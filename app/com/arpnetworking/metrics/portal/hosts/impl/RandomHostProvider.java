@@ -17,8 +17,8 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.UntypedActor;
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;

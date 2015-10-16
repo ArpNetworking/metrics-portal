@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.avaje.ebean.Ebean;
