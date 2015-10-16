@@ -14,7 +14,7 @@ Prerequisites:
 
 Building:
 
-    metrics-portal> activator stage
+    metrics-portal> ./activator stage
 
 ### Installing
 
@@ -69,17 +69,17 @@ Finally, your extending project's routes specification should include the custom
 
 To run the application in Play's debug mode execute:
 
-    metrics-portal> activator run
+    metrics-portal> ./activator run
 
 To run the application in Play's production execute:
 
-    metrics-portal> activator "start -Dconfig.file=conf/portal.application.conf"
+    metrics-portal> ./activator "start -Dconfig.file=conf/portal.application.conf"
 
 The former is configured (see [Build.scala](projectt/Build.scala)) to automatically use the custom default configuration while the latter must be instructed explicitly.
 
 To publish your development version of Metrics Portal locally for extension execute:
 
-    metrics-portal> activator publishLocal
+    metrics-portal> ./activator publishLocal
 
 License
 -------
