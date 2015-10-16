@@ -32,13 +32,13 @@ Aside from the JVM command line arguments, you may provide two additional config
 
     -Dlogger.file=/usr/local/lib/metrics_portal/logger.xml
 
-Where */usr/local/lib/metrics_portal/logger.xml* is the path to your logging configuration file. The included [default logging configuration file](conf/logback.xml) is automatically applied if one is not specified. Please refer to [LogBack](http://logback.qos.ch/) documentation for more information on how to author a configuration file.
+Where */usr/local/lib/metrics_portal/logger.xml* is the path to your logging configuration file. The included [default logging configuration file](conf/logger.xml) is automatically applied if one is not specified. Please refer to [LogBack](http://logback.qos.ch/) documentation for more information on how to author a configuration file.
 
 The second configuration is for the application. To use a custom configuration simply add the following argument to the command line above:
 
     -Dconfig.file=/usr/local/lib/metrics_portal/application.custom.conf
 
-Where */usr/local/lib/metrics_portal/application.custom.conf* is the path to your application configuration file.  The included [default application configuration file](conf/application.conf) in the project documents and demonstrates many of the configuration options available. To use the default application configuration file it needs to be specified on start-up:
+Where */usr/local/lib/metrics_portal/application.custom.conf* is the path to your application configuration file.  The included [default application configuration file](conf/portal.application.conf) in the project documents and demonstrates many of the configuration options available. To use the default application configuration file it needs to be specified on start-up:
 
     -Dconfig.resource=conf/portal.application.conf
 
