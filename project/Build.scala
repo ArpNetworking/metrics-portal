@@ -34,6 +34,8 @@ import RjsKeys._
 import sbt._
 import Keys._
 import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
+import sbtrelease.ReleaseStateTransformations._
 
 object ApplicationBuild extends Build {
 
@@ -239,6 +241,18 @@ object ApplicationBuild extends Build {
       PgpKeys.pgpPassphrase := Option(System.getenv("GPG_PASS")).map(_.toCharArray),
 
       PgpKeys.pgpSecretRing := file("arpnetworking.key"),
+
+      autoImport.releaseProcess := Seq[ReleaseStep](
+        checkSnapshotDependencies,
+        inquireVersions,
+        runTest,
+        setReleaseVersion,
+        commitReleaseVersion,
+        tagRelease,
+        setNextVersion,
+        commitNextVersion,
+        pushChanges
+      ),
 
       // Findbugs
       findbugsReportType := Some(ReportType.Html),

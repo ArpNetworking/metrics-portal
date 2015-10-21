@@ -29,7 +29,7 @@ addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.2")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-play-ebean" % "1.0.0")
 
