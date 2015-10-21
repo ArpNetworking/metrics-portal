@@ -20,6 +20,7 @@ import com.typesafe.sbt.SbtAspectj.AspectjKeys._
 import com.typesafe.sbt.digest.Import._
 import com.typesafe.sbt.gzip.Import._
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
+import com.typesafe.sbt.pgp.PgpKeys
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
@@ -32,11 +33,11 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
+import sbtrelease.ReleasePlugin._
 
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val appVersion = "0.4.0-SNAPSHOT"
     val akkaVersion = "2.3.14"
     val jacksonVersion = "2.6.2"
 
@@ -174,6 +175,8 @@ object ApplicationBuild extends Build {
           </scm>
         ),
 
+      autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+
       // Generated unmanaged assests
       unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),
 
@@ -215,8 +218,6 @@ object ApplicationBuild extends Build {
       pipelineStages := Seq(rjs, digest, gzip),
       modules += JS.Object("name" -> "classes/shell"),
 
-      version := appVersion,
-
       scalaVersion := "2.11.6",
       resolvers += Resolver.mavenLocal,
 
@@ -229,6 +230,15 @@ object ApplicationBuild extends Build {
       inputs in Aspectj <+= compiledClasses,
       products in Compile <<= products in Aspectj,
       products in Runtime <<= products in Compile,
+
+      credentials += Credentials("Sonatype Nexus Repository Manager",
+        "oss.sonatype.org",
+        System.getenv("OSSRH_USER"),
+        System.getenv("OSSRH_PASS")),
+
+      PgpKeys.pgpPassphrase := Option(System.getenv("GPG_PASS")).map(_.toCharArray),
+
+      PgpKeys.pgpSecretRing := file("arpnetworking.key"),
 
       // Findbugs
       findbugsReportType := Some(ReportType.Html),

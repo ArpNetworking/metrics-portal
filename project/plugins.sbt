@@ -29,7 +29,7 @@ addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8")
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.2")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-play-ebean" % "1.0.0")
 
@@ -42,6 +42,8 @@ addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.7")
 addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.1.5")
 
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.5")
+
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
 
 libraryDependencies ++= Seq(
     "com.puppycrawl.tools" % "checkstyle" % "6.3"
