@@ -21,7 +21,6 @@ import com.typesafe.sbt.digest.Import._
 import com.typesafe.sbt.gzip.Import._
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
 import com.typesafe.sbt.pgp.PgpKeys._
-import com.typesafe.sbt.pgp.PgpSettings
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
@@ -37,8 +36,7 @@ import Keys._
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
-
-import scala.util.Properties
+import xerial.sbt.Sonatype.SonatypeKeys._
 
 object ApplicationBuild extends Build {
 
@@ -257,6 +255,8 @@ object ApplicationBuild extends Build {
         commitNextVersion,
         pushChanges
       ),
+
+    sonatypeProfileName := "com.arpnetworking",
 
       // Findbugs
       findbugsReportType := Some(ReportType.Html),
