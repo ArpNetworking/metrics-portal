@@ -115,6 +115,7 @@ object ApplicationBuild extends Build {
             <comments>A business-friendly OSS license</comments>
           </license>
         </licenses>
+          <url>https://github.com/arpnetworking/metrics-portal</url>
 
           <developers>
             <developer>
