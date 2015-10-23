@@ -6,10 +6,12 @@ cache:
   directories:
   - $HOME/.ivy2
 install: true
+before_script:
+- gpg --import arpnetworking.key
 script:
 - ./activator clean compile checkstyle findbugs test stage
 after_success:
-- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then ./activator publishSigned; fi;
+- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then ./activator publishSigned sonatypeRelease; fi;
 env:
   global:
   - secure: e6lLmZ/JzhAr2zsFbahiMLeW7HsVFY6pPw/zhoUKWP8r6fH1+YXiJ2KQiQMzEYkJ0qp98x1PXLAMQvLNJzo8uBmJ7cUZZIfOxV7cSuAQdLeTJbZUbnKJ56LDVarSN/xciOGDCDRsERCOjX3Yg8uhQR0eIJXG6c+w2lBDCT0VHN7CepbfTA3CxCdFG8LM7Rq5V/yLKB+8ymF+JNKoj/yY/AbP1d/Oo1rcxSdR5Z28GPq9dTt8EfYbhWLf78j92qj/Gu8ujOwZrGN+4WxbIc3pRT4S62dBqhzaO2/VXhFaIFgjKsDR3m3m1PHLER1hDY5CuhJyvMf9wItE254cBedBQtVKoEe28jUmLcFIJug/uhZ41vmiEBpCN2D/MLKSVF6Dri4y6Yrz8Qfkjanh9bWN0d5alVxP5iIixvH7if9NKLX/2ANArxx2ntacx1jg0mYqKzJELKrwqTinEPH5zw5cM27cwzq3kDD7dn/lBaQHDDe9FioqyM3hGIbK4W5F9YIZs/o/pf8ncunII+MNJNLxA7touSKoxPDK1W0wMhB3pnxnq+tteyMvpKlh0KFWeQptglq21Zi0vFB88cWiz1w2682LbJ0bfA/NQR+45RODmqMi4T6BBxnVdmyjlykhVlyrqmtGN26Dcw/20dhZcqr1FvLdQa3sI0A9CEY/jhq5Gls=

@@ -20,7 +20,8 @@ import com.typesafe.sbt.SbtAspectj.AspectjKeys._
 import com.typesafe.sbt.digest.Import._
 import com.typesafe.sbt.gzip.Import._
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
-import com.typesafe.sbt.pgp.PgpKeys
+import com.typesafe.sbt.pgp.PgpKeys._
+import com.typesafe.sbt.pgp.PgpSettings
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
@@ -33,9 +34,11 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
-import sbtrelease.ReleasePlugin._
+import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
+
+import scala.util.Properties
 
 object ApplicationBuild extends Build {
 
@@ -178,7 +181,7 @@ object ApplicationBuild extends Build {
           </scm>
         ),
 
-      autoImport.releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+      releasePublishArtifactsAction := publishSigned.value,
 
       // Generated unmanaged assests
       unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),
@@ -239,11 +242,11 @@ object ApplicationBuild extends Build {
         System.getenv("OSSRH_USER"),
         System.getenv("OSSRH_PASS")),
 
-      PgpKeys.pgpPassphrase := Option(System.getenv("GPG_PASS")).map(_.toCharArray),
+      useGpg := true,
+      pgpPassphrase in Global := Option(System.getenv("GPG_PASS")).map(_.toCharArray),
 
-      PgpKeys.pgpSecretRing := file("arpnetworking.key"),
 
-      autoImport.releaseProcess := Seq[ReleaseStep](
+      releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
         runTest,
