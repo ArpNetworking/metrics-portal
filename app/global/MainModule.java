@@ -25,8 +25,8 @@ import akka.cluster.Cluster;
 import akka.contrib.pattern.ClusterSingletonManager;
 import com.arpnetworking.guice.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
-import com.arpnetworking.metrics.impl.TsdQueryLogSink;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
@@ -42,6 +42,7 @@ import play.Environment;
 import play.inject.ApplicationLifecycle;
 import play.libs.F;
 
+import java.io.File;
 import java.util.Collections;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -94,10 +95,12 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private MetricsFactory getMetricsFactory(final Configuration configuration) {
         return new TsdMetricsFactory.Builder()
+                .setClusterName(configuration.getString("metrics.cluster"))
+                .setServiceName(configuration.getString("metrics.service"))
                 .setSinks(Collections.singletonList(
-                        new TsdQueryLogSink.Builder()
+                        new TsdLogSink.Builder()
                                 .setName(configuration.getString("metrics.name"))
-                                .setPath(configuration.getString("metrics.path"))
+                                .setDirectory(new File(configuration.getString("metrics.path")))
                                 .build()
                 ))
                 .build();
