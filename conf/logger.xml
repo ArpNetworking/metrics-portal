@@ -22,11 +22,12 @@
   <appender name="MetricsPortalLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/metrics_portal.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.RandomizedTimeBasedFNATP">
+      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
         <maxOffsetInMillis>900000</maxOffsetInMillis>
+        <maxFileSize>2gb</maxFileSize>
       </timeBasedFileNamingAndTriggeringPolicy>
-      <fileNamePattern>logs/metrics-portal.%d{yyyy-MM-dd_HH}.log.gz</fileNamePattern>
-      <maxHistory>20</maxHistory>
+      <fileNamePattern>logs/metrics-portal.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
+      <maxHistory>5</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="com.arpnetworking.logback.KeyValueEncoder">

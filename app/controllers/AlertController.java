@@ -170,7 +170,7 @@ public class AlertController extends Controller {
         final models.view.Quantity viewValue = new models.view.Quantity();
         viewValue.setValue(alert.getValue().getValue());
         if (alert.getValue().getUnit().isPresent()) {
-            viewValue.setUnit(alert.getValue().getUnit().toString());
+            viewValue.setUnit(alert.getValue().getUnit().get().toString());
         }
         viewAlert.setValue(viewValue);
         return viewAlert;

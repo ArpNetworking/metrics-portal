@@ -49,7 +49,7 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.1",
       "com.arpnetworking.build" % "build-resources" % "1.0.2",
-      "com.arpnetworking.logback" % "logback-steno" % "1.9.3",
+      "com.arpnetworking.logback" % "logback-steno" % "1.11.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
       "com.arpnetworking.metrics" % "metrics-client" % "0.4.2",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -66,14 +66,7 @@ object ApplicationBuild extends Build {
       "com.typesafe.play" %% "play-ebean" % "1.0.0",
       "net.sf.oval" % "oval" % "1.82",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
-      // TODO(vkoskela): Once released remove from ./lib and uncomment with new version below.
-      // REF: https://github.com/flyway/flyway-play/pull/19
-      //"org.flywaydb" % "flyway-play_2.11" % "2.2.0.CUSTOM",
-      // TODO(vkoskela): Once the above is resolved remove these dependencies.
-      // <BEGIN REMOVE>
-      "org.flywaydb" % "flyway-core" % "3.1",
-      "org.scala-lang" % "scala-library" % "2.11.6",
-      // <END REMOVE>
+      "org.flywaydb" % "flyway-play_2.11" % "2.2.1",
       "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.2.0",
@@ -180,9 +173,6 @@ object ApplicationBuild extends Build {
         ),
 
       releasePublishArtifactsAction := publishSigned.value,
-
-      // Generated unmanaged assests
-      unmanagedResourceDirectories in Compile <+= baseDirectory( _ / "app/assets/unmanaged" ),
 
       // Export assets artifact
       packagedArtifacts := {
