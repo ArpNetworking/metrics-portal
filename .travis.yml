@@ -10,7 +10,6 @@ before_script:
 - gpg --import arpnetworking.key
 script:
 - ./activator clean compile checkstyle findbugs test stage
-after_success:
 - if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then ./activator publishSigned sonatypeRelease; fi;
 env:
   global:
