@@ -24,10 +24,10 @@ import app = require("durandal/app");
 
 class ConnectionModel {
     socket: WebSocket = null;
-    server: String;
+    server: string;
     protocol: Protocol;
     cvm: ConnectionVM;
-    connectionList: {path: String; protocol: Protocol}[];
+    connectionList: {path: string; protocol: Protocol}[];
     connectedAt: number;
     reconnectTime: number = 2000;
     attempt: number = 1;
@@ -35,7 +35,7 @@ class ConnectionModel {
     disconnect: boolean = false;
     retryConnectionHandle: number = 0;
 
-    constructor(server: String, cvm: ConnectionVM) {
+    constructor(server: string, cvm: ConnectionVM) {
         this.server = server;
         this.cvm = cvm;
         this.heartbeat();
@@ -66,20 +66,30 @@ class ConnectionModel {
     }
 
     private resetConnectionList() {
-        this.connectionList = <{path: String; protocol: Protocol}[]>[
-            {path: "/telemetry/v2/stream", protocol: new V2Protocol(this)},
-            {path: "/telemetry/v1/stream", protocol: new V1Protocol(this)},
-            {path: "/stream", protocol: new V1Protocol(this)}
-        ];
-    }
-
-    buildWebSocket() {
         var serverNameComponents = this.server.split(":");
         var serverHost = serverNameComponents[0];
         var serverPort = (typeof serverNameComponents[1] === "undefined") ? "7090" : serverNameComponents[1];
 
+        var protocol = "ws"
+        if (window.location.protocol.toLowerCase() == "https") {
+            protocol = "wss"
+        }
+        var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
+        var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + "/v1/proxy/stream";
+
+        this.connectionList = <{path: string; protocol: Protocol}[]>[
+            {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
+            {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
+            {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)},
+            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol: new V2Protocol(this)},
+            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
+            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}
+        ];
+    }
+
+    buildWebSocket() {
         this.protocol = this.connectionList[0].protocol;
-        var path = "ws://" + serverHost + ":" + serverPort + this.connectionList[0].path;
+        var path = this.connectionList[0].path;
         console.info("Attempting connection to " + path + "; attempt " + this.attempt);
         var metricsSocket:WebSocket = new WebSocket(path);
         metricsSocket.onopen = this.opened;
@@ -138,7 +148,6 @@ class ConnectionModel {
             console.warn("connection failed");
             this.connectionList.shift();
         }
-
 
         // Since the connection failed, we move to the next endpoint
         // When the list of endpoints is empty, we reset it.
