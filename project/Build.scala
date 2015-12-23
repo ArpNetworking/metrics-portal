@@ -49,6 +49,7 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.1",
       "com.arpnetworking.build" % "build-resources" % "1.0.2",
+      "com.arpnetworking.commons" % "commons" % "1.0.1",
       "com.arpnetworking.logback" % "logback-steno" % "1.11.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
       "com.arpnetworking.metrics" % "metrics-client" % "0.4.2",

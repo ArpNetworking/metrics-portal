@@ -17,7 +17,7 @@
 package global;
 
 import akka.cluster.Cluster;
-import com.arpnetworking.jackson.ObjectMapperFactory;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import play.Application;

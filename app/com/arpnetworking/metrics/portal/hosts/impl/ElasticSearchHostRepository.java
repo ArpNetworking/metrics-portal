@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.jackson.BuilderDeserializer;
-import com.arpnetworking.jackson.ObjectMapperFactory;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;

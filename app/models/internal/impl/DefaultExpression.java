@@ -15,8 +15,8 @@
  */
 package models.internal.impl;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.arpnetworking.utility.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import models.internal.Expression;
 import net.sf.oval.constraint.NotEmpty;
