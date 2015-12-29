@@ -202,6 +202,7 @@ object ApplicationBuild extends Build {
       ),
 
       devSettings := Seq(("config.resource", "portal.application.conf")),
+      javaOptions in Test += "-Dconfig.file=conf/portal.application.conf",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
       routesGenerator := InjectedRoutesGenerator,

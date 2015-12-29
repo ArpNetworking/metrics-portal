@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
+import models.internal.NagiosExtension;
 import models.internal.QueryResult;
 import models.view.PagedContainer;
 import models.view.Pagination;
@@ -33,6 +34,7 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -159,7 +161,7 @@ public class AlertController extends Controller {
         final models.view.Alert viewAlert = new models.view.Alert();
         viewAlert.setCluster(alert.getCluster());
         viewAlert.setContext(alert.getContext().toString());
-        viewAlert.setExtensions(alert.getExtensions());
+        viewAlert.setExtensions(mergeExtensions(alert.getNagiosExtension()));
         viewAlert.setId(alert.getId().toString());
         viewAlert.setMetric(alert.getMetric());
         viewAlert.setName(alert.getName());
@@ -174,6 +176,18 @@ public class AlertController extends Controller {
         }
         viewAlert.setValue(viewValue);
         return viewAlert;
+    }
+
+    private Map<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
+        if (nagiosExtension == null) {
+            return Collections.emptyMap();
+        }
+        final Map<String, Object> extensionMap = Maps.newHashMap();
+        extensionMap.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
+        extensionMap.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
+        extensionMap.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
+        extensionMap.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
+        return extensionMap;
     }
 
     /**
@@ -202,4 +216,8 @@ public class AlertController extends Controller {
 
     private static final int DEFAULT_MAX_LIMIT = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
+    private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";
+    private static final String NAGIOS_EXTENSION_NOTIFY_KEY = "notify";
+    private static final String NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY = "max_check_attempts";
+    private static final String NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY = "freshness_threshold";
 }

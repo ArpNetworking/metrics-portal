@@ -68,4 +68,11 @@ public interface AlertRepository {
      * @return The total number of alerts.
      */
     long getAlertCount();
+
+    /**
+     * Add a new alert or update an existing one in the repository.
+     *
+     * @param alert The alert to add to the repository.
+     */
+    void addOrUpdateAlert(Alert alert);
 }

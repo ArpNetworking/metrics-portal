@@ -20,6 +20,7 @@ import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -56,8 +57,8 @@ public class NagiosExtension extends Model {
     @Column(name = "updated_at")
     private Timestamp _updatedAt;
 
-    @OneToOne
-    @JoinColumn(name = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "alert_id")
     private Alert _alert;
 
     @Column(name = "severity")
@@ -70,7 +71,7 @@ public class NagiosExtension extends Model {
     private int _maxCheckAttempts;
 
     @Column(name = "freshness_threshold_in_seconds")
-    private int _freshnessThresholdInSeconds;
+    private long _freshnessThresholdInSeconds;
 
     public Alert getAlert() {
         return _alert;
@@ -128,11 +129,11 @@ public class NagiosExtension extends Model {
         _maxCheckAttempts = value;
     }
 
-    public int getFreshnessThreshold() {
+    public long getFreshnessThreshold() {
         return _freshnessThresholdInSeconds;
     }
 
-    public void setFreshnessThreshold(final int value) {
+    public void setFreshnessThreshold(final long value) {
         _freshnessThresholdInSeconds = value;
     }
 }

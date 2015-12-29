@@ -17,7 +17,6 @@ package models.internal;
 
 import org.joda.time.Period;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -98,9 +97,9 @@ public interface Alert {
     Quantity getValue();
 
     /**
-     * Endpoint specific extensions.
+     * Nagios specific extensions.
      *
-     * @return Endpoint specific extensions.
+     * @return Nagios specific extensions.
      */
-    Map<String, Object> getExtensions();
+    NagiosExtension getNagiosExtension();
 }
