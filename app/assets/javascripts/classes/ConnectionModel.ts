@@ -95,6 +95,12 @@ class ConnectionModel {
         metricsSocket.onopen = this.opened;
         metricsSocket.onmessage = this.receiveData;
         metricsSocket.onclose = this.closed;
+        setTimeout(
+            () => {
+                console.info("Connection timed out to " + path + "; attempt " + this.attempt);
+                metricsSocket.close();
+            },
+            5000);
         this.socket = metricsSocket;
     }
 
