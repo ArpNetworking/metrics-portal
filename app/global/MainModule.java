@@ -22,7 +22,8 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
-import akka.contrib.pattern.ClusterSingletonManager;
+import akka.cluster.singleton.ClusterSingletonManager;
+import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.guice.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdLogSink;
@@ -220,11 +221,11 @@ public class MainModule extends AbstractModule {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(INDEXER_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.defaultProps(
+                return _system.actorOf(ClusterSingletonManager.props(
                                 _hostProviderProps,
-                                "host-provider-scheduler",
                                 PoisonPill.getInstance(),
-                                INDEXER_ROLE));
+                                ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
+                        "host-provider-scheduler");
             }
             return null;
         }
