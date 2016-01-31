@@ -26,7 +26,6 @@ import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
 import de.johoop.findbugs4sbt.FindBugs._
 import de.johoop.findbugs4sbt.{Effort, Priority, ReportType}
-import net.virtualvoid.sbt.graph.Plugin.graphSettings
 import play.routes.compiler.InjectedRoutesGenerator
 import play.sbt.PlayImport.PlayKeys._
 import play.sbt.routes.RoutesKeys.routesGenerator
@@ -41,10 +40,10 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.3.14"
+    val akkaVersion = "2.4.1"
     val jacksonVersion = "2.6.2"
 
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings ++ graphSettings
+    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings 
 
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.1",
@@ -62,7 +61,7 @@ object ApplicationBuild extends Build {
       "com.google.guava" % "guava" % "18.0",
       "com.h2database" % "h2" % "1.4.186",
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
-      "com.typesafe.akka" %% "akka-contrib" % akkaVersion,
+      "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "com.typesafe.play" %% "play-ebean" % "1.0.0",
       "net.sf.oval" % "oval" % "1.82",
