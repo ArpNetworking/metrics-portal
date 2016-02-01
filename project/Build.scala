@@ -48,7 +48,7 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.1",
       "com.arpnetworking.build" % "build-resources" % "1.0.2",
-      "com.arpnetworking.commons" % "commons" % "1.0.1",
+      "com.arpnetworking.commons" % "commons" % "1.1.0",
       "com.arpnetworking.logback" % "logback-steno" % "1.11.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
       "com.arpnetworking.metrics" % "metrics-client" % "0.4.2",
@@ -59,7 +59,9 @@ object ApplicationBuild extends Build {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
       "com.google.code.findbugs" % "annotations" % "3.0.0",
       "com.google.guava" % "guava" % "18.0",
+      "com.google.inject" % "guice" % "4.0",
       "com.h2database" % "h2" % "1.4.186",
+      "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,

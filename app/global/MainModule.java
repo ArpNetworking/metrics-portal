@@ -24,7 +24,7 @@ import akka.actor.Props;
 import akka.cluster.Cluster;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
-import com.arpnetworking.guice.akka.GuiceActorCreator;
+import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
