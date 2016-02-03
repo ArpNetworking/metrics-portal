@@ -34,6 +34,7 @@ class ConnectionModel {
     reconnecting: boolean = false;
     disconnect: boolean = false;
     retryConnectionHandle: number = 0;
+    connectionTimeoutHandle: number = 0;
 
     constructor(server: string, cvm: ConnectionVM) {
         this.server = server;
@@ -95,7 +96,7 @@ class ConnectionModel {
         metricsSocket.onopen = this.opened;
         metricsSocket.onmessage = this.receiveData;
         metricsSocket.onclose = this.closed;
-        setTimeout(
+        this.connectionTimeoutHandle = setTimeout(
             () => {
                 console.info("Connection timed out to " + path + "; attempt " + this.attempt);
                 metricsSocket.close();
@@ -120,6 +121,7 @@ class ConnectionModel {
         this.reconnecting = false;
         this.reconnectTime = 2000;
         this.protocol.connectionInitialized();
+        clearTimeout(this.connectionTimeoutHandle);
         console.info("connection established to " + this.server);
         app.trigger('opened', this.cvm);
     };
