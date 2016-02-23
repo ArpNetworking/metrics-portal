@@ -52,6 +52,7 @@ class GraphVM implements StatisticView {
     endAt: number = 0;
     dataLength: number = 600000;
     spec: GraphSpec;
+    config: number = 0;
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
@@ -118,10 +119,31 @@ class GraphVM implements StatisticView {
     }
 
     configGraph() {
+        this.config = this.config + 1;
+
         for (var series = 0; series < this.data.length; series++) {
-            this.data[series].points.show = !this.data[series].points.show;
-            this.data[series].lines.show  = !this.data[series].lines.show;
-            this.data[series].bars.show = !this.data[series].bars.show;
+            if (this.config == 1) {
+                this.data[series].points.show = false;
+                this.data[series].lines.show  = true;
+                this.data[series].lines.fill  = false;
+                this.data[series].bars.show = false;
+            } else if (this.config == 2) {
+                this.data[series].points.show = false;
+                this.data[series].lines.show = true;
+                this.data[series].lines.fill  = true;
+                this.data[series].bars.show = false;
+            } else if (this.config == 3) {
+                this.data[series].points.show = false;
+                this.data[series].lines.show  = false;
+                this.data[series].lines.fill  = false;
+                this.data[series].bars.show = true;
+            } else {
+                this.config = 0;
+                this.data[series].points.show = true;
+                this.data[series].lines.show  = true;
+                this.data[series].lines.fill  = false;
+                this.data[series].bars.show = false;
+            }
         }
     }
 
