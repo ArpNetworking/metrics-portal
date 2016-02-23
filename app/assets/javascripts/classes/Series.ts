@@ -22,6 +22,7 @@ class Series {
     label: string = "";
     points: any = { show: true };
     lines: any = { show: true };
+    bars: any = { show: false };
     color: string = "black";
     colorSubscription: KnockoutSubscription;
 

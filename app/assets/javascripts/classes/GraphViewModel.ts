@@ -62,23 +62,30 @@ module GraphViewModel {
 
     export var sliderChanged: (event: Event, ui: any) => void = (event, ui) => { setViewDuration(ui.values); };
     export var removeGraph: (vm: StatisticView) => void = (gvm: StatisticView) => {
-            var id = gvm.id;
-            var graph = graphsById[id];
-            if (graph != undefined) {
-                graph.shutdown();
-                graphs.remove(graph);
-                $("#graph_div_" + graph.id).remove();
-                delete graphsById[id];
-            }
-            //Remove the subscription so new connections wont receive the data
-            subscriptions = subscriptions.filter((element: GraphSpec) => {
-                return !(element.metric == gvm.spec.metric && element.service == gvm.spec.service && element.statistic == gvm.spec.statistic);
-            });
-            //Make sure to unsubscribe from the graph feed.
-            Hosts.connections().forEach((element: ConnectionVM) => {
-                element.model.protocol.unsubscribeFromMetric(gvm.spec);
-            });
-        };
+        var id = gvm.id;
+        var graph = graphsById[id];
+        if (graph != undefined) {
+            graph.shutdown();
+            graphs.remove(graph);
+            $("#graph_div_" + graph.id).remove();
+            delete graphsById[id];
+        }
+        //Remove the subscription so new connections wont receive the data
+        subscriptions = subscriptions.filter((element: GraphSpec) => {
+            return !(element.metric == gvm.spec.metric && element.service == gvm.spec.service && element.statistic == gvm.spec.statistic);
+        });
+        //Make sure to unsubscribe from the graph feed.
+        Hosts.connections().forEach((element: ConnectionVM) => {
+            element.model.protocol.unsubscribeFromMetric(gvm.spec);
+        });
+    };
+    export var configGraph: (vm: StatisticView) => void = (gvm: StatisticView) => {
+        var id = gvm.id;
+        var graph = graphsById[id];
+        if (graph != undefined) {
+            graph.configGraph();
+        }
+    };
     export var fragment = ko.computed(() => {
         var servers = Hosts.connections().map((element) => { return element.server });
         var mygraphs = graphs().map((element: StatisticView) => {
@@ -166,7 +173,7 @@ module GraphViewModel {
     export var togglePause = () => {
         paused(!paused());
         for (var i = 0; i < graphs().length; i++) {
-            graphs()[i].togglePause();
+            graphs()[i].setPause(paused());
         }
     };
 

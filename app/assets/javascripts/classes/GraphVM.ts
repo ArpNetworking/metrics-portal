@@ -112,9 +112,17 @@ class GraphVM implements StatisticView {
         this.data[index].pushData(timestamp, dataValue, this.paused);
     }
 
-    togglePause() {
-        this.paused = !this.paused;
+    setPause(pause: boolean) {
+        this.paused = pause;
         this.pauseTime = new Date().getTime() - 1000;
+    }
+
+    configGraph() {
+        for (var series = 0; series < this.data.length; series++) {
+            this.data[series].points.show = !this.data[series].points.show;
+            this.data[series].lines.show  = !this.data[series].lines.show;
+            this.data[series].bars.show = !this.data[series].bars.show;
+        }
     }
 
     render() {

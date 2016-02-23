@@ -25,7 +25,8 @@ interface StatisticView {
     targetFrameRate: number;
     render(): void;
     start(): void;
-    togglePause(): void;
+    setPause(pause: boolean): void;
+    configGraph(): void;
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM): void;
     shutdown(): void;
     setViewDuration(duration: ViewDuration): void;
