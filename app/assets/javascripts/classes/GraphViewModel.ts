@@ -94,6 +94,33 @@ module GraphViewModel {
         return graphWidth();
     });
 
+    var previousTimestamp: number = 0.0;
+    export var render = (timestamp: number) => {
+        // Render
+        if (previousTimestamp != null) {
+            var currentRate = 1000 / (timestamp - previousTimestamp);
+            if (currentRate > targetFrameRate) {
+                // Delayed animate
+                var stepTimeInMillis = 1000 * (1 / targetFrameRate - 1 / currentRate);
+                setTimeout(
+                    () => {
+                        window.requestAnimationFrame(render);
+                    },
+                    stepTimeInMillis);
+                return;
+            }
+        }
+
+        previousTimestamp = timestamp;
+
+        graphs().forEach((graph) => {
+            graph.render();
+        });
+
+        window.requestAnimationFrame(render)
+    };
+    window.requestAnimationFrame(render);
+
     export var doShade = ko.computed(function() {
         return Hosts.connections().some(function(element: ConnectionVM) {
             return element.selected();
@@ -158,12 +185,14 @@ module GraphViewModel {
         if (existing != undefined) {
             return;
         }
+
         var graph: StatisticView;
         if (mode() == "graph") {
             graph = new GraphVM(id, displayName, graphSpec);
         } else if (mode() == "gauge") {
             graph = new GaugeVM(id, displayName, graphSpec);
         }
+
         graph.setViewDuration(viewDuration);
         graph.targetFrameRate = targetFrameRate;
         graphsById[id] = graph;
@@ -182,6 +211,7 @@ module GraphViewModel {
         viewDuration = new ViewDuration(window.min, window.max);
         for (var i = 0; i < graphs().length; i++) {
             graphs()[i].setViewDuration(viewDuration);
+            graphs()[i].render();
         }
     };
 
@@ -190,6 +220,7 @@ module GraphViewModel {
         if (toParse.substr(0, 7) == "#graph/") {
             toParse = toParse.substr(7);
         }
+
         var obj = JSON.parse(toParse);
         if (obj == null) {
             return;
@@ -212,7 +243,6 @@ module GraphViewModel {
             addGraph(new GraphSpec(graph.service, graph.metric, graph.stat));
         });
     };
-
 
     export var idify = (value: string): string => {
         value = value.replace(/ /g, "_").toLowerCase();
@@ -242,6 +272,7 @@ module GraphViewModel {
                 currFolder.sortChildren();
             }
         }
+
         var metricNode: MetricNodeVM = getMetricVMNode(spec.metric, serviceNode);
         if (metricNode === undefined) {
             metricNode = new MetricNodeVM(spec.metric, idify(spec.metric));
@@ -289,6 +320,7 @@ module GraphViewModel {
             ns.insensitive = true;
             return ns.naturalSort(left.name(), right.name());
         });
+
         foldersList.sort((left:FolderNodeVM, right:FolderNodeVM) => {
             left.sortChildren(true);
             left.sortSubFolders(true);
@@ -318,6 +350,7 @@ module GraphViewModel {
                 return ns.naturalSort(left.name(), right.name());
             });
         }
+
         return newFolder
     };
 
@@ -348,8 +381,7 @@ module GraphViewModel {
         if (searchTerm.length <= 0) {
             currFolder.visible(true);
             $("#folder_" + currFolder.id()).collapse('hide');
-        }
-        else {
+        } else {
             currFolder.visible(false);
         }
 
@@ -361,13 +393,11 @@ module GraphViewModel {
 
                 if (searchTerm.length <= 0) {
                     metric.expanded(true);
-                }
-                else if (regex.test(metric.name())) {
+                } else if (regex.test(metric.name())) {
                     metric.expanded(true);
                     currFolder.visible(true);
                     metricMatch = true;
-                }
-                else {
+                } else {
                     metric.expanded(false);
                 }
             }
@@ -403,6 +433,7 @@ module GraphViewModel {
                 if (!skipSort) {
                     currFolder.sortSubFolders();
                 }
+
                 if (currFolder.expanded) {
                     metricFolder.expandMe();
                 }

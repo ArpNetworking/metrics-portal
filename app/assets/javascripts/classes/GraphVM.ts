@@ -43,9 +43,11 @@ class GraphVM implements StatisticView {
     started: boolean = false;
     container: HTMLElement = null;
     data: Series[] = [];
+    buffer: number[][][] = [];
     dataStreams: { [key: string]: number } = {};
     stop: boolean = false;
     paused: boolean = false;
+    pauseTime: number = 0;
     targetFrameRate: number = 60;
     duration: number = 30000;
     endAt: number = 0;
@@ -106,151 +108,140 @@ class GraphVM implements StatisticView {
                 this.updateColor(cvm);
             });
             this.data.push(series);
+            this.buffer.push([]);
         }
-
 
         if (this.data[index].data.length == 0 || this.data[index].data[this.data[index].data.length - 1][0] < timestamp) {
-            this.data[index].data.push([timestamp, dataValue]);
+            if (this.paused) {
+                this.buffer[index].push([timestamp, dataValue]);
+            } else {
+                if (this.buffer[index].length > 0) {
+                    this.data[index].data = this.data[index].data.concat(this.buffer[index]);
+                    this.buffer[index] = [];
+                }
+
+                this.data[index].data.push([timestamp, dataValue]);
+            }
         }
+    }
+
+    render() {
+        if (this.stop || this.container.clientWidth == 0) {
+            return;
+        }
+
+        //set min and max
+        var graphMin = 1000000000;
+        var graphMax = -1000000000;
+
+        var now = new Date().getTime() - 1000;
+        if (this.paused) {
+            now = this.pauseTime
+        } else {
+            this.pauseTime = now;
+        }
+
+        var graphEnd = now - this.endAt;
+        var graphStart = graphEnd - this.duration;
+        for (var series = 0; series < this.data.length; series++) {
+            //Deleted entries are not removed from the array in order to
+            //preserve the hash of name => index
+            if (this.data[series] === undefined) {
+                continue;
+            }
+
+            //shift the data off the array that is too old
+            if (!this.paused) {
+                while (this.data[series].data[1] != undefined && this.data[series].data[1][0] < graphEnd - this.dataLength) {
+                    this.data[series].data.shift();
+                }
+            }
+
+            //find the indexes in the window
+            var lower = this.data[series].data.length;
+            var upper = 0;
+            for (var iter = this.data[series].data.length - 1; iter >= 0; iter--) {
+                var dataTimestamp = this.data[series].data[iter][0];
+                if (dataTimestamp >= graphStart && dataTimestamp <= graphEnd) {
+                    if (iter < lower) {
+                        lower = iter;
+                    }
+
+                    if (iter > upper) {
+                        upper = iter;
+                    }
+                }
+            }
+
+            if (lower > 0) {
+                lower--;
+            }
+
+            if (upper < this.data[series].data.length - 1) {
+                upper++;
+            }
+
+            for (var back = lower; back <= upper; back++) {
+                //it's in our view window
+                var dataVal = this.data[series].data[back][1];
+                if (dataVal > graphMax) {
+                    graphMax = dataVal;
+                }
+
+                if (dataVal < graphMin) {
+                    graphMin = dataVal;
+                }
+            }
+        }
+
+        if (graphMax == graphMin) {
+            graphMin--;
+            graphMax++;
+        } else if (graphMin > graphMax) {
+            //This is the case with no data
+            graphMin = 0;
+            graphMax = 1;
+        } else {
+            var spread = graphMax - graphMin;
+            var buffer = spread / 10;
+            graphMin -= buffer;
+            graphMax += buffer;
+        }
+
+        // Draw Graph
+        Flotr.draw(this.container, this.data, {
+            yaxis: {
+                max: graphMax,
+                min: graphMin
+            },
+            xaxis: {
+                mode: 'time',
+                noTicks: 3,
+                min: graphStart,
+                max: graphEnd,
+                timeMode: "local"
+
+            },
+            title: this.name,
+            HtmlText: false,
+            mouse: {
+                track: false,
+                sensibility: 8,
+                radius: 15
+            },
+            legend: {
+                show: false
+            }
+        });
     }
 
     start() {
         if (this.started == true) {
             return;
         }
+
         this.started = true;
         this.container = document.getElementById(this.id);
-
-        var previousTimestamp: number = 0.0;
-        var animate = (timestamp: number) => {
-
-            if (this.stop) {
-                return;
-            }
-
-            if (this.paused || this.container.clientWidth == 0) {
-                // Delayed animate
-                var stepTimeInMillis = 100;
-                setTimeout(
-                    () => {
-                        window.requestAnimationFrame(animate);
-                    },
-                    stepTimeInMillis);
-                return;
-            }
-
-            //set min and max
-            var graphMin = 1000000000;
-            var graphMax = -1000000000;
-
-            var now = new Date().getTime() - 1000;
-            var graphEnd = now - this.endAt;
-            var graphStart = graphEnd - this.duration;
-            for (var series = 0; series < this.data.length; series++) {
-                //Deleted entries are not removed from the array in order to
-                //preserve the hash of name => index
-                if (this.data[series] === undefined) {
-                    continue;
-                }
-                //shift the data off the array that is too old
-                while (this.data[series].data[1] != undefined && this.data[series].data[1][0] < graphEnd - this.dataLength) {
-                    this.data[series].data.shift();
-                }
-
-                //find the indexes in the window
-                var lower = this.data[series].data.length;
-                var upper = 0;
-                for (var iter = this.data[series].data.length - 1; iter >= 0; iter--) {
-                    var dataTimestamp = this.data[series].data[iter][0];
-                    if (dataTimestamp >= graphStart && dataTimestamp <= graphEnd) {
-                        if (iter < lower) {
-                            lower = iter;
-                        }
-                        if (iter > upper) {
-                            upper = iter;
-                        }
-                    }
-                }
-
-                if (lower > 0) {
-                    lower--;
-                }
-                if (upper < this.data[series].data.length - 1) {
-                    upper++;
-                }
-
-                for (var back = lower; back <= upper; back++) {
-                    //it's in our view window
-                    var dataVal = this.data[series].data[back][1];
-                    if (dataVal > graphMax) {
-                        graphMax = dataVal;
-                    }
-                    if (dataVal < graphMin) {
-                        graphMin = dataVal;
-                    }
-                }
-            }
-            if (graphMax == graphMin) {
-                graphMin--;
-                graphMax++;
-            } else if (graphMin > graphMax) {
-                //This is the case with no data
-                graphMin = 0;
-                graphMax = 1;
-            }
-            else {
-                var spread = graphMax - graphMin;
-                var buffer = spread / 10;
-                graphMin -= buffer;
-                graphMax += buffer;
-            }
-
-            // Draw Graph
-            Flotr.draw(this.container, this.data, {
-                yaxis: {
-                    max: graphMax,
-                    min: graphMin
-                },
-                xaxis: {
-                    mode: 'time',
-                    noTicks: 3,
-                    min: graphStart,
-                    max: graphEnd,
-                    timeMode: "local"
-
-                },
-                title: this.name,
-                HtmlText: false,
-                mouse: {
-                    track: false,
-                    sensibility: 8,
-                    radius: 15
-                },
-                legend: {
-                    show: false
-                }
-            });
-
-            // Render
-            if (previousTimestamp != null) {
-                var currentRate = 1000 / (timestamp - previousTimestamp);
-                if (currentRate > this.targetFrameRate) {
-                    // Delayed animate
-                    var stepTimeInMillis = 1000 * (1 / this.targetFrameRate - 1 / currentRate);
-                    previousTimestamp = timestamp;
-                    setTimeout(
-                        () => {
-                            window.requestAnimationFrame(animate);
-                        },
-                        stepTimeInMillis);
-                    return;
-                }
-            }
-            previousTimestamp = timestamp;
-            window.requestAnimationFrame(animate);
-        };
-
-        window.requestAnimationFrame(animate);
     }
 }
 

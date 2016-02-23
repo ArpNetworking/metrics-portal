@@ -24,6 +24,7 @@ interface StatisticView {
     spec: GraphSpec;
     paused: boolean;
     targetFrameRate: number;
+    render(): void;
     start(): void;
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM): void;
     shutdown(): void;

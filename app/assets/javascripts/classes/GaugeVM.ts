@@ -36,6 +36,10 @@ class GaugeVM implements StatisticView {
         this.spec = spec;
     }
 
+    render() {
+        return;
+    }
+
     start() {
         if (this.started == true) {
             return;
