@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.logback.annotations.LogValue;
-import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -37,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
-public final class NoAlertRepository implements AlertRepository {
+public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
 
     /**
      * Public constructor.
