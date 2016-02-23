@@ -18,6 +18,7 @@
 class Series {
     //This is really an array of elements of [timestamp, data value]
     data: number[][] = [];
+    buffer: number [][] = [];
     label: string = "";
     points: any = { show: true };
     lines: any = { show: true };
@@ -27,6 +28,21 @@ class Series {
     constructor(label: string, color: string) {
         this.color = color;
         this.label = label;
+    }
+
+    pushData(timestamp: number, dataValue: number, paused: boolean) {
+        if (this.data.length == 0 || this.data[this.data.length - 1][0] < timestamp) {
+            if (paused) {
+                this.buffer.push([timestamp, dataValue]);
+            } else {
+                if (this.buffer.length > 0) {
+                    this.data = this.data.concat(this.buffer);
+                    this.buffer = [];
+                }
+
+                this.data.push([timestamp, dataValue]);
+            }
+        }
     }
 }
 

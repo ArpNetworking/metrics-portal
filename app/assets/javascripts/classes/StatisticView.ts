@@ -22,10 +22,10 @@ interface StatisticView {
     id: string;
     name: string;
     spec: GraphSpec;
-    paused: boolean;
     targetFrameRate: number;
     render(): void;
     start(): void;
+    togglePause(): void;
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM): void;
     shutdown(): void;
     setViewDuration(duration: ViewDuration): void;

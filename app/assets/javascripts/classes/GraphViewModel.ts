@@ -166,7 +166,7 @@ module GraphViewModel {
     export var togglePause = () => {
         paused(!paused());
         for (var i = 0; i < graphs().length; i++) {
-            graphs()[i].paused = paused();
+            graphs()[i].togglePause();
         }
     };
 

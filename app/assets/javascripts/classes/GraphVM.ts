@@ -43,7 +43,6 @@ class GraphVM implements StatisticView {
     started: boolean = false;
     container: HTMLElement = null;
     data: Series[] = [];
-    buffer: number[][][] = [];
     dataStreams: { [key: string]: number } = {};
     stop: boolean = false;
     paused: boolean = false;
@@ -108,21 +107,14 @@ class GraphVM implements StatisticView {
                 this.updateColor(cvm);
             });
             this.data.push(series);
-            this.buffer.push([]);
         }
 
-        if (this.data[index].data.length == 0 || this.data[index].data[this.data[index].data.length - 1][0] < timestamp) {
-            if (this.paused) {
-                this.buffer[index].push([timestamp, dataValue]);
-            } else {
-                if (this.buffer[index].length > 0) {
-                    this.data[index].data = this.data[index].data.concat(this.buffer[index]);
-                    this.buffer[index] = [];
-                }
+        this.data[index].pushData(timestamp, dataValue, this.paused);
+    }
 
-                this.data[index].data.push([timestamp, dataValue]);
-            }
-        }
+    togglePause() {
+        this.paused = !this.paused;
+        this.pauseTime = new Date().getTime() - 1000;
     }
 
     render() {
@@ -137,8 +129,6 @@ class GraphVM implements StatisticView {
         var now = new Date().getTime() - 1000;
         if (this.paused) {
             now = this.pauseTime
-        } else {
-            this.pauseTime = now;
         }
 
         var graphEnd = now - this.endAt;

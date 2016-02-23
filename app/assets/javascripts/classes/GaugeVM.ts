@@ -40,6 +40,10 @@ class GaugeVM implements StatisticView {
         return;
     }
 
+    togglePause() {
+        this.paused = !this.paused;
+    }
+
     start() {
         if (this.started == true) {
             return;
