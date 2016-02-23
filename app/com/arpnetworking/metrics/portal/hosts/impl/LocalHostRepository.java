@@ -126,8 +126,8 @@ public final class LocalHostRepository implements HostRepository {
         for (final Map.Entry<String, Host> entry : _temporaryStorage.entrySet()) {
             boolean matches = true;
             if (query.getPartialHostname().isPresent()) {
-                final String queryName = query.getPartialHostname().get().toLowerCase();
-                final String hostName = entry.getKey().toLowerCase();
+                final String queryName = query.getPartialHostname().get().toLowerCase(Locale.getDefault());
+                final String hostName = entry.getKey().toLowerCase(Locale.getDefault());
                 if (!hostName.equals(queryName) && !hostName.startsWith(queryName) && !hostName.contains(queryName)) {
                     matches = false;
                 }
