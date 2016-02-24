@@ -170,6 +170,10 @@ class GraphVM implements StatisticView {
                 continue;
             }
 
+            if (this.data[series].data.length <= 0) {
+                continue;
+            }
+
             //shift the data off the array that is too old
             if (!this.paused) {
                 while (this.data[series].data[1] != undefined && this.data[series].data[1][0] < graphEnd - this.dataLength) {
@@ -255,11 +259,12 @@ class GraphVM implements StatisticView {
         });
     }
 
-    start() {
+    start(paused: boolean) {
         if (this.started == true) {
             return;
         }
 
+        this.paused = paused;
         this.started = true;
         this.container = document.getElementById(this.id);
     }

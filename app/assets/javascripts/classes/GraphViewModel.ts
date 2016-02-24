@@ -207,7 +207,7 @@ module GraphViewModel {
     };
 
     export var startGraph = (graphElement: HTMLElement, index: number, gvm: StatisticView) => {
-        gvm.start();
+        gvm.start(paused());
     };
 
     export var disconnect = (cvm: ConnectionVM) => {

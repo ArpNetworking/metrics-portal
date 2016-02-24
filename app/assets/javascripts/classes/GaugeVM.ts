@@ -48,11 +48,12 @@ class GaugeVM implements StatisticView {
         this.paused = pause;
     }
 
-    start() {
+    start(paused: boolean) {
         if (this.started == true) {
             return;
         }
         this.started = true;
+        this.paused = paused;
         this.container = document.getElementById(this.id);
 
         var config: any =
