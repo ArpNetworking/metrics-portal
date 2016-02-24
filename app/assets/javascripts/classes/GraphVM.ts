@@ -64,6 +64,27 @@ class GraphVM implements StatisticView {
         this.id = id;
         this.name = name;
         this.spec = spec;
+
+        this.renderDots.subscribe((state: boolean) => {
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].points.show = state;
+            }
+        });
+        this.renderLines.subscribe((state: boolean) => {
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].lines.show = state;
+            }
+        });
+        this.renderFill.subscribe((state: boolean) => {
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].lines.fill = state;
+            }
+        });
+        this.renderBars.subscribe((state: boolean) => {
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].bars.show = state;
+            }
+        });
     }
 
     disconnectConnection(cvm: ConnectionVM) {
@@ -126,19 +147,6 @@ class GraphVM implements StatisticView {
 
     configGraph() {
         this.showConfig(!this.showConfig());
-
-        if (!this.showConfig()) {
-            if (!this.renderLines()) {
-                this.renderFill(false);
-            }
-
-            for (var series = 0; series < this.data.length; series++) {
-                this.data[series].points.show = this.renderDots();
-                this.data[series].lines.show = this.renderLines();
-                this.data[series].lines.fill = this.renderFill();
-                this.data[series].bars.show = this.renderBars();
-            }
-        }
     }
 
     render() {

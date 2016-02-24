@@ -38,7 +38,7 @@
                         <div class="config" align="right">
                             <i class="fa fa-flask fa-lg" data-bind="click: configGraph" style="color: forestgreen">&nbsp;</i>
                         </div>
-                        <div class="graph-config" data-bind="visible: showConfig()" align="left" style="background-color: peachpuff" style="color: indianred"><br>
+                        <div class="graph-config" data-bind="visible: showConfig()" align="left"><br>
                             <input type="checkbox" data-bind="checked: renderDots, attr:{'id': 'dots_'+id}">
                             <label data-bind="attr:{'for': 'dots_'+id}">&nbsp;&nbsp;&nbsp;
                                 <i class="fa fa-square-o" data-bind="visible: !renderDots()"></i>
@@ -54,7 +54,7 @@
                             </label><br>
 
                             <input type="checkbox" data-bind="checked: renderFill, attr:{'id': 'fill_'+id}">
-                            <label data-bind="attr:{'for': 'fill_'+id}">&nbsp;&nbsp;&nbsp;
+                            <label data-bind="attr:{'for': 'fill_'+id}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;
                                 <i class="fa fa-square-o" data-bind="visible: !renderFill()"></i>
                                 <i class="fa fa-check-square-o" data-bind="visible: renderFill()"></i>
                                 Show Fill
