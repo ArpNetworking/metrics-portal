@@ -126,6 +126,7 @@ class GraphVM implements StatisticView {
 
     configGraph() {
         this.showConfig(!this.showConfig());
+
         if (!this.showConfig()) {
             if (!this.renderLines()) {
                 this.renderFill(false);
