@@ -32,6 +32,12 @@ interface StatisticView {
     setViewDuration(duration: ViewDuration): void;
     updateColor(cvm: ConnectionVM): void;
     disconnectConnection(cvm: ConnectionVM): void;
+
+    showConfig: KnockoutObservable<boolean>;
+    renderDots: KnockoutObservable<boolean>;
+    renderLines: KnockoutObservable<boolean>;
+    renderFill: KnockoutObservable<boolean>;
+    renderBars: KnockoutObservable<boolean>;
 }
 
 export = StatisticView;

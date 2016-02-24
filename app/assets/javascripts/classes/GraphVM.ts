@@ -22,6 +22,7 @@ import StatisticView = require('./StatisticView');
 import Series = require('./Series');
 import ViewDuration = require('./ViewDuration');
 import GraphSpec = require('./GraphSpec');
+import ko = require('knockout');
 
 import Flotr = require('flotr2');
 
@@ -53,6 +54,11 @@ class GraphVM implements StatisticView {
     dataLength: number = 600000;
     spec: GraphSpec;
     config: number = 0;
+    showConfig: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    renderDots: KnockoutObservable<boolean> = ko.observable<boolean>(true);
+    renderLines: KnockoutObservable<boolean> = ko.observable<boolean>(true);
+    renderFill: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    renderBars: KnockoutObservable<boolean> = ko.observable<boolean>(false);
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
@@ -119,30 +125,17 @@ class GraphVM implements StatisticView {
     }
 
     configGraph() {
-        this.config = this.config + 1;
+        this.showConfig(!this.showConfig());
+        if (!this.showConfig()) {
+            if (!this.renderLines()) {
+                this.renderFill(false);
+            }
 
-        for (var series = 0; series < this.data.length; series++) {
-            if (this.config == 1) {
-                this.data[series].points.show = false;
-                this.data[series].lines.show  = true;
-                this.data[series].lines.fill  = false;
-                this.data[series].bars.show = false;
-            } else if (this.config == 2) {
-                this.data[series].points.show = false;
-                this.data[series].lines.show = true;
-                this.data[series].lines.fill  = true;
-                this.data[series].bars.show = false;
-            } else if (this.config == 3) {
-                this.data[series].points.show = false;
-                this.data[series].lines.show  = false;
-                this.data[series].lines.fill  = false;
-                this.data[series].bars.show = true;
-            } else {
-                this.config = 0;
-                this.data[series].points.show = true;
-                this.data[series].lines.show  = true;
-                this.data[series].lines.fill  = false;
-                this.data[series].bars.show = false;
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].points.show = this.renderDots();
+                this.data[series].lines.show = this.renderLines();
+                this.data[series].lines.fill = this.renderFill();
+                this.data[series].bars.show = this.renderBars();
             }
         }
     }

@@ -1,0 +1,12 @@
+
+.graph-config {
+    position: absolute;
+    top: 13%;
+    right: 9%;
+    width: 80%;
+    height: 60%;
+}
+
+input[type="checkbox"] {
+    display: none;
+}

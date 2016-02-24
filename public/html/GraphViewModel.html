@@ -36,8 +36,37 @@
                         <div data-bind="attr: {'id': id}" class="graph"></div>
                         <a href="#" class="col-md-3" data-bind="click: $root.removeGraph">Remove</a>
                         <div class="config" align="right">
-                            <span class="glyphicon glyphicon-fire" data-bind="click: $root.configGraph">&nbsp;</span>
+                            <i class="fa fa-flask fa-lg" data-bind="click: configGraph" style="color: forestgreen">&nbsp;</i>
                         </div>
+                    </div>
+                    <div class="graph-config" data-bind="visible: showConfig()" align="left" style="background-color: peachpuff" style="color: indianred"><br>
+                        <input type="checkbox" id="dots" data-bind="checked: renderDots">
+                        <label for="dots">&nbsp;&nbsp;&nbsp;
+                            <i class="fa fa-square-o" data-bind="visible: !renderDots()"></i>
+                            <i class="fa fa-check-square-o" data-bind="visible: renderDots()"></i>
+                            Show Dots
+                        </label><br>
+
+                        <input type="checkbox" id="lines" data-bind="checked: renderLines">
+                        <label for="lines">&nbsp;&nbsp;&nbsp;
+                            <i class="fa fa-square-o" data-bind="visible: !renderLines()"></i>
+                            <i class="fa fa-check-square-o" data-bind="visible: renderLines()"></i>
+                            Show Lines
+                        </label><br>
+
+                        <input type="checkbox" id="fill" data-bind="checked: renderFill">
+                        <label for="fill">&nbsp;&nbsp;&nbsp;
+                            <i class="fa fa-square-o" data-bind="visible: !renderFill()"></i>
+                            <i class="fa fa-check-square-o" data-bind="visible: renderFill()"></i>
+                            Show Fill
+                        </label><br>
+
+                        <input type="checkbox" id="bars" data-bind="checked: renderBars">
+                        <label for="bars">&nbsp;&nbsp;&nbsp;
+                            <i class="fa fa-square-o" data-bind="visible: !renderBars()"></i>
+                            <i class="fa fa-check-square-o" data-bind="visible: renderBars()"></i>
+                            Show Bars
+                        </label>
                     </div>
                 </div>
             </div>

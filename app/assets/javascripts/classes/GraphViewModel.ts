@@ -79,13 +79,6 @@ module GraphViewModel {
             element.model.protocol.unsubscribeFromMetric(gvm.spec);
         });
     };
-    export var configGraph: (vm: StatisticView) => void = (gvm: StatisticView) => {
-        var id = gvm.id;
-        var graph = graphsById[id];
-        if (graph != undefined) {
-            graph.configGraph();
-        }
-    };
     export var fragment = ko.computed(() => {
         var servers = Hosts.connections().map((element) => { return element.server });
         var mygraphs = graphs().map((element: StatisticView) => {
@@ -528,14 +521,14 @@ module GraphViewModel {
         //if ($('.graph-container.col-md-4').length > 0) {
         if (graphLayout == 'GRID') {
             graphLayout = 'ROW';
-            $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4') });
+            $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4').addClass('col-md-12') });
             $('#graph-icon').prop("title", "Click for Grid Layout");
             $('#graph-icon').removeClass('fa-align-justify');
             $('#graph-icon').addClass('fa-th-large');
             graphWidth('');
         } else {
             graphLayout = 'GRID';
-            $('.graph-container').each(function(index, element) { $(element).addClass('col-md-4') });
+            $('.graph-container').each(function(index, element) { $(element).addClass('col-md-4').removeClass('col-md-12') });
             $('#graph-icon').prop("title", "Click for Row Layout");
             $('#graph-icon').removeClass('fa-th-large');
             $('#graph-icon').addClass('fa-align-justify');
