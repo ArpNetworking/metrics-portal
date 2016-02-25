@@ -54,42 +54,76 @@ class GraphVM implements StatisticView {
     dataLength: number = 600000;
     spec: GraphSpec;
     config: number = 0;
-    showConfig: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderDots: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderLines: KnockoutObservable<boolean> = ko.observable<boolean>(true);
-    renderFill: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderBars: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderStacked: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    showConfig: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
+    renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
+    renderStacked: KnockoutObservable<boolean>  = ko.observable<boolean>(false);
+    graphType: KnockoutObservable<string>       = ko.observable<string>("line");
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
         this.name = name;
         this.spec = spec;
 
+        this.graphType.subscribe((type: string) => {
+            if (type == "scatter") {
+                for (var series = 0; series < this.data.length; series++) {
+                    this.data[series].points.show   = true;
+                    this.data[series].lines.show    = false;
+                    this.data[series].lines.fill    = false;
+                    this.data[series].lines.stacked = false;
+                    this.data[series].bars.show     = false;
+                    this.data[series].bars.stacked  = false;
+                }
+            } else if (type == "line") {
+                for (var series = 0; series < this.data.length; series++) {
+                    this.data[series].points.show   = false;
+                    this.data[series].lines.show    = true;
+                    this.data[series].lines.fill    = false;
+                    this.data[series].lines.stacked = false;
+                    this.data[series].bars.show     = false;
+                    this.data[series].bars.stacked  = false;
+                }
+            } else if (type == "area") {
+                for (var series = 0; series < this.data.length; series++) {
+                    this.data[series].points.show   = false;
+                    this.data[series].lines.show    = true;
+                    this.data[series].lines.fill    = true;
+                    this.data[series].lines.stacked = false;
+                    this.data[series].bars.show     = false;
+                    this.data[series].bars.stacked  = false;
+                }
+            } else if (type == "bar") {
+                for (var series = 0; series < this.data.length; series++) {
+                    this.data[series].points.show   = false;
+                    this.data[series].lines.show    = false;
+                    this.data[series].lines.fill    = false;
+                    this.data[series].lines.stacked = false;
+                    this.data[series].bars.show     = true;
+                    this.data[series].bars.stacked  = false;
+                }
+            }
+
+            this.renderDots(false);
+            this.renderStacked(false);
+        });
+
         this.renderDots.subscribe((state: boolean) => {
+            if (this.graphType() != "line") { return; }
+
             for (var series = 0; series < this.data.length; series++) {
-                this.data[series].points.show = state;
+                if (this.data[series].lines) {
+                    this.data[series].points.show = state;
+                }
             }
         });
-        this.renderLines.subscribe((state: boolean) => {
-            for (var series = 0; series < this.data.length; series++) {
-                this.data[series].lines.show = state;
-            }
-        });
-        this.renderFill.subscribe((state: boolean) => {
-            for (var series = 0; series < this.data.length; series++) {
-                this.data[series].lines.fill = state;
-            }
-        });
-        this.renderBars.subscribe((state: boolean) => {
-            for (var series = 0; series < this.data.length; series++) {
-                this.data[series].bars.show = state;
-            }
-        });
+
         this.renderStacked.subscribe((state: boolean) => {
+            if (this.graphType() != "bar") { return; }
+
             for (var series = 0; series < this.data.length; series++) {
-                this.data[series].lines.stacked = state;
-                this.data[series].bars.stacked = state;
+                if (this.data[series].bars) {
+                    this.data[series].bars.stacked = state;
+                }
             }
         });
     }

@@ -35,10 +35,8 @@ interface StatisticView {
 
     showConfig: KnockoutObservable<boolean>;
     renderDots: KnockoutObservable<boolean>;
-    renderLines: KnockoutObservable<boolean>;
-    renderFill: KnockoutObservable<boolean>;
-    renderBars: KnockoutObservable<boolean>;
     renderStacked: KnockoutObservable<boolean>;
+    graphType: KnockoutObservable<string>;
 }
 
 export = StatisticView;

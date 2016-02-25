@@ -21,7 +21,7 @@ class Series {
     buffer: number [][] = [];
     label: string = "";
     points: any = { show: false };
-    lines: any = { show: true, fill: false, stacked: false };
+    lines: any = { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
     bars: any = { show: false, stacked: false };
     color: string = "black";
     colorSubscription: KnockoutSubscription;
