@@ -57,14 +57,21 @@
                             <label data-bind="attr:{'for': 'fill_'+id}">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;
                                 <i class="fa fa-square-o" data-bind="visible: !renderFill()"></i>
                                 <i class="fa fa-check-square-o" data-bind="visible: renderFill()"></i>
-                                Show Fill
+                                Show Filled
                             </label><br>
 
-                            <input type="checkbox" id="bars" data-bind="checked: renderBars, attr:{'id': 'bars_'+id}">
+                            <input type="checkbox" data-bind="checked: renderBars, attr:{'id': 'bars_'+id}">
                             <label data-bind="attr:{'for': 'bars_'+id}">&nbsp;&nbsp;&nbsp;
                                 <i class="fa fa-square-o" data-bind="visible: !renderBars()"></i>
                                 <i class="fa fa-check-square-o" data-bind="visible: renderBars()"></i>
                                 Show Bars
+                            </label><br>
+
+                            <input type="checkbox" data-bind="checked: renderStacked, attr:{'id': 'stacked_'+id}">
+                            <label data-bind="attr:{'for': 'stacked_'+id}">&nbsp;&nbsp;&nbsp;
+                                <i class="fa fa-square-o" data-bind="visible: !renderStacked()"></i>
+                                <i class="fa fa-check-square-o" data-bind="visible: renderStacked()"></i>
+                                Show Stacked
                             </label>
                         </div>
                     </div>

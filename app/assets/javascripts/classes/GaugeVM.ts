@@ -31,9 +31,10 @@ class GaugeVM implements StatisticView {
     spec: GraphSpec;
     showConfig: KnockoutObservable<boolean> = ko.observable<boolean>(false);
     renderDots: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderLines: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    renderLines: KnockoutObservable<boolean> = ko.observable<boolean>(true);
     renderFill: KnockoutObservable<boolean> = ko.observable<boolean>(false);
     renderBars: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    renderStacked: KnockoutObservable<boolean> = ko.observable<boolean>(false);
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;

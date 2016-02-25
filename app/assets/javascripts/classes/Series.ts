@@ -20,9 +20,9 @@ class Series {
     data: number[][] = [];
     buffer: number [][] = [];
     label: string = "";
-    points: any = { show: true };
-    lines: any = { show: true, fill: false };
-    bars: any = { show: false };
+    points: any = { show: false };
+    lines: any = { show: true, fill: false, stacked: false };
+    bars: any = { show: false, stacked: false };
     color: string = "black";
     colorSubscription: KnockoutSubscription;
 

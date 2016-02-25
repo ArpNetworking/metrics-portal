@@ -55,10 +55,11 @@ class GraphVM implements StatisticView {
     spec: GraphSpec;
     config: number = 0;
     showConfig: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    renderDots: KnockoutObservable<boolean> = ko.observable<boolean>(true);
+    renderDots: KnockoutObservable<boolean> = ko.observable<boolean>(false);
     renderLines: KnockoutObservable<boolean> = ko.observable<boolean>(true);
     renderFill: KnockoutObservable<boolean> = ko.observable<boolean>(false);
     renderBars: KnockoutObservable<boolean> = ko.observable<boolean>(false);
+    renderStacked: KnockoutObservable<boolean> = ko.observable<boolean>(false);
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
@@ -83,6 +84,12 @@ class GraphVM implements StatisticView {
         this.renderBars.subscribe((state: boolean) => {
             for (var series = 0; series < this.data.length; series++) {
                 this.data[series].bars.show = state;
+            }
+        });
+        this.renderStacked.subscribe((state: boolean) => {
+            for (var series = 0; series < this.data.length; series++) {
+                this.data[series].lines.stacked = state;
+                this.data[series].bars.stacked = state;
             }
         });
     }
@@ -157,6 +164,7 @@ class GraphVM implements StatisticView {
         //set min and max
         var graphMin = 1000000000;
         var graphMax = -1000000000;
+        var maxValues = {};
 
         var now = new Date().getTime() - 1000;
         if (this.paused) {
@@ -217,6 +225,24 @@ class GraphVM implements StatisticView {
                 if (dataVal < graphMin) {
                     graphMin = dataVal;
                 }
+
+                if (maxValues[back] != null) {
+                    maxValues[back] += dataVal;
+                } else {
+                    maxValues[back] = dataVal;
+                }
+            }
+        }
+
+        if (this.data.length > 0) {
+            if ((this.data[0].bars.show && this.data[0].bars.stacked) ||
+                (this.data[0].lines.show && this.data[0].lines.stacked)) {
+                graphMax = -1000000000;
+                Object.keys(maxValues).forEach((key) => {
+                    if (graphMax < maxValues[key]) {
+                        graphMax = maxValues[key];
+                    }
+                });
             }
         }
 
