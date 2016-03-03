@@ -20,6 +20,7 @@
 import system = require('durandal/system');
 import app = require('durandal/app');
 import viewLocator = require('durandal/viewLocator');
+import ko = require('knockout');
 
 app.title = "M-Portal";
 app.configurePlugins({

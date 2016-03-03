@@ -8,18 +8,12 @@
                 <li>
                     <form class="form-inline" role="form" data-bind="">
                         <div class="form-group col-xs-8">
-                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="value: searchQuery, valueUpdate: 'afterkeydown'" title="Filter the available metrics.&#013;1) Type any characters in the metric name.&#013;2) Use ? to match a single character and * to match multiple characters.&#013;3) Use regular expressions by enclosing in //.">
+                            <input class="input-medium" type="text" id="searchQuery" placeholder="Search" data-bind="textInput: searchQuery" title="Filter the available metrics.&#013;1) Type any characters in the metric name.&#013;2) Use ? to match a single character and * to match multiple characters.&#013;3) Use regular expressions by enclosing in //.">
                         </div>
                     </form>
                 </li>
             </ul>
-            <ul class="nav nav-sidebar" data-bind="foreach: foldersList()">
-                <li>
-                    <a data-bind="attr: { href: '#'}, click: expandMe"><span class="glyphicon glyphicon-list">&nbsp;</span><span data-bind="text: name"></span></a>
-                    <ul class="nav sub-item" data-bind="template: {name: 'folders_template'}, attr: { id: name}">
-                    </ul>
-                </li>
-            </ul>
+            <div data-bind="template: { name: 'metrics_list_template', data: metricsList }"></div>
         </div>
 
         <div class="col-md-10 col-md-offset-2 main">
@@ -34,7 +28,7 @@
                 <div class="nomargin graph-container sortable" data-bind="attr: {'id': 'graph_div_' + id}, css: $root.getGraphWidth">
                     <div class="row">
                         <div data-bind="attr: {'id': id}" class="graph"></div>
-                        <a href="#" class="col-md-3" data-bind="click: $root.removeGraph">Remove</a>
+                        <a href="#" class="col-md-3" data-bind="click: $root.removeGraphVM">Remove</a>
                     </div>
                 </div>
             </div>
@@ -63,25 +57,46 @@
         <!-- /ko -->
     </div>
 
-    <script type="text/html" id="folders_template">
-        <!-- ko foreach: subFolders() -->
-            <li class="sub-folder" data-bind="visible: visible">
-                <a data-bind="click: expandMe"><span class="glyphicon glyphicon-folder-close">&nbsp;</span><span data-bind="text: name"></span></a>
-                <ul class="nav sub-item" data-bind="template: {name: 'folders_template'}">
-                </ul>
+    <script type="text/html" id="metrics_list_template">
+        <ul class="nav nav-sidebar metrics-list" data-bind="foreach: serviceNodes">
+            <li data-bind="template: {name: renderAs}, visible: visible">
             </li>
-        <!-- /ko -->
-        <!-- ko foreach: children() -->
-            <!-- ko foreach: children() -->
-                <li class="sub-folder" data-bind="visible: expanded">
-                    <a href="#" data-toggle="dropdown"><span data-bind="text: shortName"></span></a>
-                    <ul class="dropdown-menu" data-bind="foreach: children, attr: { 'aria-labelledby': 'dropDownMenu' + name()}">
-                        <li data-bind="attr: {'id' : 'category_' + id()}">
-                            <a href="#" data-bind="click: expandMe"><span data-bind="text: name"></span></a>
-                        </li>
-                    </ul>
-                </li>
-            <!-- /ko -->
-        <!-- /ko -->
+        </ul>
     </script>
-</div>
+
+    <script type="text/html" id="service_node">
+        <a data-bind="click: expandMe"><span class="glyphicon glyphicon-list">&nbsp;</span><span data-bind="text: name"></span></a>
+        <ul class="nav sub-item" data-bind="fastForEach: subfolders, visible: expanded">
+            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
+            </li>
+        </ul>
+        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
+            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
+            </li>
+        </ul>
+    </script>
+
+    <script type="text/html" id="folder_node">
+        <a data-bind="click: expandMe"><span data-bind="css: icon" class="glyphicon">&nbsp;</span><span data-bind="text: name"></span></a>
+        <ul class="nav sub-item" data-bind="fastForEach: subfolders, visible: expanded">
+            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
+            </li>
+        </ul>
+        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
+            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
+            </li>
+        </ul>
+    </script>
+
+    <script type="text/html" id="metric_node">
+        <a data-bind="click: expandMe"><span class="fa fa-area-chart">&nbsp;</span><span data-bind="text: name"></span></a>
+        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
+            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
+            </li>
+        </ul>
+    </script>
+
+    <script type="text/html" id="statistic_node">
+        <a data-bind="click: expandMe"><span data-bind="css: icon">&nbsp;</span><span data-bind="text: name"></span></a>
+    </script>
+<</div>

@@ -22,7 +22,6 @@ requirejs.config({
         'bootstrap' : '/assets/lib/bootstrap/js/bootstrap.min',
         'd3' : '/assets/lib/d3js/d3.min',
         'gauge' : 'gauge.min',
-        'naturalSort' : 'naturalSort',
 
         //Durandal
         'durandal/activator': '/assets/lib/durandal/js/activator',
@@ -47,14 +46,18 @@ requirejs.config({
         'jquery.ui' : '/assets/lib/jquery-ui/jquery-ui.min',
         'jqrangeslider' : '/assets/lib/jQRangeSlider/jQAllRangeSliders-withRuler-min',
         'knockout' : '/assets/lib/knockout/knockout',
+        'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '/assets/lib/requirejs-text/text', //Required by durandal
         'typeahead' : '/assets/lib/typeaheadjs/typeahead.bundle',
         'underscore' : '/assets/lib/underscorejs/underscore-min' //Required by flotr2
     },
     shim : {
+        'knockout-fast-foreach' : {
+            deps : [ 'knockout']
+        },
         'metrics_portal' : {
-            deps : [ 'text', 'jquery', 'jquery.ui', 'bean', 'underscore', 'jqrangeslider',
-                    'bootstrap', 'd3', 'gauge', 'knockout', 'classes/KnockoutBindings', 'classes/GraphViewModel']
+            deps : [ 'debug', 'text', 'jquery', 'jquery.ui', 'bean', 'underscore', 'jqrangeslider', 'bootstrap', 'd3',
+                'gauge', 'knockout', 'knockout-fast-foreach', 'classes/KnockoutBindings', 'classes/GraphViewModel']
         },
         'jquery.ui' : {
             deps : [ 'jquery' ]

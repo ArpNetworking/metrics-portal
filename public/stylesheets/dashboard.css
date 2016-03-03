@@ -107,3 +107,9 @@ body {
 .placeholder img {
   border-radius: 50%;
 }
+
+.metrics-list {
+  overflow: auto;
+  cursor: pointer;
+  white-space: nowrap;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Groupon.com
+ * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,5 @@
  * limitations under the License.
  */
 
-interface WSCommand {
-    command: String;
-    [others: string]: any;
-}
-
-export = WSCommand;
+import system = require('durandal/system');
+system.debug(true);

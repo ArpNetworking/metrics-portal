@@ -21,30 +21,23 @@ import MetricNodeVM = require('./MetricNodeVM');
 import GraphViewModel = require('./GraphViewModel');
 import ko = require('knockout');
 import ns = require('naturalSort');
+import FolderNodeVM = require("./FolderNodeVM");
 
 class ServiceNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
     children: KnockoutObservableArray<MetricNodeVM>;
-    id: KnockoutObservable<string>;
     expanded: KnockoutObservable<boolean>;
-    display: KnockoutComputed<string>;
+    renderAs: KnockoutObservable<string>;
+    subfolders: KnockoutObservableArray<FolderNodeVM>;
+    visible: KnockoutObservable<boolean>;
 
     constructor(name: string, id: string) {
         this.name = ko.observable(name);
-        this.children = ko.observableArray<MetricNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
-        this.id = ko.observable(id);
+        this.children = ko.observableArray<MetricNodeVM>();
+        this.subfolders = ko.observableArray<FolderNodeVM>();
         this.expanded = ko.observable(false);
-        this.display = ko.computed<string>(() => { return this.name(); });
-    }
-
-    sort(recursive: boolean = false) {
-        if (recursive) {
-            ko.utils.arrayForEach(this.children(), (child: MetricNodeVM) => { child.sort(true) });
-        }
-        this.children.sort((left:MetricNodeVM, right:MetricNodeVM) => {
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
+        this.renderAs = ko.observable("service_node");
+        this.visible = ko.observable(true);
     }
 
     expandMe() {

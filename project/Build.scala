@@ -81,7 +81,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "jquery" % "2.1.1",
       "org.webjars" % "jquery-ui" % "1.11.1",
       "org.webjars" % "jquery-ui-themes" % "1.11.0",
-      "org.webjars" % "knockout" % "3.1.0",
+      "org.webjars" % "knockout" % "3.4.0",
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.6.0-3"
@@ -208,7 +208,7 @@ object ApplicationBuild extends Build {
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
       routesGenerator := InjectedRoutesGenerator,
 
-      TypescriptKeys.moduleKind := "amd",
+      TypescriptKeys.moduleKind := "AMD",
 
       mainConfig := "start_app",
       mainModule := "start_app",
