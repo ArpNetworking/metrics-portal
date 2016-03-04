@@ -18,17 +18,15 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.Maps;
 import models.internal.Alert;
 import models.internal.Context;
+import models.internal.NagiosExtension;
 import models.internal.Operator;
 import models.internal.Quantity;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -124,8 +122,8 @@ public final class DefaultAlert implements Alert {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, Object> getExtensions() {
-        return Collections.unmodifiableMap(_extensions);
+    public NagiosExtension getNagiosExtension() {
+        return _nagiosExtension;
     }
 
     /**
@@ -146,7 +144,7 @@ public final class DefaultAlert implements Alert {
                 .add("Period", _period)
                 .add("Operator", _operator)
                 .add("Value", _value)
-                .add("Extensions", _extensions)
+                .add("NagiosExtensions", _nagiosExtension)
                 .toString();
     }
 
@@ -174,7 +172,7 @@ public final class DefaultAlert implements Alert {
                 && Objects.equals(_period, otherAlert._period)
                 && Objects.equals(_operator, otherAlert._operator)
                 && Objects.equals(_value, otherAlert._value)
-                && Objects.equals(_extensions, otherAlert._extensions);
+                && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);
     }
 
     /**
@@ -193,7 +191,7 @@ public final class DefaultAlert implements Alert {
                 _period,
                 _operator,
                 _value,
-                _extensions);
+                _nagiosExtension);
     }
 
     private DefaultAlert(final Builder builder) {
@@ -207,7 +205,7 @@ public final class DefaultAlert implements Alert {
         _period = builder._period;
         _operator = builder._operator;
         _value = builder._value;
-        _extensions = Maps.newHashMap(builder._extensions);
+        _nagiosExtension = builder._nagiosExtension;
     }
 
     private final UUID _id;
@@ -220,7 +218,7 @@ public final class DefaultAlert implements Alert {
     private final Period _period;
     private final Operator _operator;
     private final Quantity _value;
-    private final Map<String, Object> _extensions;
+    private final NagiosExtension _nagiosExtension;
 
     /**
      * Builder implementation for <code>DefaultAlert</code>.
@@ -345,13 +343,13 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The extensions. Required. Cannot be null or empty.
+         * The nagios specific extensions.
          *
          * @param value The extensions.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setExtensions(final Map<String, Object> value) {
-            _extensions = value;
+        public Builder setNagiosExtension(final NagiosExtension value) {
+            _nagiosExtension = value;
             return this;
         }
 
@@ -380,7 +378,6 @@ public final class DefaultAlert implements Alert {
         private Operator _operator;
         @NotNull
         private Quantity _value;
-        @NotNull
-        private Map<String, Object> _extensions = Collections.emptyMap();
+        private NagiosExtension _nagiosExtension;
     }
 }

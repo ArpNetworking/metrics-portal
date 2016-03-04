@@ -18,8 +18,10 @@
 
 interface BrowseNode {
     expandMe(): void;
-    display: KnockoutComputed<string>;
     children: KnockoutObservableArray<BrowseNode>;
+    subfolders: KnockoutObservableArray<BrowseNode>;
     expanded: KnockoutObservable<boolean>;
     name: KnockoutObservable<string>;
+    renderAs: KnockoutObservable<string>;
+    visible: KnockoutObservable<boolean>;
 }

@@ -96,7 +96,7 @@ public class Alert extends Model {
     @Column(name = "quantity_unit")
     private String _quantityUnit;
 
-    @OneToOne(mappedBy = "_alert", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToOne(mappedBy = "_alert", cascade = CascadeType.ALL)
     private NagiosExtension _nagiosExtension;
 
     public Long getId() {

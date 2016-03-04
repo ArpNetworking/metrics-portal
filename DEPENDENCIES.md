@@ -39,7 +39,7 @@ jquery                     | MIT                        | http://jquery.com
 jquery-ui                  | MIT                        | http://jqueryui.com/
 jQRangeSlider              | MIT                        | http://ghusse.github.io/jQRangeSlider/
 knockout                   | MIT                        | http://knockoutjs.com/
-naturalsort                | MIT                        | https://github.com/overset/javascript-natural-sort/blob/master/naturalSort.js
+knockout-fast-foreach      | MIT                        | https://github.com/brianmhunt/knockout-fast-foreach
 OVal                       | Eclipse Public License 1.0 | http://oval.sourceforge.net/
 Play Framework             | Apache License 2           | http://playframework.com
 Postgresql JDBC            | BSD 3                      | https://jdbc.postgresql.org/

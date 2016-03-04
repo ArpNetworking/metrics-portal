@@ -1,5 +1,5 @@
-/*
- * Copyright 2014 Groupon.com
+/**
+ * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.arpnetworking.database.h2.triggers;
 
-interface WSCommand {
-    command: String;
-    [others: string]: any;
+/**
+ * Trigger to update Etag after every insert, delete or update statement.
+ *
+ * @author Deepika Misra (deepika at groupon dot com)
+ */
+public class AlertsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
+
+    /**
+     * Public no args constructor.
+     */
+    public AlertsUpdateEtagTrigger() {
+        super("portal.alerts_etag_seq");
+    }
 }
-
-export = WSCommand;

@@ -19,63 +19,32 @@
 import ServiceNodeVM = require('./ServiceNodeVM');
 import ko = require('knockout');
 import ns = require('naturalSort');
+import MetricNodeVM = require("./MetricNodeVM");
 
 class FolderNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
-    id: KnockoutObservable<string>;
-    subFolders: KnockoutObservableArray<FolderNodeVM>;
-    children: KnockoutObservableArray<ServiceNodeVM>;
-    isFolder: boolean;
+    subfolders: KnockoutObservableArray<BrowseNode>;
+    children: KnockoutObservableArray<BrowseNode>;
     expanded: KnockoutObservable<boolean>;
+    renderAs: KnockoutObservable<string>;
+    icon: KnockoutComputed<string>;
     visible: KnockoutObservable<boolean>;
-    display: KnockoutComputed<string>;
 
-    constructor(name: string, id: string, isFolder: boolean) {
+    constructor(name: string, id: string) {
         this.name = ko.observable(name);
-        this.id = ko.observable(id);
-        this.isFolder = isFolder;
-        this.subFolders = ko.observableArray<FolderNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
-        this.children = ko.observableArray<any>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
+        this.subfolders = ko.observableArray<BrowseNode>();
+        this.children = ko.observableArray<BrowseNode>();
         this.expanded = ko.observable(false);
-        this.visible = ko.observable(false);
-        this.display = ko.computed<string>(() => { return this.name(); });
+        this.renderAs = ko.observable("folder_node");
+        this.icon = ko.pureComputed<string>(() => { return this.cssIcon(); }).extend({ defer: true});
+        this.visible = ko.observable(true);
     }
 
-    sortChildren(recursive: boolean = false) {
-        if (recursive) {
-            ko.utils.arrayForEach(this.children(), (child: ServiceNodeVM) => { child.sort(true) });
-        }
-        this.children.sort((left:ServiceNodeVM, right:ServiceNodeVM) => {
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
+    cssIcon(): string {
+        return this.expanded() ? "glyphicon-folder-open" : "glyphicon-folder-close";
     }
-
-    sortSubFolders(recursive: boolean = false) {
-        if (recursive) {
-            ko.utils.arrayForEach(this.children(), (child: ServiceNodeVM) => { child.sort(true) });
-            ko.utils.arrayForEach(this.subFolders(), (child: FolderNodeVM) => { child.sortChildren(true); child.sortSubFolders(true) });
-        }
-        this.subFolders.sort((left:FolderNodeVM, right:FolderNodeVM) => {
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
-    }
-
     expandMe() {
         this.expanded(this.expanded() == false);
-        var expanded = this.expanded();
-        this.subFolders().forEach((item) => item.visible(this.expanded()));
-        if (this.children() !== undefined) {
-            this.children().forEach((item) => {
-                item.expanded(expanded);
-                if (item.children() !== undefined) {
-                    item.children().forEach((item) => {
-                        item.expanded(expanded);
-                    });
-                }
-            });
-        }
     }
 }
 

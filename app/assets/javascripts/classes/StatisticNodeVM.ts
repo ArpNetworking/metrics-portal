@@ -21,30 +21,44 @@ import ko = require('knockout');
 
 declare var require;
 class StatisticNodeVM implements BrowseNode {
-    serviceName: KnockoutObservable<string>;
-    metricName: KnockoutObservable<string>;
-    statisticName: KnockoutObservable<string>;
-    id: KnockoutObservable<string>;
-    display: KnockoutComputed<string>;
+    serviceName: string;
+    metricName: string;
+    statisticName: string;
     children: KnockoutObservableArray<BrowseNode>;
+    subfolders: KnockoutObservableArray<BrowseNode>;
     expanded: KnockoutObservable<boolean>;
     name: KnockoutObservable<string>;
-
-    constructor(spec: GraphSpec, id: string) {
-        this.serviceName = ko.observable(spec.service);
-        this.metricName = ko.observable(spec.metric);
-        this.statisticName = ko.observable(spec.statistic);
-        this.id = ko.observable(id);
-        this.children = ko.observableArray<BrowseNode>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
-        this.expanded = ko.observable(false);
-        this.name = this.statisticName;
-
-        this.expandMe = () => {
-            require('./GraphViewModel').addGraph(new GraphSpec(this.serviceName(), this.metricName(), this.statisticName())); };
-        this.display = ko.computed<string>(() => { return this.statisticName(); });
-    }
+    renderAs: KnockoutObservable<string>;
+    icon: KnockoutComputed<string>;
+    visible: KnockoutObservable<boolean>;
 
     expandMe: () => void;
+
+    constructor(spec: GraphSpec, id: string) {
+        this.serviceName = spec.service;
+        this.metricName = spec.metric;
+        this.statisticName = spec.statistic;
+        this.children = ko.observableArray<BrowseNode>();
+        this.subfolders = ko.observableArray<BrowseNode>();
+        this.expanded = ko.observable(false);
+        this.name = ko.observable(this.statisticName);
+        this.renderAs = ko.observable("statistic_node");
+        this.icon = ko.pureComputed<string>(() => { return this.cssIcon(); });
+        this.visible = ko.observable(true);
+
+        this.expandMe = () => {
+            this.expanded(!this.expanded());
+            if (this.expanded()) {
+                require('./GraphViewModel').addGraph(spec);
+            } else {
+                require('./GraphViewModel').removeGraph(spec);
+            }
+        };
+    }
+
+    cssIcon(): string {
+        return this.expanded() ? "fa fa-eye" : "";
+    }
 }
 
 export = StatisticNodeVM;

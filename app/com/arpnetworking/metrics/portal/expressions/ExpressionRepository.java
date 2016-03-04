@@ -68,4 +68,11 @@ public interface ExpressionRepository {
      * @return The total number of expressions.
      */
     long getExpressionCount();
+
+    /**
+     * Add a new expression or update an existing one in the repository.
+     *
+     * @param expression The expression to add to the repository.
+     */
+    void addOrUpdateExpression(Expression expression);
 }
