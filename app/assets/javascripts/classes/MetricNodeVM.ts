@@ -23,25 +23,19 @@ import ns = require('naturalSort');
 
 class MetricNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
-    shortName: KnockoutObservable<string>;
-    children: KnockoutObservableArray<StatisticNodeVM>;
-    id: KnockoutObservable<string>;
+    children: KnockoutObservableArray<BrowseNode>;
+    subfolders: KnockoutObservableArray<BrowseNode>;
     expanded: KnockoutObservable<boolean>;
-    display: KnockoutComputed<string>;
+    renderAs: KnockoutObservable<string>;
+    visible: KnockoutObservable<boolean>;
 
     constructor(name: string, id: string) {
         this.name = ko.observable(name);
-        this.children = ko.observableArray<StatisticNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });;
-        this.id = ko.observable(id);
+        this.children = ko.observableArray<BrowseNode>();
+        this.subfolders = ko.observableArray<BrowseNode>();
         this.expanded = ko.observable(false);
-        this.display = ko.computed<string>(() => { return this.name(); });
-    }
-
-    sort(recursive: boolean = false) {
-        this.children.sort((left:StatisticNodeVM, right:StatisticNodeVM) => {
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
+        this.renderAs = ko.observable("metric_node");
+        this.visible = ko.observable(true);
     }
 
     expandMe() {

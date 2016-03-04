@@ -44,6 +44,7 @@ import GraphSpec = require('./GraphSpec');
 import Hosts = require('./Hosts');
 import ConnectionVM = require('./ConnectionVM')
 import ns = require('naturalSort');
+import MetricsBrowseList = require("./MetricsBrowseList");
 
 module GraphViewModel {
     console.log("defining graphviewmodel");
@@ -51,18 +52,17 @@ module GraphViewModel {
     export var graphs: KnockoutObservableArray<StatisticView> = ko.observableArray<StatisticView>();
     export var graphsById: { [id: string]: StatisticView } = {};
     export var subscriptions: GraphSpec[] = [];
-    export var metricsList = ko.observableArray<ServiceNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });
-    export var foldersList = ko.observableArray<FolderNodeVM>().extend({ rateLimit: 100, method: "notifyWhenChangesStop" });
     export var viewDuration: ViewDuration = new ViewDuration();
     export var paused = ko.observable<boolean>(false);
     export var metricsVisible = ko.observable<boolean>(true);
     export var metricsWidth = ko.observable<boolean>(true);
     export var mode: KnockoutObservable<string> = ko.observable("graph");
     export var incomingFragment: string;
+    export var metricsList: MetricsBrowseList = new MetricsBrowseList();
 
     export var sliderChanged: (event: Event, ui: any) => void = (event, ui) => { setViewDuration(ui.values); };
-    export var removeGraph: (vm: StatisticView) => void = (gvm: StatisticView) => {
-            var id = gvm.id;
+    export var removeGraph: (s: GraphSpec) => void = (spec: GraphSpec) => {
+            var id = getGraphName(spec);
             var graph = graphsById[id];
             if (graph != undefined) {
                 graph.shutdown();
@@ -72,13 +72,18 @@ module GraphViewModel {
             }
             //Remove the subscription so new connections wont receive the data
             subscriptions = subscriptions.filter((element: GraphSpec) => {
-                return !(element.metric == gvm.spec.metric && element.service == gvm.spec.service && element.statistic == gvm.spec.statistic);
+                return !(element.metric == spec.metric && element.service == spec.service && element.statistic == spec.statistic);
             });
             //Make sure to unsubscribe from the graph feed.
             Hosts.connections().forEach((element: ConnectionVM) => {
-                element.model.protocol.unsubscribeFromMetric(gvm.spec);
+                element.model.protocol.unsubscribeFromMetric(spec);
             });
         };
+
+    export var removeGraphVM: (v: StatisticView) => void = (view: StatisticView) => {
+        removeGraph(view.spec);
+    };
+
     export var fragment = ko.computed(() => {
         var servers = Hosts.connections().map((element) => { return element.server });
         var mygraphs = graphs().map((element: StatisticView) => {
@@ -87,8 +92,9 @@ module GraphViewModel {
         var obj = { connections: servers, graphs: mygraphs, showMetrics: metricsVisible(), mode: mode() };
         return "#graph/" + encodeURIComponent(JSON.stringify(obj));
     });
-    export var searchQuery = ko.observable<string>('');
+    export var searchQuery = ko.observable<string>('').extend({throttle: 500});
     export var graphWidth = ko.observable<string>('col-md-4');
+    searchQuery.subscribe((searchTerm) => { metricsList.search(searchTerm); });
 
     export var getGraphWidth = ko.computed(function() {
         return graphWidth();
@@ -223,253 +229,8 @@ module GraphViewModel {
         return idify(spec.service) + "_" + idify(spec.metric) + "_" + idify(spec.statistic);
     };
 
-    export var createMetric = (spec: GraphSpec) => {
-        var currFolder = getRootFolderMetric(spec.service);
-        var metricSplit = spec.metric.split("/");
-        if (metricSplit.length > 1) {
-            addMetricFolder(spec.service, spec.metric, [spec.statistic], metricSplit, "", currFolder);
-        } else {
-            createFolderMetric(spec, metricSplit[0], currFolder);
-        }
-    };
-
-    export var createFolderMetric = (spec: GraphSpec, metricName: string, currFolder: FolderNodeVM) => {
-        var serviceNode: ServiceNodeVM = getServiceFolderVMNode(spec.service, currFolder);
-        if (serviceNode === undefined) {
-            serviceNode = new ServiceNodeVM(spec.service, idify(spec.service));
-            currFolder.children.push(serviceNode);
-            if (!skipSort) {
-                currFolder.sortChildren();
-            }
-        }
-        var metricNode: MetricNodeVM = getMetricVMNode(spec.metric, serviceNode);
-        if (metricNode === undefined) {
-            metricNode = new MetricNodeVM(spec.metric, idify(spec.metric));
-            metricNode.shortName = ko.observable<string>(metricName);
-            metricNode.expanded(serviceNode.expanded());
-            serviceNode.children.push(metricNode);
-            if (!skipSort) {
-                serviceNode.sort();
-            }
-        }
-
-        var stat: StatisticNodeVM = getStatVMNode(spec, metricNode);
-        if (stat === undefined) {
-            stat = new StatisticNodeVM(spec, getGraphName(spec));
-            metricNode.children.push(stat);
-            if (!skipSort) {
-                metricNode.sort();
-            }
-        }
-    };
-
     export var loadFolderMetricsList = (newMetrics: MetricsListData): void => {
-        skipSort = true;
-
-        newMetrics.metrics.forEach((service, index) => {
-            var currFolder = getRootFolderMetric(service.name);
-            service.children.forEach((metric, index) => {
-                var metricSplit = metric.name.split("/");
-                if (metricSplit.length > 1) {
-                    var statisticNames = metric.children.map((s) =>  {return s.name; });
-                    addMetricFolder(service.name, metric.name, statisticNames, metricSplit, "", currFolder);
-                } else {
-                    metric.children.forEach((statistic, index) => {
-                        createFolderMetric(new GraphSpec(service.name, metric.name, statistic.name), metricSplit[0], currFolder);
-                    });
-                }
-            });
-        });
-
-        skipSort = false;
-
-        metricsList.sort((left:ServiceNodeVM, right:ServiceNodeVM) => {
-            left.sort(true);
-            right.sort(true);
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
-        foldersList.sort((left:FolderNodeVM, right:FolderNodeVM) => {
-            left.sortChildren(true);
-            left.sortSubFolders(true);
-            right.sortChildren(true);
-            right.sortSubFolders(true);
-            ns.insensitive = true;
-            return ns.naturalSort(left.name(), right.name());
-        });
-
-        searchQuery.subscribe(function(searchTerm) {
-            searchMetrics(searchTerm);
-        });
-    };
-
-    export var getRootFolderMetric = (serviceName: string): FolderNodeVM => {
-        for (var i = 0; i < foldersList().length; i++) {
-            if (foldersList()[i].name() === serviceName) {
-                return foldersList()[i];
-            }
-        }
-
-        var newFolder = new FolderNodeVM(serviceName, serviceName, true);
-        foldersList.push(newFolder);
-        if (!skipSort) {
-            foldersList.sort((left:FolderNodeVM, right:FolderNodeVM) => {
-                ns.insensitive = true;
-                return ns.naturalSort(left.name(), right.name());
-            });
-        }
-        return newFolder
-    };
-
-    export var searchMetrics = (searchTerm: string) => {
-        for (var i = 0; i < foldersList().length; i++) {
-            $("#" + foldersList()[i].name()).collapse('show');
-            searchFolders(searchTerm, foldersList()[i]);
-        }
-    };
-
-    export var searchFolders = (searchTerm: string, currFolder: FolderNodeVM): boolean => {
-        $("#folder_" + currFolder.id()).collapse('show');
-        var regex: RegExp = null;
-        if (searchTerm[0] == '/' && searchTerm[searchTerm.length - 1] == '/') {
-            // Treat the search term as a regex
-            regex = new RegExp(searchTerm.substr(1, searchTerm.length - 2), "i");
-        } else if (searchTerm.indexOf("*") >= 0 || searchTerm.indexOf("?") >= 0) {
-            // Treat the search term as a wildcard expression:
-            // ? = match any one character
-            // * = match zero or more characters
-            var escapedSearch = searchTerm.replace(/[-\/\\^$+.()|[\]{}]/g, '\\$&');
-            regex = new RegExp(escapedSearch.replace("?", ".").replace("*", ".*"), "i");
-        } else {
-            // Just search for any path containing the search term
-            regex = new RegExp(searchTerm.replace(/[-\/\\^$+.()|[\]{}]/g, '\\$&'), "i");
-        }
-
-        if (searchTerm.length <= 0) {
-            currFolder.visible(true);
-            $("#folder_" + currFolder.id()).collapse('hide');
-        }
-        else {
-            currFolder.visible(false);
-        }
-
-        var metricMatch = false;
-        for (var i = 0; i < currFolder.children().length; i++) {
-            var service = currFolder.children()[i];
-            for (var j = 0; j < service.children().length; j++) {
-                var metric = service.children()[j];
-
-                if (searchTerm.length <= 0) {
-                    metric.expanded(true);
-                }
-                else if (regex.test(metric.name())) {
-                    metric.expanded(true);
-                    currFolder.visible(true);
-                    metricMatch = true;
-                }
-                else {
-                    metric.expanded(false);
-                }
-            }
-        }
-
-        for (var i = 0; i < currFolder.subFolders().length; i++) {
-            var subFolder = currFolder.subFolders()[i];
-            var found = searchFolders(searchTerm, subFolder);
-            if (found) {
-                currFolder.visible(true);
-                metricMatch = true;
-            }
-        }
-
-        return metricMatch;
-    };
-
-    export var addMetricFolder = (service: string, metric: string, statistics: string[], metricList: string[], path: string, currFolder: FolderNodeVM) => {
-        var currMetricName = metricList[0];
-        var currPathPart = currMetricName;
-        if (currMetricName.length === 0) {
-            currMetricName = "/";
-            currPathPart = "slash";
-        }
-
-        path += "_" + currPathPart;
-
-        if (metricList.length > 1) {
-            var metricFolder = getSubFolderVMNode(currMetricName, currFolder);
-            if (metricFolder === undefined) {
-                metricFolder = new FolderNodeVM(currMetricName, path, true);
-                currFolder.subFolders.push(metricFolder);
-                if (!skipSort) {
-                    currFolder.sortSubFolders();
-                }
-                if (currFolder.expanded) {
-                    metricFolder.expandMe();
-                }
-            }
-
-            metricList.shift();
-            addMetricFolder(service, metric, statistics, metricList, path, metricFolder);
-        } else {
-            for (var k = 0; k < statistics.length; k++) {
-                var statistic = statistics[k];
-                createFolderMetric(new GraphSpec(service, metric, statistic), currMetricName, currFolder);
-            }
-        }
-    };
-
-    export var getServiceVMNode = (name: string): ServiceNodeVM => {
-        for (var i = 0; i < metricsList().length; i++) {
-            var svc = metricsList()[i];
-            if (svc.name() == name) {
-                return svc;
-            }
-        }
-        return undefined;
-    };
-
-    export var getServiceFolderVMNode = (name: string, currFolder: FolderNodeVM): ServiceNodeVM => {
-        for (var i = 0; i < currFolder.children().length; i++) {
-            var service = currFolder.children()[i];
-            if (service.name() == name) {
-                return service;
-            }
-        }
-        return undefined;
-    };
-
-    export var getSubFolderVMNode = (name: string, currFolder: FolderNodeVM): FolderNodeVM => {
-        for (var i = 0; i < currFolder.subFolders().length; i++) {
-            var folder = currFolder.subFolders()[i];
-            if (folder.name() == name) {
-                return folder;
-            }
-        }
-        return undefined;
-    };
-
-    export var getMetricVMNode = (name: string, svcNode: ServiceNodeVM): MetricNodeVM => {
-        for (var i = 0; i < svcNode.children().length; i++) {
-            var metric = svcNode.children()[i];
-            if (metric.name() == name) {
-                return metric;
-            }
-        }
-        return undefined;
-    };
-
-    export var getStatVMNode = (spec: GraphSpec, metricNode: MetricNodeVM): StatisticNodeVM => {
-        for (var i = 0; i < metricNode.children().length; i++) {
-            var stat: StatisticNodeVM = metricNode.children()[i];
-            if (stat.serviceName() == spec.service && stat.metricName() == spec.metric && stat.statisticName() == spec.statistic) {
-                return stat;
-            }
-        }
-        return undefined;
-    };
-
-    export var addNewMetric = (newMetric: NewMetricData) => {
-        createMetric(new GraphSpec(newMetric.service, newMetric.metric, newMetric.statistic));
+        metricsList.bind(newMetrics.metrics);
     };
 
     export var reportData = (report: ReportData, cvm: ConnectionVM) => {
@@ -487,7 +248,6 @@ module GraphViewModel {
     };
 
     export var switchGraphLayout = () => {
-        //if ($('.graph-container.col-md-4').length > 0) {
         if (graphLayout == 'GRID') {
             graphLayout = 'ROW';
             $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4') });

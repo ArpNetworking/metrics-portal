@@ -71,9 +71,9 @@ class ConnectionModel {
         var serverHost = serverNameComponents[0];
         var serverPort = (typeof serverNameComponents[1] === "undefined") ? "7090" : serverNameComponents[1];
 
-        var protocol = "ws"
+        var protocol = "ws";
         if (window.location.protocol.toLowerCase() == "https") {
-            protocol = "wss"
+            protocol = "wss";
         }
         var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
         var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + "/v1/proxy/stream";

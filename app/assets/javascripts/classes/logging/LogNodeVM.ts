@@ -22,10 +22,12 @@ import Hosts = require('../Hosts');
 import LiveLoggingViewModel = require('./LiveLoggingViewModel')
 class LogNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
-    shortName: KnockoutObservable<string>;
     children: KnockoutObservableArray<BrowseNode>;
+    subfolders: KnockoutObservableArray<BrowseNode>;
     expanded: KnockoutObservable<boolean>;
     display: KnockoutComputed<string>;
+    renderAs: KnockoutObservable<string>;
+    visible: KnockoutObservable<boolean>;
 
     constructor(public log:Log, public logViewModel:LiveLoggingViewModel) {
         this.name = log.log_name;
@@ -34,6 +36,10 @@ class LogNodeVM implements BrowseNode {
                 var path = this.name().split("/");
                 return path[path.length - 1 ];
             });
+        this.renderAs = ko.observable("log_node");
+        this.children = ko.observableArray<BrowseNode>();
+        this.subfolders = ko.observableArray<BrowseNode>();
+        this.visible = ko.observable(true);
     }
 
     public expandMe() {
