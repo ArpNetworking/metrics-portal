@@ -23,7 +23,7 @@ import WSCommand = require("./WSCommand");
 class BaseProtocol implements Protocol {
     connectionInitialized():void { }
 
-    private connectionModel: ConnectionModel;
+    protected connectionModel: ConnectionModel;
 
     constructor(cm: ConnectionModel) {
         this.connectionModel = cm;
