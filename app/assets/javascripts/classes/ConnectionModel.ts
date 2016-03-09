@@ -78,14 +78,24 @@ class ConnectionModel {
         var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
         var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + "/v1/proxy/stream";
 
-        this.connectionList = <{path: string; protocol: Protocol}[]>[
-            {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
-            {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
-            {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)},
-            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol: new V2Protocol(this)},
-            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
-            {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}
-        ];
+        if (serverHost == "localhost" || serverHost == "127.0.0.1") {
+            // Do NOT proxy connections to a server host that is relative to the client
+            // TODO(vkoskela): Technically all references are "relative" so we need a feature flag to control proxying [ISSUE-17]
+            this.connectionList = <{path: string; protocol: Protocol}[]>[
+                {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
+                {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
+                {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)}
+            ];
+        } else {
+            this.connectionList = <{path: string; protocol: Protocol}[]>[
+                {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
+                {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
+                {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)},
+                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol: new V2Protocol(this)},
+                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
+                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}
+            ];
+        }
     }
 
     buildWebSocket() {
@@ -93,7 +103,7 @@ class ConnectionModel {
         var path = this.connectionList[0].path;
         console.info("Attempting connection to " + path + "; attempt " + this.attempt);
         var metricsSocket:WebSocket = new WebSocket(path);
-        metricsSocket.onopen = this.opened;
+        metricsSocket.onopen = this.connected;
         metricsSocket.onmessage = this.receiveData;
         metricsSocket.onclose = this.closed;
         this.connectionTimeoutHandle = setTimeout(
@@ -112,18 +122,24 @@ class ConnectionModel {
         setTimeout(() => { this.heartbeat(); }, 5000);
     }
 
+    connected = () => {
+        console.info("connection opened to " + this.server);
+        this.protocol.heartbeat();
+    }
 
-    opened = () => {
-        this.cvm.status("connected");
-        this.cvm.connected(true);
-        this.connectedAt = Date.now();
-        this.attempt = 1;
-        this.reconnecting = false;
-        this.reconnectTime = 2000;
-        this.protocol.connectionInitialized();
-        clearTimeout(this.connectionTimeoutHandle);
-        console.info("connection established to " + this.server);
-        app.trigger('opened', this.cvm);
+    onHeartbeat() {
+        if (this.connectedAt == 0) {
+            this.cvm.status("connected");
+            this.cvm.connected(true);
+            this.connectedAt = Date.now();
+            this.attempt = 1;
+            this.reconnecting = false;
+            this.reconnectTime = 2000;
+            this.protocol.connectionInitialized();
+            clearTimeout(this.connectionTimeoutHandle);
+            console.info("connection established to " + this.server);
+            app.trigger('opened', this.cvm);
+        }
     };
 
     receiveData = (event: any) => {
