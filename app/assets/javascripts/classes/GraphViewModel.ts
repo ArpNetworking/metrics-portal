@@ -313,7 +313,7 @@ module GraphViewModel {
 
     var skipSort = false;
     var graphLayout = 'GRID';
-    var targetFrameRate = 60;
+    var targetFrameRate = 1;
     var requireJsForceLoadKnockoutBindings = kob;
 }
 

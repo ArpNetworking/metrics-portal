@@ -55,7 +55,7 @@ class GraphVM implements StatisticView {
     spec: GraphSpec;
     config: number = 0;
     showConfig: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
-    renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
+    renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(true);
     renderStacked: KnockoutObservable<boolean>  = ko.observable<boolean>(false);
     graphType: KnockoutObservable<string>       = ko.observable<string>("line");
 

@@ -20,7 +20,7 @@ class Series {
     data: number[][] = [];
     buffer: number [][] = [];
     label: string = "";
-    points: any = { show: false };
+    points: any = { show: true };
     lines: any = { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
     bars: any = { show: false, stacked: false };
     color: string = "black";

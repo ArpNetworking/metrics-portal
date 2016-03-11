@@ -22,15 +22,15 @@
                 &nbsp;
                 <i id="graph-icon" class="fa fa-align-justify" data-bind="click: switchGraphLayout" data-toggle="tooltip" data-placement="right" title="Click for Row Layout"></i>
                 &nbsp;
-                <i id="render-icon" class="fa fa-spinner" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Stepped"></i>
+                <i id="render-icon" class="fa fa-circle-o-notch" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Continuous"></i>
             </h3>
             <div data-bind="foreach: {data: graphs, afterAdd: startGraph}" class="row sort-parent">
                 <div class="nomargin graph-container sortable" data-bind="attr: {'id': 'graph_div_' + id}, css: $root.getGraphWidth">
                     <div class="row">
                         <div data-bind="attr: {'id': id}" class="graph"></div>
                         <a href="#" class="col-md-3" data-bind="click: $root.removeGraphVM">Remove</a>
-                        <div class="config" align="right">
-                            <i class="fa fa-flask fa-lg" data-bind="click: configGraph" style="color: forestgreen">&nbsp;</i>
+                        <div align="right">
+                            <a href="#" class="config" align="right" data-bind="click: configGraph">Config</a>
                         </div>
                         <div class="graph-config" data-bind="visible: showConfig()" align="left"><br>&nbsp;&nbsp;&nbsp;
                             <input type="radio" value="scatter" data-bind="checked: graphType, attr:{'id': 'scatter_'+id}">
