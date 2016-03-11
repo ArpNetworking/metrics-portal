@@ -1,14 +1,22 @@
 
-.graph-config {
-    position: absolute;
-    top: 11%;
-    right: 9%;
-    width: 80%;
-    height: 70%;
-    background-color: rgba(255, 218, 185, 0.8);;
-    color: steelblue;
-}
-
 input[type="checkbox"] {
     display: none;
+}
+
+.modal {
+    left: 50%;
+    width: 500px;
+    margin-left: -250px;
+    margin-top: 20px;
+}
+
+.modal-header, h4, .close {
+    background-color: #5cb85c;
+    color:white !important;
+    text-align: center;
+    font-size: 30px;
+}
+
+.modal-footer {
+    background-color: #f9f9f9;
 }

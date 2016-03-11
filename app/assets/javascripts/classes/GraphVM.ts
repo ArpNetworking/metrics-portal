@@ -54,7 +54,6 @@ class GraphVM implements StatisticView {
     dataLength: number = 600000;
     spec: GraphSpec;
     config: number = 0;
-    showConfig: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
     renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(true);
     renderStacked: KnockoutObservable<boolean>  = ko.observable<boolean>(false);
     graphType: KnockoutObservable<string>       = ko.observable<string>("line");
@@ -184,10 +183,6 @@ class GraphVM implements StatisticView {
     setPause(pause: boolean) {
         this.paused = pause;
         this.pauseTime = new Date().getTime() - 1000;
-    }
-
-    configGraph() {
-        this.showConfig(!this.showConfig());
     }
 
     render() {
