@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,9 @@ package models.ebean;
 import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
+import java.sql.Timestamp;
+import java.util.List;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,14 +30,13 @@ import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-import java.sql.Timestamp;
-import java.util.List;
 
 /**
  * Data model for version sets.
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "version_sets", schema = "portal")
 public class VersionSet {
@@ -43,6 +45,9 @@ public class VersionSet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "uuid")
+    private UUID uuid;
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -59,3 +64,4 @@ public class VersionSet {
     @JoinTable(name = "version_set_package_versions")
     private List<PackageVersion> packageVersions;
 }
+// CHECKSTYLE.ON

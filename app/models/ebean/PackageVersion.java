@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +18,20 @@ package models.ebean;
 import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
+import java.sql.Timestamp;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.sql.Timestamp;
 
 /**
  * Data model for package versions.
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "package_versions", schema = "portal")
 public class PackageVersion {
@@ -56,3 +57,4 @@ public class PackageVersion {
     @Column(name = "uri")
     private String uri;
 }
+// CHECKSTYLE.ON

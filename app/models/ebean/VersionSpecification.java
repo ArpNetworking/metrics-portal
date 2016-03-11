@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,8 @@ package models.ebean;
 import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
+import java.sql.Timestamp;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -27,13 +29,13 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import java.sql.Timestamp;
 
 /**
  * Data model for Version Specifications (for Evergreen).
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "version_specifications", schema = "portal")
 public class VersionSpecification {
@@ -42,6 +44,9 @@ public class VersionSpecification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "uuid")
+    private UUID uuid;
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -63,3 +68,4 @@ public class VersionSpecification {
     @JoinColumn(name = "version_set_id")
     private VersionSet versionSet;
 }
+// CHECKSTYLE.ON
