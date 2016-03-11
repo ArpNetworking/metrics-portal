@@ -55,10 +55,6 @@ requirejs.config({
         'knockout-fast-foreach' : {
             deps : [ 'knockout']
         },
-        'metrics_portal' : {
-            deps : [ 'debug', 'text', 'jquery', 'jquery.ui', 'bean', 'underscore', 'jqrangeslider', 'bootstrap', 'd3',
-                'gauge', 'knockout', 'knockout-fast-foreach', 'classes/KnockoutBindings', 'classes/GraphViewModel']
-        },
         'jquery.ui' : {
             deps : [ 'jquery' ]
         },
