@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
@@ -57,12 +58,11 @@ public class VersionSpecification {
     private Timestamp updatedAt;
 
     /*
-    Note that these precedence values are intended to be sequential; each new row inserted with some precedence will force the update
-    of this property for every row with greater precedence. This is a known limitation of this design, and may need to fixed if
-    the number of version_specification rows becomes prohibitively large.
+    Ordering is done in a 'linked-list' style.
     */
-    @Column(name = "precedence")
-    private Long precedence;
+    @OneToOne
+    @JoinColumn(name = "next")
+    private VersionSpecification next;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "version_set_id")

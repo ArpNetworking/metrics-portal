@@ -35,8 +35,8 @@ CREATE TABLE portal.version_sets (
 /* Many-to-many join table between version_sets and package_versions */
 CREATE TABLE version_set_package_versions (
     id SERIAL PRIMARY KEY,
-    version_set INTEGER REFERENCES portal.version_sets,
-    package_version INTEGER REFERENCES portal.package_versions,
+    version_set INTEGER NOT NULL REFERENCES portal.version_sets,
+    package_version INTEGER NOT NULL REFERENCES portal.package_versions,
     UNIQUE (version_set, package_version)
 );
 
@@ -45,6 +45,6 @@ CREATE TABLE portal.version_specifications (
     uuid UUID NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    precedence INTEGER NOT NULL UNIQUE,
-    version_set_id INTEGER REFERENCES portal.version_sets
+    next INTEGER UNIQUE REFERENCES portal.version_specifications,
+    version_set_id INTEGER NOT NULL REFERENCES portal.version_sets
 );
