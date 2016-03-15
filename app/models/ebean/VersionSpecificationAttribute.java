@@ -15,61 +15,39 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.annotation.CreatedTimestamp;
-import com.avaje.ebean.annotation.UpdatedTimestamp;
-
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * Data model for Version Specifications (for Evergreen).
+ * Data model for Version Specification Attributes (for Evergreen).
+ *
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "version_specifications", schema = "portal")
-public class VersionSpecification {
+@Table(name = "version_specification_attributes", schema = "portal")
+public class VersionSpecificationAttribute {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "uuid")
-    private UUID uuid;
+    @Column(name = "key")
+    private String key;
 
-    @CreatedTimestamp
-    @Column(name = "created_at")
-    private Timestamp createdAt;
+    @Column(name = "value")
+    private String value;
 
-    @UpdatedTimestamp
-    @Column(name = "updated_at")
-    private Timestamp updatedAt;
-
-    /*
-    Ordering is done in a 'linked-list' style.
-    */
-    @OneToOne
-    @JoinColumn(name = "next")
-    private VersionSpecification next;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "version_set_id")
-    private VersionSet versionSet;
-
-    @OneToMany(mappedBy = "versionSpecification")
-    private List<VersionSpecificationAttribute> versionSpecificationAttributes;
+    @ManyToOne
+    @JoinColumn(name= "version_specification")
+    private VersionSpecification versionSpecification;
 }
 // CHECKSTYLE.ON

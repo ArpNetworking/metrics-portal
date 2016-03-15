@@ -48,3 +48,10 @@ CREATE TABLE portal.version_specifications (
     next INTEGER UNIQUE REFERENCES portal.version_specifications,
     version_set_id INTEGER NOT NULL REFERENCES portal.version_sets
 );
+
+CREATE TABLE portal.version_specification_attributes (
+    id SERIAL PRIMARY KEY,
+    "key" VARCHAR(255) NOT NULL,
+    value VARCHAR(255) NOT NULL,
+    version_specification INTEGER NOT NULL REFERENCES portal.version_specifications
+);
