@@ -26,6 +26,18 @@ class Series {
     color: string = "black";
     colorSubscription: KnockoutSubscription;
 
+    static defaultPoints() {
+        return  { show: true };
+    }
+
+    static defaultLines() {
+        return { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
+    }
+
+    static defaultBars() {
+        return { show: false, stacked: false };
+    }
+
     constructor(label: string, color: string) {
         this.color = color;
         this.label = label;

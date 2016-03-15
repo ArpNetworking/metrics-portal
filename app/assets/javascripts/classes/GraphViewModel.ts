@@ -87,7 +87,10 @@ module GraphViewModel {
     export var fragment = ko.computed(() => {
         var servers = Hosts.connections().map((element) => { return element.server });
         var mygraphs = graphs().map((element: StatisticView) => {
-            return { service: element.spec.service, metric: element.spec.metric, stat: element.spec.statistic };
+            return {
+                service: element.spec.service, metric: element.spec.metric, stat: element.spec.statistic,
+                points: element.spec.points, lines: element.spec.lines, bars: element.spec.bars
+            };
         });
         var obj = { connections: servers, graphs: mygraphs, showMetrics: metricsVisible(), mode: mode() };
         return "#graph/" + encodeURIComponent(JSON.stringify(obj));
@@ -246,7 +249,7 @@ module GraphViewModel {
         });
 
         graphs.forEach((graph) => {
-            addGraph(new GraphSpec(graph.service, graph.metric, graph.stat));
+            addGraph(new GraphSpec(graph.service, graph.metric, graph.stat, graph.points, graph.lines, graph.bars));
         });
     };
 
@@ -264,7 +267,7 @@ module GraphViewModel {
     };
 
     export var reportData = (report: ReportData, cvm: ConnectionVM) => {
-        var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic));
+        var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic, report.points, report.lines, report.bars));
         var graph = graphsById[graphName];
         if (graph != undefined) {
             graph.postData(report.server, report.timestamp, report.data, cvm);

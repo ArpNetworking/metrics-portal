@@ -22,6 +22,7 @@ import GraphSpec = require("./GraphSpec");
 import FolderNodeVM = require("./FolderNodeVM");
 import MetricNodeVM = require("./MetricNodeVM");
 import StatisticNodeVM = require("./StatisticNodeVM");
+import Series = require("./Series");
 
 class MetricsBrowseList {
     serviceNodes: KnockoutObservableArray<ServiceNodeVM> = ko.observableArray<ServiceNodeVM>();
@@ -41,7 +42,8 @@ class MetricsBrowseList {
                 var nameParts = this.getPathParts(metric.name);
                 var metricNode = this.addMetric(nameParts, nodeVM);
                 metric.children.forEach((statistic) => {
-                    this.addStatistic(metricNode, new GraphSpec(service.name, metric.name, statistic.name))
+                    this.addStatistic(metricNode, new GraphSpec(service.name, metric.name, statistic.name,
+                                                                Series.defaultPoints(), Series.defaultLines(), Series.defaultBars()))
                 });
             });
         });

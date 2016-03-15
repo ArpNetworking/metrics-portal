@@ -30,9 +30,9 @@
                         <div data-bind="attr: {'id': id}" class="graph"></div>
                         <a href="#" class="col-md-3" data-bind="click: $root.removeGraphVM">Remove</a>
                         <div align="right">
-                            <a href="#configModal" class="config" align="right" data-toggle="modal" data-backdrop="true">Config</a>
+                            <a class="config" align="right" data-toggle="modal" data-bind="attr:{'href': '#modal_'+id}" data-backdrop="true">Config</a>
                         </div>
-                        <div id="configModal" class="modal fade" role="dialog">
+                        <div data-bind="attr:{'id': 'modal_'+id}" class="modal fade" role="dialog">
                             <div class=modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header" style="padding:20px 30px;">

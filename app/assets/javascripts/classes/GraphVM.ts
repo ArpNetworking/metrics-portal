@@ -65,41 +65,33 @@ class GraphVM implements StatisticView {
 
         this.graphType.subscribe((type: string) => {
             if (type == "scatter") {
-                for (var series = 0; series < this.data.length; series++) {
-                    this.data[series].points.show   = true;
-                    this.data[series].lines.show    = false;
-                    this.data[series].lines.fill    = false;
-                    this.data[series].lines.stacked = false;
-                    this.data[series].bars.show     = false;
-                    this.data[series].bars.stacked  = false;
-                }
+                this.spec.points.show   = true;
+                this.spec.lines.show    = false;
+                this.spec.lines.fill    = false;
+                this.spec.lines.stacked = false;
+                this.spec.bars.show     = false;
+                this.spec.bars.stacked  = false;
             } else if (type == "line") {
-                for (var series = 0; series < this.data.length; series++) {
-                    this.data[series].points.show   = false;
-                    this.data[series].lines.show    = true;
-                    this.data[series].lines.fill    = false;
-                    this.data[series].lines.stacked = false;
-                    this.data[series].bars.show     = false;
-                    this.data[series].bars.stacked  = false;
-                }
+                this.spec.points.show   = false;
+                this.spec.lines.show    = true;
+                this.spec.lines.fill    = false;
+                this.spec.lines.stacked = false;
+                this.spec.bars.show     = false;
+                this.spec.bars.stacked  = false;
             } else if (type == "area") {
-                for (var series = 0; series < this.data.length; series++) {
-                    this.data[series].points.show   = false;
-                    this.data[series].lines.show    = true;
-                    this.data[series].lines.fill    = true;
-                    this.data[series].lines.stacked = false;
-                    this.data[series].bars.show     = false;
-                    this.data[series].bars.stacked  = false;
-                }
+                this.spec.points.show   = false;
+                this.spec.lines.show    = true;
+                this.spec.lines.fill    = true;
+                this.spec.lines.stacked = false;
+                this.spec.bars.show     = false;
+                this.spec.bars.stacked  = false;
             } else if (type == "bar") {
-                for (var series = 0; series < this.data.length; series++) {
-                    this.data[series].points.show   = false;
-                    this.data[series].lines.show    = false;
-                    this.data[series].lines.fill    = false;
-                    this.data[series].lines.stacked = false;
-                    this.data[series].bars.show     = true;
-                    this.data[series].bars.stacked  = false;
-                }
+                this.spec.points.show   = false;
+                this.spec.lines.show    = false;
+                this.spec.lines.fill    = false;
+                this.spec.lines.stacked = false;
+                this.spec.bars.show     = true;
+                this.spec.bars.stacked  = false;
             }
 
             this.renderDots(false);
@@ -109,20 +101,16 @@ class GraphVM implements StatisticView {
         this.renderDots.subscribe((state: boolean) => {
             if (this.graphType() != "line") { return; }
 
-            for (var series = 0; series < this.data.length; series++) {
-                if (this.data[series].lines) {
-                    this.data[series].points.show = state;
-                }
+            if (this.spec.lines) {
+                this.spec.points.show = state;
             }
         });
 
         this.renderStacked.subscribe((state: boolean) => {
             if (this.graphType() != "bar") { return; }
 
-            for (var series = 0; series < this.data.length; series++) {
-                if (this.data[series].bars) {
-                    this.data[series].bars.stacked = state;
-                }
+            if (this.spec.bars) {
+                this.spec.bars.stacked = state;
             }
         });
     }
@@ -212,6 +200,13 @@ class GraphVM implements StatisticView {
             if (this.data[series].data.length <= 0) {
                 continue;
             }
+
+            this.data[series].points.show   = this.spec.points.show;
+            this.data[series].lines.show    = this.spec.lines.show;
+            this.data[series].lines.fill    = this.spec.lines.fill;
+            this.data[series].lines.stacked = this.spec.lines.stacked;
+            this.data[series].bars.show     = this.spec.bars.show;
+            this.data[series].bars.stacked  = this.spec.bars.stacked;
 
             //shift the data off the array that is too old
             if (!this.paused) {
