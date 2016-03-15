@@ -21,7 +21,7 @@ CREATE TABLE portal.package_versions (
     name VARCHAR(255) NOT NULL,
     version VARCHAR(255) NOT NULL,
     uri VARCHAR(2047) NOT NULL,
-    UNIQUE (name, version, uri)
+    UNIQUE (name, version)
 );
 
 CREATE TABLE portal.version_sets (
