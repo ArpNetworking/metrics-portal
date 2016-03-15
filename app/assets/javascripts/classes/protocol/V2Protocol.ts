@@ -47,6 +47,7 @@ class V2Protocol extends BaseProtocol {
             this.graphViewModel.reportData(rdCommand.data, cvm);
         }
         else if (data.response == "ok") {
+            this.connectionModel.onHeartbeat();
         }
         else {
             console.warn("unhandled message: ");
