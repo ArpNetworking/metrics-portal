@@ -32,7 +32,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 /**
- * Data model for version sets.
+ * Data model for version sets. A VersionSet models a set of packages with corresponding versions.
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
