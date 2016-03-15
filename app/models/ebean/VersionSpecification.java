@@ -78,5 +78,61 @@ public class VersionSpecification {
 
     @OneToMany(mappedBy = "versionSpecification")
     private List<VersionSpecificationAttribute> versionSpecificationAttributes;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public VersionSpecification getNext() {
+        return next;
+    }
+
+    public void setNext(VersionSpecification next) {
+        this.next = next;
+    }
+
+    public VersionSet getVersionSet() {
+        return versionSet;
+    }
+
+    public void setVersionSet(VersionSet versionSet) {
+        this.versionSet = versionSet;
+    }
+
+    public List<VersionSpecificationAttribute> getVersionSpecificationAttributes() {
+        return versionSpecificationAttributes;
+    }
+
+    public void setVersionSpecificationAttributes(List<VersionSpecificationAttribute> versionSpecificationAttributes) {
+        this.versionSpecificationAttributes = versionSpecificationAttributes;
+    }
 }
 // CHECKSTYLE.ON
