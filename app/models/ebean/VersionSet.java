@@ -58,7 +58,7 @@ public class VersionSet {
     private Timestamp updatedAt;
 
     @Column(name = "version")
-    private Long version;
+    private String version;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_set_package_versions")
@@ -96,11 +96,11 @@ public class VersionSet {
         this.updatedAt = updatedAt;
     }
 
-    public Long getVersion() {
+    public String getVersion() {
         return version;
     }
 
-    public void setVersion(Long version) {
+    public void setVersion(String version) {
         this.version = version;
     }
 

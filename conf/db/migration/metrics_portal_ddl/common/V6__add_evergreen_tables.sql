@@ -27,7 +27,7 @@ CREATE TABLE portal.package_versions (
 CREATE TABLE portal.version_sets (
     id SERIAL PRIMARY KEY,
     uuid UUID NOT NULL,
-    version SERIAL NOT NULL UNIQUE,
+    version VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
