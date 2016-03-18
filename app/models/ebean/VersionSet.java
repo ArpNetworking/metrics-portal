@@ -27,6 +27,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
@@ -61,7 +62,12 @@ public class VersionSet {
     private String version;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_set_package_versions")
+    @JoinTable(
+            name = "version_set_package_versions",
+            schema = "portal",
+            joinColumns = @JoinColumn(name = "version_set_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "package_version_id", referencedColumnName = "id"))
+
     private List<PackageVersion> packageVersions;
 
     public Long getId() {

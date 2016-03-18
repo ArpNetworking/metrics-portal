@@ -33,11 +33,11 @@ CREATE TABLE portal.version_sets (
 );
 
 /* Many-to-many join table between version_sets and package_versions */
-CREATE TABLE version_set_package_versions (
+CREATE TABLE portal.version_set_package_versions (
     id SERIAL PRIMARY KEY,
-    version_set INTEGER NOT NULL REFERENCES portal.version_sets,
-    package_version INTEGER NOT NULL REFERENCES portal.package_versions,
-    UNIQUE (version_set, package_version)
+    version_set_id INTEGER NOT NULL REFERENCES portal.version_sets,
+    package_version_id INTEGER NOT NULL REFERENCES portal.package_versions,
+    UNIQUE (version_set_id, package_version_id)
 );
 
 CREATE TABLE portal.version_specifications (
@@ -51,7 +51,7 @@ CREATE TABLE portal.version_specifications (
 
 CREATE TABLE portal.version_specification_attributes (
     id SERIAL PRIMARY KEY,
-    "key" VARCHAR(255) NOT NULL,
+    keyName VARCHAR(255) NOT NULL,
     value VARCHAR(255) NOT NULL,
     version_specification INTEGER NOT NULL REFERENCES portal.version_specifications
 );

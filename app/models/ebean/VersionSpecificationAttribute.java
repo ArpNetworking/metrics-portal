@@ -41,7 +41,7 @@ public class VersionSpecificationAttribute {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "key")
+    @Column(name = "keyName")
     private String key;
 
     @Column(name = "value")
