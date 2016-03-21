@@ -33,6 +33,7 @@ import javax.persistence.Version;
  *
  * @author Ville Koskela (vkoskela at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "hosts", schema = "portal")
 public class Host extends Model {
@@ -40,82 +41,83 @@ public class Host extends Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long _id;
+    private Long id;
 
     @Version
     @Column(name = "version")
-    private Long _version;
+    private Long version;
 
     @CreatedTimestamp
     @Column(name = "created_at")
-    private Timestamp _createdAt;
+    private Timestamp createdAt;
 
     @UpdatedTimestamp
     @Column(name = "updated_at")
-    private Timestamp _updatedAt;
+    private Timestamp updatedAt;
 
     @Column(name = "name")
-    private String _name;
+    private String name;
 
     @Column(name = "cluster")
-    private String _cluster;
+    private String cluster;
 
     @Column(name = "metrics_software_state")
-    private String _metricsSoftwareState;
+    private String metricsSoftwareState;
 
     public Long getId() {
-        return _id;
+        return id;
     }
 
     public void setId(final Long value) {
-        _id = value;
+        id = value;
     }
 
     public Long getVersion() {
-        return _version;
+        return version;
     }
 
-    public void setVersion(final Long version) {
-        _version = version;
+    public void setVersion(final Long value) {
+        version = value;
     }
 
     public Timestamp getCreatedAt() {
-        return _createdAt;
+        return createdAt;
     }
 
     public void setCreatedAt(final Timestamp value) {
-        this._createdAt = value;
+        this.createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
-        return _updatedAt;
+        return updatedAt;
     }
 
     public void setUpdatedAt(final Timestamp value) {
-        this._updatedAt = value;
+        this.updatedAt = value;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public void setName(final String value) {
-        _name = value;
+        name = value;
     }
 
     public String getCluster() {
-        return _cluster;
+        return cluster;
     }
 
     public void setCluster(final String value) {
-        _cluster = value;
+        cluster = value;
     }
 
     public String getMetricsSoftwareState() {
-        return _metricsSoftwareState;
+        return metricsSoftwareState;
     }
 
     public void setMetricsSoftwareState(final String value) {
-        _metricsSoftwareState = value;
+        metricsSoftwareState = value;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck
