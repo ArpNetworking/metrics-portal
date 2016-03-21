@@ -48,7 +48,6 @@ import javax.persistence.Table;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
-// CHECKSTYLE.OFF: HiddenFieldCheck
 @Entity
 @Table(name = "version_specifications", schema = "portal")
 public class VersionSpecification {
@@ -84,57 +83,56 @@ public class VersionSpecification {
         return id;
     }
 
-    public void setId(final Long id) {
-        this.id = id;
+    public void setId(final Long value) {
+        id = value;
     }
 
     public UUID getUuid() {
         return uuid;
     }
 
-    public void setUuid(final UUID uuid) {
-        this.uuid = uuid;
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(final Timestamp createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedAt(final Timestamp value) {
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(final Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUpdatedAt(final Timestamp value) {
+        updatedAt = value;
     }
 
     public VersionSpecification getNext() {
         return next;
     }
 
-    public void setNext(final VersionSpecification next) {
-        this.next = next;
+    public void setNext(final VersionSpecification value) {
+        next = value;
     }
 
     public VersionSet getVersionSet() {
         return versionSet;
     }
 
-    public void setVersionSet(final VersionSet versionSet) {
-        this.versionSet = versionSet;
+    public void setVersionSet(final VersionSet value) {
+        versionSet = value;
     }
 
     public List<VersionSpecificationAttribute> getVersionSpecificationAttributes() {
         return versionSpecificationAttributes;
     }
 
-    public void setVersionSpecificationAttributes(final List<VersionSpecificationAttribute> versionSpecificationAttributes) {
-        this.versionSpecificationAttributes = versionSpecificationAttributes;
+    public void setVersionSpecificationAttributes(final List<VersionSpecificationAttribute> value) {
+        versionSpecificationAttributes = value;
     }
 }
-// CHECKSTYLE.ON: HiddenFieldCheck
 // CHECKSTYLE.ON: MemberNameCheck

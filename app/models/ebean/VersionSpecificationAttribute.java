@@ -32,7 +32,6 @@ import javax.persistence.Table;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
-// CHECKSTYLE.OFF: HiddenFieldCheck
 @Entity
 @Table(name = "version_specification_attributes", schema = "portal")
 public class VersionSpecificationAttribute {
@@ -56,16 +55,16 @@ public class VersionSpecificationAttribute {
         return id;
     }
 
-    public void setId(final Long id) {
-        this.id = id;
+    public void setId(final Long value) {
+        id = value;
     }
 
     public String getKey() {
         return key;
     }
 
-    public void setKey(final String key) {
-        this.key = key;
+    public void setKey(final String value) {
+        key = value;
     }
 
     public String getValue() {
@@ -80,9 +79,8 @@ public class VersionSpecificationAttribute {
         return versionSpecification;
     }
 
-    public void setVersionSpecification(final VersionSpecification versionSpecification) {
-        this.versionSpecification = versionSpecification;
+    public void setVersionSpecification(final VersionSpecification value) {
+        versionSpecification = value;
     }
 }
-// CHECKSTYLE.ON: HiddenFieldCheck
 // CHECKSTYLE.ON: MemberNameCheck

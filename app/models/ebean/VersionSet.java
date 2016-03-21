@@ -38,7 +38,6 @@ import javax.persistence.Table;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
-// CHECKSTYLE.OFF: HiddenFieldCheck
 @Entity
 @Table(name = "version_sets", schema = "portal")
 public class VersionSet {
@@ -74,49 +73,48 @@ public class VersionSet {
         return id;
     }
 
-    public void setId(final Long id) {
-        this.id = id;
+    public void setId(final Long value) {
+        id = value;
     }
 
     public UUID getUuid() {
         return uuid;
     }
 
-    public void setUuid(final UUID uuid) {
-        this.uuid = uuid;
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public Timestamp getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(final Timestamp createdAt) {
-        this.createdAt = createdAt;
+    public void setCreatedAt(final Timestamp value) {
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(final Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUpdatedAt(final Timestamp value) {
+        updatedAt = value;
     }
 
     public String getVersion() {
         return version;
     }
 
-    public void setVersion(final String version) {
-        this.version = version;
+    public void setVersion(final String value) {
+        version = value;
     }
 
     public List<PackageVersion> getPackageVersions() {
         return packageVersions;
     }
 
-    public void setPackageVersions(final List<PackageVersion> packageVersions) {
-        this.packageVersions = packageVersions;
+    public void setPackageVersions(final List<PackageVersion> value) {
+        packageVersions = value;
     }
 }
-// CHECKSTYLE.ON: HiddenFieldCheck
 // CHECKSTYLE.ON: MemberNameCheck
