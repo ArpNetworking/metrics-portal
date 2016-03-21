@@ -38,6 +38,7 @@ import javax.persistence.Table;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
+// CHECKSTYLE.OFF: HiddenFieldCheck
 @Entity
 @Table(name = "version_sets", schema = "portal")
 public class VersionSet {
@@ -67,14 +68,13 @@ public class VersionSet {
             schema = "portal",
             joinColumns = @JoinColumn(name = "version_set_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "package_version_id", referencedColumnName = "id"))
-
     private List<PackageVersion> packageVersions;
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -82,7 +82,7 @@ public class VersionSet {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
+    public void setUuid(final UUID uuid) {
         this.uuid = uuid;
     }
 
@@ -90,7 +90,7 @@ public class VersionSet {
         return createdAt;
     }
 
-    public void setCreatedAt(Timestamp createdAt) {
+    public void setCreatedAt(final Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -98,7 +98,7 @@ public class VersionSet {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Timestamp updatedAt) {
+    public void setUpdatedAt(final Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -106,7 +106,7 @@ public class VersionSet {
         return version;
     }
 
-    public void setVersion(String version) {
+    public void setVersion(final String version) {
         this.version = version;
     }
 
@@ -114,7 +114,7 @@ public class VersionSet {
         return packageVersions;
     }
 
-    public void setPackageVersions(List<PackageVersion> packageVersions) {
+    public void setPackageVersions(final List<PackageVersion> packageVersions) {
         this.packageVersions = packageVersions;
     }
 }

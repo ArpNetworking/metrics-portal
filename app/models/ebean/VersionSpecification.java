@@ -48,6 +48,7 @@ import javax.persistence.Table;
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
+// CHECKSTYLE.OFF: HiddenFieldCheck
 @Entity
 @Table(name = "version_specifications", schema = "portal")
 public class VersionSpecification {
@@ -83,7 +84,7 @@ public class VersionSpecification {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(final Long id) {
         this.id = id;
     }
 
@@ -91,7 +92,7 @@ public class VersionSpecification {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
+    public void setUuid(final UUID uuid) {
         this.uuid = uuid;
     }
 
@@ -99,7 +100,7 @@ public class VersionSpecification {
         return createdAt;
     }
 
-    public void setCreatedAt(Timestamp createdAt) {
+    public void setCreatedAt(final Timestamp createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -107,7 +108,7 @@ public class VersionSpecification {
         return updatedAt;
     }
 
-    public void setUpdatedAt(Timestamp updatedAt) {
+    public void setUpdatedAt(final Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -115,7 +116,7 @@ public class VersionSpecification {
         return next;
     }
 
-    public void setNext(VersionSpecification next) {
+    public void setNext(final VersionSpecification next) {
         this.next = next;
     }
 
@@ -123,7 +124,7 @@ public class VersionSpecification {
         return versionSet;
     }
 
-    public void setVersionSet(VersionSet versionSet) {
+    public void setVersionSet(final VersionSet versionSet) {
         this.versionSet = versionSet;
     }
 
@@ -131,7 +132,7 @@ public class VersionSpecification {
         return versionSpecificationAttributes;
     }
 
-    public void setVersionSpecificationAttributes(List<VersionSpecificationAttribute> versionSpecificationAttributes) {
+    public void setVersionSpecificationAttributes(final List<VersionSpecificationAttribute> versionSpecificationAttributes) {
         this.versionSpecificationAttributes = versionSpecificationAttributes;
     }
 }
