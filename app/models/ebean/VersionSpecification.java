@@ -40,8 +40,8 @@ import javax.persistence.Table;
  * for purposes of specifying the correct packages-versions that should be installed on the host. The <code>VersionSpecification</code>s
  * form a total order via the `next` attribute (i.e. ordered via the linked-list method).
  *
- * A <code>VersionSpecification</code> is said to match a host if and only if each of the <code>VersionSpecificationAttribute</code>s match the corresponding
- * property provided by the host.
+ * A <code>VersionSpecification</code> is said to match a host if and only if each of the
+ * <code>VersionSpecificationAttribute</code>s match the corresponding qproperty provided by the host.
  *
  * Currently, there is no support for domains or separate groups of <code>VersionSpecification</code>s.
  *
