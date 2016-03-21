@@ -25,7 +25,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * Data model for Version Specification Attributes (for Evergreen). Holds a simple key-value String pair, intended to
+ * Data model for <code>VersionSpecificationAttribute</code>s (for Evergreen). Holds a simple key-value String pair, intended to
  * be compared to key-value pairs provided by a host.
  *
  * @see VersionSpecification

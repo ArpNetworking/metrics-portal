@@ -34,16 +34,16 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * Data model for Version Specifications (for Evergreen).
+ * Data model for <code>VersionSpecification</code>s (for Evergreen).
  *
- * A VersionSpecification models a 'rule' by which a host making a query to Evergreen may be matched to a VersionSet
- * for purposes of specifying the correct packages and versions that should be installed on the host. The VersionSpecifications
+ * A <code>VersionSpecification</code> models a 'rule' by which a host making a query to Evergreen may be matched to a VersionSet
+ * for purposes of specifying the correct packages-versions that should be installed on the host. The <code>VersionSpecification</code>s
  * form a total order via the `next` attribute (i.e. ordered via the linked-list method).
  *
- * A VersionSpecification is said to match a host iff each of the VersionSpecificationAttributes match the corresponding
- * propery provided by the host.
+ * A <code>VersionSpecification</code> is said to match a host if and only if each of the <code>VersionSpecificationAttribute</code>s match the corresponding
+ * property provided by the host.
  *
- * Currently, there is no support for domains or separate groups of VersionSpecifications.
+ * Currently, there is no support for domains or separate groups of <code>VersionSpecification</code>s.
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */

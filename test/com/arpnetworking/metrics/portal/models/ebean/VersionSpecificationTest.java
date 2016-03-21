@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
+ * Test for <code>VersionSpecification</code>
+ *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
 public class VersionSpecificationTest extends WithApplication {
