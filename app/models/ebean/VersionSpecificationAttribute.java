@@ -45,7 +45,7 @@ public class VersionSpecificationAttribute {
     private String key;
 
     @Column(name = "value")
-    private String value;
+    private String attributeValue;
 
     @ManyToOne
     @JoinColumn(name = "version_specification")
@@ -68,11 +68,11 @@ public class VersionSpecificationAttribute {
     }
 
     public String getValue() {
-        return value;
+        return attributeValue;
     }
 
     public void setValue(final String value) {
-        this.value = value;
+        attributeValue = value;
     }
 
     public VersionSpecification getVersionSpecification() {
