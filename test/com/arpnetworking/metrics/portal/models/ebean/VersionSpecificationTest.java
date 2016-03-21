@@ -27,7 +27,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import play.test.WithApplication;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,7 +40,6 @@ import java.util.UUID;
  */
 public class VersionSpecificationTest extends WithApplication {
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCreateVersionSpecification() throws Exception {
 
@@ -84,10 +85,13 @@ public class VersionSpecificationTest extends WithApplication {
 
         Iterable<VersionSpecificationAttribute> attribs = allSpecs.get(0).getVersionSpecificationAttributes();
 
-        Assert.assertThat(attribs, Matchers.containsInAnyOrder(hasKV("colo", "north-america"), hasKV("dogfood-group", "alpha")));
+        Collection<Matcher<? super VersionSpecificationAttribute>> attribMatchers = new ArrayList<>();
+        attribMatchers.add(hasKV("colo", "north-america"));
+        attribMatchers.add(hasKV("dogfood-group", "alpha"));
+        Assert.assertThat(attribs, Matchers.containsInAnyOrder(attribMatchers));
     }
 
-    private Matcher<VersionSpecificationAttribute> hasKV(final String k, final String v) {
+    private Matcher<? super VersionSpecificationAttribute> hasKV(final String k, final String v) {
         FeatureMatcher<VersionSpecificationAttribute, String> keyMatcher = new FeatureMatcher<VersionSpecificationAttribute, String>(Matchers.equalTo(k), "key", "key") {
             @Override
             protected String featureValueOf(VersionSpecificationAttribute versionSpecificationAttribute) {
