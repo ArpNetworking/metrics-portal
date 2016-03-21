@@ -211,7 +211,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final IOException | RuntimeException e) {
-            // CHECKSTYLE.ON
+            // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to upsert alert")
                     .addData("alert", alert)

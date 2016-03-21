@@ -84,4 +84,5 @@ public class VersionSpecificationAttribute {
         this.versionSpecification = versionSpecification;
     }
 }
-// CHECKSTYLE.ON
+// CHECKSTYLE.ON: HiddenFieldCheck
+// CHECKSTYLE.ON: MemberNameCheck

@@ -136,4 +136,5 @@ public class VersionSpecification {
         this.versionSpecificationAttributes = versionSpecificationAttributes;
     }
 }
-// CHECKSTYLE.ON
+// CHECKSTYLE.ON: HiddenFieldCheck
+// CHECKSTYLE.ON: MemberNameCheck

@@ -106,4 +106,5 @@ public class PackageVersion {
         this.uri = uri;
     }
 }
-// CHECKSTYLE.ON
+// CHECKSTYLE.ON: HiddenFieldCheck
+// CHECKSTYLE.ON: MemberNameCheck

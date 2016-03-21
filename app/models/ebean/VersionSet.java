@@ -118,4 +118,5 @@ public class VersionSet {
         this.packageVersions = packageVersions;
     }
 }
-// CHECKSTYLE.ON
+// CHECKSTYLE.ON: HiddenFieldCheck
+// CHECKSTYLE.ON: MemberNameCheck
