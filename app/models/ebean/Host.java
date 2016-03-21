@@ -85,7 +85,7 @@ public class Host extends Model {
     }
 
     public void setCreatedAt(final Timestamp value) {
-        this.createdAt = value;
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
@@ -93,7 +93,7 @@ public class Host extends Model {
     }
 
     public void setUpdatedAt(final Timestamp value) {
-        this.updatedAt = value;
+        updatedAt = value;
     }
 
     public String getName() {
