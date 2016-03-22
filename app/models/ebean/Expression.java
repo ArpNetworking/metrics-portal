@@ -34,6 +34,7 @@ import javax.persistence.Version;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "expressions", schema = "portal")
 public class Expression extends Model {
@@ -41,104 +42,105 @@ public class Expression extends Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long _id;
+    private Long id;
 
     @Version
     @Column(name = "version")
-    private Long _version;
+    private Long version;
 
     @CreatedTimestamp
     @Column(name = "created_at")
-    private Timestamp _createdAt;
+    private Timestamp createdAt;
 
     @UpdatedTimestamp
     @Column(name = "updated_at")
-    private Timestamp _updatedAt;
+    private Timestamp updatedAt;
 
     @Column(name = "uuid")
-    private UUID _uuid;
+    private UUID uuid;
 
     @Column(name = "cluster")
-    private String _cluster;
+    private String cluster;
 
     @Column(name = "service")
-    private String _service;
+    private String service;
 
     @Column(name = "metric")
-    private String _metric;
+    private String metric;
 
     @Column(name = "script")
-    private String _script;
+    private String script;
 
     public Long getId() {
-        return _id;
+        return id;
     }
 
     public void setId(final Long value) {
-        _id = value;
+        id = value;
     }
 
     public Long getVersion() {
-        return _version;
+        return version;
     }
 
-    public void setVersion(final Long version) {
-        _version = version;
+    public void setVersion(final Long value) {
+        version = value;
     }
 
     public Timestamp getCreatedAt() {
-        return _createdAt;
+        return createdAt;
     }
 
     public void setCreatedAt(final Timestamp value) {
-        _createdAt = value;
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
-        return _updatedAt;
+        return updatedAt;
     }
 
     public void setUpdatedAt(final Timestamp value) {
-        _updatedAt = value;
+        updatedAt = value;
     }
 
     public UUID getUuid() {
-        return _uuid;
+        return uuid;
     }
 
     public void setUuid(final UUID value) {
-        _uuid = value;
+        uuid = value;
     }
 
     public String getCluster() {
-        return _cluster;
+        return cluster;
     }
 
     public void setCluster(final String value) {
-        _cluster = value;
+        cluster = value;
     }
 
     public String getService() {
-        return _service;
+        return service;
     }
 
     public void setService(final String value) {
-        _service = value;
+        service = value;
     }
 
     public String getMetric() {
-        return _metric;
+        return metric;
     }
 
     public void setMetric(final String value) {
-        _metric = value;
+        metric = value;
     }
 
     public String getScript() {
-        return _script;
+        return script;
     }
 
     public void setScript(final String value) {
-        _script = value;
+        script = value;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

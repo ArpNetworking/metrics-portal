@@ -36,6 +36,7 @@ import javax.persistence.Version;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "nagios_extensions", schema = "portal")
 public class NagiosExtension extends Model {
@@ -43,97 +44,98 @@ public class NagiosExtension extends Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long _id;
+    private Long id;
 
     @Version
     @Column(name = "version")
-    private Long _version;
+    private Long version;
 
     @CreatedTimestamp
     @Column(name = "created_at")
-    private Timestamp _createdAt;
+    private Timestamp createdAt;
 
     @UpdatedTimestamp
     @Column(name = "updated_at")
-    private Timestamp _updatedAt;
+    private Timestamp updatedAt;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "alert_id")
-    private Alert _alert;
+    private Alert alert;
 
     @Column(name = "severity")
-    private String _severity;
+    private String severity;
 
     @Column(name = "notify")
-    private String _notify;
+    private String notify;
 
     @Column(name = "max_check_attempts")
-    private int _maxCheckAttempts;
+    private int maxCheckAttempts;
 
     @Column(name = "freshness_threshold_in_seconds")
-    private long _freshnessThresholdInSeconds;
+    private long freshnessThresholdInSeconds;
 
     public Alert getAlert() {
-        return _alert;
+        return alert;
     }
 
     public void setAlert(final Alert value) {
-        _alert = value;
+        alert = value;
     }
 
     public Long getVersion() {
-        return _version;
+        return version;
     }
 
-    public void setVersion(final Long version) {
-        _version = version;
+    public void setVersion(final Long value) {
+        version = value;
     }
 
     public Timestamp getCreatedAt() {
-        return _createdAt;
+        return createdAt;
     }
 
     public void setCreatedAt(final Timestamp value) {
-        _createdAt = value;
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
-        return _updatedAt;
+        return updatedAt;
     }
 
     public void setUpdatedAt(final Timestamp value) {
-        _updatedAt = value;
+        updatedAt = value;
     }
 
     public String getSeverity() {
-        return _severity;
+        return severity;
     }
 
     public void setSeverity(final String value) {
-        _severity = value;
+        severity = value;
     }
 
     public String getNotify() {
-        return _notify;
+        return notify;
     }
 
     public void setNotify(final String value) {
-        _notify = value;
+        notify = value;
     }
 
     public int getMaxCheckAttempts() {
-        return _maxCheckAttempts;
+        return maxCheckAttempts;
     }
 
     public void setMaxCheckAttempts(final int value) {
-        _maxCheckAttempts = value;
+        maxCheckAttempts = value;
     }
 
     public long getFreshnessThreshold() {
-        return _freshnessThresholdInSeconds;
+        return freshnessThresholdInSeconds;
     }
 
     public void setFreshnessThreshold(final long value) {
-        _freshnessThresholdInSeconds = value;
+        freshnessThresholdInSeconds = value;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

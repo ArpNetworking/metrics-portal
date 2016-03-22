@@ -40,6 +40,7 @@ import javax.persistence.Version;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "alerts", schema = "portal")
 public class Alert extends Model {
@@ -47,183 +48,184 @@ public class Alert extends Model {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long _id;
+    private Long id;
 
     @Version
     @Column(name = "version")
-    private Long _version;
+    private Long version;
 
     @CreatedTimestamp
     @Column(name = "created_at")
-    private Timestamp _createdAt;
+    private Timestamp createdAt;
 
     @UpdatedTimestamp
     @Column(name = "updated_at")
-    private Timestamp _updatedAt;
+    private Timestamp updatedAt;
 
     @Column(name = "uuid")
-    private UUID _uuid;
+    private UUID uuid;
 
     @Column(name = "name")
-    private String _name;
+    private String name;
 
     @Column(name = "cluster")
-    private String _cluster;
+    private String cluster;
 
     @Column(name = "service")
-    private String _service;
+    private String service;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "context")
-    private Context _context;
+    private Context context;
 
     @Column(name = "metric")
-    private String _metric;
+    private String metric;
 
     @Column(name = "statistic")
-    private String _statistic;
+    private String statistic;
 
     @Column(name = "period_in_seconds")
-    private int _periodInSeconds;
+    private int periodInSeconds;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "operator")
-    private Operator _operator;
+    private Operator operator;
 
     @Column(name = "quantity_value")
-    private double _quantityValue;
+    private double quantityValue;
 
     @Column(name = "quantity_unit")
-    private String _quantityUnit;
+    private String quantityUnit;
 
-    @OneToOne(mappedBy = "_alert", cascade = CascadeType.ALL)
-    private NagiosExtension _nagiosExtension;
+    @OneToOne(mappedBy = "alert", cascade = CascadeType.ALL)
+    private NagiosExtension nagiosExtension;
 
     public Long getId() {
-        return _id;
+        return id;
     }
 
     public void setId(final Long value) {
-        _id = value;
+        id = value;
     }
 
     public Long getVersion() {
-        return _version;
+        return version;
     }
 
-    public void setVersion(final Long version) {
-        _version = version;
+    public void setVersion(final Long value) {
+        version = value;
     }
 
     public Timestamp getCreatedAt() {
-        return _createdAt;
+        return createdAt;
     }
 
     public void setCreatedAt(final Timestamp value) {
-        _createdAt = value;
+        createdAt = value;
     }
 
     public Timestamp getUpdatedAt() {
-        return _updatedAt;
+        return updatedAt;
     }
 
     public void setUpdatedAt(final Timestamp value) {
-        _updatedAt = value;
+        updatedAt = value;
     }
 
     public UUID getUuid() {
-        return _uuid;
+        return uuid;
     }
 
     public void setUuid(final UUID value) {
-        _uuid = value;
+        uuid = value;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public void setName(final String value) {
-        _name = value;
+        name = value;
     }
 
     public String getCluster() {
-        return _cluster;
+        return cluster;
     }
 
     public void setCluster(final String value) {
-        _cluster = value;
+        cluster = value;
     }
 
     public String getService() {
-        return _service;
+        return service;
     }
 
     public void setService(final String value) {
-        _service = value;
+        service = value;
     }
 
     public Context getContext() {
-        return _context;
+        return context;
     }
 
     public void setContext(final Context value) {
-        _context = value;
+        context = value;
     }
 
     public String getMetric() {
-        return _metric;
+        return metric;
     }
 
     public void setMetric(final String value) {
-        _metric = value;
+        metric = value;
     }
 
     public String getStatistic() {
-        return _statistic;
+        return statistic;
     }
 
     public void setStatistic(final String value) {
-        _statistic = value;
+        statistic = value;
     }
 
     public int getPeriod() {
-        return _periodInSeconds;
+        return periodInSeconds;
     }
 
     public void setPeriod(final int value) {
-        _periodInSeconds = value;
+        periodInSeconds = value;
     }
 
     public Operator getOperator() {
-        return _operator;
+        return operator;
     }
 
     public void setOperator(final Operator value) {
-        _operator = value;
+        operator = value;
     }
 
     public double getQuantityValue() {
-        return _quantityValue;
+        return quantityValue;
     }
 
     public void setQuantityValue(final double value) {
-        _quantityValue = value;
+        quantityValue = value;
     }
 
     public String getQuantityUnit() {
-        return _quantityUnit;
+        return quantityUnit;
     }
 
     public void setQuantityUnit(final String value) {
-        _quantityUnit = value;
+        quantityUnit = value;
     }
 
     public NagiosExtension getNagiosExtension() {
-        return _nagiosExtension;
+        return nagiosExtension;
     }
 
     public void setNagiosExtension(final NagiosExtension value) {
-        _nagiosExtension = value;
+        nagiosExtension = value;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck
