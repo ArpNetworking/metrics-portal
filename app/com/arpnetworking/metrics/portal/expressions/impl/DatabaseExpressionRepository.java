@@ -203,7 +203,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final IOException | RuntimeException e) {
-            // CHECKSTYLE.ON
+            // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to upsert expression")
                     .addData("expression", expression)

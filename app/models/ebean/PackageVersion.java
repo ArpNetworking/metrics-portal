@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Groupon.com
+ * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.Model;
 import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
@@ -26,26 +25,20 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Version;
 
 /**
- * Data model for hosts.
+ * Data model for package versions.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "hosts", schema = "portal")
-public class Host extends Model {
-
+@Table(name = "package_versions", schema = "portal")
+public class PackageVersion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-
-    @Version
-    @Column(name = "version")
-    private Long version;
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -58,11 +51,11 @@ public class Host extends Model {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "cluster")
-    private String cluster;
+    @Column(name = "version")
+    private String version;
 
-    @Column(name = "metrics_software_state")
-    private String metricsSoftwareState;
+    @Column(name = "uri")
+    private String uri;
 
     public Long getId() {
         return id;
@@ -70,14 +63,6 @@ public class Host extends Model {
 
     public void setId(final Long value) {
         id = value;
-    }
-
-    public Long getVersion() {
-        return version;
-    }
-
-    public void setVersion(final Long value) {
-        version = value;
     }
 
     public Timestamp getCreatedAt() {
@@ -104,20 +89,20 @@ public class Host extends Model {
         name = value;
     }
 
-    public String getCluster() {
-        return cluster;
+    public String getVersion() {
+        return version;
     }
 
-    public void setCluster(final String value) {
-        cluster = value;
+    public void setVersion(final String value) {
+        version = value;
     }
 
-    public String getMetricsSoftwareState() {
-        return metricsSoftwareState;
+    public String getUri() {
+        return uri;
     }
 
-    public void setMetricsSoftwareState(final String value) {
-        metricsSoftwareState = value;
+    public void setUri(final String value) {
+        uri = value;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

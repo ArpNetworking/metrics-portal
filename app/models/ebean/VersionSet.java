@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Groupon.com
+ * Copyright 2016 Groupon.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,37 +15,40 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.Model;
 import com.avaje.ebean.annotation.CreatedTimestamp;
 import com.avaje.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
-import javax.persistence.Version;
 
 /**
- * Data model for hosts.
+ * Data model for version sets. A <code>VersionSet</code> models a set of packages with corresponding versions.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Matthew Hayter (mhayter at groupon dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "hosts", schema = "portal")
-public class Host extends Model {
+@Table(name = "version_sets", schema = "portal")
+public class VersionSet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Version
-    @Column(name = "version")
-    private Long version;
+    @Column(name = "uuid")
+    private UUID uuid;
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -55,14 +58,16 @@ public class Host extends Model {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "version")
+    private String version;
 
-    @Column(name = "cluster")
-    private String cluster;
-
-    @Column(name = "metrics_software_state")
-    private String metricsSoftwareState;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "version_set_package_versions",
+            schema = "portal",
+            joinColumns = @JoinColumn(name = "version_set_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "package_version_id", referencedColumnName = "id"))
+    private List<PackageVersion> packageVersions;
 
     public Long getId() {
         return id;
@@ -72,12 +77,12 @@ public class Host extends Model {
         id = value;
     }
 
-    public Long getVersion() {
-        return version;
+    public UUID getUuid() {
+        return uuid;
     }
 
-    public void setVersion(final Long value) {
-        version = value;
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public Timestamp getCreatedAt() {
@@ -96,28 +101,20 @@ public class Host extends Model {
         updatedAt = value;
     }
 
-    public String getName() {
-        return name;
+    public String getVersion() {
+        return version;
     }
 
-    public void setName(final String value) {
-        name = value;
+    public void setVersion(final String value) {
+        version = value;
     }
 
-    public String getCluster() {
-        return cluster;
+    public List<PackageVersion> getPackageVersions() {
+        return packageVersions;
     }
 
-    public void setCluster(final String value) {
-        cluster = value;
-    }
-
-    public String getMetricsSoftwareState() {
-        return metricsSoftwareState;
-    }
-
-    public void setMetricsSoftwareState(final String value) {
-        metricsSoftwareState = value;
+    public void setPackageVersions(final List<PackageVersion> value) {
+        packageVersions = value;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
