@@ -21,6 +21,9 @@ class ReportData {
     service: string;
     statistic: string;
     timestamp: number;
+    points: any = { show: true };
+    lines: any = { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
+    bars: any = { show: false, stacked: false };
 
     constructor(data: any) {
         this.data = data.data;
@@ -29,6 +32,13 @@ class ReportData {
         this.service = data.service;
         this.statistic = data.statistic;
         this.timestamp = data.timestamp;
+
+        this.points.show = data.points.show;
+        this.lines.show = data.lines.show;
+        this.lines.fill = data.lines.fill;
+        this.lines.stacked = data.lines.stacked;
+        this.bars.show = data.bars.show;
+        this.bars.stacked = data.bars.stacked;
     }
 }
 

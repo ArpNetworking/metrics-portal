@@ -22,14 +22,19 @@ interface StatisticView {
     id: string;
     name: string;
     spec: GraphSpec;
-    paused: boolean;
     targetFrameRate: number;
-    start(): void;
+    render(): void;
+    start(paused: boolean): void;
+    setPause(pause: boolean): void;
     postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM): void;
     shutdown(): void;
     setViewDuration(duration: ViewDuration): void;
     updateColor(cvm: ConnectionVM): void;
     disconnectConnection(cvm: ConnectionVM): void;
+
+    renderDots: KnockoutObservable<boolean>;
+    renderStacked: KnockoutObservable<boolean>;
+    graphType: KnockoutObservable<string>;
 }
 
 export = StatisticView;

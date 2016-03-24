@@ -1,0 +1,22 @@
+
+input[type="checkbox"] {
+    display: none;
+}
+
+.modal {
+    left: 50%;
+    width: 500px;
+    margin-left: -250px;
+    margin-top: 20px;
+}
+
+.modal-header, h4, .close {
+    background-color: #5cb85c;
+    color:white !important;
+    text-align: center;
+    font-size: 30px;
+}
+
+.modal-footer {
+    background-color: #f9f9f9;
+}

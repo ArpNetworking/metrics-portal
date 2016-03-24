@@ -43,7 +43,7 @@ object ApplicationBuild extends Build {
     val akkaVersion = "2.4.1"
     val jacksonVersion = "2.6.2"
 
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings 
+    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.1",
@@ -159,6 +159,16 @@ object ApplicationBuild extends Build {
               <id>tingtu</id>
               <name>Ting Tu</name>
               <email>tingtu@groupon.com</email>
+              <organization>Groupon</organization>
+              <organizationUrl>http://www.groupon.com</organizationUrl>
+              <roles>
+                <role>developer</role>
+              </roles>
+            </developer>
+            <developer>
+              <id>PhoenixRion</id>
+              <name>Ryan Ascheman</name>
+              <email>rascheman@groupon.com</email>
               <organization>Groupon</organization>
               <organizationUrl>http://www.groupon.com</organizationUrl>
               <roles>

@@ -18,15 +18,44 @@
 class Series {
     //This is really an array of elements of [timestamp, data value]
     data: number[][] = [];
+    buffer: number [][] = [];
     label: string = "";
     points: any = { show: true };
-    lines: any = { show: true };
+    lines: any = { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
+    bars: any = { show: false, stacked: false };
     color: string = "black";
     colorSubscription: KnockoutSubscription;
+
+    static defaultPoints() {
+        return  { show: true };
+    }
+
+    static defaultLines() {
+        return { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
+    }
+
+    static defaultBars() {
+        return { show: false, stacked: false };
+    }
 
     constructor(label: string, color: string) {
         this.color = color;
         this.label = label;
+    }
+
+    pushData(timestamp: number, dataValue: number, paused: boolean) {
+        if (this.data.length == 0 || this.data[this.data.length - 1][0] < timestamp) {
+            if (paused) {
+                this.buffer.push([timestamp, dataValue]);
+            } else {
+                if (this.buffer.length > 0) {
+                    this.data = this.data.concat(this.buffer);
+                    this.buffer = [];
+                }
+
+                this.data.push([timestamp, dataValue]);
+            }
+        }
     }
 }
 

@@ -22,13 +22,66 @@
                 &nbsp;
                 <i id="graph-icon" class="fa fa-align-justify" data-bind="click: switchGraphLayout" data-toggle="tooltip" data-placement="right" title="Click for Row Layout"></i>
                 &nbsp;
-                <i id="render-icon" class="fa fa-spinner" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Stepped"></i>
+                <i id="render-icon" class="fa fa-circle-o-notch" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Continuous"></i>
             </h3>
             <div data-bind="foreach: {data: graphs, afterAdd: startGraph}" class="row sort-parent">
                 <div class="nomargin graph-container sortable" data-bind="attr: {'id': 'graph_div_' + id}, css: $root.getGraphWidth">
                     <div class="row">
                         <div data-bind="attr: {'id': id}" class="graph"></div>
                         <a href="#" class="col-md-3" data-bind="click: $root.removeGraphVM">Remove</a>
+                        <div align="right">
+                            <a class="config" align="right" data-toggle="modal" data-bind="attr:{'href': '#modal_'+id}" data-backdrop="true">Config</a>
+                        </div>
+                        <div data-bind="attr:{'id': 'modal_'+id}" class="modal fade" role="dialog">
+                            <div class=modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header" style="padding:20px 30px;">
+                                        <h4><span class="fa fa-cog"></span> Configure Graph</h4>
+                                    </div>
+                                    <div class="modal-body" style="padding:30px 40px; height:200px">
+                                        <div class="col-sm-6"><h5>Graph Types</h5>
+                                            <input type="radio" value="line" data-bind="checked: graphType, attr:{'id': 'lines_'+id}">
+                                            <label data-bind="attr:{'for': 'lines_'+id}">
+                                                Line Graph
+                                            </label><br>
+                                            <input type="radio" value="bar" data-bind="checked: graphType, attr:{'id': 'bars_'+id}">
+                                            <label data-bind="attr:{'for': 'bars_'+id}">
+                                                Bar Graph
+                                            </label><br>
+                                            <input type="radio" value="area" data-bind="checked: graphType, attr:{'id': 'area_'+id}">
+                                            <label data-bind="attr:{'for': 'area_'+id}">
+                                                Area Graph
+                                            </label><br>
+                                            <input type="radio" value="scatter" data-bind="checked: graphType, attr:{'id': 'scatter_'+id}">
+                                            <label data-bind="attr:{'for': 'scatter_'+id}">
+                                                Scatter Graph
+                                            </label>
+                                        </div>
+                                        <div class="col-sm-6"><h5>Graph Options</h5>
+                                            <div data-bind="visible: graphType()=='line'">
+                                                <input type="checkbox" data-bind="checked: renderDots, attr:{'id': 'dots_'+id}">
+                                                <label data-bind="attr:{'for': 'dots_'+id}">
+                                                    <i class="fa fa-square-o" data-bind="visible: !renderDots()"></i>
+                                                    <i class="fa fa-check-square-o" data-bind="visible: renderDots()"></i>
+                                                    Show Dots
+                                                </label><br>
+                                            </div>
+                                            <div data-bind="visible: graphType()=='bar'">
+                                                <input type="checkbox" data-bind="checked: renderStacked, attr:{'id': 'stacked_'+id}">
+                                                <label data-bind="attr:{'for': 'stacked_'+id}">
+                                                    <i class="fa fa-square-o" data-bind="visible: !renderStacked()"></i>
+                                                    <i class="fa fa-check-square-o" data-bind="visible: renderStacked()"></i>
+                                                    Show Stacked
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

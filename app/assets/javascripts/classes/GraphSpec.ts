@@ -18,11 +18,17 @@ class GraphSpec {
     service: string;
     metric: string;
     statistic: string;
+    points: any;
+    lines: any;
+    bars: any;
 
-    constructor(service: string, metric: string, statistic: string) {
+    constructor(service: string, metric: string, statistic: string, points: any, lines: any, bars: any) {
         this.service = service;
         this.metric = metric;
         this.statistic = statistic;
+        this.points = points;
+        this.lines = lines;
+        this.bars = bars;
     }
 }
 

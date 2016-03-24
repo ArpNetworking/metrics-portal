@@ -87,7 +87,10 @@ module GraphViewModel {
     export var fragment = ko.computed(() => {
         var servers = Hosts.connections().map((element) => { return element.server });
         var mygraphs = graphs().map((element: StatisticView) => {
-            return { service: element.spec.service, metric: element.spec.metric, stat: element.spec.statistic };
+            return {
+                service: element.spec.service, metric: element.spec.metric, stat: element.spec.statistic,
+                points: element.spec.points, lines: element.spec.lines, bars: element.spec.bars
+            };
         });
         var obj = { connections: servers, graphs: mygraphs, showMetrics: metricsVisible(), mode: mode() };
         return "#graph/" + encodeURIComponent(JSON.stringify(obj));
@@ -99,6 +102,33 @@ module GraphViewModel {
     export var getGraphWidth = ko.computed(function() {
         return graphWidth();
     });
+
+    var previousTimestamp: number = 0.0;
+    export var render = (timestamp: number) => {
+        // Render
+        if (previousTimestamp != null) {
+            var currentRate = 1000 / (timestamp - previousTimestamp);
+            if (currentRate > targetFrameRate) {
+                // Delayed animate
+                var stepTimeInMillis = 1000 * (1 / targetFrameRate - 1 / currentRate);
+                setTimeout(
+                    () => {
+                        window.requestAnimationFrame(render);
+                    },
+                    stepTimeInMillis);
+                return;
+            }
+        }
+
+        previousTimestamp = timestamp;
+
+        graphs().forEach((graph) => {
+            graph.render();
+        });
+
+        window.requestAnimationFrame(render)
+    };
+    window.requestAnimationFrame(render);
 
     export var doShade = ko.computed(function() {
         return Hosts.connections().some(function(element: ConnectionVM) {
@@ -145,7 +175,7 @@ module GraphViewModel {
     export var togglePause = () => {
         paused(!paused());
         for (var i = 0; i < graphs().length; i++) {
-            graphs()[i].paused = paused();
+            graphs()[i].setPause(paused());
         }
     };
 
@@ -164,12 +194,14 @@ module GraphViewModel {
         if (existing != undefined) {
             return;
         }
+
         var graph: StatisticView;
         if (mode() == "graph") {
             graph = new GraphVM(id, displayName, graphSpec);
         } else if (mode() == "gauge") {
             graph = new GaugeVM(id, displayName, graphSpec);
         }
+
         graph.setViewDuration(viewDuration);
         graph.targetFrameRate = targetFrameRate;
         graphsById[id] = graph;
@@ -177,7 +209,7 @@ module GraphViewModel {
     };
 
     export var startGraph = (graphElement: HTMLElement, index: number, gvm: StatisticView) => {
-        gvm.start();
+        gvm.start(paused());
     };
 
     export var disconnect = (cvm: ConnectionVM) => {
@@ -188,6 +220,7 @@ module GraphViewModel {
         viewDuration = new ViewDuration(window.min, window.max);
         for (var i = 0; i < graphs().length; i++) {
             graphs()[i].setViewDuration(viewDuration);
+            graphs()[i].render();
         }
     };
 
@@ -196,6 +229,7 @@ module GraphViewModel {
         if (toParse.substr(0, 7) == "#graph/") {
             toParse = toParse.substr(7);
         }
+
         var obj = JSON.parse(toParse);
         if (obj == null) {
             return;
@@ -215,10 +249,9 @@ module GraphViewModel {
         });
 
         graphs.forEach((graph) => {
-            addGraph(new GraphSpec(graph.service, graph.metric, graph.stat));
+            addGraph(new GraphSpec(graph.service, graph.metric, graph.stat, graph.points, graph.lines, graph.bars));
         });
     };
-
 
     export var idify = (value: string): string => {
         value = value.replace(/ /g, "_").toLowerCase();
@@ -234,7 +267,7 @@ module GraphViewModel {
     };
 
     export var reportData = (report: ReportData, cvm: ConnectionVM) => {
-        var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic));
+        var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic, report.points, report.lines, report.bars));
         var graph = graphsById[graphName];
         if (graph != undefined) {
             graph.postData(report.server, report.timestamp, report.data, cvm);
@@ -250,14 +283,14 @@ module GraphViewModel {
     export var switchGraphLayout = () => {
         if (graphLayout == 'GRID') {
             graphLayout = 'ROW';
-            $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4') });
+            $('.graph-container.col-md-4').each(function(index, element) { $(element).removeClass('col-md-4').addClass('col-md-12') });
             $('#graph-icon').prop("title", "Click for Grid Layout");
             $('#graph-icon').removeClass('fa-align-justify');
             $('#graph-icon').addClass('fa-th-large');
             graphWidth('');
         } else {
             graphLayout = 'GRID';
-            $('.graph-container').each(function(index, element) { $(element).addClass('col-md-4') });
+            $('.graph-container').each(function(index, element) { $(element).addClass('col-md-4').removeClass('col-md-12') });
             $('#graph-icon').prop("title", "Click for Row Layout");
             $('#graph-icon').removeClass('fa-th-large');
             $('#graph-icon').addClass('fa-align-justify');
@@ -283,7 +316,7 @@ module GraphViewModel {
 
     var skipSort = false;
     var graphLayout = 'GRID';
-    var targetFrameRate = 60;
+    var targetFrameRate = 1;
     var requireJsForceLoadKnockoutBindings = kob;
 }
 
