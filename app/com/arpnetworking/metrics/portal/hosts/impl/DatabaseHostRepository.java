@@ -116,10 +116,10 @@ public class DatabaseHostRepository implements HostRepository {
                     .where()
                     .eq("name", host.getHostname())
                     .findUnique();
-            boolean created = false;
+            boolean isNewHost = false;
             if (ebeanHost == null) {
                 ebeanHost = new models.ebean.Host();
-                created = true;
+                isNewHost = true;
             }
             ebeanHost.setCluster(host.getCluster().orNull());
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
@@ -130,7 +130,7 @@ public class DatabaseHostRepository implements HostRepository {
             LOGGER.info()
                     .setMessage("Upserted host")
                     .addData("host", host)
-                    .addData("isCreated", created)
+                    .addData("isCreated", isNewHost)
                     .log();
         } finally {
             transaction.end();
