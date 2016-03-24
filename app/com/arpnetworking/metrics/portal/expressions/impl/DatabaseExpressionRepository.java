@@ -182,10 +182,10 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .where()
                     .eq("uuid", expression.getId())
                     .findUnique();
-            boolean created = false;
+            boolean isNewExpression = false;
             if (ebeanExpression == null) {
                 ebeanExpression = new models.ebean.Expression();
-                created = true;
+                isNewExpression = true;
             }
 
             ebeanExpression.setCluster(expression.getCluster());
@@ -199,7 +199,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             LOGGER.info()
                     .setMessage("Upserted expression")
                     .addData("expression", expression)
-                    .addData("isCreated", created)
+                    .addData("isCreated", isNewExpression)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final IOException | RuntimeException e) {

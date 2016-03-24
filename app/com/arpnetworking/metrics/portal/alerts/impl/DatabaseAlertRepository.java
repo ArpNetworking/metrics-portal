@@ -183,10 +183,10 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .where()
                     .eq("uuid", alert.getId())
                     .findUnique();
-            boolean created = false;
+            boolean isNewAlert = false;
             if (ebeanAlert == null) {
                 ebeanAlert = new models.ebean.Alert();
-                created = true;
+                isNewAlert = true;
             }
 
             ebeanAlert.setCluster(alert.getCluster());
@@ -207,7 +207,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             LOGGER.info()
                     .setMessage("Upserted alert")
                     .addData("alert", alert)
-                    .addData("isCreated", created)
+                    .addData("isCreated", isNewAlert)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final IOException | RuntimeException e) {
