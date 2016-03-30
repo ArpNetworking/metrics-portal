@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
-import models.internal.ExpressionQuery;
 import models.internal.NagiosExtension;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
@@ -50,17 +49,6 @@ import javax.persistence.PersistenceException;
  * @author Deepika Misra (deepika at groupon dot com)
  */
 public class DatabaseAlertRepositoryTest extends WithApplication {
-
-    @Override
-    protected FakeApplication provideFakeApplication() {
-        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
-        return new FakeApplication(
-                new java.io.File("."),
-                Helpers.class.getClassLoader(),
-                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
-                new ArrayList<String>(),
-                null);
-    }
 
     @Before
     public void setup() {
@@ -364,6 +352,17 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         Assert.assertEquals(2, result.values().size());
         Assert.assertEquals(alert1.getId(), result.values().get(0).getId());
         Assert.assertEquals(alert2.getId(), result.values().get(1).getId());
+    }
+
+    @Override
+    protected FakeApplication provideFakeApplication() {
+        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
+        return new FakeApplication(
+                new java.io.File("."),
+                Helpers.class.getClassLoader(),
+                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
+                new ArrayList<String>(),
+                null);
     }
 
     private boolean isAlertEbeanEquivalent(final Alert alert, final models.ebean.Alert ebeanAlert) {

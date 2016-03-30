@@ -46,17 +46,6 @@ import javax.persistence.PersistenceException;
  */
 public class DatabaseExpressionRepositoryTest extends WithApplication {
 
-    @Override
-    protected FakeApplication provideFakeApplication() {
-        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
-        return new FakeApplication(
-                new java.io.File("."),
-                Helpers.class.getClassLoader(),
-                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
-                new ArrayList<String>(),
-                null);
-    }
-
     @Before
     public void setup() {
         exprRepo.open();
@@ -347,6 +336,17 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         Assert.assertEquals(2, result.values().size());
         Assert.assertEquals(expr1.getId(), result.values().get(0).getId());
         Assert.assertEquals(expr2.getId(), result.values().get(1).getId());
+    }
+
+    @Override
+    protected FakeApplication provideFakeApplication() {
+        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
+        return new FakeApplication(
+                new java.io.File("."),
+                Helpers.class.getClassLoader(),
+                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
+                new ArrayList<String>(),
+                null);
     }
 
     private boolean isExpressionEbeanEquivalent(

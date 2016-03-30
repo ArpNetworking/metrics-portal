@@ -15,7 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.models.ebean;
 
+import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.avaje.ebean.Ebean;
+import com.google.common.collect.ImmutableMap;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
 import models.ebean.VersionSpecification;
@@ -25,6 +27,8 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
+import play.test.FakeApplication;
+import play.test.Helpers;
 import play.test.WithApplication;
 
 import java.util.ArrayList;
@@ -89,6 +93,17 @@ public class VersionSpecificationTest extends WithApplication {
         attribMatchers.add(hasKV("colo", "north-america"));
         attribMatchers.add(hasKV("dogfood-group", "alpha"));
         Assert.assertThat(attribs, Matchers.containsInAnyOrder(attribMatchers));
+    }
+
+    @Override
+    protected FakeApplication provideFakeApplication() {
+        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
+        return new FakeApplication(
+                new java.io.File("."),
+                Helpers.class.getClassLoader(),
+                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
+                new ArrayList<String>(),
+                null);
     }
 
     private Matcher<? super VersionSpecificationAttribute> hasKV(final String k, final String v) {

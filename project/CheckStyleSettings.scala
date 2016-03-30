@@ -38,7 +38,8 @@ object CheckstyleSettings {
         inputDir
       )
 
-      System.setProperty("samedir", buildDir.toString)
+        System.setProperty("header_file", (buildDir / "al2").toString)
+        System.setProperty("suppressions_file", (buildDir / "checkstyle-suppressions.xml").toString)
 
       trappingExits {
         CsMain(args.toArray)
