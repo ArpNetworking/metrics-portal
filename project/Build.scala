@@ -40,21 +40,20 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.4.1"
-    val jacksonVersion = "2.6.2"
+    val akkaVersion = "2.4.2"
+    val jacksonVersion = "2.7.3"
 
     val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
-      "cglib" % "cglib" % "3.1",
-      "com.arpnetworking.build" % "build-resources" % "1.0.2",
-      "com.arpnetworking.commons" % "commons" % "1.1.0",
-      "com.arpnetworking.logback" % "logback-steno" % "1.11.0",
+      "cglib" % "cglib" % "3.2.1",
+      "com.arpnetworking.build" % "build-resources" % "1.0.5",
+      "com.arpnetworking.commons" % "commons" % "1.4.0",
+      "com.arpnetworking.logback" % "logback-steno" % "1.13.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
       "com.arpnetworking.metrics" % "metrics-client" % "0.4.2",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
-      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk7" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
       "com.google.code.findbugs" % "annotations" % "3.0.0",
@@ -84,7 +83,10 @@ object ApplicationBuild extends Build {
       "org.webjars" % "knockout" % "3.4.0",
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
-      "org.webjars" % "underscorejs" % "1.6.0-3"
+      "org.webjars" % "underscorejs" % "1.6.0-3",
+      "junit" % "junit" % "4.12" % "test",
+      "org.mockito" % "mockito-core" % "1.10.19" % "test",
+      "org.hamcrest" % "java-hamcrest" % "2.0.0.0" % "test"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean).settings(
@@ -213,7 +215,7 @@ object ApplicationBuild extends Build {
       ),
 
       devSettings := Seq(("config.resource", "portal.application.conf")),
-      javaOptions in Test += "-Dconfig.file=conf/portal.application.conf",
+      javaOptions += "-Dconfig.file=conf/portal.application.conf",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
       routesGenerator := InjectedRoutesGenerator,

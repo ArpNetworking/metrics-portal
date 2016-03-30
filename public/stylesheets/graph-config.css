@@ -11,10 +11,10 @@ input[type="checkbox"] {
 }
 
 .modal-header, h4, .close {
-    background-color: #5cb85c;
+    background-color: #666666;
     color:white !important;
     text-align: center;
-    font-size: 30px;
+    font-size: 20px;
 }
 
 .modal-footer {

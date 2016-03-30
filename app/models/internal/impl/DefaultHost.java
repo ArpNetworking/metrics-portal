@@ -119,7 +119,7 @@ public final class DefaultHost implements Host {
          * Public constructor.
          */
         public Builder() {
-            super(DefaultHost.class);
+            super(DefaultHost::new);
         }
 
         /**

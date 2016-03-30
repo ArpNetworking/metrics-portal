@@ -108,7 +108,7 @@ public final class DefaultQuantity implements Quantity {
          * Public constructor.
          */
         public Builder() {
-            super(DefaultQuantity.class);
+            super(DefaultQuantity::new);
         }
 
         /**

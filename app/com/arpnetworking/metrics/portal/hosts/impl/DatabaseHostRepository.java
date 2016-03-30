@@ -436,13 +436,13 @@ public class DatabaseHostRepository implements HostRepository {
                 final String sql,
                 final Map<String, Object> parameters) {
             final RawSql rawSql = RawSqlBuilder.parse(sql)
-                    .columnMapping("t0.id", "_id")
-                    .columnMapping("t0.version", "_version")
-                    .columnMapping("t0.created_at", "_createdAt")
-                    .columnMapping("t0.updated_at", "_updatedAt")
-                    .columnMapping("t0.name", "_name")
-                    .columnMapping("t0.cluster", "_cluster")
-                    .columnMapping("t0.metrics_software_state", "_metricsSoftwareState")
+                    .columnMapping("t0.id", "id")
+                    .columnMapping("t0.version", "version")
+                    .columnMapping("t0.created_at", "createdAt")
+                    .columnMapping("t0.updated_at", "updatedAt")
+                    .columnMapping("t0.name", "name")
+                    .columnMapping("t0.cluster", "cluster")
+                    .columnMapping("t0.metrics_software_state", "metricsSoftwareState")
                     .create();
             final Query<models.ebean.Host> ebeanQuery = Ebean.find(models.ebean.Host.class).setRawSql(rawSql);
             for (final Map.Entry<String, Object> parameter : parameters.entrySet()) {

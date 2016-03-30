@@ -146,7 +146,7 @@ public final class DefaultExpression implements Expression {
          * Public constructor.
          */
         public Builder() {
-            super(DefaultExpression.class);
+            super(DefaultExpression::new);
         }
 
         /**

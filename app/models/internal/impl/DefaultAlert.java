@@ -229,7 +229,7 @@ public final class DefaultAlert implements Alert {
          * Public constructor.
          */
         public Builder() {
-            super(DefaultAlert.class);
+            super(DefaultAlert::new);
         }
 
         /**

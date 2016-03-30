@@ -117,7 +117,7 @@ public final class NagiosExtension {
          * Public constructor.
          */
         public Builder() {
-            super(NagiosExtension.class);
+            super(NagiosExtension::new);
         }
 
         /**
