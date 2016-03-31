@@ -15,6 +15,7 @@ input[type="checkbox"] {
     color:white !important;
     text-align: center;
     font-size: 20px;
+    padding: 1px 40px;
 }
 
 .modal-footer {
