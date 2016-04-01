@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.hosts.impl;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.arpnetworking.jackson.BuilderDeserializer;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -25,7 +24,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import models.internal.Host;
@@ -346,7 +344,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
         final List<Host> hosts = Lists.newArrayList();
         for (final SearchHit hit : response.getHits().hits()) {
             try {
-                hosts.add(OBJECT_MAPPER.readValue(hit.getSourceAsString(), Host.class));
+                hosts.add(OBJECT_MAPPER.readValue(hit.getSourceAsString(), DefaultHost.class));
             } catch (final IOException e) {
                 LOGGER.error()
                         .setMessage("Unable to deserialize host")
@@ -406,17 +404,9 @@ public final class ElasticSearchHostRepository implements HostRepository {
 
     private static final String INDEX = "hosts";
     private static final String TYPE = "host";
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchHostRepository.class);
     private static final int MAX_EXPANSIONS = 10000;
-
-    static {
-        final SimpleModule module = new SimpleModule("ElasticSearchHostRepository");
-        module.addDeserializer(
-                Host.class,
-                BuilderDeserializer.of(DefaultHost.Builder.class));
-        OBJECT_MAPPER.registerModule(module);
-    }
 }
 
 
