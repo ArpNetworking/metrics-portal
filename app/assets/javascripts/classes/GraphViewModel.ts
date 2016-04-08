@@ -266,7 +266,7 @@ module GraphViewModel {
         metricsList.bind(newMetrics.metrics);
     };
 
-    export var reportData = (report: ReportData, cvm: ConnectionVM) => {
+    export var reportData = (report: ReportData, cvm: ConnectionVM): void => {
         var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic, report.points, report.lines, report.bars));
         var graph = graphsById[graphName];
         if (graph != undefined) {

@@ -23,24 +23,27 @@ import MetricsListData = require("../MetricsListData");
 import NewMetricData = require("../NewMetricData");
 import ReportData = require("../ReportData");
 import GraphSpec = require("../GraphSpec");
+import MetricsBrowseList = require("../MetricsBrowseList");
 
 declare var require;
 class V2Protocol extends BaseProtocol {
-    graphViewModel: any;
+    private graphViewModel: any;
+    metricsList: MetricsBrowseList;
 
     public constructor(cm:ConnectionModel) {
         super(cm);
         this.graphViewModel = require('../GraphViewModel');
+        this.metricsList = this.graphViewModel.metricsList;
     }
 
     public processMessage(data:any, cvm:ConnectionVM) {
         if (data.command == "metricsList") {
             var mlCommand:Command<MetricsListData> = data;
-            this.graphViewModel.loadFolderMetricsList(mlCommand.data);
+            this.metricsList.bind(mlCommand.data.metrics);
         }
         else if (data.command == "newMetric") {
             var nmCommand:Command<NewMetricData> = data;
-            this.graphViewModel.addNewMetric(nmCommand.data);
+            this.metricsList.addNewMetric(nmCommand.data);
         }
         else if (data.command == "reportMetric") {
             var rdCommand:Command<ReportData> = data;
