@@ -23,6 +23,7 @@ import FolderNodeVM = require("./FolderNodeVM");
 import MetricNodeVM = require("./MetricNodeVM");
 import StatisticNodeVM = require("./StatisticNodeVM");
 import Series = require("./Series");
+import NewMetricData = require("./NewMetricData");
 
 class MetricsBrowseList {
     serviceNodes: KnockoutObservableArray<ServiceNodeVM> = ko.observableArray<ServiceNodeVM>();
@@ -31,16 +32,11 @@ class MetricsBrowseList {
         var start = Date.now();
         console.debug("starting binding");
         serviceList.forEach((service) => {
-            var nodeVM = this.findServiceNode(service.name);
-            if (nodeVM == null) {
-                nodeVM = new ServiceNodeVM(service.name, this.idify(service.name));
-                this.serviceNodes.push(nodeVM);
-                this.sortNodeArray(this.serviceNodes);
-            }
+            var serviceNodeVM = this.findOrCreateService(service);
 
             service.children.forEach((metric) => {
                 var nameParts = this.getPathParts(metric.name);
-                var metricNode = this.addMetric(nameParts, nodeVM);
+                var metricNode = this.addMetric(nameParts, serviceNodeVM);
                 metric.children.forEach((statistic) => {
                     this.addStatistic(metricNode, new GraphSpec(service.name, metric.name, statistic.name,
                                                                 Series.defaultPoints(), Series.defaultLines(), Series.defaultBars()))
@@ -49,6 +45,24 @@ class MetricsBrowseList {
         });
         var end = Date.now();
         console.log("done binding, took " + (end - start) + " millis", this.serviceNodes());
+    }
+
+    private findOrCreateService(service: ServiceData): ServiceNodeVM {
+        var nodeVM = this.findServiceNode(service.name);
+        if (nodeVM == null) {
+            nodeVM = new ServiceNodeVM(service.name, this.idify(service.name));
+            this.serviceNodes.push(nodeVM);
+            this.sortNodeArray(this.serviceNodes);
+        }
+        return nodeVM;
+    }
+
+    public addNewMetric(metric: NewMetricData): void {
+        var serviceNodeVM: ServiceNodeVM = this.findOrCreateService({name: metric.service, children: []});
+        var nameParts: string[] = this.getPathParts(metric.metric);
+        var metricNode = this.addMetric(nameParts, serviceNodeVM);
+        this.addStatistic(metricNode, new GraphSpec(metric.service, metric.metric, metric.statistic,
+            Series.defaultPoints(), Series.defaultLines(), Series.defaultBars()))
     }
 
     public search(needle: string) {
@@ -123,7 +137,7 @@ class MetricsBrowseList {
         }
     }
 
-    private addMetric(nameParts: string[], node: BrowseNode) {
+    private addMetric(nameParts: string[], node: BrowseNode): BrowseNode {
         // Traverse the tree
         var name = nameParts.shift();
         var nextNode;

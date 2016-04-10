@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/// <reference path="../GraphViewModel"/>
 
 import BaseProtocol = require("./BaseProtocol");
 import GraphViewModel = require("../GraphViewModel");
@@ -23,24 +24,27 @@ import MetricsListData = require("../MetricsListData");
 import NewMetricData = require("../NewMetricData");
 import ReportData = require("../ReportData");
 import GraphSpec = require("../GraphSpec");
+import MetricsBrowseList = require("../MetricsBrowseList");
 
 declare var require;
 class V1Protocol extends BaseProtocol {
     private graphViewModel: any;
+    private metricsList: MetricsBrowseList;
 
     public constructor(cm: ConnectionModel) {
         super(cm);
         this.graphViewModel = require('../GraphViewModel');
+        this.metricsList = this.graphViewModel.metricsList;
     }
 
     public processMessage(data: any, cvm: ConnectionVM) {
         if (data.command == "metricsList") {
             var mlCommand: Command<MetricsListData> = data;
-            this.graphViewModel.loadFolderMetricsList(mlCommand.data);
+            this.metricsList.bind(mlCommand.data.metrics);
         }
         else if (data.command == "newMetric") {
             var nmCommand: Command<NewMetricData> = data;
-            this.graphViewModel.addNewMetric(nmCommand.data);
+            this.metricsList.addNewMetric(nmCommand.data);
         }
         else if (data.command == "report") {
             var rdCommand: Command<ReportData> = data;
