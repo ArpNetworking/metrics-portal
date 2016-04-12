@@ -18,7 +18,14 @@ Building:
 
 ### Installing
 
+#### Manual
+
 The artifacts from the build are in *metrics-portal/target/universal/stage* and should be copied to an appropriate directory on the Metrics Portal host(s).
+
+#### Docker
+
+If you use Docker, we publish a [base docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/) that makes it easy for you to layer configuration on top of.  Create a Docker image based on the image arpnetworking/metrics-portal.  Configuration files are currently embedded in the jar as resources.  You can override the configuration by importing portal.application.conf in your configuration file and then setting the CONFIG_FILE environment variable to -Dconfig.file="your_file_path".  In addition, you can specify CONFIG_FILE (defaults to -Dconfig.resource=portal.application.conf) and PARAMS (defaults to $CONFIG_FILE) environment variables to control startup.
+
 
 ### Execution
 
