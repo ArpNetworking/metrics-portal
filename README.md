@@ -1,6 +1,19 @@
 Metrics Portal
 ==============
 
+<a href="https://raw.githubusercontent.com/ArpNetworking/metrics-portal/master/LICENSE">
+    <img src="https://img.shields.io/hexpm/l/plug.svg"
+         alt="License: Apache 2">
+</a>
+<a href="https://travis-ci.org/ArpNetworking/metrics-portal/">
+    <img src="https://travis-ci.org/ArpNetworking/metrics-portal.png?branch=master"
+         alt="Travis Build">
+</a>
+<a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.metrics%22%20a%3A%22metrics-portal_2.11%22">
+    <img src="https://img.shields.io/maven-central/v/com.arpnetworking.metrics/metrics-portal_2.11.svg"
+         alt="Maven Artifact">
+</a>
+
 Provides a web interface for metrics. This includes viewing telemetry (aka streaming statistics) from one or more hosts running [Tsd Aggregator](https://github.com/ArpNetworking/metrics/blob/master/tsd/tsd-aggregator/README.md) and [ReMet Proxy](https://github.com/ArpNetworking/metrics/blob/master/remet-proxy/README.md). The web interface also provides for browsing hosts reporting metrics as well as viewing and editing alerts and expressions.
 
 Setup
