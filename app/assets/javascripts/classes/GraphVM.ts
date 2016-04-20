@@ -41,6 +41,8 @@ window.requestAnimationFrame = (function () {
 class GraphVM implements StatisticView {
     id: string;
     name: string;
+    title: string;
+    subtitle: string = "";
     started: boolean = false;
     container: HTMLElement = null;
     data: Series[] = [];
@@ -62,6 +64,14 @@ class GraphVM implements StatisticView {
         this.id = id;
         this.name = name;
         this.spec = spec;
+
+        var parenIndex = name.lastIndexOf('(') - 1;
+        if (parenIndex > 0) {
+            this.subtitle = name.substring(parenIndex+1);
+            this.title = name.substring(0, parenIndex > 40 ? 40 : parenIndex);
+        } else {
+            this.title = name;
+        }
 
         this.graphType.subscribe((type: string) => {
             if (type == "scatter") {
@@ -298,7 +308,8 @@ class GraphVM implements StatisticView {
                 timeMode: "local"
 
             },
-            title: this.name,
+            title: this.title,
+            subtitle: this.subtitle,
             HtmlText: false,
             mouse: {
                 track: false,
