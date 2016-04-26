@@ -15,9 +15,12 @@
  */
 package controllers;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
@@ -25,13 +28,17 @@ import com.google.inject.Inject;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
 import models.internal.QueryResult;
+import models.internal.impl.DefaultExpression;
 import models.view.PagedContainer;
 import models.view.Pagination;
+import net.sf.oval.exception.ConstraintsViolatedException;
 import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,6 +62,38 @@ public class ExpressionController extends Controller {
     @Inject
     public ExpressionController(final Configuration configuration, final ExpressionRepository expressionRepository) {
         this(configuration.getInt("expression.limit", DEFAULT_MAX_LIMIT), expressionRepository);
+    }
+
+    /**
+     * Adds an expression in the expression repository.
+     *
+     * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
+     */
+    public Result addOrUpdate() {
+        final Expression expression;
+        try {
+            final models.view.Expression viewExpression = buildViewExpression(request().body());
+            expression = convertToInternalExpression(viewExpression);
+        } catch (final IOException | ConstraintsViolatedException | IllegalArgumentException e) {
+            LOGGER.error()
+                    .setMessage("Failed to build an expression.")
+                    .setThrowable(e)
+                    .log();
+            return badRequest("Invalid request body.");
+        }
+
+        try {
+            _expressionRepository.addOrUpdateExpression(expression);
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Failed to add an expression.")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
+        return ok();
     }
 
     /**
@@ -141,6 +180,25 @@ public class ExpressionController extends Controller {
                         conditions))));
     }
 
+    private models.view.Expression buildViewExpression(final Http.RequestBody body) throws IOException {
+        final JsonNode jsonBody = body.asJson();
+        if (jsonBody == null) {
+            throw new IOException();
+        }
+        return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Expression.class);
+    }
+
+    private Expression convertToInternalExpression(final models.view.Expression viewExpression) {
+        return new DefaultExpression.Builder()
+                .setId(viewExpression.getId() == null ? null : UUID.fromString(viewExpression.getId()))
+                .setCluster(viewExpression.getCluster())
+                .setMetric(viewExpression.getMetric())
+                .setService(viewExpression.getService())
+                .setScript(viewExpression.getScript())
+                .build();
+
+    }
+
     private models.view.Expression internalModelToViewModel(final Expression expression) {
         final models.view.Expression viewExpression = new models.view.Expression();
         viewExpression.setCluster(expression.getCluster());
@@ -177,4 +235,5 @@ public class ExpressionController extends Controller {
 
     private static final int DEFAULT_MAX_LIMIT = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionController.class);
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

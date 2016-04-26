@@ -17,9 +17,7 @@ package models.view;
 
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
-
-import java.util.Collections;
-import java.util.Map;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * View model of <code>Alert</code>. Play view models are mutable.
@@ -109,12 +107,12 @@ public final class Alert {
         return _value;
     }
 
-    public void setExtensions(final Map<String, Object> extensions) {
+    public void setExtensions(final ImmutableMap<String, Object> extensions) {
         _extensions = extensions;
     }
 
-    public Map<String, Object> getExtensions() {
-        return Collections.unmodifiableMap(_extensions);
+    public ImmutableMap<String, Object> getExtensions() {
+        return _extensions;
     }
 
     /**
@@ -149,5 +147,5 @@ public final class Alert {
     private String _period;
     private String _operator;
     private Quantity _value;
-    private Map<String, Object> _extensions;
+    private ImmutableMap<String, Object> _extensions;
 }
