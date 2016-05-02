@@ -284,6 +284,9 @@ object ApplicationBuild extends Build {
             <Class name="~_routes_.*"/>
           </Match>
           <Match>
+            <Class name="~portal.Routes.*"/>
+          </Match>
+          <Match>
             <Class name="~controllers\.routes.*"/>
           </Match>
           <Match>

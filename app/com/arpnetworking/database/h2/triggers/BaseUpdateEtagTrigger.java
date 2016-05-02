@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.database.h2.triggers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.h2.api.Trigger;
 
 import java.sql.Connection;
@@ -53,6 +54,7 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
      * {@inheritDoc}
      */
     @Override
+    @SuppressFBWarnings("SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING")
     public void fire(final Connection conn, final Object[] oldRow, final Object[] newRow) throws SQLException {
         try (PreparedStatement stmt = conn.prepareStatement(_queryStatement)) {
             stmt.execute();
