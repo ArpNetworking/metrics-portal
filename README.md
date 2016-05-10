@@ -16,6 +16,15 @@ Metrics Portal
 
 Provides a web interface for metrics. This includes viewing telemetry (aka streaming statistics) from one or more hosts running [Tsd Aggregator](https://github.com/ArpNetworking/metrics/blob/master/tsd/tsd-aggregator/README.md) and [ReMet Proxy](https://github.com/ArpNetworking/metrics/blob/master/remet-proxy/README.md). The web interface also provides for browsing hosts reporting metrics as well as viewing and editing alerts and expressions.
 
+Evergreen
+---------
+
+MetricsPortal provides an endpoint for hosts running the Metrics Aggregator Daemon (MAD) to call and retrieve a set of packages and corresponding versions
+that relate to MAD that should be installed on the host; i.e. installations of MAD can be kept up-to-date by querying Metrics
+Portal and installing the packages returned. This endpoint is:
+
+# TODO: the route will be created with completion of Evergreen support.
+
 Setup
 -----
 
