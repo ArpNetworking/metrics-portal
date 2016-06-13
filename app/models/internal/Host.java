@@ -21,7 +21,7 @@ import com.google.common.base.Optional;
 /**
  * Internal model interface for a host.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public interface Host {
 

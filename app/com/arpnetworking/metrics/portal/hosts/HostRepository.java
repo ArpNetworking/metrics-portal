@@ -24,7 +24,7 @@ import models.internal.QueryResult;
  * Interface for repository of hosts available for metrics. The repository is
  * designed around the host name as the primary key.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  * @author Ting Tu (tingtu at groupon dot com)
  */
 public interface HostRepository extends AutoCloseable {

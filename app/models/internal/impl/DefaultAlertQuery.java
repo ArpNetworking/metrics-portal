@@ -28,7 +28,7 @@ import java.util.Optional;
 /**
  * Default internal model implementation for an alert query.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class DefaultAlertQuery implements AlertQuery {

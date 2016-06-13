@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * Internal model interface for an alert query.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public interface AlertQuery {
 

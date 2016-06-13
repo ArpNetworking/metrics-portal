@@ -31,7 +31,7 @@ import javax.inject.Singleton;
 /**
  * Metrics portal generic Play controller.
  *
- * @author Brandon Arp (barp at groupon dot com)
+ * @author Brandon Arp (brandonarp at gmail dot com)
  */
 @Singleton
 public final class MetaController extends Controller {

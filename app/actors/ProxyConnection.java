@@ -34,7 +34,7 @@ import java.util.Queue;
 /**
  * Actor to proxy between two Web Socket connections.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public class ProxyConnection extends UntypedActor {
 

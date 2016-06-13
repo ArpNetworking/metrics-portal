@@ -27,7 +27,7 @@ import java.util.Optional;
  *
  * @param <T> The result value type.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class DefaultQueryResult<T> implements QueryResult<T> {
 

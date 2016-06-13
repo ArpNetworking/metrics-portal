@@ -31,7 +31,7 @@ import play.mvc.Result;
  *
  * TODO(vkoskela): Add to shared library with Play dependency (tsd-core?) [MAI-?]
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class MetricsActionWrapper extends Action.Simple {
 
