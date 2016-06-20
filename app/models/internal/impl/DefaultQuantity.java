@@ -29,7 +29,7 @@ import net.sf.oval.constraint.NotNull;
  *
  * TODO(vkoskela): This should probably be unified with the tsd-core type Quantity.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class DefaultQuantity implements Quantity {
@@ -100,7 +100,7 @@ public final class DefaultQuantity implements Quantity {
     /**
      * Implementation of builder pattern for <code>DefaultQuantity</code>.
      *
-     * @author Ville Koskela (vkoskela at groupon dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
      */
     public static final class Builder extends OvalBuilder<Quantity> {
 

@@ -42,7 +42,7 @@ import javax.inject.Singleton;
 /**
  * Metrics portal host controller. Exposes APIs to query and manipulate hosts.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Singleton
 public class HostController extends Controller {

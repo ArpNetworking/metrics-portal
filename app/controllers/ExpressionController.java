@@ -48,7 +48,7 @@ import javax.inject.Singleton;
 /**
  * Metrics portal expression controller. Exposes APIs to query and manipulate expressions.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Singleton
 public class ExpressionController extends Controller {

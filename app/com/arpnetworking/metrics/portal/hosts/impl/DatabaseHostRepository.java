@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 /**
  * Implementation of <code>HostRepository</code> using SQL database.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public class DatabaseHostRepository implements HostRepository {
 

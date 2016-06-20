@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableMap;
 /**
  * View model of <code>Alert</code>. Play view models are mutable.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class Alert {

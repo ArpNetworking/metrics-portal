@@ -118,9 +118,9 @@ object ApplicationBuild extends Build {
 
           <developers>
             <developer>
-              <id>brandonarp</id>
-              <name>Brandon Arp</name>
-              <email>barp@groupon.com</email>
+              <id>alanshield</id>
+              <name>Alan Shield</name>
+              <email>ashield@groupon.com</email>
               <organization>Groupon</organization>
               <organizationUrl>http://www.groupon.com</organizationUrl>
               <roles>
@@ -128,11 +128,11 @@ object ApplicationBuild extends Build {
               </roles>
             </developer>
             <developer>
-              <id>villekoskela</id>
-              <name>Ville Koskela</name>
-              <email>vkoskela@groupon.com</email>
-              <organization>Groupon</organization>
-              <organizationUrl>http://www.groupon.com</organizationUrl>
+              <id>brandonarp</id>
+              <name>Brandon Arp</name>
+              <email>brandonarp@gmail.com</email>
+              <organization>ArpNetworking</organization>
+              <organizationUrl>http://www.arpnetworking.com</organizationUrl>
               <roles>
                 <role>developer</role>
               </roles>
@@ -141,6 +141,16 @@ object ApplicationBuild extends Build {
               <id>deepikamisra</id>
               <name>Deepika Misra</name>
               <email>deepika@groupon.com</email>
+              <organization>Groupon</organization>
+              <organizationUrl>http://www.groupon.com</organizationUrl>
+              <roles>
+                <role>developer</role>
+              </roles>
+            </developer>
+            <developer>
+              <id>matthewhayter</id>
+              <name>Matthew Hayter</name>
+              <email>mhayter@groupon.com</email>
               <organization>Groupon</organization>
               <organizationUrl>http://www.groupon.com</organizationUrl>
               <roles>
@@ -158,6 +168,16 @@ object ApplicationBuild extends Build {
               </roles>
             </developer>
             <developer>
+              <id>ryanascheman</id>
+              <name>Ryan Ascheman</name>
+              <email>rascheman@groupon.com</email>
+              <organization>Groupon</organization>
+              <organizationUrl>http://www.groupon.com</organizationUrl>
+              <roles>
+                <role>developer</role>
+              </roles>
+            </developer>
+            <developer>
               <id>tingtu</id>
               <name>Ting Tu</name>
               <email>tingtu@groupon.com</email>
@@ -168,11 +188,11 @@ object ApplicationBuild extends Build {
               </roles>
             </developer>
             <developer>
-              <id>PhoenixRion</id>
-              <name>Ryan Ascheman</name>
-              <email>rascheman@groupon.com</email>
-              <organization>Groupon</organization>
-              <organizationUrl>http://www.groupon.com</organizationUrl>
+              <id>villekoskela</id>
+              <name>Ville Koskela</name>
+              <email>ville.koskela@inscopemetrics.com</email>
+              <organization>Inscope Metrics</organization>
+              <organizationUrl>http://www.inscopemetrics.com</organizationUrl>
               <roles>
                 <role>developer</role>
               </roles>

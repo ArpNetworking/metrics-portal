@@ -65,8 +65,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementation of <code>HostRepository</code> using Elastic Search.
  *
  * @author Ruchita Venugopal (rvenugopal at groupon dot com)
- * @author Brandon Arp (barp at groupon dot com)
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Brandon Arp (brandonarp at gmail dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class ElasticSearchHostRepository implements HostRepository {
 
