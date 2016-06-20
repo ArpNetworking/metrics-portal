@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * Metrics portal proxy controller. Exposes API to proxy streaming to application hosts.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public class ProxyController extends Controller {
 

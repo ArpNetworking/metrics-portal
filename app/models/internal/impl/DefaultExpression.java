@@ -28,7 +28,7 @@ import java.util.UUID;
 /**
  * Default internal model implementation for an expression.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class DefaultExpression implements Expression {

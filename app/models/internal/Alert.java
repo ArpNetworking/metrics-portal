@@ -22,7 +22,7 @@ import java.util.UUID;
 /**
  * Internal model interface for an alert.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public interface Alert {
 

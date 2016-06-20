@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementation of <code>HostRepository</code> using a <code>Map</code>. This
  * is <b>not</b> intended for production usage.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class LocalHostRepository implements HostRepository {
 

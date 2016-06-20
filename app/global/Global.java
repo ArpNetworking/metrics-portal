@@ -28,7 +28,7 @@ import play.libs.Json;
 /**
  * Setup the global application components.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class Global extends GlobalSettings {
 

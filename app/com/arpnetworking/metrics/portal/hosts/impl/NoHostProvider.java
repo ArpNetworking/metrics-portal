@@ -27,7 +27,7 @@ import play.Configuration;
  * The primary purpose of this class is to demonstrate how to implement a
  * host provider.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public class NoHostProvider extends UntypedActor {
 

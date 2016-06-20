@@ -28,7 +28,7 @@ import javax.inject.Inject;
 /**
  * Request handler for the application.
  *
- * @author Brandon Arp (barp at groupon dot com)
+ * @author Brandon Arp (brandonarp at gmail dot com)
  */
 public class RequestHandler extends DefaultHttpRequestHandler {
     /**

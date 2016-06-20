@@ -28,7 +28,7 @@ import net.sf.oval.constraint.NotNull;
 /**
  * Default internal model implementation for a host.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class DefaultHost implements Host {
@@ -111,7 +111,7 @@ public final class DefaultHost implements Host {
     /**
      * Implementation of builder pattern for <code>DefaultHost</code>.
      *
-     * @author Ville Koskela (vkoskela at groupon dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
      */
     public static final class Builder extends OvalBuilder<Host> {
 

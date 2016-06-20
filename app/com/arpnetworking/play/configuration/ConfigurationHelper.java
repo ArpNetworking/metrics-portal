@@ -29,7 +29,7 @@ import java.io.File;
 /**
  * Utility methods that provide common patterns when interacting with Play's <code>Configuration</code> class.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class ConfigurationHelper {
 
