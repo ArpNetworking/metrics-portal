@@ -34,7 +34,7 @@ import play.Configuration;
  * class is to for development and testing. This is <b>not</b> intended for
  * production usage.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class RandomHostProvider extends UntypedActor {
 

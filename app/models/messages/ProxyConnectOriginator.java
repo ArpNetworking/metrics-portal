@@ -20,7 +20,7 @@ import play.mvc.WebSocket;
 /**
  * Message sent when web socket connection is established to the proxy originator.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public class ProxyConnectOriginator {
 

@@ -142,7 +142,7 @@
     </script>
 
     <script type="text/html" id="metric_node">
-        <a data-bind="click: expandMe"><span class="fa fa-area-chart">&nbsp;</span><span data-bind="text: name"></span></a>
+        <a data-bind="click: expandMe"><span class="fa fa-area-chart">&nbsp;</span><span data-bind="text: name, attr: { title: metricName }"></span></a>
         <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
             <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
             </li>

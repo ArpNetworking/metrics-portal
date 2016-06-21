@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @param <T> The result type to paginate through.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class PagedContainer<T> {

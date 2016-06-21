@@ -18,7 +18,7 @@ package models.internal;
 /**
  * The type of alert context. Either host or cluster.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public enum Context {
 

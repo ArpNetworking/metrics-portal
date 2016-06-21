@@ -33,7 +33,7 @@ import java.util.UUID;
 /**
  * Default internal model implementation for an alert.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class DefaultAlert implements Alert {

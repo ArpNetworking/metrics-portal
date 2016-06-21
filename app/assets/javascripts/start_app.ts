@@ -63,6 +63,9 @@ requirejs.config({
         },
         'bootstrap' : {
             deps : [ 'jquery' ]
+        },
+        'typeahead' : {
+            deps : [ 'jquery']
         }
     }
 });

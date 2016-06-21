@@ -18,7 +18,7 @@ package models.internal;
 /**
  * Alert condition operators.
  *
- * @author Ville Koskela (vkoskela at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public enum Operator {
 
