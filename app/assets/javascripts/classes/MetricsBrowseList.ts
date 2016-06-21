@@ -36,7 +36,7 @@ class MetricsBrowseList {
 
             service.children.forEach((metric) => {
                 var nameParts = this.getPathParts(metric.name);
-                var metricNode = this.addMetric(nameParts, serviceNodeVM);
+                var metricNode = this.addMetric(metric.name, nameParts, serviceNodeVM);
                 metric.children.forEach((statistic) => {
                     this.addStatistic(metricNode, new GraphSpec(service.name, metric.name, statistic.name,
                                                                 Series.defaultPoints(), Series.defaultLines(), Series.defaultBars()))
@@ -60,7 +60,7 @@ class MetricsBrowseList {
     public addNewMetric(metric: NewMetricData): void {
         var serviceNodeVM: ServiceNodeVM = this.findOrCreateService({name: metric.service, children: []});
         var nameParts: string[] = this.getPathParts(metric.metric);
-        var metricNode = this.addMetric(nameParts, serviceNodeVM);
+        var metricNode = this.addMetric(metric.metric, nameParts, serviceNodeVM);
         this.addStatistic(metricNode, new GraphSpec(metric.service, metric.metric, metric.statistic,
             Series.defaultPoints(), Series.defaultLines(), Series.defaultBars()))
     }
@@ -137,7 +137,7 @@ class MetricsBrowseList {
         }
     }
 
-    private addMetric(nameParts: string[], node: BrowseNode): BrowseNode {
+    private addMetric(metricName: string, nameParts: string[], node: BrowseNode): BrowseNode {
         // Traverse the tree
         var name = nameParts.shift();
         var nextNode;
@@ -148,11 +148,11 @@ class MetricsBrowseList {
                 node.subfolders.push(nextNode);
                 this.sortNodeArray(node.subfolders);
             }
-            return this.addMetric(nameParts, nextNode);
+            return this.addMetric(metricName, nameParts, nextNode);
         } else {
             nextNode = this.findNodeByName(node.children, name);
             if (nextNode == undefined) {
-                nextNode = new MetricNodeVM(name, this.idify(name));
+                nextNode = new MetricNodeVM(metricName, name, this.idify(name));
                 node.children.push(nextNode);
                 this.sortNodeArray(node.children);
             }

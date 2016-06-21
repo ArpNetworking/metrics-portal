@@ -22,6 +22,7 @@ import ko = require('knockout');
 import ns = require('naturalSort');
 
 class MetricNodeVM implements BrowseNode {
+    metricName: KnockoutObservable<string>;
     name: KnockoutObservable<string>;
     children: KnockoutObservableArray<BrowseNode>;
     subfolders: KnockoutObservableArray<BrowseNode>;
@@ -29,8 +30,9 @@ class MetricNodeVM implements BrowseNode {
     renderAs: KnockoutObservable<string>;
     visible: KnockoutObservable<boolean>;
 
-    constructor(name: string, id: string) {
-        this.name = ko.observable(name);
+    constructor(metricName: string, displayName: string, id: string) {
+        this.metricName = ko.observable(metricName);
+        this.name = ko.observable(displayName);
         this.children = ko.observableArray<BrowseNode>();
         this.subfolders = ko.observableArray<BrowseNode>();
         this.expanded = ko.observable(false);
