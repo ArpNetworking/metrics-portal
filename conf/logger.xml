@@ -20,7 +20,7 @@
 
   <!-- IMPORTANT: This logger should only used when debugging and testing -->
   <appender name="MetricsPortalLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>logs/metrics_portal.log</file>
+    <file>logs/metrics-portal.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
         <maxOffsetInMillis>900000</maxOffsetInMillis>
