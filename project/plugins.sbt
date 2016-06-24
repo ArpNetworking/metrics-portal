@@ -21,7 +21,7 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // The SBT Community repository
 resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
 
-addSbtPlugin("de.johoop" %% "findbugs4sbt" % "1.4.0")
+addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.4.1")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.3")
 

@@ -64,16 +64,32 @@ public class ProxyController extends Controller {
         proxyActor.tell(new ProxyConnectDestination(new URI(uri)), ActorRef.noSender());
 
         // Accept web socket connection from proxy originator
-        return new WebSocket<String>() {
-            // Called when the Websocket Handshake is done.
-            @Override
-            public void onReady(final WebSocket.In<String> in, final WebSocket.Out<String> out) {
-                proxyActor.tell(new ProxyConnectOriginator(in, out), ActorRef.noSender());
-            }
-        };
+        return new ProxyWebSocket(proxyActor);
     }
 
     private final MetricsFactory _metricsFactory;
     private final ActorSystem _system;
     private final Map<WebSocket.Out<JsonNode>, ActorRef> _connections = Maps.newHashMap();
+
+    private static class ProxyWebSocket extends WebSocket<String> {
+
+        /**
+         * Public constructor.
+         *
+         * @param proxyActor Actor reference to proxy connection actor.
+         */
+        public ProxyWebSocket(final ActorRef proxyActor) {
+            _proxyActor = proxyActor;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void onReady(final In<String> in, final Out<String> out) {
+            _proxyActor.tell(new ProxyConnectOriginator(in, out), ActorRef.noSender());
+        }
+
+        private final ActorRef _proxyActor;
+    }
 }
