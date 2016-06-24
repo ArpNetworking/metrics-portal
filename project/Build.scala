@@ -24,8 +24,12 @@ import com.typesafe.sbt.pgp.PgpKeys._
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
-import de.johoop.findbugs4sbt.FindBugs._
-import de.johoop.findbugs4sbt.{Effort, Priority, ReportType}
+//import uk.co.josephearl.sbt.findbugs._
+//import uk.co.josephearl.sbt.findbugs.FindBugsPlugin._
+import uk.co.josephearl.sbt.findbugs.FindBugsPlugin.autoImport._
+//import uk.co.josephearl.sbt.findbugs.FindBugsEffort._
+//import uk.co.josephearl.sbt.findbugs.FindBugsPriority
+//import uk.co.josephearl.sbt.findbugs.FindBugsReportType
 import play.routes.compiler.InjectedRoutesGenerator
 import play.sbt.PlayImport.PlayKeys._
 import play.sbt.routes.RoutesKeys.routesGenerator
@@ -43,7 +47,7 @@ object ApplicationBuild extends Build {
     val akkaVersion = "2.4.2"
     val jacksonVersion = "2.7.3"
 
-    val s = findbugsSettings ++ CheckstyleSettings.checkstyleTask ++ aspectjSettings
+    val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.2.1",
@@ -285,10 +289,11 @@ object ApplicationBuild extends Build {
     sonatypeProfileName := "com.arpnetworking",
 
       // Findbugs
-      findbugsReportType := Some(ReportType.Html),
+      findbugsFailOnError := true,
+      findbugsReportType := Some(FindBugsReportType.Xml),
       findbugsReportPath := Some(target.value / "findbugs" / "findbugs.html"),
-      findbugsPriority := Priority.Low,
-      findbugsEffort := Effort.Maximum,
+      findbugsPriority := FindBugsPriority.Low,
+      findbugsEffort := FindBugsEffort.Maximum,
       findbugsExcludeFilters := Some(
         <FindBugsFilter>
           <Match>
