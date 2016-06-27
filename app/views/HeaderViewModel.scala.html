@@ -1,3 +1,4 @@
+@(features: models.internal.Features)
 <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -14,25 +15,31 @@
                         </li>
                     </ul>
                 </li>
+                @if(features.isTelemetryEnabled()) {
                 <li>
                     <a href="#">Telemetry</a>
                 </li>
-                <!-- Disabled: (too many to list)
+                }
+                @if(features.isLiveLoggingEnabled()) {
                 <li>
                     <a href="#live-logging">Live Logging</a>
                 </li>
-                -->
+                }
+                @if(features.isHostRegistryEnabled()) {
                 <li>
                     <a href="#host-registry">Host Registry</a>
                 </li>
-                <!-- Hidden until feature is complete
+                }
+                @if(features.isExpressionsEnabled()) {
                 <li>
                     <a href="#expressions">Expressions</a>
                 </li>
-                -->
+                }
+                @if(features.isAlertsEnabled()) {
                 <li>
                     <a href="#alerts">Alerts</a>
                 </li>
+                }
                 <li>
                     <a data-bind="attr: {href: fragment()}">Workspace Link</a>
                 </li>

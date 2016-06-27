@@ -18,29 +18,32 @@
 # ~~~~
 
 # Home page
-GET        /                            controllers.Assets.at(path="/public/html", file="index.html")
+GET        /                                    controllers.Assets.at(path="/public/html", file="index.html")
 
 # Configuration
-GET        /config                      controllers.MetaController.config()
+GET        /config                              controllers.MetaController.config()
 
 # Health checks
-GET        /ping                        controllers.MetaController.ping()
+GET        /ping                                controllers.MetaController.ping()
 
 # Telemetry proxy
-GET        /v1/proxy/stream             controllers.ProxyController.stream(uri: String ?= null)
+GET        /v1/proxy/stream                     controllers.ProxyController.stream(uri: String ?= null)
 
 # Hosts
-GET        /v1/hosts/query              controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
+GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
 
 # Alerts
-GET        /v1/alerts/query             controllers.AlertController.query(contains: String ?= null, context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/alerts/:id               controllers.AlertController.get(id: String)
-PUT        /v1/alerts                   controllers.AlertController.addOrUpdate
+GET        /v1/alerts/query                     controllers.AlertController.query(contains: String ?= null, context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/alerts/:id                       controllers.AlertController.get(id: String)
+PUT        /v1/alerts                           controllers.AlertController.addOrUpdate
 
 # Expressions
-GET        /v1/expressions/query        controllers.ExpressionController.query(contains: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/expressions/:id          controllers.ExpressionController.get(id: String)
-PUT        /v1/expressions              controllers.ExpressionController.addOrUpdate
+GET        /v1/expressions/query                controllers.ExpressionController.query(contains: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)
+PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
+
+# Templates
+GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file                controllers.Assets.versioned(path = "/public", file: Asset)
+GET        /assets/*file                        controllers.Assets.versioned(path = "/public", file: Asset)

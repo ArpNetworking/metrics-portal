@@ -1,9 +1,9 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-2 sidebar" id="accordion">
-            <h2 class="sidebar-title">
+            <h3 class="sidebar-title">
                 <span>Metrics</span>
-            </h2>
+            </h3>
             <ul class="nav nav-sidebar">
                 <li>
                     <form class="form-inline" role="form" data-bind="">
@@ -17,13 +17,13 @@
         </div>
 
         <div class="col-md-10 col-md-offset-2 main">
-            <h3 class="page-header">
-                Graphs
+            <h2 class="page-header">
+                Telemetry
                 &nbsp;
                 <i id="graph-icon" class="fa fa-align-justify" data-bind="click: switchGraphLayout" data-toggle="tooltip" data-placement="right" title="Click for Row Layout"></i>
                 &nbsp;
                 <i id="render-icon" class="fa fa-circle-o-notch" data-bind="click: switchRenderRate" data-toggle="tooltip" data-placement="right" title="Click for Continuous"></i>
-            </h3>
+            </h2>
             <div data-bind="foreach: {data: graphs, afterAdd: startGraph}" class="row sort-parent">
                 <div class="nomargin graph-container sortable" data-bind="attr: {'id': 'graph_div_' + id}, css: $root.getGraphWidth">
                     <div class="row">

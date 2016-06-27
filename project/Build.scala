@@ -24,12 +24,7 @@ import com.typesafe.sbt.pgp.PgpKeys._
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
-//import uk.co.josephearl.sbt.findbugs._
-//import uk.co.josephearl.sbt.findbugs.FindBugsPlugin._
 import uk.co.josephearl.sbt.findbugs.FindBugsPlugin.autoImport._
-//import uk.co.josephearl.sbt.findbugs.FindBugsEffort._
-//import uk.co.josephearl.sbt.findbugs.FindBugsPriority
-//import uk.co.josephearl.sbt.findbugs.FindBugsReportType
 import play.routes.compiler.InjectedRoutesGenerator
 import play.sbt.PlayImport.PlayKeys._
 import play.sbt.routes.RoutesKeys.routesGenerator
@@ -286,7 +281,7 @@ object ApplicationBuild extends Build {
         pushChanges
       ),
 
-    sonatypeProfileName := "com.arpnetworking",
+      sonatypeProfileName := "com.arpnetworking",
 
       // Findbugs
       findbugsFailOnError := true,
