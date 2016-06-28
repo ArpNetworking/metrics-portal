@@ -281,7 +281,7 @@ object ApplicationBuild extends Build {
         pushChanges
       ),
 
-    sonatypeProfileName := "com.arpnetworking",
+      sonatypeProfileName := "com.arpnetworking",
 
       // Findbugs
       findbugsFailOnError := true,

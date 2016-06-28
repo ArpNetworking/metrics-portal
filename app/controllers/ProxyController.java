@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import models.internal.Features;
 import models.messages.ProxyConnectDestination;
 import models.messages.ProxyConnectOriginator;
 import play.mvc.Controller;
@@ -43,11 +44,16 @@ public class ProxyController extends Controller {
      *
      * @param metricsFactory The <code>MetricsFactory</code> instance.
      * @param system The <code>ActorSystem</code> instance.
+     * @param features The <code>Features</code> instance.
      */
     @Inject
-    public ProxyController(final MetricsFactory metricsFactory, final ActorSystem system) {
+    public ProxyController(
+            final MetricsFactory metricsFactory,
+            final ActorSystem system,
+            final Features features) {
         _metricsFactory = metricsFactory;
         _system = system;
+        _enabled = features.isProxyEnabled();
     }
 
     /**
@@ -58,6 +64,10 @@ public class ProxyController extends Controller {
      * @throws URISyntaxException if supplied uri is invalid.
      */
     public WebSocket<String> stream(final String uri) throws URISyntaxException {
+        if (!_enabled) {
+            throw new IllegalStateException("Proxy disabled");
+        }
+
         final ActorRef proxyActor = _system.actorOf(ProxyConnection.props(_metricsFactory));
 
         // Initiate web socket connection to proxy destination
@@ -69,6 +79,7 @@ public class ProxyController extends Controller {
 
     private final MetricsFactory _metricsFactory;
     private final ActorSystem _system;
+    private final boolean _enabled;
     private final Map<WebSocket.Out<JsonNode>, ActorRef> _connections = Maps.newHashMap();
 
     private static class ProxyWebSocket extends WebSocket<String> {

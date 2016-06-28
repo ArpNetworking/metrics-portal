@@ -38,6 +38,8 @@ import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.Features;
+import models.internal.impl.DefaultFeatures;
 import play.Configuration;
 import play.Environment;
 import play.inject.ApplicationLifecycle;
@@ -105,6 +107,13 @@ public class MainModule extends AbstractModule {
                                 .build()
                 ))
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Features getFeatures(final Configuration configuration) {
+        return new DefaultFeatures(configuration);
     }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {
