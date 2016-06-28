@@ -31,7 +31,6 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultExpression;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import net.sf.oval.exception.ConstraintsViolatedException;
 import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -74,7 +73,7 @@ public class ExpressionController extends Controller {
         try {
             final models.view.Expression viewExpression = buildViewExpression(request().body());
             expression = convertToInternalExpression(viewExpression);
-        } catch (final IOException | ConstraintsViolatedException | IllegalArgumentException e) {
+        } catch (final IOException e) {
             LOGGER.error()
                     .setMessage("Failed to build an expression.")
                     .setThrowable(e)
@@ -188,15 +187,20 @@ public class ExpressionController extends Controller {
         return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Expression.class);
     }
 
-    private Expression convertToInternalExpression(final models.view.Expression viewExpression) {
-        return new DefaultExpression.Builder()
-                .setId(viewExpression.getId() == null ? null : UUID.fromString(viewExpression.getId()))
-                .setCluster(viewExpression.getCluster())
-                .setMetric(viewExpression.getMetric())
-                .setService(viewExpression.getService())
-                .setScript(viewExpression.getScript())
-                .build();
-
+    private Expression convertToInternalExpression(final models.view.Expression viewExpression) throws IOException {
+        try {
+            return new DefaultExpression.Builder()
+                    .setId(viewExpression.getId() == null ? null : UUID.fromString(viewExpression.getId()))
+                    .setCluster(viewExpression.getCluster())
+                    .setMetric(viewExpression.getMetric())
+                    .setService(viewExpression.getService())
+                    .setScript(viewExpression.getScript())
+                    .build();
+            // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            throw new IOException(e);
+        }
     }
 
     private models.view.Expression internalModelToViewModel(final Expression expression) {
