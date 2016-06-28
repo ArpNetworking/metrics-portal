@@ -24,12 +24,7 @@ import com.typesafe.sbt.pgp.PgpKeys._
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
 import com.typesafe.sbt.web.js.JS
-//import uk.co.josephearl.sbt.findbugs._
-//import uk.co.josephearl.sbt.findbugs.FindBugsPlugin._
 import uk.co.josephearl.sbt.findbugs.FindBugsPlugin.autoImport._
-//import uk.co.josephearl.sbt.findbugs.FindBugsEffort._
-//import uk.co.josephearl.sbt.findbugs.FindBugsPriority
-//import uk.co.josephearl.sbt.findbugs.FindBugsReportType
 import play.routes.compiler.InjectedRoutesGenerator
 import play.sbt.PlayImport.PlayKeys._
 import play.sbt.routes.RoutesKeys.routesGenerator
@@ -45,25 +40,25 @@ object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
     val akkaVersion = "2.4.2"
-    val jacksonVersion = "2.7.3"
+    val jacksonVersion = "2.7.4"
 
     val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
       "cglib" % "cglib" % "3.2.1",
       "com.arpnetworking.build" % "build-resources" % "1.0.5",
-      "com.arpnetworking.commons" % "commons" % "1.4.0",
-      "com.arpnetworking.logback" % "logback-steno" % "1.13.0",
+      "com.arpnetworking.commons" % "commons" % "1.6.0",
+      "com.arpnetworking.logback" % "logback-steno" % "1.15.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.4.2",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.4.2",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.4.5",
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
-      "com.google.code.findbugs" % "annotations" % "3.0.0",
-      "com.google.guava" % "guava" % "18.0",
+      "com.google.code.findbugs" % "annotations" % "3.0.1",
+      "com.google.guava" % "guava" % "19.0",
       "com.google.inject" % "guice" % "4.0",
-      "com.h2database" % "h2" % "1.4.186",
+      "com.h2database" % "h2" % "1.4.192",
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
@@ -73,7 +68,7 @@ object ApplicationBuild extends Build {
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
       "org.flywaydb" % "flyway-play_2.11" % "2.2.1",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0",
-      "org.postgresql" % "postgresql" % "9.4-1202-jdbc42",
+      "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.2.0",
       "org.webjars" % "d3js" % "3.4.8",

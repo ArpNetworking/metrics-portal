@@ -37,7 +37,6 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultQuantity;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import net.sf.oval.exception.ConstraintsViolatedException;
 import org.joda.time.Period;
 import play.Configuration;
 import play.libs.Json;
@@ -81,7 +80,7 @@ public class AlertController extends Controller {
         try {
             final models.view.Alert viewAlert = buildViewAlert(request().body());
             alert = convertToInternalAlert(viewAlert);
-        } catch (final IOException | ConstraintsViolatedException | IllegalArgumentException e) {
+        } catch (final IOException e) {
             LOGGER.error()
                     .setMessage("Failed to build an alert.")
                     .setThrowable(e)
@@ -244,7 +243,7 @@ public class AlertController extends Controller {
                 .build();
     }
 
-    private Optional<NagiosExtension> convertToInternalNagiosExtension(final Map<String, Object> extensionsMap) throws IOException {
+    private Optional<NagiosExtension> convertToInternalNagiosExtension(final Map<String, Object> extensionsMap) {
         try {
             return Optional.of(
                     OBJECT_MAPPER
@@ -258,31 +257,37 @@ public class AlertController extends Controller {
     }
 
     private Alert convertToInternalAlert(final models.view.Alert viewAlert) throws IOException {
-        final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
-                .setCluster(viewAlert.getCluster())
-                .setMetric(viewAlert.getMetric())
-                .setName(viewAlert.getName())
-                .setService(viewAlert.getService())
-                .setStatistic(viewAlert.getStatistic());
-        if (viewAlert.getValue() != null) {
-            alertBuilder.setValue(convertToInternalQuantity(viewAlert.getValue()));
+        try {
+            final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
+                    .setCluster(viewAlert.getCluster())
+                    .setMetric(viewAlert.getMetric())
+                    .setName(viewAlert.getName())
+                    .setService(viewAlert.getService())
+                    .setStatistic(viewAlert.getStatistic());
+            if (viewAlert.getValue() != null) {
+                alertBuilder.setValue(convertToInternalQuantity(viewAlert.getValue()));
+            }
+            if (viewAlert.getId() != null) {
+                alertBuilder.setId(UUID.fromString(viewAlert.getId()));
+            }
+            if (viewAlert.getContext() != null) {
+                alertBuilder.setContext(Context.valueOf(viewAlert.getContext()));
+            }
+            if (viewAlert.getOperator() != null) {
+                alertBuilder.setOperator(Operator.valueOf(viewAlert.getOperator()));
+            }
+            if (viewAlert.getPeriod() != null) {
+                alertBuilder.setPeriod(new Period(Long.parseLong(viewAlert.getPeriod())));
+            }
+            if (viewAlert.getExtensions() != null) {
+                alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));
+            }
+            return alertBuilder.build();
+            // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            throw new IOException(e);
         }
-        if (viewAlert.getId() != null) {
-            alertBuilder.setId(UUID.fromString(viewAlert.getId()));
-        }
-        if (viewAlert.getContext() != null) {
-            alertBuilder.setContext(Context.valueOf(viewAlert.getContext()));
-        }
-        if (viewAlert.getOperator() != null) {
-            alertBuilder.setOperator(Operator.valueOf(viewAlert.getOperator()));
-        }
-        if (viewAlert.getPeriod() != null) {
-            alertBuilder.setPeriod(new Period(Long.parseLong(viewAlert.getPeriod())));
-        }
-        if (viewAlert.getExtensions() != null) {
-            alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));
-        }
-        return alertBuilder.build();
     }
 
     private ImmutableMap<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
