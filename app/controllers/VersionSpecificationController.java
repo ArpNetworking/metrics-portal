@@ -42,6 +42,8 @@ import play.mvc.Result;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -111,7 +113,9 @@ public class VersionSpecificationController extends Controller {
                     .log();
             return internalServerError();
         }
-        response().setHeader(LAST_MODIFIED, RFC_1123_DATE_TIME.format(versionSetResult.getLastModified().get()));
+        // RFC_1123 formatter requires a Zone plus an Instant.
+        final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(versionSetResult.getLastModified().get(), ZoneId.of("UTC"));
+        response().setHeader(LAST_MODIFIED, RFC_1123_DATE_TIME.format(zonedDateTime));
         return ok(Json.toJson(internalToViewModel(versionSetResult.getVersionSet().get())));
     }
 

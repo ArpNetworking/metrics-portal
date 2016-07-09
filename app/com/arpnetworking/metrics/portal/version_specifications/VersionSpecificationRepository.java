@@ -34,6 +34,16 @@ import java.util.UUID;
 public interface VersionSpecificationRepository {
 
     /**
+     * Open the <code>AlertRepository</code>.
+     */
+    void open();
+
+    /**
+     * Close the <code>AlertRepository</code>.
+     */
+    void close();
+
+    /**
      * Find the version set that corresponds to the set of host attributes by considering the list of version specifications.
      *
      * @param attributes The set of host attributes.

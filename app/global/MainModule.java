@@ -31,6 +31,7 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.metrics.portal.version_specifications.VersionSpecificationRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -75,6 +76,9 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(ExpressionRepository.class)
                 .toProvider(ExpressionRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(VersionSpecificationRepository.class)
+                .toProvider(VersionSpecificationRepositoryProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
@@ -207,6 +211,42 @@ public class MainModule extends AbstractModule {
                         return F.Promise.pure(null);
                     });
             return alertRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Configuration _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class VersionSpecificationRepositoryProvider implements Provider<VersionSpecificationRepository> {
+
+        @Inject
+        public VersionSpecificationRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Configuration configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public VersionSpecificationRepository get() {
+            final VersionSpecificationRepository versionSpecificationRepository = _injector.getInstance(
+                    ConfigurationHelper.<VersionSpecificationRepository>getType(
+                            _environment,
+                            _configuration,
+                            "versionSpecificationRepository.type"));
+            versionSpecificationRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        versionSpecificationRepository.close();
+                        return F.Promise.pure(null);
+                    });
+            return versionSpecificationRepository;
         }
 
         private final Injector _injector;
