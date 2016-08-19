@@ -31,6 +31,8 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
+import com.typesafe.sbt.packager.rpm._
+import com.typesafe.sbt.packager.rpm.RpmPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
@@ -88,7 +90,7 @@ object ApplicationBuild extends Build {
       "org.hamcrest" % "java-hamcrest" % "2.0.0.0" % "test"
     )
 
-    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean).settings(
+    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin).settings(
 
       organization := "com.arpnetworking.metrics",
       organizationName := "Arpnetworking Inc",
@@ -268,7 +270,9 @@ object ApplicationBuild extends Build {
       useGpg := true,
       pgpPassphrase in Global := Option(System.getenv("GPG_PASS")).map(_.toCharArray),
 
-
+      rpmVendor := "ArpNetworking",
+      rpmLicense := Option("ASL 2.0"),
+      rpmUrl := Option("https://github.com/ArpNetworking/metrics-portal"),
       releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
