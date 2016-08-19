@@ -31,6 +31,7 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
+import play.sbt.PlayImport._
 import com.typesafe.sbt.packager.rpm._
 import com.typesafe.sbt.packager.rpm.RpmPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
@@ -47,6 +48,7 @@ object ApplicationBuild extends Build {
     val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
     val appDependencies = Seq(
+      javaWs,
       "cglib" % "cglib" % "3.2.1",
       "com.arpnetworking.build" % "build-resources" % "1.0.5",
       "com.arpnetworking.commons" % "commons" % "1.6.0",

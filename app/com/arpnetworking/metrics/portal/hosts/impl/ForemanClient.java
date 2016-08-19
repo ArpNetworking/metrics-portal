@@ -1,0 +1,283 @@
+/**
+ * Copyright 2016 Smartsheet.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.arpnetworking.metrics.portal.hosts.impl;
+
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNull;
+import play.libs.F;
+import play.libs.ws.WS;
+import play.libs.ws.WSResponse;
+
+import java.io.IOException;
+import java.net.URI;
+
+/**
+ * Client for HTTP Foreman API.
+ *
+ * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ */
+public final class ForemanClient {
+    /**
+     * Calls the Foreman API to get a page of hosts.
+     *
+     * @param page The page number to start at
+     * @return A Promise containing a {@link HostPageResponse}
+     */
+    public F.Promise<HostPageResponse> getHostPage(final int page) {
+        return getHostPage(page, 250);
+    }
+
+    /**
+     * Calls the Foreman API to get a page of hosts.
+     *
+     * @param page The page number to start at
+     * @param perPage The number of hosts per page
+     * @return A Promise containing a {@link HostPageResponse}
+     */
+    public F.Promise<HostPageResponse> getHostPage(final int page, final int perPage) {
+            return WS.client()
+                    .url(_baseUrl + String.format("/api/hosts?per_page=%d&page=%d", perPage, page))
+                    .get()
+                    .map(this::parseWSResponse);
+    }
+
+    private HostPageResponse parseWSResponse(final WSResponse page) {
+        try {
+            if (page.getStatus() / 100 != 2) {
+                throw new IOException("Non-200 response from Foreman");
+            } else {
+                return OBJECT_MAPPER.readValue(page.getBody(), HostPageResponse.class);
+            }
+        } catch (final IOException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private ForemanClient(final Builder builder) {
+        _baseUrl = builder._baseUrl;
+    }
+
+    private final URI _baseUrl;
+
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
+
+    /**
+     * Implementation of the Builder pattern for ForemanClient.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class Builder extends OvalBuilder<ForemanClient> {
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(ForemanClient::new);
+        }
+
+        /**
+         * Sets the base URL of the Foreman API. Required. Cannot be null. Cannot be empty.
+         *
+         * @param value The url.
+         * @return This {@link Builder}.
+         */
+        public Builder setBaseUrl(final URI value) {
+            _baseUrl = value;
+            return this;
+        }
+
+        @NotNull
+        @NotEmpty
+        private URI _baseUrl;
+    }
+
+    /**
+     * Represents a listing of hosts from the Foreman API.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class HostPageResponse {
+        public int getTotal() {
+            return _total;
+        }
+
+        public int getSubtotal() {
+            return _subtotal;
+        }
+
+        public int getPage() {
+            return _page;
+        }
+
+        public int getPerPage() {
+            return _perPage;
+        }
+
+        public ImmutableList<ForemanHost> getResults() {
+            return _results;
+        }
+
+        private HostPageResponse(final Builder builder) {
+            _total = builder._total;
+            _subtotal = builder._subtotal;
+            _page = builder._page;
+            _perPage = builder._perPage;
+            _results = builder._results;
+        }
+
+        private final int _total;
+        private final int _subtotal;
+        private final int _page;
+        private final int _perPage;
+        private final ImmutableList<ForemanHost> _results;
+
+        /**
+         * Implementation of the builder pattern for {@link HostPageResponse}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends OvalBuilder<HostPageResponse> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(HostPageResponse::new);
+            }
+
+            /**
+             * Sets the total number of hosts.  Required. Cannot be null.
+             *
+             * @param value The total number of hosts
+             * @return this {@link Builder}
+             */
+            public Builder setTotal(final Integer value) {
+                _total = value;
+                return this;
+            }
+
+            /**
+             * Sets the Subtotal.  Required. Cannot be null.
+             *
+             * @param value The subtotal
+             * @return this {@link Builder}
+             */
+            public Builder setSubtotal(final Integer value) {
+                _subtotal = value;
+                return this;
+            }
+
+            /**
+             * Sets the current page.  Required. Cannot be null.
+             *
+             * @param value The current page number (1-based)
+             * @return this {@link Builder}
+             */
+            public Builder setPage(final Integer value) {
+                _page = value;
+                return this;
+            }
+
+            /**
+             * Sets the number of hosts per page.  Required. Cannot be null.
+             *
+             * @param value Number of hosts per page
+             * @return this {@link Builder}
+             */
+            @JsonProperty("per_page")
+            public Builder setPerPage(final Integer value) {
+                _perPage = value;
+                return this;
+            }
+
+            /**
+             * Sets the list of hosts.  Required. Cannot be null.
+             *
+             * @param value List of hosts
+             * @return this {@link Builder}
+             */
+            public Builder setResults(final ImmutableList<ForemanHost> value) {
+                _results = value;
+                return this;
+            }
+
+            @NotNull
+            private Integer _total;
+
+            @NotNull
+            private Integer _subtotal;
+
+            @NotNull
+            private Integer _page;
+
+            @NotNull
+            private Integer _perPage;
+
+            @NotNull
+            private ImmutableList<ForemanHost> _results;
+        }
+    }
+
+    /**
+     * Represents a Host from the ForemanAPI.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class ForemanHost {
+        public String getName() {
+            return _name;
+        }
+
+        private ForemanHost(final Builder builder) {
+            _name = builder._name;
+        }
+
+        private final String _name;
+
+        /**
+         * Implementation of the builder pattern for {@link ForemanHost}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends OvalBuilder<ForemanHost> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(ForemanHost::new);
+            }
+
+            /**
+             * Sets the name of the host. Required. Cannot be null.  Cannot be empty.
+             *
+             * @param value The name of the host
+             * @return this {@link Builder}
+             */
+            public Builder setName(final String value) {
+                _name = value;
+                return this;
+            }
+
+            @NotNull
+            @NotEmpty
+            private String _name;
+        }
+    }
+}

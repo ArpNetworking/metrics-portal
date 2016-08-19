@@ -16,7 +16,6 @@
 package global;
 
 import actors.JvmMetricsCollector;
-import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
@@ -90,7 +89,7 @@ public class MainModule extends AbstractModule {
         return
                 GuiceActorCreator.props(
                         injector,
-                        ConfigurationHelper.<Actor>getType(environment, config, "hostProvider.type"));
+                        ConfigurationHelper.getType(environment, config, "hostProvider.type"));
     }
 
     @Provides
