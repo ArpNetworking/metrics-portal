@@ -1,8 +1,12 @@
 cache:
   directories:
-  - $HOME/.ivy2
-  - $HOME/.jdk
+  - "$HOME/.ivy2"
+  - "$HOME/.jdk"
 sudo: false
+addons:
+  apt:
+    packages:
+    - rpm
 env:
   global:
   - TARGET="compile checkstyle findbugs test stage"
@@ -16,3 +20,13 @@ before_script:
 - if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export TARGET="${TARGET} publishSigned sonatypeRelease"; fi;
 script:
 - curl -s ${JDKW} | bash /dev/stdin ./activator clean ${TARGET}
+deploy:
+  provider: releases
+  api_key:
+    secure: o6t6woW0/A1MjEHYXp3x84jNRSdmC2GZpgNvZWdryhqJqtqp+k8SvcOm7fzEG8ZDJxlR/I5Qs51UQTNqtUAa+D6/sN3flvxnlVyTot7NsLHgrq9Hb9zAfRSANGr3F7X1HVmINMmEVfqrT/5Ko9c/QztFbZfotzCx0m8JcCMzaX8rJ0i8/YE3l534E1IFSoCr7AKen/+GGAq0RoeGZukhMN5pMq0iljdHodupaRmWGvpIUlGYrvHi+2c8KYezwAurkcNectrga3TZbDbHuixtdTYsw5StY8Tk5BXXdQ2lOoUBDDQ3QRcMINb8q7ufhqTgW77NO+94NlVPuvfbipP6ixi2j3Zkycz0LVFueKzGRVtTNa7nP/XzwhB5sSBi3zIPl85W5ZbRNQKLwijwHwH2m1MBU3JKKXmTSYeySlP+PwCnFskpvkkgNJkrRE6RuQSiCJA28lBEauQFvjj3Se371FY8YQhCjtwRGVLo1ObTlQ92hN1nTMREGndJKdA6xPnrOHrDNUQfnXBTv05Dmfm7cIjtPdfgtN2mbjngIz2icjglrXsZtk115k3VR0z8B0IIwA/+f+dRT+QOf0ZJcF48Xu6I8thttFRdwv3IvNScF74u472TpOFVR/L6wvzXBNGx4VewEjbsBzs9S7JebTtMDr2xTKWyaz4Wqwl2gu7ruoo=
+  file: target/rpm/RPMS/noarch/metrics-portal*.rpm
+  file_glob: true
+  skip_cleanup: true
+  on:
+    repo: ArpNetworking/metrics-portal
+    tags: true
