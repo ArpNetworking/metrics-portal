@@ -21,6 +21,8 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
@@ -28,7 +30,6 @@ import play.Configuration;
 
 import java.net.URI;
 import java.util.List;
-import javax.inject.Inject;
 
 /**
  * Host provider that uses the Foreman API to get host data.
@@ -44,17 +45,17 @@ public final class ForemanHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public ForemanHostProvider(final HostRepository hostRepository, final Configuration configuration) {
+    public ForemanHostProvider(final HostRepository hostRepository, @Assisted final Configuration configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.initialDelay"),
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.interval"),
+                ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
+                ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
                 TICK,
                 getContext().dispatcher(),
                 getSelf());
         _client = new ForemanClient.Builder()
-                .setBaseUrl(URI.create(configuration.getString("hostProvider.foreman.baseUrl")))
+                .setBaseUrl(URI.create(configuration.getString("baseUrl")))
                 .build();
     }
 

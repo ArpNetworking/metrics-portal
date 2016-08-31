@@ -30,6 +30,7 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -85,11 +86,8 @@ public class MainModule extends AbstractModule {
     @Named("HostProviderProps")
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private Props getHostProviderProps(final Injector injector, final Environment environment, final Configuration config) {
-        return
-                GuiceActorCreator.props(
-                        injector,
-                        ConfigurationHelper.getType(environment, config, "hostProvider.type"));
+    private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Configuration config) {
+        return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
     }
 
     @Provides
