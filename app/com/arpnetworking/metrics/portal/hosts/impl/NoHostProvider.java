@@ -20,6 +20,7 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 import play.Configuration;
 
 /**
@@ -37,10 +38,10 @@ public class NoHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public NoHostProvider(final Configuration configuration) {
+    public NoHostProvider(@Assisted final Configuration configuration) {
         getContext().system().scheduler().schedule(
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.initialDelay"),
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.interval"),
+                ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
+                ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
                 "tick",
                 getContext().dispatcher(),

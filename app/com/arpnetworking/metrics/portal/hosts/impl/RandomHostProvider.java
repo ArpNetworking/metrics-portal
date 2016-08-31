@@ -23,6 +23,7 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
@@ -45,11 +46,11 @@ public final class RandomHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public RandomHostProvider(final HostRepository hostRepository, final Configuration configuration) {
+    public RandomHostProvider(final HostRepository hostRepository, @Assisted final Configuration configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.initialDelay"),
-                ConfigurationHelper.getFiniteDuration(configuration, "hostProvider.interval"),
+                ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
+                ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
                 "tick",
                 getContext().dispatcher(),
