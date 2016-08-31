@@ -42,6 +42,9 @@ GET        /v1/expressions/query                controllers.ExpressionController
 GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)
 PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
 
+# Version Specifications
+GET        /v1/version_specifications           controllers.VersionSpecificationController.lookupHostVersionSet
+
 # Templates
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
