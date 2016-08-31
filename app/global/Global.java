@@ -24,6 +24,10 @@ import play.Application;
 import play.GlobalSettings;
 import play.libs.Akka;
 import play.libs.Json;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Setup the global application components.
@@ -63,6 +67,14 @@ public final class Global extends GlobalSettings {
         } catch (final InterruptedException ignored) {
             // Clear the interrupted status
             Thread.interrupted();
+        }
+
+        try {
+            Await.result(Akka.system().terminate(), Duration.apply(1, TimeUnit.MINUTES));
+            // CHECKSTYLE.OFF: IllegalCatch - Await.result declares that it can throw Exception
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error().setMessage("Exception waiting for Akka to shutdown").setThrowable(e).log();
         }
 
         // Shutdown
