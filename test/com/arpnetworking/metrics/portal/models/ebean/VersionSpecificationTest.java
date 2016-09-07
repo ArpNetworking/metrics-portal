@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.models.ebean;
 
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.avaje.ebean.Ebean;
-import com.google.common.collect.ImmutableMap;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
 import models.ebean.VersionSpecification;
@@ -97,9 +96,8 @@ public class VersionSpecificationTest extends WithApplication {
 
     @Override
     protected Application provideApplication() {
-        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
         return new GuiceApplicationBuilder()
-                .configure(ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl))
+                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
     }
 

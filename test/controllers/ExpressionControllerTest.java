@@ -15,12 +15,14 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.expressions.impl.DatabaseExpressionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import models.internal.Expression;
+import models.internal.Organization;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -48,6 +50,7 @@ public class ExpressionControllerTest {
         Configuration configuration = Configuration.empty();
         app = new GuiceApplicationBuilder()
                 .bindings(Bindings.bind(ExpressionController.class).toInstance(new ExpressionController(configuration, exprRepo)))
+                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
         exprRepo.open();
@@ -144,7 +147,7 @@ public class ExpressionControllerTest {
         Expression originalExpr = TestBeanFactory.createExpressionBuilder()
                 .setId(uuid)
                 .build();
-        exprRepo.addOrUpdateExpression(originalExpr);
+        exprRepo.addOrUpdateExpression(originalExpr, Organization.DEFAULT);
         final JsonNode body = OBJECT_MAPPER.valueToTree(TestBeanFactory.createExpressionBuilder().setId(uuid).build());
         Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
@@ -153,7 +156,7 @@ public class ExpressionControllerTest {
                 .uri("/v1/expressions");
         Result result = Helpers.route(request);
         Assert.assertEquals(Http.Status.OK, result.status());
-        Expression expectedExpr = exprRepo.get(originalExpr.getId()).get();
+        Expression expectedExpr = exprRepo.get(originalExpr.getId(), Organization.DEFAULT).get();
         Assert.assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
     }
 

@@ -31,6 +31,7 @@ import com.google.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHost;
 import models.internal.impl.DefaultHostQuery;
@@ -103,17 +104,19 @@ public class DatabaseHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateHost(final Host host) {
+    public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Adding or updating host")
                 .addData("host", host)
+                .addData("organization", organization)
                 .log();
 
         final Transaction transaction = Ebean.beginTransaction();
         try {
             models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
                     .where()
+                    .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())
                     .findUnique();
             boolean isNewHost = false;
@@ -124,12 +127,14 @@ public class DatabaseHostRepository implements HostRepository {
             ebeanHost.setCluster(host.getCluster().orNull());
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
+            ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(organization));
             _hostQueryGenerator.saveHost(ebeanHost);
             transaction.commit();
 
             LOGGER.info()
                     .setMessage("Upserted host")
                     .addData("host", host)
+                    .addData("organization", organization)
                     .addData("isCreated", isNewHost)
                     .log();
         } finally {
@@ -141,26 +146,30 @@ public class DatabaseHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostname) {
+    public void deleteHost(final String hostname, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
                 .addData("hostname", hostname)
+                .addData("organization", organization)
                 .log();
         final models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
                 .where()
                 .eq("name", hostname)
+                .eq("organization.uuid", organization.getId())
                 .findUnique();
         if (ebeanHost != null) {
             Ebean.delete(ebeanHost);
             LOGGER.info()
                     .setMessage("Deleted host")
                     .addData("hostname", hostname)
+                    .addData("organization", organization)
                     .log();
         } else {
             LOGGER.info()
                     .setMessage("Host not found")
                     .addData("hostname", hostname)
+                    .addData("organization", organization)
                     .log();
         }
     }
@@ -169,10 +178,13 @@ public class DatabaseHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQuery createQuery() {
+    public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultHostQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultHostQuery(this, organization);
     }
 
     /**
@@ -185,9 +197,10 @@ public class DatabaseHostRepository implements HostRepository {
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
+        final Organization organization = query.getOrganization();
 
         // Create the base query
-        final PagedList<models.ebean.Host> pagedHosts = _hostQueryGenerator.createHostQuery(query);
+        final PagedList<models.ebean.Host> pagedHosts = _hostQueryGenerator.createHostQuery(query, organization);
 
         // Compute the etag
         // NOTE: Another way to do this would be to use the version field and hash those together.
@@ -215,19 +228,23 @@ public class DatabaseHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount() {
+    public long getHostCount(final Organization organization) {
         assertIsOpen();
-        return Ebean.find(models.ebean.Host.class).findRowCount();
+        return Ebean.find(models.ebean.Host.class)
+                .where()
+                .eq("organization.uuid", organization.getId())
+                .findRowCount();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
+    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
         return Ebean.find(models.ebean.Host.class)
                 .where()
+                .eq("organization.uuid", organization.getId())
                 .eq("metrics_software_state", metricsSoftwareState.toString())
                 .findRowCount();
     }
@@ -267,9 +284,10 @@ public class DatabaseHostRepository implements HostRepository {
          * Translate the <code>HostQuery</code> to an Ebean <code>Query</code>.
          *
          * @param query The repository agnostic <code>HostQuery</code>.
+         * @param organization The organization to query in.
          * @return The database specific <code>PagedList</code> query result.
          */
-        PagedList<models.ebean.Host> createHostQuery(HostQuery query);
+        PagedList<models.ebean.Host> createHostQuery(HostQuery query, Organization organization);
 
         /**
          * Save the <code>Host</code> to the database. This needs to be executed in a transaction.
@@ -288,8 +306,9 @@ public class DatabaseHostRepository implements HostRepository {
          * {@inheritDoc}
          */
         @Override
-        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query) {
+        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
             ExpressionList<models.ebean.Host> ebeanExpressionList = Ebean.find(models.ebean.Host.class).where();
+            ebeanExpressionList = ebeanExpressionList.eq("organization.uuid", organization.getId());
             if (query.getCluster().isPresent()) {
                 ebeanExpressionList = ebeanExpressionList.eq("cluster", query.getCluster().get());
             }
@@ -330,7 +349,7 @@ public class DatabaseHostRepository implements HostRepository {
          * {@inheritDoc}
          */
         @Override
-        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query) {
+        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
             final StringBuilder selectBuilder = new StringBuilder(
                     "select t0.id, t0.version, t0.created_at, t0.updated_at, "
                             + "t0.name, t0.cluster, t0.metrics_software_state "
@@ -362,6 +381,7 @@ public class DatabaseHostRepository implements HostRepository {
                     // The user enters only removable tokens (e.g. space, period, etc.)
                     LOGGER.debug()
                             .setMessage("Skipping partial host name query clause")
+                            .addData("organization", organization)
                             .addData("partialHostName", query.getPartialHostname().get())
                             .addData("tokens", tokens)
                             .addData("prefixExpression", prefixExpression)

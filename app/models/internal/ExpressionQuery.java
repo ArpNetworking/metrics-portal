@@ -79,6 +79,13 @@ public interface ExpressionQuery {
     Optional<String> getContains();
 
     /**
+     * Accessor for the organization.
+     *
+     * @return The organization.
+     */
+    Organization getOrganization();
+
+    /**
      * Accessor for the cluster.
      *
      * @return The cluster.

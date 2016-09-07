@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.database.h2.triggers;
 
+import models.ebean.ExpressionEtags;
+
 /**
  * Trigger to update Etag after every insert, delete or update statement.
  *
@@ -26,6 +28,6 @@ public class ExpressionsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
      * Public no args constructor.
      */
     public ExpressionsUpdateEtagTrigger() {
-        super("portal.expressions_etag_seq");
+        super(ExpressionEtags::incrementEtag, 9);
     }
 }

@@ -31,6 +31,7 @@ import models.internal.AlertQuery;
 import models.internal.Context;
 import models.internal.NagiosExtension;
 import models.internal.Operator;
+import models.internal.Organization;
 import models.internal.Quantity;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlert;
@@ -89,7 +90,7 @@ public class AlertController extends Controller {
         }
 
         try {
-            _alertRepository.addOrUpdateAlert(alert);
+            _alertRepository.addOrUpdateAlert(alert, Organization.DEFAULT);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -159,7 +160,7 @@ public class AlertController extends Controller {
         }
 
         // Build a host repository query
-        final AlertQuery query = _alertRepository.createQuery()
+        final AlertQuery query = _alertRepository.createQuery(Organization.DEFAULT)
                 .contains(argContains)
                 .context(argContext)
                 .service(argService)
@@ -207,7 +208,7 @@ public class AlertController extends Controller {
      */
     public Result get(final String id) {
         final UUID identifier = UUID.fromString(id);
-        final Optional<Alert> result = _alertRepository.get(identifier);
+        final Optional<Alert> result = _alertRepository.get(identifier, Organization.DEFAULT);
         if (!result.isPresent()) {
             return notFound();
         }
@@ -292,10 +293,12 @@ public class AlertController extends Controller {
 
     private ImmutableMap<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
         final ImmutableMap.Builder<String, Object> nagiosMapBuilder = ImmutableMap.builder();
-        nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
-        nagiosMapBuilder.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
-        nagiosMapBuilder.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
-        nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
+        if (nagiosExtension != null) {
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
+        }
         return nagiosMapBuilder.build();
     }
 

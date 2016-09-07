@@ -22,6 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import models.internal.Alert;
 import models.internal.AlertQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQueryResult;
@@ -68,11 +69,12 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public Optional<Alert> get(final UUID identifier) {
+    public Optional<Alert> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")
                 .addData("identifier", identifier)
+                .addData("organization", organization)
                 .log();
         return Optional.empty();
     }
@@ -81,9 +83,12 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public AlertQuery createQuery() {
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultAlertQuery(this);
+    public AlertQuery createQuery(final Organization organization) {
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultAlertQuery(this, organization);
     }
 
     /**
@@ -103,9 +108,12 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getAlertCount() {
+    public long getAlertCount(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Getting alert count").log();
+        LOGGER.debug()
+                .setMessage("Getting alert count")
+                .addData("organization", organization)
+                .log();
         return 0;
     }
 

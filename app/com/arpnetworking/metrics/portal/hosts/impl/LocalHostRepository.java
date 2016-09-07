@@ -27,10 +27,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
-
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -38,6 +38,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -78,36 +79,43 @@ public final class LocalHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateHost(final Host host) {
+    public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Adding or updating host")
                 .addData("host", host)
+                .addData("organization", organization)
                 .log();
-        _temporaryStorage.put(host.getHostname(), host);
+        final Map<String, Host> orgMap = getOrganizationMap(organization);
+        orgMap.put(host.getHostname(), host);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostname) {
+    public void deleteHost(final String hostname, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
                 .addData("hostname", hostname)
+                .addData("organization", organization)
                 .log();
-        _temporaryStorage.remove(hostname);
+        final Map<String, Host> orgMap = getOrganizationMap(organization);
+        orgMap.remove(hostname);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public HostQuery createQuery() {
+    public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultHostQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultHostQuery(this, organization);
     }
 
     /**
@@ -120,10 +128,11 @@ public final class LocalHostRepository implements HostRepository {
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
+        final Organization organization = query.getOrganization();
 
         // Find all matching hosts
         final List<Host> hosts = Lists.newLinkedList();
-        for (final Map.Entry<String, Host> entry : _temporaryStorage.entrySet()) {
+        for (final Map.Entry<String, Host> entry : getOrganizationMap(organization).entrySet()) {
             boolean matches = true;
             if (query.getPartialHostname().isPresent()) {
                 final String queryName = query.getPartialHostname().get().toLowerCase(Locale.getDefault());
@@ -170,24 +179,28 @@ public final class LocalHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount() {
+    public long getHostCount(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Getting host count").log();
-        return _temporaryStorage.size();
+        LOGGER.debug()
+                .setMessage("Getting host count")
+                .addData("organization", organization)
+                .log();
+        return getOrganizationMap(organization).size();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
+    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting host count in state")
+                .addData("organization", organization)
                 .addData("state", metricsSoftwareState)
                 .log();
         long count = 0;
-        for (final Host host : _temporaryStorage.values()) {
+        for (final Host host : getOrganizationMap(organization).values()) {
             if (!metricsSoftwareState.equals(host.getMetricsSoftwareState())) {
                 ++count;
             }
@@ -226,8 +239,12 @@ public final class LocalHostRepository implements HostRepository {
         }
     }
 
+    private Map<String, Host> getOrganizationMap(final Organization organization) {
+        return _temporaryStorage.computeIfAbsent(organization.getId(), (v) -> Maps.newConcurrentMap());
+    }
+
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final Map<String, Host> _temporaryStorage = Maps.newConcurrentMap();
+    private final Map<UUID, Map<String, Host>> _temporaryStorage = Maps.newConcurrentMap();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalHostRepository.class);
 

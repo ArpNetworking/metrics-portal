@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import models.internal.Expression;
+import models.internal.Organization;
 
 /**
  * Abstract repository that overrides the write functions for the expression repository.
@@ -31,7 +32,7 @@ public abstract class ReadOnlyAbstractExpressionRepository implements Expression
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateExpression(final Expression expression) {
+    public void addOrUpdateExpression(final Expression expression, final Organization organization) {
         throw new UnsupportedOperationException("This is a read only repository.");
     }
 

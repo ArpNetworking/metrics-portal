@@ -31,6 +31,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Version;
@@ -99,6 +101,10 @@ public class Alert extends Model {
 
     @OneToOne(mappedBy = "alert", cascade = CascadeType.ALL)
     private NagiosExtension nagiosExtension;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization")
+    private Organization organization;
 
     public Long getId() {
         return id;
@@ -226,6 +232,14 @@ public class Alert extends Model {
 
     public void setNagiosExtension(final NagiosExtension value) {
         nagiosExtension = value;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(final Organization organizationValue) {
+        this.organization = organizationValue;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

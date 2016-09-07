@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Groupon.com
+ * Copyright 2016 Smartsheet.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.database.h2.triggers;
 
-import models.ebean.AlertEtags;
-
-/**
- * Trigger to update Etag after every insert, delete or update statement.
- *
- * @author Deepika Misra (deepika at groupon dot com)
- */
-public class AlertsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
-
-    /**
-     * Public no args constructor.
-     */
-    public AlertsUpdateEtagTrigger() {
-        super(AlertEtags::incrementEtag, 15);
-    }
-}
+ALTER TABLE portal.hosts ADD COLUMN metrics_software_version VARCHAR(255) DEFAULT NULL;
+ALTER TABLE portal.hosts ADD COLUMN metrics_software_sha VARCHAR(255) DEFAULT NULL;
+CREATE INDEX hosts_metrics_software_version_idx ON portal.hosts (organization, metrics_software_version);
+CREATE INDEX hosts_metrics_software_sha_idx ON portal.hosts (organization, metrics_software_sha);

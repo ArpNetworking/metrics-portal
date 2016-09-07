@@ -27,6 +27,7 @@ import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultExpression;
 import models.view.PagedContainer;
@@ -82,7 +83,7 @@ public class ExpressionController extends Controller {
         }
 
         try {
-            _expressionRepository.addOrUpdateExpression(expression);
+            _expressionRepository.addOrUpdateExpression(expression, Organization.DEFAULT);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -140,7 +141,7 @@ public class ExpressionController extends Controller {
         }
 
         // Build a host repository query
-        final ExpressionQuery query = _expressionRepository.createQuery()
+        final ExpressionQuery query = _expressionRepository.createQuery(Organization.DEFAULT)
                 .contains(argContains)
                 .service(argService)
                 .cluster(argCluster)
@@ -221,7 +222,7 @@ public class ExpressionController extends Controller {
      */
     public Result get(final String id) {
         final UUID identifier = UUID.fromString(id);
-        final Optional<Expression> result = _expressionRepository.get(identifier);
+        final Optional<Expression> result = _expressionRepository.get(identifier, Organization.DEFAULT);
         if (!result.isPresent()) {
             return notFound();
         }

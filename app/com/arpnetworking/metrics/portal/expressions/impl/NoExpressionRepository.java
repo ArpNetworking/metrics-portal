@@ -22,6 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultExpressionQuery;
 import models.internal.impl.DefaultQueryResult;
@@ -68,11 +69,12 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
      * {@inheritDoc}
      */
     @Override
-    public Optional<Expression> get(final UUID identifier) {
+    public Optional<Expression> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting expression")
                 .addData("identifier", identifier)
+                .addData("organization", organization)
                 .log();
         return Optional.empty();
     }
@@ -81,9 +83,12 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
      * {@inheritDoc}
      */
     @Override
-    public ExpressionQuery createQuery() {
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultExpressionQuery(this);
+    public ExpressionQuery createQuery(final Organization organization) {
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultExpressionQuery(this, organization);
     }
 
     /**
@@ -103,9 +108,12 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
      * {@inheritDoc}
      */
     @Override
-    public long getExpressionCount() {
+    public long getExpressionCount(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Getting expression count").log();
+        LOGGER.debug()
+                .setMessage("Getting expression count")
+                .addData("organization", organization)
+                .log();
         return 0;
     }
 

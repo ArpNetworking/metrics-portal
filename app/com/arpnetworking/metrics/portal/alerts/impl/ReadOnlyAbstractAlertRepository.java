@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import models.internal.Alert;
+import models.internal.Organization;
 
 /**
  * Abstract repository that overrides the write functions for the <code>AlertRepository</code>.
@@ -31,7 +32,7 @@ public abstract class ReadOnlyAbstractAlertRepository implements AlertRepository
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateAlert(final Alert alert) {
+    public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         throw new UnsupportedOperationException("This is a read only repository.");
     }
 

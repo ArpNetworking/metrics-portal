@@ -16,11 +16,12 @@
 package com.arpnetworking.database.h2.triggers;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.ebean.Organization;
 import org.h2.api.Trigger;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 /**
  * Base class for H2 triggers for updating etags.
@@ -32,10 +33,12 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
     /**
      * Public constructor.
      *
-     * @param sequenceName Name of the sequence that should be updated.
+     * @param incrementEtag Method to update the etag.
+     * @param orgIndex The index to find the organization for which to update the etag.
      */
-    public BaseUpdateEtagTrigger(final String sequenceName) {
-        _queryStatement = String.format("SELECT NEXTVAL('%s');", sequenceName);
+    public BaseUpdateEtagTrigger(final Consumer<Organization> incrementEtag, final int orgIndex) {
+        _incrementEtag = incrementEtag;
+        _orgIndex = orgIndex;
     }
 
     /**
@@ -56,9 +59,9 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
     @Override
     @SuppressFBWarnings("SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING")
     public void fire(final Connection conn, final Object[] oldRow, final Object[] newRow) throws SQLException {
-        try (PreparedStatement stmt = conn.prepareStatement(_queryStatement)) {
-            stmt.execute();
-        }
+        final long orgId = (long) (oldRow != null ? oldRow[_orgIndex] : newRow[_orgIndex]);
+        final Organization org = Organization.refById(orgId);
+        _incrementEtag.accept(org);
     }
 
     /**
@@ -77,5 +80,6 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
         // ignore
     }
 
-    protected String _queryStatement;
+    private final Consumer<Organization> _incrementEtag;
+    private final int _orgIndex;
 }

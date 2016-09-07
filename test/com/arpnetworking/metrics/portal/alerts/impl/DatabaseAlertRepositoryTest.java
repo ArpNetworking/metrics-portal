@@ -20,11 +20,11 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.Transaction;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.collect.ImmutableMap;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
 import models.internal.NagiosExtension;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
 import org.joda.time.Period;
@@ -60,54 +60,58 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
 
     @Test
     public void testGetForInvalidId() {
-        Assert.assertFalse(alertRepo.get(UUID.randomUUID()).isPresent());
+        Assert.assertFalse(alertRepo.get(UUID.randomUUID(), Organization.DEFAULT).isPresent());
     }
 
     @Test
     public void testGetForValidId() throws IOException {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(alertRepo.get(uuid).isPresent());
         final models.ebean.Alert ebeanAlert = TestBeanFactory.createEbeanAlert();
+        final Organization org = TestBeanFactory.organizationFrom(ebeanAlert.getOrganization());
+        Assert.assertFalse(alertRepo.get(uuid, org).isPresent());
         ebeanAlert.setUuid(uuid);
         try (Transaction transaction = Ebean.beginTransaction()) {
             Ebean.save(ebeanAlert);
             transaction.commit();
         }
-        final Optional<Alert> expected = alertRepo.get(uuid);
+        final Optional<Alert> expected = alertRepo.get(uuid, org);
         Assert.assertTrue(expected.isPresent());
         assertAlertEbeanEquivalent(expected.get(), ebeanAlert);
     }
 
     @Test
     public void testGetAlertCountWithNoAlert() {
-        Assert.assertEquals(0, alertRepo.getAlertCount());
+        Assert.assertEquals(0, alertRepo.getAlertCount(Organization.DEFAULT));
     }
 
     @Test
     public void testGetAlertCountWithMultipleAlert() throws JsonProcessingException {
-        Assert.assertEquals(0, alertRepo.getAlertCount());
+        Assert.assertEquals(0, alertRepo.getAlertCount(Organization.DEFAULT));
         final Transaction transaction = Ebean.beginTransaction();
+        final Organization org;
         try {
             final models.ebean.Alert ebeanAlert1 = TestBeanFactory.createEbeanAlert();
             ebeanAlert1.setUuid(UUID.randomUUID());
             Ebean.save(ebeanAlert1);
             final models.ebean.Alert ebeanAlert2 = TestBeanFactory.createEbeanAlert();
             ebeanAlert2.setUuid(UUID.randomUUID());
+            ebeanAlert2.setOrganization(ebeanAlert1.getOrganization());
             Ebean.save(ebeanAlert2);
+            org = TestBeanFactory.organizationFrom(ebeanAlert1.getOrganization());
             transaction.commit();
         } finally {
             transaction.end();
         }
-        Assert.assertEquals(2, alertRepo.getAlertCount());
+        Assert.assertEquals(2, alertRepo.getAlertCount(org));
     }
 
     @Test
     public void testAddOrUpdateAlertAddCase() {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(alertRepo.get(uuid).isPresent());
+        Assert.assertFalse(alertRepo.get(uuid, Organization.DEFAULT).isPresent());
         final Alert actualAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-        alertRepo.addOrUpdateAlert(actualAlert);
-        final Optional<Alert> expected = alertRepo.get(uuid);
+        alertRepo.addOrUpdateAlert(actualAlert, Organization.DEFAULT);
+        final Optional<Alert> expected = alertRepo.get(uuid, Organization.DEFAULT);
         Assert.assertTrue(expected.isPresent());
         Assert.assertEquals(expected.get(), actualAlert);
     }
@@ -119,8 +123,8 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .setId(uuid)
                 .setNagiosExtension(null)
                 .build();
-        alertRepo.addOrUpdateAlert(alert);
-        final Alert expectedAlert = alertRepo.get(uuid).get();
+        alertRepo.addOrUpdateAlert(alert, Organization.DEFAULT);
+        final Alert expectedAlert = alertRepo.get(uuid, Organization.DEFAULT).get();
         Assert.assertNull(expectedAlert.getNagiosExtension());
     }
 
@@ -130,7 +134,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         alertRepo.addOrUpdateAlert(TestBeanFactory.createAlertBuilder()
                 .setId(uuid)
                 .setCluster("new-cluster")
-                .build());
+                .build(), Organization.DEFAULT);
         models.ebean.Alert ebeanAlert1 = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", uuid)
@@ -157,13 +161,13 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         final Alert alert2 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         successQuery.cluster(Optional.of("my-test-cluster"));
         final QueryResult<Alert> successResult = alertRepo.query(successQuery);
         Assert.assertEquals(1, successResult.total());
-        final AlertQuery failQuery = new DefaultAlertQuery(alertRepo);
+        final AlertQuery failQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         failQuery.cluster(Optional.of("some-random-cluster"));
         final QueryResult<Alert> failResult = alertRepo.query(failQuery);
         Assert.assertEquals(0, failResult.total());
@@ -179,9 +183,9 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .setId(UUID.randomUUID())
                 .setContext(Context.HOST)
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         successQuery.context(Optional.of(Context.CLUSTER));
         final QueryResult<Alert> successResult = alertRepo.query(successQuery);
         Assert.assertEquals(1, successResult.total());
@@ -196,13 +200,13 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         final Alert alert2 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         successQuery.service(Optional.of("my-test-service"));
         final QueryResult<Alert> successResult = alertRepo.query(successQuery);
         Assert.assertEquals(1, successResult.total());
-        final AlertQuery failQuery = new DefaultAlertQuery(alertRepo);
+        final AlertQuery failQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         failQuery.service(Optional.of("some-random-service"));
         final QueryResult<Alert> failResult = alertRepo.query(failQuery);
         Assert.assertEquals(0, failResult.total());
@@ -229,12 +233,12 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         final Alert alert5 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        alertRepo.addOrUpdateAlert(alert3);
-        alertRepo.addOrUpdateAlert(alert4);
-        alertRepo.addOrUpdateAlert(alert5);
-        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert4, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert5, Organization.DEFAULT);
+        final AlertQuery successQuery = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         successQuery.contains(Optional.of("contained"));
         final QueryResult<Alert> successResult = alertRepo.query(successQuery);
         Assert.assertEquals(3, successResult.total());
@@ -252,15 +256,15 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .setService("my-test-service")
                 .setCluster("my-test-cluster")
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        final AlertQuery query1 = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        final AlertQuery query1 = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         query1.service(Optional.of("my-test-service"));
         query1.cluster(Optional.of("my-test-cluster"));
         query1.limit(1);
         final QueryResult<Alert> result1 = alertRepo.query(query1);
         Assert.assertEquals(1, result1.values().size());
-        final AlertQuery query2 = new DefaultAlertQuery(alertRepo);
+        final AlertQuery query2 = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         query2.service(Optional.of("my-test-service"));
         query2.cluster(Optional.of("my-test-cluster"));
         query2.limit(2);
@@ -285,10 +289,10 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .setService("my-test-service")
                 .setCluster("my-test-cluster")
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        alertRepo.addOrUpdateAlert(alert3);
-        final AlertQuery query = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
+        final AlertQuery query = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         query.service(Optional.of("my-test-service"));
         query.cluster(Optional.of("my-test-cluster"));
         query.offset(Optional.of(2));
@@ -313,10 +317,10 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         final Alert alert3 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        alertRepo.addOrUpdateAlert(alert3);
-        final AlertQuery query = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
+        final AlertQuery query = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         query.contains(Optional.of("contained"));
         query.cluster(Optional.of("my-cluster"));
         final QueryResult<Alert> result = alertRepo.query(query);
@@ -340,10 +344,10 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         final Alert alert3 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
-        alertRepo.addOrUpdateAlert(alert1);
-        alertRepo.addOrUpdateAlert(alert2);
-        alertRepo.addOrUpdateAlert(alert3);
-        final AlertQuery query = new DefaultAlertQuery(alertRepo);
+        alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
+        alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
+        final AlertQuery query = new DefaultAlertQuery(alertRepo, Organization.DEFAULT);
         query.contains(Optional.of("contained"));
         query.service(Optional.of("my-service"));
         final QueryResult<Alert> result = alertRepo.query(query);
@@ -354,9 +358,8 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
 
     @Override
     protected Application provideApplication() {
-        final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
         return new GuiceApplicationBuilder()
-                .configure(ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl))
+                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
     }
 

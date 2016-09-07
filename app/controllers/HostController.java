@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.view.PagedContainer;
 import models.view.Pagination;
@@ -121,7 +122,7 @@ public class HostController extends Controller {
         }
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createQuery()
+        final HostQuery query = _hostRepository.createQuery(Organization.DEFAULT)
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)
@@ -141,7 +142,7 @@ public class HostController extends Controller {
 
         final QueryResult<Host> result;
         try {
-            result = query.execute();
+            result = _hostRepository.query(query);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch

@@ -24,12 +24,13 @@ import com.avaje.ebean.ExpressionList;
 import com.avaje.ebean.Junction;
 import com.avaje.ebean.PagedList;
 import com.avaje.ebean.Query;
-import com.avaje.ebean.SqlQuery;
 import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
+import models.ebean.AlertEtags;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.AlertQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
@@ -104,16 +105,18 @@ public class DatabaseAlertRepository implements AlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public Optional<Alert> get(final UUID identifier) {
+    public Optional<Alert> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")
                 .addData("alertId", identifier)
+                .addData("organization", organization)
                 .log();
 
         final models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", identifier)
+                .eq("organization.uuid", organization.getId())
                 .findUnique();
         if (ebeanAlert == null) {
             return Optional.empty();
@@ -125,10 +128,13 @@ public class DatabaseAlertRepository implements AlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public AlertQuery createQuery() {
+    public AlertQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultAlertQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultAlertQuery(this, organization);
     }
 
     /**
@@ -147,7 +153,7 @@ public class DatabaseAlertRepository implements AlertRepository {
 
         // Compute the etag
         // TODO(deepika): Obfuscate the etag [ISSUE-7]
-        final Long etag = _alertQueryGenerator.getEtag();
+        final Long etag = _alertQueryGenerator.getEtag(query.getOrganization());
 
         final List<Alert> values = new ArrayList<>();
         pagedAlerts.getList().forEach(ebeanAlert -> values.add(convertFromEbeanAlert(ebeanAlert)));
@@ -160,9 +166,11 @@ public class DatabaseAlertRepository implements AlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getAlertCount() {
+    public long getAlertCount(final Organization organization) {
         assertIsOpen();
         return Ebean.find(models.ebean.Alert.class)
+                .where()
+                .eq("organization.uuid", organization.getId())
                 .findRowCount();
     }
 
@@ -170,11 +178,12 @@ public class DatabaseAlertRepository implements AlertRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateAlert(final Alert alert) {
+    public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Upserting alert")
                 .addData("alert", alert)
+                .addData("organization", organization)
                 .log();
 
 
@@ -182,6 +191,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
                     .where()
                     .eq("uuid", alert.getId())
+                    .eq("organization.uuid", organization.getId())
                     .findUnique();
             boolean isNewAlert = false;
             if (ebeanAlert == null) {
@@ -189,6 +199,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 isNewAlert = true;
             }
 
+            ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(organization));
             ebeanAlert.setCluster(alert.getCluster());
             ebeanAlert.setUuid(alert.getId());
             ebeanAlert.setMetric(alert.getMetric());
@@ -207,6 +218,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             LOGGER.info()
                     .setMessage("Upserted alert")
                     .addData("alert", alert)
+                    .addData("organization", organization)
                     .addData("isCreated", isNewAlert)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
@@ -215,6 +227,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             LOGGER.error()
                     .setMessage("Failed to upsert alert")
                     .addData("alert", alert)
+                    .addData("organization", organization)
                     .setThrowable(e)
                     .log();
             throw new PersistenceException(e);
@@ -303,9 +316,10 @@ public class DatabaseAlertRepository implements AlertRepository {
         /**
          * Gets the etag for the alerts table.
          *
+         * @param organization The organization owning the alert.
          * @return The etag for the table.
          */
-        long getEtag();
+        long getEtag(Organization organization);
     }
 
     /**
@@ -319,6 +333,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         @Override
         public PagedList<models.ebean.Alert> createAlertQuery(final AlertQuery query) {
             ExpressionList<models.ebean.Alert> ebeanExpressionList = Ebean.find(models.ebean.Alert.class).where();
+            ebeanExpressionList = ebeanExpressionList.eq("organization.uuid", query.getOrganization().getId());
             if (query.getCluster().isPresent()) {
                 ebeanExpressionList = ebeanExpressionList.eq("cluster", query.getCluster().get());
             }
@@ -364,9 +379,8 @@ public class DatabaseAlertRepository implements AlertRepository {
          * {@inheritDoc}
          */
         @Override
-        public long getEtag() {
-            final SqlQuery sqlQuery = Ebean.createSqlQuery("SELECT CURRVAL('portal.alerts_etag_seq') AS etag;");
-            return sqlQuery.findUnique().getLong("etag");
+        public long getEtag(final Organization organization) {
+            return AlertEtags.getEtagByOrganization(organization);
         }
     }
 }

@@ -25,6 +25,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
@@ -63,6 +65,10 @@ public class Host extends Model {
 
     @Column(name = "metrics_software_state")
     private String metricsSoftwareState;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization")
+    private Organization organization;
 
     public Long getId() {
         return id;
@@ -118,6 +124,14 @@ public class Host extends Model {
 
     public void setMetricsSoftwareState(final String value) {
         metricsSoftwareState = value;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(final Organization organizationValue) {
+        this.organization = organizationValue;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

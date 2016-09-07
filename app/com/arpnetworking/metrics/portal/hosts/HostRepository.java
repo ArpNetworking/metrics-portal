@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.hosts;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 
 /**
@@ -43,22 +44,25 @@ public interface HostRepository extends AutoCloseable {
      * Add a new host or update an existing host in the repository.
      *
      * @param host The host to add to the repository.
+     * @param organization The organization owning the host.
      */
-    void addOrUpdateHost(Host host);
+    void addOrUpdateHost(Host host, Organization organization);
 
     /**
      * Remove the host by hostname from the repository.
      *
      * @param hostname The hostname of the host to remove.
+     * @param organization The organization owning the host.
      */
-    void deleteHost(String hostname);
+    void deleteHost(String hostname, Organization organization);
 
     /**
      * Create a query against the hosts repository.
      *
+     * @param organization Organization to search in.
      * @return Instance of <code>HostQuery</code>.
      */
-    HostQuery createQuery();
+    HostQuery createQuery(Organization organization);
 
     /**
      * Query the hosts repository.
@@ -66,21 +70,23 @@ public interface HostRepository extends AutoCloseable {
      * @param query Instance of <code>HostQuery</code>.
      * @return Instance of <code>HostQueryResult</code>.
      */
-    QueryResult<Host> query(final HostQuery query);
+    QueryResult<Host> query(HostQuery query);
 
     /**
      * Retrieve the total number of hosts in the repository.
      *
+     * @param organization The organization owning the hosts.
      * @return The total number of hosts.
      */
-    long getHostCount();
+    long getHostCount(Organization organization);
 
     /**
      * Retrieve the number of hosts with metrics software in the specified
      * state.
      *
      * @param metricsSoftwareState The state to filter on.
+     * @param organization The organization owning the host.
      * @return The number of hosts in the specified state.
      */
-    long getHostCount(MetricsSoftwareState metricsSoftwareState);
+    long getHostCount(MetricsSoftwareState metricsSoftwareState, Organization organization);
 }
