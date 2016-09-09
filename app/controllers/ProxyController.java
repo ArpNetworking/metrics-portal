@@ -26,6 +26,7 @@ import models.internal.Features;
 import models.messages.ProxyConnectDestination;
 import models.messages.ProxyConnectOriginator;
 import play.mvc.Controller;
+import play.mvc.LegacyWebSocket;
 import play.mvc.WebSocket;
 
 import java.net.URI;
@@ -63,7 +64,7 @@ public class ProxyController extends Controller {
      * @return Proxied stream.
      * @throws URISyntaxException if supplied uri is invalid.
      */
-    public WebSocket<String> stream(final String uri) throws URISyntaxException {
+    public LegacyWebSocket<String> stream(final String uri) throws URISyntaxException {
         if (!_enabled) {
             throw new IllegalStateException("Proxy disabled");
         }
@@ -82,7 +83,7 @@ public class ProxyController extends Controller {
     private final boolean _enabled;
     private final Map<WebSocket.Out<JsonNode>, ActorRef> _connections = Maps.newHashMap();
 
-    private static class ProxyWebSocket extends WebSocket<String> {
+    private static class ProxyWebSocket extends LegacyWebSocket<String> {
 
         /**
          * Public constructor.
@@ -97,7 +98,7 @@ public class ProxyController extends Controller {
          * {@inheritDoc}
          */
         @Override
-        public void onReady(final In<String> in, final Out<String> out) {
+        public void onReady(final WebSocket.In<String> in, final WebSocket.Out<String> out) {
             _proxyActor.tell(new ProxyConnectOriginator(in, out), ActorRef.noSender());
         }
 

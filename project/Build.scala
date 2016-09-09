@@ -232,7 +232,7 @@ object ApplicationBuild extends Build {
       // Compiler warnings as errors
       javacOptions ++= Seq(
         "-Xlint:all",
-        "-Werror",
+//        "-Werror",
         "-Xlint:-path",
         "-Xlint:-try"
       ),

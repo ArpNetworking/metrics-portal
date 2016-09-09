@@ -18,10 +18,12 @@ package global;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import play.http.HttpErrorHandler;
-import play.libs.F;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Error handler for the application.
@@ -33,26 +35,26 @@ public class ErrorHandler implements HttpErrorHandler {
      * {@inheritDoc}
      */
     @Override
-    public F.Promise<Result> onClientError(final Http.RequestHeader requestHeader, final int status, final String message) {
+    public CompletionStage<Result> onClientError(final Http.RequestHeader requestHeader, final int status, final String message) {
         LOGGER.warn()
                 .setMessage("error on client request")
                 .addData("request", requestHeader)
                 .addData("reason", message)
                 .log();
-        return F.Promise.pure(Results.status(status));
+        return CompletableFuture.completedFuture(Results.status(status));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public F.Promise<Result> onServerError(final Http.RequestHeader requestHeader, final Throwable throwable) {
+    public CompletionStage<Result> onServerError(final Http.RequestHeader requestHeader, final Throwable throwable) {
         LOGGER.error()
                 .setMessage("error processing request")
                 .addData("request", requestHeader)
                 .setThrowable(throwable)
                 .log();
-        return F.Promise.pure(Results.status(500));
+        return CompletableFuture.completedFuture(Results.status(500));
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ErrorHandler.class);
