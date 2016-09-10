@@ -43,6 +43,7 @@ public final class ForemanHostProvider extends UntypedActor {
      * Public constructor.
      *
      * @param hostRepository Repository to store hosts.
+     * @param wsClient Webservice client used to make HTTP service calls.
      * @param configuration Play configuration.
      */
     @Inject

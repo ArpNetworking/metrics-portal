@@ -42,7 +42,7 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.4.2"
+    val akkaVersion = "2.4.10"
     val jacksonVersion = "2.7.4"
 
     val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
@@ -66,8 +66,9 @@ object ApplicationBuild extends Build {
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
+      "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "com.typesafe.play" %% "play-ebean" % "1.0.0",
+      "com.typesafe.play" %% "play-ebean" % "3.0.0",
       "net.sf.oval" % "oval" % "1.82",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
       "org.flywaydb" % "flyway-play_2.11" % "2.2.1",
@@ -232,7 +233,7 @@ object ApplicationBuild extends Build {
       // Compiler warnings as errors
       javacOptions ++= Seq(
         "-Xlint:all",
-//        "-Werror",
+        "-Werror",
         "-Xlint:-path",
         "-Xlint:-try"
       ),
