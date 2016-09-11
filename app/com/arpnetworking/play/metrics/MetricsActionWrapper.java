@@ -21,10 +21,11 @@ import com.arpnetworking.metrics.Timer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Strings;
-import play.libs.F;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * Simple action wrapper that wraps each call in a metrics timer.
@@ -39,11 +40,9 @@ public final class MetricsActionWrapper extends Action.Simple {
      * Public constructor.
      *
      * @param metricsFactory Instance of <code>MetricsFactory</code>.
-     * @param action The <code>Action</code> to wrap.
      */
-    public MetricsActionWrapper(final MetricsFactory metricsFactory, final Action<?> action) {
+    public MetricsActionWrapper(final MetricsFactory metricsFactory) {
         _metricsFactory = metricsFactory;
-        this.delegate = action;
     }
 
     /**
@@ -51,12 +50,12 @@ public final class MetricsActionWrapper extends Action.Simple {
      */
     @Override
     // CHECKSTYLE.OFF: IllegalThrow
-    public F.Promise<Result> call(final Http.Context context) throws Throwable {
+    public CompletionStage<Result> call(final Http.Context context) {
         // CHECKSTYLE.ON: IllegalThrow
 
         final Metrics metrics = getMetrics(context);
         final Timer timer = metrics.createTimer(createTimerName(context));
-        return delegate.call(context).map(r -> { timer.stop(); metrics.close(); return r; });
+        return delegate.call(context).thenApply(r -> { timer.stop(); metrics.close(); return r; });
         // TODO(vkoskela): Add success/failure counter by mapping on return code. [MAI-279]
     }
 

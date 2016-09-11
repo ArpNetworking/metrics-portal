@@ -43,10 +43,10 @@ import models.internal.impl.DefaultFeatures;
 import play.Configuration;
 import play.Environment;
 import play.inject.ApplicationLifecycle;
-import play.libs.F;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -63,6 +63,7 @@ public class MainModule extends AbstractModule {
      */
     @Override
     protected void configure() {
+        bind(Global.class).asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
@@ -135,7 +136,7 @@ public class MainModule extends AbstractModule {
             _lifecycle.addStopHook(
                     () -> {
                         hostRepository.close();
-                        return F.Promise.pure(null);
+                        return CompletableFuture.completedFuture(null);
                     });
             return hostRepository;
         }
@@ -168,7 +169,7 @@ public class MainModule extends AbstractModule {
             _lifecycle.addStopHook(
                     () -> {
                         expressionRepository.close();
-                        return F.Promise.pure(null);
+                        return CompletableFuture.completedFuture(null);
                     });
             return expressionRepository;
         }
@@ -201,7 +202,7 @@ public class MainModule extends AbstractModule {
             _lifecycle.addStopHook(
                     () -> {
                         alertRepository.close();
-                        return F.Promise.pure(null);
+                        return CompletableFuture.completedFuture(null);
                     });
             return alertRepository;
         }

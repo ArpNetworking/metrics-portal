@@ -16,10 +16,11 @@
 package controllers;
 
 import models.internal.Features;
-import play.libs.F;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -46,8 +47,8 @@ public final class ApplicationController extends Controller {
      *
      * @return Rendered header view.
      */
-    public F.Promise<Result> getHeaderViewModel() {
-        return F.Promise.pure(ok(views.html.HeaderViewModel.render(_features)));
+    public CompletionStage<Result> getHeaderViewModel() {
+        return CompletableFuture.completedFuture(ok(views.html.HeaderViewModel.render(_features)));
     }
 
     private final Features _features;

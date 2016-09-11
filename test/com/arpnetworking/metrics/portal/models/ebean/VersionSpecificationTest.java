@@ -27,8 +27,8 @@ import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import play.test.FakeApplication;
-import play.test.Helpers;
+import play.Application;
+import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
 import java.util.ArrayList;
@@ -96,14 +96,11 @@ public class VersionSpecificationTest extends WithApplication {
     }
 
     @Override
-    protected FakeApplication provideFakeApplication() {
+    protected Application provideApplication() {
         final String jdbcUrl = H2ConnectionStringFactory.generateJdbcUrl();
-        return new FakeApplication(
-                new java.io.File("."),
-                Helpers.class.getClassLoader(),
-                ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl),
-                new ArrayList<String>(),
-                null);
+        return new GuiceApplicationBuilder()
+                .configure(ImmutableMap.of("db.metrics_portal_ddl.url", jdbcUrl, "db.default.url", jdbcUrl))
+                .build();
     }
 
     private Matcher<? super VersionSpecificationAttribute> hasKV(final String k, final String v) {

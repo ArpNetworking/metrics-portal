@@ -21,27 +21,27 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // The SBT Community repository
 resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
 
-addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.4.1")
+addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.4.3")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-aspectj" % "0.10.6")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.0")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-digest" % "1.1.1")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-gzip" % "1.0.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-play-ebean" % "1.0.0")
+addSbtPlugin("com.typesafe.sbt" % "sbt-play-ebean" % "3.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-play-enhancer" % "1.1.0")
 
-addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.4.8")
+addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.6")
 
-addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.7")
+addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.8")
 
 addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.2.1")
 
-addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.0")
+addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.3")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "0.5.1")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
 

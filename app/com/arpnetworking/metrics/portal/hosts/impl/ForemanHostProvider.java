@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.UntypedActor;
-import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
@@ -27,6 +27,7 @@ import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 import play.Configuration;
+import play.libs.ws.WSClient;
 
 import java.net.URI;
 import java.util.List;
@@ -42,10 +43,11 @@ public final class ForemanHostProvider extends UntypedActor {
      * Public constructor.
      *
      * @param hostRepository Repository to store hosts.
+     * @param wsClient Webservice client used to make HTTP service calls.
      * @param configuration Play configuration.
      */
     @Inject
-    public ForemanHostProvider(final HostRepository hostRepository, @Assisted final Configuration configuration) {
+    public ForemanHostProvider(final HostRepository hostRepository, final WSClient wsClient, @Assisted final Configuration configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
@@ -56,6 +58,7 @@ public final class ForemanHostProvider extends UntypedActor {
                 getSelf());
         _client = new ForemanClient.Builder()
                 .setBaseUrl(URI.create(configuration.getString("baseUrl")))
+                .setClient(wsClient)
                 .build();
     }
 
@@ -66,7 +69,7 @@ public final class ForemanHostProvider extends UntypedActor {
                     .setMessage("Searching for added/updated hosts")
                     .addData("actor", self())
                     .log();
-            Patterns.pipe(_client.getHostPage(1).wrapped(), context().dispatcher()).to(self(), self());
+            PatternsCS.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
         } else if (message instanceof ForemanClient.HostPageResponse) {
             final ForemanClient.HostPageResponse response = (ForemanClient.HostPageResponse) message;
             final List<ForemanClient.ForemanHost> results = response.getResults();
@@ -79,7 +82,7 @@ public final class ForemanHostProvider extends UntypedActor {
             }
 
             if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                Patterns.pipe(_client.getHostPage(response.getPage() + 1, response.getPerPage()).wrapped(), context().dispatcher())
+                PatternsCS.pipe(_client.getHostPage(response.getPage() + 1, response.getPerPage()), context().dispatcher())
                         .to(self(), self());
             }
         } else {

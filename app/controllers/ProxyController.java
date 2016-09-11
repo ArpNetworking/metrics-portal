@@ -15,22 +15,22 @@
  */
 package controllers;
 
-import actors.ProxyConnection;
-import akka.actor.ActorRef;
+import akka.NotUsed;
 import akka.actor.ActorSystem;
+import akka.http.javadsl.Http;
+import akka.http.javadsl.model.ws.Message;
+import akka.http.javadsl.model.ws.TextMessage;
+import akka.http.javadsl.model.ws.WebSocketRequest;
+import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
+import akka.stream.javadsl.Flow;
 import com.arpnetworking.metrics.MetricsFactory;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.internal.Features;
-import models.messages.ProxyConnectDestination;
-import models.messages.ProxyConnectOriginator;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
 
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Metrics portal proxy controller. Exposes API to proxy streaming to application hosts.
@@ -63,44 +63,24 @@ public class ProxyController extends Controller {
      * @return Proxied stream.
      * @throws URISyntaxException if supplied uri is invalid.
      */
-    public WebSocket<String> stream(final String uri) throws URISyntaxException {
+    public WebSocket stream(final String uri) throws URISyntaxException {
         if (!_enabled) {
             throw new IllegalStateException("Proxy disabled");
         }
 
-        final ActorRef proxyActor = _system.actorOf(ProxyConnection.props(_metricsFactory));
+        final Http http = Http.get(_system);
 
-        // Initiate web socket connection to proxy destination
-        proxyActor.tell(new ProxyConnectDestination(new URI(uri)), ActorRef.noSender());
+        final Flow<String, Message, NotUsed> mapFlow = Flow.<String>create()
+                .map(TextMessage::create);
+        final Flow<Message, String, CompletionStage<WebSocketUpgradeResponse>> wsFlow =
+                http.webSocketClientFlow(WebSocketRequest.create(uri))
+                .map(m -> m.asTextMessage().getStrictText());
 
         // Accept web socket connection from proxy originator
-        return new ProxyWebSocket(proxyActor);
+        return WebSocket.Text.accept(header -> mapFlow.via(wsFlow));
     }
 
     private final MetricsFactory _metricsFactory;
     private final ActorSystem _system;
     private final boolean _enabled;
-    private final Map<WebSocket.Out<JsonNode>, ActorRef> _connections = Maps.newHashMap();
-
-    private static class ProxyWebSocket extends WebSocket<String> {
-
-        /**
-         * Public constructor.
-         *
-         * @param proxyActor Actor reference to proxy connection actor.
-         */
-        public ProxyWebSocket(final ActorRef proxyActor) {
-            _proxyActor = proxyActor;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void onReady(final In<String> in, final Out<String> out) {
-            _proxyActor.tell(new ProxyConnectOriginator(in, out), ActorRef.noSender());
-        }
-
-        private final ActorRef _proxyActor;
-    }
 }

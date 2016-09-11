@@ -23,12 +23,12 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import play.libs.F;
-import play.libs.ws.WS;
+import play.libs.ws.WSClient;
 import play.libs.ws.WSResponse;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Client for HTTP Foreman API.
@@ -42,7 +42,7 @@ public final class ForemanClient {
      * @param page The page number to start at
      * @return A Promise containing a {@link HostPageResponse}
      */
-    public F.Promise<HostPageResponse> getHostPage(final int page) {
+    public CompletionStage<HostPageResponse> getHostPage(final int page) {
         return getHostPage(page, 250);
     }
 
@@ -53,11 +53,11 @@ public final class ForemanClient {
      * @param perPage The number of hosts per page
      * @return A Promise containing a {@link HostPageResponse}
      */
-    public F.Promise<HostPageResponse> getHostPage(final int page, final int perPage) {
-            return WS.client()
+    public CompletionStage<HostPageResponse> getHostPage(final int page, final int perPage) {
+            return _client
                     .url(_baseUrl + String.format("/api/hosts?per_page=%d&page=%d", perPage, page))
                     .get()
-                    .map(this::parseWSResponse);
+                    .thenApply(this::parseWSResponse);
     }
 
     private HostPageResponse parseWSResponse(final WSResponse page) {
@@ -74,9 +74,11 @@ public final class ForemanClient {
 
     private ForemanClient(final Builder builder) {
         _baseUrl = builder._baseUrl;
+        _client = builder._client;
     }
 
     private final URI _baseUrl;
+    private final WSClient _client;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 
@@ -104,9 +106,22 @@ public final class ForemanClient {
             return this;
         }
 
+        /**
+         * Sets the {@link play.libs.ws.WSClient} to use to make the calls. Required. Cannot be null.
+         *
+         * @param value The WSClient.
+         * @return this {@link Builder}
+         */
+        public Builder setClient(final WSClient value) {
+            _client = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private URI _baseUrl;
+        @NotNull
+        private WSClient _client;
     }
 
     /**

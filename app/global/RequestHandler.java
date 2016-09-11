@@ -18,7 +18,7 @@ package global;
 
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.metrics.MetricsActionWrapper;
-import play.http.DefaultHttpRequestHandler;
+import play.http.ActionCreator;
 import play.mvc.Action;
 import play.mvc.Http;
 
@@ -30,7 +30,7 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (brandonarp at gmail dot com)
  */
-public class RequestHandler extends DefaultHttpRequestHandler {
+public class RequestHandler implements ActionCreator {
     /**
      * Public constructor.
      *
@@ -47,7 +47,7 @@ public class RequestHandler extends DefaultHttpRequestHandler {
     @Override
     @SuppressWarnings("unchecked")
     public Action<?> createAction(final Http.Request request, final Method method) {
-        return new MetricsActionWrapper(_metricsFactory, (Action<Object>) super.createAction(request, method));
+        return new MetricsActionWrapper(_metricsFactory);
     }
 
     private final MetricsFactory _metricsFactory;
