@@ -252,7 +252,7 @@ object ApplicationBuild extends Build {
       pipelineStages := Seq(rjs, digest, gzip),
       modules += JS.Object("name" -> "classes/shell"),
 
-      scalaVersion := "2.11.6",
+      scalaVersion := "2.11.8",
       resolvers += Resolver.mavenLocal,
 
       libraryDependencies ++= appDependencies,
