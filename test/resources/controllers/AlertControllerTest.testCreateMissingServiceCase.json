@@ -5,7 +5,7 @@
     "name" : "test-name",
     "metric" : "test-metric",
     "statistic" : "test-statistic",
-    "period" : 1000,
+    "period" : "PT1S",
     "operator" : "EQUAL_TO",
     "value" : {
         "value" : 12.0,

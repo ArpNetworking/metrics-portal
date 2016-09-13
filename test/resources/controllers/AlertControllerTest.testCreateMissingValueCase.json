@@ -6,7 +6,7 @@
     "metric" : "test-metric",
     "service" : "test-service",
     "statistic" : "test-statistic",
-    "period" : 1000,
+    "period" : "PT1S",
     "operator" : "EQUAL_TO",
     "extensions" : {
         "severity" : "CRITICAL",

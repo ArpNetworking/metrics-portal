@@ -37,7 +37,6 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
@@ -76,7 +75,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         }
         final Optional<Alert> expected = alertRepo.get(uuid);
         Assert.assertTrue(expected.isPresent());
-        Assert.assertTrue(isAlertEbeanEquivalent(expected.get(), ebeanAlert));
+        assertAlertEbeanEquivalent(expected.get(), ebeanAlert);
     }
 
     @Test
@@ -361,28 +360,28 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .build();
     }
 
-    private boolean isAlertEbeanEquivalent(final Alert alert, final models.ebean.Alert ebeanAlert) {
-        return Objects.equals(alert.getId(), ebeanAlert.getUuid())
-                && Objects.equals(alert.getCluster(), ebeanAlert.getCluster())
-                && Objects.equals(alert.getMetric(), ebeanAlert.getMetric())
-                && isNagiosExtensionEbeanEquivalent(alert.getNagiosExtension(), ebeanAlert.getNagiosExtension())
-                && Objects.equals(alert.getService(), ebeanAlert.getService())
-                && Objects.equals(alert.getName(), ebeanAlert.getName())
-                && Objects.equals(alert.getOperator(), ebeanAlert.getOperator())
-                && Objects.equals(alert.getPeriod(), Period.seconds(ebeanAlert.getPeriod()))
-                && Objects.equals(alert.getStatistic(), ebeanAlert.getStatistic())
-                && Objects.equals(alert.getValue().getUnit(), com.google.common.base.Optional.of(ebeanAlert.getQuantityUnit()))
-                && alert.getValue().getValue() == ebeanAlert.getQuantityValue()
-                && Objects.equals(alert.getContext(), ebeanAlert.getContext());
+    private void assertAlertEbeanEquivalent(final Alert alert, final models.ebean.Alert ebeanAlert) {
+        Assert.assertEquals(alert.getId(), ebeanAlert.getUuid());
+        Assert.assertEquals(alert.getCluster(), ebeanAlert.getCluster());
+        Assert.assertEquals(alert.getMetric(), ebeanAlert.getMetric());
+        assertNagiosExtensionEbeanEquivalent(alert.getNagiosExtension(), ebeanAlert.getNagiosExtension());
+        Assert.assertEquals(alert.getService(), ebeanAlert.getService());
+        Assert.assertEquals(alert.getName(), ebeanAlert.getName());
+        Assert.assertEquals(alert.getOperator(), ebeanAlert.getOperator());
+        Assert.assertEquals(alert.getPeriod(), Period.seconds(ebeanAlert.getPeriod()).normalizedStandard());
+        Assert.assertEquals(alert.getStatistic(), ebeanAlert.getStatistic());
+        Assert.assertEquals(alert.getValue().getUnit(), com.google.common.base.Optional.of(ebeanAlert.getQuantityUnit()));
+        Assert.assertEquals(alert.getValue().getValue(), ebeanAlert.getQuantityValue(), 0.001);
+        Assert.assertEquals(alert.getContext(), ebeanAlert.getContext());
     }
 
-    private static boolean isNagiosExtensionEbeanEquivalent(
+    private static void assertNagiosExtensionEbeanEquivalent(
             final NagiosExtension extension,
             final models.ebean.NagiosExtension ebeanExtension) {
-        return Objects.equals(extension.getSeverity(), ebeanExtension.getSeverity())
-                && Objects.equals(extension.getNotify(), ebeanExtension.getNotify())
-                && extension.getMaxCheckAttempts() == ebeanExtension.getMaxCheckAttempts()
-                && extension.getFreshnessThreshold().getStandardSeconds() == ebeanExtension.getFreshnessThreshold();
+        Assert.assertEquals(extension.getSeverity(), ebeanExtension.getSeverity());
+        Assert.assertEquals(extension.getNotify(), ebeanExtension.getNotify());
+        Assert.assertEquals(extension.getMaxCheckAttempts(), ebeanExtension.getMaxCheckAttempts());
+        Assert.assertEquals(extension.getFreshnessThreshold().getStandardSeconds(), ebeanExtension.getFreshnessThreshold());
     }
 
     private final DatabaseAlertRepository.AlertQueryGenerator queryGenerator = new DatabaseAlertRepository.GenericQueryGenerator();

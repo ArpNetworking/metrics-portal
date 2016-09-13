@@ -169,7 +169,7 @@ public final class DefaultAlert implements Alert {
                 && Objects.equals(_service, otherAlert._service)
                 && Objects.equals(_metric, otherAlert._metric)
                 && Objects.equals(_statistic, otherAlert._statistic)
-                && Objects.equals(_period, otherAlert._period)
+                && Objects.equals(_period.normalizedStandard(), otherAlert._period.normalizedStandard())
                 && Objects.equals(_operator, otherAlert._operator)
                 && Objects.equals(_value, otherAlert._value)
                 && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);

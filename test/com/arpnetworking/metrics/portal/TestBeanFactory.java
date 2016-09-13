@@ -47,7 +47,7 @@ public final class TestBeanFactory {
                 .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
                 .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Period.seconds(RANDOM.nextInt(100)))
+                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard())
                 .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
                 .setValue(new DefaultQuantity.Builder()
                         .setValue(100 + RANDOM.nextDouble())
