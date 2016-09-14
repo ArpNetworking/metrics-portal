@@ -22,13 +22,13 @@
             <div class="col-md-12 col-sm-12 col-lg-12 search-header">
                 <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
                     <div class="form-group has-feedback">
-                        <input class="form-control" data-bind="value: searchAlert, valueUpdate: 'keyup'" type="text" placeholder="Search">
+                        <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
                         <span class="glyphicon glyphicon-search form-control-feedback"></span>
                     </div>
                 </form>
             </div>
             <div style="font-size: large; overflow-style: scrollbar; overflow-y: auto" class="container-fluid col-md-12 col-sm-12 col-lg-12">
-                <div data-bind="foreach: filteredAlerts" class="row">
+                <div data-bind="foreach: filteredEntities" class="row">
                     <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6 box">
                         <i class="fa fa-sitemap"></i>
                         <span data-bind="text: cluster, tooltip:{ cluster, tooltipClass: 'host-tip'}, attr: {title: cluster}"></span>
