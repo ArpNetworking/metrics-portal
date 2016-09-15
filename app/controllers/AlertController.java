@@ -277,7 +277,7 @@ public class AlertController extends Controller {
                 alertBuilder.setOperator(Operator.valueOf(viewAlert.getOperator()));
             }
             if (viewAlert.getPeriod() != null) {
-                alertBuilder.setPeriod(new Period(Long.parseLong(viewAlert.getPeriod())));
+                alertBuilder.setPeriod(Period.parse(viewAlert.getPeriod()));
             }
             if (viewAlert.getExtensions() != null) {
                 alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));

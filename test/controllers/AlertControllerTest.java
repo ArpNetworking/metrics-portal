@@ -18,9 +18,13 @@ package controllers;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
+import com.avaje.ebean.Ebean;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import models.ebean.NagiosExtension;
 import models.internal.Alert;
+import models.internal.Context;
+import models.internal.Operator;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -70,6 +74,28 @@ public class AlertControllerTest {
                 .uri("/v1/alerts");
         Result result = Helpers.route(request);
         Assert.assertEquals(Http.Status.OK, result.status());
+        final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
+                .where()
+                .eq("uuid", UUID.fromString("88410734-aed7-11e1-8e54-00259060b612"))
+                .findUnique();
+
+        Assert.assertNotNull(alert);
+        Assert.assertEquals(Context.CLUSTER, alert.getContext());
+        Assert.assertEquals("test-cluster", alert.getCluster());
+        Assert.assertEquals("test-name", alert.getName());
+        Assert.assertEquals("test-metric", alert.getMetric());
+        Assert.assertEquals("test-service", alert.getService());
+        Assert.assertEquals(1, alert.getPeriod());
+        Assert.assertEquals(Operator.EQUAL_TO, alert.getOperator());
+        Assert.assertEquals(12, alert.getQuantityValue(), 0.01);
+        Assert.assertEquals("MEGABYTE", alert.getQuantityUnit());
+
+        final NagiosExtension extension = alert.getNagiosExtension();
+        Assert.assertNotNull(extension);
+        Assert.assertEquals("CRITICAL", extension.getSeverity());
+        Assert.assertEquals("abc@example.com", extension.getNotify());
+        Assert.assertEquals(3, extension.getMaxCheckAttempts());
+        Assert.assertEquals(300, extension.getFreshnessThreshold());
     }
 
     @Test

@@ -239,7 +239,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .setMetric(ebeanAlert.getMetric())
                 .setName(ebeanAlert.getName())
                 .setOperator(ebeanAlert.getOperator())
-                .setPeriod(Period.seconds(ebeanAlert.getPeriod()))
+                .setPeriod(Period.seconds(ebeanAlert.getPeriod()).normalizedStandard())
                 .setService(ebeanAlert.getService())
                 .setStatistic(ebeanAlert.getStatistic())
                 .setValue(new DefaultQuantity.Builder()
