@@ -18,12 +18,7 @@ import AlertData = require('./AlertData');
 import PaginatedSearchableList = require('../PaginatedSearchableList');
 import $ = require('jquery');
 
-class AlertsViewModel extends PaginatedSearchableList<AlertData> {
-    constructor() {
-        super();
-        this.query();
-    }
-
+class AlertsList extends PaginatedSearchableList<AlertData> {
     fetchData(query, callback) {
         $.getJSON("/v1/alerts/query", query, (data) => {
             var alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
@@ -42,6 +37,15 @@ class AlertsViewModel extends PaginatedSearchableList<AlertData> {
             callback(alertsList, data.pagination);
         });
     }
+}
+
+class AlertsViewModel {
+    alerts: AlertsList = new AlertsList();
+
+    constructor() {
+        this.alerts.query();
+    }
+
 }
 
 export = AlertsViewModel;

@@ -22,13 +22,12 @@ import GraphViewModel = require('../GraphViewModel');
 import $ = require('jquery');
 import ko = require('knockout');
 
-class HostRegistryViewModel extends PaginatedSearchableList<HostData> {
+class HostList extends PaginatedSearchableList<HostData> {
     versionFilter: KnockoutObservable <string> = ko.observable('');
 
     constructor() {
         super();
         this.versionFilter.subscribe(() => {this.page(1); this.query()});
-        this.query();
     };
 
     click(connectTo: HostData) {
@@ -55,4 +54,11 @@ class HostRegistryViewModel extends PaginatedSearchableList<HostData> {
     }
 }
 
+class HostRegistryViewModel {
+    hosts: HostList = new HostList();
+
+    constructor() {
+        this.hosts.query();
+    };
+}
 export = HostRegistryViewModel;

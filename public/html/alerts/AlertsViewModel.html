@@ -18,46 +18,33 @@
     <div class="row-fluid">
         <div class="col-md-12">
             <h2>Alerts</h2>
-
-            <div class="col-md-12 col-sm-12 col-lg-12 search-header">
-                <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
-                    <div class="form-group has-feedback">
-                        <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
-                        <span class="glyphicon glyphicon-search form-control-feedback"></span>
-                    </div>
-                </form>
-            </div>
-            <div style="font-size: large; overflow-style: scrollbar; overflow-y: auto" class="container-fluid col-md-12 col-sm-12 col-lg-12">
-                <div data-bind="foreach: filteredEntities" class="row">
-                    <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6 box">
-                        <i class="fa fa-sitemap"></i>
-                        <span data-bind="text: cluster, tooltip:{ cluster, tooltipClass: 'host-tip'}, attr: {title: cluster}"></span>
-                        <br/>
-                        <i class="fa fa-cog"></i>
-                        <span data-bind="text: service, tooltip:{ service, tooltipClass: 'host-tip'}, attr: {title: service}"></span>
-                        <br/>
-                        <i class="fa fa-bar-chart"></i>
-                        <span data-bind="text: metric, tooltip:{ metric, tooltipClass: 'host-tip'}, attr: {title: metric}"></span>
-                        <br/>
-                        <i class="fa fa-bell"></i>
-                        <span data-bind="text: name, tooltip:{ name, tooltipClass: 'host-tip'}, attr: {title: name}"></span>
-                        <br/>
-                        <i class="fa fa-calculator"></i>
-                        <span data-bind="text: statistic, tooltip:{ statistic, tooltipClass: 'host-tip'}, attr: {title: statistic}"></span>
-                        <br/>
-                        <i class="fa fa-clock-o"></i>
-                        <span data-bind="text: period, tooltip:{ period, tooltipClass: 'host-tip'}, attr: {title: period}"></span>
-                        <i class="fa" style="float : right;" data-bind="css: contextStyle, tooltip:{ contextTip, tooltipClass: 'host-tip'}, attr: {title: contextTip}"></i>
-                    </div>
-                </div>
-            </div>
-            <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
-                <div class="text-center">
-                    <ul class="pagination" data-bind="foreach: pagerElements">
-                        <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
-                    </ul>
-                </div>
-            </nav>
+            <div data-bind="compose: { model: alerts, view: '/assets/html/components/Pager.html' }"></div>
         </div>
     </div>
 </div>
+
+<script type="text/html" id="list-element-template">
+    <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6 box">
+        <i class="fa fa-sitemap"></i>
+        <span data-bind="text: cluster, tooltip:{ cluster, tooltipClass: 'host-tip'}, attr: {title: cluster}"></span>
+        <br/>
+        <i class="fa fa-cog"></i>
+        <span data-bind="text: service, tooltip:{ service, tooltipClass: 'host-tip'}, attr: {title: service}"></span>
+        <br/>
+        <i class="fa fa-bar-chart"></i>
+        <span data-bind="text: metric, tooltip:{ metric, tooltipClass: 'host-tip'}, attr: {title: metric}"></span>
+        <br/>
+        <i class="fa fa-bell"></i>
+        <span data-bind="text: name, tooltip:{ name, tooltipClass: 'host-tip'}, attr: {title: name}"></span>
+        <br/>
+        <i class="fa fa-calculator"></i>
+        <span data-bind="text: statistic, tooltip:{ statistic, tooltipClass: 'host-tip'}, attr: {title: statistic}"></span>
+        <br/>
+        <i class="fa fa-clock-o left"></i>
+        <span data-bind="text: period, tooltip:{ period, tooltipClass: 'host-tip'}, attr: {title: period}"></span>
+        <a data-bind="attr: { href: editUri }">
+            <i class="fa fa-pencil-square-o right"></i>
+        </a>
+        <i class="fa right" data-bind="css: contextStyle, tooltip:{ contextTip, tooltipClass: 'host-tip'}, attr: {title: contextTip}"></i>
+    </div>
+</script>

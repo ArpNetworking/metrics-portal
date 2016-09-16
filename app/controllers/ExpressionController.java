@@ -93,7 +93,7 @@ public class ExpressionController extends Controller {
                     .log();
             return internalServerError();
         }
-        return ok();
+        return noContent();
     }
 
     /**
