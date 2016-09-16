@@ -100,7 +100,7 @@ public class AlertController extends Controller {
                     .log();
             return internalServerError();
         }
-        return ok();
+        return noContent();
     }
 
     /**
@@ -219,6 +219,22 @@ public class AlertController extends Controller {
         }
         // Return as JSON
         return ok(Json.toJson(result.get()));
+    }
+
+    /**
+     * Delete a specific alert.
+     *
+     * @param id The identifier of the alert.
+     * @return No content
+     */
+    public Result delete(final String id) {
+        final UUID identifier = UUID.fromString(id);
+        final int deleted = _alertRepository.delete(identifier, Organization.DEFAULT);
+        if (deleted > 0) {
+            return noContent();
+        } else {
+            return notFound();
+        }
     }
 
     private models.view.Alert internalModelToViewModel(final Alert alert) {
