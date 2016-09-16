@@ -83,7 +83,7 @@ abstract class PaginatedSearchableList<T> {
 
     abstract fetchData(query: any, callback: (data: T[], pagination: Pagination) => void): void;
 
-    query() {
+    public query() {
         var query = this.createQuery();
         this.amendQuery(query);
 

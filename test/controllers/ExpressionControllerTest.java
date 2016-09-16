@@ -73,7 +73,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -155,7 +155,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
         Expression expectedExpr = exprRepo.get(originalExpr.getId(), Organization.DEFAULT).get();
         Assert.assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
     }

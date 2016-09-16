@@ -100,7 +100,7 @@ public class AlertController extends Controller {
                     .log();
             return internalServerError();
         }
-        return ok();
+        return noContent();
     }
 
     /**

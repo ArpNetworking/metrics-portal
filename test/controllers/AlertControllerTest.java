@@ -76,7 +76,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
         final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", UUID.fromString("88410734-aed7-11e1-8e54-00259060b612"))
@@ -262,7 +262,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -273,7 +273,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -288,7 +288,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(request);
-        Assert.assertEquals(Http.Status.OK, result.status());
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     private JsonNode readTree(final String resourceSuffix) {

@@ -25,7 +25,8 @@ class shell {
             { route: 'live-logging', title: 'Live Logging', moduleId: 'classes/logging/LiveLoggingViewModel', nav: false },
             { route: 'host-registry', title: 'Host Registry', moduleId: 'classes/hostregistry/HostRegistryViewModel', nav: false },
             { route: 'expressions', title: 'Expressions', moduleId: 'classes/expressions/ExpressionsViewModel', nav: false },
-            { route: 'alerts', title: 'Alerts', moduleId: 'classes/alerts/AlertsViewModel', nav: false }
+            { route: 'alerts', title: 'Alerts', moduleId: 'classes/alerts/AlertsViewModel', nav: false },
+            { route: 'alert/edit(/:id)', title: 'Alerts', moduleId: 'classes/alerts/EditAlertViewModel', nav: false }
         ]).buildNavigationModel();
 
         return router.activate();

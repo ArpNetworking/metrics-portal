@@ -86,7 +86,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.2.0",
       "org.webjars" % "d3js" % "3.4.8",
-      "org.webjars" % "durandal" % "2.1.0",
+      "org.webjars" % "durandal" % "2.1.0-2",
       "org.webjars" % "flotr2" % "d43f8566e8",
       "org.webjars" % "font-awesome" % "4.3.0-2",
       "org.webjars" % "jQRangeSlider" % "5.7.0",
