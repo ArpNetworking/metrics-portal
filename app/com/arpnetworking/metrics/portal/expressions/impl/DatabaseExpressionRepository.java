@@ -24,11 +24,12 @@ import com.avaje.ebean.ExpressionList;
 import com.avaje.ebean.Junction;
 import com.avaje.ebean.PagedList;
 import com.avaje.ebean.Query;
-import com.avaje.ebean.SqlQuery;
 import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
+import models.ebean.ExpressionEtags;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultExpressionQuery;
@@ -100,16 +101,18 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      * {@inheritDoc}
      */
     @Override
-    public Optional<Expression> get(final UUID identifier) {
+    public Optional<Expression> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting expression")
                 .addData("expressionId", identifier)
+                .addData("organization", organization)
                 .log();
 
         final models.ebean.Expression ebeanExpression = Ebean.find(models.ebean.Expression.class)
                 .where()
                 .eq("uuid", identifier)
+                .eq("organization.uuid", organization.getId())
                 .findUnique();
         if (ebeanExpression == null) {
             return Optional.empty();
@@ -122,10 +125,13 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      * {@inheritDoc}
      */
     @Override
-    public ExpressionQuery createQuery() {
+    public ExpressionQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultExpressionQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultExpressionQuery(this, organization);
     }
 
     /**
@@ -144,7 +150,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
 
         // Compute the etag
         // TODO(deepika): Obfuscate the etag [ISSUE-7]
-        final Long etag = _expressionQueryGenerator.getEtag();
+        final Long etag = _expressionQueryGenerator.getEtag(query.getOrganization());
 
         // Transform the results
         return new DefaultQueryResult<>(
@@ -160,9 +166,11 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getExpressionCount() {
+    public long getExpressionCount(final Organization organization) {
         assertIsOpen();
         return Ebean.find(models.ebean.Expression.class)
+                .where()
+                .eq("organization.uuid", organization.getId())
                 .findRowCount();
     }
 
@@ -170,17 +178,19 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateExpression(final Expression expression) {
+    public void addOrUpdateExpression(final Expression expression, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Upserting expression")
                 .addData("expression", expression)
+                .addData("organization", organization)
                 .log();
 
         try (Transaction transaction = Ebean.beginTransaction()) {
             models.ebean.Expression ebeanExpression = Ebean.find(models.ebean.Expression.class)
                     .where()
                     .eq("uuid", expression.getId())
+                    .eq("organization.uuid", organization.getId())
                     .findUnique();
             boolean isNewExpression = false;
             if (ebeanExpression == null) {
@@ -193,6 +203,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             ebeanExpression.setMetric(expression.getMetric());
             ebeanExpression.setScript(expression.getScript());
             ebeanExpression.setService(expression.getService());
+            ebeanExpression.setOrganization(models.ebean.Organization.findByOrganization(organization));
             _expressionQueryGenerator.saveExpression(ebeanExpression);
             transaction.commit();
 
@@ -200,6 +211,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .setMessage("Upserted expression")
                     .addData("expression", expression)
                     .addData("isCreated", isNewExpression)
+                    .addData("organization", organization)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final IOException | RuntimeException e) {
@@ -207,6 +219,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             LOGGER.error()
                     .setMessage("Failed to upsert expression")
                     .addData("expression", expression)
+                    .addData("organization", organization)
                     .setThrowable(e)
                     .log();
             throw new PersistenceException(e);
@@ -261,9 +274,10 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         /**
          * Gets the etag for the alerts table.
          *
+         * @param organization The organization owning the expression.
          * @return The etag for the table.
          */
-        long getEtag();
+        long getEtag(Organization organization);
     }
 
     /**
@@ -277,6 +291,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         @Override
         public PagedList<models.ebean.Expression> createExpressionQuery(final ExpressionQuery query) {
             ExpressionList<models.ebean.Expression> ebeanExpressionList = Ebean.find(models.ebean.Expression.class).where();
+            ebeanExpressionList = ebeanExpressionList.eq("organization.uuid", query.getOrganization().getId());
             if (query.getCluster().isPresent()) {
                 ebeanExpressionList = ebeanExpressionList.eq("cluster", query.getCluster().get());
             }
@@ -317,9 +332,8 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
          * {@inheritDoc}
          */
         @Override
-        public long getEtag() {
-            final SqlQuery sqlQuery = Ebean.createSqlQuery("SELECT CURRVAL('portal.expressions_etag_seq') AS etag;");
-            return sqlQuery.findUnique().getLong("etag");
+        public long getEtag(final Organization organization) {
+            return ExpressionEtags.getEtagByOrganization(organization);
         }
     }
 }

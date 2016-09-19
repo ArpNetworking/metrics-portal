@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHost;
 import models.internal.impl.DefaultHostQuery;
@@ -126,6 +127,18 @@ public final class ElasticSearchHostRepository implements HostRepository {
                                             + "                }\n"
                                             + "            }\n"
                                             + "        },\n"
+                                            + "        \"metricsSoftwareVersion\" : {\n"
+                                            + "            \"type\" : \"string\", \n"
+                                            + "            \"store\" : true\n"
+                                            + "        },\n"
+                                            + "        \"metricsSoftwareSha\" : {\n"
+                                            + "            \"type\" : \"string\", \n"
+                                            + "            \"store\" : true\n"
+                                            + "        },\n"
+                                            + "        \"organization\" : {\n"
+                                            + "            \"type\" : \"string\", \n"
+                                            + "            \"store\" : true\n"
+                                            + "        },\n"
                                             + "        \"metricsSoftwareState\" : {\n"
                                             + "            \"type\" : \"string\", \n"
                                             + "            \"store\" : true\n"
@@ -163,11 +176,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateHost(final Host host) {
+    public void addOrUpdateHost(final Host host, final Organization organization) {
+        //TODO(barp): Support organizational separation in ElasticSearch [?]
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Adding or updating host")
                 .addData("host", host)
+                .addData("organization", organization)
                 .log();
 
         final String hostJson;
@@ -188,6 +203,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
         LOGGER.info()
                 .setMessage("Upserted host")
                 .addData("host", host)
+                .addData("organization", organization)
                 .addData("isCreated", response.isCreated())
                 .log();
     }
@@ -196,11 +212,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostname) {
+    public void deleteHost(final String hostname, final Organization organization) {
+        //TODO(barp): Support organizational separation in ElasticSearch [?]
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
                 .addData("hostname", hostname)
+                .addData("organization", organization)
                 .log();
 
         final DeleteResponse response = _client.prepareDelete(INDEX, TYPE, hostname)
@@ -211,11 +229,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
             LOGGER.info()
                     .setMessage("Deleted host")
                     .addData("hostname", hostname)
+                    .addData("organization", organization)
                     .log();
         } else {
             LOGGER.info()
                     .setMessage("Host not found")
                     .addData("hostname", hostname)
+                    .addData("organization", organization)
                     .log();
         }
     }
@@ -224,10 +244,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQuery createQuery() {
+    public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultHostQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultHostQuery(this, organization);
     }
 
     /**
@@ -240,6 +263,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
+        final Organization organization = query.getOrganization();
 
         QueryBuilder esQuery = null;
         if (query.getPartialHostname().isPresent()) {
@@ -271,16 +295,19 @@ public final class ElasticSearchHostRepository implements HostRepository {
         }
         request.setSize(query.getLimit());
 
-        return deserializeHits(request.execute().actionGet());
+        return deserializeHits(request.execute().actionGet(), organization);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount() {
+    public long getHostCount(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Getting host count").log();
+        LOGGER.debug()
+                .setMessage("Getting host count")
+                .addData("organization", organization)
+                .log();
 
         final CountResponse response = _client.prepareCount(INDEX)
                 .execute()
@@ -292,11 +319,12 @@ public final class ElasticSearchHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
+    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting host count in state")
                 .addData("state", metricsSoftwareState)
+                .addData("organization", organization)
                 .log();
 
         final QueryBuilder queryState = QueryBuilders.matchQuery("metricsSoftwareState", metricsSoftwareState.toString());
@@ -340,7 +368,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
         }
     }
 
-    private QueryResult<Host> deserializeHits(final SearchResponse response) {
+    private QueryResult<Host> deserializeHits(final SearchResponse response, final Organization organization) {
         final List<Host> hosts = Lists.newArrayList();
         for (final SearchHit hit : response.getHits().hits()) {
             try {
@@ -349,13 +377,15 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 LOGGER.error()
                         .setMessage("Unable to deserialize host")
                         .addData("json", hit.getSourceAsString())
+                        .addData("organization", organization)
                         .setThrowable(e)
                         .log();
                 LOGGER.warn()
                         .setMessage("Deleting malformed host")
                         .addData("id", hit.id())
+                        .addData("organization", organization)
                         .log();
-                deleteHost(hit.getId());
+                deleteHost(hit.getId(), organization);
             }
         }
         return new DefaultQueryResult<>(hosts, response.getHits().getTotalHits());

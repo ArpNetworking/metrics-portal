@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
@@ -25,6 +26,7 @@ import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.Operator;
+import models.internal.Organization;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -52,6 +54,7 @@ public class AlertControllerTest {
         Configuration configuration = Configuration.empty();
         app = new GuiceApplicationBuilder()
                 .bindings(Bindings.bind(AlertController.class).toInstance(new AlertController(configuration, alertRepo)))
+                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
         alertRepo.open();
@@ -277,7 +280,7 @@ public class AlertControllerTest {
     public void testUpdateValidCase() throws IOException {
         final UUID uuid = UUID.fromString("e62368dc-1421-11e3-91c1-00259069c2f0");
         Alert originalAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-        alertRepo.addOrUpdateAlert(originalAlert);
+        alertRepo.addOrUpdateAlert(originalAlert, Organization.DEFAULT);
         final JsonNode body = readTree("testUpdateValidCase");
         Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")

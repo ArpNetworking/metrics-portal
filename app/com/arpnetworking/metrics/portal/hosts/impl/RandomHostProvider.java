@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.impl.DefaultHost;
 import org.joda.time.Duration;
 import play.Configuration;
@@ -79,7 +80,7 @@ public final class RandomHostProvider extends UntypedActor {
                         .addData("actor", self())
                         .addData("hostname", newHost.getHostname())
                         .log();
-                _hostRepository.addOrUpdateHost(newHost);
+                _hostRepository.addOrUpdateHost(newHost, Organization.DEFAULT);
                 if (_hostUpdateOne > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
                             .setHostname("test-app" + _hostUpdateOne + ".example.com")
@@ -91,7 +92,7 @@ public final class RandomHostProvider extends UntypedActor {
                             .addData("actor", self())
                             .addData("hostname", updatedHost.getHostname())
                             .log();
-                    _hostRepository.addOrUpdateHost(updatedHost);
+                    _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
                 }
                 if (_hostUpdateTwo > 0) {
                     final Host updatedHost = new DefaultHost.Builder()
@@ -104,7 +105,7 @@ public final class RandomHostProvider extends UntypedActor {
                             .addData("actor", self())
                             .addData("hostname", updatedHost.getHostname())
                             .log();
-                    _hostRepository.addOrUpdateHost(updatedHost);
+                    _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
                 }
                 if (_hostRemove > 0) {
                     final String deletedHostName = "test-app" + _hostRemove + ".example..com";
@@ -113,7 +114,7 @@ public final class RandomHostProvider extends UntypedActor {
                             .addData("actor", self())
                             .addData("hostname", deletedHostName)
                             .log();
-                    _hostRepository.deleteHost(deletedHostName);
+                    _hostRepository.deleteHost(deletedHostName, Organization.DEFAULT);
                 }
                 ++_hostAdd;
                 ++_hostUpdateOne;

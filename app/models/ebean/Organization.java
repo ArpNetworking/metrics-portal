@@ -1,5 +1,5 @@
 /**
- * Copyright 2015 Groupon.com
+ * Copyright 2016 Smartsheet.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,30 +21,33 @@ import com.avaje.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import java.util.UUID;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
 /**
- * Data model for expressions.
+ * Data model for organizations.
  *
- * @author Deepika Misra (deepika at groupon dot com)
+ * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "expressions", schema = "portal")
-public class Expression extends Model {
+@Table(name = "organizations", schema = "portal")
+public class Organization extends Model {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
+
+    @Column(name = "uuid")
+    private UUID uuid;
 
     @Version
     @Column(name = "version")
@@ -58,24 +61,31 @@ public class Expression extends Model {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @Column(name = "uuid")
-    private UUID uuid;
+    /**
+     * Finds an {@link Organization} when given an {@link models.internal.Organization}.
+     *
+     * @param organization The organization to lookup.
+     * @return The organization from the database.
+     */
+    @Nullable
+    public static Organization findByOrganization(@Nonnull final models.internal.Organization organization) {
+        final Organization org = FINDER
+                .where()
+                .eq("uuid", organization.getId())
+                .findUnique();
+        return org;
+    }
 
-    @Column(name = "cluster")
-    private String cluster;
-
-    @Column(name = "service")
-    private String service;
-
-    @Column(name = "metric")
-    private String metric;
-
-    @Column(name = "script")
-    private String script;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "organization")
-    private Organization organization;
+    /**
+     * Returns an {@link Organization} by reference. This defers all database operations until a field besides id is
+     * requested.
+     *
+     * @param id The id (primary key) of the organization.
+     * @return The {@link Organization} with the given primary key.
+     */
+    public static Organization refById(final long id) {
+        return FINDER.ref(id);
+    }
 
     public Long getId() {
         return id;
@@ -114,47 +124,9 @@ public class Expression extends Model {
     }
 
     public void setUuid(final UUID value) {
-        uuid = value;
+        this.uuid = value;
     }
 
-    public String getCluster() {
-        return cluster;
-    }
-
-    public void setCluster(final String value) {
-        cluster = value;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(final String value) {
-        service = value;
-    }
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(final String value) {
-        metric = value;
-    }
-
-    public String getScript() {
-        return script;
-    }
-
-    public void setScript(final String value) {
-        script = value;
-    }
-
-    public Organization getOrganization() {
-        return organization;
-    }
-
-    public void setOrganization(final Organization organizationValue) {
-        this.organization = organizationValue;
-    }
+    private static final Finder<Long, Organization> FINDER = new Finder<>(Organization.class);
 }
 // CHECKSTYLE.ON: MemberNameCheck

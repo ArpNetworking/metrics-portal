@@ -16,7 +16,9 @@
 
 package global;
 
+import actors.ClusterShutdownActor;
 import akka.actor.ActorSystem;
+import akka.actor.Terminated;
 import akka.cluster.Cluster;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.steno.Logger;
@@ -24,8 +26,10 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.Function1;
 import scala.compat.java8.JFunction;
 import scala.concurrent.ExecutionContext$;
+import scala.util.Try;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -51,6 +55,7 @@ public final class Global {
 
         // Configure Json serialization
         Json.setObjectMapper(ObjectMapperFactory.getInstance());
+        _akka.actorOf(ClusterShutdownActor.props(_shutdownFuture));
 
         LOGGER.debug().setMessage("Startup complete").log();
     }
@@ -61,23 +66,18 @@ public final class Global {
 
         final Cluster cluster = Cluster.get(_akka);
         cluster.leave(cluster.selfAddress());
-        // Give the message 3 seconds to propagate through the fleet
-        try {
-            Thread.sleep(3000);
-        } catch (final InterruptedException ignored) {
-            // Clear the interrupted status
-            Thread.interrupted();
-        }
 
-        _akka.terminate().onComplete(JFunction.func((t) -> {
+        final Function1<Try<Terminated>, Boolean> shutdownComplete = JFunction.func((t) -> {
             LOGGER.debug().setMessage("Shutdown complete").log();
             return shutdownFuture.complete(null);
-        }), ExecutionContext$.MODULE$.global());
+        });
+        _shutdownFuture.thenAccept((v) -> _akka.terminate().onComplete(shutdownComplete, ExecutionContext$.MODULE$.global()));
 
         return shutdownFuture;
     }
 
     private final ActorSystem _akka;
+    private final CompletableFuture<Boolean> _shutdownFuture = new CompletableFuture<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Global.class);
 }

@@ -21,6 +21,7 @@ import com.google.common.base.MoreObjects;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
+import models.internal.Organization;
 import models.internal.QueryResult;
 
 import java.util.Optional;
@@ -37,9 +38,11 @@ public final class DefaultAlertQuery implements AlertQuery {
      * Public constructor.
      *
      * @param repository The <code>AlertRepository</code>
+     * @param organization The <code>Organization</code> to search in
      */
-    public DefaultAlertQuery(final AlertRepository repository) {
+    public DefaultAlertQuery(final AlertRepository repository, final Organization organization) {
         _repository = repository;
+        _organization = organization;
     }
 
     /**
@@ -102,6 +105,14 @@ public final class DefaultAlertQuery implements AlertQuery {
     @Override
     public QueryResult<Alert> execute() {
         return _repository.query(this);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Organization getOrganization() {
+        return _organization;
     }
 
     /**
@@ -171,6 +182,7 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     private final AlertRepository _repository;
+    private final Organization _organization;
     private Optional<String> _contains = Optional.empty();
     private Optional<Context> _context = Optional.empty();
     private Optional<String> _cluster = Optional.empty();

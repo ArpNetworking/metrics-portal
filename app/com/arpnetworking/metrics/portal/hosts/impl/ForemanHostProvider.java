@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.impl.DefaultHost;
 import play.Configuration;
 import play.libs.ws.WSClient;
@@ -78,7 +79,7 @@ public final class ForemanHostProvider extends UntypedActor {
                         .setHostname(host.getName())
                         .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
                         .build();
-                _hostRepository.addOrUpdateHost(dh);
+                _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
             }
 
             if (response.getTotal() > response.getPage() * response.getPerPage()) {

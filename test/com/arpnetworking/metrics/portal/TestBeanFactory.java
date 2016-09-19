@@ -20,8 +20,10 @@ import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.Operator;
+import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultExpression;
+import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
@@ -36,6 +38,18 @@ import java.util.UUID;
  * @author Deepika Misra (deepika at groupon dot com)
  */
 public final class TestBeanFactory {
+
+    public static Organization organizationFrom(final models.ebean.Organization organization) {
+        return new DefaultOrganization.Builder()
+                .setId(organization.getUuid())
+                .build();
+    }
+
+    public static models.ebean.Organization createEbeanOrganization() {
+        final models.ebean.Organization organization = new models.ebean.Organization();
+        organization.setUuid(UUID.randomUUID());
+        return organization;
+    }
 
     public static DefaultAlert.Builder createAlertBuilder() {
         return new DefaultAlert.Builder()
@@ -60,7 +74,10 @@ public final class TestBeanFactory {
     }
 
     public static models.ebean.Alert createEbeanAlert() {
+        final models.ebean.Organization organization = createEbeanOrganization();
+        organization.save();
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
+        ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
         ebeanAlert.setNagiosExtension(createEbeanNagiosExtension());
         ebeanAlert.setName(TEST_NAME + RANDOM.nextInt(100));
@@ -95,7 +112,10 @@ public final class TestBeanFactory {
     }
 
     public static Expression createEbeanExpression() {
+        final models.ebean.Organization organization = createEbeanOrganization();
+        organization.save();
         final models.ebean.Expression ebeanExpression = new models.ebean.Expression();
+        ebeanExpression.setOrganization(organization);
         ebeanExpression.setUuid(UUID.randomUUID());
         ebeanExpression.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
         ebeanExpression.setMetric(TEST_METRIC + RANDOM.nextInt(100));

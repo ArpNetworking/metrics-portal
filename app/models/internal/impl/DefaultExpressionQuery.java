@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.google.common.base.MoreObjects;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 
 import java.util.Optional;
@@ -36,9 +37,11 @@ public final class DefaultExpressionQuery implements ExpressionQuery {
      * Public constructor.
      *
      * @param repository The <code>ExpressionRepository</code>
+     * @param organization The <code>Organization</code> to search in
      */
-    public DefaultExpressionQuery(final ExpressionRepository repository) {
+    public DefaultExpressionQuery(final ExpressionRepository repository, final Organization organization) {
         _repository = repository;
+        _organization = organization;
     }
 
     /**
@@ -122,6 +125,14 @@ public final class DefaultExpressionQuery implements ExpressionQuery {
      * {@inheritDoc}
      */
     @Override
+    public Organization getOrganization() {
+        return _organization;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int getLimit() {
         return _limit;
     }
@@ -152,6 +163,7 @@ public final class DefaultExpressionQuery implements ExpressionQuery {
     }
 
     private final ExpressionRepository _repository;
+    private final Organization _organization;
     private Optional<String> _contains = Optional.empty();
     private Optional<String> _cluster = Optional.empty();
     private Optional<String> _service = Optional.empty();

@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.expressions;
 
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
+import models.internal.Organization;
 import models.internal.QueryResult;
 
 import java.util.Optional;
@@ -43,16 +44,18 @@ public interface ExpressionRepository {
      * Get the <code>Expression</code> by identifier.
      *
      * @param identifier The <code>Expression</code> identifier.
+     * @param organization The organization owning the expression.
      * @return The matching <code>Expression</code> if found or <code>Optional.empty()</code>.
      */
-    Optional<Expression> get(final UUID identifier);
+    Optional<Expression> get(UUID identifier, Organization organization);
 
     /**
      * Create a query against the expressions repository.
      *
+     * @param organization Organization to search in.
      * @return Instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery createQuery();
+    ExpressionQuery createQuery(Organization organization);
 
     /**
      * Query expressions.
@@ -65,14 +68,16 @@ public interface ExpressionRepository {
     /**
      * Retrieve the total number of expressions in the repository.
      *
+     * @param organization The organization owning the expressions.
      * @return The total number of expressions.
      */
-    long getExpressionCount();
+    long getExpressionCount(Organization organization);
 
     /**
      * Add a new expression or update an existing one in the repository.
      *
      * @param expression The expression to add to the repository.
+     * @param organization The organization owning the expression.
      */
-    void addOrUpdateExpression(Expression expression);
+    void addOrUpdateExpression(Expression expression, Organization organization);
 }

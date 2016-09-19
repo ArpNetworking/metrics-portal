@@ -18,10 +18,9 @@ package models.internal.impl;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.google.common.base.MoreObjects;
-import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
-import models.internal.QueryResult;
+import models.internal.Organization;
 
 import java.util.Optional;
 
@@ -37,9 +36,11 @@ public final class DefaultHostQuery implements HostQuery {
      * Public constructor.
      *
      * @param repository The <code>HostRepository</code>
+     * @param organization The <code>Organization</code> to search in
      */
-    public DefaultHostQuery(final HostRepository repository) {
+    public DefaultHostQuery(final HostRepository repository, final Organization organization) {
         _repository = repository;
+        _organization = organization;
     }
 
     /**
@@ -100,16 +101,16 @@ public final class DefaultHostQuery implements HostQuery {
      * {@inheritDoc}
      */
     @Override
-    public QueryResult<Host> execute() {
-        return _repository.query(this);
+    public Optional<String> getPartialHostname() {
+        return _partialHostname;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<String> getPartialHostname() {
-        return _partialHostname;
+    public Organization getOrganization() {
+        return _organization;
     }
 
     /**
@@ -171,6 +172,7 @@ public final class DefaultHostQuery implements HostQuery {
 
 
     private final HostRepository _repository;
+    private final Organization _organization;
     private Optional<String> _partialHostname = Optional.empty();
     private Optional<MetricsSoftwareState> _metricsSoftwareState = Optional.empty();
     private Optional<String> _cluster = Optional.empty();

@@ -15,6 +15,14 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -25,18 +33,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class H2ConnectionStringFactory {
 
     /**
-     * Generates the JDBC url with a unique port number and database name.
+     * Generates the JDBC url with a unique port number and database name.  Deletes the file if it already exists.
      *
      * @return The JDBC url.
      */
     public static String generateJdbcUrl() {
         final int nextCounter = UNIQUE_COUNTER.getAndIncrement();
         final int port = BASE_PORT + nextCounter;
-        return "jdbc:h2:./target/h2/metrics" +
-                nextCounter +
-                ":portal;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=" +
+        final String path = "./target/h2/metrics_portal" + nextCounter;
+        try {
+            if (Files.exists(Paths.get(path + ".mv.db"))) {
+                Files.delete(Paths.get(path + ".mv.db"));
+            }
+        } catch (final IOException e) {
+            throw Throwables.propagate(e);
+        }
+        return "jdbc:h2:" +
+                path +
+                ";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=" +
                 port +
                 ";MODE=PostgreSQL;INIT=create schema if not exists portal;DB_CLOSE_DELAY=-1";
+    }
+
+    public static Map<String, Object> generateConfiguration() {
+        final String url = generateJdbcUrl();
+        return ImmutableMap.of(
+                "db.default.driver", "org.h2.Driver",
+                "db.default.url", url,
+                "db.metrics_portal_ddl.driver", "org.h2.Driver",
+                "db.metrics_portal_ddl.url", url,
+                "db.metrics_portal_ddl.migration.locations", Lists.newArrayList("common", "h2"));
     }
 
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);

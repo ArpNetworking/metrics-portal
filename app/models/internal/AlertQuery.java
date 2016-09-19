@@ -80,6 +80,13 @@ public interface AlertQuery {
     QueryResult<Alert> execute();
 
     /**
+     * Accessor for the organization.
+     *
+     * @return The organization.
+     */
+    Organization getOrganization();
+
+    /**
      * Accessor for the contains.
      *
      * @return The contains.

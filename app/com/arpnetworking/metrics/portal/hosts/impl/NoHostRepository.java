@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
@@ -70,11 +71,12 @@ public final class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void addOrUpdateHost(final Host host) {
+    public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Adding or updating host")
                 .addData("host", host)
+                .addData("organization", organization)
                 .log();
     }
 
@@ -82,11 +84,12 @@ public final class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public void deleteHost(final String hostname) {
+    public void deleteHost(final String hostname, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting host")
                 .addData("hostname", hostname)
+                .addData("organization", organization)
                 .log();
     }
 
@@ -95,10 +98,13 @@ public final class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public HostQuery createQuery() {
+    public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Preparing query").log();
-        return new DefaultHostQuery(this);
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultHostQuery(this, organization);
     }
 
     /**
@@ -118,9 +124,12 @@ public final class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount() {
+    public long getHostCount(final Organization organization) {
         assertIsOpen();
-        LOGGER.debug().setMessage("Getting host count").log();
+        LOGGER.debug()
+                .setMessage("Getting host count")
+                .addData("organization", organization)
+                .log();
         return 0;
     }
 
@@ -128,11 +137,12 @@ public final class NoHostRepository implements HostRepository {
      * {@inheritDoc}
      */
     @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState) {
+    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting host count in state")
                 .addData("state", metricsSoftwareState)
+                .addData("organization", organization)
                 .log();
         return 0;
     }

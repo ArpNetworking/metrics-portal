@@ -76,13 +76,6 @@ public interface HostQuery {
     HostQuery sortBy(final Optional<Field> field);
 
     /**
-     * Execute the query and return the results.
-     *
-     * @return The results of the query as an {@code QueryResult<Host>} instance.
-     */
-    QueryResult<Host> execute();
-
-    /**
      * Accessor for the hostname.
      *
      * @return The hostname.
@@ -95,6 +88,13 @@ public interface HostQuery {
      * @return The cluster.
      */
     Optional<String> getCluster();
+
+    /**
+     * Accessor for the organization.
+     *
+     * @return The organization.
+     */
+    Organization getOrganization();
 
     /**
      * Accessor for the metrics software state.
