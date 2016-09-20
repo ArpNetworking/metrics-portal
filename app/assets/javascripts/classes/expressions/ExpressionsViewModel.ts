@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../../libs/jqueryui/jqueryui.d.ts"/>
 import ExpressionData = require('./ExpressionData');
 import PaginatedSearchableList = require('../PaginatedSearchableList');
 import $ = require('jquery');

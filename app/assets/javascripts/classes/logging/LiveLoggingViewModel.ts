@@ -26,23 +26,23 @@ import ReportLogVM = require('./ReportLogVM');
 
 class LiveLoggingViewModel implements ViewModel {
   connections = Hosts.connections;
-  available_log_names:KnockoutObservableArray<LogNodeVM> = ko.observableArray<LogNodeVM>();
+  available_log_names: KnockoutObservableArray<LogNodeVM> = ko.observableArray<LogNodeVM>();
   logsByName: { [id: string]: Log } = {};
-  logs:KnockoutObservableArray<Log> = ko.observableArray<Log>();
+  logs: KnockoutObservableArray<Log> = ko.observableArray<Log>();
 
   shouldShade = ko.computed(function() {
       return true
   }, this);
 
-  selectedTab:KnockoutObservable<Log> = ko.observable<Log>();
+  selectedTab: KnockoutObservable<Log> = ko.observable<Log>();
 
   constructor() {
   }
 
   attached() {
-    app.on('receive_event').then(function(data, cvm) {
+    app.on('receive_event').then((data, cvm) => {
       this.processMessage(data, cvm);
-    }, this);
+    });
 
     // if the connection was established before opening the logs view, we would have missed the 'logsList'
     // command so let's make sure we are not missing anything

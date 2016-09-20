@@ -245,6 +245,8 @@ object ApplicationBuild extends Build {
       routesGenerator := InjectedRoutesGenerator,
 
       TypescriptKeys.moduleKind := "AMD",
+      TypescriptKeys.typingsFile := some(file("typings/index.d.ts")),
+
 
       mainConfig := "start_app",
       mainModule := "start_app",

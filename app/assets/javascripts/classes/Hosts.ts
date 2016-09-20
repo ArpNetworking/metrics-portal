@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/durandal/durandal.d.ts"/>
 import app = require('durandal/app');
 import Color = require('./Color');
 import ConnectionVM = require('./ConnectionVM');

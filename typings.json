@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "d3": "registry:npm/d3#3.0.0+20160723033700"
+  },
+  "globalDependencies": {
+    "bootstrap": "registry:dt/bootstrap#3.3.5+20160619023404",
+    "d3gauge": "file:./app/assets/javascripts/libs/d3/d3gauge.d.ts",
+    "durandal": "registry:dt/durandal#0.0.0+20160823075249",
+    "flotr2": "file:./app/assets/javascripts/libs/flotr2/flotr2.d.ts",
+    "jqrangeslider": "file:./app/assets/javascripts/libs/jqueryui/jqrangeslider.d.ts",
+    "jquery": "registry:dt/jquery#1.10.0+20160908203239",
+    "jqueryui": "registry:dt/jqueryui#1.11.0+20160727153854",
+    "knockout": "registry:dt/knockout#0.0.0+20160914182733",
+    "requirejs": "registry:env/requirejs#2.2.0+20160319062041",
+    "typeahead": "registry:dt/typeahead#0.11.1+20160317120654"
+  }
+}

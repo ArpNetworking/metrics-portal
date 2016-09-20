@@ -24,6 +24,7 @@ import MetricNodeVM = require("./MetricNodeVM");
 import StatisticNodeVM = require("./StatisticNodeVM");
 import Series = require("./Series");
 import NewMetricData = require("./NewMetricData");
+import BrowseNode = require("./BrowseNode");
 
 class MetricsBrowseList {
     serviceNodes: KnockoutObservableArray<ServiceNodeVM> = ko.observableArray<ServiceNodeVM>();

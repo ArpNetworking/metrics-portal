@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/d3/d3gauge.d.ts"/>
 import ConnectionVM = require('./ConnectionVM');
 import StatisticView = require('./StatisticView');
 import ViewDuration = require('./ViewDuration');
 import GraphSpec = require('./GraphSpec')
+import ko = require('knockout');
 
 class GaugeVM implements StatisticView {
     id: string;

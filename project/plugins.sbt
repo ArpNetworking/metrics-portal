@@ -37,7 +37,7 @@ addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.5.6")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.8")
 
-addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.2.1")
+addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.2.3")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.3")
 

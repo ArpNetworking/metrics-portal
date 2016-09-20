@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts"/>
-
 interface BrowseNode {
     expandMe(): void;
     children: KnockoutObservableArray<BrowseNode>;
@@ -25,3 +23,5 @@ interface BrowseNode {
     renderAs: KnockoutObservable<string>;
     visible: KnockoutObservable<boolean>;
 }
+
+export = BrowseNode;

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
-///<reference path="./ViewModel.ts"/>
 ///<amd-dependency path="./KnockoutBindings" />
 
 import app = require('durandal/app');

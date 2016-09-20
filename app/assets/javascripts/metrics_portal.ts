@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-/// <reference path="libs/durandal/durandal.d.ts"/>
 /// <amd-dependency path="debug"/>
 /// <amd-dependency path="text"/>
 /// <amd-dependency path="jquery"/>

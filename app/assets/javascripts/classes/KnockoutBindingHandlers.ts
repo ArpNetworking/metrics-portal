@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts"/>
 interface KnockoutBindingHandlers {
     slider: KnockoutBindingHandler;
     legendBlock: KnockoutBindingHandler;
@@ -23,3 +22,5 @@ interface KnockoutBindingHandlers {
     typeahead: KnockoutBindingHandler;
     tooltip: KnockoutBindingHandler;
 }
+
+export = KnockoutBindingHandlers;

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-
-///<reference path="../libs/flotr2/flotr2.d.ts"/>
-
 import ConnectionVM = require('./ConnectionVM');
 import StatisticView = require('./StatisticView');
 import Series = require('./Series');
@@ -24,7 +21,7 @@ import ViewDuration = require('./ViewDuration');
 import GraphSpec = require('./GraphSpec');
 import ko = require('knockout');
 
-import Flotr = require('flotr2');
+import flotr = require('flotr2');
 
 // requestAnimFrame shim with setTimeout fallback
 window.requestAnimationFrame = (function () {
@@ -285,7 +282,7 @@ class GraphVM implements StatisticView {
         }
 
         // Draw Graph
-        Flotr.draw(this.container, this.data, {
+        flotr.draw(this.container, this.data, {
             yaxis: {
                 max: graphMax,
                 min: graphMin

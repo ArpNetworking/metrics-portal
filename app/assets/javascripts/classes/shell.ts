@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/durandal/durandal.d.ts"/>
 import router = require('plugins/router');
 
 class shell {
