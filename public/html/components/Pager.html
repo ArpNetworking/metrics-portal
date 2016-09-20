@@ -14,15 +14,17 @@
   ~ limitations under the License.
   -->
 <div class="col-md-12 col-sm-12 col-lg-12 search-header">
-    <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
+    <form role="form" class="form-inline">
         <div class="form-group has-feedback">
             <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
             <span class="glyphicon glyphicon-search form-control-feedback"></span>
         </div>
     </form>
 </div>
-<div style="font-size: large; overflow-style: scrollbar; overflow-y: auto; margin-bottom: 6em" class="container-fluid col-md-12 col-sm-12 col-lg-12">
-    <div data-bind="template: {foreach: filteredEntities, name: 'list-element-template'}" class="row"></div>
+<div style="font-size: large; overflow-style: scrollbar; overflow-y: auto; margin-bottom: 6em" class="col-md-12 col-sm-12 col-lg-12">
+    <div data-bind="foreach: filteredEntities" class="row">
+        <div data-part="content"></div>
+    </div>
 </div>
 <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
     <div class="text-center">

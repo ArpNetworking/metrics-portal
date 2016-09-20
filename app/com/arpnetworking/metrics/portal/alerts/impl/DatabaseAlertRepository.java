@@ -157,6 +157,23 @@ public class DatabaseAlertRepository implements AlertRepository {
     }
 
     @Override
+    public int delete(final UUID identifier, final Organization organization) {
+        LOGGER.debug()
+                .setMessage("Deleting alert")
+                .addData("id", identifier)
+                .addData("organization", organization)
+                .log();
+        return Ebean.find(models.ebean.Alert.class)
+                .where()
+                .eq("uuid", identifier)
+                .eq("organization.uuid", organization.getId())
+                .delete();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()

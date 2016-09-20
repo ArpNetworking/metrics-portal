@@ -19,6 +19,7 @@ import ko = require('knockout');
 import $ = require('jquery');
 import Operator = require("./Operator");
 import Quantity = require("../Quantity");
+import uuid = require('../Uuid');
 
 class OperatorOption {
     text: string;
@@ -68,6 +69,8 @@ class EditAlertViewModel {
     activate(id: String) {
         if (id != null) {
             this.loadAlert(id);
+        } else {
+            this.id(uuid.v4());
         }
     }
 
@@ -107,7 +110,6 @@ class EditAlertViewModel {
                 "value": {"value": this.value(), "unit": this.valueUnit()}
             }),
         }).done(() => {
-            console.log("success callback");
             window.location.href = "/#alerts";
         });
     }

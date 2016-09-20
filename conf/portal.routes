@@ -35,6 +35,7 @@ GET        /v1/hosts/query                      controllers.HostController.query
 # Alerts
 GET        /v1/alerts/query                     controllers.AlertController.query(contains: String ?= null, context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
 GET        /v1/alerts/:id                       controllers.AlertController.get(id: String)
+DELETE     /v1/alerts/:id                       controllers.AlertController.delete(id: String)
 PUT        /v1/alerts                           controllers.AlertController.addOrUpdate
 
 # Expressions
