@@ -21,6 +21,8 @@ import com.arpnetworking.steno.LoggerFactory;
 import models.internal.Alert;
 import models.internal.Organization;
 
+import java.util.UUID;
+
 /**
  * Abstract repository that overrides the write functions for the <code>AlertRepository</code>.
  *
@@ -33,6 +35,14 @@ public abstract class ReadOnlyAbstractAlertRepository implements AlertRepository
      */
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
+        throw new UnsupportedOperationException("This is a read only repository.");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int delete(final UUID identifier, final Organization organization) {
         throw new UnsupportedOperationException("This is a read only repository.");
     }
 

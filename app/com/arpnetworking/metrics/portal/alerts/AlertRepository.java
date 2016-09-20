@@ -50,6 +50,15 @@ public interface AlertRepository {
     Optional<Alert> get(UUID identifier, Organization organization);
 
     /**
+     * Delete an <code>Alert</code> by identifier.
+     *
+     * @param identifier The <code>Alert</code> identifier.
+     * @param organization The organization owning the alert.
+     * @return The matching <code>Alert</code> if found or <code>Optional.empty()</code>.
+     */
+    int delete(UUID identifier, Organization organization);
+
+    /**
      * Create a query against the alerts repository.
      *
      * @param organization Organization to search in.

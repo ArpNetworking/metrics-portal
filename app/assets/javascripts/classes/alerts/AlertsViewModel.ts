@@ -41,11 +41,30 @@ class AlertsList extends PaginatedSearchableList<AlertData> {
 
 class AlertsViewModel {
     alerts: AlertsList = new AlertsList();
+    deletingId: string = null;
+    remove: (alert: AlertData) => void;
 
     constructor() {
         this.alerts.query();
+        this.remove = (alert: AlertData) => {
+            this.deletingId = alert.id;
+            console.log("set deletingId: ", this, this.deletingId);
+
+            $("#confirm-delete-modal").modal('show');
+        };
     }
 
+    confirmDelete() {
+        $.ajax({
+            type: "DELETE",
+            url: "/v1/alerts/" + this.deletingId,
+            contentType: "application/json"
+        }).done(() => {
+            $("#confirm-delete-modal").modal('hide');
+        });
+        this.deletingId = null;
+        this.alerts.query();
+    }
 }
 
 export = AlertsViewModel;
