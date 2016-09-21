@@ -1,5 +1,3 @@
-/// <reference path="../jqueryui/jqueryui.d.ts"/>
-
 interface JQuery {
     rangeSlider(): JQuery;
     rangeSlider(methodName:string): JQuery;
@@ -20,4 +18,5 @@ interface JQuery {
     rangeSlider(optionLiteral:string, optionName:string): any;
     rangeSlider(optionLiteral:string, options:JQueryUI.SliderOptions): any;
     rangeSlider(optionLiteral:string, optionName:string, optionValue:any): JQuery;
+    bind(eventType: string, handler: (eventObject: JQueryEventObject, data: any) => any): JQuery;
 }

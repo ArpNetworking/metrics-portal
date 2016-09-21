@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
-///<reference path="../libs/bootstrap/bootstrap.d.ts"/>
-///<reference path="../libs/naturalSort/naturalSort.d.ts" />
-///<reference path="BrowseNode.ts"/>
-///<reference path="ViewModel.ts"/>
 ///<amd-dependency path="jquery.ui"/>
 import app = require('durandal/app');
 import MetricData = require('./MetricData');
@@ -43,7 +38,6 @@ import $ = require('jquery');
 import GraphSpec = require('./GraphSpec');
 import Hosts = require('./Hosts');
 import ConnectionVM = require('./ConnectionVM')
-import ns = require('naturalSort');
 import MetricsBrowseList = require("./MetricsBrowseList");
 
 module GraphViewModel {

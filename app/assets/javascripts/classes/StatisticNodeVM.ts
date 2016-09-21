@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts" />
-///<reference path="./BrowseNode.ts"/>
 import GraphSpec = require('./GraphSpec');
 import ko = require('knockout');
+import BrowseNode = require("./BrowseNode");
 
 declare var require;
 class StatisticNodeVM implements BrowseNode {

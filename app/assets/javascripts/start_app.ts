@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/// <reference path="libs/requirejs/require.d.ts"/>
-
+/// <reference path="../../../typings/globals/requirejs/index.d.ts" />
 requirejs.config({
     deps: ["metrics_portal"],
     paths : {

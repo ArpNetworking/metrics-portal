@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-///<reference path="BrowseNode.ts" />
-///<reference path="../libs/naturalSort/naturalSort.d.ts" />
 import ServiceNodeVM = require('./ServiceNodeVM');
 import ko = require('knockout');
-import ns = require('naturalSort');
 import MetricNodeVM = require("./MetricNodeVM");
+import BrowseNode = require("./BrowseNode");
 
 class FolderNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts"/>
 class Series {
     //This is really an array of elements of [timestamp, data value]
     data: number[][] = [];

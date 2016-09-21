@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="./ViewModel.ts"/>
 import Color = require('./Color');
 import ConnectionModel = require('./ConnectionModel');
 import ko = require('knockout');
@@ -29,7 +28,7 @@ class ConnectionVM {
     server: string;
     status: KnockoutObservable<string> = ko.observable<string>("connecting");
     connected: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    selected = ko.observable<boolean>(false);
+    selected: KnockoutObservable<boolean> = ko.observable<boolean>(false);
     colorBase: KnockoutObservable<Color> = ko.observable(new Color(0, 0, 0));
     model: ConnectionModel;
 

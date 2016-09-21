@@ -1,8 +1,4 @@
-///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
-///<reference path="../libs/jqueryui/jqrangeslider.d.ts"/>
-///<reference path="../libs/knockout/knockout.d.ts"/>
-///<reference path="../libs/typeahead/typeahead.d.ts" />
-///<reference path="./BrowseNode.ts"/>
+///<amd-dependency path="jquery"/>
 ///<amd-dependency path="jquery.ui"/>
 ///<amd-dependency path="jqrangeslider"/>
 ///<amd-dependency path="typeahead" />

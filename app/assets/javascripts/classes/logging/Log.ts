@@ -19,14 +19,14 @@ import ConnectionVM = require('../ConnectionVM');
 import ReportLogVM = require('./ReportLogVM');
 
 class Log {
-  lines:KnockoutObservableArray<ReportLogVM> = ko.observableArray<ReportLogVM>();
-  log_name:KnockoutObservable<string> = ko.observable<string>();
-  public widgetHeight:KnockoutComputed<string>;
+  lines: KnockoutObservableArray<ReportLogVM> = ko.observableArray<ReportLogVM>();
+  log_name: KnockoutObservable<string> = ko.observable<string>();
+  public widgetHeight: KnockoutComputed<string>;
   private isSubscribed:boolean = false;
   public displayName:string;
   constructor(
       log_name: string,
-      public parentCollection:KnockoutObservableArray<Log>) {
+      public parentCollection: KnockoutObservableArray<Log>) {
     this.log_name(log_name);
     var path = this.log_name().split("/");
     this.displayName = path[path.length - 1 ];

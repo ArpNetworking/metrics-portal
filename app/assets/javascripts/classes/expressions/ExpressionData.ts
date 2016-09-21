@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../../libs/knockout/knockout.d.ts" />
-import ko = require('knockout');
-
 class ExpressionData {
     id: string;
     metric: string;

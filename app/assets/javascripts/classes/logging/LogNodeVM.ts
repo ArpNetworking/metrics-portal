@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-///<reference path="../../libs/knockout/knockout.d.ts"/>
-///<reference path="../BrowseNode.ts"/>
 import Log = require('./Log');
 import ko = require('knockout');
 import Hosts = require('../Hosts');
 import LiveLoggingViewModel = require('./LiveLoggingViewModel')
+import BrowseNode = require("../BrowseNode");
 class LogNodeVM implements BrowseNode {
     name: KnockoutObservable<string>;
     children: KnockoutObservableArray<BrowseNode>;

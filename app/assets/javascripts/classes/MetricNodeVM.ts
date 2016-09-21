@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts"/>
-///<reference path="./BrowseNode.ts"/>
 import GraphViewModel = require('./GraphViewModel');
 import StatisticNodeVM = require('./StatisticNodeVM');
 import ko = require('knockout');
-import ns = require('naturalSort');
+import BrowseNode = require("./BrowseNode");
 
 class MetricNodeVM implements BrowseNode {
     metricName: KnockoutObservable<string>;

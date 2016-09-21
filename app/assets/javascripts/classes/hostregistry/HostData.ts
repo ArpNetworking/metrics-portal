@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../../libs/knockout/knockout.d.ts" />
 import ko = require('knockout');
 import ConnectionVM = require('../ConnectionVM');
 import Hosts = require('../Hosts');

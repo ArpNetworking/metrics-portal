@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-///<reference path="../libs/knockout/knockout.d.ts" />
-///<reference path="../libs/jqueryui/jqueryui.d.ts"/>
 import ko = require('knockout');
-import $ = require('jquery');
 
 interface PagerElement { name: string; page: number; disabled: boolean; active: boolean}
 interface Pagination { total: number; offset: number}

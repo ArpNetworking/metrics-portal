@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-///<reference path="../../libs/knockout/knockout.d.ts" />
-///<reference path="../../libs/jqueryui/jqueryui.d.ts"/>
 import HostData = require('./HostData');
 import PaginatedSearchableList = require('../PaginatedSearchableList');
 import Hosts = require('../Hosts');
