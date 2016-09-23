@@ -248,7 +248,7 @@ object ApplicationBuild extends Build {
         "-Xlint:-try"
       ),
 
-      devSettings := Seq(("config.resource", "portal.application.conf")),
+      devSettings := Seq(("config.resource", "dev.conf")),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
