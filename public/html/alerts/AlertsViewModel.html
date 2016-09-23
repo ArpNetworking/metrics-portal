@@ -24,31 +24,19 @@
         <div class="col-md-12">
             <div><a href="#alert/edit" class="btn btn-default" style="margin-bottom: .5em">Create New Alert</a></div>
             <div data-bind="compose: { model: alerts, view: '/assets/html/components/Pager.html', mode: 'templated' }">
-                <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6 box">
-                    <i class="fa fa-sitemap"></i>
-                    <span data-bind="text: cluster, tooltip:{ cluster, tooltipClass: 'host-tip'}, attr: {title: cluster}"></span>
-                    <br/>
-                    <i class="fa fa-cog"></i>
-                    <span data-bind="text: service, tooltip:{ service, tooltipClass: 'host-tip'}, attr: {title: service}"></span>
-                    <br/>
-                    <i class="fa fa-bar-chart"></i>
-                    <span data-bind="text: metric, tooltip:{ metric, tooltipClass: 'host-tip'}, attr: {title: metric}"></span>
-                    <br/>
-                    <i class="fa fa-bell"></i>
-                    <span data-bind="text: name, tooltip:{ name, tooltipClass: 'host-tip'}, attr: {title: name}"></span>
-                    <br/>
-                    <i class="fa fa-calculator"></i>
-                    <span data-bind="text: statistic, tooltip:{ statistic, tooltipClass: 'host-tip'}, attr: {title: statistic}"></span>
-                    <br/>
-                    <i class="fa fa-clock-o left"></i>
-                    <span data-bind="text: period, tooltip:{ period, tooltipClass: 'host-tip'}, attr: {title: period}"></span>
-                    <a data-bind="attr: { href: editUri }">
-                        <i class="fa fa-pencil-square-o right"></i>
-                    </a>
-                    <a data-bind="click: $root.remove">
-                        <i class="fa fa-times right"></i>
-                    </a>
-                    <i class="fa right" data-bind="css: contextStyle, tooltip:{ contextTip, tooltipClass: 'host-tip'}, attr: {title: contextTip}"></i>
+                <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6">
+                    <div class="left">
+                        <i class="fa" data-bind="css: contextStyle"></i>
+                        <i><span data-bind="text: service"></span></i>/<b><span data-bind="text: metric"></span></b>/<span data-bind="text: statistic"></span>
+                    </div>
+                    <div class="right">
+                        <a data-bind="attr: { href: editUri }">
+                            <i class="fa fa-pencil-square-o"></i>
+                        </a>
+                        <a data-bind="click: $root.remove" href="#">
+                            <i class="fa fa-times"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
