@@ -55,7 +55,7 @@ public final class ForemanClient {
      */
     public CompletionStage<HostPageResponse> getHostPage(final int page, final int perPage) {
             return _client
-                    .url(_baseUrl + String.format("/api/hosts?per_page=%d&page=%d", perPage, page))
+                    .url(_baseUrl + String.format("/api/hosts?page=%d&per_page=%d", page, perPage))
                     .get()
                     .thenApply(this::parseWSResponse);
     }

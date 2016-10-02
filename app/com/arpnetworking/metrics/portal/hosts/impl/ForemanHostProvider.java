@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import akka.actor.Status;
 import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
@@ -66,7 +67,7 @@ public final class ForemanHostProvider extends UntypedActor {
     @Override
     public void onReceive(final Object message) throws Exception {
         if (TICK.equals(message)) {
-            LOGGER.trace()
+            LOGGER.info()
                     .setMessage("Searching for added/updated hosts")
                     .addData("actor", self())
                     .log();
@@ -83,12 +84,22 @@ public final class ForemanHostProvider extends UntypedActor {
             }
 
             if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                PatternsCS.pipe(_client.getHostPage(response.getPage() + 1, response.getPerPage()), context().dispatcher())
+                PatternsCS.pipe(
+                        _client.getHostPage(response.getPage() + 1, response.getPerPage()),
+                        context().dispatcher())
                         .to(self(), self());
             }
+        } else if (message instanceof Status.Failure) {
+            final Status.Failure failure = (Status.Failure) message;
+            LOGGER.warn()
+                    .setMessage("Failure processing Foreman response")
+                    .addData("actor", self())
+                    .setThrowable(failure.cause())
+                    .log();
         } else {
             LOGGER.warn()
                     .setMessage("unhandled message")
+                    .addData("actor", self())
                     .addData("akkaMessage", message)
                     .log();
             unhandled(message);
