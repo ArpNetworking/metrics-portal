@@ -84,11 +84,12 @@ public final class ForemanHostProvider extends UntypedActor {
             }
 
             if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                PatternsCS.pipe(
-                        _client.getHostPage(
-                                response.getPage() + 1,
-                                response.getPerPage()),
-                        context().dispatcher())
+                PatternsCS
+                        .pipe(
+                                _client.getHostPage(
+                                        response.getPage() + 1,
+                                        response.getPerPage()),
+                                context().dispatcher())
                         .to(self(), self());
             }
         } else if (message instanceof Status.Failure) {
