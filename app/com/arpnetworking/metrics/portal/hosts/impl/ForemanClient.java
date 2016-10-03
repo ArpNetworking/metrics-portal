@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -29,11 +31,13 @@ import play.libs.ws.WSResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 /**
  * Client for HTTP Foreman API.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class ForemanClient {
     /**
@@ -55,7 +59,7 @@ public final class ForemanClient {
      */
     public CompletionStage<HostPageResponse> getHostPage(final int page, final int perPage) {
             return _client
-                    .url(_baseUrl + String.format("/api/hosts?per_page=%d&page=%d", perPage, page))
+                    .url(_baseUrl + String.format("/api/hosts?page=%d&per_page=%d", page, perPage))
                     .get()
                     .thenApply(this::parseWSResponse);
     }
@@ -65,7 +69,31 @@ public final class ForemanClient {
             if (page.getStatus() / 100 != 2) {
                 throw new IOException("Non-200 response from Foreman");
             } else {
-                return OBJECT_MAPPER.readValue(page.getBody(), HostPageResponse.class);
+                final JsonNode jsonNode = OBJECT_MAPPER.readTree(page.getBody());
+                if (jsonNode.isObject()) {
+                    return OBJECT_MAPPER.treeToValue(jsonNode, HostPageResponse.class);
+                } else if (jsonNode.isArray()) {
+                    // NOTE: treeToValue does not support TypeReference
+                    // See: https://github.com/FasterXML/jackson-databind/issues/1294
+                    final ImmutableList<ForemanHostContainer> foremanHostContainers = OBJECT_MAPPER.readValue(
+                            OBJECT_MAPPER.treeAsTokens(jsonNode),
+                            OBJECT_MAPPER.getTypeFactory().constructType(FOREMAN_HOST_CONTAINER_LIST_TYPE_REFERENCE));
+                    // NOTE: Guava does not yet have Collectors for its immutable variants
+                    // See: https://github.com/google/guava/issues/1582
+                    final ImmutableList<ForemanHost> foremanHosts = ImmutableList.copyOf(
+                            foremanHostContainers
+                                    .stream()
+                                    .map(foremanHostContainer -> foremanHostContainer.getHost())
+                                    .collect(Collectors.toList()));
+                    return new HostPageResponse.Builder()
+                            .setResults(foremanHosts)
+                            .setPage(1)
+                            .setPerPage(foremanHosts.size())
+                            .setSubtotal(foremanHosts.size())
+                            .setTotal(foremanHosts.size())
+                            .build();
+                }
+                throw new IllegalArgumentException("Unsupported response format");
             }
         } catch (final IOException e) {
             throw Throwables.propagate(e);
@@ -81,6 +109,8 @@ public final class ForemanClient {
     private final WSClient _client;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
+    private static final TypeReference<ImmutableList<ForemanHostContainer>> FOREMAN_HOST_CONTAINER_LIST_TYPE_REFERENCE =
+            new TypeReference<ImmutableList<ForemanHostContainer>>() {};
 
     /**
      * Implementation of the Builder pattern for ForemanClient.
@@ -293,6 +323,51 @@ public final class ForemanClient {
             @NotNull
             @NotEmpty
             private String _name;
+        }
+    }
+
+    /**
+     * Wraps a ForemanHost from the ForemanAPI. This was used in at least version 1.8.
+     *
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     */
+    public static final class ForemanHostContainer {
+        public ForemanHost getHost() {
+            return _host;
+        }
+
+        private ForemanHostContainer(final Builder builder) {
+            _host = builder._host;
+        }
+
+        private final ForemanHost _host;
+
+        /**
+         * Implementation of the builder pattern for {@link ForemanHostContainer}.
+         *
+         * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+         */
+        public static final class Builder extends OvalBuilder<ForemanHostContainer> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(ForemanHostContainer::new);
+            }
+
+            /**
+             * Sets the ForemanHost instance. Required. Cannot be null.
+             *
+             * @param value The {@code ForemanHost} instance
+             * @return this {@link Builder}
+             */
+            public Builder setHost(final ForemanHost value) {
+                _host = value;
+                return this;
+            }
+
+            @NotNull
+            private ForemanHost _host;
         }
     }
 }

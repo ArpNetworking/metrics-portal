@@ -1,0 +1,26 @@
+[
+  {
+    "host": {
+      "name": "host1.example.com",
+      "id": 3109,
+      "hostgroup_id": 1127,
+      "operatingsystem_id": 13
+    }
+  },
+  {
+    "host": {
+      "name": "host2.example.com",
+      "id": 2167,
+      "hostgroup_id": 1164,
+      "operatingsystem_id": 10
+    }
+  },
+  {
+    "host": {
+      "name": "host3.example.com",
+      "id": 1118,
+      "hostgroup_id": 114,
+      "operatingsystem_id": 13
+    }
+  }
+]
