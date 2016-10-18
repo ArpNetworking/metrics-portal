@@ -53,7 +53,7 @@ public final class ConsulClient {
     private ImmutableList<Host> parseWSResponse(final WSResponse response) {
         try {
             if (response.getStatus() / 100 != 2) {
-                throw new IllegalArgumentException(
+                throw new IOException(
                         String.format(
                                 "Non-200 response %d from Consul",
                                 response.getStatus()));
