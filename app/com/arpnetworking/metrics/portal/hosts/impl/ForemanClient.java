@@ -67,7 +67,10 @@ public final class ForemanClient {
     private HostPageResponse parseWSResponse(final WSResponse page) {
         try {
             if (page.getStatus() / 100 != 2) {
-                throw new IOException("Non-200 response from Foreman");
+                throw new IOException(
+                        String.format(
+                                "Non-200 response %d from Consul",
+                                page.getStatus()));
             } else {
                 final JsonNode jsonNode = OBJECT_MAPPER.readTree(page.getBody());
                 if (jsonNode.isObject()) {
