@@ -67,7 +67,7 @@ public final class ForemanClient {
     private HostPageResponse parseWSResponse(final WSResponse page) {
         try {
             if (page.getStatus() / 100 != 2) {
-                throw new IllegalArgumentException(
+                throw new IOException(
                         String.format(
                                 "Non-200 response %d from Consul",
                                 page.getStatus()));
