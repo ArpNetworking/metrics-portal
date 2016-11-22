@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -26,6 +27,7 @@ import play.mvc.Result;
 
 import java.util.ArrayList;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
@@ -35,6 +37,16 @@ import javax.inject.Singleton;
  */
 @Singleton
 public final class MetaController extends Controller {
+
+    /**
+     * Public constructor.
+     *
+     * @param healthProvider Instace of {@link HealthProvider}.
+     */
+    @Inject
+    public MetaController(final HealthProvider healthProvider) {
+        _healthProvider = healthProvider;
+    }
 
     /**
      * Endpoint implementation to dump Play application configuration.
@@ -52,7 +64,7 @@ public final class MetaController extends Controller {
      * @return Serialized response containing service health.
      */
     public Result ping() {
-        final boolean healthy = isHealthy();
+        final boolean healthy = _healthProvider.isHealthy();
         final ObjectNode result = JsonNodeFactory.instance.objectNode();
         response().setHeader(CACHE_CONTROL, "private, no-cache, no-store, must-revalidate");
         if (healthy) {
@@ -61,11 +73,6 @@ public final class MetaController extends Controller {
         }
         result.put("status", UNHEALTHY_STATE);
         return internalServerError(result);
-    }
-
-    private static boolean isHealthy() {
-        // TODO(vkoskela): Deep health check when features warrant it [MAI-83].
-        return Boolean.TRUE;
     }
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
@@ -114,6 +121,8 @@ public final class MetaController extends Controller {
             put(child, remaining.substring(dotIndex + 1), value);
         }
     }
+
+    private final HealthProvider _healthProvider;
 
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
