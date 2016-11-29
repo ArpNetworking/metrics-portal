@@ -209,7 +209,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setOperator(alert.getOperator());
             ebeanAlert.setPeriod(alert.getPeriod().toStandardSeconds().getSeconds());
             ebeanAlert.setQuantityValue(alert.getValue().getValue());
-            ebeanAlert.setQuantityUnit(alert.getValue().getUnit().orNull());
+            ebeanAlert.setQuantityUnit(alert.getValue().getUnit().orElse(null));
             ebeanAlert.setStatistic(alert.getStatistic());
             ebeanAlert.setService(alert.getService());
             _alertQueryGenerator.saveAlert(ebeanAlert);

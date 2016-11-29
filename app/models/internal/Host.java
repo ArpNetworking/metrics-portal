@@ -16,7 +16,7 @@
 
 package models.internal;
 
-import com.google.common.base.Optional;
+import java.util.Optional;
 
 /**
  * Internal model interface for a host.

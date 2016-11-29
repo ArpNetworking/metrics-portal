@@ -173,7 +173,7 @@ public class HostController extends Controller {
 
     private models.view.Host internalModelToViewModel(final Host host) {
         final models.view.Host viewHost = new models.view.Host();
-        viewHost.setCluster(host.getCluster().orNull());
+        viewHost.setCluster(host.getCluster().orElse(null));
         viewHost.setHostname(host.getHostname());
         viewHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
         return viewHost;

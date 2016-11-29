@@ -373,7 +373,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         Assert.assertEquals(alert.getOperator(), ebeanAlert.getOperator());
         Assert.assertEquals(alert.getPeriod(), Period.seconds(ebeanAlert.getPeriod()).normalizedStandard());
         Assert.assertEquals(alert.getStatistic(), ebeanAlert.getStatistic());
-        Assert.assertEquals(alert.getValue().getUnit(), com.google.common.base.Optional.of(ebeanAlert.getQuantityUnit()));
+        Assert.assertEquals(alert.getValue().getUnit(), Optional.of(ebeanAlert.getQuantityUnit()));
         Assert.assertEquals(alert.getValue().getValue(), ebeanAlert.getQuantityValue(), 0.001);
         Assert.assertEquals(alert.getContext(), ebeanAlert.getContext());
     }

@@ -125,7 +125,7 @@ public class DatabaseHostRepository implements HostRepository {
                 ebeanHost = new models.ebean.Host();
                 isNewHost = true;
             }
-            ebeanHost.setCluster(host.getCluster().orNull());
+            ebeanHost.setCluster(host.getCluster().orElse(null));
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
             ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(organization));
