@@ -29,6 +29,7 @@ import play.libs.ws.WSResponse;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -45,7 +46,7 @@ public final class ConsulClient {
      */
     public CompletionStage<ImmutableList<Host>> getHostList() {
         return _client
-                .url(_baseUrl + "/v1/catalog/nodes")
+                .url(_baseUrl + "/v1/catalog/nodes" + _query.orElse(""))
                 .get()
                 .thenApply(this::parseWSResponse);
     }
@@ -70,10 +71,12 @@ public final class ConsulClient {
     private ConsulClient(final Builder builder) {
         _baseUrl = builder._baseUrl;
         _client = builder._client;
+        _query = Optional.ofNullable(builder._query);
     }
 
     private final URI _baseUrl;
     private final WSClient _client;
+    private final Optional<String> _query;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final TypeReference<ImmutableList<Host>> HOST_LIST_RESPONSE_TYPE_REFERENCE =
@@ -104,7 +107,20 @@ public final class ConsulClient {
         }
 
         /**
+         * Sets the query to the Consul API. Optional. Cannot be empty.
+         *
+         * @param value The query.
+         * @return This {@link Builder}.
+         */
+        public Builder setQuery(final String value) {
+            _query = value;
+            return this;
+        }
+
+        /**
          * Sets the {@link WSClient} to use to make the calls. Required. Cannot be null.
+         *
+         * For example, to query nodes in a particular data center use: {@code ?dc=my-dc}
          *
          * @param value The WSClient.
          * @return this {@link Builder}
@@ -117,6 +133,8 @@ public final class ConsulClient {
         @NotNull
         @NotEmpty
         private URI _baseUrl;
+        @NotEmpty
+        private String _query;
         @NotNull
         private WSClient _client;
     }

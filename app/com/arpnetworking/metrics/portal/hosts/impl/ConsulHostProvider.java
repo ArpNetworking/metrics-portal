@@ -62,6 +62,7 @@ public final class ConsulHostProvider extends UntypedActor {
                 getSelf());
         _client = new ConsulClient.Builder()
                 .setBaseUrl(URI.create(configuration.getString("baseUrl")))
+                .setQuery(configuration.getString("query"))
                 .setClient(wsClient)
                 .build();
     }
