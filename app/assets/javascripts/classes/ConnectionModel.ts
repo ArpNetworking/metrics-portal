@@ -72,7 +72,7 @@ class ConnectionModel {
         var serverPort = (typeof serverNameComponents[1] === "undefined") ? "7090" : serverNameComponents[1];
 
         var protocol = "ws";
-        if (window.location.protocol.toLowerCase() == "https") {
+        if (window.location.protocol.toLowerCase().indexOf("https") == 0) {
             protocol = "wss";
         }
         var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
