@@ -69,7 +69,7 @@ public final class ForemanClient {
             if (page.getStatus() / 100 != 2) {
                 throw new IOException(
                         String.format(
-                                "Non-200 response %d from Consul",
+                                "Non-200 response %d from Foreman",
                                 page.getStatus()));
             } else {
                 final JsonNode jsonNode = OBJECT_MAPPER.readTree(page.getBody());
