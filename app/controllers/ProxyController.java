@@ -22,6 +22,7 @@ import akka.http.javadsl.model.ws.Message;
 import akka.http.javadsl.model.ws.TextMessage;
 import akka.http.javadsl.model.ws.WebSocketRequest;
 import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
+import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.google.inject.Inject;
@@ -54,6 +55,7 @@ public class ProxyController extends Controller {
         _metricsFactory = metricsFactory;
         _system = system;
         _enabled = features.isProxyEnabled();
+        _materializer = ActorMaterializer.create(_system);
     }
 
     /**
@@ -74,12 +76,14 @@ public class ProxyController extends Controller {
                 .map(TextMessage::create);
         final Flow<Message, String, CompletionStage<WebSocketUpgradeResponse>> wsFlow =
                 http.webSocketClientFlow(WebSocketRequest.create(uri))
-                .map(m -> m.asTextMessage().getStrictText());
+                .mapAsync(1, m -> m.asTextMessage().getStreamedText().runFold("", (a, b) -> a + b, _materializer));
 
         // Accept web socket connection from proxy originator
         return WebSocket.Text.accept(header -> mapFlow.via(wsFlow));
     }
 
+
+    private ActorMaterializer _materializer;
     private final MetricsFactory _metricsFactory;
     private final ActorSystem _system;
     private final boolean _enabled;
