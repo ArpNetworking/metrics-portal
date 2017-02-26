@@ -17,7 +17,7 @@ env:
 install: true
 before_script:
 - gpg --import arpnetworking.key
-- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export TARGET="${TARGET} publishSigned sonatypeRelease"; fi;
+- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export TARGET="${TARGET} publishSigned sonatypeRelease rpm:packageBin"; fi;
 script:
 - curl -s ${JDKW} | bash /dev/stdin ./activator clean ${TARGET}
 deploy:
