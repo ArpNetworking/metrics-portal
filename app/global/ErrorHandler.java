@@ -28,12 +28,9 @@ import java.util.concurrent.CompletionStage;
 /**
  * Error handler for the application.
  *
- * @author Brandon Arp (brandonarp at gmail dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
 public class ErrorHandler implements HttpErrorHandler {
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CompletionStage<Result> onClientError(final Http.RequestHeader requestHeader, final int status, final String message) {
         LOGGER.warn()
@@ -44,9 +41,6 @@ public class ErrorHandler implements HttpErrorHandler {
         return CompletableFuture.completedFuture(Results.status(status));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public CompletionStage<Result> onServerError(final Http.RequestHeader requestHeader, final Throwable throwable) {
         LOGGER.error()

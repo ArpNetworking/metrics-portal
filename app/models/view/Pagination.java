@@ -89,9 +89,6 @@ public class Pagination {
         return _previous;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

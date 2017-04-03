@@ -50,9 +50,6 @@ public class PackageVersion {
         _uri = value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

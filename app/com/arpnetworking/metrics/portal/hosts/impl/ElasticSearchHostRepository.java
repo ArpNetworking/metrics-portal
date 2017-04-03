@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementation of <code>HostRepository</code> using Elastic Search.
  *
  * @author Ruchita Venugopal (rvenugopal at groupon dot com)
- * @author Brandon Arp (brandonarp at gmail dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 public final class ElasticSearchHostRepository implements HostRepository {
@@ -89,9 +89,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         this(buildNodeSettings(configuration, application), buildIndexSettings(configuration));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -158,9 +155,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         LOGGER.info().setMessage("ElasticSearchHostRepository up and healthy").log();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -172,9 +166,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         _node.close();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateHost(final Host host, final Organization organization) {
         //TODO(barp): Support organizational separation in ElasticSearch [?]
@@ -208,9 +199,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 .log();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void deleteHost(final String hostname, final Organization organization) {
         //TODO(barp): Support organizational separation in ElasticSearch [?]
@@ -240,9 +228,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
@@ -253,9 +238,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         return new DefaultHostQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
@@ -298,9 +280,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         return deserializeHits(request.execute().actionGet(), organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final Organization organization) {
         assertIsOpen();
@@ -315,9 +294,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
         return response.getCount();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
@@ -349,9 +325,6 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return toLogValue().toString();

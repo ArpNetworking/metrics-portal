@@ -33,33 +33,21 @@ import net.sf.oval.constraint.NotNull;
 @Loggable
 public final class DefaultHost implements Host {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getHostname() {
         return _hostname;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public MetricsSoftwareState getMetricsSoftwareState() {
         return _metricsSoftwareState;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (other == this) {
@@ -76,17 +64,11 @@ public final class DefaultHost implements Host {
                 && Objects.equal(_cluster, otherHost._cluster);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_hostname, _metricsSoftwareState);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

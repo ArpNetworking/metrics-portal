@@ -44,9 +44,6 @@ public final class VersionSet {
         _version = value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

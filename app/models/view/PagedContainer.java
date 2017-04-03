@@ -50,9 +50,6 @@ public final class PagedContainer<T> {
         return _pagination;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

@@ -35,41 +35,26 @@ import java.util.UUID;
 @Loggable
 public final class DefaultVersionSpecification implements VersionSpecification {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public UUID getUuid() {
         return _uuid;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public VersionSet getVersionSet() {
         return _versionSet;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<VersionSpecificationAttribute> getVersionSpecificationAttributes() {
         return _versionSpecificationAttributes;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getPosition() {
         return _position;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -87,17 +72,11 @@ public final class DefaultVersionSpecification implements VersionSpecification {
                 && Objects.equal(_versionSpecificationAttributes, otherDefaultVersionSpecification._versionSpecificationAttributes);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_uuid, _versionSet, _versionSpecificationAttributes, _position);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

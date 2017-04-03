@@ -45,9 +45,6 @@ public final class MetricsActionWrapper extends Action.Simple {
         _metricsFactory = metricsFactory;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     // CHECKSTYLE.OFF: IllegalThrow
     public CompletionStage<Result> call(final Http.Context context) {

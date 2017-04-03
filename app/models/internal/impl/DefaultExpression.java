@@ -33,49 +33,31 @@ import java.util.UUID;
 @Loggable
 public final class DefaultExpression implements Expression {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public UUID getId() {
         return _id;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getService() {
         return _service;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getMetric() {
         return _metric;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getScript() {
         return _script;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -89,9 +71,6 @@ public final class DefaultExpression implements Expression {
                 .toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -110,9 +89,6 @@ public final class DefaultExpression implements Expression {
                 && Objects.equals(_script, otherExpression._script);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hash(

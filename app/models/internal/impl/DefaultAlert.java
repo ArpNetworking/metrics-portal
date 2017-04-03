@@ -38,97 +38,61 @@ import java.util.UUID;
 @Loggable
 public final class DefaultAlert implements Alert {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public UUID getId() {
         return _id;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Context getContext() {
         return _context;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getName() {
         return _name;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getService() {
         return _service;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getMetric() {
         return _metric;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getStatistic() {
         return _statistic;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Period getPeriod() {
         return _period;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Operator getOperator() {
         return _operator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Quantity getValue() {
         return _value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public NagiosExtension getNagiosExtension() {
         return _nagiosExtension;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -148,9 +112,6 @@ public final class DefaultAlert implements Alert {
                 .toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -175,9 +136,6 @@ public final class DefaultAlert implements Alert {
                 && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hash(

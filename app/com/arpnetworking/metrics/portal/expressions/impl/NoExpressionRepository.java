@@ -45,9 +45,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
     @Inject
     public NoExpressionRepository() {}
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -55,9 +52,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -65,9 +59,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Expression> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
@@ -79,9 +70,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
         return Optional.empty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery createQuery(final Organization organization) {
         LOGGER.debug()
@@ -91,9 +79,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
         return new DefaultExpressionQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Expression> query(final ExpressionQuery query) {
         assertIsOpen();
@@ -104,9 +89,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
         return new DefaultQueryResult<>(Collections.<Expression>emptyList(), 0);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getExpressionCount(final Organization organization) {
         assertIsOpen();
@@ -129,9 +111,6 @@ public final class NoExpressionRepository extends ReadOnlyAbstractExpressionRepo
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return toLogValue().toString();

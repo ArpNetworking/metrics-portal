@@ -61,9 +61,6 @@ public final class VersionSpecification {
         _uuid = value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

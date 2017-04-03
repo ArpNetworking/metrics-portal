@@ -31,25 +31,16 @@ import net.sf.oval.constraint.NotNull;
 @Loggable
 public final class DefaultVersionSpecificationAttribute implements VersionSpecificationAttribute {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getKey() {
         return _key;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getValue() {
         return _value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -65,17 +56,11 @@ public final class DefaultVersionSpecificationAttribute implements VersionSpecif
                 && Objects.equal(_value, otherDefaultVersionSpecificationAttribute._value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_key, _value);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

@@ -43,119 +43,77 @@ public final class DefaultHostQuery implements HostQuery {
         _organization = organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery partialHostname(final Optional<String> partialHostname) {
         _partialHostname = partialHostname;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery metricsSoftwareState(final Optional<MetricsSoftwareState> metricsSoftwareState) {
         _metricsSoftwareState = metricsSoftwareState;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery cluster(final Optional<String> cluster) {
         _cluster = cluster;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery limit(final int limit) {
         _limit = limit;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery offset(final Optional<Integer> offset) {
         _offset = offset;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery sortBy(final Optional<Field> sortBy) {
         _sortBy = sortBy;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getPartialHostname() {
         return _partialHostname;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Organization getOrganization() {
         return _organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<MetricsSoftwareState> getMetricsSoftwareState() {
         return _metricsSoftwareState;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int getLimit() {
         return _limit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Integer> getOffset() {
         return _offset;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Field> getSortBy() {
         return _sortBy;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
