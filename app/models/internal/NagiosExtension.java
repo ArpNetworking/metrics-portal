@@ -49,9 +49,6 @@ public final class NagiosExtension {
         return _freshnessThreshold;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -64,9 +61,6 @@ public final class NagiosExtension {
                 .toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -84,9 +78,6 @@ public final class NagiosExtension {
                 && Objects.equals(_freshnessThreshold, otherExtension._freshnessThreshold);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hash(

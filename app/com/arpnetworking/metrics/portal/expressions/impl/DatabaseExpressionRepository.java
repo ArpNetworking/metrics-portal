@@ -77,9 +77,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         _expressionQueryGenerator = expressionQueryGenerator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -87,9 +84,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -97,9 +91,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Expression> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
@@ -121,9 +112,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         return Optional.of(convertFromEbeanExpression(ebeanExpression));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery createQuery(final Organization organization) {
         assertIsOpen();
@@ -134,9 +122,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         return new DefaultExpressionQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Expression> query(final ExpressionQuery query) {
         assertIsOpen();
@@ -162,9 +147,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                 etag.toString());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getExpressionCount(final Organization organization) {
         assertIsOpen();
@@ -174,9 +156,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                 .findRowCount();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateExpression(final Expression expression, final Organization organization) {
         assertIsOpen();
@@ -285,9 +264,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      */
     public static final class GenericQueryGenerator implements ExpressionQueryGenerator {
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public PagedList<models.ebean.Expression> createExpressionQuery(final ExpressionQuery query) {
             ExpressionList<models.ebean.Expression> ebeanExpressionList = Ebean.find(models.ebean.Expression.class).where();
@@ -320,17 +296,11 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             return ebeanQuery.findPagedList(pageOffset, query.getLimit());
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void saveExpression(final models.ebean.Expression expression) {
             Ebean.save(expression);
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public long getEtag(final Organization organization) {
             return ExpressionEtags.getEtagByOrganization(organization);

@@ -33,17 +33,11 @@ import java.util.UUID;
 @Loggable
 public final class DefaultOrganization implements Organization {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public UUID getId() {
         return _id;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (other == this) {
@@ -58,17 +52,11 @@ public final class DefaultOrganization implements Organization {
         return Objects.equal(_id, otherOrg._id);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_id);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

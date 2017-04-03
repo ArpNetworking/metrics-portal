@@ -115,9 +115,6 @@ public final class Alert {
         return _extensions;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

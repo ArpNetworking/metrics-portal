@@ -28,9 +28,6 @@ import models.internal.Organization;
  */
 public abstract class ReadOnlyAbstractExpressionRepository implements ExpressionRepository {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateExpression(final Expression expression, final Organization organization) {
         throw new UnsupportedOperationException("This is a read only repository.");

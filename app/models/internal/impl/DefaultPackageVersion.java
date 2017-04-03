@@ -31,33 +31,21 @@ import net.sf.oval.constraint.NotNull;
 @Loggable
 public final class DefaultPackageVersion implements PackageVersion {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getName() {
         return _name;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getVersion() {
         return _version;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getUri() {
         return _uri;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (other == this) {
@@ -74,17 +62,11 @@ public final class DefaultPackageVersion implements PackageVersion {
                 && Objects.equal(_version, otherPackageVersion._version);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_name, _uri, _version);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

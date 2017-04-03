@@ -44,110 +44,71 @@ public final class DefaultExpressionQuery implements ExpressionQuery {
         _organization = organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery contains(final Optional<String> contains) {
         _contains = contains;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery cluster(final Optional<String> cluster) {
         _cluster = cluster;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery service(final Optional<String> service) {
         _service = service;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery limit(final int limit) {
         _limit = limit;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public ExpressionQuery offset(final Optional<Integer> offset) {
         _offset = offset;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Expression> execute() {
         return _repository.query(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getContains() {
         return _contains;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getService() {
         return _service;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Organization getOrganization() {
         return _organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int getLimit() {
         return _limit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Integer> getOffset() {
         return _offset;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

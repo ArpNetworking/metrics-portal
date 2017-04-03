@@ -56,25 +56,16 @@ public final class DefaultQueryResult<T> implements QueryResult<T> {
         _etag = Optional.of(etag);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<? extends T> values() {
         return _values;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long total() {
         return _total;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> etag() {
         return _etag;
@@ -94,9 +85,6 @@ public final class DefaultQueryResult<T> implements QueryResult<T> {
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return toLogValue().toString();

@@ -45,9 +45,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
     @Inject
     public NoAlertRepository() {}
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -55,9 +52,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -65,9 +59,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Alert> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
@@ -79,9 +70,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         return Optional.empty();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery createQuery(final Organization organization) {
         LOGGER.debug()
@@ -91,9 +79,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         return new DefaultAlertQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Alert> query(final AlertQuery query) {
         assertIsOpen();
@@ -104,9 +89,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         return new DefaultQueryResult<>(Collections.<Alert>emptyList(), 0);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getAlertCount(final Organization organization) {
         assertIsOpen();
@@ -129,9 +111,6 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return toLogValue().toString();

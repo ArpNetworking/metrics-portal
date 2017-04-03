@@ -81,9 +81,6 @@ public class DatabaseHostRepository implements HostRepository {
         _hostQueryGenerator = hostQueryGenerator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -91,9 +88,6 @@ public class DatabaseHostRepository implements HostRepository {
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -101,9 +95,6 @@ public class DatabaseHostRepository implements HostRepository {
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
@@ -143,9 +134,6 @@ public class DatabaseHostRepository implements HostRepository {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void deleteHost(final String hostname, final Organization organization) {
         assertIsOpen();
@@ -175,9 +163,6 @@ public class DatabaseHostRepository implements HostRepository {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
@@ -188,9 +173,6 @@ public class DatabaseHostRepository implements HostRepository {
         return new DefaultHostQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
@@ -225,9 +207,6 @@ public class DatabaseHostRepository implements HostRepository {
                 etag);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final Organization organization) {
         assertIsOpen();
@@ -237,9 +216,6 @@ public class DatabaseHostRepository implements HostRepository {
                 .findRowCount();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
@@ -303,9 +279,6 @@ public class DatabaseHostRepository implements HostRepository {
      */
     public static final class GenericQueryGenerator implements HostQueryGenerator {
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
             ExpressionList<models.ebean.Host> ebeanExpressionList = Ebean.find(models.ebean.Host.class).where();
@@ -332,9 +305,6 @@ public class DatabaseHostRepository implements HostRepository {
             return ebeanQuery.findPagedList(pageOffset, query.getLimit());
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void saveHost(final models.ebean.Host host) {
             Ebean.save(host);
@@ -346,9 +316,6 @@ public class DatabaseHostRepository implements HostRepository {
      */
     public static final class PostgresqlHostQueryGenerator implements HostQueryGenerator {
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
             final StringBuilder selectBuilder = new StringBuilder(
@@ -426,9 +393,6 @@ public class DatabaseHostRepository implements HostRepository {
                     .findPagedList(pageOffset, query.getLimit());
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void saveHost(final models.ebean.Host host) {
             final String hostname = host.getName();

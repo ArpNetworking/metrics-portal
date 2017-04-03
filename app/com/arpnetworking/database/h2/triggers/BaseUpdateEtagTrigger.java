@@ -41,9 +41,6 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
         _orgIndex = orgIndex;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void init(
             final Connection conn,
@@ -53,9 +50,6 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
             final boolean before,
             final int type) throws SQLException {}
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @SuppressFBWarnings("SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING")
     public void fire(final Connection conn, final Object[] oldRow, final Object[] newRow) throws SQLException {
@@ -64,17 +58,11 @@ public abstract class BaseUpdateEtagTrigger implements Trigger {
         _incrementEtag.accept(org);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         // ignore
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void remove() {
         // ignore

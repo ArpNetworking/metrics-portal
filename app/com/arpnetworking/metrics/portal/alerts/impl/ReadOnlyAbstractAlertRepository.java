@@ -28,9 +28,6 @@ import models.internal.Organization;
  */
 public abstract class ReadOnlyAbstractAlertRepository implements AlertRepository {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         throw new UnsupportedOperationException("This is a read only repository.");

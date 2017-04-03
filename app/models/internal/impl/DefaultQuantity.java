@@ -35,25 +35,16 @@ import java.util.Optional;
 @Loggable
 public final class DefaultQuantity implements Quantity {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public double getValue() {
         return _value;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getUnit() {
         return _unit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (other == this) {
@@ -69,17 +60,11 @@ public final class DefaultQuantity implements Quantity {
                 && Objects.equal(_unit, otherQuantity._unit);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_value, _unit);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

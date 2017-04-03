@@ -45,127 +45,82 @@ public final class DefaultAlertQuery implements AlertQuery {
         _organization = organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery contains(final Optional<String> contains) {
         _contains = contains;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery context(final Optional<Context> context) {
         _context = context;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery cluster(final Optional<String> cluster) {
         _cluster = cluster;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery service(final Optional<String> service) {
         _service = service;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery limit(final int limit) {
         _limit = limit;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery offset(final Optional<Integer> offset) {
         _offset = offset;
         return this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Alert> execute() {
         return _repository.query(this);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Organization getOrganization() {
         return _organization;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getContains() {
         return _contains;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Context> getContext() {
         return _context;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getCluster() {
         return _cluster;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<String> getService() {
         return _service;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int getLimit() {
         return _limit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Integer> getOffset() {
         return _offset;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

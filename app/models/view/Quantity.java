@@ -42,9 +42,6 @@ public final class Quantity {
         return _unit;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

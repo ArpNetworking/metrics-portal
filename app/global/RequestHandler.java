@@ -28,7 +28,7 @@ import javax.inject.Inject;
 /**
  * Request handler for the application.
  *
- * @author Brandon Arp (brandonarp at gmail dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
 public class RequestHandler implements ActionCreator {
     /**
@@ -41,9 +41,6 @@ public class RequestHandler implements ActionCreator {
         _metricsFactory = metricsFactory;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     @SuppressWarnings("unchecked")
     public Action<?> createAction(final Http.Request request, final Method method) {

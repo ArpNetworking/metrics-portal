@@ -81,9 +81,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         _alertQueryGenerator = alertQueryGenerator;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -91,9 +88,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -101,9 +95,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Alert> get(final UUID identifier, final Organization organization) {
         assertIsOpen();
@@ -124,9 +115,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         return Optional.of(convertFromEbeanAlert(ebeanAlert));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AlertQuery createQuery(final Organization organization) {
         assertIsOpen();
@@ -137,9 +125,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         return new DefaultAlertQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Alert> query(final AlertQuery query) {
         assertIsOpen();
@@ -162,9 +147,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         return new DefaultQueryResult<>(values, pagedAlerts.getTotalRowCount(), etag.toString());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getAlertCount(final Organization organization) {
         assertIsOpen();
@@ -174,9 +156,6 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .findRowCount();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();
@@ -327,9 +306,6 @@ public class DatabaseAlertRepository implements AlertRepository {
      */
     public static final class GenericQueryGenerator implements AlertQueryGenerator {
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public PagedList<models.ebean.Alert> createAlertQuery(final AlertQuery query) {
             ExpressionList<models.ebean.Alert> ebeanExpressionList = Ebean.find(models.ebean.Alert.class).where();
@@ -367,17 +343,11 @@ public class DatabaseAlertRepository implements AlertRepository {
             return ebeanQuery.findPagedList(pageOffset, query.getLimit());
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void saveAlert(final models.ebean.Alert alert) {
             Ebean.save(alert);
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public long getEtag(final Organization organization) {
             return AlertEtags.getEtagByOrganization(organization);

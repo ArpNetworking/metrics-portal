@@ -39,33 +39,21 @@ public final class DefaultVersionSet implements VersionSet {
     private final String _version;
     private final List<PackageVersion> _packageVersions;
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public UUID getUuid() {
         return _uuid;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getVersion() {
         return _version;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<PackageVersion> getPackageVersions() {
         return _packageVersions;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean equals(final Object other) {
         if (this == other) {
@@ -82,17 +70,11 @@ public final class DefaultVersionSet implements VersionSet {
                 && Objects.equal(_packageVersions, otherDefaultVersionSet._packageVersions);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int hashCode() {
         return Objects.hashCode(_uuid, _version, _packageVersions);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)

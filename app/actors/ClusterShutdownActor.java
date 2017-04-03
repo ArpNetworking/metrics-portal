@@ -54,9 +54,6 @@ public class ClusterShutdownActor extends UntypedActor {
         cluster.subscribe(self(), ClusterEvent.initialStateAsEvents(), ClusterEvent.MemberRemoved.class);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onReceive(final Object message) throws Throwable {
         if (message instanceof ClusterEvent.MemberRemoved) {

@@ -27,49 +27,31 @@ import play.Configuration;
 @Loggable
 public final class DefaultFeatures implements Features {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isTelemetryEnabled() {
         return _telemetryEnabled;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isProxyEnabled() {
         return _proxyEnabled;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isLiveLoggingEnabled() {
         return _liveLoggingEnabled;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isHostRegistryEnabled() {
         return _hostRegistryEnabled;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isExpressionsEnabled() {
         return _expressionsEnabled;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean isAlertsEnabled() {
         return _alertsEnabled;

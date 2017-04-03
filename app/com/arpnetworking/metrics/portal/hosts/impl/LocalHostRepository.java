@@ -55,9 +55,6 @@ public final class LocalHostRepository implements HostRepository {
     @Inject
     public LocalHostRepository() {}
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void open() {
         assertIsOpen(false);
@@ -65,9 +62,6 @@ public final class LocalHostRepository implements HostRepository {
         _isOpen.set(true);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void close() {
         assertIsOpen();
@@ -75,9 +69,6 @@ public final class LocalHostRepository implements HostRepository {
         _isOpen.set(false);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
@@ -90,9 +81,6 @@ public final class LocalHostRepository implements HostRepository {
         orgMap.put(host.getHostname(), host);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void deleteHost(final String hostname, final Organization organization) {
         assertIsOpen();
@@ -105,9 +93,6 @@ public final class LocalHostRepository implements HostRepository {
         orgMap.remove(hostname);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public HostQuery createQuery(final Organization organization) {
         assertIsOpen();
@@ -118,9 +103,6 @@ public final class LocalHostRepository implements HostRepository {
         return new DefaultHostQuery(this, organization);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public QueryResult<Host> query(final HostQuery query) {
         assertIsOpen();
@@ -175,9 +157,6 @@ public final class LocalHostRepository implements HostRepository {
         return new DefaultQueryResult<>(hosts, total);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final Organization organization) {
         assertIsOpen();
@@ -188,9 +167,6 @@ public final class LocalHostRepository implements HostRepository {
         return getOrganizationMap(organization).size();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
@@ -221,9 +197,6 @@ public final class LocalHostRepository implements HostRepository {
                 .build();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String toString() {
         return toLogValue().toString();

@@ -48,9 +48,6 @@ public class NoHostProvider extends UntypedActor {
                 getSelf());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void onReceive(final Object message) throws Exception {
         if ("tick".equals(message)) {
