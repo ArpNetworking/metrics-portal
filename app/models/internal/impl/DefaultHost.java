@@ -19,11 +19,12 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+
+import java.util.Optional;
 
 /**
  * Default internal model implementation for a host.
@@ -83,7 +84,7 @@ public final class DefaultHost implements Host {
     private DefaultHost(final Builder builder) {
         _hostname = builder._hostname;
         _metricsSoftwareState = builder._metricsSoftwareState;
-        _cluster = Optional.fromNullable(builder._cluster);
+        _cluster = Optional.ofNullable(builder._cluster);
     }
 
     private final String _hostname;

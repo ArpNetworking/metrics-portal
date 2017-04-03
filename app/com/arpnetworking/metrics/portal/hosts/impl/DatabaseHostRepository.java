@@ -41,6 +41,7 @@ import play.Environment;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class DatabaseHostRepository implements HostRepository {
                 ebeanHost = new models.ebean.Host();
                 isNewHost = true;
             }
-            ebeanHost.setCluster(host.getCluster().orNull());
+            ebeanHost.setCluster(host.getCluster().orElse(null));
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
             ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(organization));
@@ -327,21 +328,21 @@ public class DatabaseHostRepository implements HostRepository {
 
             // Add the partial host name clause using the postgresql full text index
             if (query.getPartialHostname().isPresent() && !query.getPartialHostname().get().isEmpty()) {
-                final List<String> tokens = tokenize(query.getPartialHostname().get());
-                final String prefixExpression = tokens
+                final List<String> queryTokens = Arrays.asList(query.getPartialHostname().get().split(" "));
+                final String prefixExpression = queryTokens
                         .stream()
                         .map(s -> s + ":*")
-                        .reduce((s1, s2) -> s1 + " | " + s2)
+                        .reduce((s1, s2) -> s1 + " & " + s2)
                         .orElse(null);
-                final String termExpression = tokenize(query.getPartialHostname().get())
+                final String termExpression = queryTokens
                         .stream()
-                        .reduce((s1, s2) -> s1 + " | " + s2)
+                        .reduce((s1, s2) -> s1 + " & " + s2)
                         .orElse(null);
                 if (prefixExpression != null && termExpression != null) {
                     parameters.put("prefixQuery", prefixExpression);
                     parameters.put("termQuery", termExpression);
                     selectBuilder.append(", to_tsquery('simple',:prefixQuery) prefixQuery, to_tsquery('simple',:termQuery) termQuery");
-                    whereBuilder.append("where t0.name_idx_col @@ prefixQuery or t0.name_idx_col @@ termQuery");
+                    whereBuilder.append("where (t0.name_idx_col @@ prefixQuery or t0.name_idx_col @@ termQuery)");
                     orderBuilder.append("order by ts_rank(t0.name_idx_col, prefixQuery) * ts_rank(t0.name_idx_col, termQuery) "
                             + "/ char_length(t0.name) DESC, name ASC");
                 } else {
@@ -350,7 +351,6 @@ public class DatabaseHostRepository implements HostRepository {
                             .setMessage("Skipping partial host name query clause")
                             .addData("organization", organization)
                             .addData("partialHostName", query.getPartialHostname().get())
-                            .addData("tokens", tokens)
                             .addData("prefixExpression", prefixExpression)
                             .addData("termExpression", termExpression)
                             .log();
@@ -373,8 +373,10 @@ public class DatabaseHostRepository implements HostRepository {
 
             // Add the sort order
             if (query.getSortBy().isPresent()) {
-                beginOrExtend(orderBuilder, "order by ", ", ");
-                orderBuilder.append(mapField(query.getSortBy().get()))
+                // NOTE: Replace the ordering (if any) with the user specified one
+                orderBuilder.setLength(0);
+                orderBuilder.append("order by ")
+                        .append(mapField(query.getSortBy().get()))
                         .append(" ASC");
             }
 
@@ -393,15 +395,27 @@ public class DatabaseHostRepository implements HostRepository {
 
         @Override
         public void saveHost(final models.ebean.Host host) {
+            final String hostname = host.getName();
+            final String labels = hostname.replace('.', ' ');
+            final String words = labels.replace('-', ' ');
+            final String alnum = tokenize(labels)
+                    .stream()
+                    .reduce((s1, s2) -> s1 + " " + s2)
+                    .orElse("");
+
             Ebean.save(host);
-            Ebean.createSqlUpdate("UPDATE portal.hosts SET name_idx_col = to_tsvector('simple', coalesce(:tokens,'')) WHERE id = :id")
+            Ebean.createSqlUpdate(
+                    "UPDATE portal.hosts SET name_idx_col = "
+                            + "setweight(to_tsvector('simple', coalesce(:hostname,'')), 'A')"
+                            + "|| setweight(to_tsvector('simple', coalesce(:labels,'')), 'B')"
+                            + "|| setweight(to_tsvector('simple', coalesce(:words,'')), 'C')"
+                            + "|| setweight(to_tsvector('simple', coalesce(:alnum,'')), 'D')"
+                            + "WHERE id = :id")
                     .setParameter("id", host.getId())
-                    .setParameter(
-                            "tokens",
-                            tokenize(host.getName())
-                                    .stream()
-                                    .reduce((s1, s2) -> s1 + " " + s2)
-                                    .orElse(host.getName()))
+                    .setParameter("hostname", hostname)
+                    .setParameter("labels", labels)
+                    .setParameter("words", words)
+                    .setParameter("alnum", alnum)
                     .execute();
         }
 

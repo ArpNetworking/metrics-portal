@@ -21,7 +21,7 @@
   <!-- IMPORTANT: This logger should only used when debugging and testing -->
   <appender name="MetricsPortalLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/metrics-portal.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
       <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
         <maxOffsetInMillis>900000</maxOffsetInMillis>
         <maxFileSize>2gb</maxFileSize>

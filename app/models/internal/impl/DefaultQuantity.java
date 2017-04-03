@@ -19,10 +19,11 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
-import com.google.common.base.Optional;
 import models.internal.Quantity;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+
+import java.util.Optional;
 
 /**
  * Default internal model implementation for a quantity.
@@ -76,7 +77,7 @@ public final class DefaultQuantity implements Quantity {
 
     private DefaultQuantity(final Builder builder) {
         _value = builder._value.doubleValue();
-        _unit = Optional.fromNullable(builder._unit);
+        _unit = Optional.ofNullable(builder._unit);
     }
 
     private final double _value;

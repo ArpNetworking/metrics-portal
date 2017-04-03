@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Groupon.com
+ * Copyright 2016 Inscope Metrics Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,36 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package models.internal;
-
-import java.util.Optional;
+package com.arpnetworking.metrics.portal.health;
 
 /**
- * Internal model interface for a host.
+ * Interface for evaluating the health of the service.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public interface Host {
+public interface HealthProvider {
 
     /**
-     * Accessor for the hostname.
+     * Evaluate whether this service instance is healthy.
      *
-     * @return The hostname.
+     * @return {@code true} if and only if the service is healthy.
      */
-    String getHostname();
-
-    /**
-     * Accessor for the state of the metrics software stack on the host.
-     *
-     * @return The state of the metrics software stack on the host.
-     */
-    MetricsSoftwareState getMetricsSoftwareState();
-
-    /**
-     * Accessor for the cluster.
-     *
-     * @return The cluster.
-     */
-    Optional<String> getCluster();
+    boolean isHealthy();
 }

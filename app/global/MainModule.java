@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.impl.TsdLogSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
+import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -61,6 +62,8 @@ public class MainModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(Global.class).asEagerSingleton();
+        bind(HealthProvider.class)
+                .toProvider(HealthProviderProvider.class);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
@@ -109,6 +112,29 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Features getFeatures(final Configuration configuration) {
         return new DefaultFeatures(configuration);
+    }
+
+    private static final class HealthProviderProvider implements Provider<HealthProvider> {
+
+        @Inject
+        public HealthProviderProvider(
+                final Injector injector,
+                final Environment environment,
+                final Configuration configuration) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+        }
+
+        @Override
+        public HealthProvider get() {
+            return _injector.getInstance(
+                    ConfigurationHelper.<HealthProvider>getType(_environment, _configuration, "http.healthProvider.type"));
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Configuration _configuration;
     }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {

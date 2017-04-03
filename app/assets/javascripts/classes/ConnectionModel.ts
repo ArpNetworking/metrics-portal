@@ -72,10 +72,11 @@ class ConnectionModel {
         var serverPort = (typeof serverNameComponents[1] === "undefined") ? "7090" : serverNameComponents[1];
 
         var protocol = "ws";
-        if (window.location.protocol.toLowerCase() == "https") {
+        if (window.location.protocol.toLowerCase().indexOf("https") == 0) {
             protocol = "wss";
         }
         var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
+        var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
         var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + "/v1/proxy/stream";
 
         if (serverHost == "localhost" || serverHost == "127.0.0.1") {
@@ -93,8 +94,14 @@ class ConnectionModel {
                 {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)},
                 {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol: new V2Protocol(this)},
                 {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
-                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}
+                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)},
             ];
+            if (protocol == "wss") {
+                this.connectionList = this.connectionList.concat([
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/stream"), protocol: new V1Protocol(this)}]);
+            }
         }
     }
 

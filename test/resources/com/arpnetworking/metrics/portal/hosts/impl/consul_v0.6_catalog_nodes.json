@@ -1,0 +1,20 @@
+[
+  {
+    "Node": "host1.example.com",
+    "Address": "10.1.0.1",
+    "CreateIndex": 9059038,
+    "ModifyIndex": 8999557
+  },
+  {
+    "Node": "host2.example.com",
+    "Address": "10.1.0.12",
+    "CreateIndex": 9,
+    "ModifyIndex": 7
+  },
+  {
+    "Node": "host3.example.com",
+    "Address": "10.1.0.18",
+    "CreateIndex": 4,
+    "ModifyIndex": 2709850
+  }
+]

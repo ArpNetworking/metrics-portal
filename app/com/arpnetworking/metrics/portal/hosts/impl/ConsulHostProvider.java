@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 Smartsheet.com
+ * Copyright 2016 Inscope Metrics Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
@@ -35,11 +34,11 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Host provider that uses the Foreman API to get host data.
+ * Host provider that uses the Consul API to get host data.
  *
- * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class ForemanHostProvider extends UntypedActor {
+public final class ConsulHostProvider extends UntypedActor {
 
     /**
      * Public constructor.
@@ -49,7 +48,7 @@ public final class ForemanHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public ForemanHostProvider(
+    public ConsulHostProvider(
             final HostRepository hostRepository,
             final WSClient wsClient,
             @Assisted final Configuration configuration) {
@@ -61,8 +60,9 @@ public final class ForemanHostProvider extends UntypedActor {
                 TICK,
                 getContext().dispatcher(),
                 getSelf());
-        _client = new ForemanClient.Builder()
+        _client = new ConsulClient.Builder()
                 .setBaseUrl(URI.create(configuration.getString("baseUrl")))
+                .setQuery(configuration.getString("query"))
                 .setClient(wsClient)
                 .build();
     }
@@ -77,31 +77,21 @@ public final class ForemanHostProvider extends UntypedActor {
                     .setMessage("Searching for added/updated hosts")
                     .addData("actor", self())
                     .log();
-            PatternsCS.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
-        } else if (message instanceof ForemanClient.HostPageResponse) {
-            final ForemanClient.HostPageResponse response = (ForemanClient.HostPageResponse) message;
-            final List<ForemanClient.ForemanHost> results = response.getResults();
-            for (final ForemanClient.ForemanHost host : results) {
-                final Host dh = new DefaultHost.Builder()
-                        .setHostname(host.getName())
+            PatternsCS.pipe(_client.getHostList(), context().dispatcher()).to(self(), self());
+        } else if (message instanceof List) {
+            @SuppressWarnings("unchecked")
+            final List<ConsulClient.Host> hostList = (List<ConsulClient.Host>) message;
+            for (final ConsulClient.Host host : hostList) {
+                final models.internal.Host dh = new DefaultHost.Builder()
+                        .setHostname(host.getNode())
                         .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
                         .build();
                 _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
             }
-
-            if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                PatternsCS
-                        .pipe(
-                                _client.getHostPage(
-                                        response.getPage() + 1,
-                                        response.getPerPage()),
-                                context().dispatcher())
-                        .to(self(), self());
-            }
         } else if (message instanceof Status.Failure) {
             final Status.Failure failure = (Status.Failure) message;
             LOGGER.warn()
-                    .setMessage("Failure processing Foreman response")
+                    .setMessage("Failure processing Consul response")
                     .addData("actor", self())
                     .setThrowable(failure.cause())
                     .log();
@@ -116,8 +106,8 @@ public final class ForemanHostProvider extends UntypedActor {
     }
 
     private final HostRepository _hostRepository;
-    private final ForemanClient _client;
+    private final ConsulClient _client;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ForemanHostProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsulHostProvider.class);
     private static final String TICK = "tick";
 }
