@@ -17,7 +17,6 @@ package com.arpnetworking.play.configuration;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.base.Throwables;
 import play.Application;
 import play.Configuration;
 import play.Environment;
@@ -87,7 +86,7 @@ public final class ConfigurationHelper {
                     .log();
             return clazz;
         } catch (final ClassNotFoundException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

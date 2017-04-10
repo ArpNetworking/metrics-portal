@@ -20,7 +20,6 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -64,7 +63,7 @@ public final class ConsulClient {
                         HOST_LIST_RESPONSE_TYPE_REFERENCE);
             }
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 
