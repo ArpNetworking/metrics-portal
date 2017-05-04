@@ -45,6 +45,7 @@ object ApplicationBuild extends Build {
     val akkaVersion = "2.4.18"
     val akkaHttpVersion = "10.0.6"
     val jacksonVersion = "2.7.4"
+    val cassandraDriverVersion = "3.2.0"
 
     val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
 
@@ -58,6 +59,10 @@ object ApplicationBuild extends Build {
       "com.arpnetworking.metrics" % "metrics-client" % "0.7.0",
       "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.6.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",
+      "com.chrisomeara" %% "pillar" % "2.3.0",
+      "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
+      "com.datastax.cassandra" % "cassandra-driver-mapping" % cassandraDriverVersion,
+      "com.datastax.cassandra" % "cassandra-driver-extras" % cassandraDriverVersion,
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
@@ -91,9 +96,10 @@ object ApplicationBuild extends Build {
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.6.0-3",
+
+      "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",
       "junit" % "junit" % "4.12" % "test",
-      "org.mockito" % "mockito-core" % "1.10.19" % "test",
-      "org.hamcrest" % "java-hamcrest" % "2.0.0.0" % "test"
+      "org.mockito" % "mockito-core" % "1.10.19" % "test"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin).settings(

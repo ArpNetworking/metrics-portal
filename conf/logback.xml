@@ -27,6 +27,7 @@
         <maxFileSize>2gb</maxFileSize>
       </timeBasedFileNamingAndTriggeringPolicy>
       <fileNamePattern>logs/metrics-portal.%d{yyyy-MM-dd_HH}.%i.log.gz</fileNamePattern>
+      <maxFileSize>2gb</maxFileSize>
       <maxHistory>5</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
