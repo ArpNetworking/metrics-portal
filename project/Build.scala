@@ -248,7 +248,7 @@ object ApplicationBuild extends Build {
         "-Xlint:-try"
       ),
 
-      devSettings := Seq(("config.resource", "portal.application.conf")),
+      devSettings := Seq(("config.resource", "portal.application.conf"), "play.server.http.port" -> "8080"),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
