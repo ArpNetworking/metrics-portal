@@ -77,7 +77,7 @@ class ConnectionModel {
         }
         var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
         var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
-        var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + "/v1/proxy/stream";
+        var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "v1/proxy/stream";
 
         if (serverHost == "localhost" || serverHost == "127.0.0.1") {
             // Do NOT proxy connections to a server host that is relative to the client
