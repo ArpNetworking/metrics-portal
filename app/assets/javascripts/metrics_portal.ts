@@ -41,7 +41,7 @@ app.configurePlugins({
     widget: true
 });
 
-viewLocator.useConvention('classes', '/assets/html');
+viewLocator.useConvention('classes', '../../../assets/html');
 
 app.start().then(function() {
     app.setRoot("../classes/shell");

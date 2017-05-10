@@ -25,7 +25,7 @@ class ExpressionsViewModel extends PaginatedSearchableList<ExpressionData> {
     }
 
     fetchData(query, callback) {
-        $.getJSON("/v1/expressions/query", query, (data) => {
+        $.getJSON("v1/expressions/query", query, (data) => {
             var expressionsList: ExpressionData[] = data.data.map((v: ExpressionData)=> {
                 return new ExpressionData(v.id, v.metric, v.service, v.cluster, v.script);});
             callback(expressionsList, data.pagination);

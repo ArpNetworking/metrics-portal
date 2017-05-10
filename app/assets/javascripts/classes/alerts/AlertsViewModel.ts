@@ -25,7 +25,7 @@ class AlertsViewModel extends PaginatedSearchableList<AlertData> {
     }
 
     fetchData(query, callback) {
-        $.getJSON("/v1/alerts/query", query, (data) => {
+        $.getJSON("v1/alerts/query", query, (data) => {
             var alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
                 v.id,
                 v.context,
