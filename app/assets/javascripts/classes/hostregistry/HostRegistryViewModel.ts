@@ -47,7 +47,7 @@ class HostRegistryViewModel extends PaginatedSearchableList<HostData> {
     }
 
     fetchData(query, callback) {
-        $.getJSON("/v1/hosts/query", query, (data) => {
+        $.getJSON("v1/hosts/query", query, (data) => {
             var hostList: HostData[] = data.data.map((v: HostData)=> {
                 return new HostData(v.hostname, v.metricsSoftwareState);});
             callback(hostList, data.pagination);
