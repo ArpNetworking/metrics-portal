@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -46,7 +45,7 @@ public final class H2ConnectionStringFactory {
                 Files.delete(Paths.get(path + ".mv.db"));
             }
         } catch (final IOException e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
         return "jdbc:h2:" +
                 path +

@@ -25,7 +25,7 @@ import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.MetricsFactory;
-import com.arpnetworking.metrics.impl.TsdLogSink;
+import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
@@ -45,7 +45,7 @@ import play.Configuration;
 import play.Environment;
 import play.inject.ApplicationLifecycle;
 
-import java.io.File;
+import java.net.URI;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
@@ -99,9 +99,8 @@ public class MainModule extends AbstractModule {
                 .setClusterName(configuration.getString("metrics.cluster"))
                 .setServiceName(configuration.getString("metrics.service"))
                 .setSinks(Collections.singletonList(
-                        new TsdLogSink.Builder()
-                                .setName(configuration.getString("metrics.name"))
-                                .setDirectory(new File(configuration.getString("metrics.path")))
+                        new ApacheHttpSink.Builder()
+                                .setUri(URI.create(configuration.getString("metrics.uri") + "/metrics/v1/application"))
                                 .build()
                 ))
                 .build();
