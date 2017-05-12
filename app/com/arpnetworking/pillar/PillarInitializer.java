@@ -16,17 +16,19 @@
 package com.arpnetworking.pillar;
 
 import akka.japi.Option;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.chrisomeara.pillar.CassandraMigrator;
 import com.chrisomeara.pillar.Migrator;
 import com.chrisomeara.pillar.Registry;
 import com.chrisomeara.pillar.ReplicationOptions;
 import com.datastax.driver.core.Session;
-import com.google.common.base.Strings;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import play.Environment;
 import play.core.WebCommands;
 import scala.Predef;
@@ -35,8 +37,10 @@ import scala.collection.JavaConverters;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -67,32 +71,44 @@ public class PillarInitializer {
     }
 
     private void runMigrations() {
-        for (Map.Entry<String, Configuration.DatastoreConfig> entry : _configuration.getDatastores().entrySet()) {
+        for (final Map.Entry<String, Configuration.DatastoreConfig> entry : _configuration.getDatastores().entrySet()) {
             final String dbName = entry.getKey();
             final Configuration.DatastoreConfig config = entry.getValue();
 
-            final String directory = config.getDirectory();
-            if (!Strings.isNullOrEmpty(directory)) {
-                final URL resource = _environment.resource(directory);
-                if (resource != null) {
-                    LOGGER.info("Running migrations for Cassandra database " + dbName);
-                    try {
-                        final scala.collection.immutable.Map<String, Object> replication = JavaConverters.mapAsScalaMapConverter(
-                                config.getReplication()).asScala().toMap(Predef.conforms());
-                        final File file = new File(resource.toURI());
-                        final Registry registry = Registry.fromDirectory(file);
-                        final Migrator migrator = new CassandraMigrator(registry);
-                        final Session session = _injector.getInstance(Key.get(Session.class, Names.named(dbName)));
-                        session.init();
-                        migrator.initialize(session, config.getKeyspace(), new ReplicationOptions(replication));
-                        session.execute("USE " + config.getKeyspace());
-                        migrator.migrate(session, Option.<Date>none().asScala());
-                    } catch (final URISyntaxException e) {
-                        LOGGER.error("Unable to run migrations at " + resource, e);
-                    }
-                } else {
-                    LOGGER.info("Found no migrations in directory " + directory + " for Cassandra database " + dbName);
+            final Path directory = config.getDirectory();
+            @Nullable final URL resource = _environment.resource(directory.toString());
+            if (resource != null) {
+                LOGGER.info()
+                        .setMessage("Running migrations for Cassandra database")
+                        .addData("database", dbName)
+                        .log();
+                try {
+                    final scala.collection.immutable.Map<String, Object> replication =
+                            JavaConverters.<String, Object>mapAsScalaMapConverter(
+                                    MAPPER.convertValue(config.getReplication(), MAP_TYPE_REFERENCE))
+                                    .asScala()
+                                    .toMap(Predef.conforms());
+                    final File file = new File(resource.toURI());
+                    final Registry registry = Registry.fromDirectory(file);
+                    final Migrator migrator = new CassandraMigrator(registry);
+                    final Session session = _injector.getInstance(Key.get(Session.class, Names.named(dbName)));
+                    session.init();
+                    migrator.initialize(session, config.getKeyspace(), new ReplicationOptions(replication));
+                    session.execute("USE " + config.getKeyspace());
+                    migrator.migrate(session, Option.<Date>none().asScala());
+                } catch (final URISyntaxException e) {
+                    LOGGER.error()
+                            .setMessage("Unable to run migrations")
+                            .addData("resource", resource)
+                            .setThrowable(e)
+                            .log();
                 }
+            } else {
+                LOGGER.info()
+                        .setMessage("Could not find migrations directory")
+                        .addData("directory", directory)
+                        .addData("database" , dbName)
+                        .log();
             }
         }
     }
@@ -102,4 +118,6 @@ public class PillarInitializer {
     private final Injector _injector;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PillarInitializer.class);
+    private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() { };
+    private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
 }

@@ -33,7 +33,6 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Version;
 
-
 /**
  * Model for alerts stored in Cassandra.
  *

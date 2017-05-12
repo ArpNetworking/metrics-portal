@@ -55,7 +55,7 @@ object ApplicationBuild extends Build {
       "com.arpnetworking.build" % "build-resources" % "1.0.5",
       "com.arpnetworking.commons" % "commons" % "1.10.1",
       "com.arpnetworking.commons" % "javassist-maven-core" % "0.1.2",
-      "com.arpnetworking.logback" % "logback-steno" % "1.15.0",
+      "com.arpnetworking.logback" % "logback-steno" % "1.17.0",
       "com.arpnetworking.metrics" % "metrics-client" % "0.7.0",
       "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.6.0",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",

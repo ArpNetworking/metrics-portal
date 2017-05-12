@@ -37,10 +37,12 @@ import org.joda.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 
 /**
@@ -48,7 +50,7 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class CassandraAlertRepository implements AlertRepository {
+public final class CassandraAlertRepository implements AlertRepository {
     /**
      * Public constructor.
      *
@@ -109,10 +111,10 @@ public class CassandraAlertRepository implements AlertRepository {
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         final models.cassandra.Alert.AlertQueries accessor = mapper.getManager().createAccessor(models.cassandra.Alert.AlertQueries.class);
         final Result<models.cassandra.Alert> result = accessor.getAlertsForOrganization(query.getOrganization().getId());
-        final List<models.cassandra.Alert> allAlerts = result.all();
+        final Spliterator<models.cassandra.Alert> allAlerts = result.spliterator();
         final int start = query.getOffset().orElse(0);
 
-        Stream<models.cassandra.Alert> alertStream = allAlerts.stream();
+        Stream<models.cassandra.Alert> alertStream = StreamSupport.stream(allAlerts, false);
 
         if (query.getCluster().isPresent()) {
             alertStream = alertStream.filter(alert -> alert.getCluster().equals(query.getCluster().get()));
@@ -180,7 +182,6 @@ public class CassandraAlertRepository implements AlertRepository {
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         mapper.save(cassAlert);
     }
-
 
     private void assertIsOpen() {
         assertIsOpen(true);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.play;
+package global;
 
 import com.arpnetworking.pillar.PillarInitializer;
 import com.datastax.driver.core.Cluster;
@@ -64,7 +64,7 @@ public class PillarModule extends AbstractModule {
         final ConfigObject cassConfig = dbConfig.underlying().root();
         final Set<String> dbNames = cassConfig.keySet();
         final Provider<CodecRegistry> registryProvider = binder().getProvider(CodecRegistry.class);
-        for (String name : dbNames) {
+        for (final String name : dbNames) {
             bind(Session.class).annotatedWith(Names.named(name))
                     .toProvider(new CassandraSessionProvider(cassConfig.toConfig().getConfig(name), registryProvider));
             bind(MappingManager.class).annotatedWith(Names.named(name))
@@ -80,7 +80,7 @@ public class PillarModule extends AbstractModule {
     }
     private final Configuration _configuration;
 
-    private static class CassandraSessionProvider implements Provider<Session> {
+    private static final class CassandraSessionProvider implements Provider<Session> {
         CassandraSessionProvider(final Config config, final Provider<CodecRegistry> registryProvider) {
             _config = config;
             _registryProvider = registryProvider;
@@ -93,7 +93,7 @@ public class PillarModule extends AbstractModule {
             if (_config.hasPath("port")) {
                 port = _config.getInt("port");
             } else {
-                port = 9042;
+                port = DEFAULT_CASSANDRA_PORT;
             }
             final List<InetAddress> hosts = _config.getStringList("hosts")
                     .stream()
@@ -117,9 +117,11 @@ public class PillarModule extends AbstractModule {
 
         private final Config _config;
         private final Provider<CodecRegistry> _registryProvider;
+
+        private static final int DEFAULT_CASSANDRA_PORT = 9042;
     }
 
-    private static class CassandraMappingProvider implements Provider<MappingManager> {
+    private static final class CassandraMappingProvider implements Provider<MappingManager> {
         CassandraMappingProvider(final com.google.inject.Provider<Session> sessionProvider) {
             _sessionProvider = sessionProvider;
         }

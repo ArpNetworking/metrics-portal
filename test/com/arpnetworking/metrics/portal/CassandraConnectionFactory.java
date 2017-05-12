@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class CassandraConnectionFactory {
+public final class CassandraConnectionFactory {
     public static Map<String, Object> generateConfiguration(
             final String clusterName,
             final String keyspace,

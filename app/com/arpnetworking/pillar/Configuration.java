@@ -15,16 +15,23 @@
  */
 package com.arpnetworking.pillar;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 
 /**
- * Configuration for the Pillar evolustions.
+ * Configuration for the Pillar evolutions.
  *
  * @author Brandon Arp (brandon dot arp at smartseet dot com)
  */
@@ -57,7 +64,7 @@ public class Configuration {
      * @author Brandon Arp (brandon dot arp at smartseet dot com)
      */
     public static final class DatastoreConfig {
-        public String getDirectory() {
+        public Path getDirectory() {
             return _directory;
         }
 
@@ -69,24 +76,27 @@ public class Configuration {
             return _keyspace;
         }
 
-        public Map<String, Object> getReplication() {
+        public ObjectNode getReplication() {
             return _replication;
         }
 
         private DatastoreConfig(final String dbName, final Config config) {
-            if (config.hasPath("migration.directory")) {
-                _directory = config.getString("migration.directory");
+            final ConfigValue directory = config.root().get("migration.directory");
+            if (directory != null && ConfigValueType.STRING.equals(directory.valueType())) {
+                _directory = Paths.get((String) directory.unwrapped());
             } else {
-                _directory = "cassandra/migration/" + dbName;
+                _directory = Paths.get("cassandra/migration/" + dbName);
             }
             _hosts = config.getStringList("hosts");
             _keyspace = config.getString("keyspace");
-            _replication = config.getObject("replication").unwrapped();
+            _replication = MAPPER.valueToTree(config.getObject("replication").unwrapped());
         }
 
-        private final String _directory;
+        private final Path _directory;
         private final List<String> _hosts;
         private final String _keyspace;
-        private final Map<String, Object> _replication;
+        private final ObjectNode _replication;
+
+        private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
     }
 }
