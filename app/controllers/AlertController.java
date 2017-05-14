@@ -207,7 +207,12 @@ public class AlertController extends Controller {
      * @return Matching alert.
      */
     public Result get(final String id) {
-        final UUID identifier = UUID.fromString(id);
+        final UUID identifier;
+        try {
+            identifier = UUID.fromString(id);
+        } catch (final IllegalArgumentException e) {
+            return badRequest();
+        }
         final Optional<Alert> result = _alertRepository.get(identifier, Organization.DEFAULT);
         if (!result.isPresent()) {
             return notFound();

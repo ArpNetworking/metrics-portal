@@ -18,7 +18,7 @@ package global;
 
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.metrics.MetricsActionWrapper;
-import play.http.ActionCreator;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.mvc.Action;
 import play.mvc.Http;
 
@@ -30,14 +30,15 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public class RequestHandler implements ActionCreator {
+@SuppressFBWarnings("NM_SAME_SIMPLE_NAME_AS_INTERFACE")
+public class ActionCreator implements play.http.ActionCreator {
     /**
      * Public constructor.
      *
      * @param metricsFactory The metrics factory
      */
     @Inject
-    public RequestHandler(final MetricsFactory metricsFactory) {
+    public ActionCreator(final MetricsFactory metricsFactory) {
         _metricsFactory = metricsFactory;
     }
 
