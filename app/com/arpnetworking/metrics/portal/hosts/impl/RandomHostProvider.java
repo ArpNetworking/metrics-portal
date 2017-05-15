@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -38,7 +38,7 @@ import play.Configuration;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class RandomHostProvider extends UntypedActor {
+public final class RandomHostProvider extends UntypedAbstractActor {
 
     /**
      * Public constructor.

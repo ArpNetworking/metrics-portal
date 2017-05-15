@@ -42,7 +42,8 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.4.10"
+    val akkaVersion = "2.5.1"
+    val akkaHttpVersion = "10.0.6"
     val jacksonVersion = "2.7.4"
 
     val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
@@ -68,7 +69,7 @@ object ApplicationBuild extends Build {
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-      "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "com.typesafe.play" %% "play-ebean" % "3.0.0",
       "net.sf.oval" % "oval" % "1.82",
@@ -256,7 +257,7 @@ object ApplicationBuild extends Build {
       pipelineStages := Seq(rjs, digest, gzip),
       modules += JS.Object("name" -> "classes/shell"),
 
-      scalaVersion := "2.11.8",
+      scalaVersion := "2.11.11",
       resolvers += Resolver.mavenLocal,
 
       libraryDependencies ++= appDependencies,
