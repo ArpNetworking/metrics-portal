@@ -221,7 +221,12 @@ public class ExpressionController extends Controller {
      * @return Matching expression.
      */
     public Result get(final String id) {
-        final UUID identifier = UUID.fromString(id);
+        final UUID identifier;
+        try {
+            identifier = UUID.fromString(id);
+        } catch (final IllegalArgumentException e) {
+            return badRequest();
+        }
         final Optional<Expression> result = _expressionRepository.get(identifier, Organization.DEFAULT);
         if (!result.isPresent()) {
             return notFound();
