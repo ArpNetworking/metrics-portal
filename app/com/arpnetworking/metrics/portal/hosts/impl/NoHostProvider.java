@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -30,7 +30,7 @@ import play.Configuration;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public class NoHostProvider extends UntypedActor {
+public class NoHostProvider extends UntypedAbstractActor {
 
     /**
      * Public constructor.

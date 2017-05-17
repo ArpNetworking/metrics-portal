@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.Props;
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -38,7 +38,7 @@ import java.util.Set;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class MultiProvider extends UntypedActor {
+public class MultiProvider extends UntypedAbstractActor {
     /**
      * Public constructor.
      *
