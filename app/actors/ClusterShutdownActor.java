@@ -17,7 +17,7 @@ package actors;
 
 import akka.actor.Address;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
 import akka.cluster.Member;
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public class ClusterShutdownActor extends UntypedActor {
+public class ClusterShutdownActor extends UntypedAbstractActor {
     /**
      * Creates a {@link Props} for this actor.
      *

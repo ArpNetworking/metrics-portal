@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.Status;
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class ConsulHostProvider extends UntypedActor {
+public final class ConsulHostProvider extends UntypedAbstractActor {
 
     /**
      * Public constructor.
