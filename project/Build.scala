@@ -42,7 +42,7 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.5.1"
+    val akkaVersion = "2.4.18"
     val akkaHttpVersion = "10.0.6"
     val jacksonVersion = "2.7.4"
 

@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.Status;
-import akka.actor.UntypedAbstractActor;
+import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -39,7 +39,7 @@ import java.util.List;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public final class ForemanHostProvider extends UntypedAbstractActor {
+public final class ForemanHostProvider extends UntypedActor {
 
     /**
      * Public constructor.
