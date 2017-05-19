@@ -33,13 +33,18 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.datastax.driver.core.CodecRegistry;
+import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
+import com.datastax.driver.extras.codecs.joda.InstantCodec;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.Context;
 import models.internal.Features;
+import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
 import play.Configuration;
 import play.Environment;
@@ -111,6 +116,16 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Features getFeatures(final Configuration configuration) {
         return new DefaultFeatures(configuration);
+    }
+
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private CodecRegistry provideCodecRegistry() {
+        final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
+        registry.register(InstantCodec.instance);
+        registry.register(new EnumNameCodec<>(Operator.class));
+        registry.register(new EnumNameCodec<>(Context.class));
+        return registry;
     }
 
     private static final class HealthProviderProvider implements Provider<HealthProvider> {

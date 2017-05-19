@@ -17,7 +17,7 @@ package actors;
 
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
-import akka.actor.UntypedAbstractActor;
+import akka.actor.UntypedActor;
 import akka.dispatch.Dispatcher;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -54,7 +54,7 @@ import java.util.concurrent.TimeoutException;
  * @author Deepika Misra (deepika at groupon dot com)
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class JvmMetricsCollector extends UntypedAbstractActor {
+public final class JvmMetricsCollector extends UntypedActor {
 
     /**
      * Public constructor.

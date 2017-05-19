@@ -47,6 +47,7 @@
   <logger name="application" level="DEBUG" />
   <logger name="org.elasticsearch" level="INFO" />
   <logger name="com.arpnetworking" level="DEBUG" />
+  <logger name="com.arpnetworking.metrics.apachehttpsinkextra.shaded" level="INFO" />
   <logger name="controllers" level="DEBUG" />
   <logger name="global" level="DEBUG" />
   <logger name="models" level="DEBUG" />

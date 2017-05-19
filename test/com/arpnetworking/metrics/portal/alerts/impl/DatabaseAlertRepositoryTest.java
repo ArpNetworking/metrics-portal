@@ -63,6 +63,13 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         Assert.assertFalse(alertRepo.get(UUID.randomUUID(), Organization.DEFAULT).isPresent());
     }
 
+    @Override
+    protected Application provideApplication() {
+        return new GuiceApplicationBuilder()
+                .configure(H2ConnectionStringFactory.generateConfiguration())
+                .build();
+    }
+
     @Test
     public void testGetForValidId() throws IOException {
         final UUID uuid = UUID.randomUUID();
@@ -354,13 +361,6 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         Assert.assertEquals(2, result.values().size());
         Assert.assertEquals(alert1.getId(), result.values().get(0).getId());
         Assert.assertEquals(alert2.getId(), result.values().get(1).getId());
-    }
-
-    @Override
-    protected Application provideApplication() {
-        return new GuiceApplicationBuilder()
-                .configure(H2ConnectionStringFactory.generateConfiguration())
-                .build();
     }
 
     private void assertAlertEbeanEquivalent(final Alert alert, final models.ebean.Alert ebeanAlert) {
