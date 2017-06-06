@@ -68,7 +68,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
     @BeforeClass
     public static void setupFixture() throws ConfigurationException, IOException, TTransportException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE);
+        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 30000);
     }
 
 
@@ -82,9 +82,20 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
     @After
     public void teardown() {
-        EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
         if (_alertRepo != null) {
             _alertRepo.close();
+        }
+        final int maxTries = 10;
+        for (int x = 1; x <= maxTries; x++) {
+            try {
+                EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+                break;
+            } catch (final Throwable e) {
+                if (x == maxTries) {
+                    throw e;
+                }
+            }
+
         }
     }
 
