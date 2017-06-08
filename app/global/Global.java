@@ -54,7 +54,7 @@ public final class Global {
         lifecycle.addStopHook(this::onStop);
 
         // Configure Json serialization
-        Json.setObjectMapper(ObjectMapperFactory.getInstance());
+        Json.setObjectMapper(ObjectMapperFactory.createInstance());
         _akka.actorOf(ClusterShutdownActor.props(_shutdownFuture));
 
         LOGGER.debug().setMessage("Startup complete").log();
