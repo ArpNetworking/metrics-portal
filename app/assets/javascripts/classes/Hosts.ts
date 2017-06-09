@@ -23,9 +23,32 @@ declare var require;
 module Hosts {
     export var connections: KnockoutObservableArray<ConnectionVM> = ko.observableArray<ConnectionVM>();
     export var connectionIndex: { [id: string]: ConnectionVM; } = {};
-    export var colors: Color[] = [new Color(31, 120, 180), new Color(51, 160, 44), new Color(227, 26, 28), new Color(255, 127, 0),
-        new Color(106, 61, 154), new Color(166, 206, 227), new Color(178, 223, 138), new Color(251, 154, 153),
-        new Color(253, 191, 111), new Color(202, 178, 214), new Color(255, 255, 153)];
+    export var colors: Color[] = [
+        Color.of('#e31a1c'),
+        Color.of('#1f78b4'),
+        Color.of('#33a02c'),
+        Color.of('#6a3d9a'),
+        Color.of('#fdbf6f'),
+        Color.of('#b15928'),
+        Color.of('#ff7f00'),
+        Color.of('#cab2d6'),
+        Color.of('#fb9a99'),
+        Color.of('#a6cee3'),
+        Color.of('#40c9ff'),
+        Color.of('#b2df8a'),
+        Color.of('#8dd3c7'),
+        Color.of('#ffffb3'),
+        Color.of('#bebada'),
+        Color.of('#fb8072'),
+        Color.of('#80b1d3'),
+        Color.of('#fdb462'),
+        Color.of('#b3de69'),
+        Color.of('#fccde5'),
+        Color.of('#d9d9d9'),
+        Color.of('#bc80bd'),
+        Color.of('#ccebc5'),
+        Color.of('#ffed6f')
+    ];
 
     export var colorId = 0;
 
@@ -57,7 +80,7 @@ module Hosts {
     };
 
     export var getColor = (): Color => {
-        var color = colors[colorId];
+        var color = colors[colorId % colors.length];
         colorId++;
         return color;
     };

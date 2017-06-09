@@ -30,6 +30,24 @@ class Color {
     rgb(): number[] {
         return [this.r, this.g, this.b];
     }
+
+    static of(colorString: string): Color {
+        if (colorString.charAt(0) == "#" && (colorString.length == 7 || colorString.length == 9)) {
+            let parse = colorString.slice(1);
+            let red = parseInt(parse.slice(0, 2), 16);
+            let green = parseInt(parse.slice(2, 4), 16);
+            let blue = parseInt(parse.slice(4, 6), 16);
+            let alpha = 1;
+            if (parse.length == 8) {
+                alpha = parseInt(parse.slice(6, 8), 16);
+            }
+            return new Color(red, green, blue, alpha);
+        } else {
+            throw new Error("Invalid color string " + colorString);
+        }
+
+
+    }
 }
 
 export = Color;
