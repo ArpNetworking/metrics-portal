@@ -41,4 +41,10 @@ PRIMARY KEY (organization, uuid);
 -- down:
 
 -- stage: 1
+DROP MATERIALIZED VIEW alerts_by_organization;
+
+-- stage: 2
+DROP MATERIALIZED VIEW alerts_by_cluster;
+
+-- stage: 3
 DROP TABLE alerts;

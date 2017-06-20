@@ -17,20 +17,17 @@ package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
-import models.internal.Context;
-import models.internal.Operator;
 
 import java.sql.Timestamp;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -69,34 +66,12 @@ public class Alert {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "cluster")
-    private String cluster;
-
-    @Column(name = "service")
-    private String service;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "context")
-    private Context context;
-
-    @Column(name = "metric")
-    private String metric;
-
-    @Column(name = "statistic")
-    private String statistic;
+    @Lob
+    @Column(name = "query")
+    private String query;
 
     @Column(name = "period_in_seconds")
     private int periodInSeconds;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "operator")
-    private Operator operator;
-
-    @Column(name = "quantity_value")
-    private double quantityValue;
-
-    @Column(name = "quantity_unit")
-    private String quantityUnit;
 
     @OneToOne(mappedBy = "alert", cascade = CascadeType.ALL)
     private NagiosExtension nagiosExtension;
@@ -153,44 +128,12 @@ public class Alert {
         name = value;
     }
 
-    public String getCluster() {
-        return cluster;
+    public String getQuery() {
+        return query;
     }
 
-    public void setCluster(final String value) {
-        cluster = value;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(final String value) {
-        service = value;
-    }
-
-    public Context getContext() {
-        return context;
-    }
-
-    public void setContext(final Context value) {
-        context = value;
-    }
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(final String value) {
-        metric = value;
-    }
-
-    public String getStatistic() {
-        return statistic;
-    }
-
-    public void setStatistic(final String value) {
-        statistic = value;
+    public void setQuery(final String value) {
+        query = value;
     }
 
     public int getPeriod() {
@@ -199,30 +142,6 @@ public class Alert {
 
     public void setPeriod(final int value) {
         periodInSeconds = value;
-    }
-
-    public Operator getOperator() {
-        return operator;
-    }
-
-    public void setOperator(final Operator value) {
-        operator = value;
-    }
-
-    public double getQuantityValue() {
-        return quantityValue;
-    }
-
-    public void setQuantityValue(final double value) {
-        quantityValue = value;
-    }
-
-    public String getQuantityUnit() {
-        return quantityUnit;
-    }
-
-    public void setQuantityUnit(final String value) {
-        quantityUnit = value;
     }
 
     public NagiosExtension getNagiosExtension() {

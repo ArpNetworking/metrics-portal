@@ -34,13 +34,6 @@ public interface Alert {
     UUID getId();
 
     /**
-     * The context of the alert. Either a host or cluster.
-     *
-     * @return The context of the alert.
-     */
-    Context getContext();
-
-    /**
      * The name of the alert.
      *
      * @return The name of the alert.
@@ -48,32 +41,11 @@ public interface Alert {
     String getName();
 
     /**
-     * The name of the cluster for statistic identifier of condition left-hand side.
+     * The query to execute.
      *
-     * @return The name of the cluster for statistic identifier of condition left-hand side.
+     * @return The query to execute.
      */
-    String getCluster();
-
-    /**
-     * The name of the service for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the service for statistic identifier of condition left-hand side.
-     */
-    String getService();
-
-    /**
-     * The name of the metric for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the metric for statistic identifier of condition left-hand side.
-     */
-    String getMetric();
-
-    /**
-     * The name of the statistic for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the statistic for statistic identifier of condition left-hand side.
-     */
-    String getStatistic();
+    String getQuery();
 
     /**
      * The period to evaluate the condition in.
@@ -81,20 +53,6 @@ public interface Alert {
      * @return The period to evaluate the condition in.
      */
     Period getPeriod();
-
-    /**
-     * The condition operator.
-     *
-     * @return The condition operator.
-     */
-    Operator getOperator();
-
-    /**
-     * The value of condition right-hand side.
-     *
-     * @return The value of condition right-hand side.
-     */
-    Quantity getValue();
 
     /**
      * Nagios specific extensions.

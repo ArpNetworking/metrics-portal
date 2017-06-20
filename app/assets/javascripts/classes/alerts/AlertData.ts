@@ -15,58 +15,21 @@
  */
 
 import ko = require('knockout');
-import Operator = require('./Operator');
 import Quantity = require('../Quantity');
 
 class AlertData {
     id: string;
-    context: string;
     name: string;
-    metric: string;
-    service: string;
-    cluster: string;
-    statistic: string;
+    query: string;
     period: string;
-    operator: Operator;
-    value: Quantity;
     extensions: { [id: string]: string };
-    contextStyle: KnockoutComputed<string>;
-    contextTip: KnockoutComputed<string>;
     editUri: KnockoutComputed<string>;
 
-    constructor(id: string, context: string, name: string, metric: string, service: string, cluster: string, statistic: string, period: string, operator: Operator, value: Quantity, extensions: { [id: string]: string }) {
+    constructor(id: string, name: string, period: string, extensions: { [id: string]: string }) {
         this.id = id;
-        this.context = context;
         this.name = name;
-        this.metric = metric;
-        this.service = service;
-        this.cluster = cluster;
-        this.statistic = statistic;
         this.period = period;
-        this.operator = operator;
-        this.value = value;
         this.extensions = extensions;
-        var self = this;
-
-        this.contextStyle = ko.computed<string>(() => {
-            if (this.context == "HOST") {
-                return "fa-cube";
-            } else if (this.context == "CLUSTER") {
-                return "fa-cubes";
-            } else {
-                return "fa-question";
-            }
-        }, self);
-
-        this.contextTip = ko.computed<string>(() => {
-            if (this.context == "HOST") {
-                return "Evaluated Per Host";
-            } else if (this.context == "CLUSTER") {
-                return "Evaluated For Cluster";
-            } else {
-                return "";
-            }
-        }, self);
 
         this.editUri = ko.computed<string>(() => {
             return "#alert/edit/" + this.id;

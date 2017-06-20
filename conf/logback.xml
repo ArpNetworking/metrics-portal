@@ -52,6 +52,7 @@
   <logger name="global" level="DEBUG" />
   <logger name="models" level="DEBUG" />
   <logger name="org.reflections.Reflections" level="ERROR" />
+  <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalAsync" />

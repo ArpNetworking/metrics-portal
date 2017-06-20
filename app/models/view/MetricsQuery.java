@@ -1,5 +1,5 @@
-/*
- * Copyright 2015 Groupon.com
+/**
+ * Copyright 2017 Smartsheet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package models.view;
 
-enum Operator {
-    EQUAL_TO,
-    NOT_EQUAL_TO,
-    LESS_THAN,
-    LESS_THAN_OR_EQUAL_TO,
-    GREATER_THAN,
-    GREATER_THAN_OR_EQUAL_TO
+import com.arpnetworking.logback.annotations.Loggable;
+
+/**
+ * View model for metrics queries.
+ *
+ * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ */
+@Loggable
+public final class MetricsQuery {
+    public String getQuery() {
+        return _query;
+    }
+
+    public void setQuery(final String query) {
+        _query = query;
+    }
+
+    private String _query;
 }
-
-export = Operator;
