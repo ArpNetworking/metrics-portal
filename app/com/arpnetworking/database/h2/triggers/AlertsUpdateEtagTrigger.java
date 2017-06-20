@@ -28,6 +28,6 @@ public class AlertsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
      * Public no args constructor.
      */
     public AlertsUpdateEtagTrigger() {
-        super(AlertEtags::incrementEtag, 15);
+        super(AlertEtags::incrementEtag, 7);
     }
 }

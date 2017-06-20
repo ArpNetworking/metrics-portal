@@ -1,15 +1,6 @@
 {
     "id" : "da5db3e0-21e2-11e2-b872-00259060b612",
-    "context" : "CLUSTER",
-    "cluster" : "test-cluster",
     "name" : "test-name",
-    "metric" : "test-metric",
-    "service" : "test-service",
-    "statistic" : "test-statistic",
-    "period" : "PT1S",
-    "operator" : "EQUAL_TO",
-    "value" : {
-        "value" : 12.0,
-        "unit" : "MEGABYTE"
-    }
+    "query" : "select test_metric",
+    "period" : "PT1M"
 }

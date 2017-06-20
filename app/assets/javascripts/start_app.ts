@@ -40,6 +40,7 @@ requirejs.config({
         'plugins/serializer': '../lib/durandal/js/plugins/serializer',
         'plugins/widget': '../lib/durandal/js/plugins/widget',
 
+        'daterangepicker': '../lib/bootstrap-daterangepicker/daterangepicker',
         'flotr2' : '../lib/flotr2/flotr2.amd',
         'jquery' : '../lib/jquery/jquery.min',
         'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
@@ -47,13 +48,15 @@ requirejs.config({
         'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
         'knockout' : '../lib/knockout/knockout',
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
+        'moment' : '../lib/moment/moment',
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
         'underscore' : '../lib/underscorejs/underscore-min' //Required by flotr2
     },
     map : {
         '*': {
-            'jwt-decode': 'jwt_decode'
+            'jwt-decode': 'jwt_decode',
+            'moment/moment': 'moment'
         }
     },
     shim : {

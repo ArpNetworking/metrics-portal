@@ -1,0 +1,11 @@
+{
+    "id" : "1a3d037c-ee11-11e1-a1e5-00259060b5c0",
+    "name" : "test-name",
+    "period" : "PT1M",
+    "extensions" : {
+        "severity" : "CRITICAL",
+        "notify" : "abc@example.com",
+        "maxCheckAttempts" : 3,
+        "freshnessThresholdInSeconds" : 300
+    }
+}

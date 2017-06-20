@@ -43,6 +43,9 @@ GET        /v1/expressions/query                controllers.ExpressionController
 GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)
 PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
 
+# Metrics Queries
+POST       /v1/metrics/query                    controllers.MetricsController.query()
+
 # Templates
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
