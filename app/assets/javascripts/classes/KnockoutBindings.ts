@@ -2,10 +2,12 @@
 ///<amd-dependency path="jquery.ui"/>
 ///<amd-dependency path="jqrangeslider"/>
 ///<amd-dependency path="typeahead" />
+///<amd-dependency path="daterangepicker" />
 
 import ko = require('knockout');
 import $ = require('jquery');
 import _ = require('underscore');
+import * as moment from 'moment/moment'
 
 module kobindings {
     ko.bindingHandlers['slider'] = {
@@ -127,6 +129,37 @@ module kobindings {
                     ta.typeahead('val', displayFn(valueUnwrapped.value()));
                 }
             }
+        }
+    };
+
+    ko.bindingHandlers['dateRange'] = {
+        init: function(element, valueAccessor) {
+            let el: any = $(element);
+            let value = valueAccessor();
+            let valueUnwrapped: any = ko.utils.unwrapObservable(value);
+            let ranges = {
+                   "Last hour" : [() => moment().subtract(1, 'hour'), () => moment()],
+                   "Last 2 hours" : [() => moment().subtract(2, 'hour'), () => moment()],
+                   "Last 3 hours" : [() => moment().subtract(3, 'hour'), () => moment()],
+                   "Last 6 hours" : [() => moment().subtract(6, 'hour'), () => moment()],
+                   "Today": [() => moment().startOf('day'), () => moment().endOf('day')]
+               };
+
+            let defaultOptions = {
+               ranges: _.mapObject(ranges, (o) => [o[0](), o[1]()]),
+               autoApply: true
+            };
+
+            let options = Object.assign({}, defaultOptions, valueUnwrapped.options || {});
+            let range = el.daterangepicker(options, (start, end, label) => {
+                if (label == "Custom Range") {
+                    valueUnwrapped.target([start, end]);
+                } else if (ranges[label]) {
+                    let range = ranges[label];
+                    valueUnwrapped.target([range[0](), range[1]()]);
+                }
+            });
+
         }
     }
 }

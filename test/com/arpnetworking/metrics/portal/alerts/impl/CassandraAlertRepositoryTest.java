@@ -23,7 +23,6 @@ import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import models.internal.Alert;
 import models.internal.AlertQuery;
-import models.internal.Context;
 import models.internal.NagiosExtension;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -169,73 +168,12 @@ public class CassandraAlertRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryClauseWithClusterOnly() {
-        final Alert alert1 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setCluster("my-test-cluster")
-                .build();
-        final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .build();
-        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-        final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        successQuery.cluster(Optional.of("my-test-cluster"));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
-        Assert.assertEquals(1, successResult.total());
-        final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        failQuery.cluster(Optional.of("some-random-cluster"));
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
-        Assert.assertEquals(0, failResult.total());
-    }
-
-    @Test
-    public void testQueryClauseWithContextOnly() {
-        final Alert alert1 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setContext(Context.CLUSTER)
-                .build();
-        final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setContext(Context.HOST)
-                .build();
-        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-        final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        successQuery.context(Optional.of(Context.CLUSTER));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
-        Assert.assertEquals(1, successResult.total());
-    }
-
-    @Test
-    public void testQueryClauseWithServiceOnly() {
-        final Alert alert1 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .build();
-        final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .build();
-        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-        final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        successQuery.service(Optional.of("my-test-service"));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
-        Assert.assertEquals(1, successResult.total());
-        final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        failQuery.service(Optional.of("some-random-service"));
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
-        Assert.assertEquals(0, failResult.total());
-    }
-
-    @Test
     public void testQueryClauseWithContainsOnly() {
         final Alert alert1 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-contained-service")
                 .build();
         final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setCluster("my-cluster")
+                .setQuery("select my_contained_metric")
                 .setId(UUID.randomUUID())
                 .build();
         final Alert alert3 = TestBeanFactory.createAlertBuilder()
@@ -243,46 +181,33 @@ public class CassandraAlertRepositoryTest extends WithApplication {
                 .setId(UUID.randomUUID())
                 .build();
         final Alert alert4 = TestBeanFactory.createAlertBuilder()
-                .setMetric("my-contained-metric")
-                .setId(UUID.randomUUID())
-                .build();
-        final Alert alert5 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
                 .build();
         _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert4, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert5, Organization.DEFAULT);
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
         successQuery.contains(Optional.of("contained"));
         final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
-        Assert.assertEquals(3, successResult.total());
+        Assert.assertEquals(2, successResult.total());
     }
 
     @Test
     public void testQueryClauseWithLimit() {
         final Alert alert1 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .setCluster("my-test-cluster")
                 .build();
         final Alert alert2 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .setCluster("my-test-cluster")
                 .build();
         _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
         final AlertQuery query1 = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        query1.service(Optional.of("my-test-service"));
-        query1.cluster(Optional.of("my-test-cluster"));
         query1.limit(1);
         final QueryResult<Alert> result1 = _alertRepo.query(query1);
         Assert.assertEquals(1, result1.values().size());
         final AlertQuery query2 = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        query2.service(Optional.of("my-test-service"));
-        query2.cluster(Optional.of("my-test-cluster"));
         query2.limit(2);
         final QueryResult<Alert> result2 = _alertRepo.query(query2);
         Assert.assertEquals(2, result2.values().size());
@@ -292,25 +217,17 @@ public class CassandraAlertRepositoryTest extends WithApplication {
     public void testQueryClauseWithOffsetAndLimit() {
         final Alert alert1 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .setCluster("my-test-cluster")
                 .build();
         final Alert alert2 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .setCluster("my-test-cluster")
                 .build();
         final Alert alert3 = TestBeanFactory.createAlertBuilder()
                 .setId(UUID.randomUUID())
-                .setService("my-test-service")
-                .setCluster("my-test-cluster")
                 .build();
         _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
         _alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
         final AlertQuery query = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        query.service(Optional.of("my-test-service"));
-        query.cluster(Optional.of("my-test-cluster"));
         query.offset(Optional.of(2));
         query.limit(2);
         final QueryResult<Alert> result = _alertRepo.query(query);
@@ -321,73 +238,11 @@ public class CassandraAlertRepositoryTest extends WithApplication {
                 Matchers.equalTo(alert3.getId())));
     }
 
-    @Test
-    public void testQueryWithContainsAndClusterClause() {
-        final Alert alert1 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setMetric("my-contained-metric")
-                .setCluster("my-cluster")
-                .build();
-        final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setService("my-contained-service")
-                .setCluster("my-cluster")
-                .build();
-        final Alert alert3 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .build();
-        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
-        final AlertQuery query = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        query.contains(Optional.of("contained"));
-        query.cluster(Optional.of("my-cluster"));
-        final QueryResult<Alert> result = _alertRepo.query(query);
-        Assert.assertEquals(2, result.values().size());
-        Assert.assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert1.getId())));
-        Assert.assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert2.getId())));
-    }
-
-    @Test
-    public void testQueryWithContainsAndServiceClause() {
-        final Alert alert1 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setMetric("my-contained-metric")
-                .setService("my-service")
-                .build();
-        final Alert alert2 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .setCluster("my-contained-cluster")
-                .setService("my-service")
-                .build();
-        final Alert alert3 = TestBeanFactory.createAlertBuilder()
-                .setId(UUID.randomUUID())
-                .build();
-        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-        _alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
-        final AlertQuery query = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
-        query.contains(Optional.of("contained"));
-        query.service(Optional.of("my-service"));
-        final QueryResult<Alert> result = _alertRepo.query(query);
-        Assert.assertEquals(2, result.values().size());
-        Assert.assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert1.getId())));
-        Assert.assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert2.getId())));
-    }
-
     private void assertAlertCassandraEquivalent(final Alert alert, final models.cassandra.Alert cassandraAlert) {
         Assert.assertEquals(alert.getId(), cassandraAlert.getUuid());
-        Assert.assertEquals(alert.getCluster(), cassandraAlert.getCluster());
-        Assert.assertEquals(alert.getMetric(), cassandraAlert.getMetric());
         assertNagiosExtensionCassandraEquivalent(alert.getNagiosExtension(), cassandraAlert.getNagiosExtensions());
-        Assert.assertEquals(alert.getService(), cassandraAlert.getService());
         Assert.assertEquals(alert.getName(), cassandraAlert.getName());
-        Assert.assertEquals(alert.getOperator(), cassandraAlert.getOperator());
         Assert.assertEquals(alert.getPeriod(), Period.seconds(cassandraAlert.getPeriodInSeconds()).normalizedStandard());
-        Assert.assertEquals(alert.getStatistic(), cassandraAlert.getStatistic());
-        Assert.assertEquals(alert.getValue().getUnit(), Optional.of(cassandraAlert.getQuantityUnit()));
-        Assert.assertEquals(alert.getValue().getValue(), cassandraAlert.getQuantityValue(), 0.001);
-        Assert.assertEquals(alert.getContext(), cassandraAlert.getContext());
     }
 
     private static void assertNagiosExtensionCassandraEquivalent(

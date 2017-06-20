@@ -1,0 +1,12 @@
+{
+    "id" : "18410734-aed7-11e1-8e54-00259060b618",
+    "name" : "test-name",
+    "query" : "select test_metric",
+    "period" : "PT1S",
+    "extensions" : {
+        "severity" : "CRITICAL",
+        "notify" : "abc@example.com",
+        "maxCheckAttempts" : 3,
+        "freshnessThresholdInSeconds" : 300
+    }
+}
