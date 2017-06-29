@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM java:8u111-jre-alpine
+FROM openjdk:8u131-jre-alpine
 RUN apk --update add bash
 EXPOSE 9000
 RUN mkdir -p /opt/metrics-portal/logs
