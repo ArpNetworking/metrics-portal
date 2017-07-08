@@ -97,6 +97,24 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
+    public int delete(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Deleting alert")
+                .addData("alertId", identifier)
+                .addData("organization", organization)
+                .log();
+        final Optional<Alert> alert = get(identifier, organization);
+        if (alert.isPresent()) {
+            final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
+            mapper.delete(alert);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
     public AlertQuery createQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
