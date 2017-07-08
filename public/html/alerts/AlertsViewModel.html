@@ -18,46 +18,45 @@
     <div class="row-fluid">
         <div class="col-md-12">
             <h2>Alerts</h2>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="col-md-12">
+            <div><a href="#alert/edit" class="btn btn-default" style="margin-bottom: .5em">Create New Alert</a></div>
+            <div data-bind="compose: { model: alerts, view: '/assets/html/components/Pager.html', mode: 'templated' }">
+                <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6">
+                    <div class="left">
+                        <i class="fa" data-bind="css: contextStyle"></i>
+                        <i><span data-bind="text: service"></span></i>/<b><span data-bind="text: metric"></span></b>/<span data-bind="text: statistic"></span>
+                    </div>
+                    <div class="right">
+                        <a data-bind="attr: { href: editUri }">
+                            <i class="fa fa-pencil-square-o"></i>
+                        </a>
+                        <a data-bind="click: $root.remove" href="#">
+                            <i class="fa fa-times"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-            <div class="col-md-12 col-sm-12 col-lg-12 search-header">
-                <form role="form" class="container-fluid form-inline col-md-8 col-sm-12 col-lg-6">
-                    <div class="form-group has-feedback">
-                        <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
-                        <span class="glyphicon glyphicon-search form-control-feedback"></span>
-                    </div>
-                </form>
+<div id="confirm-delete-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Are you sure?</h4>
             </div>
-            <div style="font-size: large; overflow-style: scrollbar; overflow-y: auto" class="container-fluid col-md-12 col-sm-12 col-lg-12">
-                <div data-bind="foreach: filteredEntities" class="row">
-                    <div style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6 box">
-                        <i class="fa fa-sitemap"></i>
-                        <span data-bind="text: cluster, tooltip:{ cluster, tooltipClass: 'host-tip'}, attr: {title: cluster}"></span>
-                        <br/>
-                        <i class="fa fa-cog"></i>
-                        <span data-bind="text: service, tooltip:{ service, tooltipClass: 'host-tip'}, attr: {title: service}"></span>
-                        <br/>
-                        <i class="fa fa-bar-chart"></i>
-                        <span data-bind="text: metric, tooltip:{ metric, tooltipClass: 'host-tip'}, attr: {title: metric}"></span>
-                        <br/>
-                        <i class="fa fa-bell"></i>
-                        <span data-bind="text: name, tooltip:{ name, tooltipClass: 'host-tip'}, attr: {title: name}"></span>
-                        <br/>
-                        <i class="fa fa-calculator"></i>
-                        <span data-bind="text: statistic, tooltip:{ statistic, tooltipClass: 'host-tip'}, attr: {title: statistic}"></span>
-                        <br/>
-                        <i class="fa fa-clock-o"></i>
-                        <span data-bind="text: period, tooltip:{ period, tooltipClass: 'host-tip'}, attr: {title: period}"></span>
-                        <i class="fa" style="float : right;" data-bind="css: contextStyle, tooltip:{ contextTip, tooltipClass: 'host-tip'}, attr: {title: contextTip}"></i>
-                    </div>
-                </div>
+            <div class="modal-body">
+                <div>Are you sure you want to delete the alert?</div>
             </div>
-            <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
-                <div class="text-center">
-                    <ul class="pagination" data-bind="foreach: pagerElements">
-                        <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
-                    </ul>
-                </div>
-            </nav>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" data-bind="click: confirmDelete">Confirm</button>
+            </div>
         </div>
     </div>
 </div>

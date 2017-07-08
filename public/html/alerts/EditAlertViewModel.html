@@ -1,0 +1,71 @@
+<!--
+  ~ Copyright 2016 Smartsheet.com
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="col-md-12">
+            <h2>Edit Alert</h2>
+            <div class="col-md-12 col-sm-12 col-lg-12">
+                <form role="form" class="container-fluid form-horizontal col-md-8 col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <label for="nameInput">Name</label>
+                        <input class="form-control" data-bind="value: name" type="text" id="nameInput" placeholder="Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="contextInput">Context</label>
+                        <select class="form-control" data-bind="options: contexts, optionsText: 'text', optionsValue: 'value', value: context" id="contextInput"></select>
+                        <!--<input class="form-control" data-bind="value: operator" type="text" id="operatorInput" placeholder="Operator">-->
+                    </div>
+                    <div class="form-group">
+                        <label for="metricInput">Metric</label>
+                        <input class="form-control" data-bind="value: metric" type="text" id="metricInput" placeholder="Metric">
+                    </div>
+                    <div class="form-group">
+                        <label for="serviceInput">Service</label>
+                        <input class="form-control" data-bind="value: service" type="text" id="serviceInput" placeholder="Service">
+                    </div>
+                    <div class="form-group">
+                        <label for="clusterInput">Cluster</label>
+                        <input class="form-control" data-bind="value: cluster" type="text" id="clusterInput" placeholder="Cluster">
+                    </div>
+                    <div class="form-group">
+                        <label for="statisticInput">Statistic</label>
+                        <input class="form-control" data-bind="value: statistic" type="text" id="statisticInput" placeholder="Statistic">
+                    </div>
+                    <div class="form-group">
+                        <label for="periodInput">Period</label>
+                        <input class="form-control" data-bind="value: period" type="text" id="periodInput" placeholder="Period">
+                    </div>
+                    <div class="form-group">
+                        <label for="operatorInput">Operator</label>
+                        <select class="form-control" data-bind="options: operators, optionsText: 'text', optionsValue: 'value', value: operator" id="operatorInput"></select>
+                        <!--<input class="form-control" data-bind="value: operator" type="text" id="operatorInput" placeholder="Operator">-->
+                    </div>
+                    <div class="form-group">
+                        <label for="valueInput">Value</label>
+                        <input class="form-control" data-bind="value: value" type="text" id="valueInput" placeholder="Value">
+                    </div>
+                    <div class="form-group">
+                        <label for="unitInput">Unit</label>
+                        <input class="form-control" data-bind="value: valueUnit" type="text" id="unitInput" placeholder="Unit">
+                    </div>
+                    <button type="submit" class="btn btn-default" data-bind="click: save">Save</button>
+                    <button type="submit" class="btn btn-warning" data-bind="click: cancel">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
