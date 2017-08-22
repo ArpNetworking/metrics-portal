@@ -26,7 +26,7 @@ interface StatisticView {
     render(): void;
     start(paused: boolean): void;
     setPause(pause: boolean): void;
-    postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM): void;
+    postData(server: string, timestamp: number, dataValue: number, dataUnit: string, cvm: ConnectionVM): void;
     shutdown(): void;
     setViewDuration(duration: ViewDuration): void;
     updateColor(cvm: ConnectionVM): void;

@@ -16,6 +16,8 @@
 
 class ReportData {
     data: number;
+    numeratorUnits: string[];
+    denominatorUnits: string[];
     metric: string;
     server: string;
     service: string;
@@ -27,6 +29,16 @@ class ReportData {
 
     constructor(data: any) {
         this.data = data.data;
+        if (data.hasOwnProperty("numeratorUnits")) {
+            this.numeratorUnits = data.numeratorUnits;
+        } else {
+            this.numeratorUnits = [];
+        }
+        if (data.hasOwnProperty("denominatorUnits")) {
+            this.denominatorUnits = data.denominatorUnits;
+        } else {
+            this.denominatorUnits = [];
+        }
         this.metric = data.metric;
         this.server = data.server;
         this.service = data.service;

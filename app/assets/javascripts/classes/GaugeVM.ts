@@ -69,7 +69,7 @@ class GaugeVM implements StatisticView {
         // TODO(vkoskela): Support target frame rate in gauge [AINT-?]
     }
 
-    postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM) {
+    postData(server: string, timestamp: number, dataValue: number, dataUnit: string, cvm: ConnectionVM) {
         if (this.paused) {
             return;
         }

@@ -41,6 +41,7 @@ class GraphVM implements StatisticView {
     started: boolean = false;
     container: HTMLElement = null;
     data: Series[] = [];
+    unit: string = null;
     dataStreams: { [key: string]: number } = {};
     stop: boolean = false;
     paused: boolean = false;
@@ -150,7 +151,12 @@ class GraphVM implements StatisticView {
         this.data[index].points.fillOpacity = cvm.alpha();
     }
 
-    postData(server: string, timestamp: number, dataValue: number, cvm: ConnectionVM) {
+    postData(server: string, timestamp: number, dataValue: number, dataUnit: string, cvm: ConnectionVM) {
+        if (this.unit == null) {
+            this.unit = dataUnit;
+        } else if (this.unit != dataUnit) {
+             console.warn("inconsistent units (" + this.unit + " vs " + dataUnit + ") in graph " + this.id + " from " + server);
+        }
         var index = this.dataStreams[cvm.server];
         if (index == undefined) {
             index = this.data.length;
@@ -281,11 +287,17 @@ class GraphVM implements StatisticView {
             graphMax += buffer;
         }
 
+        var yaxisLabel = "";
+        if (this.unit != null && this.unit != undefined) {
+            yaxisLabel = this.unit
+        }
+
         // Draw Graph
         flotr.draw(this.container, this.data, {
             yaxis: {
                 max: graphMax,
-                min: graphMin
+                min: graphMin,
+                title: yaxisLabel
             },
             xaxis: {
                 mode: 'time',
