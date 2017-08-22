@@ -264,7 +264,12 @@ module GraphViewModel {
         var graphName = getGraphName(new GraphSpec(report.service, report.metric, report.statistic, report.points, report.lines, report.bars));
         var graph = graphsById[graphName];
         if (graph != undefined) {
-            graph.postData(report.server, report.timestamp, report.data, cvm);
+            // TODO(ville): Support a complete compound unit model here.
+            var unit = undefined;
+            if (report.numeratorUnits != undefined) {
+                unit = report.numeratorUnits[0];
+            }
+            graph.postData(report.server, report.timestamp, report.data, unit, cvm);
         }
     };
 
