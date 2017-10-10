@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -24,7 +24,6 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueType;
-import play.Configuration;
 import play.Environment;
 
 import java.util.Set;
@@ -34,11 +33,11 @@ import java.util.Set;
  *
  * The MultiProvider operates by looking at the hostProvider config block and iterating over each key.  If the
  * key is an object with a type subkey, we will attempt to instantiate it. We leverage the {@link HostProviderFactory}
- * class to create a {@link Props} with the {@link Configuration} built from the subkey.
+ * class to create a {@link Props} with the {@link Config} built from the subkey.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class MultiProvider extends UntypedActor {
+public class MultiProvider extends AbstractActor {
     /**
      * Public constructor.
      *
@@ -47,13 +46,12 @@ public class MultiProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Configuration configuration) {
-        final Set<String> entries = configuration.subKeys();
-        final Config underlying = configuration.underlying();
+    public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Config configuration) {
+        final Set<String> entries = configuration.root().keySet();
         for (String key : entries) {
-            if (underlying.getValue(key).valueType() == ConfigValueType.OBJECT) {
+            if (configuration.getValue(key).valueType() == ConfigValueType.OBJECT) {
                 // Make sure that we're looking at an Object with a .type subkey
-                if (!underlying.hasPath(key + ".type")) {
+                if (!configuration.hasPath(key + ".type")) {
                     LOGGER.warn()
                             .setMessage("Expected type for host provider")
                             .addData("key", key)
@@ -62,7 +60,7 @@ public class MultiProvider extends UntypedActor {
                 }
 
                 // Create the child configuration, with a fallback to the current config for things like "interval"
-                final Configuration subConfig = configuration.getConfig(key).withFallback(configuration);
+                final Config subConfig = configuration.getConfig(key).withFallback(configuration);
 
                 // Create the props and launch
                 final Props subProps = factory.create(subConfig, ConfigurationHelper.getType(environment, subConfig, "type"));
@@ -72,8 +70,9 @@ public class MultiProvider extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        unhandled(message);
+    public Receive createReceive() {
+        return receiveBuilder()
+                .build();
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MultiProvider.class);

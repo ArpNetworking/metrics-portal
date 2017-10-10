@@ -107,7 +107,7 @@ public class PillarInitializer {
                 LOGGER.info()
                         .setMessage("Could not find migrations directory")
                         .addData("directory", directory)
-                        .addData("database" , dbName)
+                        .addData("database", dbName)
                         .log();
             }
         }

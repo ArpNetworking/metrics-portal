@@ -24,6 +24,7 @@ import akka.cluster.Cluster;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -36,19 +37,22 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
-import play.Configuration;
 import play.Environment;
+import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
+import play.libs.Json;
 
 import java.net.URI;
 import java.util.Collections;
@@ -92,14 +96,14 @@ public class MainModule extends AbstractModule {
     @Named("HostProviderProps")
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Configuration config) {
+    private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Config config) {
         return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
     }
 
     @Provides
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private MetricsFactory getMetricsFactory(final Configuration configuration) {
+    private MetricsFactory getMetricsFactory(final Config configuration) {
         return new TsdMetricsFactory.Builder()
                 .setClusterName(configuration.getString("metrics.cluster"))
                 .setServiceName(configuration.getString("metrics.service"))
@@ -114,7 +118,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private Features getFeatures(final Configuration configuration) {
+    private Features getFeatures(final Config configuration) {
         return new DefaultFeatures(configuration);
     }
 
@@ -128,13 +132,31 @@ public class MainModule extends AbstractModule {
         return registry;
     }
 
+
+    //Note: This is essentially the same as Play's ObjectMapperModule, but uses the Commons ObjectMapperFactory
+    //  instance as the base
+    @Singleton
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ObjectMapper provideObjectMapper(final ApplicationLifecycle lifecycle) {
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
+        objectMapper.registerModule(PlayJsonModule$.MODULE$);
+        Json.setObjectMapper(objectMapper);
+        lifecycle.addStopHook(() -> {
+            Json.setObjectMapper(null);
+            return CompletableFuture.completedFuture(null);
+        });
+
+        return objectMapper;
+    }
+
     private static final class HealthProviderProvider implements Provider<HealthProvider> {
 
         @Inject
-        public HealthProviderProvider(
+        HealthProviderProvider(
                 final Injector injector,
                 final Environment environment,
-                final Configuration configuration) {
+                final Config configuration) {
             _injector = injector;
             _environment = environment;
             _configuration = configuration;
@@ -148,16 +170,16 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final Environment _environment;
-        private final Configuration _configuration;
+        private final Config _configuration;
     }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {
 
         @Inject
-        public HostRepositoryProvider(
+        HostRepositoryProvider(
                 final Injector injector,
                 final Environment environment,
-                final Configuration configuration,
+                final Config configuration,
                 final ApplicationLifecycle lifecycle) {
             _injector = injector;
             _environment = environment;
@@ -180,17 +202,17 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final Environment _environment;
-        private final Configuration _configuration;
+        private final Config _configuration;
         private final ApplicationLifecycle _lifecycle;
     }
 
     private static final class ExpressionRepositoryProvider implements Provider<ExpressionRepository> {
 
         @Inject
-        public ExpressionRepositoryProvider(
+        ExpressionRepositoryProvider(
                 final Injector injector,
                 final Environment environment,
-                final Configuration configuration,
+                final Config configuration,
                 final ApplicationLifecycle lifecycle) {
             _injector = injector;
             _environment = environment;
@@ -213,17 +235,17 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final Environment _environment;
-        private final Configuration _configuration;
+        private final Config _configuration;
         private final ApplicationLifecycle _lifecycle;
     }
 
     private static final class AlertRepositoryProvider implements Provider<AlertRepository> {
 
         @Inject
-        public AlertRepositoryProvider(
+        AlertRepositoryProvider(
                 final Injector injector,
                 final Environment environment,
-                final Configuration configuration,
+                final Config configuration,
                 final ApplicationLifecycle lifecycle) {
             _injector = injector;
             _environment = environment;
@@ -246,13 +268,13 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final Environment _environment;
-        private final Configuration _configuration;
+        private final Config _configuration;
         private final ApplicationLifecycle _lifecycle;
     }
 
     private static final class HostProviderProvider implements Provider<ActorRef> {
         @Inject
-        public HostProviderProvider(
+        HostProviderProvider(
                 final ActorSystem system,
                 @Named("HostProviderProps")
                 final Props hostProviderProps) {
@@ -282,7 +304,7 @@ public class MainModule extends AbstractModule {
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
         @Inject
-        public JvmMetricsCollectorProvider(final Injector injector, final ActorSystem system) {
+        JvmMetricsCollectorProvider(final Injector injector, final ActorSystem system) {
             _injector = injector;
             _system = system;
         }

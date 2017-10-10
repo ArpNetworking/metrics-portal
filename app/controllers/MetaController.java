@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
-import play.Configuration;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -42,10 +42,12 @@ public final class MetaController extends Controller {
      * Public constructor.
      *
      * @param healthProvider Instace of {@link HealthProvider}.
+     * @param configuration Play configuration for the app.
      */
     @Inject
-    public MetaController(final HealthProvider healthProvider) {
+    public MetaController(final HealthProvider healthProvider, final Config configuration) {
         _healthProvider = healthProvider;
+        _configuration = configuration;
     }
 
     /**
@@ -54,7 +56,7 @@ public final class MetaController extends Controller {
      * @return Serialized response containing configuration.
      */
     public Result config() {
-        final JsonNode node = getConfigNode(play.Configuration.root());
+        final JsonNode node = getConfigNode(_configuration);
         return ok(node);
     }
 
@@ -77,8 +79,8 @@ public final class MetaController extends Controller {
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
     private static JsonNode getConfigNode(final Object element) {
-        if (element instanceof Configuration) {
-            final Configuration config = (Configuration) element;
+        if (element instanceof Config) {
+            final Config config = (Config) element;
             final ObjectNode node = JsonNodeFactory.instance.objectNode();
             for (final Map.Entry<String, ConfigValue> entry : config.entrySet()) {
                 put(node, entry.getKey(), entry.getValue());
@@ -123,6 +125,7 @@ public final class MetaController extends Controller {
     }
 
     private final HealthProvider _healthProvider;
+    private final Config _configuration;
 
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";

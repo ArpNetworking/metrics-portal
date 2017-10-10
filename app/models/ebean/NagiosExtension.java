@@ -15,9 +15,8 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.Model;
-import com.avaje.ebean.annotation.CreatedTimestamp;
-import com.avaje.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import javax.persistence.CascadeType;
@@ -39,7 +38,7 @@ import javax.persistence.Version;
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "nagios_extensions", schema = "portal")
-public class NagiosExtension extends Model {
+public class NagiosExtension {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

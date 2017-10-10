@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
-import play.Configuration;
 import play.inject.Bindings;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
@@ -47,13 +46,12 @@ public class ExpressionControllerTest {
 
     @BeforeClass
     public static void instantiate() {
-        Configuration configuration = Configuration.empty();
+        exprRepo.open();
         app = new GuiceApplicationBuilder()
-                .bindings(Bindings.bind(ExpressionController.class).toInstance(new ExpressionController(configuration, exprRepo)))
+                .overrides(Bindings.bind(ExpressionRepository.class).toInstance(exprRepo))
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
-        exprRepo.open();
     }
 
     @AfterClass
@@ -72,7 +70,7 @@ public class ExpressionControllerTest {
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
     }
 
@@ -82,7 +80,7 @@ public class ExpressionControllerTest {
                 .method("PUT")
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -93,7 +91,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingIdCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -104,7 +102,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingClusterCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -115,7 +113,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingMetricCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -126,7 +124,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingScriptCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -137,7 +135,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingServiceCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -154,7 +152,7 @@ public class ExpressionControllerTest {
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
         Expression expectedExpr = exprRepo.get(originalExpr.getId(), Organization.DEFAULT).get();
         Assert.assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);

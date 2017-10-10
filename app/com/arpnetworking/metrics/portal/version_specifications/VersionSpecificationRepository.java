@@ -44,7 +44,7 @@ public interface VersionSpecificationRepository {
      * corresponding version set, which contains a package-version list. If the ifModifiedSince parameter is left
      * absent, the value will not be <code>LookupResultError.NOT_MODIFIED</code>.
      */
-    VersionSetLookupResult lookupVersionSetByHostAttributes(Map<String, String> attributes, final Optional<Instant> ifModifiedSince);
+    VersionSetLookupResult lookupVersionSetByHostAttributes(Map<String, String> attributes, Optional<Instant> ifModifiedSince);
 
     /**
      * Lookup a version set by UUID.

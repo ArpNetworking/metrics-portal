@@ -31,7 +31,7 @@ public interface HostQuery {
      * @param partialHostname The partial or complete hostname to match.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery partialHostname(final Optional<String> partialHostname);
+    HostQuery partialHostname(Optional<String> partialHostname);
 
     /**
      * Set the metrics software state to query for. Optional. Defaults to any state.
@@ -39,7 +39,7 @@ public interface HostQuery {
      * @param metricsSoftwareState The metrics software state to match.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery metricsSoftwareState(final Optional<MetricsSoftwareState> metricsSoftwareState);
+    HostQuery metricsSoftwareState(Optional<MetricsSoftwareState> metricsSoftwareState);
 
     /**
      * Set the cluster to query for. Optional. Defaults to all clusters.
@@ -47,7 +47,7 @@ public interface HostQuery {
      * @param cluster The complete cluster to match.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery cluster(final Optional<String> cluster);
+    HostQuery cluster(Optional<String> cluster);
 
     /**
      * The maximum number of hosts to return. Optional. Default is 1000.
@@ -55,7 +55,7 @@ public interface HostQuery {
      * @param limit The maximum number of hosts to return.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery limit(final int limit);
+    HostQuery limit(int limit);
 
     /**
      * The offset into the result set. Optional. Default is not set.
@@ -63,7 +63,7 @@ public interface HostQuery {
      * @param offset The offset into the result set.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery offset(final Optional<Integer> offset);
+    HostQuery offset(Optional<Integer> offset);
 
     /**
      * Sort the results by the specified field. Optional. Default sorting is defined by the underlying repository
@@ -73,7 +73,7 @@ public interface HostQuery {
      * @param field The <code>Field</code> to sort on.
      * @return This instance of <code>HostQuery</code>.
      */
-    HostQuery sortBy(final Optional<Field> field);
+    HostQuery sortBy(Optional<Field> field);
 
     /**
      * Accessor for the hostname.
@@ -126,7 +126,7 @@ public interface HostQuery {
     /**
      * The fields defined for a host.
      */
-    public enum Field {
+    enum Field {
         /**
          * The hostname.
          */

@@ -15,8 +15,10 @@
  */
 
 import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
-import com.typesafe.sbt.SbtAspectj._
-import com.typesafe.sbt.SbtAspectj.AspectjKeys._
+import com.lightbend.sbt.SbtAspectj
+import com.lightbend.sbt.SbtAspectj._
+import com.lightbend.sbt.SbtAspectj.autoImport._
+import SbtCheckstyle._
 import com.typesafe.sbt.digest.Import._
 import com.typesafe.sbt.gzip.Import._
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
@@ -44,20 +46,22 @@ object ApplicationBuild extends Build {
     val appName = "metrics-portal"
     val akkaVersion = "2.4.18"
     val akkaHttpVersion = "10.0.6"
-    val jacksonVersion = "2.7.4"
+    val jacksonVersion = "2.9.2"
     val cassandraDriverVersion = "3.2.0"
 
-    val s = CheckstyleSettings.checkstyleTask ++ aspectjSettings
+    val s = checkstyleSettings ++ aspectjSettings
 
     val appDependencies = Seq(
       javaWs,
+      filters,
+      guice,
       "cglib" % "cglib" % "3.2.1",
-      "com.arpnetworking.build" % "build-resources" % "1.0.5",
-      "com.arpnetworking.commons" % "commons" % "1.10.1",
-      "com.arpnetworking.commons" % "javassist-maven-core" % "0.1.2",
-      "com.arpnetworking.logback" % "logback-steno" % "1.17.0",
-      "com.arpnetworking.metrics" % "metrics-client" % "0.7.0",
-      "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.6.0",
+      "com.arpnetworking.build" % "build-resources" % "1.1.0",
+      "com.arpnetworking.commons" % "commons" % "1.13.2",
+      "com.arpnetworking.commons" % "javassist-maven-core" % "0.2.1",
+      "com.arpnetworking.logback" % "logback-steno" % "1.18.0",
+      "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
+      "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.8.2",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",
       "org.asynchttpclient" % "async-http-client" % "2.0.32",
       "com.chrisomeara" %% "pillar" % "2.3.0",
@@ -77,33 +81,36 @@ object ApplicationBuild extends Build {
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "com.typesafe.play" %% "play-ebean" % "3.0.0",
       "net.sf.oval" % "oval" % "1.82",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
-      "org.flywaydb" % "flyway-play_2.11" % "2.2.1",
+      "org.flywaydb" %% "flyway-play" % "4.0.0",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0",
       "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
       "org.webjars" % "bean" % "1.0.14",
-      "org.webjars" % "bootstrap" % "3.2.0",
-      "org.webjars" % "d3js" % "3.4.8",
-      "org.webjars" % "durandal" % "2.1.0",
+      "org.webjars" % "bootstrap" % "3.3.7",
+      "org.webjars.npm" % "d3" % "4.11.0",
+
+      // Needed as a transitive of d3, but we need v 1.0.1 as opposed to the default 1.0.0
+      "org.webjars.npm" % "graceful-readlink" % "1.0.1",
+
+      "org.webjars" % "durandal" % "2.2.0",
       "org.webjars" % "flotr2" % "d43f8566e8",
       "org.webjars" % "font-awesome" % "4.3.0-2",
       "org.webjars" % "jQRangeSlider" % "5.7.0",
-      "org.webjars" % "jquery" % "2.1.1",
-      "org.webjars" % "jquery-ui" % "1.11.1",
-      "org.webjars" % "jquery-ui-themes" % "1.11.0",
+      "org.webjars" % "jquery" % "3.2.1",
+      "org.webjars" % "jquery-ui" % "1.12.1",
+      "org.webjars" % "jquery-ui-themes" % "1.12.1",
       "org.webjars" % "knockout" % "3.4.0",
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
-      "org.webjars" % "underscorejs" % "1.6.0-3",
+      "org.webjars" % "underscorejs" % "1.8.3",
 
       "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",
       "junit" % "junit" % "4.12" % "test",
       "org.mockito" % "mockito-core" % "1.10.19" % "test"
     )
 
-    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin).settings(
+    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj).settings(
 
       organization := "com.arpnetworking.metrics",
       organizationName := "Arpnetworking Inc",
@@ -111,13 +118,13 @@ object ApplicationBuild extends Build {
 
       publishMavenStyle := true,
       publishTo in publishLocal := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository"))),
-      publishTo <<= version { v: String =>
+      publishTo := version { v: String =>
         val nexus = "https://oss.sonatype.org/"
         if (v.trim.endsWith("SNAPSHOT"))
           Some("snapshots" at nexus + "content/repositories/snapshots")
         else
           Some("releases" at nexus + "service/local/staging/deploy/maven2")
-      },
+      }.value,
       pomIncludeRepository := { _ => false },
       pomExtra := (
         <licenses>
@@ -231,32 +238,31 @@ object ApplicationBuild extends Build {
       },
 
       // Extract build resources
-      compile in Compile <<= (compile in Compile).dependsOn(Def.task {
+      compile in Compile := (compile in Compile).dependsOn(Def.task {
         val jar = (update in Compile).value
           .select(configurationFilter("compile"))
           .filter(_.name.contains("build-resources"))
           .head
         IO.unzip(jar, (target in Compile).value / "build-resources")
         Seq.empty[File]
-      }),
+      }).value,
 
       // Compiler warnings as errors
       javacOptions ++= Seq(
         "-Xlint:all",
-        "-Werror",
+        //"-Werror",
         "-Xlint:-path",
         "-Xlint:-try"
       ),
 
       devSettings := Seq(("config.resource", "portal.application.conf"), "play.server.http.port" -> "8080"),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
+      javaOptions in Test += "-Dlogger.resource=logback-test.xml",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
       routesGenerator := InjectedRoutesGenerator,
 
-      TypescriptKeys.moduleKind := "AMD",
-      TypescriptKeys.typingsFile := some(file("typings/index.d.ts")),
-
+      TypescriptKeys.configFile := "tsconfig.json",
 
       mainConfig := "start_app",
       mainModule := "start_app",
@@ -270,12 +276,10 @@ object ApplicationBuild extends Build {
       libraryDependencies ++= appDependencies,
 
       // AspectJ
-      binaries in Aspectj <++= update map { report =>
-        report.matching(moduleFilter(organization = "com.arpnetworking.logback", name = "logback-steno"))
-      },
-      inputs in Aspectj <+= compiledClasses,
-      products in Compile <<= products in Aspectj,
-      products in Runtime <<= products in Compile,
+      aspectjBinaries in Aspectj := update.value.matching(moduleFilter(organization = "com.arpnetworking.logback", name = "logback-steno")),
+      aspectjInputs in Aspectj += (aspectjCompiledClasses in Aspectj).value,
+      products in Compile := (products in Aspectj).value,
+      products in Runtime := (products in Compile).value,
 
       credentials += Credentials("Sonatype Nexus Repository Manager",
         "oss.sonatype.org",

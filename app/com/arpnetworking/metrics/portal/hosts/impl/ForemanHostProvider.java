@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import akka.actor.AbstractActor;
 import akka.actor.Status;
-import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -24,11 +24,11 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
-import play.Configuration;
 import play.libs.ws.WSClient;
 
 import java.net.URI;
@@ -39,7 +39,7 @@ import java.util.List;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public final class ForemanHostProvider extends UntypedActor {
+public final class ForemanHostProvider extends AbstractActor {
 
     /**
      * Public constructor.
@@ -52,7 +52,7 @@ public final class ForemanHostProvider extends UntypedActor {
     public ForemanHostProvider(
             final HostRepository hostRepository,
             final WSClient wsClient,
-            @Assisted final Configuration configuration) {
+            @Assisted final Config configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
@@ -71,48 +71,43 @@ public final class ForemanHostProvider extends UntypedActor {
      * {@inheritDoc}
      */
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (TICK.equals(message)) {
-            LOGGER.info()
-                    .setMessage("Searching for added/updated hosts")
-                    .addData("actor", self())
-                    .log();
-            PatternsCS.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
-        } else if (message instanceof ForemanClient.HostPageResponse) {
-            final ForemanClient.HostPageResponse response = (ForemanClient.HostPageResponse) message;
-            final List<ForemanClient.ForemanHost> results = response.getResults();
-            for (final ForemanClient.ForemanHost host : results) {
-                final Host dh = new DefaultHost.Builder()
-                        .setHostname(host.getName())
-                        .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
-                        .build();
-                _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
-            }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals(TICK, m -> {
+                    LOGGER.info()
+                            .setMessage("Searching for added/updated hosts")
+                            .addData("actor", self())
+                            .log();
+                    PatternsCS.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
+                })
+                .match(ForemanClient.HostPageResponse.class, response -> {
+                    final List<ForemanClient.ForemanHost> results = response.getResults();
+                    for (final ForemanClient.ForemanHost host : results) {
+                        final Host dh = new DefaultHost.Builder()
+                                .setHostname(host.getName())
+                                .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
+                                .build();
+                        _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
+                    }
 
-            if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                PatternsCS
-                        .pipe(
-                                _client.getHostPage(
-                                        response.getPage() + 1,
-                                        response.getPerPage()),
-                                context().dispatcher())
-                        .to(self(), self());
-            }
-        } else if (message instanceof Status.Failure) {
-            final Status.Failure failure = (Status.Failure) message;
-            LOGGER.warn()
-                    .setMessage("Failure processing Foreman response")
-                    .addData("actor", self())
-                    .setThrowable(failure.cause())
-                    .log();
-        } else {
-            LOGGER.warn()
-                    .setMessage("Unhandled message")
-                    .addData("actor", self())
-                    .addData("akkaMessage", message)
-                    .log();
-            unhandled(message);
-        }
+                    if (response.getTotal() > response.getPage() * response.getPerPage()) {
+                        PatternsCS
+                                .pipe(
+                                        _client.getHostPage(
+                                                response.getPage() + 1,
+                                                response.getPerPage()),
+                                        context().dispatcher())
+                                .to(self(), self());
+                    }
+                })
+                .match(Status.Failure.class, failure -> {
+                    LOGGER.warn()
+                            .setMessage("Failure processing Foreman response")
+                            .addData("actor", self())
+                            .setThrowable(failure.cause())
+                            .log();
+                })
+                .build();
     }
 
     private final HostRepository _hostRepository;

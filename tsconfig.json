@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "amd",
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": false,
+        "lib": ["es6", "es2015.iterable", "dom"]
+    },
+    "include": [
+        "**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts"
+    ],
+    "target": "es6"
+}

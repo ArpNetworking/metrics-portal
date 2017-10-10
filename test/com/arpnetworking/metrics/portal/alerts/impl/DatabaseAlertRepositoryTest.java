@@ -17,9 +17,9 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
@@ -153,8 +153,8 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         try (Transaction transaction = Ebean.beginTransaction()) {
             ebeanAlert1.setCluster("new-cluster1");
             ebeanAlert2.setCluster("new-cluster2");
-            ebeanAlert2.save();
-            ebeanAlert1.save();
+            Ebean.save(ebeanAlert2);
+            Ebean.save(ebeanAlert1);
             transaction.commit();
         }
     }

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import akka.actor.AbstractActor;
 import akka.actor.Status;
-import akka.actor.UntypedActor;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -24,10 +25,10 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
-import play.Configuration;
 import play.libs.ws.WSClient;
 
 import java.net.URI;
@@ -38,7 +39,7 @@ import java.util.List;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class ConsulHostProvider extends UntypedActor {
+public final class ConsulHostProvider extends AbstractActor {
 
     /**
      * Public constructor.
@@ -51,7 +52,7 @@ public final class ConsulHostProvider extends UntypedActor {
     public ConsulHostProvider(
             final HostRepository hostRepository,
             final WSClient wsClient,
-            @Assisted final Configuration configuration) {
+            @Assisted final Config configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
@@ -71,38 +72,32 @@ public final class ConsulHostProvider extends UntypedActor {
      * {@inheritDoc}
      */
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if (TICK.equals(message)) {
-            LOGGER.info()
-                    .setMessage("Searching for added/updated hosts")
-                    .addData("actor", self())
-                    .log();
-            PatternsCS.pipe(_client.getHostList(), context().dispatcher()).to(self(), self());
-        } else if (message instanceof List) {
-            @SuppressWarnings("unchecked")
-            final List<ConsulClient.Host> hostList = (List<ConsulClient.Host>) message;
-            for (final ConsulClient.Host host : hostList) {
-                final models.internal.Host dh = new DefaultHost.Builder()
-                        .setHostname(host.getNode())
-                        .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
-                        .build();
-                _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
-            }
-        } else if (message instanceof Status.Failure) {
-            final Status.Failure failure = (Status.Failure) message;
-            LOGGER.warn()
-                    .setMessage("Failure processing Consul response")
-                    .addData("actor", self())
-                    .setThrowable(failure.cause())
-                    .log();
-        } else {
-            LOGGER.warn()
-                    .setMessage("Unhandled message")
-                    .addData("actor", self())
-                    .addData("akkaMessage", message)
-                    .log();
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals(TICK, tick -> {
+                    LOGGER.info()
+                            .setMessage("Searching for added/updated hosts")
+                            .addData("actor", self())
+                            .log();
+                    PatternsCS.pipe(_client.getHostList(), context().dispatcher()).to(self(), self());
+                })
+                .matchUnchecked(List.class, (List<ConsulClient.Host> hostList) -> {
+                    for (final ConsulClient.Host host : hostList) {
+                        final models.internal.Host dh = new DefaultHost.Builder()
+                                .setHostname(host.getNode())
+                                .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
+                                .build();
+                        _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
+                    }
+                })
+                .match(Status.Failure.class, failure -> {
+                    LOGGER.warn()
+                            .setMessage("Failure processing Consul response")
+                            .addData("actor", self())
+                            .setThrowable(failure.cause())
+                            .log();
+                })
+                .build();
     }
 
     private final HostRepository _hostRepository;

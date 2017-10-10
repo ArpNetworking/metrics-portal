@@ -15,9 +15,9 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Address;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
 import akka.cluster.Member;
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public class ClusterShutdownActor extends UntypedActor {
+public class ClusterShutdownActor extends AbstractActor {
     /**
      * Creates a {@link Props} for this actor.
      *
@@ -55,16 +55,15 @@ public class ClusterShutdownActor extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Throwable {
-        if (message instanceof ClusterEvent.MemberRemoved) {
-            final ClusterEvent.MemberRemoved removed = (ClusterEvent.MemberRemoved) message;
-            final Member member = removed.member();
-            if (_selfAddress.equals(member.address())) {
-                _shutdownFuture.complete(Boolean.TRUE);
-            }
-        } else {
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(ClusterEvent.MemberRemoved.class, removed -> {
+                    final Member member = removed.member();
+                    if (_selfAddress.equals(member.address())) {
+                        _shutdownFuture.complete(Boolean.TRUE);
+                    }
+                })
+                .build();
     }
 
     private final CompletableFuture<Boolean> _shutdownFuture;

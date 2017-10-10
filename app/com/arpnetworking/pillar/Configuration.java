@@ -42,10 +42,10 @@ public class Configuration {
      * @param configuration Play configuration
      */
     @Inject
-    public Configuration(final play.Configuration configuration) {
+    public Configuration(final Config configuration) {
         _datastores = Maps.newHashMap();
 
-        final Config dbConfig = configuration.underlying().getConfig("cassandra.db");
+        final Config dbConfig = configuration.getConfig("cassandra.db");
         final Set<String> dbNames = dbConfig.root().keySet();
         for (final String dbName : dbNames) {
             _datastores.put(dbName, new DatastoreConfig(dbName, dbConfig.getConfig(dbName)));

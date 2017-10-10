@@ -19,9 +19,9 @@ import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
-import com.avaje.ebean.Ebean;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.ebean.Ebean;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
@@ -32,7 +32,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
-import play.Configuration;
 import play.inject.Bindings;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
@@ -51,13 +50,13 @@ public class AlertControllerTest {
 
     @BeforeClass
     public static void instantiate() {
-        Configuration configuration = Configuration.empty();
+        alertRepo.open();
         app = new GuiceApplicationBuilder()
-                .bindings(Bindings.bind(AlertController.class).toInstance(new AlertController(configuration, alertRepo)))
+                .overrides(
+                        Bindings.bind(AlertRepository.class).toInstance(alertRepo))
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
-        alertRepo.open();
     }
 
     @AfterClass
@@ -75,7 +74,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateValidCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
         final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
                 .where()
@@ -107,7 +106,7 @@ public class AlertControllerTest {
                 .method("PUT")
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -118,7 +117,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingIdCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -129,7 +128,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingContextCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -140,7 +139,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateInvalidContextCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -151,7 +150,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingNameCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -162,7 +161,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingClusterCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -173,7 +172,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingMetricCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -184,7 +183,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingStatisticCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -195,7 +194,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingServiceCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -206,7 +205,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingPeriodCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -217,7 +216,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateInvalidPeriodCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -228,7 +227,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingOperatorCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -239,7 +238,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateInvalidOperatorCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -250,7 +249,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingValueCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -261,7 +260,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateMissingExtensionsCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
     }
 
@@ -272,7 +271,7 @@ public class AlertControllerTest {
                 .bodyJson(readTree("testCreateEmptyExtensionsCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
     }
 
@@ -287,7 +286,7 @@ public class AlertControllerTest {
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(request);
+        Result result = Helpers.route(app, request);
         Assert.assertEquals(Http.Status.OK, result.status());
     }
 

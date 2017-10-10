@@ -25,6 +25,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
 import models.internal.Organization;
@@ -32,7 +33,6 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultExpression;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -60,8 +60,8 @@ public class ExpressionController extends Controller {
      * @param expressionRepository Instance of <code>ExpressionRepository</code>.
      */
     @Inject
-    public ExpressionController(final Configuration configuration, final ExpressionRepository expressionRepository) {
-        this(configuration.getInt("expression.limit", DEFAULT_MAX_LIMIT), expressionRepository);
+    public ExpressionController(final Config configuration, final ExpressionRepository expressionRepository) {
+        this(configuration.getInt("expression.limit"), expressionRepository);
     }
 
     /**
@@ -243,7 +243,6 @@ public class ExpressionController extends Controller {
     private final int _maxLimit;
     private final ExpressionRepository _expressionRepository;
 
-    private static final int DEFAULT_MAX_LIMIT = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

@@ -19,13 +19,14 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.ExpressionList;
-import com.avaje.ebean.Junction;
-import com.avaje.ebean.PagedList;
-import com.avaje.ebean.Query;
-import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
+import io.ebean.Ebean;
+import io.ebean.ExpressionList;
+import io.ebean.Junction;
+import io.ebean.PagedList;
+import io.ebean.Query;
+import io.ebean.Transaction;
 import models.ebean.AlertEtags;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -37,10 +38,8 @@ import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultQueryResult;
 import org.joda.time.Period;
-import play.Configuration;
 import play.Environment;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +62,7 @@ public class DatabaseAlertRepository implements AlertRepository {
      * @throws Exception If the configuration is invalid.
      */
     @Inject
-    public DatabaseAlertRepository(final Environment environment, final Configuration config) throws Exception {
+    public DatabaseAlertRepository(final Environment environment, final Config config) throws Exception {
         this(
                 ConfigurationHelper.<AlertQueryGenerator>getType(
                         environment,
@@ -144,7 +143,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         pagedAlerts.getList().forEach(ebeanAlert -> values.add(convertFromEbeanAlert(ebeanAlert)));
 
         // Transform the results
-        return new DefaultQueryResult<>(values, pagedAlerts.getTotalRowCount(), etag.toString());
+        return new DefaultQueryResult<>(values, pagedAlerts.getTotalCount(), etag.toString());
     }
 
     @Override
@@ -153,7 +152,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         return Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findRowCount();
+                .findCount();
     }
 
     @Override
@@ -201,7 +200,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .addData("isCreated", isNewAlert)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final IOException | RuntimeException e) {
+        } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to upsert alert")
@@ -336,11 +335,11 @@ public class DatabaseAlertRepository implements AlertRepository {
                 ebeanExpressionList = ebeanExpressionList.endJunction();
             }
             final Query<models.ebean.Alert> ebeanQuery = ebeanExpressionList.query();
-            int pageOffset = 0;
+            int offset = 0;
             if (query.getOffset().isPresent()) {
-                pageOffset = query.getOffset().get() / query.getLimit();
+                offset = query.getOffset().get();
             }
-            return ebeanQuery.findPagedList(pageOffset, query.getLimit());
+            return ebeanQuery.setFirstRow(offset).setMaxRows(query.getLimit()).findPagedList();
         }
 
         @Override

@@ -16,8 +16,8 @@
 package models.internal.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.typesafe.config.Config;
 import models.internal.Features;
-import play.Configuration;
 
 /**
  * Default internal model implementation of features.
@@ -75,7 +75,7 @@ public final class DefaultFeatures implements Features {
      *
      * @param configuration the <code>Configuration</code> instance.
      */
-    public DefaultFeatures(final Configuration configuration) {
+    public DefaultFeatures(final Config configuration) {
         _telemetryEnabled = configuration.getBoolean("portal.features.telemetry.enabled");
         _proxyEnabled = configuration.getBoolean("portal.features.proxy.enabled");
         _liveLoggingEnabled = configuration.getBoolean("portal.features.liveLogging.enabled");
