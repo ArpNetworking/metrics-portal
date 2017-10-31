@@ -47,7 +47,6 @@ public final class Global {
     @Inject
     public Global(final ActorSystem akka, final ApplicationLifecycle lifecycle) {
         LOGGER.info().setMessage("Starting application...").log();
-
         _akka = akka;
         lifecycle.addStopHook(this::onStop);
 
