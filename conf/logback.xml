@@ -47,12 +47,14 @@
   <logger name="application" level="DEBUG" />
   <logger name="org.elasticsearch" level="INFO" />
   <logger name="com.arpnetworking" level="DEBUG" />
-  <logger name="com.arpnetworking.metrics" level="INFO" />
+  <logger name="com.arpnetworking.metrics" level="DEBUG" />
   <logger name="controllers" level="DEBUG" />
   <logger name="global" level="DEBUG" />
   <logger name="models" level="DEBUG" />
   <logger name="org.reflections.Reflections" level="ERROR" />
   <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
+  <logger name="com.arpnetworking.utility" level="INFO" />
+  <logger name="com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository" level="INFO" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalAsync" />
