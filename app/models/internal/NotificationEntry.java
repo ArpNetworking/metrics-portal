@@ -16,6 +16,9 @@
 package models.internal;
 
 import com.arpnetworking.mql.grammar.AlertTrigger;
+import com.google.inject.Injector;
+
+import java.util.concurrent.CompletionStage;
 
 /**
  * A way to notify.
@@ -27,8 +30,10 @@ public interface NotificationEntry {
      * Dispatches notifications to the recipient.
      *
      * @param trigger the trigger of the notification
+     * @param injector injector to create dependencies
+     * @return a {@link CompletionStage} indicating completion
      */
-    void notifyRecipient(AlertTrigger trigger);
+    CompletionStage<Void> notifyRecipient(AlertTrigger trigger, Injector injector);
 
     /**
      * Converts the model to a view model.

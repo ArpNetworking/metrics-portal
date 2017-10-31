@@ -20,12 +20,22 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.mql.grammar.AlertTrigger;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.inject.Injector;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.NotificationEntry;
 import models.view.EmailNotificationEntry;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.MimeMessage;
 
 /**
  * Represents a notification by email.
@@ -36,13 +46,39 @@ import java.util.Objects;
 public final class DefaultEmailNotificationEntry implements NotificationEntry {
 
     @Override
-    public void notifyRecipient(final AlertTrigger trigger) {
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION",
+            justification = "Bug in findbugs: https://github.com/findbugsproject/findbugs/issues/79")
+    public CompletionStage<Void> notifyRecipient(final AlertTrigger trigger, final Injector injector) {
         // TODO(brandon): fire the email
+
         LOGGER.debug()
                 .setMessage("Sending email notification")
                 .addData("address", _address)
                 .addData("trigger", trigger)
                 .log();
+        final Session mailSession = injector.getInstance(Session.class);
+        final MimeMessage mailMessage = new MimeMessage(mailSession);
+        try {
+            mailMessage.addRecipients(Message.RecipientType.TO, _address);
+            final Optional<String> name = Optional.ofNullable(trigger.getArgs().get("name"));
+            final String subject;
+            if (name.isPresent()) {
+                subject = String.format("%s in alarm", name.get());
+            } else {
+                subject = "Metric is in alarm";
+            }
+            mailMessage.setSubject(subject);
+            mailMessage.setFrom("Metrics Portal <noreply@smartsheet.com>");
+            final String text = "A metric has gone into alert: \n"
+                    + "Details: " + trigger.getArgs().toString();
+            mailMessage.setText(text);
+            Transport.send(mailMessage);
+            return CompletableFuture.completedFuture(null);
+        } catch (final MessagingException e) {
+            final CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
     }
 
     @Override

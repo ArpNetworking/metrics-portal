@@ -110,9 +110,6 @@ public class MetricsController extends Controller {
 
         if (parser.getNumberOfSyntaxErrors() != 0) {
             // Build the error object
-            final ObjectNode response = Json.newObject();
-            final ArrayNode errors = response.putArray("errors");
-            errorListener.getErrors().forEach(errors::add);
             throw new ExecutionException(errorListener.getErrors());
         }
         return statement;
