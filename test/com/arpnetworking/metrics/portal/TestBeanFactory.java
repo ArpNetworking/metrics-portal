@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal;
 
 import com.google.common.collect.ImmutableMap;
+import io.ebean.Ebean;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -83,7 +84,7 @@ public final class TestBeanFactory {
 
     public static models.ebean.Alert createEbeanAlert() {
         final models.ebean.Organization organization = createEbeanOrganization();
-        organization.save();
+        Ebean.save(organization);
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
         ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
@@ -148,7 +149,7 @@ public final class TestBeanFactory {
 
     public static Expression createEbeanExpression() {
         final models.ebean.Organization organization = createEbeanOrganization();
-        organization.save();
+        Ebean.save(organization);
         final models.ebean.Expression ebeanExpression = new models.ebean.Expression();
         ebeanExpression.setOrganization(organization);
         ebeanExpression.setUuid(UUID.randomUUID());

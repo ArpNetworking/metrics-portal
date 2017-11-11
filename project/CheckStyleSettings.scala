@@ -15,39 +15,60 @@
  */
 
 import java.security.Permission
-import sbt._
-import Keys._
 
-// Adapted from https://github.com/ymasory/sbt-code-quality.g8
-object CheckstyleSettings {
+import sbt._
+import sbt.Keys._
+import sbt.plugins.JvmPlugin
+
+trait CheckstyleKeys {
+  val checkstyle = TaskKey[Unit]("checkstyle", "run checkstyle, placing results in target/checkstyle")
+}
+
+object SbtCheckstyle extends AutoPlugin {
+
+  object autoImport extends CheckstyleKeys
+
+  override def requires = JvmPlugin
+  override def trigger = allRequirements
+
 
   object CheckstyleFailedException extends Exception
-  val checkstyle = TaskKey[Unit]("checkstyle", "run checkstyle, placing results in target/checkstyle")
-  val checkstyleTask = checkstyle <<=
-    (streams, baseDirectory, sourceDirectory in Compile, target) map {
-      (streams, base, src, target) =>
-      import com.puppycrawl.tools.checkstyle.Main.{ main => CsMain }
-      val outputDir = (target / "checkstyle").mkdirs
-      val outputFile = (target / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
-      val inputDir = src.getAbsolutePath
-      val buildDir = (target / "build-resources").getAbsoluteFile
-      val args = List(
-        "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
-        "-f", "xml",
-        "-o", outputFile,
-        inputDir
-      )
 
-        System.setProperty("header_file", (buildDir / "al2").toString)
-        System.setProperty("suppressions_file", (buildDir / "checkstyle-suppressions.xml").toString)
+  import autoImport._
+  import Cs._
 
-      trappingExits {
-        CsMain(args.toArray)
-      } match {
-        case 0 =>
-        case _ => throw CheckstyleFailedException
-      }
+  lazy val checkstyleSettings: Seq[Setting[_]] = defaultCheckstyleSettings
+
+  def defaultCheckstyleSettings = Seq(
+    checkstyle := checkstyleTask.dependsOn(compile in Compile).value
+  )
+
+  object Cs {
+
+    val checkstyleTask = Def.task {
+          import com.puppycrawl.tools.checkstyle.Main.{main => CsMain}
+          val outputDir = (target.value / "checkstyle").mkdirs
+          val outputFile = (target.value / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
+          val inputDir = sourceDirectory.in(Compile).value.getAbsolutePath
+          val buildDir = (target.value / "build-resources").getAbsoluteFile
+          val args = List(
+            "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
+            "-f", "xml",
+            "-o", outputFile,
+            inputDir
+          )
+
+          System.setProperty("header_file", (buildDir / "al2").toString)
+          System.setProperty("suppressions_file", (buildDir / "checkstyle-suppressions.xml").toString)
+
+          trappingExits {
+            CsMain(args:_*)
+          } match {
+            case 0 =>
+            case _ => throw CheckstyleFailedException
+          }
     }
+  }
 
   def trappingExits(thunk: => Unit): Int = {
     val originalSecManager = System.getSecurityManager

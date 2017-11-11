@@ -237,7 +237,7 @@ public class Alert {
          * @return Mapped query results
          */
         @Query("select * from portal.alerts_by_organization where organization = :org")
-        Result<Alert> getAlertsForOrganization(@Param("org") final UUID organization);
+        Result<Alert> getAlertsForOrganization(@Param("org") UUID organization);
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

@@ -17,8 +17,8 @@ package com.arpnetworking.metrics.portal.expressions.impl;
 
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.Transaction;
+import io.ebean.Ebean;
+import io.ebean.Transaction;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
 import models.internal.Organization;
@@ -150,11 +150,9 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         try (Transaction transaction = Ebean.beginTransaction()) {
             ebeanExpression1.setCluster("new-cluster1");
             ebeanExpression2.setCluster("new-cluster2");
-            ebeanExpression2.save();
-            ebeanExpression1.save();
+            Ebean.save(ebeanExpression2);
+            Ebean.save(ebeanExpression1);
             transaction.commit();
-        } catch (final IOException e) {
-            //Do Nothing
         }
     }
 

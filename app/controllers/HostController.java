@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
@@ -30,7 +31,6 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -55,8 +55,8 @@ public class HostController extends Controller {
      * @param hostRepository Instance of <code>HostRepository</code>.
      */
     @Inject
-    public HostController(final Configuration configuration, final HostRepository hostRepository) {
-        this(configuration.getInt("hosts.limit", MAX_LIMIT), hostRepository);
+    public HostController(final Config configuration, final HostRepository hostRepository) {
+        this(configuration.getInt("hosts.limit"), hostRepository);
     }
 
     /**
@@ -187,6 +187,5 @@ public class HostController extends Controller {
     private final int _maxLimit;
     private final HostRepository _hostRepository;
 
-    private static final int MAX_LIMIT = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(HostController.class);
 }

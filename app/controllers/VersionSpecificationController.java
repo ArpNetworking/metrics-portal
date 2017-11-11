@@ -22,6 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.QueryResult;
 import models.internal.VersionSetLookupResult;
 import models.internal.VersionSpecificationAttribute;
@@ -35,7 +36,6 @@ import models.view.Pagination;
 import models.view.VersionSet;
 import models.view.VersionSpecification;
 import models.view.VersionSpecificationDetails;
-import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -70,9 +70,9 @@ public class VersionSpecificationController extends Controller {
      */
     @Inject
     public VersionSpecificationController(
-            final Configuration configuration,
+            final Config configuration,
             final VersionSpecificationRepository versionSpecificationRepository) {
-        this(configuration.getInt("version_specifications.limit", DEFAULT_MAX_LIMIT), versionSpecificationRepository);
+        this(configuration.getInt("version_specifications.limit"), versionSpecificationRepository);
     }
 
     /**
@@ -89,7 +89,7 @@ public class VersionSpecificationController extends Controller {
 
         Optional<Instant> ifModifiedSince = Optional.empty();
         if (request().hasHeader(IF_MODIFIED_SINCE)) {
-            ifModifiedSince = Optional.of(Instant.from(RFC_1123_DATE_TIME.parse(request().getHeader(IF_MODIFIED_SINCE))));
+            ifModifiedSince = request().header(IF_MODIFIED_SINCE).map(mod -> Instant.from(RFC_1123_DATE_TIME.parse(mod)));
         }
 
         final VersionSetLookupResult versionSetResult =

@@ -24,8 +24,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigObject;
-import play.Configuration;
 import play.Environment;
 
 import java.net.InetAddress;
@@ -48,20 +48,22 @@ public class PillarModule extends AbstractModule {
      * @param configuration Play configuration
      */
     @Inject
-    public PillarModule(final Environment environment, final Configuration configuration) {
+    public PillarModule(final Environment environment, final Config configuration) {
         _configuration = configuration;
     }
 
     @Override
     protected void configure() {
-        final Configuration dbConfig = _configuration.getConfig("cassandra.db");
-        if (dbConfig == null) {
+        final Config dbConfig;
+        try {
+            dbConfig = _configuration.getConfig("cassandra.db");
+        } catch (final ConfigException.Missing ignored) {
             return;
         }
 
         bind(PillarInitializer.class).asEagerSingleton();
 
-        final ConfigObject cassConfig = dbConfig.underlying().root();
+        final ConfigObject cassConfig = dbConfig.root();
         final Set<String> dbNames = cassConfig.keySet();
         final Provider<CodecRegistry> registryProvider = binder().getProvider(CodecRegistry.class);
         for (final String name : dbNames) {
@@ -78,7 +80,7 @@ public class PillarModule extends AbstractModule {
 
         bind(PillarInitializer.class).asEagerSingleton();
     }
-    private final Configuration _configuration;
+    private final Config _configuration;
 
     private static final class CassandraSessionProvider implements Provider<Session> {
         CassandraSessionProvider(final Config config, final Provider<CodecRegistry> registryProvider) {

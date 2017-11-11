@@ -19,13 +19,14 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.ExpressionList;
-import com.avaje.ebean.Junction;
-import com.avaje.ebean.PagedList;
-import com.avaje.ebean.Query;
-import com.avaje.ebean.Transaction;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
+import io.ebean.Ebean;
+import io.ebean.ExpressionList;
+import io.ebean.Junction;
+import io.ebean.PagedList;
+import io.ebean.Query;
+import io.ebean.Transaction;
 import models.ebean.ExpressionEtags;
 import models.internal.Expression;
 import models.internal.ExpressionQuery;
@@ -34,10 +35,8 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultExpressionQuery;
 import models.internal.impl.DefaultQueryResult;
-import play.Configuration;
 import play.Environment;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,7 +58,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
      * @throws Exception If the configuration is invalid.
      */
     @Inject
-    public DatabaseExpressionRepository(final Environment environment, final Configuration config) throws Exception {
+    public DatabaseExpressionRepository(final Environment environment, final Config config) throws Exception {
         this(
                 ConfigurationHelper.<ExpressionQueryGenerator>getType(
                         environment,
@@ -143,7 +142,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                         .stream()
                         .map(expression -> convertFromEbeanExpression(expression))
                         .collect(Collectors.toList()),
-                pagedExpressions.getTotalRowCount(),
+                pagedExpressions.getTotalCount(),
                 etag.toString());
     }
 
@@ -153,7 +152,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
         return Ebean.find(models.ebean.Expression.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findRowCount();
+                .findCount();
     }
 
     @Override
@@ -193,7 +192,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .addData("organization", organization)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final IOException | RuntimeException e) {
+        } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to upsert expression")
@@ -289,11 +288,11 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             }
             final Query<models.ebean.Expression> ebeanQuery = ebeanExpressionList.query();
 
-            int pageOffset = 0;
+            int offset = 0;
             if (query.getOffset().isPresent()) {
-                pageOffset = query.getOffset().get() / query.getLimit();
+                offset = query.getOffset().get();
             }
-            return ebeanQuery.findPagedList(pageOffset, query.getLimit());
+            return ebeanQuery.setFirstRow(offset).setMaxRows(query.getLimit()).findPagedList();
         }
 
         @Override

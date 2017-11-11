@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
@@ -39,7 +40,6 @@ import models.internal.impl.DefaultQuantity;
 import models.view.PagedContainer;
 import models.view.Pagination;
 import org.joda.time.Period;
-import play.Configuration;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -67,8 +67,8 @@ public class AlertController extends Controller {
      * @param alertRepository Instance of <code>AlertRepository</code>.
      */
     @Inject
-    public AlertController(final Configuration configuration, final AlertRepository alertRepository) {
-        this(configuration.getInt("alerts.limit", DEFAULT_MAX_LIMIT), alertRepository);
+    public AlertController(final Config configuration, final AlertRepository alertRepository) {
+        this(configuration.getInt("alerts.limit"), alertRepository);
     }
 
     /**
@@ -323,7 +323,6 @@ public class AlertController extends Controller {
     private final int _maxLimit;
     private final AlertRepository _alertRepository;
 
-    private static final int DEFAULT_MAX_LIMIT = 1000;
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
     private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";
     private static final String NAGIOS_EXTENSION_NOTIFY_KEY = "notify";

@@ -19,15 +19,16 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.avaje.ebean.Ebean;
-import com.avaje.ebean.ExpressionList;
-import com.avaje.ebean.PagedList;
-import com.avaje.ebean.Query;
-import com.avaje.ebean.RawSql;
-import com.avaje.ebean.RawSqlBuilder;
-import com.avaje.ebean.Transaction;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
+import io.ebean.Ebean;
+import io.ebean.ExpressionList;
+import io.ebean.PagedList;
+import io.ebean.Query;
+import io.ebean.RawSql;
+import io.ebean.RawSqlBuilder;
+import io.ebean.Transaction;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
@@ -36,7 +37,6 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultHost;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
-import play.Configuration;
 import play.Environment;
 
 import java.sql.Timestamp;
@@ -63,7 +63,7 @@ public class DatabaseHostRepository implements HostRepository {
      * @throws Exception If the configuration is invalid.
      */
     @Inject
-    public DatabaseHostRepository(final Environment environment, final Configuration config) throws Exception {
+    public DatabaseHostRepository(final Environment environment, final Config config) throws Exception {
         this(
                 ConfigurationHelper.<HostQueryGenerator>getType(
                         environment,
@@ -203,7 +203,7 @@ public class DatabaseHostRepository implements HostRepository {
                                 .setMetricsSoftwareState(MetricsSoftwareState.valueOf(host.getMetricsSoftwareState()))
                                 .build())
                 .collect(Collectors.toList()),
-                pagedHosts.getTotalRowCount(),
+                pagedHosts.getTotalCount(),
                 etag);
     }
 
@@ -213,7 +213,7 @@ public class DatabaseHostRepository implements HostRepository {
         return Ebean.find(models.ebean.Host.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findRowCount();
+                .findCount();
     }
 
     @Override
@@ -223,7 +223,7 @@ public class DatabaseHostRepository implements HostRepository {
                 .where()
                 .eq("organization.uuid", organization.getId())
                 .eq("metrics_software_state", metricsSoftwareState.toString())
-                .findRowCount();
+                .findCount();
     }
 
     private static String mapField(final HostQuery.Field field) {
@@ -298,11 +298,11 @@ public class DatabaseHostRepository implements HostRepository {
                 ebeanQuery = ebeanQuery.orderBy().asc(mapField(query.getSortBy().get()));
             }
 
-            int pageOffset = 0;
+            int offset = 0;
             if (query.getOffset().isPresent()) {
-                pageOffset = query.getOffset().get() / query.getLimit();
+                offset = query.getOffset().get();
             }
-            return ebeanQuery.findPagedList(pageOffset, query.getLimit());
+            return ebeanQuery.setFirstRow(offset).setMaxRows(query.getLimit()).findPagedList();
         }
 
         @Override
@@ -381,16 +381,18 @@ public class DatabaseHostRepository implements HostRepository {
             }
 
             // Compute the page offset
-            int pageOffset = 0;
+            int offset = 0;
             if (query.getOffset().isPresent()) {
-                pageOffset = query.getOffset().get() / query.getLimit();
+                offset = query.getOffset().get();
             }
 
             // Create and execute the raw parameterized query
             return createParameterizedHostQueryFromRawSql(
                     selectBuilder.toString() + " " + whereBuilder.toString() + " " + orderBuilder.toString(),
                     parameters)
-                    .findPagedList(pageOffset, query.getLimit());
+                    .setFirstRow(offset)
+                    .setMaxRows(query.getLimit())
+                    .findPagedList();
         }
 
         @Override

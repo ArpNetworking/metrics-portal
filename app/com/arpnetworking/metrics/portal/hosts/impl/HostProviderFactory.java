@@ -22,7 +22,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
-import play.Configuration;
+import com.typesafe.config.Config;
 
 /**
  * Factory for creating HostProviders with nested/changed Configurations.
@@ -31,7 +31,7 @@ import play.Configuration;
  * host providers to only care about their immediate config values and still use Guice's dependency injection.
  * Since Guice does not allow overriding of any bindings, we leverage the @Assisted scope. Given a configuration to use,
  * we create a child injector with a module {@link ConfigurationOverrideModule} that only binds the
- * {@link Configuration} in the @Assisted scope.  We then use the GuiceActorCreator to create the {@link Props} to
+ * {@link Config} in the @Assisted scope.  We then use the GuiceActorCreator to create the {@link Props} to
  * create the actor.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
@@ -54,7 +54,7 @@ public final class HostProviderFactory {
      * @param clazz the class of the host provider
      * @return A new {@link Props} for constructing the actor
      */
-    public Props create(final Configuration config, final Class<? extends Actor> clazz) {
+    public Props create(final Config config, final Class<? extends Actor> clazz) {
         // Create new injector with bound config
         final Injector childInjector = _injector.createChildInjector(new ConfigurationOverrideModule(config));
         // Create the Props
@@ -66,13 +66,13 @@ public final class HostProviderFactory {
     private static final class ConfigurationOverrideModule extends AbstractModule {
         @Override
         protected void configure() {
-            bind(Configuration.class).annotatedWith(Assisted.class).toInstance(_config);
+            bind(Config.class).annotatedWith(Assisted.class).toInstance(_config);
         }
 
-        private ConfigurationOverrideModule(final Configuration config) {
+        private ConfigurationOverrideModule(final Config config) {
             _config = config;
         }
 
-        private final Configuration _config;
+        private final Config _config;
     }
 }

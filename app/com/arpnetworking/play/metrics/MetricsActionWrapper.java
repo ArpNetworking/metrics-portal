@@ -89,7 +89,7 @@ public final class MetricsActionWrapper extends Action.Simple {
         metricNameBuilder.append(r.method());
 
         final String route = ROUTE_PATTERN_REGEX.matcher(
-                Optional.ofNullable(context.request().tags().get(Router.Tags.ROUTE_PATTERN)).orElse(""))
+                Optional.ofNullable(context.request().attrs().get(Router.Attrs.HANDLER_DEF).path()).orElse(""))
                 .replaceAll(":$1");
 
         if (!Strings.isNullOrEmpty(route)) {

@@ -30,7 +30,7 @@ public interface ExpressionQuery {
      * @param contains The text to match.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery contains(final Optional<String> contains);
+    ExpressionQuery contains(Optional<String> contains);
 
     /**
      * Set the cluster to query for. Optional. Defaults to all clusters.
@@ -38,7 +38,7 @@ public interface ExpressionQuery {
      * @param cluster The cluster to match.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery cluster(final Optional<String> cluster);
+    ExpressionQuery cluster(Optional<String> cluster);
 
     /**
      * Set the service to query for. Optional. Defaults to all services.
@@ -46,7 +46,7 @@ public interface ExpressionQuery {
      * @param service The service to match.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery service(final Optional<String> service);
+    ExpressionQuery service(Optional<String> service);
 
     /**
      * The maximum number of expressions to return. Optional. Default is 1000.
@@ -54,7 +54,7 @@ public interface ExpressionQuery {
      * @param limit The maximum number of alerts to return.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery limit(final int limit);
+    ExpressionQuery limit(int limit);
 
     /**
      * The offset into the result set. Optional. Default is not set.
@@ -62,7 +62,7 @@ public interface ExpressionQuery {
      * @param offset The offset into the result set.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    ExpressionQuery offset(final Optional<Integer> offset);
+    ExpressionQuery offset(Optional<Integer> offset);
 
     /**
      * Execute the query and return the results.

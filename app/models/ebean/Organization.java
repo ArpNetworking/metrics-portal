@@ -15,9 +15,9 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.Model;
-import com.avaje.ebean.annotation.CreatedTimestamp;
-import com.avaje.ebean.annotation.UpdatedTimestamp;
+import io.ebean.Finder;
+import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -39,7 +39,7 @@ import javax.persistence.Version;
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "organizations", schema = "portal")
-public class Organization extends Model {
+public class Organization {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -69,7 +69,7 @@ public class Organization extends Model {
      */
     @Nullable
     public static Organization findByOrganization(@Nonnull final models.internal.Organization organization) {
-        final Organization org = FINDER
+        final Organization org = FINDER.query()
                 .where()
                 .eq("uuid", organization.getId())
                 .findUnique();

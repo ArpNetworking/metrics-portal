@@ -15,13 +15,13 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
-import play.Configuration;
+import com.typesafe.config.Config;
 
 /**
  * This is a placeholder actor that does not actually find any hosts.
@@ -30,7 +30,7 @@ import play.Configuration;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public class NoHostProvider extends UntypedActor {
+public class NoHostProvider extends AbstractActor {
 
     /**
      * Public constructor.
@@ -38,26 +38,29 @@ public class NoHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public NoHostProvider(@Assisted final Configuration configuration) {
+    public NoHostProvider(@Assisted final Config configuration) {
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
-                "tick",
+                TICK,
                 getContext().dispatcher(),
                 getSelf());
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if ("tick".equals(message)) {
-            LOGGER.trace()
-                    .setMessage("Searching for added/updated/deleted hosts")
-                    .addData("actor", self())
-                    .log();
-            LOGGER.debug().setMessage("No hosts found!").log();
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals(TICK, tick -> {
+                    LOGGER.trace()
+                            .setMessage("Searching for added/updated/deleted hosts")
+                            .addData("actor", self())
+                            .log();
+                    LOGGER.debug().setMessage("No hosts found!").log();
+                })
+                .build();
     }
 
+    private static final String TICK = "tick";
     private static final Logger LOGGER = LoggerFactory.getLogger(NoHostProvider.class);
 }

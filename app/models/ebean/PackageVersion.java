@@ -15,8 +15,8 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.annotation.CreatedTimestamp;
-import com.avaje.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import javax.persistence.Column;

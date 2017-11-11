@@ -15,9 +15,9 @@
  */
 package actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
-import akka.actor.UntypedActor;
 import akka.dispatch.Dispatcher;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -30,13 +30,12 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import play.Configuration;
+import com.typesafe.config.Config;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.duration.FiniteDuration;
 import scala.concurrent.forkjoin.ForkJoinPool;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -54,7 +53,7 @@ import java.util.concurrent.TimeoutException;
  * @author Deepika Misra (deepika at groupon dot com)
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class JvmMetricsCollector extends UntypedActor {
+public final class JvmMetricsCollector extends AbstractActor {
 
     /**
      * Public constructor.
@@ -64,7 +63,7 @@ public final class JvmMetricsCollector extends UntypedActor {
      */
     @Inject
     public JvmMetricsCollector(
-            final Configuration configuration,
+            final Config configuration,
             final MetricsFactory metricsFactory) {
         _interval = ConfigurationHelper.getFiniteDuration(configuration, "metrics.jvm.interval");
         _jvmMetricsRunnable = new JvmMetricsRunnable.Builder()
@@ -100,17 +99,13 @@ public final class JvmMetricsCollector extends UntypedActor {
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        LOGGER.trace().setMessage("Message received")
-                .addData("data", message)
-                .addData("actor", self())
-                .log();
-        if (message instanceof CollectJvmMetrics) {
-            _jvmMetricsRunnable.run();
-            _executorServiceMetricsRunnable.run();
-        } else {
-            unhandled(message);
-        }
+    public Receive createReceive() {
+        return receiveBuilder()
+                .match(CollectJvmMetrics.class, ignored -> {
+                    _jvmMetricsRunnable.run();
+                    _executorServiceMetricsRunnable.run();
+                })
+                .build();
     }
 
     /**
@@ -134,11 +129,11 @@ public final class JvmMetricsCollector extends UntypedActor {
 
     private Map<String, ExecutorService> createExecutorServiceMap(
             final ActorSystem actorSystem,
-            final Configuration configuration) {
+            final Config configuration) {
         final Map<String, ExecutorService> executorServices = Maps.newHashMap();
 
         // Add the default dispatcher
-        if (configuration.getBoolean("metrics.jvm.dispatchers.includeDefaultDispatcher", true)) {
+        if (configuration.getBoolean("metrics.jvm.dispatchers.includeDefaultDispatcher")) {
             addExecutorServiceFromExecutionContextExecutor(
                     executorServices,
                     "akka/default_dispatcher",
@@ -146,9 +141,7 @@ public final class JvmMetricsCollector extends UntypedActor {
         }
 
         // Add any other configured dispatchers
-        for (final Object dispatcherName : configuration.getList(
-                "metrics.jvm.dispatchers.includeAdditionalDispatchers",
-                Collections.emptyList())) {
+        for (final Object dispatcherName : configuration.getList("metrics.jvm.dispatchers.includeAdditionalDispatchers")) {
             if (dispatcherName instanceof String) {
                 final String dispatcherNameAsString = (String) dispatcherName;
                 addExecutorServiceFromExecutionContextExecutor(
@@ -233,7 +226,7 @@ public final class JvmMetricsCollector extends UntypedActor {
      */
     private static final class ForkJoinPoolAdapter extends java.util.concurrent.ForkJoinPool {
 
-        public ForkJoinPoolAdapter(final ForkJoinPool scalaForkJoinPool) {
+        ForkJoinPoolAdapter(final ForkJoinPool scalaForkJoinPool) {
             _scalaForkJoinPool = scalaForkJoinPool;
         }
 

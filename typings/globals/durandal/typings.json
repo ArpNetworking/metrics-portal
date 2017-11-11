@@ -1,8 +1,0 @@
-{
-  "resolution": "main",
-  "tree": {
-    "src": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/e9fc032fe8a9cf754f2c9b06ab855bfbf837d4e6/durandal/durandal.d.ts",
-    "raw": "registry:dt/durandal#0.0.0+20160823075249",
-    "typings": "https://raw.githubusercontent.com/DefinitelyTyped/DefinitelyTyped/e9fc032fe8a9cf754f2c9b06ab855bfbf837d4e6/durandal/durandal.d.ts"
-  }
-}

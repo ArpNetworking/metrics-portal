@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.models.ebean;
 
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
-import com.avaje.ebean.Ebean;
+import io.ebean.Ebean;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
 import models.ebean.VersionSpecification;

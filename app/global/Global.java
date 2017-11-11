@@ -67,11 +67,11 @@ public final class Global {
         final Cluster cluster = Cluster.get(_akka);
         cluster.leave(cluster.selfAddress());
 
-        final Function1<Try<Terminated>, Boolean> shutdownComplete = JFunction.func((t) -> {
+        final Function1<Try<Terminated>, Boolean> shutdownComplete = JFunction.func(t -> {
             LOGGER.debug().setMessage("Shutdown complete").log();
             return shutdownFuture.complete(null);
         });
-        _shutdownFuture.thenAccept((v) -> _akka.terminate().onComplete(shutdownComplete, ExecutionContext$.MODULE$.global()));
+        _shutdownFuture.thenAccept(v -> _akka.terminate().onComplete(shutdownComplete, ExecutionContext$.MODULE$.global()));
 
         return shutdownFuture;
     }

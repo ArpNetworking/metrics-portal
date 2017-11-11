@@ -15,7 +15,8 @@
  */
 package models.ebean;
 
-import com.avaje.ebean.Model;
+import io.ebean.Ebean;
+import io.ebean.Finder;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,7 +35,7 @@ import javax.persistence.Table;
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "alerts_etags", schema = "portal")
-public class AlertEtags extends Model {
+public class AlertEtags {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -53,7 +54,8 @@ public class AlertEtags extends Model {
      * @param organization the organization
      */
     public static void incrementEtag(final Organization organization) {
-        AlertEtags etag = FINDER.setForUpdate(true)
+        AlertEtags etag = FINDER.query()
+                .setForUpdate(true)
                 .where()
                 .eq("organization", organization)
                 .findUnique();
@@ -64,7 +66,7 @@ public class AlertEtags extends Model {
         } else {
             etag.setEtag(etag.getEtag() + 1);
         }
-        etag.save();
+        Ebean.save(etag);
     }
 
     /**
@@ -74,7 +76,8 @@ public class AlertEtags extends Model {
      * @return the etag value, or 0 if a value does not exist in the table
      */
     public static long getEtagByOrganization(final models.internal.Organization organization) {
-        final AlertEtags etag = FINDER.where()
+        final AlertEtags etag = FINDER.query()
+                .where()
                 .eq("organization.uuid", organization.getId())
                 .findUnique();
         if (etag != null) {

@@ -213,7 +213,7 @@ public final class LocalHostRepository implements HostRepository {
     }
 
     private Map<String, Host> getOrganizationMap(final Organization organization) {
-        return _temporaryStorage.computeIfAbsent(organization.getId(), (v) -> Maps.newConcurrentMap());
+        return _temporaryStorage.computeIfAbsent(organization.getId(), v -> Maps.newConcurrentMap());
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
@@ -224,7 +224,7 @@ public final class LocalHostRepository implements HostRepository {
     @SuppressFBWarnings("SE_BAD_FIELD")
     private static class HostComparator implements Comparator<Host>, Serializable {
 
-        public HostComparator(final HostQuery query) {
+        HostComparator(final HostQuery query) {
             _query = query;
         }
 

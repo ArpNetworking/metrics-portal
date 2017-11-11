@@ -30,7 +30,7 @@ public interface AlertQuery {
      * @param contains The text to match.
      * @return This instance of <code>ExpressionQuery</code>.
      */
-    AlertQuery contains(final Optional<String> contains);
+    AlertQuery contains(Optional<String> contains);
 
     /**
      * Set the context to query for. Optional. Defaults to all context types.
@@ -38,7 +38,7 @@ public interface AlertQuery {
      * @param context The context to match.
      * @return This instance of <code>AlertQuery</code>.
      */
-    AlertQuery context(final Optional<Context> context);
+    AlertQuery context(Optional<Context> context);
 
     /**
      * Set the cluster to query for. Optional. Defaults to all clusters.
@@ -46,7 +46,7 @@ public interface AlertQuery {
      * @param cluster The cluster to match.
      * @return This instance of <code>AlertQuery</code>.
      */
-    AlertQuery cluster(final Optional<String> cluster);
+    AlertQuery cluster(Optional<String> cluster);
 
     /**
      * Set the service to query for. Optional. Defaults to all services.
@@ -54,7 +54,7 @@ public interface AlertQuery {
      * @param service The service to match.
      * @return This instance of <code>AlertQuery</code>.
      */
-    AlertQuery service(final Optional<String> service);
+    AlertQuery service(Optional<String> service);
 
     /**
      * The maximum number of alerts to return.  Optional. Default is 1000.
@@ -62,7 +62,7 @@ public interface AlertQuery {
      * @param limit The maximum number of alerts to return.
      * @return This instance of <code>HostQuery</code>.
      */
-    AlertQuery limit(final int limit);
+    AlertQuery limit(int limit);
 
     /**
      * The offset into the result set. Optional. Default is not set.
@@ -70,7 +70,7 @@ public interface AlertQuery {
      * @param offset The offset into the result set.
      * @return This instance of <code>AlertQuery</code>.
      */
-    AlertQuery offset(final Optional<Integer> offset);
+    AlertQuery offset(Optional<Integer> offset);
 
     /**
      * Execute the query and return the results.

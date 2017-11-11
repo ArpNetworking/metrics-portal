@@ -17,8 +17,7 @@ package com.arpnetworking.play.configuration;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import play.Application;
-import play.Configuration;
+import com.typesafe.config.Config;
 import play.Environment;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -26,7 +25,7 @@ import scala.concurrent.duration.FiniteDuration;
 import java.io.File;
 
 /**
- * Utility methods that provide common patterns when interacting with Play's <code>Configuration</code> class.
+ * Utility methods that provide common patterns when interacting with Play's <code>Config</code> class.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
@@ -35,15 +34,15 @@ public final class ConfigurationHelper {
     /**
      * Return the value of a configuration key as a <code>File</code> instance.
      *
-     * @param configuration Play <code>Configuration</code> instance.
+     * @param configuration Play <code>Config</code> instance.
      * @param key The name of the configuration key to interpret as a <code>File</code> reference.
-     * @param app Instance of Play <code>Application</code>.
+     * @param environment Instance of Play <code>Environment</code>.
      * @return Instance of <code>File</code> as defined by key in configuration.
      */
-    public static File getFile(final Configuration configuration, final String key, final Application app) {
+    public static File getFile(final Config configuration, final String key, final Environment environment) {
         final String pathAsString = configuration.getString(key);
         if (!pathAsString.startsWith("/")) {
-            return app.getFile(pathAsString);
+            return environment.getFile(pathAsString);
         }
         return new File(pathAsString);
     }
@@ -51,11 +50,11 @@ public final class ConfigurationHelper {
     /**
      * Return the value of a configuration key as a <code>FiniteDuration</code> instance.
      *
-     * @param configuration Play <code>Configuration</code> instance.
+     * @param configuration Play <code>Config</code> instance.
      * @param key The name of the configuration key to interpret as a <code>FiniteDuration</code> reference.
      * @return Instance of <code>FiniteDuration</code> as defined by key in configuration.
      */
-    public static FiniteDuration getFiniteDuration(final Configuration configuration, final String key) {
+    public static FiniteDuration getFiniteDuration(final Config configuration, final String key) {
         final Duration duration = Duration.create(configuration.getString(key));
         return new FiniteDuration(
                 duration.length(),
@@ -66,14 +65,14 @@ public final class ConfigurationHelper {
      * Return the value of a configuration key as a <code>Class</code> instance.
      *
      * @param environment Play <code>Environment</code> instance.
-     * @param configuration Play <code>Configuration</code> instance.
+     * @param configuration Play <code>Config</code> instance.
      * @param key The name of the configuration key to interpret as a <code>Class</code> reference.
      * @param <T> The type parameter for the <code>Class</code> instance to return.
      * @return Instance of <code>Class</code> as defined by key in configuration.
      */
     public static <T> Class<? extends T> getType(
             final Environment environment,
-            final Configuration configuration,
+            final Config configuration,
             final String key) {
         final String className = configuration.getString(key);
         try {

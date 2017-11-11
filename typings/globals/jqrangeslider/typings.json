@@ -1,8 +1,0 @@
-{
-  "resolution": "main",
-  "tree": {
-    "src": "/home/barp/workspace/metrics-portal/app/assets/javascripts/libs/jqueryui/jqrangeslider.d.ts",
-    "raw": "file:./app/assets/javascripts/libs/jqueryui/jqrangeslider.d.ts",
-    "typings": "/home/barp/workspace/metrics-portal/app/assets/javascripts/libs/jqueryui/jqrangeslider.d.ts"
-  }
-}

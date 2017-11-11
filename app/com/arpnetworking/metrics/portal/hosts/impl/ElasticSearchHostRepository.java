@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
@@ -55,8 +56,7 @@ import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import play.Application;
-import play.Configuration;
+import play.Environment;
 
 import java.io.IOException;
 import java.util.List;
@@ -75,10 +75,10 @@ public final class ElasticSearchHostRepository implements HostRepository {
      * Public constructor.
      *
      * @param configuration Instance of Play's <code>Configuration</code>.
-     * @param application Instance of Play <code>Application</code>.
+     * @param environment Instance of Play <code>Environment</code>.
      */
     @Inject
-    public ElasticSearchHostRepository(final Configuration configuration, final Application application) {
+    public ElasticSearchHostRepository(final Config configuration, final Environment environment) {
         // For more information about these settings please see:
         //
         // Elastic Search Configuration:
@@ -86,7 +86,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
         //
         // Index Settings:
         // http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/indices-update-settings.html
-        this(buildNodeSettings(configuration, application), buildIndexSettings(configuration));
+        this(buildNodeSettings(configuration, environment), buildIndexSettings(configuration));
     }
 
     @Override
@@ -379,7 +379,7 @@ public final class ElasticSearchHostRepository implements HostRepository {
         _indexSettings = indexSettings;
     }
 
-    private static Settings buildIndexSettings(final Configuration configuration) {
+    private static Settings buildIndexSettings(final Config configuration) {
         return ImmutableSettings.settingsBuilder()
                 .put("number_of_shards", configuration.getString("elasticSearch.index.hosts.shards"))
                 .put("number_of_replicas", configuration.getString("elasticSearch.index.hosts.replicas"))
@@ -387,13 +387,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 .build();
     }
 
-    private static Settings buildNodeSettings(final Configuration configuration, final Application application) {
+    private static Settings buildNodeSettings(final Config configuration, final Environment environment) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", configuration.getString("elasticSearch.cluster.name"))
                 .put("node.local", configuration.getString("elasticSearch.node.local"))
                 .put("node.data", configuration.getString("elasticSearch.node.data"))
-                .put("path.logs", ConfigurationHelper.getFile(configuration, "elasticSearch.path.logs", application).getAbsolutePath())
-                .put("path.data", ConfigurationHelper.getFile(configuration, "elasticSearch.path.data", application).getAbsolutePath())
+                .put("path.logs", ConfigurationHelper.getFile(configuration, "elasticSearch.path.logs", environment).getAbsolutePath())
+                .put("path.data", ConfigurationHelper.getFile(configuration, "elasticSearch.path.data", environment).getAbsolutePath())
                 .put("discovery.zen.ping.unicast.hosts", configuration.getString("elasticSearch.discovery.zen.ping.unicast.hosts"))
                 .put("discovery.zen.minimum_master_nodes", configuration.getInt("elasticSearch.discovery.zen.minimum_master_nodes"))
                 .build();

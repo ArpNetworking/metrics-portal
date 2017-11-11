@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -24,12 +24,12 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
 import org.joda.time.Duration;
-import play.Configuration;
 
 /**
  * This is an actor that finds "random" hosts. The primary purpose of this
@@ -38,7 +38,7 @@ import play.Configuration;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class RandomHostProvider extends UntypedActor {
+public final class RandomHostProvider extends AbstractActor {
 
     /**
      * Public constructor.
@@ -47,79 +47,81 @@ public final class RandomHostProvider extends UntypedActor {
      * @param configuration Play configuration.
      */
     @Inject
-    public RandomHostProvider(final HostRepository hostRepository, @Assisted final Configuration configuration) {
+    public RandomHostProvider(final HostRepository hostRepository, @Assisted final Config configuration) {
         _hostRepository = hostRepository;
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
-                "tick",
+                TICK,
                 getContext().dispatcher(),
                 getSelf());
     }
 
     @Override
-    public void onReceive(final Object message) throws Exception {
-        if ("tick".equals(message)) {
-            LOGGER.trace()
-                    .setMessage("Searching for added/updated/deleted hosts")
-                    .addData("actor", self())
-                    .log();
+    public Receive createReceive() {
+        return receiveBuilder()
+                .matchEquals(TICK, tick -> {
+                    LOGGER.trace()
+                            .setMessage("Searching for added/updated/deleted hosts")
+                            .addData("actor", self())
+                            .log();
 
-            if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
-                final Host newHost = new DefaultHost.Builder()
-                        .setHostname("test-app" + _hostAdd + ".example.com")
-                        .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
-                        .setCluster("cluster" + (_hostAdd / 10 + 1))
-                        .build();
-                LOGGER.debug()
-                        .setMessage("Found a new host")
-                        .addData("actor", self())
-                        .addData("hostname", newHost.getHostname())
-                        .log();
-                _hostRepository.addOrUpdateHost(newHost, Organization.DEFAULT);
-                if (_hostUpdateOne > 0) {
-                    final Host updatedHost = new DefaultHost.Builder()
-                            .setHostname("test-app" + _hostUpdateOne + ".example.com")
-                            .setMetricsSoftwareState(MetricsSoftwareState.OLD_VERSION_INSTALLED)
-                            .setCluster("cluster" + (_hostUpdateOne / 10 + 1))
-                            .build();
-                    LOGGER.debug()
-                            .setMessage("Found an updated host")
-                            .addData("actor", self())
-                            .addData("hostname", updatedHost.getHostname())
-                            .log();
-                    _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
-                }
-                if (_hostUpdateTwo > 0) {
-                    final Host updatedHost = new DefaultHost.Builder()
-                            .setHostname("test-app" + _hostUpdateTwo + ".example.com")
-                            .setCluster("cluster" + (_hostUpdateTwo / 10 + 1))
-                            .setMetricsSoftwareState(MetricsSoftwareState.LATEST_VERSION_INSTALLED)
-                            .build();
-                    LOGGER.debug()
-                            .setMessage("Found an updated host")
-                            .addData("actor", self())
-                            .addData("hostname", updatedHost.getHostname())
-                            .log();
-                    _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
-                }
-                if (_hostRemove > 0) {
-                    final String deletedHostName = "test-app" + _hostRemove + ".example..com";
-                    LOGGER.debug()
-                            .setMessage("Found host to delete")
-                            .addData("actor", self())
-                            .addData("hostname", deletedHostName)
-                            .log();
-                    _hostRepository.deleteHost(deletedHostName, Organization.DEFAULT);
-                }
-                ++_hostAdd;
-                ++_hostUpdateOne;
-                ++_hostUpdateTwo;
-                ++_hostRemove;
-                _lastTime = System.currentTimeMillis();
-            }
-        }
+                    if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
+                        final Host newHost = new DefaultHost.Builder()
+                                .setHostname("test-app" + _hostAdd + ".example.com")
+                                .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
+                                .setCluster("cluster" + (_hostAdd / 10 + 1))
+                                .build();
+                        LOGGER.debug()
+                                .setMessage("Found a new host")
+                                .addData("actor", self())
+                                .addData("hostname", newHost.getHostname())
+                                .log();
+                        _hostRepository.addOrUpdateHost(newHost, Organization.DEFAULT);
+                        if (_hostUpdateOne > 0) {
+                            final Host updatedHost = new DefaultHost.Builder()
+                                    .setHostname("test-app" + _hostUpdateOne + ".example.com")
+                                    .setMetricsSoftwareState(MetricsSoftwareState.OLD_VERSION_INSTALLED)
+                                    .setCluster("cluster" + (_hostUpdateOne / 10 + 1))
+                                    .build();
+                            LOGGER.debug()
+                                    .setMessage("Found an updated host")
+                                    .addData("actor", self())
+                                    .addData("hostname", updatedHost.getHostname())
+                                    .log();
+                            _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
+                        }
+                        if (_hostUpdateTwo > 0) {
+                            final Host updatedHost = new DefaultHost.Builder()
+                                    .setHostname("test-app" + _hostUpdateTwo + ".example.com")
+                                    .setCluster("cluster" + (_hostUpdateTwo / 10 + 1))
+                                    .setMetricsSoftwareState(MetricsSoftwareState.LATEST_VERSION_INSTALLED)
+                                    .build();
+                            LOGGER.debug()
+                                    .setMessage("Found an updated host")
+                                    .addData("actor", self())
+                                    .addData("hostname", updatedHost.getHostname())
+                                    .log();
+                            _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
+                        }
+                        if (_hostRemove > 0) {
+                            final String deletedHostName = "test-app" + _hostRemove + ".example..com";
+                            LOGGER.debug()
+                                    .setMessage("Found host to delete")
+                                    .addData("actor", self())
+                                    .addData("hostname", deletedHostName)
+                                    .log();
+                            _hostRepository.deleteHost(deletedHostName, Organization.DEFAULT);
+                        }
+                        ++_hostAdd;
+                        ++_hostUpdateOne;
+                        ++_hostUpdateTwo;
+                        ++_hostRemove;
+                        _lastTime = System.currentTimeMillis();
+                    }
+                })
+                .build();
     }
 
     /**
@@ -151,6 +153,7 @@ public final class RandomHostProvider extends UntypedActor {
     private long _hostUpdateTwo = -10;
     private long _hostRemove = -15;
 
+    private static final String TICK = "tick";
     private static final Duration INTERVAL = Duration.standardSeconds(10);
     private static final Logger LOGGER = LoggerFactory.getLogger(RandomHostProvider.class);
 }
