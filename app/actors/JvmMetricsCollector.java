@@ -23,6 +23,8 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.ExecutorServiceMetricsRunnable;
 import com.arpnetworking.metrics.jvm.JvmMetricsRunnable;
+import com.arpnetworking.metrics.util.AkkaForkJoinPoolAdapter;
+import com.arpnetworking.metrics.util.ScalaForkJoinPoolAdapter;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
@@ -33,19 +35,9 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.duration.FiniteDuration;
-import scala.concurrent.forkjoin.ForkJoinPool;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.Future;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Actor responsible for collecting JVM metrics on a periodic basis.
@@ -183,7 +175,11 @@ public final class JvmMetricsCollector extends AbstractActor {
             // ^ Scala and hopefully Play will use Java's ForkJoinPool natively instead
             final scala.concurrent.forkjoin.ForkJoinPool scalaForkJoinPool =
                     (scala.concurrent.forkjoin.ForkJoinPool) executorService;
-            executorServices.put(name, new ForkJoinPoolAdapter(scalaForkJoinPool));
+            executorServices.put(name, new ScalaForkJoinPoolAdapter(scalaForkJoinPool));
+        } else if (executorService instanceof akka.dispatch.forkjoin.ForkJoinPool) {
+            final akka.dispatch.forkjoin.ForkJoinPool akkaForkJoinPool =
+                    (akka.dispatch.forkjoin.ForkJoinPool) executorService;
+            executorServices.put(name, new AkkaForkJoinPoolAdapter(akkaForkJoinPool));
         } else if (executorService instanceof java.util.concurrent.ForkJoinPool
                 || executorService instanceof java.util.concurrent.ThreadPoolExecutor) {
             executorServices.put(name, executorService);
@@ -218,202 +214,5 @@ public final class JvmMetricsCollector extends AbstractActor {
         }
 
         private CollectJvmMetrics() { }
-    }
-
-    /**
-     * This is a partial adapter to enable instrumentation of Scala's
-     * <code>ForkJoinPool</code> as if it were a Java <code>ForkJoinPool</code>.
-     */
-    private static final class ForkJoinPoolAdapter extends java.util.concurrent.ForkJoinPool {
-
-        ForkJoinPoolAdapter(final ForkJoinPool scalaForkJoinPool) {
-            _scalaForkJoinPool = scalaForkJoinPool;
-        }
-
-        private final ForkJoinPool _scalaForkJoinPool;
-
-        @Override
-        public <T> T invoke(final ForkJoinTask<T> task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public void execute(final ForkJoinTask<?> task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public void execute(final Runnable task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> ForkJoinTask<T> submit(final ForkJoinTask<T> task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> ForkJoinTask<T> submit(final Callable<T> task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> T invokeAny(final Collection<? extends Callable<T>> tasks)
-                throws InterruptedException, ExecutionException {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> T invokeAny(
-                final Collection<? extends Callable<T>> tasks,
-                final long timeout,
-                final TimeUnit unit)
-                throws InterruptedException, ExecutionException, TimeoutException {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> ForkJoinTask<T> submit(final Runnable task, final T result) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public ForkJoinTask<?> submit(final Runnable task) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> List<Future<T>> invokeAll(final Collection<? extends Callable<T>> tasks) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public <T> List<Future<T>> invokeAll(
-                final Collection<? extends Callable<T>> tasks,
-                final long timeout,
-                final TimeUnit unit)
-                throws InterruptedException {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public ForkJoinWorkerThreadFactory getFactory() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public int getParallelism() {
-            return _scalaForkJoinPool.getParallelism();
-        }
-
-        @Override
-        public int getPoolSize() {
-            return _scalaForkJoinPool.getPoolSize();
-        }
-
-        @Override
-        public boolean getAsyncMode() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public int getRunningThreadCount() {
-            return _scalaForkJoinPool.getRunningThreadCount();
-        }
-
-        @Override
-        public int getActiveThreadCount() {
-            return _scalaForkJoinPool.getActiveThreadCount();
-        }
-
-        @Override
-        public boolean isQuiescent() {
-            return _scalaForkJoinPool.isQuiescent();
-        }
-
-        @Override
-        public long getStealCount() {
-            return _scalaForkJoinPool.getStealCount();
-        }
-
-        @Override
-        public long getQueuedTaskCount() {
-            return _scalaForkJoinPool.getQueuedTaskCount();
-        }
-
-        @Override
-        public int getQueuedSubmissionCount() {
-            return _scalaForkJoinPool.getQueuedSubmissionCount();
-        }
-
-        @Override
-        public boolean hasQueuedSubmissions() {
-            return _scalaForkJoinPool.hasQueuedSubmissions();
-        }
-
-        @Override
-        protected ForkJoinTask<?> pollSubmission() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        protected int drainTasksTo(final Collection<? super ForkJoinTask<?>> c) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public String toString() {
-            return _scalaForkJoinPool.toString();
-        }
-
-        @Override
-        public void shutdown() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public boolean isTerminated() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public boolean isTerminating() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public boolean isShutdown() {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public boolean awaitTermination(final long timeout, final TimeUnit unit) throws InterruptedException {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        public boolean awaitQuiescence(final long timeout, final TimeUnit unit) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        protected <T> RunnableFuture<T> newTaskFor(final Runnable runnable, final T value) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
-
-        @Override
-        protected <T> RunnableFuture<T> newTaskFor(final Callable<T> callable) {
-            throw new UnsupportedOperationException("This adapter only supports instrumentation");
-        }
     }
 }
