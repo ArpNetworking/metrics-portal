@@ -15,6 +15,7 @@
  */
 
 import AlertData = require('./AlertData');
+import {NotificationGroup} from './NotificationGroup';
 import ko = require('knockout');
 import $ = require('jquery');
 import uuid = require('../Uuid');
@@ -80,6 +81,9 @@ class RangeSeries {
     values: RangeDatapoint[] = [];
 }
 
+interface ResponseCallback {
+    (response: any[]): void;
+}
 class EditAlertViewModel {
     id = ko.observable<string>("");
     name = ko.observable<string>("");
@@ -88,7 +92,23 @@ class EditAlertViewModel {
     container: HTMLElement;
     queryErrors = ko.observableArray<string>();
     queryWarnings = ko.observableArray<string>();
+    notificationGroup = ko.observable<NotificationGroup>();
     dateRange = ko.observable<any[]>([moment().subtract(2, 'hours'), moment()]);
+    notificationGroupAutocompleteOpts: any = {
+        source: {
+            source: (request: string, response: ResponseCallback) => {
+                $.getJSON("v1/notificationgroup/query", {contains: request, limit: 10}, (result:{data: NotificationGroup[]}) => {
+                    response(result.data);
+                });
+            },
+            display: "name"
+        },
+        opt: {
+            minLength: 2,
+            delay: 500,
+            strict: true
+        }
+    };
     formattedDateRange = ko.computed(() => {
         let range = this.dateRange();
         let start = range[0];
@@ -105,6 +125,7 @@ class EditAlertViewModel {
 
     constructor() {
         this.formattedQuery.subscribe((newValue) => this.queryChanged(newValue));
+        this.notificationGroup.subscribe((newValue) => console.log(newValue));
     }
 
     activate(id: string) {
@@ -124,6 +145,12 @@ class EditAlertViewModel {
             this.name(data.name);
             this.query(data.query);
             this.period(data.period);
+
+            if (data.notificationGroupId) {
+                $.getJSON("/v1/notificationgroup/" + data.notificationGroupId, {}, (data: NotificationGroup) => {
+                    this.notificationGroup(data);
+                })
+            }
         });
     }
 
@@ -313,6 +340,11 @@ class EditAlertViewModel {
     }
 
     save(): void {
+        let notificationGroup = this.notificationGroup();
+        let notificationGroupId = null;
+        if (notificationGroup != undefined) {
+            notificationGroupId = notificationGroup.id;
+        }
         $.ajax({
             type: "PUT",
             url: "/v1/alerts",
@@ -325,7 +357,8 @@ class EditAlertViewModel {
                 "id": this.id(),
                 "query": this.query(),
                 "name": this.name(),
-                "period": this.period()
+                "period": this.period(),
+                "notificationGroupId": notificationGroupId
             }),
         }).done(() => {
             window.location.href = "/#alerts";

@@ -29,6 +29,7 @@ import io.ebean.Query;
 import io.ebean.Transaction;
 import models.ebean.AlertEtags;
 import models.ebean.NagiosExtension;
+import models.ebean.NotificationGroup;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
@@ -202,6 +203,11 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setName(alert.getName());
             ebeanAlert.setQuery(alert.getQuery());
             ebeanAlert.setPeriod(alert.getPeriod().toStandardSeconds().getSeconds());
+            if (alert.getNotificationGroup() != null) {
+                ebeanAlert.setNotificationGroup(NotificationGroup.findByNotificationGroup(alert.getNotificationGroup()));
+            } else {
+                ebeanAlert.setNotificationGroup(null);
+            }
             _alertQueryGenerator.saveAlert(ebeanAlert);
             transaction.commit();
 

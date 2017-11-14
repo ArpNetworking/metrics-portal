@@ -17,6 +17,7 @@ package controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -65,13 +66,15 @@ public class AlertController extends Controller {
      * @param configuration Instance of Play's {@link Config}.
      * @param alertRepository Instance of {@link AlertRepository}.
      * @param organizationProvider Instance of {@link OrganizationProvider}.
+     * @param notificationRepository Instance of <code>NotificationRepository</code>
      */
     @Inject
     public AlertController(
             final Config configuration,
             final AlertRepository alertRepository,
-            final OrganizationProvider organizationProvider) {
-        this(configuration.getInt("alerts.limit"), alertRepository, organizationProvider);
+            final OrganizationProvider organizationProvider,
+            final NotificationRepository notificationRepository) {
+        this(configuration.getInt("alerts.limit"), alertRepository, organizationProvider, notificationRepository);
     }
 
     /**
@@ -219,7 +222,7 @@ public class AlertController extends Controller {
             return notFound();
         }
         // Return as JSON
-        return ok(Json.toJson(result.get()));
+        return ok(Json.toJson(internalModelToViewModel(result.get())));
     }
 
     /**
@@ -245,6 +248,9 @@ public class AlertController extends Controller {
         viewAlert.setName(alert.getName());
         viewAlert.setQuery(alert.getQuery());
         viewAlert.setPeriod(alert.getPeriod().toString());
+        if (alert.getNotificationGroup() != null) {
+            viewAlert.setNotificationGroupId(alert.getNotificationGroup().getId());
+        }
         return viewAlert;
     }
 
@@ -282,6 +288,13 @@ public class AlertController extends Controller {
             if (viewAlert.getExtensions() != null) {
                 alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));
             }
+            if (viewAlert.getNotificationGroupId() != null) {
+                alertBuilder.setNotificationGroup(
+                        _notificationRepository.getNotificationGroup(
+                                viewAlert.getNotificationGroupId(),
+                                organization)
+                                .orElse(null));
+            }
             return alertBuilder.build();
             // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
         } catch (final RuntimeException e) {
@@ -309,15 +322,21 @@ public class AlertController extends Controller {
         return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Alert.class);
     }
 
-    private AlertController(final int maxLimit, final AlertRepository alertRepository, final OrganizationProvider organizationProvider) {
+    private AlertController(
+            final int maxLimit,
+            final AlertRepository alertRepository,
+            final OrganizationProvider organizationProvider,
+            final NotificationRepository notificationRepository) {
         _maxLimit = maxLimit;
         _alertRepository = alertRepository;
         _organizationProvider = organizationProvider;
+        _notificationRepository = notificationRepository;
     }
 
     private final int _maxLimit;
     private final AlertRepository _alertRepository;
     private final OrganizationProvider _organizationProvider;
+    private final NotificationRepository _notificationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
     private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";

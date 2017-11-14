@@ -85,6 +85,7 @@ object ApplicationBuild extends Build {
       "com.google.guava" % "guava" % "19.0",
       "com.google.inject" % "guice" % "4.0",
       "com.h2database" % "h2" % "1.4.192",
+      "com.sun.mail" % "javax.mail" % "1.6.0",
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
