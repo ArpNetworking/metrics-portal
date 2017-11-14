@@ -15,6 +15,7 @@
  */
 package models.cassandra;
 
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.datastax.driver.mapping.Result;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Column;
@@ -24,6 +25,7 @@ import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
 import models.internal.NagiosExtension;
+import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import org.joda.time.Instant;
@@ -71,6 +73,9 @@ public class Alert {
     @Frozen
     @Column(name = "nagios_extensions")
     private Map<String, String> nagiosExtensions;
+
+    @Column(name = "notification_group_id")
+    private UUID notificationGroupId;
 
     public Long getVersion() {
         return version;
@@ -144,19 +149,34 @@ public class Alert {
         nagiosExtensions = value;
     }
 
+    public UUID getNotificationGroupId() {
+        return notificationGroupId;
+    }
+
+    public void setNotificationGroupId(final UUID value) {
+        notificationGroupId = value;
+    }
+
     /**
      * Converts this model into an {@link models.internal.Alert}.
      *
+     * @param notificationRepository notification repository used to resolve notification groups
      * @return a new internal model
      */
-    public models.internal.Alert toInternal() {
+    public models.internal.Alert toInternal(final NotificationRepository notificationRepository) {
+        final Organization org = new DefaultOrganization.Builder().setId(organization).build();
         return new DefaultAlert.Builder()
                 .setId(getUuid())
                 .setName(getName())
                 .setQuery(getQuery())
                 .setPeriod(Period.seconds(getPeriodInSeconds()).normalizedStandard())
                 .setNagiosExtension(convertToInternalNagiosExtension(getNagiosExtensions()))
-                .setOrganization(new DefaultOrganization.Builder().setId(organization).build())
+                .setOrganization(org)
+                .setNotificationGroup(
+                        Optional.ofNullable(
+                                getNotificationGroupId())
+                                .flatMap(id -> notificationRepository.getNotificationGroup(id, org))
+                                .orElse(null))
                 .build();
     }
 

@@ -1,0 +1,59 @@
+<!--
+  ~ Copyright 2018 Smartsheet.com
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="col-md-12">
+            <h2>Edit Notification Group</h2>
+            <div class="col-md-8 col-sm-12 col-lg-4">
+                <div>
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="nameInput">Name</label>
+                            <input class="form-control" data-bind="value: name" type="text" id="nameInput" placeholder="Name">
+                        </div>
+                    </form>
+                </div>
+                <div>
+                    <h3>Recipients</h3>
+                    <form role="form" data-bind="submit: newRecipient">
+                        <div class="form-inline form-group">
+                            <select data-bind="value: addType" class="form-control">
+                                <option value="email">Email</option>
+                            </select>
+                            <span data-bind="template: {name: addRecipientTemplate}"></span>
+                            <input type="submit" class="btn btn-info" value="+">
+                            <ul data-bind="template: {name: recipientTemplate, foreach: recipients}"></ul>
+                        </div>
+                    </form>
+                    <button type="submit" class="btn btn-default" data-bind="click: save">Save</button>
+                    <button type="submit" class="btn btn-warning" data-bind="click: cancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/html" id="template-add-recipient-email">
+    <label for="addressInput">Email Address</label>
+    <input class="form-control" data-bind="value: addAddress" type="email" id="addressInput" placeholder="Email Address">
+</script>
+<script type="text/html" id="template-recipient-email">
+    <li>
+        <i class="fa fa-envelope" aria-hidden="true"></i> <span data-bind="text: address"></span>
+        <a href="#" data-bind="click: $root.removeRecipient.bind($root)"><i class="fa fa-trash-o"></i></a>
+    </li>
+</script>

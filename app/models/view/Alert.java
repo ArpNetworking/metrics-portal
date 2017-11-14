@@ -19,6 +19,8 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 
+import java.util.UUID;
+
 /**
  * View model of <code>Alert</code>. Play view models are mutable.
  *
@@ -67,6 +69,14 @@ public final class Alert {
         return _extensions;
     }
 
+    public UUID getNotificationGroupId() {
+        return _notificationGroupId;
+    }
+
+    public void setNotificationGroupId(final UUID notificationGroupId) {
+        _notificationGroupId = notificationGroupId;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -85,4 +95,5 @@ public final class Alert {
     private String _query;
     private String _period;
     private ImmutableMap<String, Object> _extensions;
+    private UUID _notificationGroupId;
 }

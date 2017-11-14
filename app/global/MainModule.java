@@ -34,7 +34,9 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.util.JacksonCodec;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -47,6 +49,7 @@ import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.cassandra.NotificationRecipient;
 import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
@@ -81,6 +84,9 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(NotificationRepository.class)
+                .toProvider(NotificationRepositoryProvider.class)
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
@@ -128,11 +134,12 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private CodecRegistry provideCodecRegistry() {
+    private CodecRegistry provideCodecRegistry(final ObjectMapper mapper) {
         final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
         registry.register(InstantCodec.instance);
         registry.register(new EnumNameCodec<>(Operator.class));
         registry.register(new EnumNameCodec<>(Context.class));
+        registry.register(new JacksonCodec<>(mapper, NotificationRecipient.class));
         return registry;
     }
 
@@ -238,6 +245,39 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return hostRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class NotificationRepositoryProvider implements Provider<NotificationRepository> {
+
+        @Inject
+        NotificationRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public NotificationRepository get() {
+            final NotificationRepository repository = _injector.getInstance(
+                    ConfigurationHelper.<NotificationRepository>getType(_environment, _configuration, "notificationRepository.type"));
+            repository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        repository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return repository;
         }
 
         private final Injector _injector;

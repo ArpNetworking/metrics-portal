@@ -67,4 +67,11 @@ public interface Alert {
      * @return Nagios specific extensions.
      */
     NagiosExtension getNagiosExtension();
+
+    /**
+     * UUID of the notification group to notify when the alert triggers.
+     *
+     * @return The {@link NotificationGroup}'s UUID.
+     */
+    NotificationGroup getNotificationGroup();
 }

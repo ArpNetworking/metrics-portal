@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Groupon.com
+ * Copyright 2018 Smartsheet.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,37 +14,29 @@
  * limitations under the License.
  */
 
-import AlertData = require('./AlertData');
+import {NotificationGroup} from './NotificationGroup';
 import PaginatedSearchableList = require('../PaginatedSearchableList');
 import $ = require('jquery');
-import csrf from '../Csrf'
 
-class AlertsList extends PaginatedSearchableList<AlertData> {
+class NotificationGroupsList extends PaginatedSearchableList<NotificationGroup> {
     fetchData(query, callback) {
-        $.getJSON("v1/alerts/query", query, (data) => {
-            const alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
-                v.id,
-                v.name,
-                v.period,
-                v.extensions,
-                v.notificationGroupId
-            );});
+        $.getJSON("v1/notificationgroup/query", query, (data) => {
+            const alertsList: NotificationGroup[] = data.data.map(
+                (v: NotificationGroup) => new NotificationGroup(v.id, v.name, v.entries));
             callback(alertsList, data.pagination);
         });
     }
 }
 
-class AlertsViewModel {
-    alerts: AlertsList = new AlertsList();
+class NotificationGroupsViewModel {
+    notificationGroups: NotificationGroupsList = new NotificationGroupsList();
     deletingId: string = null;
-    remove: (alert: AlertData) => void;
+    remove: (alert: NotificationGroup) => void;
 
     constructor() {
-        this.alerts.query();
-        this.remove = (alert: AlertData) => {
+        this.notificationGroups.query();
+        this.remove = (alert: NotificationGroup) => {
             this.deletingId = alert.id;
-            console.log("set deletingId: ", this, this.deletingId);
-
             $("#confirm-delete-modal").modal('show');
         };
     }
@@ -52,17 +44,14 @@ class AlertsViewModel {
     confirmDelete() {
         $.ajax({
             type: "DELETE",
-            url: "/v1/alerts/" + this.deletingId,
-            beforeSend: function(request) {
-                request.setRequestHeader("Csrf-Token", csrf.getToken());
-            },
+            url: "/v1/notificationgroup/" + this.deletingId,
             contentType: "application/json"
         }).done(() => {
             $("#confirm-delete-modal").modal('hide');
-            this.alerts.query();
+            this.notificationGroups.query();
             this.deletingId = null;
         });
     }
 }
 
-export = AlertsViewModel;
+export = NotificationGroupsViewModel;

@@ -43,6 +43,13 @@ GET        /v1/expressions/query                controllers.ExpressionController
 GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)
 PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
 
+# Notifications
+GET        /v1/notificationgroup/query          controllers.NotificationController.query(contains: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/notificationgroup/:id            controllers.NotificationController.get(id: String)
+PUT        /v1/notificationgroup                controllers.NotificationController.addOrUpdate
+PUT        /v1/notificationgroup/:id/recipient  controllers.NotificationController.addRecipient(id: String)
+DELETE     /v1/notificationgroup/:id/recipient  controllers.NotificationController.removeRecipient(id: String)
+
 # Metrics Queries
 POST       /v1/metrics/query                    controllers.MetricsController.query()
 
