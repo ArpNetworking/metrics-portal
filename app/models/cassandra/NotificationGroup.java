@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2017 Smartsheet.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,25 +15,21 @@
  */
 package models.cassandra;
 
-import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.datastax.driver.mapping.Result;
 import com.datastax.driver.mapping.annotations.Accessor;
 import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.Frozen;
 import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
 import models.internal.Organization;
-import models.internal.impl.DefaultAlert;
-import models.internal.impl.DefaultOrganization;
+import models.internal.impl.DefaultNotificationGroup;
 import org.joda.time.Instant;
-import org.joda.time.Period;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 import javax.persistence.Version;
 
 /**
@@ -42,8 +38,8 @@ import javax.persistence.Version;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
-@Table(name = "alerts", keyspace = "portal")
-public class Alert {
+@Table(name = "notification_groups", keyspace = "portal")
+public class NotificationGroup {
     @Version
     @Column(name = "version")
     private Long version;
@@ -61,25 +57,11 @@ public class Alert {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "query")
-    private String query;
-
-    @Column(name = "period_in_seconds")
-    private int periodInSeconds;
-
     @Column(name = "organization")
     private UUID organization;
 
-    @Frozen
-    @Column(name = "nagios_extensions")
-    private Map<String, String> nagiosExtensions;
-
-    @Nullable
-    @Column(name = "notification_group_id")
-    private UUID notificationGroupId;
-
-    @Column(name = "comment")
-    private String comment = "";
+    @Column(name = "recipients")
+    private List<NotificationRecipient> recipients = Collections.emptyList();
 
     public Long getVersion() {
         return version;
@@ -121,22 +103,6 @@ public class Alert {
         name = value;
     }
 
-    public String getQuery() {
-        return query;
-    }
-
-    public void setQuery(final String value) {
-        query = value;
-    }
-
-    public int getPeriodInSeconds() {
-        return periodInSeconds;
-    }
-
-    public void setPeriodInSeconds(final int value) {
-        periodInSeconds = value;
-    }
-
     public UUID getOrganization() {
         return organization;
     }
@@ -145,43 +111,44 @@ public class Alert {
         organization = value;
     }
 
-    @Nullable
-    public UUID getNotificationGroupId() {
-        return notificationGroupId;
+    public List<NotificationRecipient> getRecipients() {
+        return recipients;
     }
 
-    public void setNotificationGroupId(@Nullable final UUID value) {
-        notificationGroupId = value;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(final String value) {
-        comment = value;
+    public void setRecipients(final List<NotificationRecipient> value) {
+        recipients = value;
     }
 
     /**
-     * Converts this model into an {@link models.internal.Alert}.
+     * Creates a {@link models.internal.NotificationGroup} from this instance.
      *
-     * @param notificationRepository notification repository used to resolve notification groups
-     * @return a new internal model
+     * @return a new {@link models.internal.NotificationGroup}
      */
-    public models.internal.Alert toInternal(final NotificationRepository notificationRepository) {
-        final Organization org = new DefaultOrganization.Builder().setId(organization).build();
-        return new DefaultAlert.Builder()
+    public models.internal.NotificationGroup toInternal() {
+        return new DefaultNotificationGroup.Builder()
+                .setEntries(getRecipients().stream().map(NotificationRecipient::toInternal).collect(Collectors.toList()))
                 .setId(getUuid())
                 .setName(getName())
-                .setQuery(getQuery())
-                .setCheckInterval(Period.seconds(getPeriodInSeconds()).normalizedStandard())
-                .setOrganization(org)
-                .setNotificationGroup(
-                        Optional.ofNullable(
-                                getNotificationGroupId())
-                                .flatMap(id -> notificationRepository.getNotificationGroup(id, org)))
-                .setComment(comment)
                 .build();
+    }
+
+    /**
+     * Creates a {@link NotificationGroup} from a {@link models.internal.NotificationGroup}.
+     * @param internalGroup a notification group
+     * @param organization the organization associated with the group
+     * @return a new {@link NotificationGroup}
+     */
+    public static NotificationGroup fromInternal(final models.internal.NotificationGroup internalGroup, final Organization organization) {
+        final NotificationGroup notificationGroup = new NotificationGroup();
+        notificationGroup.setName(internalGroup.getName());
+        notificationGroup.setOrganization(organization.getId());
+        notificationGroup.setUuid(internalGroup.getId());
+        notificationGroup.setRecipients(
+                internalGroup.getEntries()
+                        .stream()
+                        .map(NotificationRecipient::fromInternal)
+                        .collect(Collectors.toList()));
+        return notificationGroup;
     }
 
     /**
@@ -190,15 +157,15 @@ public class Alert {
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
     @Accessor
-    public interface AlertQueries {
+    public interface NotificationGroupQueries {
         /**
-         * Queries for all alerts in an organization.
+         * Queries for all notification groups in an organization.
          *
-         * @param organization Organization owning the alerts
+         * @param organization Organization owning the notification groups
          * @return Mapped query results
          */
-        @Query("select * from portal.alerts_by_organization where organization = :org")
-        Result<Alert> getAlertsForOrganization(@Param("org") UUID organization);
+        @Query("select * from portal.notification_groups_by_organization where organization = :org")
+        Result<NotificationGroup> getNotificationGroupsForOrganization(@Param("org") UUID organization);
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

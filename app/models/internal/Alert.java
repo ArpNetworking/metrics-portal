@@ -17,6 +17,7 @@ package models.internal;
 
 import org.joda.time.Period;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -67,5 +68,11 @@ public interface Alert {
      * @return The checkInterval to evaluate the condition on.
      */
     Period getCheckInterval();
-}
 
+    /**
+     * UUID of the notification group to notify when the alert triggers.
+     *
+     * @return The {@link NotificationGroup}'s UUID.
+     */
+    Optional<NotificationGroup> getNotificationGroup();
+}

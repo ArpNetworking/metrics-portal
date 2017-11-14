@@ -23,12 +23,14 @@ class AlertData {
     query: string;
     checkInterval: string;
     comment: string
+    notificationGroupId: string;
     editUri: KnockoutComputed<string>;
 
-    constructor(id: string, name: string, checkInterval: string, comment: string) {
+    constructor(id: string, name: string, checkInterval: string, notificationGroupId: string, comment: string) {
         this.id = id;
         this.name = name;
         this.checkInterval = checkInterval;
+        this.notificationGroupId = notificationGroupId;
         this.comment = comment;
 
         this.editUri = ko.computed<string>(() => {

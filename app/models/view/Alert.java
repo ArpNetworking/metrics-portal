@@ -17,6 +17,7 @@ package models.view;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import models.internal.Organization;
@@ -25,6 +26,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -51,6 +53,10 @@ public final class Alert {
         return _checkInterval;
     }
 
+    public Optional<UUID> getNotificationGroupId() {
+        return _notificationGroupId;
+    }
+
     public String getComment() {
         return _comment;
     }
@@ -65,6 +71,7 @@ public final class Alert {
                 .add("Comment", _comment)
                 .add("Query", _query)
                 .add("Period", _checkInterval)
+                .add("NotificationGroupId", _notificationGroupId)
                 .toString();
     }
 
@@ -72,18 +79,21 @@ public final class Alert {
      * Converts a view model to an internal model.
      *
      * @param organization organization the alert belongs to
+     * @param notificationRepository notification repository to resolve notification groups
      * @param objectMapper object mapper to convert some values
      * @return a new internal model
      */
     public models.internal.Alert toInternal(
             final Organization organization,
-        final ObjectMapper objectMapper) {
+            final NotificationRepository notificationRepository,
+            final ObjectMapper objectMapper) {
         final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
                 .setId(_id)
                 .setName(_name)
                 .setQuery(_query)
                 .setCheckInterval(_checkInterval)
                 .setComment(_comment)
+                .setNotificationGroup(_notificationGroupId.flatMap(id -> notificationRepository.getNotificationGroup(id, organization)))
                 .setOrganization(organization);
 
         return alertBuilder.build();
@@ -102,6 +112,7 @@ public final class Alert {
                 .setQuery(alert.getQuery())
                 .setCheckInterval(alert.getCheckInterval())
                 .setComment(alert.getComment())
+                .setNotificationGroupId(alert.getNotificationGroup().map(NotificationGroup::fromInternal).map(NotificationGroup::getId))
                 .build();
     }
 
@@ -109,6 +120,7 @@ public final class Alert {
     private final String _name;
     private final String _query;
     private final Period _checkInterval;
+    private final Optional<UUID> _notificationGroupId;
     private final String _comment;
 
     private Alert(final Builder builder) {
@@ -116,6 +128,7 @@ public final class Alert {
         _name = builder._name;
         _query = builder._query;
         _checkInterval = builder._checkInterval;
+        _notificationGroupId = builder._notificationGroupId;
         _comment = builder._comment;
     }
 
@@ -178,6 +191,17 @@ public final class Alert {
         }
 
         /**
+         * Sets the notification group UUID. Optional. Defaults empty. Cannot be null.
+         *
+         * @param value the check interval
+         * @return this {@link Builder}
+         */
+        public Builder setNotificationGroupId(final Optional<UUID> value) {
+            _notificationGroupId = value;
+            return this;
+        }
+
+        /**
          * Sets the comment. Optional. Defaults empty. Cannot be null.
          *
          * @param value the comment
@@ -198,6 +222,8 @@ public final class Alert {
         private String _query;
         @NotNull
         private Period _checkInterval = Period.minutes(1);
+        @NotNull
+        private Optional<UUID> _notificationGroupId = Optional.empty();
         @NotNull
         private String _comment = "";
     }

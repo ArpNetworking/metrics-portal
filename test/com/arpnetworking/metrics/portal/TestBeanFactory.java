@@ -30,6 +30,7 @@ import org.joda.time.Period;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -64,7 +65,8 @@ public final class TestBeanFactory {
                 .setName(TEST_NAME + RANDOM.nextInt(100))
                 .setQuery("select metric where host = " + RANDOM.nextInt())
                 .setOrganization(Organization.DEFAULT)
-                .setCheckInterval(Period.seconds(60 + RANDOM.nextInt(100)).normalizedStandard());
+                .setCheckInterval(Period.seconds(60 + RANDOM.nextInt(100)).normalizedStandard())
+                .setNotificationGroup(Optional.empty());
     }
 
     public static Alert createAlert() {

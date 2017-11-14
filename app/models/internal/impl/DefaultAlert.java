@@ -19,6 +19,7 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.Alert;
+import models.internal.NotificationGroup;
 import models.internal.Organization;
 import net.sf.oval.constraint.CheckWith;
 import net.sf.oval.constraint.CheckWithCheck;
@@ -28,6 +29,7 @@ import org.joda.time.Minutes;
 import org.joda.time.Period;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -63,6 +65,11 @@ public final class DefaultAlert implements Alert {
         return _checkInterval;
     }
 
+    @Override
+    public Optional<NotificationGroup> getNotificationGroup() {
+        return _notificationGroup;
+    }
+
     public String getComment() {
         return _comment;
     }
@@ -76,7 +83,8 @@ public final class DefaultAlert implements Alert {
                 .add("Name", _name)
                 .add("Comment", _comment)
                 .add("Query", _query)
-                .add("Period", _checkInterval)
+                .add("CheckInterval", _checkInterval)
+                .add("NotificationGroup", _notificationGroup)
                 .toString();
     }
 
@@ -95,6 +103,7 @@ public final class DefaultAlert implements Alert {
                 && Objects.equals(_name, otherAlert._name)
                 && Objects.equals(_query, otherAlert._query)
                 && Objects.equals(_comment, otherAlert._comment)
+                && Objects.equals(_notificationGroup, otherAlert._notificationGroup)
                 && Objects.equals(_checkInterval.normalizedStandard(), otherAlert._checkInterval.normalizedStandard());
     }
 
@@ -105,7 +114,8 @@ public final class DefaultAlert implements Alert {
                 _query,
                 _name,
                 _checkInterval,
-                _comment);
+                _comment,
+                _notificationGroup);
     }
 
     private DefaultAlert(final Builder builder) {
@@ -114,6 +124,7 @@ public final class DefaultAlert implements Alert {
         _name = builder._name;
         _query = builder._query;
         _checkInterval = builder._checkInterval;
+        _notificationGroup = builder._notificationGroup;
         _comment = builder._comment;
     }
 
@@ -122,6 +133,7 @@ public final class DefaultAlert implements Alert {
     private final String _name;
     private final String _query;
     private final Period _checkInterval;
+    private final Optional<NotificationGroup> _notificationGroup;
     private final String _comment;
 
     /**
@@ -202,6 +214,17 @@ public final class DefaultAlert implements Alert {
             return this;
         }
 
+        /**
+         * The notification group to notify.
+         *
+         * @param value The notification group.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setNotificationGroup(final Optional<NotificationGroup> value) {
+            _notificationGroup = value;
+            return this;
+        }
+
         @NotNull
         private UUID _id;
         @NotNull
@@ -212,6 +235,8 @@ public final class DefaultAlert implements Alert {
         @NotNull
         @NotEmpty
         private String _query;
+        @NotNull
+        private Optional<NotificationGroup> _notificationGroup;
         @NotNull
         @CheckWith(MinDuration1Min.class)
         private Period _checkInterval;

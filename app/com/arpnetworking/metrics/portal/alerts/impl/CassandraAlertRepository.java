@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.datastax.driver.core.Session;
@@ -24,6 +25,7 @@ import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
 import models.internal.Alert;
 import models.internal.AlertQuery;
+import models.internal.NotificationGroup;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
@@ -51,11 +53,16 @@ public final class CassandraAlertRepository implements AlertRepository {
      *
      * @param cassandraSession a Session to use to query data
      * @param mappingManager a MappingManager providing ORM for the Cassandra objects
+     * @param notificationRepository Notification repository used to create and lookup notification groups
      */
     @Inject
-    public CassandraAlertRepository(final Session cassandraSession, final MappingManager mappingManager) {
+    public CassandraAlertRepository(
+            final Session cassandraSession,
+            final MappingManager mappingManager,
+            final NotificationRepository notificationRepository) {
         _cassandraSession = cassandraSession;
         _mappingManager = mappingManager;
+        _notificationRepository = notificationRepository;
     }
 
     @Override
@@ -88,7 +95,7 @@ public final class CassandraAlertRepository implements AlertRepository {
             return Optional.empty();
         }
 
-        return Optional.of(cassandraAlert.toInternal());
+        return Optional.of(cassandraAlert.toInternal(_notificationRepository));
     }
 
     @Override
@@ -138,7 +145,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         }
 
         final List<Alert> alerts = alertStream
-                .map(models.cassandra.Alert::toInternal)
+                .map(alert -> alert.toInternal(_notificationRepository))
                 .collect(Collectors.toList());
         final List<Alert> paginated = alerts.stream().skip(start).limit(query.getLimit()).collect(Collectors.toList());
         return new DefaultQueryResult<>(paginated, alerts.size());
@@ -167,6 +174,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         cassAlert.setName(alert.getName());
         cassAlert.setQuery(alert.getQuery());
         cassAlert.setPeriodInSeconds(alert.getCheckInterval().toStandardSeconds().getSeconds());
+        cassAlert.setNotificationGroupId(alert.getNotificationGroup().map(NotificationGroup::getId).orElse(null));
         cassAlert.setComment(alert.getComment());
 
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
@@ -186,6 +194,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     private final Session _cassandraSession;
     private final MappingManager _mappingManager;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
+    private final NotificationRepository _notificationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraAlertRepository.class);
 }

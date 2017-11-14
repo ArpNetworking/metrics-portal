@@ -28,6 +28,7 @@ import io.ebean.PagedList;
 import io.ebean.Query;
 import io.ebean.Transaction;
 import models.ebean.AlertEtags;
+import models.ebean.NotificationGroup;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
@@ -201,6 +202,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setName(alert.getName());
             ebeanAlert.setQuery(alert.getQuery());
             ebeanAlert.setPeriod(alert.getCheckInterval().toStandardSeconds().getSeconds());
+            ebeanAlert.setNotificationGroup(alert.getNotificationGroup().map(NotificationGroup::findByNotificationGroup).orElse(null));
             ebeanAlert.setComment(alert.getComment());
             _alertQueryGenerator.saveAlert(ebeanAlert);
             transaction.commit();

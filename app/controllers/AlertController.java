@@ -17,6 +17,7 @@ package controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 /**
@@ -60,13 +62,15 @@ public class AlertController extends Controller {
      * @param configuration Instance of Play's {@link Config}.
      * @param alertRepository Instance of {@link AlertRepository}.
      * @param organizationProvider Instance of {@link OrganizationProvider}.
+     * @param notificationRepository Instance of <code>NotificationRepository</code>
      */
     @Inject
     public AlertController(
             final Config configuration,
             final AlertRepository alertRepository,
-            final OrganizationProvider organizationProvider) {
-        this(configuration.getInt("alerts.limit"), alertRepository, organizationProvider);
+            final OrganizationProvider organizationProvider,
+            final NotificationRepository notificationRepository) {
+        this(configuration.getInt("alerts.limit"), alertRepository, organizationProvider, notificationRepository);
     }
 
     /**
@@ -83,7 +87,7 @@ public class AlertController extends Controller {
                 return badRequest("empty request body.");
             }
             final models.view.Alert viewAlert = OBJECT_MAPPER.treeToValue(jsonBody, models.view.Alert.class);
-            alert = viewAlert.toInternal(organization, OBJECT_MAPPER);
+            alert = viewAlert.toInternal(organization, _notificationRepository, OBJECT_MAPPER);
         } catch (final IOException | ConstraintsViolatedException e) {
             LOGGER.error()
                     .setMessage("Failed to build an alert.")
@@ -119,12 +123,12 @@ public class AlertController extends Controller {
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
-            final String contains,
-            final String context,
-            final String cluster,
-            final String service,
-            final Integer limit,
-            final Integer offset) {
+            @Nullable final String contains,
+            @Nullable final String context,
+            @Nullable final String cluster,
+            @Nullable final String service,
+            @Nullable final Integer limit,
+            @Nullable final Integer offset) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
@@ -240,15 +244,18 @@ public class AlertController extends Controller {
     private AlertController(
             final int maxLimit,
             final AlertRepository alertRepository,
-            final OrganizationProvider organizationProvider) {
+            final OrganizationProvider organizationProvider,
+            final NotificationRepository notificationRepository) {
         _maxLimit = maxLimit;
         _alertRepository = alertRepository;
         _organizationProvider = organizationProvider;
+        _notificationRepository = notificationRepository;
     }
 
     private final int _maxLimit;
     private final AlertRepository _alertRepository;
     private final OrganizationProvider _organizationProvider;
+    private final NotificationRepository _notificationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

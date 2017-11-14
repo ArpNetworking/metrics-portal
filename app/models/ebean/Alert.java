@@ -21,7 +21,9 @@ import models.internal.impl.DefaultAlert;
 import org.joda.time.Period;
 
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -75,6 +77,11 @@ public class Alert {
 
     @Column(name = "comment")
     private String comment = "";
+
+    @ManyToOne
+    @JoinColumn(name = "notification_group")
+    @Nullable
+    private NotificationGroup notificationGroup;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization")
@@ -144,12 +151,21 @@ public class Alert {
         periodInSeconds = value;
     }
 
+    @Nullable
+    public NotificationGroup getNotificationGroup() {
+        return notificationGroup;
+    }
+
+    public void setNotificationGroup(@Nullable final NotificationGroup value) {
+        notificationGroup = value;
+    }
+
     public Organization getOrganization() {
         return organization;
     }
 
-    public void setOrganization(final Organization organizationValue) {
-        this.organization = organizationValue;
+    public void setOrganization(final Organization value) {
+        organization = value;
     }
 
     public String getComment() {
@@ -174,6 +190,7 @@ public class Alert {
                 .setQuery(getQuery())
                 .setComment(comment)
                 .setCheckInterval(Period.seconds(getPeriod()).normalizedStandard())
+                .setNotificationGroup(Optional.ofNullable(getNotificationGroup()).map(NotificationGroup::toInternal))
                 .build();
     }
 
