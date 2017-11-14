@@ -38,6 +38,12 @@
                         <label for="periodInput">Check Interval</label>
                         <input class="form-control" data-bind="value: period" type="text" id="periodInput" placeholder="PT1M">
                     </div>
+                    <div class="form-group has-feedback">
+                        <label for="notifyGroup">Notify Group</label>
+                        <input class="form-control" data-bind="typeahead: {options: notificationGroupAutocompleteOpts, value: notificationGroup}" id="notifyGroup" type="text" placeholder="Notify">
+                        <!--<input class="form-control" data-bind="value: notificationGroup, valueUpdate: 'keyup'" id="notifyGroup" type="text" placeholder="Notify">-->
+                        <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                    </div>
                     <button type="submit" class="btn btn-default" data-bind="click: save">Save</button>
                     <button type="submit" class="btn btn-warning" data-bind="click: cancel">Cancel</button>
                 </form>

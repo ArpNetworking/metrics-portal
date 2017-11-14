@@ -26,7 +26,9 @@ class shell {
             { route: 'host-registry', title: 'Host Registry', moduleId: 'classes/hostregistry/HostRegistryViewModel', nav: false },
             { route: 'expressions', title: 'Expressions', moduleId: 'classes/expressions/ExpressionsViewModel', nav: false },
             { route: 'alerts', title: 'Alerts', moduleId: 'classes/alerts/AlertsViewModel', nav: false },
-            { route: 'alert/edit(/:id)', title: 'Alerts', moduleId: 'classes/alerts/EditAlertViewModel', nav: false }
+            { route: 'alert/edit(/:id)', title: 'Alerts', moduleId: 'classes/alerts/EditAlertViewModel', nav: false },
+            { route: 'notificationgroups', title: 'Notification Groups', moduleId: 'classes/alerts/NotificationGroupsViewModel', nav: false },
+            { route: 'notificationgroup/edit(/:id)', title: 'Notification Groups', moduleId: 'classes/alerts/EditNotificationGroupViewModel', nav: false }
         ]).buildNavigationModel();
 
         return router.activate();
