@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.expressions.impl;
 
+import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import io.ebean.Ebean;
@@ -343,6 +344,7 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
     @Override
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
     }

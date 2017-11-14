@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
@@ -61,6 +62,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
         final String host = EmbeddedCassandraServerHelper.getHost();
         _app = new GuiceApplicationBuilder()
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
                 .build();
         return _app;

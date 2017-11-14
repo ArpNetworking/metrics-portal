@@ -20,12 +20,10 @@ import actors.ClusterShutdownActor;
 import akka.actor.ActorSystem;
 import akka.actor.Terminated;
 import akka.cluster.Cluster;
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import play.inject.ApplicationLifecycle;
-import play.libs.Json;
 import scala.Function1;
 import scala.compat.java8.JFunction;
 import scala.concurrent.ExecutionContext$;
@@ -53,8 +51,6 @@ public final class Global {
         _akka = akka;
         lifecycle.addStopHook(this::onStop);
 
-        // Configure Json serialization
-        Json.setObjectMapper(ObjectMapperFactory.createInstance());
         _akka.actorOf(ClusterShutdownActor.props(_shutdownFuture));
 
         LOGGER.debug().setMessage("Startup complete").log();
