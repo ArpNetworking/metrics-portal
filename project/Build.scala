@@ -328,6 +328,9 @@ object ApplicationBuild extends Build {
             <Class name="~router.Routes.*"/>
           </Match>
           <Match>
+            <Class name="~kairosdb.Routes.*"/>
+          </Match>
+          <Match>
             <Class name="~_routes_.*"/>
           </Match>
           <Match>
