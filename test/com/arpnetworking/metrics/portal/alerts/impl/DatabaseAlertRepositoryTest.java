@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -66,6 +67,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
     @Override
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
     }

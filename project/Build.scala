@@ -250,9 +250,13 @@ object ApplicationBuild extends Build {
       // Compiler warnings as errors
       javacOptions ++= Seq(
         "-Xlint:all",
-        //"-Werror",
+        "-Werror",
         "-Xlint:-path",
-        "-Xlint:-try"
+        "-Xlint:-try",
+        // Needed because there is an annotation processor and the JUnit annotations
+        // are not processed by it. See https://github.com/playframework/playframework/issues/1922#issuecomment-52884818
+        // and https://bugs.openjdk.java.net/browse/JDK-6999068
+        "-Xlint:-processing"
       ),
 
       devSettings := Seq(("config.resource", "portal.application.conf"), "play.server.http.port" -> "8080"),
