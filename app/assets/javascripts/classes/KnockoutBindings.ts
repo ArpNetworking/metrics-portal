@@ -5,6 +5,7 @@
 
 import ko = require('knockout');
 import $ = require('jquery');
+import _ = require('underscore');
 
 module kobindings {
     ko.bindingHandlers['slider'] = {
@@ -77,31 +78,54 @@ module kobindings {
     };
 
     ko.bindingHandlers["typeahead"] = {
-        update: function(element, valueAccessor, allValuesAccessor) {
-            var value = valueAccessor();
-            var valueUnwrapped: any = ko.utils.unwrapObservable(value);
+        init: function(element, valueAccessor, allValuesAccessor) {
+            let value = valueAccessor();
+            let valueUnwrapped: any = ko.utils.unwrapObservable(value);
 
-            var ta = $(element).typeahead(valueUnwrapped.options.opt, valueUnwrapped.options.source);
+            let ta = $(element).typeahead(valueUnwrapped.options.opt, valueUnwrapped.options.source);
+            let strict = false;
+            if (valueUnwrapped && valueUnwrapped.options && valueUnwrapped.options.opt && valueUnwrapped.options.opt.strict) {
+                strict = true;
+            }
 
             if (valueUnwrapped.value !== undefined) {
-                ta.data().ttTypeahead.input.onSync("queryChanged", () => {
-                    valueUnwrapped.value(ta.typeahead('val'));
+                if (!strict) {
+                    ta.data().ttTypeahead.input.onSync("queryChanged", () => {
+                        valueUnwrapped.value(ta.val());
+                    });
+                } else {
+                    ta.on('blur', (event) => {
+                        console.log("blur time", event, ta.val(), valueUnwrapped.value());
+                        if (ta.typeahead('val') != displayFn(valueUnwrapped.value())) {
+                            valueUnwrapped.value(null);
+                        }
+                    });
+                }
+
+                ta.on('typeahead:autocompleted', (event, object, dataset) => {
+                    valueUnwrapped.value(object);
                 });
 
-                ta.on('typeahead:autocompleted', () => {
-                    valueUnwrapped.value(ta.typeahead('val'));
+                ta.on('typeahead:selected', (event, object, dataset) => {
+                    valueUnwrapped.value(object);
                 });
 
-                ta.on('typeahead:selected', () => {
-                    valueUnwrapped.value(ta.typeahead('val'));
-                });
-
+                let displayFn = (obj) => {return obj.value;};
+                if (valueUnwrapped && valueUnwrapped.options && valueUnwrapped.options.source && valueUnwrapped.options.source.display) {
+                    displayFn = _.isFunction(valueUnwrapped.options.source.display) ?
+                        valueUnwrapped.options.source.display : (obj) => { return obj[valueUnwrapped.options.source.display]; };
+                }
                 //Hack to handle the clearing of the query
                 valueUnwrapped.value.subscribe((newValue) => {
-                    if (newValue == "") {
+                    if (newValue == null) {
                         ta.typeahead('val', '');
+                    } else if (ta.typeahead('val') != displayFn(newValue)) {
+                        ta.typeahead('val', displayFn(newValue));
                     }
                 });
+                if (valueUnwrapped.value()) {
+                    ta.typeahead('val', displayFn(valueUnwrapped.value()));
+                }
             }
         }
     }

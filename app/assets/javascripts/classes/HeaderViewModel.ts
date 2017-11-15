@@ -25,7 +25,7 @@ import ko = require('knockout');
 import $ = require('jquery');
 
 interface ResponseCallback {
-    (response: {value: string}[]): void;
+    (response: any[]): void;
 }
 
 class HeaderViewModel implements ViewModel {
@@ -37,11 +37,12 @@ class HeaderViewModel implements ViewModel {
                 $.getJSON("v1/hosts/query", {name: request, limit: 10}, (result:any) => {
                     var hosts:{hostname: string; metricsSoftwareState: string}[] = result.data;
                     var transformed = hosts.map((host) => {
-                        return {value: host.hostname}
+                        return host.hostname
                     });
                     response(transformed);
                 });
-            }
+            },
+            display: (val) => { return val; }
         },
         opt: {
             minLength: 2,
