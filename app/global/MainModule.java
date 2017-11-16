@@ -25,6 +25,7 @@ import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -132,6 +133,20 @@ public class MainModule extends AbstractModule {
         return registry;
     }
 
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private KairosDbClient provideKairosDbClient(
+            final ActorSystem actorSystem,
+            final ObjectMapper mapper,
+            final Config configuration) {
+        return new KairosDbClient.Builder()
+                .setActorSystem(actorSystem)
+                .setMapper(mapper)
+                .setUri(URI.create(configuration.getString("kairosdb.uri")))
+                .setReadTimeout(ConfigurationHelper.getFiniteDuration(configuration, "kairosdb.timeout"))
+                .build();
+    }
 
     //Note: This is essentially the same as Play's ObjectMapperModule, but uses the Commons ObjectMapperFactory
     //  instance as the base

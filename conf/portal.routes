@@ -45,5 +45,10 @@ PUT        /v1/expressions                      controllers.ExpressionController
 # Templates
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
+# Kairosdb proxying
+# The original Kairos routes start with /api/v1 and this is a direct
+# replacement for them
+-> /api/v1 kairosdb.Routes
+
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path = "/public", file: Asset)
