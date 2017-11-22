@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneId, ZonedDateTime}
+
 import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
 import com.lightbend.sbt.SbtAspectj
 import com.lightbend.sbt.SbtAspectj._
@@ -33,9 +36,13 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
+import com.typesafe.sbt.packager.archetypes.JavaServerAppPackaging
+import com.typesafe.sbt.packager.archetypes.systemloader.SystemVPlugin
 import play.sbt.PlayImport._
 import com.typesafe.sbt.packager.rpm._
 import com.typesafe.sbt.packager.rpm.RpmPlugin.autoImport._
+import com.typesafe.sbt.packager.universal.UniversalPlugin
+import com.typesafe.sbt.packager.universal.UniversalPlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleasePlugin.autoImport.ReleaseStep
 import sbtrelease.ReleaseStateTransformations._
@@ -111,7 +118,7 @@ object ApplicationBuild extends Build {
       "org.mockito" % "mockito-core" % "1.10.19" % "test"
     )
 
-    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj).settings(
+    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj, JavaServerAppPackaging, SystemVPlugin, UniversalPlugin).settings(
 
       organization := "com.arpnetworking.metrics",
       organizationName := "Arpnetworking Inc",
@@ -263,6 +270,7 @@ object ApplicationBuild extends Build {
       devSettings := Seq(("config.resource", "dev.conf"), "play.server.http.port" -> "8080"),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
       javaOptions in Test += "-Dlogger.resource=logback-test.xml",
+      javaOptions in Universal += s"-Dpidfile.path=/var/run/$appName/play.pid",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
       routesGenerator := InjectedRoutesGenerator,
@@ -272,7 +280,8 @@ object ApplicationBuild extends Build {
       mainConfig := "start_app",
       mainModule := "start_app",
       buildProfile := JS.Object("wrapShim" -> true),
-      pipelineStages := Seq(rjs, digest, gzip),
+      pipelineStages := Seq(digest, gzip),
+      RjsKeys.webJarCdns := Map(),
       modules += JS.Object("name" -> "classes/shell"),
 
       scalaVersion := "2.11.11",
@@ -297,6 +306,15 @@ object ApplicationBuild extends Build {
       rpmVendor := "ArpNetworking",
       rpmLicense := Option("ASL 2.0"),
       rpmUrl := Option("https://github.com/ArpNetworking/metrics-portal"),
+      rpmRelease ~= { release =>
+        if (release.equals("SNAPSHOT")) {
+          val date = ZonedDateTime.now(ZoneId.of("Z"))
+          val dateStamp = date.format(DateTimeFormatter.ofPattern("YYYYMMddHHmmss"))
+          s"SNAPSHOT$dateStamp"
+        } else {
+          release
+        }
+      },
       releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
