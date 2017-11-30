@@ -17,6 +17,7 @@ package com.arpnetworking.mql.grammar;
 
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.metrics.util.ImmutableCollectors;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MoreCollectors;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -95,37 +97,43 @@ public abstract class BaseAlertExecution extends BaseExecution {
         final List<MetricsQueryResponse.DataPoint> values = result.getValues();
         int x = 0;
 
-        DateTime last = null;
+        DateTime breachStart = null;
+        DateTime breachLast = null;
         AlertTrigger.Builder alertBuilder = null;
         // We'll lazy create this
-        ImmutableMap<String, String> args = null;
+        final Supplier<ImmutableMap<String, String>> args = Suppliers.memoize(() -> createArgs(result));
+
         while (x < values.size()) {
             // If we have an alert
             final MetricsQueryResponse.DataPoint dataPoint = values.get(x);
             if (evaluateDataPoint(dataPoint)) {
-                // Don't start a new alert unless we are in an OK period
-                if (alertBuilder == null) {
-                    if (args == null) {
-                        args = createArgs(result);
-                    }
-                    alertBuilder = new AlertTrigger.Builder().setTime(dataPoint.getTime()).setArgs(args);
+                if (breachStart == null) {
+                    breachStart = dataPoint.getTime();
                 }
-                // Consume the range of in-alert points
-                last = dataPoint.getTime();
-                while (x < values.size() && evaluateDataPoint(values.get(x))) {
-                    last = values.get(x).getTime();
-                    x++;
+                if (!dataPoint.getTime().minus(_dwellPeriod).isBefore(breachStart)) {
+                    // Don't start a new alert unless we are in an OK period
+                    if (alertBuilder == null) {
+                        alertBuilder = new AlertTrigger.Builder().setTime(dataPoint.getTime()).setArgs(args.get());
+                    }
+                    // Consume the range of in-alert points
+                    breachLast = dataPoint.getTime();
+                    while (x < values.size() && evaluateDataPoint(values.get(x))) {
+                        breachLast = values.get(x).getTime();
+                        x++;
+                    }
+                    x--;
                 }
             } else {
                 // Check to see if we're far enough past the last bad sample to clear the alert
-                if (last != null && last.plus(_recoveryPeriod).isBefore(dataPoint.getTime())) {
+                if (breachLast != null && breachLast.plus(_recoveryPeriod).isBefore(dataPoint.getTime())) {
                     alertBuilder.setEndTime(dataPoint.getTime());
                     alerts.add(alertBuilder.build());
                     alertBuilder = null;
-                    last = null;
+                    breachLast = null;
                 }
-                x++;
+                breachStart = null;
             }
+            x++;
         }
         // If we still have an alertBuilder, the alert is ongoing, set the end time to the final sample
         if (alertBuilder != null) {
@@ -170,9 +178,11 @@ public abstract class BaseAlertExecution extends BaseExecution {
     protected BaseAlertExecution(final Builder<?, ?> builder) {
         super(builder);
         _recoveryPeriod = builder._recoveryPeriod;
+        _dwellPeriod = builder._dwellPeriod;
     }
 
     private final Period _recoveryPeriod;
+    private final Period _dwellPeriod;
 
     /**
      * Implementation of the Builder pattern for {@link BaseAlertExecution}.
@@ -202,7 +212,22 @@ public abstract class BaseAlertExecution extends BaseExecution {
             return self();
         }
 
+        /**
+         * Sets the dwell period. The threshold conditions must be met for this period of time before an alert is made.
+         * Optional. Cannot be null.
+         *
+         * @param value the recovery period
+         * @return this {@link Builder}
+         */
+        B setDwellPeriod(final Period value) {
+            _dwellPeriod = value;
+            return self();
+        }
+
         @NotNull
         private Period _recoveryPeriod = Period.minutes(0);
+
+        @NotNull
+        private Period _dwellPeriod = Period.minutes(0);
     }
 }
