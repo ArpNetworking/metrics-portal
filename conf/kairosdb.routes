@@ -6,4 +6,3 @@ GET   /tagvalues                                      controllers.KairosDbProxy.
 POST  /version                                        controllers.KairosDbProxy.version()
 POST  /datapoints/query/tags                          controllers.KairosDbProxy.queryTags()
 POST  /datapoints/query                               controllers.KairosDbProxy.queryMetrics()
-POST  /datapoings/query                               controllers.KairosDbProxy.queryMetrics()
