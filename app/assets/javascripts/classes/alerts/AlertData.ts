@@ -32,6 +32,7 @@ class AlertData {
     extensions: { [id: string]: string };
     contextStyle: KnockoutComputed<string>;
     contextTip: KnockoutComputed<string>;
+    editUri: KnockoutComputed<string>;
 
     constructor(id: string, context: string, name: string, metric: string, service: string, cluster: string, statistic: string, period: string, operator: Operator, value: Quantity, extensions: { [id: string]: string }) {
         this.id = id;
@@ -66,6 +67,10 @@ class AlertData {
                 return "";
             }
         }, self);
+
+        this.editUri = ko.computed<string>(() => {
+            return "#alert/edit/" + this.id;
+        });
     }
 }
 

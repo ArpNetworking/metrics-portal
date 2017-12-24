@@ -126,7 +126,7 @@ object ApplicationBuild extends Build {
           Some("releases" at nexus + "service/local/staging/deploy/maven2")
       }.value,
       pomIncludeRepository := { _ => false },
-      pomExtra := (
+      pomExtra :=
         <licenses>
           <license>
             <name>Apache License, Version 2.0</name>
@@ -226,7 +226,7 @@ object ApplicationBuild extends Build {
             <url>https://github.com/arpnetworking/metrics-portal</url>
             <tag>HEAD</tag>
           </scm>
-        ),
+        ,
 
       releasePublishArtifactsAction := publishSigned.value,
 
@@ -259,7 +259,7 @@ object ApplicationBuild extends Build {
         "-Xlint:-processing"
       ),
 
-      devSettings := Seq(("config.resource", "portal.application.conf"), "play.server.http.port" -> "8080"),
+      devSettings := Seq(("config.resource", "dev.conf"), "play.server.http.port" -> "8080"),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
       javaOptions in Test += "-Dlogger.resource=logback-test.xml",
 
