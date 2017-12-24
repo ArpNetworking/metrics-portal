@@ -109,7 +109,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (ebeanExpression == null) {
             return Optional.empty();
         }
@@ -175,7 +175,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .where()
                     .eq("uuid", expression.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
+                    .findOne();
             boolean isNewExpression = false;
             if (ebeanExpression == null) {
                 ebeanExpression = new models.ebean.Expression();

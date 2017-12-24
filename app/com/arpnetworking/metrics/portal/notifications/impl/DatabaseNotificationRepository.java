@@ -113,7 +113,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (notificationGroup == null) {
             return Optional.empty();
         }
@@ -153,7 +153,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                     .where()
                     .eq("uuid", group.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
+                    .findOne();
             boolean isNewGroup = false;
             if (notificationGroup == null) {
                 notificationGroup = new models.ebean.NotificationGroup();
@@ -204,7 +204,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                     .where()
                     .eq("uuid", group.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
+                    .findOne();
             if (notificationGroup == null) {
                 throw new IllegalArgumentException("NotificationGroup not found");
             }
@@ -254,7 +254,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                     .where()
                     .eq("uuid", group.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
+                    .findOne();
             if (notificationGroup == null) {
                 throw new IllegalArgumentException("NotificationGroup not found");
             }

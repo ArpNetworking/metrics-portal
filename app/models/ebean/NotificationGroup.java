@@ -129,7 +129,7 @@ public class NotificationGroup {
         return FINDER.query()
                 .where()
                 .eq("uuid", group.getId())
-                .findUnique();
+                .findOne();
     }
 
     private static final Finder<Long, NotificationGroup> FINDER = new Finder<>(NotificationGroup.class);

@@ -115,7 +115,7 @@ public class DatabaseHostRepository implements HostRepository {
                     .where()
                     .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())
-                    .findUnique();
+                    .findOne();
             boolean isNewHost = false;
             if (ebeanHost == null) {
                 ebeanHost = new models.ebean.Host();
@@ -151,7 +151,7 @@ public class DatabaseHostRepository implements HostRepository {
                 .where()
                 .eq("name", hostname)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (ebeanHost != null) {
             Ebean.delete(ebeanHost);
             LOGGER.info()

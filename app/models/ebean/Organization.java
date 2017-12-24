@@ -73,7 +73,7 @@ public class Organization {
         final Organization org = FINDER.query()
                 .where()
                 .eq("uuid", organization.getId())
-                .findUnique();
+                .findOne();
         return org;
     }
 

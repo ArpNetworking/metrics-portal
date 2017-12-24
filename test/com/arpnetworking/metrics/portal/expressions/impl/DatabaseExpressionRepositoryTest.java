@@ -143,11 +143,11 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         models.ebean.Expression ebeanExpression1 = Ebean.find(models.ebean.Expression.class)
                 .where()
                 .eq("uuid", uuid)
-                .findUnique();
+                .findOne();
         models.ebean.Expression ebeanExpression2 = Ebean.find(models.ebean.Expression.class)
                 .where()
                 .eq("uuid", uuid)
-                .findUnique();
+                .findOne();
         try (Transaction transaction = Ebean.beginTransaction()) {
             ebeanExpression1.setCluster("new-cluster1");
             ebeanExpression2.setCluster("new-cluster2");
