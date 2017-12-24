@@ -58,7 +58,7 @@ public class AlertEtags {
                 .setForUpdate(true)
                 .where()
                 .eq("organization", organization)
-                .findUnique();
+                .findOne();
         if (etag == null) {
             etag = new AlertEtags();
             etag.setOrganization(organization);
@@ -79,7 +79,7 @@ public class AlertEtags {
         final AlertEtags etag = FINDER.query()
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (etag != null) {
             return etag.getEtag();
         }
