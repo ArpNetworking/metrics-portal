@@ -31,7 +31,6 @@ import models.view.MetricsQuery;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.jetbrains.annotations.NotNull;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -41,6 +40,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -115,7 +115,7 @@ public class MetricsController extends Controller {
         return statement;
     }
 
-    @NotNull
+    @Nonnull
     private ObjectNode createErrorJson(final RuntimeException ex) {
         if (ex.getMessage() != null) {
             return createErrorJson(ex.getMessage());
@@ -124,7 +124,7 @@ public class MetricsController extends Controller {
         }
     }
 
-    @NotNull
+    @Nonnull
     private ObjectNode createErrorJson(final String message) {
         final ObjectNode errorJson = Json.newObject();
         final ArrayNode errors = errorJson.putArray("errors");
@@ -132,7 +132,7 @@ public class MetricsController extends Controller {
         return errorJson;
     }
 
-    @NotNull
+    @Nonnull
     private ObjectNode createErrorJson(final List<String> messages) {
         final ObjectNode errorJson = Json.newObject();
         final ArrayNode errors = errorJson.putArray("errors");

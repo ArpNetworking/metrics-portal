@@ -110,7 +110,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (ebeanAlert == null) {
             return Optional.empty();
         }
@@ -190,7 +190,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .where()
                     .eq("uuid", alert.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
+                    .findOne();
             boolean isNewAlert = false;
             if (ebeanAlert == null) {
                 ebeanAlert = new models.ebean.Alert();
