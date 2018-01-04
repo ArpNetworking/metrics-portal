@@ -101,7 +101,7 @@ public class NotificationActor extends AbstractPersistentActor {
                                 .addData("trigger", trigger)
                                 .log();
                         final List<CompletionStage<Void>> futures = entries.stream()
-                                .map(entry -> entry.notifyRecipient(trigger, _injector))
+                                .map(entry -> entry.notifyRecipient(alert.get(), trigger, _injector))
                                 .collect(Collectors.toList());
                         final CompletableFuture<?>[] futureArray = futures.stream()
                                 .map(CompletionStage::toCompletableFuture)
