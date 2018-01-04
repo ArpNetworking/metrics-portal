@@ -96,6 +96,7 @@ object ApplicationBuild extends Build {
       "net.sf.oval" % "oval" % "1.82",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
       "org.flywaydb" %% "flyway-play" % "4.0.0",
+      "org.freemarker" % "freemarker" % "2.3.27-incubating",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0",
       "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
       "org.webjars" % "bean" % "1.0.14",

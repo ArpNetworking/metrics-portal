@@ -29,11 +29,12 @@ public interface NotificationEntry {
     /**
      * Dispatches notifications to the recipient.
      *
+     * @param alert the alert that triggered
      * @param trigger the trigger of the notification
      * @param injector injector to create dependencies
      * @return a {@link CompletionStage} indicating completion
      */
-    CompletionStage<Void> notifyRecipient(AlertTrigger trigger, Injector injector);
+    CompletionStage<Void> notifyRecipient(Alert alert, AlertTrigger trigger, Injector injector);
 
     /**
      * Converts the model to a view model.

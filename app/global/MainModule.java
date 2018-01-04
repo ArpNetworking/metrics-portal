@@ -55,6 +55,8 @@ import com.google.inject.Provides;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import freemarker.template.Configuration;
+import freemarker.template.TemplateExceptionHandler;
 import models.cassandra.NotificationRecipient;
 import models.internal.Context;
 import models.internal.Features;
@@ -65,6 +67,8 @@ import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Optional;
@@ -211,6 +215,18 @@ public class MainModule extends AbstractModule {
                 PoisonPill.getInstance());
     }
 
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Configuration provideFreemarkerConfig(final Config config) throws IOException {
+        final Configuration cfg = new Configuration(Configuration.VERSION_2_3_27);
+        cfg.setDirectoryForTemplateLoading(new File(config.getString("alerts.templateDirectory")));
+        cfg.setDefaultEncoding("UTF-8");
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setLogTemplateExceptions(false);
+        cfg.setWrapUncheckedExceptions(true);
+        return cfg;
+    }
 
     @Provides
     @Singleton

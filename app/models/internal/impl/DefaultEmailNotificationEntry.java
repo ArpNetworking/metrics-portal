@@ -20,22 +20,32 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.mql.grammar.AlertTrigger;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import models.internal.Alert;
 import models.internal.NotificationEntry;
 import models.view.EmailNotificationEntry;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
 /**
  * Represents a notification by email.
@@ -48,36 +58,77 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
     @Override
     @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION",
             justification = "Bug in findbugs: https://github.com/findbugsproject/findbugs/issues/79")
-    public CompletionStage<Void> notifyRecipient(final AlertTrigger trigger, final Injector injector) {
-        // TODO(brandon): fire the email
-
+    public CompletionStage<Void> notifyRecipient(final Alert alert, final AlertTrigger trigger, final Injector injector) {
         LOGGER.debug()
                 .setMessage("Sending email notification")
                 .addData("address", _address)
                 .addData("trigger", trigger)
                 .log();
-        final Session mailSession = injector.getInstance(Session.class);
-        final MimeMessage mailMessage = new MimeMessage(mailSession);
+        final Configuration configuration = injector.getInstance(Configuration.class);
+        final Config typesafeConfig = injector.getInstance(Config.class);
         try {
+            final Session mailSession = injector.getInstance(Session.class);
+            final MimeMessage mailMessage = new MimeMessage(mailSession);
             mailMessage.addRecipients(Message.RecipientType.TO, _address);
-            final Optional<String> name = Optional.ofNullable(trigger.getArgs().get("name"));
-            final String subject;
-            if (name.isPresent()) {
-                subject = String.format("%s in alarm", name.get());
-            } else {
-                subject = "Metric is in alarm";
-            }
+            mailMessage.setFrom(typesafeConfig.getString("alerts.email.from"));
+            final String baseUrl = typesafeConfig.getString("alerts.baseUrl");
+            final String alertUrl = URI.create(baseUrl).resolve("/#alert/edit/" + alert.getId()).toString();
+            final String subject = String.format("Alert '%s' in alarm", alert.getName());
             mailMessage.setSubject(subject);
-            mailMessage.setFrom("Metrics Portal <noreply@smartsheet.com>");
-            final String text = "A metric has gone into alert: \n"
-                    + "Details: " + trigger.getArgs().toString();
-            mailMessage.setText(text);
+            final MimeMultipart multipart = new MimeMultipart("alternative");
+            final ImmutableMap<String, Object> templateObject = ImmutableMap.<String, Object>builder()
+                    .put("alert", alert)
+                    .put("trigger", trigger)
+                    .put("alertUrl", alertUrl)
+                    .build();
+
+            addBodyPart(templateObject, configuration, multipart, "alert.text.ftlh", "text/plain; charset=utf-8");
+            addBodyPart(templateObject, configuration, multipart, "alert.html.ftlh", "text/html; charset=utf-8");
+
+            if (multipart.getCount() == 0) {
+                final String text = "Metric '" + alert.getName() + "' has gone into alert: \n"
+                        + "Details: " + trigger.getArgs().toString() + "\n";
+                final MimeBodyPart bodyText = new MimeBodyPart();
+                bodyText.setText(text, "utf-8");
+                multipart.addBodyPart(bodyText);
+            }
+
+            mailMessage.setContent(multipart);
             Transport.send(mailMessage);
             return CompletableFuture.completedFuture(null);
         } catch (final MessagingException e) {
             final CompletableFuture<Void> future = new CompletableFuture<>();
             future.completeExceptionally(e);
             return future;
+        }
+    }
+
+    private void addBodyPart(
+            final ImmutableMap<String, Object> templateObject,
+            final Configuration configuration,
+            final MimeMultipart multipart,
+            final String template,
+            final String contentType)
+            throws MessagingException {
+        try {
+            final MimeBodyPart part = new MimeBodyPart();
+            final StringWriter stringWriter = new StringWriter();
+            final Template textTemplate = configuration.getTemplate(template);
+            textTemplate.process(templateObject, stringWriter);
+            part.setContent(stringWriter.toString(), contentType);
+            multipart.addBodyPart(part);
+        } catch (final IOException e) {
+            LOGGER.warn()
+                    .setMessage("Error loading alert template")
+                    .setThrowable(e)
+                    .addData("template", template)
+                    .log();
+        } catch (final TemplateException e) {
+            LOGGER.warn()
+                    .setMessage("Error processing alert template")
+                    .addData("template", template)
+                    .setThrowable(e)
+                    .log();
         }
     }
 
