@@ -107,7 +107,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         final Optional<Alert> alert = get(identifier, organization);
         if (alert.isPresent()) {
             final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
-            mapper.delete(alert);
+            mapper.delete(identifier);
             return 1;
         } else {
             return 0;
