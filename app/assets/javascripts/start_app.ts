@@ -44,11 +44,17 @@ requirejs.config({
         'jquery' : '../lib/jquery/jquery.min',
         'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
         'jqrangeslider' : '../lib/jQRangeSlider/jQAllRangeSliders-withRuler-min',
+        'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
         'knockout' : '../lib/knockout/knockout',
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
         'underscore' : '../lib/underscorejs/underscore-min' //Required by flotr2
+    },
+    map : {
+        '*': {
+            'jwt-decode': 'jwt_decode'
+        }
     },
     shim : {
         'knockout-fast-foreach' : {

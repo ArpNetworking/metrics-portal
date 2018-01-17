@@ -104,6 +104,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.8.3",
+      "org.webjars.npm" % "github-com-auth0-jwt-decode" % "2.1.0",
 
       "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",
       "junit" % "junit" % "4.12" % "test",

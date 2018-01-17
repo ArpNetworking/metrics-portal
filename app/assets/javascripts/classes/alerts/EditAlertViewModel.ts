@@ -20,6 +20,7 @@ import $ = require('jquery');
 import Operator = require("./Operator");
 import Quantity = require("../Quantity");
 import uuid = require('../Uuid');
+import csrf from '../Csrf';
 
 class OperatorOption {
     text: string;
@@ -95,6 +96,9 @@ class EditAlertViewModel {
         $.ajax({
             type: "PUT",
             url: "/v1/alerts",
+            beforeSend: function(request) {
+                request.setRequestHeader("Csrf-Token", csrf.getToken());
+            },
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify({

@@ -17,6 +17,7 @@
 import AlertData = require('./AlertData');
 import PaginatedSearchableList = require('../PaginatedSearchableList');
 import $ = require('jquery');
+import csrf from '../Csrf'
 
 class AlertsList extends PaginatedSearchableList<AlertData> {
     fetchData(query, callback) {
@@ -58,6 +59,9 @@ class AlertsViewModel {
         $.ajax({
             type: "DELETE",
             url: "/v1/alerts/" + this.deletingId,
+            beforeSend: function(request) {
+                request.setRequestHeader("Csrf-Token", csrf.getToken());
+            },
             contentType: "application/json"
         }).done(() => {
             $("#confirm-delete-modal").modal('hide');
