@@ -33,10 +33,8 @@ import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQueryResult;
-import org.joda.time.Period;
 import play.Environment;
 import play.db.ebean.EbeanDynamicEvolutions;
 
@@ -115,7 +113,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         if (ebeanAlert == null) {
             return Optional.empty();
         }
-        return Optional.of(convertFromEbeanAlert(ebeanAlert));
+        return Optional.of(ebeanAlert.toInternal());
     }
 
     @Override
@@ -144,7 +142,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         final Long etag = _alertQueryGenerator.getEtag(query.getOrganization());
 
         final List<Alert> values = new ArrayList<>();
-        pagedAlerts.getList().forEach(ebeanAlert -> values.add(convertFromEbeanAlert(ebeanAlert)));
+        pagedAlerts.getList().forEach(ebeanAlert -> values.add(ebeanAlert.toInternal()));
 
         // Transform the results
         return new DefaultQueryResult<>(values, pagedAlerts.getTotalCount(), etag.toString());
@@ -200,7 +198,7 @@ public class DatabaseAlertRepository implements AlertRepository {
 
             ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(organization));
             ebeanAlert.setUuid(alert.getId());
-            ebeanAlert.setNagiosExtension(convertToEbeanNagiosExtension(alert.getNagiosExtension()));
+            ebeanAlert.setNagiosExtension(NagiosExtension.fromInternal(alert.getNagiosExtension()));
             ebeanAlert.setName(alert.getName());
             ebeanAlert.setQuery(alert.getQuery());
             ebeanAlert.setPeriod(alert.getPeriod().toStandardSeconds().getSeconds());
@@ -234,41 +232,6 @@ public class DatabaseAlertRepository implements AlertRepository {
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("Alert repository is not %s", expectedState ? "open" : "closed"));
         }
-    }
-
-    private Alert convertFromEbeanAlert(final models.ebean.Alert ebeanAlert) {
-        return new DefaultAlert.Builder()
-                .setId(ebeanAlert.getUuid())
-                .setName(ebeanAlert.getName())
-                .setQuery(ebeanAlert.getQuery())
-                .setPeriod(Period.seconds(ebeanAlert.getPeriod()).normalizedStandard())
-                .setNagiosExtension(convertToInternalNagiosExtension(ebeanAlert.getNagiosExtension()))
-                .build();
-    }
-
-
-    private models.internal.NagiosExtension convertToInternalNagiosExtension(final NagiosExtension ebeanExtension) {
-        if (ebeanExtension == null) {
-            return null;
-        }
-        return new models.internal.NagiosExtension.Builder()
-                .setSeverity(ebeanExtension.getSeverity())
-                .setNotify(ebeanExtension.getNotify())
-                .setMaxCheckAttempts(ebeanExtension.getMaxCheckAttempts())
-                .setFreshnessThresholdInSeconds(ebeanExtension.getFreshnessThreshold())
-                .build();
-    }
-
-    private NagiosExtension convertToEbeanNagiosExtension(final models.internal.NagiosExtension internalExtension) {
-        if (internalExtension == null) {
-            return null;
-        }
-        final NagiosExtension extension = new NagiosExtension();
-        extension.setSeverity(internalExtension.getSeverity());
-        extension.setNotify(internalExtension.getNotify());
-        extension.setMaxCheckAttempts(internalExtension.getMaxCheckAttempts());
-        extension.setFreshnessThreshold(internalExtension.getFreshnessThreshold().getStandardSeconds());
-        return extension;
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);

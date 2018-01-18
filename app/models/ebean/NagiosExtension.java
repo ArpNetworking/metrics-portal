@@ -136,5 +136,36 @@ public class NagiosExtension {
     public void setFreshnessThreshold(final long value) {
         freshnessThresholdInSeconds = value;
     }
+
+    /**
+     * Converts this model into an {@link models.internal.NagiosExtension}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.NagiosExtension toInternal() {
+        return new models.internal.NagiosExtension.Builder()
+                .setSeverity(getSeverity())
+                .setNotify(getNotify())
+                .setMaxCheckAttempts(getMaxCheckAttempts())
+                .setFreshnessThresholdInSeconds(getFreshnessThreshold())
+                .build();
+    }
+
+    /**
+     * Creates a {@link NagiosExtension} from a {@link models.internal.NagiosExtension}.
+     * @param internalExtension the {@link models.internal.NagiosExtension} source
+     * @return a new {@link NagiosExtension}
+     */
+    public static NagiosExtension fromInternal(final models.internal.NagiosExtension internalExtension) {
+        if (internalExtension == null) {
+            return null;
+        }
+        final NagiosExtension extension = new NagiosExtension();
+        extension.setSeverity(internalExtension.getSeverity());
+        extension.setNotify(internalExtension.getNotify());
+        extension.setMaxCheckAttempts(internalExtension.getMaxCheckAttempts());
+        extension.setFreshnessThreshold(internalExtension.getFreshnessThreshold().getStandardSeconds());
+        return extension;
+    }
 }
 // CHECKSTYLE.ON: MemberNameCheck

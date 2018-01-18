@@ -28,10 +28,8 @@ import models.internal.AlertQuery;
 import models.internal.NagiosExtension;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQueryResult;
-import org.joda.time.Period;
 
 import java.util.List;
 import java.util.Locale;
@@ -93,7 +91,7 @@ public final class CassandraAlertRepository implements AlertRepository {
             return Optional.empty();
         }
 
-        return Optional.of(convertFromCassandraAlert(cassandraAlert));
+        return Optional.of(cassandraAlert.toInternal());
     }
 
     @Override
@@ -143,7 +141,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         }
 
         final List<Alert> alerts = alertStream
-                .map(this::convertFromCassandraAlert)
+                .map(models.cassandra.Alert::toInternal)
                 .collect(Collectors.toList());
         final List<Alert> paginated = alerts.stream().skip(start).limit(query.getLimit()).collect(Collectors.toList());
         return new DefaultQueryResult<>(paginated, alerts.size());
@@ -186,31 +184,6 @@ public final class CassandraAlertRepository implements AlertRepository {
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("Alert repository is not %s", expectedState ? "open" : "closed"));
         }
-    }
-
-    private Alert convertFromCassandraAlert(final models.cassandra.Alert cassandraAlert) {
-        return new DefaultAlert.Builder()
-                .setId(cassandraAlert.getUuid())
-                .setName(cassandraAlert.getName())
-                .setQuery(cassandraAlert.getQuery())
-                .setPeriod(Period.seconds(cassandraAlert.getPeriodInSeconds()).normalizedStandard())
-                .setNagiosExtension(convertToInternalNagiosExtension(cassandraAlert.getNagiosExtensions()))
-                .build();
-    }
-
-    private NagiosExtension convertToInternalNagiosExtension(final Map<String, String> nagiosExtensions) {
-        if (nagiosExtensions == null) {
-            return null;
-        }
-
-        final NagiosExtension.Builder internal = new NagiosExtension.Builder();
-        Optional.ofNullable(nagiosExtensions.get("severity")).ifPresent(internal::setSeverity);
-        Optional.ofNullable(nagiosExtensions.get("notify")).ifPresent(internal::setNotify);
-        Optional.ofNullable(nagiosExtensions.get("attempts")).ifPresent(value ->
-                internal.setMaxCheckAttempts(Integer.parseInt(value)));
-        Optional.ofNullable(nagiosExtensions.get("freshness")).ifPresent(value ->
-                internal.setFreshnessThresholdInSeconds(Long.parseLong(value)));
-        return internal.build();
     }
 
     private Map<String, String> convertToCassandraNagiosExtension(final NagiosExtension nagiosExtension) {

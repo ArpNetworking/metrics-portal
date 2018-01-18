@@ -23,9 +23,14 @@ import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
+import models.internal.NagiosExtension;
+import models.internal.impl.DefaultAlert;
+import models.internal.impl.DefaultOrganization;
 import org.joda.time.Instant;
+import org.joda.time.Period;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.Version;
 
@@ -139,6 +144,36 @@ public class Alert {
         nagiosExtensions = value;
     }
 
+    /**
+     * Converts this model into an {@link models.internal.Alert}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal() {
+        return new DefaultAlert.Builder()
+                .setId(getUuid())
+                .setName(getName())
+                .setQuery(getQuery())
+                .setPeriod(Period.seconds(getPeriodInSeconds()).normalizedStandard())
+                .setNagiosExtension(convertToInternalNagiosExtension(getNagiosExtensions()))
+                .setOrganization(new DefaultOrganization.Builder().setId(organization).build())
+                .build();
+    }
+
+    private NagiosExtension convertToInternalNagiosExtension(final Map<String, String> extensions) {
+        if (extensions == null) {
+            return null;
+        }
+
+        final NagiosExtension.Builder internal = new NagiosExtension.Builder();
+        Optional.ofNullable(extensions.get("severity")).ifPresent(internal::setSeverity);
+        Optional.ofNullable(extensions.get("notify")).ifPresent(internal::setNotify);
+        Optional.ofNullable(extensions.get("attempts")).ifPresent(value ->
+                internal.setMaxCheckAttempts(Integer.parseInt(value)));
+        Optional.ofNullable(extensions.get("freshness")).ifPresent(value ->
+                internal.setFreshnessThresholdInSeconds(Long.parseLong(value)));
+        return internal.build();
+    }
 
     /**
      * Queries for alerts.

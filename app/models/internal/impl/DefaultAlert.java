@@ -20,6 +20,7 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.Alert;
 import models.internal.NagiosExtension;
+import models.internal.Organization;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.Period;
@@ -38,6 +39,11 @@ public final class DefaultAlert implements Alert {
     @Override
     public UUID getId() {
         return _id;
+    }
+
+    @Override
+    public Organization getOrganization() {
+        return _organization;
     }
 
     @Override
@@ -103,6 +109,7 @@ public final class DefaultAlert implements Alert {
 
     private DefaultAlert(final Builder builder) {
         _id = builder._id;
+        _organization =  builder._organization;
         _name = builder._name;
         _query = builder._query;
         _period = builder._period;
@@ -110,6 +117,7 @@ public final class DefaultAlert implements Alert {
     }
 
     private final UUID _id;
+    private final Organization _organization;
     private final String _name;
     private final String _query;
     private final Period _period;
@@ -135,6 +143,17 @@ public final class DefaultAlert implements Alert {
          */
         public Builder setId(final UUID value) {
             _id = value;
+            return this;
+        }
+
+        /**
+         * A supplier to provide the Organization. Required. Cannot be null.
+         *
+         * @param value The organization supplier.
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setOrganization(final Organization value) {
+            _organization = value;
             return this;
         }
 
@@ -184,6 +203,8 @@ public final class DefaultAlert implements Alert {
 
         @NotNull
         private UUID _id;
+        @NotNull
+        private Organization _organization;
         @NotNull
         @NotEmpty
         private String _name;

@@ -32,6 +32,7 @@ import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
 import models.internal.NagiosExtension;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlert;
 import models.view.PagedContainer;
@@ -80,9 +81,10 @@ public class AlertController extends Controller {
      */
     public Result addOrUpdate() {
         final Alert alert;
+        final Organization organization = _organizationProvider.getOrganization(request());
         try {
             final models.view.Alert viewAlert = buildViewAlert(request().body());
-            alert = convertToInternalAlert(viewAlert);
+            alert = convertToInternalAlert(viewAlert, organization);
         } catch (final IOException e) {
             LOGGER.error()
                     .setMessage("Failed to build an alert.")
@@ -92,7 +94,7 @@ public class AlertController extends Controller {
         }
 
         try {
-            _alertRepository.addOrUpdateAlert(alert, _organizationProvider.getOrganization(request()));
+            _alertRepository.addOrUpdateAlert(alert, organization);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -259,11 +261,12 @@ public class AlertController extends Controller {
         }
     }
 
-    private Alert convertToInternalAlert(final models.view.Alert viewAlert) throws IOException {
+    private Alert convertToInternalAlert(final models.view.Alert viewAlert, final Organization organization) throws IOException {
         try {
             final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
                     .setName(viewAlert.getName())
-                    .setQuery(viewAlert.getQuery());
+                    .setQuery(viewAlert.getQuery())
+                    .setOrganization(organization);
             if (viewAlert.getId() != null) {
                 alertBuilder.setId(UUID.fromString(viewAlert.getId()));
             }

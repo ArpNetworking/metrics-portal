@@ -17,8 +17,11 @@ package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.impl.DefaultAlert;
+import org.joda.time.Period;
 
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -159,5 +162,23 @@ public class Alert {
     public void setOrganization(final Organization organizationValue) {
         this.organization = organizationValue;
     }
+
+    /**
+     * Converts this model into an {@link models.internal.Alert}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal() {
+        final DefaultAlert.Builder builder = new DefaultAlert.Builder()
+                .setId(getUuid())
+                .setOrganization(organization.toInternal())
+                .setName(getName())
+                .setQuery(getQuery())
+                .setPeriod(Period.seconds(getPeriod()).normalizedStandard())
+                .setNagiosExtension(Optional.ofNullable(getNagiosExtension()).map(NagiosExtension::toInternal).orElse(null));
+
+        return builder.build();
+    }
+
 }
 // CHECKSTYLE.ON: MemberNameCheck
