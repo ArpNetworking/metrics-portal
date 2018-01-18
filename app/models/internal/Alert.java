@@ -34,6 +34,13 @@ public interface Alert {
     UUID getId();
 
     /**
+     * The organization that owns the alert.
+     *
+     * @return The organization that owns the alert.
+     */
+    Organization getOrganization();
+
+    /**
      * The name of the alert.
      *
      * @return The name of the alert.

@@ -65,6 +65,7 @@ public final class TestBeanFactory {
                 .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
                 .setQuery("select metric where host = " + RANDOM.nextInt())
+                .setOrganization(Organization.DEFAULT)
                 .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard());
     }
 
