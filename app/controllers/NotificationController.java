@@ -22,27 +22,35 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
+import com.google.inject.Injector;
 import com.typesafe.config.Config;
+import models.internal.AlertTrigger;
 import models.internal.NotificationEntry;
 import models.internal.NotificationGroup;
 import models.internal.NotificationGroupQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.view.Notification;
+import models.internal.impl.DefaultAlert;
+import models.internal.impl.DefaultAlertTrigger;
+import models.internal.impl.DefaultEmailNotificationEntry;
+import models.internal.impl.DefaultNotificationGroup;
 import models.view.PagedContainer;
 import models.view.Pagination;
+import org.joda.time.DateTime;
+import org.joda.time.Period;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Results;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -60,6 +68,7 @@ public class NotificationController extends Controller {
      *
      * @param mapper Instance of an {@link ObjectMapper}
      * @param configuration Application configuration
+     * @param injector injector
      * @param notificationRepository Instance of a {@link NotificationRepository}
      * @param organizationProvider An {@link OrganizationProvider} to get the organization from the request
      */
@@ -67,9 +76,11 @@ public class NotificationController extends Controller {
     public NotificationController(
             final ObjectMapper mapper,
             final Config configuration,
+            final Injector injector,
             final NotificationRepository notificationRepository,
             final OrganizationProvider organizationProvider) {
         _mapper = mapper;
+        _injector = injector;
         _notificationRepository = notificationRepository;
         _maxLimit = configuration.getInt("notifications.limit");
         _organizationProvider = organizationProvider;
@@ -304,38 +315,42 @@ public class NotificationController extends Controller {
     /**
      * Notifies recipients of an event.
      *
+     * @param emailAddress email addresss
      * @return <code>Result</code> of NoContent or error
      */
-    public CompletionStage<Result> notifyEvent() {
-        final JsonNode body = request().body().asJson();
-        if (body == null) {
-            throw new RuntimeException("null body for notification");
-        }
+    public CompletionStage<Result> testNotification(final String emailAddress) {
+        final DefaultEmailNotificationEntry entry = new DefaultEmailNotificationEntry.Builder()
+                .setAddress(emailAddress)
+                .build();
+        final DefaultNotificationGroup notificationGroup = new DefaultNotificationGroup.Builder()
+                .setEntries(Collections.singletonList(entry))
+                .setName("Test Notification Group")
+                .setId(UUID.randomUUID())
+                .build();
 
-        final Notification notification;
-        try {
-            notification = _mapper.treeToValue(body, Notification.class);
-        } catch (final IOException e) {
-            throw new RuntimeException("invalid body for notification");
-        }
+        final DefaultAlert alert = new DefaultAlert.Builder()
+                .setId(UUID.randomUUID())
+                .setName("TestAlert")
+                .setNotificationGroup(Optional.of(notificationGroup))
+                .setQuery("select test/alert | threshold threshold = 1 operator=GREATER_THAN")
+                .setOrganization(Organization.DEFAULT)
+                .setCheckInterval(Period.minutes(1))
+                .build();
+        final AlertTrigger trigger = new DefaultAlertTrigger.Builder()
+                .setArgs(ImmutableMap.of("arg1", "val1", "arg2", "val2"))
+                .setTime(DateTime.now().minusMinutes(5))
+                .setEndTime(Optional.of(DateTime.now()))
+                .build();
 
-        //TODO(brandon): get the recipients for this notification
-        final Optional<NotificationGroup> notificationGroup =
-                _notificationRepository.getNotificationGroup(notification.getAlertId(), _organizationProvider.getOrganization(request()));
-        if (!notificationGroup.isPresent()) {
-            LOGGER.warn()
-                    .setMessage("No notification group found for notification")
-                    .addData("alertId", notification.getAlertId())
-                    .log();
-            throw new IllegalStateException("Alert should have a notification group. AlertId: " + notification.getAlertId());
-        }
-
-        return CompletableFuture.completedFuture(Results.noContent());
+        return entry.notifyRecipient(alert, trigger, _injector)
+                .thenApply(aVoid -> Results.ok("sent"))
+                .exceptionally(t -> Results.internalServerError(t.toString()));
     }
 
     private final int _maxLimit;
     private final OrganizationProvider _organizationProvider;
     private final ObjectMapper _mapper;
+    private final Injector _injector;
     private final NotificationRepository _notificationRepository;
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationController.class);
 }
