@@ -49,6 +49,7 @@ GET        /v1/notificationgroup/:id            controllers.NotificationControll
 PUT        /v1/notificationgroup                controllers.NotificationController.addOrUpdate
 PUT        /v1/notificationgroup/:id/recipient  controllers.NotificationController.addRecipient(id: String)
 DELETE     /v1/notificationgroup/:id/recipient  controllers.NotificationController.removeRecipient(id: String)
+GET        /v1/notification/test           controllers.NotificationController.testNotification(address: String)
 
 # Metrics Queries
 POST       /v1/metrics/query                    controllers.MetricsController.query()
