@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {EmailRecipient, NotificationGroup, Recipient} from './NotificationGroup';
+import {EmailRecipient, NotificationGroup, Recipient, WebHookRecipient} from './NotificationGroup';
 import ko = require('knockout');
 import $ = require('jquery');
 import uuid = require('../Uuid');
@@ -87,8 +87,13 @@ class EditNotificationGroupViewModel {
     newRecipient(): void {
         let recipient;
 
-        recipient = new EmailRecipient();
-        recipient.address = this.addAddress();
+        if (this.addType() === "email") {
+            recipient = new EmailRecipient();
+            recipient.address = this.addAddress();
+        } else if (this.addType() === "webhook") {
+            recipient = new WebHookRecipient();
+            recipient.address = this.addAddress();
+        }
         let saveRecipient = () => {$.ajax({
             type: "PUT",
             url: "/v1/notificationgroup/" + this.id() + "/recipient",
