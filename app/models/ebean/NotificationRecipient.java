@@ -15,6 +15,10 @@
  */
 package models.ebean;
 
+import models.internal.NotificationEntry;
+import models.internal.impl.DefaultEmailNotificationEntry;
+import models.internal.impl.WebHookNotificationEntry;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
@@ -38,6 +42,26 @@ import javax.persistence.Table;
 @DiscriminatorColumn(name = "type")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public abstract class NotificationRecipient {
+    /**
+     * Creates an ebean model from an internal model.
+     *
+     * @param recipient an internal model
+     * @return an ebean model
+     */
+    public static NotificationRecipient fromInternal(final NotificationEntry recipient) {
+        if (recipient instanceof DefaultEmailNotificationEntry) {
+            final DefaultEmailNotificationEntry emailRecipient = (DefaultEmailNotificationEntry) recipient;
+            final EmailNotificationRecipient notificationRecipient = new EmailNotificationRecipient();
+            notificationRecipient.setAddress(emailRecipient.getAddress());
+            return notificationRecipient;
+        } else if (recipient instanceof WebHookNotificationEntry) {
+            final WebHookNotificationEntry webHookNotificationEntry = (WebHookNotificationEntry) recipient;
+            final WebHookNotificationRecipient notificationRecipient = new WebHookNotificationRecipient();
+            notificationRecipient.setAddress(webHookNotificationEntry.getAddress());
+            return notificationRecipient;
+        }
+        throw new IllegalArgumentException("Unknown recipient type \"" + recipient.getClass().getCanonicalName() + "\"");
+    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

@@ -33,6 +33,7 @@
                         <div class="form-inline form-group">
                             <select data-bind="value: addType" class="form-control">
                                 <option value="email">Email</option>
+                                <option value="webhook">WebHook</option>
                             </select>
                             <span data-bind="template: {name: addRecipientTemplate}"></span>
                             <input type="submit" class="btn btn-info" value="+">
@@ -54,6 +55,16 @@
 <script type="text/html" id="template-recipient-email">
     <li>
         <i class="fa fa-envelope" aria-hidden="true"></i> <span data-bind="text: address"></span>
+        <a href="#" data-bind="click: $root.removeRecipient.bind($root)"><i class="fa fa-trash-o"></i></a>
+    </li>
+</script>
+<script type="text/html" id="template-add-recipient-webhook">
+    <label for="webhookAddressInput">WebHook</label>
+    <input class="form-control" data-bind="value: addAddress" type="url" id="webhookAddressInput" placeholder="URL">
+</script>
+<script type="text/html" id="template-recipient-webhook">
+    <li>
+        <i class="fa fa-cloud" aria-hidden="true"></i> <span data-bind="text: address"></span>
         <a href="#" data-bind="click: $root.removeRecipient.bind($root)"><i class="fa fa-trash-o"></i></a>
     </li>
 </script>

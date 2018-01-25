@@ -26,14 +26,12 @@ import io.ebean.Junction;
 import io.ebean.PagedList;
 import io.ebean.Query;
 import io.ebean.Transaction;
-import models.ebean.EmailNotificationRecipient;
 import models.ebean.NotificationRecipient;
 import models.internal.NotificationEntry;
 import models.internal.NotificationGroup;
 import models.internal.NotificationGroupQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultEmailNotificationEntry;
 import models.internal.impl.DefaultNotificationGroupQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
@@ -208,7 +206,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                 throw new IllegalArgumentException("NotificationGroup not found");
             }
 
-            final NotificationRecipient toAdd = internalToEbeanRecipient(recipient);
+            final NotificationRecipient toAdd = NotificationRecipient.fromInternal(recipient);
             final List<NotificationRecipient> recipients = notificationGroup.getRecipients();
             recipients.add(toAdd);
             _notificationQueryGenerator.saveNotificationGroup(notificationGroup);
@@ -258,7 +256,7 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                 throw new IllegalArgumentException("NotificationGroup not found");
             }
 
-            final NotificationRecipient toRemove = internalToEbeanRecipient(recipient);
+            final NotificationRecipient toRemove = NotificationRecipient.fromInternal(recipient);
             final List<NotificationRecipient> recipients = notificationGroup.getRecipients();
             final int index = recipients.indexOf(toRemove);
             if (index == -1) {
@@ -308,16 +306,6 @@ public class DatabaseNotificationRepository implements NotificationRepository {
 
     private DatabaseNotificationRepository(final NotificationQueryGenerator queryGenerator) {
         _notificationQueryGenerator = queryGenerator;
-    }
-
-    private NotificationRecipient internalToEbeanRecipient(final NotificationEntry recipient) {
-        if (recipient instanceof DefaultEmailNotificationEntry) {
-            final DefaultEmailNotificationEntry emailRecipient = (DefaultEmailNotificationEntry) recipient;
-            final EmailNotificationRecipient notificationRecipient = new EmailNotificationRecipient();
-            notificationRecipient.setAddress(emailRecipient.getAddress());
-            return notificationRecipient;
-        }
-        throw new IllegalArgumentException("Unknown recipient type \"" + recipient.getClass().getCanonicalName() + "\"");
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
