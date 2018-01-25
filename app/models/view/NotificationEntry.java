@@ -34,6 +34,7 @@ import java.util.Map;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = EmailNotificationEntry.class, name = "email"),
+        @JsonSubTypes.Type(value = WebHookNotificationEntry.class, name = "webhook")
 })
 public abstract class NotificationEntry {
     @JsonAnyGetter
@@ -68,6 +69,8 @@ public abstract class NotificationEntry {
     public static NotificationEntry fromInternal(final models.internal.NotificationEntry entry) {
         if (entry instanceof DefaultEmailNotificationEntry) {
             return EmailNotificationEntry.fromInternal((DefaultEmailNotificationEntry) entry);
+        } else if (entry instanceof models.internal.impl.WebHookNotificationEntry) {
+            return WebHookNotificationEntry.fromInternal((models.internal.impl.WebHookNotificationEntry) entry);
         } else {
             throw new IllegalArgumentException("Don't know how to convert a " + entry.getClass() + " to a view");
         }
