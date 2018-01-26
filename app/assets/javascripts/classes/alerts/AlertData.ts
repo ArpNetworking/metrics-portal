@@ -22,16 +22,18 @@ class AlertData {
     name: string;
     query: string;
     period: string;
+    comment: string
     notificationGroupId: string;
     extensions: { [id: string]: string };
     editUri: KnockoutComputed<string>;
 
-    constructor(id: string, name: string, period: string, extensions: { [id: string]: string }, notificationGroupId: string) {
+    constructor(id: string, name: string, period: string, extensions: { [id: string]: string }, notificationGroupId: string, comment: string) {
         this.id = id;
         this.name = name;
         this.period = period;
         this.extensions = extensions;
         this.notificationGroupId = notificationGroupId;
+        this.comment = comment;
 
         this.editUri = ko.computed<string>(() => {
             return "#alert/edit/" + this.id;

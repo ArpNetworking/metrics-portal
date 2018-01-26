@@ -77,6 +77,9 @@ public class Alert {
     @Column(name = "notification_group_id")
     private UUID notificationGroupId;
 
+    @Column(name = "comment")
+    private String comment;
+
     public Long getVersion() {
         return version;
     }
@@ -157,6 +160,14 @@ public class Alert {
         notificationGroupId = value;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(final String value) {
+        comment = value;
+    }
+
     /**
      * Converts this model into an {@link models.internal.Alert}.
      *
@@ -165,7 +176,7 @@ public class Alert {
      */
     public models.internal.Alert toInternal(final NotificationRepository notificationRepository) {
         final Organization org = new DefaultOrganization.Builder().setId(organization).build();
-        return new DefaultAlert.Builder()
+        final DefaultAlert.Builder builder = new DefaultAlert.Builder()
                 .setId(getUuid())
                 .setName(getName())
                 .setQuery(getQuery())
@@ -176,8 +187,11 @@ public class Alert {
                         Optional.ofNullable(
                                 getNotificationGroupId())
                                 .flatMap(id -> notificationRepository.getNotificationGroup(id, org))
-                                .orElse(null))
-                .build();
+                                .orElse(null));
+        if (comment != null) {
+            builder.setComment(comment);
+        }
+        return builder.build();
     }
 
     private NagiosExtension convertToInternalNagiosExtension(final Map<String, String> extensions) {

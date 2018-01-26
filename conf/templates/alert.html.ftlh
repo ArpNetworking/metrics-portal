@@ -104,6 +104,7 @@
                                 <tr>
                                     <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;">
                                         <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">Alert <a href="${alertUrl}">${alert.name}</a> has gone into alarm at ${trigger.time.toString("HH:mm MM/dd/YYYY z")}.</p>
+                                        <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;">${alert.comment}</p>
                                         <table>
                                             <#list trigger.args as key, value>
                                                 <tr>

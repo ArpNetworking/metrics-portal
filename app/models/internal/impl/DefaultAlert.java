@@ -18,6 +18,7 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 import models.internal.Alert;
 import models.internal.NagiosExtension;
 import models.internal.NotificationGroup;
@@ -58,9 +59,41 @@ public final class DefaultAlert implements Alert {
     }
 
     @Override
+    public String getComment() {
+        return _comment;
+    }
+
+    @Override
     public Period getPeriod() {
         return _period;
     }
+
+    @Override
+    public models.view.Alert toView() {
+        final models.view.Alert viewAlert = new models.view.Alert();
+        viewAlert.setExtensions(mergeExtensions(_nagiosExtension));
+        viewAlert.setId(_id.toString());
+        viewAlert.setName(_name);
+        viewAlert.setQuery(_query);
+        viewAlert.setPeriod(_period.toString());
+        viewAlert.setComment(_comment);
+        if (_notificationGroup != null) {
+            viewAlert.setNotificationGroupId(_notificationGroup.getId());
+        }
+        return viewAlert;
+    }
+
+    private ImmutableMap<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
+        final ImmutableMap.Builder<String, Object> nagiosMapBuilder = ImmutableMap.builder();
+        if (nagiosExtension != null) {
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
+        }
+        return nagiosMapBuilder.build();
+    }
+
 
     @Override
     public NagiosExtension getNagiosExtension() {
@@ -79,6 +112,7 @@ public final class DefaultAlert implements Alert {
                 .add("class", this.getClass())
                 .add("Id", _id)
                 .add("Name", _name)
+                .add("Comment", _comment)
                 .add("Query", _query)
                 .add("Period", _period)
                 .add("NagiosExtensions", _nagiosExtension)
@@ -100,6 +134,7 @@ public final class DefaultAlert implements Alert {
         return Objects.equals(_id, otherAlert._id)
                 && Objects.equals(_name, otherAlert._name)
                 && Objects.equals(_query, otherAlert._query)
+                && Objects.equals(_comment, otherAlert._comment)
                 && Objects.equals(_period.normalizedStandard(), otherAlert._period.normalizedStandard())
                 && Objects.equals(_notificationGroup, otherAlert._notificationGroup)
                 && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);
@@ -111,6 +146,7 @@ public final class DefaultAlert implements Alert {
                 _id,
                 _query,
                 _name,
+                _comment,
                 _period,
                 _nagiosExtension,
                 _notificationGroup);
@@ -124,15 +160,22 @@ public final class DefaultAlert implements Alert {
         _period = builder._period;
         _nagiosExtension = builder._nagiosExtension;
         _notificationGroup = builder._notificationGroup;
+        _comment = builder._comment;
     }
 
     private final UUID _id;
     private final Organization _organization;
     private final String _name;
     private final String _query;
+    private final String _comment;
     private final Period _period;
     private final NagiosExtension _nagiosExtension;
     private final NotificationGroup _notificationGroup;
+
+    private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";
+    private static final String NAGIOS_EXTENSION_NOTIFY_KEY = "notify";
+    private static final String NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY = "max_check_attempts";
+    private static final String NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY = "freshness_threshold";
 
     /**
      * Builder implementation for <code>DefaultAlert</code>.
@@ -191,6 +234,17 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
+         * Comment about the alert. Optional. Cannot be null. Defaults to empty.
+         *
+         * @param value Alert comment
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setComment(final String value) {
+            _comment = value;
+            return this;
+        }
+
+        /**
          * The period. Required. Cannot be null or empty.
          *
          * @param value The period.
@@ -233,6 +287,8 @@ public final class DefaultAlert implements Alert {
         @NotNull
         @NotEmpty
         private String _query;
+        @NotNull
+        private String _comment = "";
         @NotNull
         private Period _period;
         private NotificationGroup _notificationGroup;
