@@ -76,6 +76,9 @@ public class Alert {
     @Column(name = "period_in_seconds")
     private int periodInSeconds;
 
+    @Column(name = "comment")
+    private String comment;
+
     @OneToOne(mappedBy = "alert", cascade = CascadeType.ALL)
     private NagiosExtension nagiosExtension;
 
@@ -175,6 +178,14 @@ public class Alert {
         organization = value;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(final String value) {
+        comment = value;
+    }
+
     /**
      * Converts this model into an {@link models.internal.Alert}.
      *
@@ -189,6 +200,9 @@ public class Alert {
                 .setPeriod(Period.seconds(getPeriod()).normalizedStandard())
                 .setNagiosExtension(Optional.ofNullable(getNagiosExtension()).map(NagiosExtension::toInternal).orElse(null));
 
+        if (comment != null) {
+            builder.setComment(comment);
+        }
         if (getNotificationGroup() != null) {
             builder.setNotificationGroup(getNotificationGroup().toInternal());
         }

@@ -202,6 +202,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setNagiosExtension(NagiosExtension.fromInternal(alert.getNagiosExtension()));
             ebeanAlert.setName(alert.getName());
             ebeanAlert.setQuery(alert.getQuery());
+            ebeanAlert.setComment(alert.getComment());
             ebeanAlert.setPeriod(alert.getPeriod().toStandardSeconds().getSeconds());
             if (alert.getNotificationGroup() != null) {
                 ebeanAlert.setNotificationGroup(NotificationGroup.findByNotificationGroup(alert.getNotificationGroup()));

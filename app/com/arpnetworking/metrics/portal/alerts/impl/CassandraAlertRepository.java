@@ -176,6 +176,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         cassAlert.setNagiosExtensions(convertToCassandraNagiosExtension(alert.getNagiosExtension()));
         cassAlert.setName(alert.getName());
         cassAlert.setQuery(alert.getQuery());
+        cassAlert.setComment(alert.getComment());
         if (alert.getNotificationGroup() != null) {
             cassAlert.setNotificationGroupId(alert.getNotificationGroup().getId());
         } else {
