@@ -89,6 +89,7 @@ class EditAlertViewModel {
     name = ko.observable<string>("");
     query = ko.observable<string>("select my_metric group by cluster | avg | threshold threshold=10 operator=GREATER_THAN").extend({ rateLimit: { timeout: 500, method: "notifyWhenChangesStop" } });
     period = ko.observable<string>("PT1M");
+    comment = ko.observable<string>("");
     container: HTMLElement;
     queryErrors = ko.observableArray<string>();
     queryWarnings = ko.observableArray<string>();
@@ -145,6 +146,7 @@ class EditAlertViewModel {
             this.name(data.name);
             this.query(data.query);
             this.period(data.period);
+            this.comment(data.comment);
 
             if (data.notificationGroupId) {
                 $.getJSON("/v1/notificationgroup/" + data.notificationGroupId, {}, (data: NotificationGroup) => {
@@ -358,6 +360,7 @@ class EditAlertViewModel {
                 "query": this.query(),
                 "name": this.name(),
                 "period": this.period(),
+                "comment": this.comment(),
                 "notificationGroupId": notificationGroupId
             }),
         }).done(() => {

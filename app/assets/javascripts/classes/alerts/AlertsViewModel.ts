@@ -27,7 +27,8 @@ class AlertsList extends PaginatedSearchableList<AlertData> {
                 v.name,
                 v.period,
                 v.extensions,
-                v.notificationGroupId
+                v.notificationGroupId,
+                v.comment
             );});
             callback(alertsList, data.pagination);
         });

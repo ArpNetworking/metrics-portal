@@ -55,11 +55,25 @@ public interface Alert {
     String getQuery();
 
     /**
+     * The comment.
+     *
+     * @return The comment about
+     */
+    String getComment();
+
+    /**
      * The period to evaluate the condition in.
      *
      * @return The period to evaluate the condition in.
      */
     Period getPeriod();
+
+    /**
+     * Converts the model to a view model.
+     *
+     * @return a new view model
+     */
+    models.view.Alert toView();
 
     /**
      * Nagios specific extensions.

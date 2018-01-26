@@ -23,10 +23,10 @@ import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
@@ -34,20 +34,14 @@ import com.typesafe.config.Config;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
-import models.internal.NagiosExtension;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultAlert;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import org.joda.time.Minutes;
-import org.joda.time.Period;
 import play.libs.Json;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -92,9 +86,15 @@ public class AlertController extends Controller {
         final Alert alert;
         final Organization organization = _organizationProvider.getOrganization(request());
         try {
-            final models.view.Alert viewAlert = buildViewAlert(request().body());
-            alert = convertToInternalAlert(viewAlert, organization);
-        } catch (final IOException e) {
+            final JsonNode jsonBody = request().body().asJson();
+            if (jsonBody == null) {
+                return badRequest("Missing request body.");
+            }
+            final models.view.Alert viewAlert = OBJECT_MAPPER.treeToValue(jsonBody, models.view.Alert.class);
+            alert = viewAlert.toInternal(organization, _notificationRepository, OBJECT_MAPPER);
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 400
+        } catch (final RuntimeException | JsonProcessingException e) {
+            // CHECKSTYLE.ON: IllegalCatch
             LOGGER.error()
                     .setMessage("Failed to build an alert.")
                     .setThrowable(e)
@@ -202,7 +202,7 @@ public class AlertController extends Controller {
         return ok(Json.toJson(new PagedContainer<>(
                 result.values()
                         .stream()
-                        .map(this::internalModelToViewModel)
+                        .map(Alert::toView)
                         .collect(Collectors.toList()),
                 new Pagination(
                         request().path(),
@@ -231,7 +231,7 @@ public class AlertController extends Controller {
             return notFound();
         }
         // Return as JSON
-        return ok(Json.toJson(internalModelToViewModel(result.get())));
+        return ok(Json.toJson(result.get().toView()));
     }
 
     /**
@@ -251,87 +251,6 @@ public class AlertController extends Controller {
         } else {
             return notFound();
         }
-    }
-
-    private models.view.Alert internalModelToViewModel(final Alert alert) {
-        final models.view.Alert viewAlert = new models.view.Alert();
-        viewAlert.setExtensions(mergeExtensions(alert.getNagiosExtension()));
-        viewAlert.setId(alert.getId().toString());
-        viewAlert.setName(alert.getName());
-        viewAlert.setQuery(alert.getQuery());
-        viewAlert.setPeriod(alert.getPeriod().toString());
-        if (alert.getNotificationGroup() != null) {
-            viewAlert.setNotificationGroupId(alert.getNotificationGroup().getId());
-        }
-        return viewAlert;
-    }
-
-    private Optional<NagiosExtension> convertToInternalNagiosExtension(final Map<String, Object> extensionsMap) {
-        try {
-            return Optional.of(
-                    OBJECT_MAPPER
-                            .convertValue(extensionsMap, NagiosExtension.Builder.class)
-                            .build());
-            // CHECKSTYLE.OFF: IllegalCatch - Assume there is no Nagios data on build failure.
-        } catch (final Exception e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            return Optional.empty();
-        }
-    }
-
-    private Alert convertToInternalAlert(final models.view.Alert viewAlert, final Organization organization) throws IOException {
-        try {
-            final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
-                    .setName(viewAlert.getName())
-                    .setQuery(viewAlert.getQuery())
-                    .setOrganization(organization);
-            if (viewAlert.getId() != null) {
-                alertBuilder.setId(UUID.fromString(viewAlert.getId()));
-            }
-            if (viewAlert.getPeriod() != null) {
-                // Minimum period supported is 1 minute
-                Period period = Period.parse(viewAlert.getPeriod());
-                if (period.toStandardMinutes().isLessThan(Minutes.ONE)) {
-                    period = Period.minutes(1);
-                }
-                alertBuilder.setPeriod(period);
-
-            }
-            if (viewAlert.getExtensions() != null) {
-                alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));
-            }
-            if (viewAlert.getNotificationGroupId() != null) {
-                alertBuilder.setNotificationGroup(
-                        _notificationRepository.getNotificationGroup(
-                                viewAlert.getNotificationGroupId(),
-                                organization)
-                                .orElse(null));
-            }
-            return alertBuilder.build();
-            // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            throw new IOException(e);
-        }
-    }
-
-    private ImmutableMap<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
-        final ImmutableMap.Builder<String, Object> nagiosMapBuilder = ImmutableMap.builder();
-        if (nagiosExtension != null) {
-            nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
-            nagiosMapBuilder.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
-            nagiosMapBuilder.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
-            nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
-        }
-        return nagiosMapBuilder.build();
-    }
-
-    private models.view.Alert buildViewAlert(final Http.RequestBody body) throws IOException {
-        final JsonNode jsonBody = body.asJson();
-        if (jsonBody == null) {
-            throw new IOException();
-        }
-        return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Alert.class);
     }
 
     private AlertController(
@@ -354,9 +273,5 @@ public class AlertController extends Controller {
     private final ActorRef _alertExecutorRegion;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
-    private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";
-    private static final String NAGIOS_EXTENSION_NOTIFY_KEY = "notify";
-    private static final String NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY = "max_check_attempts";
-    private static final String NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY = "freshness_threshold";
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }
