@@ -34,6 +34,7 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
+import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -91,6 +92,8 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
+        bind(OrganizationProvider.class)
+                .toProvider(OrganizationProviderProvider.class);
     }
 
     @Singleton
@@ -163,6 +166,28 @@ public class MainModule extends AbstractModule {
         });
 
         return objectMapper;
+    }
+
+    private static final class OrganizationProviderProvider implements Provider<OrganizationProvider> {
+        @Inject
+        OrganizationProviderProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+        }
+
+        @Override
+        public OrganizationProvider get() {
+            return _injector.getInstance(
+                    ConfigurationHelper.<OrganizationProvider>getType(_environment, _configuration, "organizationProvider.type"));
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
     }
 
     private static final class HealthProviderProvider implements Provider<HealthProvider> {

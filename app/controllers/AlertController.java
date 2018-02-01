@@ -17,6 +17,7 @@ package controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +33,6 @@ import models.internal.AlertQuery;
 import models.internal.Context;
 import models.internal.NagiosExtension;
 import models.internal.Operator;
-import models.internal.Organization;
 import models.internal.Quantity;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlert;
@@ -63,12 +63,16 @@ public class AlertController extends Controller {
     /**
      * Public constructor.
      *
-     * @param configuration Instance of Play's <code>Configuration</code>.
-     * @param alertRepository Instance of <code>AlertRepository</code>.
+     * @param configuration Instance of Play's {@link Config}.
+     * @param alertRepository Instance of {@link AlertRepository}.
+     * @param organizationProvider Instance of {@link OrganizationProvider}.
      */
     @Inject
-    public AlertController(final Config configuration, final AlertRepository alertRepository) {
-        this(configuration.getInt("alerts.limit"), alertRepository);
+    public AlertController(
+            final Config configuration,
+            final AlertRepository alertRepository,
+            final OrganizationProvider organizationProvider) {
+        this(configuration.getInt("alerts.limit"), alertRepository, organizationProvider);
     }
 
     /**
@@ -90,7 +94,7 @@ public class AlertController extends Controller {
         }
 
         try {
-            _alertRepository.addOrUpdateAlert(alert, Organization.DEFAULT);
+            _alertRepository.addOrUpdateAlert(alert, _organizationProvider.getOrganization(request()));
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -160,7 +164,7 @@ public class AlertController extends Controller {
         }
 
         // Build a host repository query
-        final AlertQuery query = _alertRepository.createQuery(Organization.DEFAULT)
+        final AlertQuery query = _alertRepository.createQuery(_organizationProvider.getOrganization(request()))
                 .contains(argContains)
                 .context(argContext)
                 .service(argService)
@@ -213,7 +217,7 @@ public class AlertController extends Controller {
         } catch (final IllegalArgumentException e) {
             return badRequest();
         }
-        final Optional<Alert> result = _alertRepository.get(identifier, Organization.DEFAULT);
+        final Optional<Alert> result = _alertRepository.get(identifier, _organizationProvider.getOrganization(request()));
         if (!result.isPresent()) {
             return notFound();
         }
@@ -229,7 +233,7 @@ public class AlertController extends Controller {
      */
     public Result delete(final String id) {
         final UUID identifier = UUID.fromString(id);
-        final int deleted = _alertRepository.delete(identifier, Organization.DEFAULT);
+        final int deleted = _alertRepository.delete(identifier, _organizationProvider.getOrganization(request()));
         if (deleted > 0) {
             return noContent();
         } else {
@@ -331,13 +335,15 @@ public class AlertController extends Controller {
         return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Alert.class);
     }
 
-    private AlertController(final int maxLimit, final AlertRepository alertRepository) {
+    private AlertController(final int maxLimit, final AlertRepository alertRepository, final OrganizationProvider organizationProvider) {
         _maxLimit = maxLimit;
         _alertRepository = alertRepository;
+        _organizationProvider = organizationProvider;
     }
 
     private final int _maxLimit;
     private final AlertRepository _alertRepository;
+    private final OrganizationProvider _organizationProvider;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
     private static final String NAGIOS_EXTENSION_SEVERITY_KEY = "severity";

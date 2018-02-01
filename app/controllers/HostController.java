@@ -17,6 +17,7 @@ package controllers;
 
 
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
@@ -27,7 +28,6 @@ import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
-import models.internal.Organization;
 import models.internal.QueryResult;
 import models.view.PagedContainer;
 import models.view.Pagination;
@@ -51,12 +51,16 @@ public class HostController extends Controller {
     /**
      * Public constructor.
      *
-     * @param configuration Instance of Play's <code>Configuration</code>.
-     * @param hostRepository Instance of <code>HostRepository</code>.
+     * @param configuration Instance of Play's {@link Config}
+     * @param hostRepository Instance of {@link HostRepository}
+     * @param organizationProvider Instance of {@link OrganizationProvider}.
      */
     @Inject
-    public HostController(final Config configuration, final HostRepository hostRepository) {
-        this(configuration.getInt("hosts.limit"), hostRepository);
+    public HostController(
+            final Config configuration,
+            final HostRepository hostRepository,
+            final OrganizationProvider organizationProvider) {
+        this(configuration.getInt("hosts.limit"), hostRepository, organizationProvider);
     }
 
     /**
@@ -122,7 +126,7 @@ public class HostController extends Controller {
         }
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createQuery(Organization.DEFAULT)
+        final HostQuery query = _hostRepository.createQuery(_organizationProvider.getOrganization(request()))
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)
@@ -179,13 +183,15 @@ public class HostController extends Controller {
         return viewHost;
     }
 
-    private HostController(final int maxLimit, final HostRepository hostRepository) {
+    private HostController(final int maxLimit, final HostRepository hostRepository, final OrganizationProvider organizationProvider) {
         _maxLimit = maxLimit;
         _hostRepository = hostRepository;
+        _organizationProvider = organizationProvider;
     }
 
     private final int _maxLimit;
     private final HostRepository _hostRepository;
+    private final OrganizationProvider _organizationProvider;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HostController.class);
 }
