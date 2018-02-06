@@ -2,7 +2,7 @@ MQL
 ===
 
 MQL is a language to query and transform time series data. The syntax is loosely based on SQL and supports a logical 
-flow and transformation of data through the use of a | character.
+flow and transformation of data through the use of the `|` character.
 
 In MQL, `select` statements are chained to `aggregators` to transform the raw data into something useful. The result 
 of an MQL query is the result of the last statement.
@@ -14,10 +14,10 @@ The `select` portion of the statement is constructed as follows
 
   (from *start_time* to *end_time*)?  
   select *metric_name*  
-  (where *key1* = '*value1*'(, *key2* = '*value2*')*)?  
+  (where *key1* = '*value1*'(, *key2* = '*value2*')*)?
   (group by *key1* (, *key2*) *)?
-  
-Ex:  from '1 hour ago' to 'now' select cpu/idle where cluster = 'mportal' group by host  
+
+Ex:  `from '1 hour ago' to 'now' select cpu/idle where cluster = 'mportal' group by host`
 This will select a 1 hour window of the cpu/idle metric from the 'mportal' cluster, with a series for each host found.
 
 Aggregators
@@ -56,6 +56,7 @@ is less than 30.
 ### <a name="agg_min"></a>min Aggregator
 
 The min aggregator takes the minimum value in the bucket.  This is an accurate minimum from histograms.
+For a person writing alerts, does the fact that this is an "accurate minimum" mean something different than "minimum"?
 
 ### <a name="agg_max"></a>max Aggregator
 
@@ -69,7 +70,7 @@ input histograms.
 ### <a name="agg_percentile"></a>percentile Aggregator
 
 Computes the specified percentile from the histogram.  This is an estimate to within the size of the bucket the 
-computed percentile resides.
+computed percentile resides.  What does the term "size of the bucket" mean?  Is the fact that this is an estimate going to matter to the writer of an alert?
 
 args: `percentile` - a number between 0.0 and 1 indicating the percentile to use. required. ex: 0.99 = 99%
 
@@ -90,11 +91,13 @@ The sum aggregator returns the sum of the samples recorded in the bucket.  This 
 
 The diff aggregator computes the difference in successive data points in a time series.  This **_does not_** work with 
 histograms.
+How does the alert writer know whether a metric is a histogram or data points in a time series?
 
 ### <a name="agg_union"></a>union Aggregator
 
 The union aggregator combines the results of multiple, named queries into a single result with multiple time series.
 This is often used to feed the results into an aggregator expecting a single input.
+How does that combination happen?  Does it matter to the alert writer?
 
 ### <a name="agg_top"></a>top Aggregator
 
@@ -121,3 +124,4 @@ args:
 * `dwellPeriod` - period the series must be out of spec before an alert event is created. defaults to PT0S (0 seconds)
 * `recoveryPeriod` - period the series must be in spec before an alert event is considered cleared. defaults to PT0S 
 (0 seconds)
+What is meant by "out of spec"? Does that mean that the `operator` evaluates to `true`, or that it evaluates to `false`?
