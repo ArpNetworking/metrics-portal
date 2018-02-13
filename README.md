@@ -23,6 +23,7 @@ Setup
 
 Prerequisites:
 * [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Node](https://nodejs.org/en/download/)
 
 Building:
 
