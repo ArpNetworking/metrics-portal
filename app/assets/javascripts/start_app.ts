@@ -21,6 +21,7 @@ requirejs.config({
         'bootstrap' : '../lib/bootstrap/js/bootstrap.min',
         'd3' : '../lib/d3/build/d3.min',
         'gauge' : 'gauge.min',
+        'configure' : '../lib/configure',
 
         //Durandal
         'durandal/activator': '../lib/durandal/js/activator',

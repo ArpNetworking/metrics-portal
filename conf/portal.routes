@@ -44,6 +44,7 @@ GET        /v1/expressions/:id                  controllers.ExpressionController
 PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
 
 # Templates
+GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
 # Kairosdb proxying
