@@ -21,8 +21,7 @@ import ConnectionVM = require("./ConnectionVM");
 import WSCommand = require("./protocol/WSCommand");
 import GraphViewModel = require("./GraphViewModel");
 import app = require("durandal/app");
-
-declare var Features: any;
+import features = require('configure');
 
 class ConnectionModel {
     socket: WebSocket = null;
@@ -73,7 +72,7 @@ class ConnectionModel {
         var serverHost = serverNameComponents[0];
         var serverPorts = [];
         if (typeof serverNameComponents[1] === "undefined") {
-            serverPorts = Features.metricsAggregatorDaemonPorts;
+            serverPorts = features.metricsAggregatorDaemonPorts;
         } else {
             serverPorts = [serverNameComponents[1]];
         }
@@ -98,7 +97,7 @@ class ConnectionModel {
         }
 
         // If enabled add all proxy routes
-        if (Features.proxyEnabled && serverHost != "localhost" && serverHost != "127.0.0.1") {
+        if (features.proxyEnabled && serverHost != "localhost" && serverHost != "127.0.0.1") {
             var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "v1/proxy/stream";
             for (let serverPort of serverPorts) {
                 var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
