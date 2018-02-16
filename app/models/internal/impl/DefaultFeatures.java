@@ -16,6 +16,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
 import models.internal.Features;
 
@@ -58,6 +59,11 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
+    public ImmutableList<Integer> getMetricsAggregatorDaemonPorts() {
+        return _metricsAggregatorDaemonPorts;
+    }
+
+    @Override
     public String toString() {
         return new StringBuilder()
                 .append("{telemetryEnabled=").append(_telemetryEnabled)
@@ -66,6 +72,7 @@ public final class DefaultFeatures implements Features {
                 .append(", hostRegistryEnabled=").append(_hostRegistryEnabled)
                 .append(", expressionsEnabled=").append(_expressionsEnabled)
                 .append(", alertsEnabled=").append(_alertsEnabled)
+                .append(", metricsAggregatorDaemonPorts=").append(_metricsAggregatorDaemonPorts)
                 .append("}")
                 .toString();
     }
@@ -82,6 +89,8 @@ public final class DefaultFeatures implements Features {
         _hostRegistryEnabled = configuration.getBoolean("portal.features.hostRegistry.enabled");
         _expressionsEnabled = configuration.getBoolean("portal.features.expressions.enabled");
         _alertsEnabled = configuration.getBoolean("portal.features.alerts.enabled");
+        _metricsAggregatorDaemonPorts = ImmutableList.copyOf(
+                configuration.getIntList("portal.features.metricsAggregatorDaemonPorts"));
     }
 
     private final boolean _telemetryEnabled;
@@ -90,4 +99,5 @@ public final class DefaultFeatures implements Features {
     private final boolean _hostRegistryEnabled;
     private final boolean _expressionsEnabled;
     private final boolean _alertsEnabled;
+    private final ImmutableList<Integer> _metricsAggregatorDaemonPorts;
 }

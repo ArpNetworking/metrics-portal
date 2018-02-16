@@ -15,6 +15,8 @@
  */
 package models.internal;
 
+import com.google.common.collect.ImmutableList;
+
 /**
  * Internal model interface for metrics portal feature state.
  *
@@ -63,4 +65,11 @@ public interface Features {
      * @return true if and only if alerts is enabled.
      */
     boolean isAlertsEnabled();
+
+    /**
+     * Metrics aggregator daemon ports.
+     *
+     * @return list of ports for metrics aggregator daemon (or its proxies).
+     */
+    ImmutableList<Integer> getMetricsAggregatorDaemonPorts();
 }

@@ -15,6 +15,11 @@
  */
 package controllers;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import models.internal.Features;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -40,6 +45,24 @@ public final class ApplicationController extends Controller {
     @Inject
     public ApplicationController(final Features features) {
         _features = features;
+        _featuresJson = Suppliers.memoize(() -> {
+            try {
+                return OBJECT_MAPPER.writeValueAsString(_features);
+            } catch (final JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Render configure javascript.
+     *
+     * @return Rendered configure javascript.
+     */
+    public CompletionStage<Result> getConfigureJs() {
+        return CompletableFuture.completedFuture(
+                ok(views.html.ConfigureJsViewModel.render(_featuresJson.get()))
+                        .as("text/javascript"));
     }
 
     /**
@@ -52,4 +75,7 @@ public final class ApplicationController extends Controller {
     }
 
     private final Features _features;
+    private final Supplier<String> _featuresJson;
+
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

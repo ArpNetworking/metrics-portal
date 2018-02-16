@@ -22,6 +22,8 @@ import WSCommand = require("./protocol/WSCommand");
 import GraphViewModel = require("./GraphViewModel");
 import app = require("durandal/app");
 
+declare var Features: any;
+
 class ConnectionModel {
     socket: WebSocket = null;
     server: string;
@@ -69,38 +71,52 @@ class ConnectionModel {
     private resetConnectionList() {
         var serverNameComponents = this.server.split(":");
         var serverHost = serverNameComponents[0];
-        var serverPort = (typeof serverNameComponents[1] === "undefined") ? "7090" : serverNameComponents[1];
+        var serverPorts = [];
+        if (typeof serverNameComponents[1] === "undefined") {
+            serverPorts = Features.metricsAggregatorDaemonPorts;
+        } else {
+            serverPorts = [serverNameComponents[1]];
+        }
 
         var protocol = "ws";
         if (window.location.protocol.toLowerCase().indexOf("https") == 0) {
             protocol = "wss";
         }
-        var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
-        var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
-        var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "v1/proxy/stream";
 
-        if (serverHost == "localhost" || serverHost == "127.0.0.1") {
-            // Do NOT proxy connections to a server host that is relative to the client
-            // TODO(vkoskela): Technically all references are "relative" so we need a feature flag to control proxying [ISSUE-17]
-            this.connectionList = <{path: string; protocol: Protocol}[]>[
+        this.connectionList = <{path: string; protocol: Protocol}[]>[]
+
+        // Add all direct connect routes first
+        for (let serverPort of serverPorts) {
+            var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
+            var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
+
+            this.connectionList = this.connectionList.concat([
                 {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
                 {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
                 {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)}
-            ];
-        } else {
-            this.connectionList = <{path: string; protocol: Protocol}[]>[
-                {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
-                {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
-                {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)},
-                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol: new V2Protocol(this)},
-                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
-                {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)},
-            ];
-            if (protocol == "wss") {
+            ]);
+        }
+
+        // If enabled add all proxy routes
+        if (Features.proxyEnabled && serverHost != "localhost" && serverHost != "127.0.0.1") {
+            var proxyRoute : string = protocol + "://" + window.location.hostname + ":" + window.location.port + window.location.pathname + "v1/proxy/stream";
+            for (let serverPort of serverPorts) {
+                var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
+
                 this.connectionList = this.connectionList.concat([
-                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
-                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
-                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/stream"), protocol: new V1Protocol(this)}]);
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
+                    {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}]);
+
+                // Add a proxy route for insecure connection even if this site is loaded securely
+                // NOTE: The inverse should not be necessary if the remote endpoint supports upgrading
+                if (protocol == "wss") {
+                    var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
+                    this.connectionList = this.connectionList.concat([
+                        {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
+                        {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
+                        {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/stream"), protocol: new V1Protocol(this)}]);
+                }
             }
         }
     }
@@ -187,13 +203,13 @@ class ConnectionModel {
 
             // We've looped through all the endpoints. If we're reconnecting, increment the attempt
             // and try again after a delay
-                this.attempt += 1;
+            this.attempt += 1;
 
-                var randomWait = Math.random() * Math.pow(1.5, this.attempt) * this.reconnectTime;
-                var delay = Math.min(60000, randomWait);
-                console.info("will attempt reconnect in " + (delay / 1000).toFixed() + " seconds.");
-                var self = this;
-                this.retryConnectionHandle = setTimeout(() => { self.buildWebSocket(); }, delay);
+            var randomWait = Math.random() * Math.pow(1.5, this.attempt) * this.reconnectTime;
+            var delay = Math.min(60000, randomWait);
+            console.info("will attempt reconnect in " + (delay / 1000).toFixed() + " seconds.");
+            var self = this;
+            this.retryConnectionHandle = setTimeout(() => { self.buildWebSocket(); }, delay);
         } else {
             // Try to connect to the next endpoint on the list immediately
             this.buildWebSocket();
