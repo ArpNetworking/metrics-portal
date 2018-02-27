@@ -53,6 +53,15 @@ public abstract class BaseAlertExecution extends BaseExecution {
         return CompletableFuture.completedFuture(new TimeSeriesResult.Builder().setResponse(newResponse).build());
     }
 
+    public Period getRecoveryPeriod() {
+        return _recoveryPeriod;
+    }
+
+    public Period getDwellPeriod() {
+        return _dwellPeriod;
+    }
+
+
     /**
      * Evaluates a {@link TimeSeriesResult} and returns a stream of Queries with {@link AlertTrigger}s applied.
      *
