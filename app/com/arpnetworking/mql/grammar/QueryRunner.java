@@ -479,6 +479,7 @@ public class QueryRunner extends MqlBaseVisitor<Object> {
 
     static {
         AGG_BUILDERS.put("threshold", createBuilderProvider(SimpleThresholdAlertExecution.Builder.class));
+        AGG_BUILDERS.put("dataabsent", createBuilderProvider(DataAbsentAlertExecution.Builder.class));
         AGG_BUILDERS.put("union", createBuilderProvider(UnionAggregator.Builder.class));
         AGG_BUILDERS.put("diff", createBuilderProvider(DiffAggregator.Builder.class));
         AGG_BUILDERS.put("top", createBuilderProvider(TopSeriesFilter.Builder.class));
