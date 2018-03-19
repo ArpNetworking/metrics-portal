@@ -90,7 +90,7 @@ public class NotificationActor extends AbstractPersistentActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(AlertTrigger.class, trigger -> {
-                    if (_lastAlertStartTime == null || trigger.getTime().isAfter(_lastAlertStartTime)) {
+                    if (_lastAlertTime == null || trigger.getTime().isAfter(_lastAlertTime)) {
                         final Optional<Alert> alert = _alertRepository.get(_alertId, _organization);
                         final List<NotificationEntry> entries = alert.map(Alert::getNotificationGroup)
                                 .map(NotificationGroup::getEntries)
@@ -117,9 +117,13 @@ public class NotificationActor extends AbstractPersistentActor {
                             .setMessage("Trigger dispatched successfully")
                             .addData("trigger", trigger)
                             .log();
-                    if (_lastAlertStartTime == null || trigger.getTime().isAfter(_lastAlertStartTime)) {
+                    if (_lastAlertTime == null || trigger.getTime().isAfter(_lastAlertTime)) {
                         saveSnapshot(new NotificationState(trigger.getTime()));
-                        _lastAlertStartTime = trigger.getTime();
+                        if (trigger.getEndTime() != null) {
+                            _lastAlertTime = trigger.getEndTime();
+                        } else {
+                            _lastAlertTime = trigger.getTime();
+                        }
                     }
                 })
                 .match(ReceiveTimeout.class, timeout -> context().parent().tell(ShuttingDown.getInstance(), self()))
@@ -131,7 +135,7 @@ public class NotificationActor extends AbstractPersistentActor {
     public Receive createReceiveRecover() {
         return receiveBuilder()
                 .match(SnapshotOffer.class, ss -> {
-                    _lastAlertStartTime = ((NotificationState) ss.snapshot()).getLastNotificationTime();
+                    _lastAlertTime = ((NotificationState) ss.snapshot()).getLastNotificationTime();
                 })
                 .build();
     }
@@ -141,7 +145,7 @@ public class NotificationActor extends AbstractPersistentActor {
         return "alert-" + getSelf().path().name();
     }
 
-    private DateTime _lastAlertStartTime = null;
+    private DateTime _lastAlertTime = null;
 
     private final UUID _alertId;
     private final Organization _organization;
