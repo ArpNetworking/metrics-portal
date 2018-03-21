@@ -31,6 +31,8 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.AlertExecutor;
 import com.arpnetworking.metrics.portal.alerts.impl.AlertMessageExtractor;
@@ -66,6 +68,7 @@ import play.Environment;
 import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +77,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -242,6 +246,19 @@ public class MainModule extends AbstractModule {
         } else {
             return Session.getInstance(props);
         }
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private PeriodicMetrics providePeriodicMetrics(final MetricsFactory metricsFactory, final ActorSystem actorSystem) {
+        final TsdPeriodicMetrics periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(metricsFactory)
+                .setPollingExecutor(actorSystem.dispatcher())
+                .build();
+        final FiniteDuration delay = FiniteDuration.apply(500, TimeUnit.MILLISECONDS);
+        actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
+        return periodicMetrics;
     }
 
     private static final class OrganizationProviderProvider implements Provider<OrganizationProvider> {

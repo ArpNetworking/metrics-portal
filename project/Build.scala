@@ -71,6 +71,7 @@ object ApplicationBuild extends Build {
       "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
       "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.8.2",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",
+      "com.arpnetworking.metrics.extras" % "incubator-extra" % "0.6.2",
       "org.asynchttpclient" % "async-http-client" % "2.0.32",
       "com.chrisomeara" %% "pillar" % "2.3.0",
       "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
