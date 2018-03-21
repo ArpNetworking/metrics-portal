@@ -17,11 +17,13 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
+import akka.actor.Status;
 import akka.actor.Terminated;
 import akka.cluster.sharding.ShardRegion;
 import akka.pattern.PatternsCS;
 import akka.persistence.AbstractPersistentActorWithTimers;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.mql.grammar.AlertTrigger;
 import com.arpnetworking.mql.grammar.CollectingErrorListener;
@@ -63,6 +65,8 @@ import javax.inject.Provider;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public class AlertExecutor extends AbstractPersistentActorWithTimers {
+
+
     /**
      * Public constructor.
      *
@@ -71,10 +75,15 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
      * @param injector injector to create dependencies
      */
     @Inject
-    public AlertExecutor(final AlertRepository alertRepository, final Provider<QueryRunner> queryRunnerProvider, final Injector injector) {
+    public AlertExecutor(
+            final AlertRepository alertRepository,
+            final Provider<QueryRunner> queryRunnerProvider,
+            final Injector injector,
+            final PeriodicMetrics periodicMetrics) {
         _alertRepository = alertRepository;
         _queryRunner = queryRunnerProvider;
         _injector = injector;
+        _periodicMetrics = periodicMetrics;
         LOGGER.debug()
                 .setMessage("Starting alert executor")
                 .addData("name", self().path().name())
@@ -122,6 +131,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                             .setMessage("Executing alert")
                             .addData("alertId", _alertId)
                             .log();
+                    _periodicMetrics.recordCounter(ALERT_EXECUTED_METRIC, 1);
                     PatternsCS.pipe(_queryRunner.get().visitStatement(_parsedStatement), context().dispatcher()).to(self());
                 })
                 .match(SendTo.class, sendTo -> {
@@ -129,6 +139,15 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                         self().tell(new InstantiateAlert(sendTo.getAlertId(), sendTo.getOrganizationId()), self());
                     }
                     self().tell(sendTo.getPayload(), getSender());
+                })
+                .match(Status.Failure.class, failure -> {
+                    _periodicMetrics.recordCounter(ALERT_EXECUTED_FAILURE_METRIC, 1);
+                    LOGGER.warn()
+                            .setMessage("failed to execute alert")
+                            .addData("alertId", _alertId)
+                            .setThrowable(failure.cause())
+                            .log();
+                    //TODO: send email about alert failure
                 })
                 .match(TimeSeriesResult.class, this::processTimeSeriesResult)
                 .match(NotificationActor.ShuttingDown.class, shuttingDown -> {
@@ -191,7 +210,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                 notificationId,
                 hash -> {
                     final ActorRef actor = context().actorOf(
-                            NotificationActor.props(_alertId, _organization, _alertRepository, _injector),
+                            NotificationActor.props(_alertId, _organization, _alertRepository, _periodicMetrics, _injector),
                             notificationId);
                     _pendingMessages.get(notificationId).forEach(msg -> actor.tell(msg, self()));
                     _pendingMessages.removeAll(notificationId);
@@ -235,12 +254,14 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                             .log();
                 }
             }
+            _periodicMetrics.recordCounter(ALERT_LOAD_METRIC, 1);
         } else {
             LOGGER.info()
                     .setMessage("Tried loading executor for alert that does not exist, shutting down executor")
                     .addData("alertId", _alertId)
                     .log();
             context().parent().tell(new ShardRegion.Passivate(PoisonPill.getInstance()), self());
+            _periodicMetrics.recordCounter(ALERT_LOAD_FAILURE_METRIC, 1);
         }
     }
 
@@ -284,11 +305,17 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
 
     private final Provider<QueryRunner> _queryRunner;
     private final Injector _injector;
+    private final PeriodicMetrics _periodicMetrics;
     private final AlertRepository _alertRepository;
     private final BiMap<String, ActorRef> _notificationActors = HashBiMap.create();
     private final Set<ActorRef> _shuttingDownNotifications = Sets.newHashSet();
     private final Multimap<String, Object> _pendingMessages = HashMultimap.create();
 
+    private static final String METRICS_PREFIX = "alert/executor/";
+    private static final String ALERT_LOAD_METRIC = METRICS_PREFIX + "alert_load";
+    private static final String ALERT_LOAD_FAILURE_METRIC = METRICS_PREFIX + "alert_load_failure";
+    private static final String ALERT_EXECUTED_METRIC = METRICS_PREFIX + "execute";
+    private static final String ALERT_EXECUTED_FAILURE_METRIC = METRICS_PREFIX + "execute_failure";
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutor.class);
 
     /**

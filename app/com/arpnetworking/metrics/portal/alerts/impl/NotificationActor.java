@@ -21,6 +21,7 @@ import akka.actor.ReceiveTimeout;
 import akka.pattern.PatternsCS;
 import akka.persistence.AbstractPersistentActor;
 import akka.persistence.SnapshotOffer;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.mql.grammar.AlertTrigger;
 import com.arpnetworking.steno.Logger;
@@ -49,12 +50,14 @@ import java.util.stream.Collectors;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public class NotificationActor extends AbstractPersistentActor {
+
     /**
      * Creates a props to build the actor.
      *
      * @param alertId the id of the alert causing the notification
      * @param organization organization the alert belongs to
      * @param alertRepository an alert repository
+     * @param periodicMetrics periodic metrics
      * @param injector injector to create dependencies
      * @return a new {@link Props} to build the actor
      */
@@ -62,8 +65,10 @@ public class NotificationActor extends AbstractPersistentActor {
             final UUID alertId,
             final Organization organization,
             final AlertRepository alertRepository,
+            final PeriodicMetrics periodicMetrics,
             final Injector injector) {
-        return Props.create(NotificationActor.class, () -> new NotificationActor(alertId, organization, alertRepository, injector));
+        return Props.create(NotificationActor.class, () ->
+                new NotificationActor(alertId, organization, alertRepository, periodicMetrics, injector));
     }
 
     /**
@@ -78,10 +83,12 @@ public class NotificationActor extends AbstractPersistentActor {
             final UUID alertId,
             final Organization organization,
             final AlertRepository alertRepository,
+            final PeriodicMetrics periodicMetrics,
             final Injector injector) {
         _alertId = alertId;
         _organization = organization;
         _alertRepository = alertRepository;
+        _periodicMetrics = periodicMetrics;
         _injector = injector;
         context().setReceiveTimeout(FiniteDuration.apply(30, TimeUnit.MINUTES));
     }
@@ -100,11 +107,19 @@ public class NotificationActor extends AbstractPersistentActor {
                                 .addData("entries", entries)
                                 .addData("trigger", trigger)
                                 .log();
+                        _periodicMetrics.recordCounter(ALERT_TRIGGERED_METRIC, 1);
                         final List<CompletionStage<Void>> futures = entries.stream()
                                 .map(entry -> entry.notifyRecipient(alert.get(), trigger, _injector))
                                 .collect(Collectors.toList());
                         final CompletableFuture<?>[] futureArray = futures.stream()
                                 .map(CompletionStage::toCompletableFuture)
+                                .peek(future -> future.whenComplete((aVoid, t) -> {
+                                    if (t == null) {
+                                        _periodicMetrics.recordCounter(DISPATCH_SUCCESS_METRIC, 1);
+                                    } else {
+                                        _periodicMetrics.recordCounter(DISPATCH_FAILED_METRIC, 1);
+                                    }
+                                }))
                                 .toArray(CompletableFuture[]::new);
                         final CompletableFuture<NotificationsSent> all = CompletableFuture.allOf(futureArray)
                                 .thenApply(v -> new NotificationsSent(trigger));
@@ -150,9 +165,14 @@ public class NotificationActor extends AbstractPersistentActor {
     private final UUID _alertId;
     private final Organization _organization;
     private final AlertRepository _alertRepository;
+    private final PeriodicMetrics _periodicMetrics;
     private final Injector _injector;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationActor.class);
+    private static final String METRICS_PREFIX = "alert/notification/";
+    private static final String DISPATCH_SUCCESS_METRIC = METRICS_PREFIX + "dispatch_success";
+    private static final String DISPATCH_FAILED_METRIC = METRICS_PREFIX + "dispatch_failed";
+    private static final String ALERT_TRIGGERED_METRIC = METRICS_PREFIX + "alert_triggered";
 
     private static final class NotificationsSent {
         NotificationsSent(final AlertTrigger trigger) {
