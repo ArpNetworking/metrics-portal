@@ -97,7 +97,13 @@ public class NotificationActor extends AbstractPersistentActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(AlertTrigger.class, trigger -> {
-                    if (_lastAlertTime == null || trigger.getTime().isAfter(_lastAlertTime)) {
+                    final DateTime effectiveEnd;
+                    if (trigger.getEndTime() != null) {
+                        effectiveEnd = trigger.getEndTime();
+                    } else {
+                        effectiveEnd = trigger.getTime();
+                    }
+                    if (_lastAlertTime == null || effectiveEnd.isAfter(_lastAlertTime)) {
                         final Optional<Alert> alert = _alertRepository.get(_alertId, _organization);
                         final List<NotificationEntry> entries = alert.map(Alert::getNotificationGroup)
                                 .map(NotificationGroup::getEntries)
@@ -124,6 +130,13 @@ public class NotificationActor extends AbstractPersistentActor {
                         final CompletableFuture<NotificationsSent> all = CompletableFuture.allOf(futureArray)
                                 .thenApply(v -> new NotificationsSent(trigger));
                         PatternsCS.pipe(all, context().dispatcher()).to(self());
+                    } else {
+                        LOGGER.debug()
+                                .setMessage("Suppressing trigger due to already sent")
+                                .addData("lastAlertTime", _lastAlertTime)
+                                .addData("effectiveEnd", effectiveEnd)
+                                .addData("trigger", trigger)
+                                .log();
                     }
                 })
                 .match(NotificationsSent.class, sent -> {
@@ -132,13 +145,23 @@ public class NotificationActor extends AbstractPersistentActor {
                             .setMessage("Trigger dispatched successfully")
                             .addData("trigger", trigger)
                             .log();
-                    if (_lastAlertTime == null || trigger.getTime().isAfter(_lastAlertTime)) {
-                        saveSnapshot(new NotificationState(trigger.getTime()));
-                        if (trigger.getEndTime() != null) {
-                            _lastAlertTime = trigger.getEndTime();
-                        } else {
-                            _lastAlertTime = trigger.getTime();
-                        }
+
+                    final DateTime updatedTime;
+                    if (trigger.getEndTime() != null) {
+                        updatedTime = trigger.getEndTime();
+                    } else {
+                        updatedTime = trigger.getTime();
+                    }
+
+                    LOGGER.debug()
+                            .setMessage("Updating last alert time on trigger")
+                            .addData("trigger", trigger)
+                            .addData("updatedTime", updatedTime)
+                            .log();
+
+                    if (_lastAlertTime == null || updatedTime.isAfter(_lastAlertTime)) {
+                        _lastAlertTime = updatedTime;
+                        saveSnapshot(new NotificationState(updatedTime));
                     }
                 })
                 .match(ReceiveTimeout.class, timeout -> context().parent().tell(ShuttingDown.getInstance(), self()))
