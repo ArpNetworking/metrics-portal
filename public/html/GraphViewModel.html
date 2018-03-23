@@ -112,41 +112,59 @@
 
     <script type="text/html" id="metrics_list_template">
         <ul class="nav nav-sidebar metrics-list" data-bind="foreach: serviceNodes">
-            <li data-bind="template: {name: renderAs}, visible: visible">
-            </li>
+            <!-- ko if: visible -->
+                <li data-bind="template: {name: renderAs}">
+                </li>
+            <!-- /ko -->
         </ul>
     </script>
 
     <script type="text/html" id="service_node">
         <a data-bind="click: expandMe"><span class="glyphicon glyphicon-list">&nbsp;</span><span data-bind="text: name"></span></a>
-        <ul class="nav sub-item" data-bind="fastForEach: subfolders, visible: expanded">
-            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
-            </li>
-        </ul>
-        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
-            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
-            </li>
-        </ul>
+        <!-- ko if: expanded -->
+            <ul class="nav sub-item" data-bind="fastForEach: subfolders">
+                <!-- ko if: visible -->
+                    <li class="sub-folder" data-bind="template: {name: renderAs}">
+                    </li>
+                <!-- /ko -->
+            </ul>
+            <ul class="nav sub-item" data-bind="fastForEach: children">
+                <!-- ko if: visible -->
+                    <li class="sub-folder" data-bind="template: {name: renderAs}">
+                    </li>
+                <!-- /ko -->
+            </ul>
+        <!-- /ko -->
     </script>
 
     <script type="text/html" id="folder_node">
         <a data-bind="click: expandMe"><span data-bind="css: icon" class="glyphicon">&nbsp;</span><span data-bind="text: name"></span></a>
-        <ul class="nav sub-item" data-bind="fastForEach: subfolders, visible: expanded">
-            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
-            </li>
-        </ul>
-        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
-            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
-            </li>
-        </ul>
+        <!-- ko if: expanded -->
+            <ul class="nav sub-item" data-bind="fastForEach: subfolders">
+                <!-- ko if: visible -->
+                    <li class="sub-folder" data-bind="template: {name: renderAs}">
+                    </li>
+                <!-- /ko -->
+            </ul>
+            <ul class="nav sub-item" data-bind="fastForEach: children">
+                <!-- ko if: visible -->
+                    <li class="sub-folder" data-bind="template: {name: renderAs}">
+                    </li>
+                <!-- /ko -->
+            </ul>
+        <!-- /ko -->
     </script>
 
     <script type="text/html" id="metric_node">
         <a data-bind="click: expandMe"><span class="fa fa-area-chart">&nbsp;</span><span data-bind="text: name, attr: { title: metricName }"></span></a>
-        <ul class="nav sub-item" data-bind="fastForEach: children, visible: expanded">
-            <li class="sub-folder" data-bind="template: {name: renderAs}, visible: visible">
-            </li>
-        </ul>
+        <!-- ko if: expanded -->
+            <ul class="nav sub-item" data-bind="fastForEach: children">
+                <!-- ko if: visible -->
+                    <li class="sub-folder" data-bind="template: {name: renderAs}">
+                    </li>
+                <!-- /ko -->
+            </ul>
+        <!-- /ko -->
     </script>
 
     <script type="text/html" id="statistic_node">
