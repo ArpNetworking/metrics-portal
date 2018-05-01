@@ -21,7 +21,7 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // The SBT Community repository
 resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
 
-addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.4.3")
+addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.4.4-SNAPSHOT")
 
 addSbtPlugin("com.lightbend.sbt" % "sbt-aspectj" % "0.11.0")
 
@@ -37,15 +37,15 @@ addSbtPlugin("com.typesafe.play" %% "sbt-plugin" % "2.6.15")
 
 addSbtPlugin("com.typesafe.sbt" %% "sbt-rjs" % "1.0.10")
 
-addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.3.5")
+addSbtPlugin("com.arpnetworking" %% "sbt-typescript" % "0.4.1")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.6")
 
-addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "1.1")
+addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "2.3")
 
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.0.0")
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.0")
 
-addSbtPlugin("com.simplytyped" % "sbt-antlr4" % "0.7.11")
+addSbtPlugin("com.simplytyped" % "sbt-antlr4" % "0.8.1")
 
 libraryDependencies ++= Seq(
     "com.puppycrawl.tools" % "checkstyle" % "8.4"
