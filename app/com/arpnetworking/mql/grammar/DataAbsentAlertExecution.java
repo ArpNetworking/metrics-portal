@@ -34,6 +34,7 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
     @Override
     protected MetricsQueryResponse.QueryResult evaluateQueryResult(final MetricsQueryResponse.QueryResult result) {
         final ImmutableList.Builder<AlertTrigger> alerts = ImmutableList.builder();
+        alerts.addAll(result.getAlerts());
         final MetricsQueryResponse.QueryResult.Builder newResult = MetricsQueryResponse.QueryResult.Builder.clone(result);
 
         final List<MetricsQueryResponse.DataPoint> values = result.getValues();
