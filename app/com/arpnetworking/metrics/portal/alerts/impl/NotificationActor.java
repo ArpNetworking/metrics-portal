@@ -77,6 +77,7 @@ public class NotificationActor extends AbstractPersistentActor {
      * @param alertId the id of the alert causing the notification
      * @param organization the organization owning the alert
      * @param alertRepository an alert repository
+     * @param periodicMetrics periodic metrics instance to record against
      * @param injector injector to create dependencies
      */
     public NotificationActor(

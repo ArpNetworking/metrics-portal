@@ -101,8 +101,7 @@ public abstract class BaseAlertExecution extends BaseExecution {
      * @return a {@link Stream} of {@link AlertTrigger}
      */
     protected MetricsQueryResponse.QueryResult evaluateQueryResult(final MetricsQueryResponse.QueryResult result) {
-        final ImmutableList.Builder<AlertTrigger> alerts = ImmutableList.builder();
-        alerts.addAll(result.getAlerts());
+        final ImmutableList.Builder<AlertTrigger> alerts = ImmutableList.<AlertTrigger>builder().addAll(result.getAlerts());
 
         final List<MetricsQueryResponse.DataPoint> values = result.getValues();
         int x = 0;

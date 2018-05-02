@@ -73,6 +73,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
      * @param alertRepository an alert repository
      * @param queryRunnerProvider a query runner provider
      * @param injector injector to create dependencies
+     * @param periodicMetrics periodic metrics instance to record against
      */
     @Inject
     public AlertExecutor(
@@ -147,7 +148,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                             .addData("alertId", _alertId)
                             .setThrowable(failure.cause())
                             .log();
-                    //TODO: send email about alert failure
+                    //TODO(brandon): send email about alert failure
                 })
                 .match(TimeSeriesResult.class, this::processTimeSeriesResult)
                 .match(NotificationActor.ShuttingDown.class, shuttingDown -> {

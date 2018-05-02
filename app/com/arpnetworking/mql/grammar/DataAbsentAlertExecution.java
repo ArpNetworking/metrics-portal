@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 
 /**
  * An alert execution that will trigger when data has gone missing.
+ *
+ * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public class DataAbsentAlertExecution extends BaseAlertExecution {
     @Override
