@@ -34,7 +34,6 @@ import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultHost;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
@@ -202,12 +201,8 @@ public class DatabaseHostRepository implements HostRepository {
         return new DefaultQueryResult<>(
                 pagedHosts.getList()
                         .stream()
-                        .map(host -> new DefaultHost.Builder()
-                                .setCluster(host.getCluster())
-                                .setHostname(host.getName())
-                                .setMetricsSoftwareState(MetricsSoftwareState.valueOf(host.getMetricsSoftwareState()))
-                                .build())
-                .collect(Collectors.toList()),
+                        .map(models.ebean.Host::toInternal)
+                        .collect(Collectors.toList()),
                 pagedHosts.getTotalCount(),
                 etag);
     }
