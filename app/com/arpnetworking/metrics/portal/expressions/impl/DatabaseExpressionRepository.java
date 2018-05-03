@@ -69,6 +69,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                         environment,
                         config,
                         "expressionRepository.expressionQueryGenerator.type")
+                        .getDeclaredConstructor()
                         .newInstance());
     }
 
