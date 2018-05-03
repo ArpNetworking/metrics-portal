@@ -290,7 +290,7 @@ val main = (project in file(".")).enablePlugins(play.sbt.PlayJava, play.ebean.sb
   RjsKeys.webJarCdns := Map(),
   modules += JS.Object("name" -> "classes/shell"),
 
-  scalaVersion := "2.11.11",
+  scalaVersion := "2.11.12",
   resolvers += Resolver.mavenLocal,
 
   // Custom kryo repo for akka 2.5 compat

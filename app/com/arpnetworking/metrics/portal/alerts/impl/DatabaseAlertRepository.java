@@ -71,6 +71,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                         environment,
                         config,
                         "alertRepository.alertQueryGenerator.type")
+                        .getDeclaredConstructor()
                         .newInstance());
     }
 

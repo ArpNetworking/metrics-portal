@@ -73,6 +73,7 @@ public class DatabaseHostRepository implements HostRepository {
                         environment,
                         config,
                         "hostRepository.hostQueryGenerator.type")
+                .getDeclaredConstructor()
                 .newInstance());
     }
 
