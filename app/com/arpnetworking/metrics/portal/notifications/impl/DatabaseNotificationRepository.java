@@ -69,7 +69,8 @@ public class DatabaseNotificationRepository implements NotificationRepository {
                         environment,
                         config,
                         "notificationRepository.notificationQueryGenerator.type")
-                        .newInstance());
+                .getDeclaredConstructor()
+                .newInstance());
 
     }
 
