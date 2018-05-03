@@ -82,14 +82,17 @@ class ConnectionModel {
             protocol = "wss";
         }
 
-        this.connectionList = <{path: string; protocol: Protocol}[]>[]
+        this.connectionList = <{path: string; protocol: Protocol}[]>[];
 
-        // Add all direct connect routes first
+        let directConnections: {path: string; protocol: Protocol}[] = [];
+        let proxiedConnections: {path: string; protocol: Protocol}[] = [];
+
+        // Direct connect routes
         for (let serverPort of serverPorts) {
             var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
             var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
 
-            this.connectionList = this.connectionList.concat([
+            directConnections = directConnections.concat([
                 {path: directRoutePrefix + "/telemetry/v2/stream", protocol: new V2Protocol(this)},
                 {path: directRoutePrefix + "/telemetry/v1/stream", protocol: new V1Protocol(this)},
                 {path: directRoutePrefix + "/stream", protocol: new V1Protocol(this)}
@@ -102,7 +105,7 @@ class ConnectionModel {
             for (let serverPort of serverPorts) {
                 var directRoutePrefix = protocol + "://" + serverHost + ":" + serverPort;
 
-                this.connectionList = this.connectionList.concat([
+                proxiedConnections = proxiedConnections.concat([
                     {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
                     {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
                     {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefix + "/stream"), protocol: new V1Protocol(this)}]);
@@ -111,12 +114,20 @@ class ConnectionModel {
                 // NOTE: The inverse should not be necessary if the remote endpoint supports upgrading
                 if (protocol == "wss") {
                     var directRoutePrefixInsecure = "ws://" + serverHost + ":" + serverPort;
-                    this.connectionList = this.connectionList.concat([
+                    proxiedConnections = proxiedConnections.concat([
                         {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v2/stream"), protocol : new V2Protocol(this)},
                         {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/telemetry/v1/stream"), protocol: new V1Protocol(this)},
                         {path: proxyRoute + "?uri=" + encodeURIComponent(directRoutePrefixInsecure + "/stream"), protocol: new V1Protocol(this)}]);
                 }
             }
+        }
+
+        if (features.proxyPreferred) {
+            this.connectionList = this.connectionList.concat(proxiedConnections);
+            this.connectionList = this.connectionList.concat(directConnections);
+        } else {
+            this.connectionList = this.connectionList.concat(directConnections);
+            this.connectionList = this.connectionList.concat(proxiedConnections);
         }
     }
 

@@ -39,6 +39,11 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
+    public boolean isProxyPreferred() {
+        return _proxyPreferred;
+    }
+
+    @Override
     public boolean isLiveLoggingEnabled() {
         return _liveLoggingEnabled;
     }
@@ -68,6 +73,7 @@ public final class DefaultFeatures implements Features {
         return new StringBuilder()
                 .append("{telemetryEnabled=").append(_telemetryEnabled)
                 .append(", proxyEnabled=").append(_proxyEnabled)
+                .append(", proxyPreferred=").append(_proxyPreferred)
                 .append(", liveLoggingEnabled=").append(_liveLoggingEnabled)
                 .append(", hostRegistryEnabled=").append(_hostRegistryEnabled)
                 .append(", expressionsEnabled=").append(_expressionsEnabled)
@@ -85,6 +91,7 @@ public final class DefaultFeatures implements Features {
     public DefaultFeatures(final Config configuration) {
         _telemetryEnabled = configuration.getBoolean("portal.features.telemetry.enabled");
         _proxyEnabled = configuration.getBoolean("portal.features.proxy.enabled");
+        _proxyPreferred = configuration.getBoolean("portal.features.proxy.preferred");
         _liveLoggingEnabled = configuration.getBoolean("portal.features.liveLogging.enabled");
         _hostRegistryEnabled = configuration.getBoolean("portal.features.hostRegistry.enabled");
         _expressionsEnabled = configuration.getBoolean("portal.features.expressions.enabled");
@@ -95,6 +102,7 @@ public final class DefaultFeatures implements Features {
 
     private final boolean _telemetryEnabled;
     private final boolean _proxyEnabled;
+    private final boolean _proxyPreferred;
     private final boolean _liveLoggingEnabled;
     private final boolean _hostRegistryEnabled;
     private final boolean _expressionsEnabled;
