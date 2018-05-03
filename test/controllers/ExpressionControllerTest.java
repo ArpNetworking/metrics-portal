@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
@@ -49,6 +50,7 @@ public class ExpressionControllerTest {
         exprRepo.open();
         app = new GuiceApplicationBuilder()
                 .overrides(Bindings.bind(ExpressionRepository.class).toInstance(exprRepo))
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
