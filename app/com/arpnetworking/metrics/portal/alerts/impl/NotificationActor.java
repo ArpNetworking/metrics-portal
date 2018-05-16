@@ -165,8 +165,22 @@ public class NotificationActor extends AbstractPersistentActor {
                         saveSnapshot(new NotificationState(updatedTime));
                     }
                 })
-                .match(ReceiveTimeout.class, timeout -> context().parent().tell(ShuttingDown.getInstance(), self()))
-                .match(ShuttingDownAck.class, ack -> self().tell(PoisonPill.getInstance(), self()))
+                .match(ReceiveTimeout.class, timeout -> {
+                    context().parent().tell(ShuttingDown.getInstance(), self());
+                    LOGGER.debug()
+                            .setMessage("Starting shut down of notification actor due to inactivity")
+                            .addData("alertId", _alertId)
+                            .addData("actor", self().path().toStringWithoutAddress())
+                            .log();
+                })
+                .match(ShuttingDownAck.class, ack -> {
+                    self().tell(PoisonPill.getInstance(), self());
+                    LOGGER.debug()
+                            .setMessage("Shutting down notification actor due to inactivity")
+                            .addData("alertId", _alertId)
+                            .addData("actor", self().path().toStringWithoutAddress())
+                            .log();
+                })
                 .build();
     }
 
