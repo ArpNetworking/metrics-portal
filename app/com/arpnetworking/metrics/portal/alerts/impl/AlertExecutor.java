@@ -38,8 +38,8 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import models.internal.Alert;
 import models.internal.Organization;
@@ -51,8 +51,10 @@ import org.joda.time.Duration;
 import org.joda.time.Period;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -152,12 +154,21 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                 })
                 .match(TimeSeriesResult.class, this::processTimeSeriesResult)
                 .match(NotificationActor.ShuttingDown.class, shuttingDown -> {
-                    _shuttingDownNotifications.add(context().sender());
-                    context().sender().tell(NotificationActor.ShuttingDownAck.getInstance(), self());
+                    _shuttingDownNotifications.put(context().sender(), ZonedDateTime.now());
+
+                    // Schedule a cleanup task to make sure the shutdown happens properly
+                    context().system().scheduler().scheduleOnce(
+                            FiniteDuration.apply(2, TimeUnit.MINUTES),
+                            self(),
+                            new FlushNotificationActor(context().sender()),
+                            context().system().dispatcher(),
+                            self());
+
+                    sender().tell(NotificationActor.ShuttingDownAck.getInstance(), self());
                 })
                 .match(Terminated.class, terminated -> {
                     final ActorRef dead = terminated.actor();
-                    if (!_shuttingDownNotifications.contains(dead)) {
+                    if (!_shuttingDownNotifications.containsKey(dead)) {
                         LOGGER.warn()
                                 .setMessage("Notification actor died without sending shutdown")
                                 .addData("notificationActor", dead)
@@ -169,6 +180,23 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                     _notificationActors.remove(notificationId);
                     if (!_pendingMessages.get(notificationId).isEmpty()) {
                         getOrLaunchActor(notificationId);
+                    }
+                })
+                .match(FlushNotificationActor.class , flush -> {
+                    final ActorRef ref = flush.getRef();
+                    if (_shuttingDownNotifications.containsKey(ref)) {
+                        LOGGER.warn()
+                                .setMessage("Flushing actor that did not shutdown properly")
+                                .addData("notificationActor", ref)
+                                .log();
+                        context().stop(ref);
+                        _shuttingDownNotifications.remove(ref);
+                        // Check to see if there are any pending messages that would require re-launching
+                        final String notificationId = _notificationActors.inverse().get(ref);
+                        _notificationActors.remove(notificationId);
+                        if (!_pendingMessages.get(notificationId).isEmpty()) {
+                            getOrLaunchActor(notificationId);
+                        }
                     }
                 })
                 .build();
@@ -198,8 +226,14 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                     final String notificationId = hashAlert(alert);
                     final ActorRef notificationActor = getOrLaunchActor(notificationId);
                     // If it's shutting down, we enqueue to the pending messages for that actor
-                    if (_shuttingDownNotifications.contains(notificationActor)) {
+                    if (_shuttingDownNotifications.containsKey(notificationActor)) {
                         _pendingMessages.put(notificationId, alert);
+
+                        // Timeout the shutdown and launch it again to make sure it's up and running
+                        final ZonedDateTime shuttingDownTime = _shuttingDownNotifications.get(notificationActor);
+                        if (shuttingDownTime.isBefore(ZonedDateTime.now().minus(3, ChronoUnit.MINUTES))) {
+                            _shuttingDownNotifications.remove((notificationActor));
+                        }
                     } else {
                         notificationActor.tell(alert, self());
                     }
@@ -213,6 +247,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                     final ActorRef actor = context().actorOf(
                             NotificationActor.props(_alertId, _organization, _alertRepository, _periodicMetrics, _injector),
                             notificationId);
+                    context().watch(actor);
                     _pendingMessages.get(notificationId).forEach(msg -> actor.tell(msg, self()));
                     _pendingMessages.removeAll(notificationId);
                     return actor;
@@ -309,7 +344,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private final AlertRepository _alertRepository;
     private final BiMap<String, ActorRef> _notificationActors = HashBiMap.create();
-    private final Set<ActorRef> _shuttingDownNotifications = Sets.newHashSet();
+    private final Map<ActorRef, ZonedDateTime> _shuttingDownNotifications = Maps.newHashMap();
     private final Multimap<String, Object> _pendingMessages = HashMultimap.create();
 
     private static final String METRICS_PREFIX = "alert/executor/";
@@ -414,5 +449,19 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
         private final UUID _alertId;
         private final UUID _organizationId;
         private final Object _payload;
+    }
+
+    private static class FlushNotificationActor {
+        public FlushNotificationActor(final ActorRef ref) {
+
+            _ref = ref;
+        }
+
+        public ActorRef getRef() {
+            return _ref;
+        }
+
+        private final ActorRef _ref;
+
     }
 }
