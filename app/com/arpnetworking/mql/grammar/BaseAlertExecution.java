@@ -25,6 +25,8 @@ import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 
+import java.text.DecimalFormat;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -100,6 +102,7 @@ public abstract class BaseAlertExecution extends BaseExecution {
      * @param result a {@link MetricsQueryResponse.QueryResult}
      * @return a {@link Stream} of {@link AlertTrigger}
      */
+    // CHECKSTYLE.OFF: ExecutableStatementCount - Well, it's just complicated
     protected MetricsQueryResponse.QueryResult evaluateQueryResult(final MetricsQueryResponse.QueryResult result) {
         final ImmutableList.Builder<AlertTrigger> alerts = ImmutableList.<AlertTrigger>builder().addAll(result.getAlerts());
 
@@ -111,6 +114,7 @@ public abstract class BaseAlertExecution extends BaseExecution {
         AlertTrigger.Builder alertBuilder = null;
         // We'll lazy create this
         final Supplier<ImmutableMap<String, String>> args = Suppliers.memoize(() -> createArgs(result));
+        final Supplier<ImmutableMap<String, String>> groupBy = Suppliers.memoize(() -> createGroupBy(result));
 
         while (x < values.size()) {
             // If we have an alert
@@ -123,6 +127,8 @@ public abstract class BaseAlertExecution extends BaseExecution {
                     // Don't start a new alert unless we are in an OK period
                     if (alertBuilder == null) {
                         alertBuilder = new AlertTrigger.Builder().setTime(dataPoint.getTime()).setArgs(args.get());
+                        alertBuilder.setMessage(getMessage(dataPoint));
+                        alertBuilder.setGroupBy(groupBy.get());
                     }
                     // Consume the range of in-alert points
                     breachLast = dataPoint.getTime();
@@ -154,6 +160,28 @@ public abstract class BaseAlertExecution extends BaseExecution {
         newResult.setAlerts(alerts.build());
         return newResult.build();
     }
+    // CHECKSTYLE.ON: ExecutableStatementCount
+
+    /**
+     * Gets a friendly message indicating why a datapoint is in alert.
+     *
+     * @param dataPoint Datapoint out of spec
+     * @return a message indicating the alert reason
+     */
+    protected String getMessage(final MetricsQueryResponse.DataPoint dataPoint) {
+        return String.format("value of %s at %s was out of expected range", getDataPointValue(dataPoint), dataPoint.getTime());
+    }
+    /**
+     * Gets a friendly formatting of the data point value.
+     *
+     * @param dataPoint Datapoint out of spec
+     * @return a message indicating the alert reason
+     */
+    protected String getDataPointValue(final MetricsQueryResponse.DataPoint dataPoint) {
+        final DecimalFormat df = new DecimalFormat("0");
+        df.setMaximumFractionDigits(340);
+        return df.format(dataPoint.getValue());
+    }
 
     private ImmutableMap<String, String> createArgs(final MetricsQueryResponse.QueryResult result) {
         final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
@@ -164,6 +192,19 @@ public abstract class BaseAlertExecution extends BaseExecution {
                 .stream()
                 .filter(entry -> entry.getValue().size() == 1)
                 .forEach(entry -> builder.put(entry.getKey(), entry.getValue().stream().collect(MoreCollectors.onlyElement())));
+        return builder.build();
+    }
+
+    private ImmutableMap<String, String> createGroupBy(final MetricsQueryResponse.QueryResult result) {
+        final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        result.getGroupBy()
+                .stream()
+                .filter(MetricsQueryResponse.QueryTagGroupBy.class::isInstance)
+                .map(MetricsQueryResponse.QueryTagGroupBy.class::cast)
+                .map(MetricsQueryResponse.QueryTagGroupBy::getGroup)
+                .map(ImmutableMap::entrySet)
+                .flatMap(Collection::stream)
+                .forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
         return builder.build();
     }
 
@@ -178,6 +219,7 @@ public abstract class BaseAlertExecution extends BaseExecution {
     protected boolean evaluateDataPoint(final MetricsQueryResponse.DataPoint dataPoint) {
         return false;
     }
+
 
     /**
      * Protected constructor.

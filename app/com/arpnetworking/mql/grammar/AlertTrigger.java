@@ -40,14 +40,26 @@ public final class AlertTrigger {
         return _args;
     }
 
+    public ImmutableMap<String, String> getGroupBy() {
+        return _groupBy;
+    }
+
+    public String getMessage() {
+        return _message;
+    }
+
     private AlertTrigger(final Builder builder) {
         _time = builder._time;
         _endTime = builder._endTime;
         _args = builder._args;
+        _message = builder._message;
+        _groupBy = builder._groupBy;
     }
 
     private final DateTime _time;
     private final DateTime _endTime;
+    private final String _message;
+    private final ImmutableMap<String, String> _groupBy;
     private final ImmutableMap<String, String> _args;
 
     /**
@@ -73,6 +85,17 @@ public final class AlertTrigger {
         }
 
         /**
+         * Sets a message for why this series was in alert. Optional. Cannot be null. Defaults to empty string.
+         *
+         * @param value the message
+         * @return this {@link Builder}
+         */
+        public Builder setMessage(final String value) {
+            _message = value;
+            return this;
+        }
+
+        /**
          * Sets the args of the alert. Optional. Cannot be null.
          *
          * @param value the args
@@ -80,6 +103,17 @@ public final class AlertTrigger {
          */
         public Builder setArgs(final ImmutableMap<String, String> value) {
             _args = value;
+            return this;
+        }
+
+        /**
+         * Sets the "group by" portion of the arguments that make this distinct from other triggers. Optional. Cannot be null.
+         *
+         * @param value the group by parameters
+         * @return this {@link Builder}
+         */
+        public Builder setGroupBy(final ImmutableMap<String, String> value) {
+            _groupBy = value;
             return this;
         }
 
@@ -99,5 +133,9 @@ public final class AlertTrigger {
         private DateTime _endTime;
         @NotNull
         private ImmutableMap<String, String> _args = ImmutableMap.of();
+        @NotNull
+        private ImmutableMap<String, String> _groupBy = ImmutableMap.of();
+        @NotNull
+        private String _message = "";
     }
 }

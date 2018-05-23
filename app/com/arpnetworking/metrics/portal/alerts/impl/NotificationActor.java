@@ -97,82 +97,9 @@ public class NotificationActor extends AbstractPersistentActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(AlertTrigger.class, trigger -> {
-                    final DateTime effectiveEnd;
-                    if (trigger.getEndTime() != null) {
-                        effectiveEnd = trigger.getEndTime();
-                    } else {
-                        effectiveEnd = trigger.getTime();
-                    }
-                    if (_lastAlertTime == null || effectiveEnd.isAfter(_lastAlertTime)) {
-                        final Optional<Alert> alert = _alertRepository.get(_alertId, _organization);
-                        final List<NotificationEntry> entries = alert.map(Alert::getNotificationGroup)
-                                .map(NotificationGroup::getEntries)
-                                .orElse(Collections.emptyList());
-                        LOGGER.debug()
-                                .setMessage("Dispatching trigger to entries")
-                                .addData("entries", entries)
-                                .addData("trigger", trigger)
-                                .log();
-                        _periodicMetrics.recordCounter(ALERT_TRIGGERED_METRIC, 1);
-                        final List<CompletionStage<Void>> futures = entries.stream()
-                                .map(entry -> entry.notifyRecipient(alert.get(), trigger, _injector))
-                                .collect(Collectors.toList());
-                        final CompletableFuture<?>[] futureArray = futures.stream()
-                                .map(CompletionStage::toCompletableFuture)
-                                .peek(future -> future.whenComplete((aVoid, t) -> {
-                                    if (t == null) {
-                                        _periodicMetrics.recordCounter(DISPATCH_SUCCESS_METRIC, 1);
-                                    } else {
-                                        _periodicMetrics.recordCounter(DISPATCH_FAILED_METRIC, 1);
-                                    }
-                                }))
-                                .toArray(CompletableFuture[]::new);
-                        final CompletableFuture<NotificationsSent> all = CompletableFuture.allOf(futureArray)
-                                .thenApply(v -> new NotificationsSent(trigger));
-                        PatternsCS.pipe(all, context().dispatcher()).to(self());
-                    } else {
-                        LOGGER.debug()
-                                .setMessage("Suppressing trigger due to already sent")
-                                .addData("lastAlertTime", _lastAlertTime)
-                                .addData("effectiveEnd", effectiveEnd)
-                                .addData("trigger", trigger)
-                                .log();
-                    }
-                })
-                .match(NotificationsSent.class, sent -> {
-                    final AlertTrigger trigger = sent.getTrigger();
-                    LOGGER.debug()
-                            .setMessage("Trigger dispatched successfully")
-                            .addData("trigger", trigger)
-                            .log();
-
-                    final DateTime updatedTime;
-                    if (trigger.getEndTime() != null) {
-                        updatedTime = trigger.getEndTime();
-                    } else {
-                        updatedTime = trigger.getTime();
-                    }
-
-                    LOGGER.debug()
-                            .setMessage("Updating last alert time on trigger")
-                            .addData("trigger", trigger)
-                            .addData("updatedTime", updatedTime)
-                            .log();
-
-                    if (_lastAlertTime == null || updatedTime.isAfter(_lastAlertTime)) {
-                        _lastAlertTime = updatedTime;
-                        saveSnapshot(new NotificationState(updatedTime));
-                    }
-                })
-                .match(ReceiveTimeout.class, timeout -> {
-                    context().parent().tell(ShuttingDown.getInstance(), self());
-                    LOGGER.debug()
-                            .setMessage("Starting shut down of notification actor due to inactivity")
-                            .addData("alertId", _alertId)
-                            .addData("actor", self().path().toStringWithoutAddress())
-                            .log();
-                })
+                .match(AlertTrigger.class, this::alertTrigger)
+                .match(NotificationsSent.class, this::notificationSent)
+                .match(ReceiveTimeout.class, this::timeout)
                 .match(ShuttingDownAck.class, ack -> {
                     self().tell(PoisonPill.getInstance(), self());
                     LOGGER.debug()
@@ -196,6 +123,85 @@ public class NotificationActor extends AbstractPersistentActor {
     @Override
     public String persistenceId() {
         return "alert-" + getSelf().path().name();
+    }
+
+    private void alertTrigger(final AlertTrigger trigger) {
+        final DateTime effectiveEnd;
+        if (trigger.getEndTime() != null) {
+            effectiveEnd = trigger.getEndTime();
+        } else {
+            effectiveEnd = trigger.getTime();
+        }
+        if (_lastAlertTime == null || effectiveEnd.isAfter(_lastAlertTime)) {
+            final Optional<Alert> alert = _alertRepository.get(_alertId, _organization);
+            final List<NotificationEntry> entries = alert.map(Alert::getNotificationGroup)
+                    .map(NotificationGroup::getEntries)
+                    .orElse(Collections.emptyList());
+            LOGGER.debug()
+                    .setMessage("Dispatching trigger to entries")
+                    .addData("entries", entries)
+                    .addData("trigger", trigger)
+                    .log();
+            _periodicMetrics.recordCounter(ALERT_TRIGGERED_METRIC, 1);
+            final List<CompletionStage<Void>> futures = entries.stream()
+                    .map(entry -> entry.notifyRecipient(alert.get(), trigger, _injector))
+                    .collect(Collectors.toList());
+            final CompletableFuture<?>[] futureArray = futures.stream()
+                    .map(CompletionStage::toCompletableFuture)
+                    .peek(future -> future.whenComplete((aVoid, t) -> {
+                        if (t == null) {
+                            _periodicMetrics.recordCounter(DISPATCH_SUCCESS_METRIC, 1);
+                        } else {
+                            _periodicMetrics.recordCounter(DISPATCH_FAILED_METRIC, 1);
+                        }
+                    }))
+                    .toArray(CompletableFuture[]::new);
+            final CompletableFuture<NotificationsSent> all = CompletableFuture.allOf(futureArray)
+                    .thenApply(v -> new NotificationsSent(trigger));
+            PatternsCS.pipe(all, context().dispatcher()).to(self());
+        } else {
+            LOGGER.debug()
+                    .setMessage("Suppressing trigger due to already sent")
+                    .addData("lastAlertTime", _lastAlertTime)
+                    .addData("effectiveEnd", effectiveEnd)
+                    .addData("trigger", trigger)
+                    .log();
+        }
+    }
+
+    private void notificationSent(final NotificationsSent sent) {
+        final AlertTrigger trigger = sent.getTrigger();
+        LOGGER.debug()
+                .setMessage("Trigger dispatched successfully")
+                .addData("trigger", trigger)
+                .log();
+
+        final DateTime updatedTime;
+        if (trigger.getEndTime() != null) {
+            updatedTime = trigger.getEndTime();
+        } else {
+            updatedTime = trigger.getTime();
+        }
+
+        LOGGER.debug()
+                .setMessage("Updating last alert time on trigger")
+                .addData("trigger", trigger)
+                .addData("updatedTime", updatedTime)
+                .log();
+
+        if (_lastAlertTime == null || updatedTime.isAfter(_lastAlertTime)) {
+            _lastAlertTime = updatedTime;
+            saveSnapshot(new NotificationState(updatedTime));
+        }
+    }
+
+    private void timeout(final ReceiveTimeout timeout) {
+        context().parent().tell(ShuttingDown.getInstance(), self());
+        LOGGER.debug()
+                .setMessage("Starting shut down of notification actor due to inactivity")
+                .addData("alertId", _alertId)
+                .addData("actor", self().path().toStringWithoutAddress())
+                .log();
     }
 
     private DateTime _lastAlertTime = null;

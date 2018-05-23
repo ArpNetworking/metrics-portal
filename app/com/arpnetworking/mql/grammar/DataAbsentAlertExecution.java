@@ -24,6 +24,7 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -46,6 +47,7 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
             AlertTrigger.Builder alertBuilder = null;
             // We'll lazy create this
             final Supplier<ImmutableMap<String, String>> args = Suppliers.memoize(() -> createArgs(result));
+            final Supplier<ImmutableMap<String, String>> groupBy = Suppliers.memoize(() -> createGroupBy(result));
 
             DateTime breachLast = null;
 
@@ -58,7 +60,9 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
                     if (alertBuilder == null) {
                         alertBuilder = new AlertTrigger.Builder()
                                 .setTime(first.getTime().plus(getDwellPeriod()))
-                                .setArgs(args.get());
+                                .setArgs(args.get())
+                                .setGroupBy(groupBy.get())
+                                .setMessage(getMessage(first));
                     }
                     breachLast = second.getTime();
                 } else if (alertBuilder != null && breachLast.plus(getRecoveryPeriod()).isBefore(second.getTime())) {
@@ -77,7 +81,9 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
             if (last.getTime().plus(getDwellPeriod()).isBefore(newDataCutoff)) {
                 alertBuilder = new AlertTrigger.Builder()
                         .setTime(last.getTime().plus(getDwellPeriod()))
-                        .setArgs(args.get());
+                        .setArgs(args.get())
+                        .setGroupBy(groupBy.get())
+                        .setMessage(getMessage(last));
             }
 
             // If we still have an alertBuilder, the alert is ongoing, set the end time to the final sample
@@ -91,6 +97,12 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
         return newResult.build();
     }
 
+    @Override
+    protected String getMessage(final MetricsQueryResponse.DataPoint dataPoint) {
+        final String missingDataTime = String.format("%d minutes", getDwellPeriod().toStandardMinutes().getMinutes());
+        return String.format("Missing data for at least %s.", missingDataTime);
+    }
+
     private ImmutableMap<String, String> createArgs(final MetricsQueryResponse.QueryResult result) {
         final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         builder.put("name", result.getName());
@@ -100,6 +112,19 @@ public class DataAbsentAlertExecution extends BaseAlertExecution {
                 .stream()
                 .filter(entry -> entry.getValue().size() == 1)
                 .forEach(entry -> builder.put(entry.getKey(), entry.getValue().stream().collect(MoreCollectors.onlyElement())));
+        return builder.build();
+    }
+
+    private ImmutableMap<String, String> createGroupBy(final MetricsQueryResponse.QueryResult result) {
+        final ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        result.getGroupBy()
+                .stream()
+                .filter(MetricsQueryResponse.QueryTagGroupBy.class::isInstance)
+                .map(MetricsQueryResponse.QueryTagGroupBy.class::cast)
+                .map(MetricsQueryResponse.QueryTagGroupBy::getGroup)
+                .map(ImmutableMap::entrySet)
+                .flatMap(Collection::stream)
+                .forEach(entry -> builder.put(entry.getKey(), entry.getValue()));
         return builder.build();
     }
 
