@@ -153,52 +153,12 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                     //TODO(brandon): send email about alert failure
                 })
                 .match(TimeSeriesResult.class, this::processTimeSeriesResult)
-                .match(NotificationActor.ShuttingDown.class, shuttingDown -> {
-                    _shuttingDownNotifications.put(context().sender(), ZonedDateTime.now());
-
-                    // Schedule a cleanup task to make sure the shutdown happens properly
-                    context().system().scheduler().scheduleOnce(
-                            FiniteDuration.apply(2, TimeUnit.MINUTES),
-                            self(),
-                            new FlushNotificationActor(context().sender()),
-                            context().system().dispatcher(),
-                            self());
-
-                    sender().tell(NotificationActor.ShuttingDownAck.getInstance(), self());
-                })
-                .match(Terminated.class, terminated -> {
-                    final ActorRef dead = terminated.actor();
-                    if (!_shuttingDownNotifications.containsKey(dead)) {
-                        LOGGER.warn()
-                                .setMessage("Notification actor died without sending shutdown")
-                                .addData("notificationActor", dead)
-                                .log();
-                    }
-                    _shuttingDownNotifications.remove(dead);
-                    // Check to see if there are any pending messages that would require re-launching
-                    final String notificationId = _notificationActors.inverse().get(dead);
-                    _notificationActors.remove(notificationId);
-                    if (!_pendingMessages.get(notificationId).isEmpty()) {
-                        getOrLaunchActor(notificationId);
-                    }
-                })
-                .match(FlushNotificationActor.class , flush -> {
-                    final ActorRef ref = flush.getRef();
-                    if (_shuttingDownNotifications.containsKey(ref)) {
-                        LOGGER.warn()
-                                .setMessage("Flushing actor that did not shutdown properly")
-                                .addData("notificationActor", ref)
-                                .log();
-                        context().stop(ref);
-                        _shuttingDownNotifications.remove(ref);
-                        // Check to see if there are any pending messages that would require re-launching
-                        final String notificationId = _notificationActors.inverse().get(ref);
-                        _notificationActors.remove(notificationId);
-                        if (!_pendingMessages.get(notificationId).isEmpty()) {
-                            getOrLaunchActor(notificationId);
-                        }
-                    }
-                })
+                .match(NotificationActor.ShuttingDown.class, // Schedule a cleanup task to make sure the shutdown happens properly
+                        this::notifiationActorShuttingDown)
+                .match(Terminated.class, // Check to see if there are any pending messages that would require re-launching
+                        this::notificationActorTerminated)
+                .match(FlushNotificationActor.class, // Check to see if there are any pending messages that would require re-launching
+                        this::flushNotificationActor)
                 .build();
     }
 
@@ -232,7 +192,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                         // Timeout the shutdown and launch it again to make sure it's up and running
                         final ZonedDateTime shuttingDownTime = _shuttingDownNotifications.get(notificationActor);
                         if (shuttingDownTime.isBefore(ZonedDateTime.now().minus(3, ChronoUnit.MINUTES))) {
-                            _shuttingDownNotifications.remove((notificationActor));
+                            _shuttingDownNotifications.remove(notificationActor);
                         }
                     } else {
                         notificationActor.tell(alert, self());
@@ -326,6 +286,55 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
             throw new ExecutionException(errorListener.getErrors());
         }
         return statement;
+    }
+
+    private void flushNotificationActor(final FlushNotificationActor flush) {
+        final ActorRef ref = flush.getRef();
+        if (_shuttingDownNotifications.containsKey(ref)) {
+            LOGGER.warn()
+                    .setMessage("Flushing actor that did not shutdown properly")
+                    .addData("notificationActor", ref)
+                    .log();
+            context().stop(ref);
+            _shuttingDownNotifications.remove(ref);
+// Check to see if there are any pending messages that would require re-launching
+            final String notificationId = _notificationActors.inverse().get(ref);
+            _notificationActors.remove(notificationId);
+            if (!_pendingMessages.get(notificationId).isEmpty()) {
+                getOrLaunchActor(notificationId);
+            }
+        }
+    }
+
+    private void notificationActorTerminated(final Terminated terminated) {
+        final ActorRef dead = terminated.actor();
+        if (!_shuttingDownNotifications.containsKey(dead)) {
+            LOGGER.warn()
+                    .setMessage("Notification actor died without sending shutdown")
+                    .addData("notificationActor", dead)
+                    .log();
+        }
+        _shuttingDownNotifications.remove(dead);
+        // Check to see if there are any pending messages that would require re-launching
+        final String notificationId = _notificationActors.inverse().get(dead);
+        _notificationActors.remove(notificationId);
+        if (!_pendingMessages.get(notificationId).isEmpty()) {
+            getOrLaunchActor(notificationId);
+        }
+    }
+
+    private void notifiationActorShuttingDown(final NotificationActor.ShuttingDown shuttingDown) {
+        _shuttingDownNotifications.put(context().sender(), ZonedDateTime.now());
+
+        // Schedule a cleanup task to make sure the shutdown happens properly
+        context().system().scheduler().scheduleOnce(
+                FiniteDuration.apply(2, TimeUnit.MINUTES),
+                self(),
+                new FlushNotificationActor(context().sender()),
+                context().system().dispatcher(),
+                self());
+
+        sender().tell(NotificationActor.ShuttingDownAck.getInstance(), self());
     }
 
     @Override
@@ -452,7 +461,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
     }
 
     private static class FlushNotificationActor {
-        public FlushNotificationActor(final ActorRef ref) {
+        FlushNotificationActor(final ActorRef ref) {
 
             _ref = ref;
         }

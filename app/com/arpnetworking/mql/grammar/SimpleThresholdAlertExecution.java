@@ -19,6 +19,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import models.internal.Operator;
 import net.sf.oval.constraint.NotNull;
 
+import java.text.DecimalFormat;
 import java.util.function.Predicate;
 
 /**
@@ -36,33 +37,69 @@ public final class SimpleThresholdAlertExecution extends BaseAlertExecution {
 
     private SimpleThresholdAlertExecution(final Builder builder) {
         super(builder);
-        final Double threshold = builder._threshold;
-        final Operator operator = builder._operator;
-        switch (operator) {
+        _threshold = builder._threshold;
+        _operator = builder._operator;
+        switch (_operator) {
             case EQUAL_TO:
-                _evaluator = new TriggerEvaluator(threshold::equals);
+                _evaluator = new TriggerEvaluator(_threshold::equals);
                 break;
             case GREATER_THAN:
-                _evaluator = new TriggerEvaluator(v -> v > threshold);
+                _evaluator = new TriggerEvaluator(v -> v > _threshold);
                 break;
             case GREATER_THAN_OR_EQUAL_TO:
-                _evaluator = new TriggerEvaluator(v -> v >= threshold);
+                _evaluator = new TriggerEvaluator(v -> v >= _threshold);
                 break;
             case LESS_THAN:
-                _evaluator = new TriggerEvaluator(v -> v < threshold);
+                _evaluator = new TriggerEvaluator(v -> v < _threshold);
                 break;
             case LESS_THAN_OR_EQUAL_TO:
-                _evaluator = new TriggerEvaluator(v -> v <= threshold);
+                _evaluator = new TriggerEvaluator(v -> v <= _threshold);
                 break;
             case NOT_EQUAL_TO:
-                _evaluator = new TriggerEvaluator(v -> !threshold.equals(v));
+                _evaluator = new TriggerEvaluator(v -> !_threshold.equals(v));
                 break;
             default:
-                throw new IllegalArgumentException("Unknown operator on alert execution, operator=" + operator);
+                throw new IllegalArgumentException("Unknown operator on alert execution, operator=" + _operator);
         }
     }
 
+    @Override
+    protected String getMessage(final MetricsQueryResponse.DataPoint dataPoint) {
+        final String violation;
+        switch (_operator) {
+            case EQUAL_TO:
+                violation = "equal to";
+                break;
+            case GREATER_THAN:
+                violation = "greater than";
+                break;
+            case GREATER_THAN_OR_EQUAL_TO:
+                violation = "greater than or equal to";
+                break;
+            case LESS_THAN:
+                violation = "less than";
+                break;
+            case LESS_THAN_OR_EQUAL_TO:
+                violation = "less than or equal to";
+                break;
+            case NOT_EQUAL_TO:
+                violation = "not equal to";
+                break;
+            default:
+                return super.getMessage(dataPoint);
+        }
+        final DecimalFormat df = new DecimalFormat("0");
+        df.setMaximumFractionDigits(340);
+        return String.format("value of %s at %s was %s threshold of %s",
+                getDataPointValue(dataPoint),
+                dataPoint.getTime(),
+                violation,
+                df.format(_threshold));
+    }
+
     private final TriggerEvaluator _evaluator;
+    private final Operator _operator;
+    private final Double _threshold;
 
     /**
      * Implementation of the Builder pattern for {@link SimpleThresholdAlertExecution}.

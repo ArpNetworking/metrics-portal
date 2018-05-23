@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -32,6 +34,7 @@ import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Model class to represent a metrics query response from KairosDB.
@@ -209,6 +212,10 @@ public final class MetricsQueryResponse {
             return _alerts;
         }
 
+        public ImmutableList<QueryGroupBy> getGroupBy() {
+            return _groupBy;
+        }
+
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
             return _otherArgs;
@@ -220,6 +227,7 @@ public final class MetricsQueryResponse {
             _alerts = builder._alerts;
             _name = builder._name;
             _tags = builder._tags;
+            _groupBy = builder._groupBy;
         }
 
         private final ImmutableMap<String, Object> _otherArgs;
@@ -227,6 +235,7 @@ public final class MetricsQueryResponse {
         private final ImmutableList<AlertTrigger> _alerts;
         private final String _name;
         private final ImmutableMultimap<String, String> _tags;
+        private final ImmutableList<QueryGroupBy> _groupBy;
 
         /**
          * Implementation of the builder pattern for a {@link QueryResult}.
@@ -300,6 +309,18 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Sets the group by. Optional. Cannot be null.
+             *
+             * @param value the group by list
+             * @return this {@link Builder}
+             */
+            @JsonProperty("group_by")
+            public Builder setGroupBy(final ImmutableList<QueryGroupBy> value) {
+                _groupBy = value;
+                return this;
+            }
+
+            /**
              * Sets the alerts. Optional. Cannot be null. Defaults to empty.
              *
              * @param value the alerts
@@ -322,6 +343,181 @@ public final class MetricsQueryResponse {
             @NotNull
             @NotEmpty
             private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
+            @NotNull
+            private ImmutableList<QueryGroupBy> _groupBy = ImmutableList.of();
+        }
+    }
+
+    /**
+     * Model for the group_by fields in the {@link QueryResult}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
+    @JsonSubTypes({
+            @JsonSubTypes.Type(name = "tag", value = QueryTagGroupBy.class),
+            @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class)})
+    public abstract static class QueryGroupBy {
+        private QueryGroupBy(final Builder<?, ?> builder) {
+        }
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryGroupBy}.
+         *
+         * @param <B> type of the builder
+         * @param <T> type of the thing to be built
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public abstract static class Builder<B extends Builder<B, T>, T extends QueryGroupBy> extends OvalBuilder<T> {
+
+            /**
+             * Protected constructor.
+             *
+             * @param targetConstructor the constructor for the QueryGroupBy
+             * @param <B> Type of the builder
+             */
+            protected <B extends com.arpnetworking.commons.builder.Builder<T>> Builder(final Function<B, T> targetConstructor) {
+                super(targetConstructor);
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected abstract B self();
+        }
+    }
+
+    /**
+     * Model for the group_by fields of type "tag" in the {@link QueryResult}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class QueryTagGroupBy extends QueryGroupBy {
+        public ImmutableList<String> getTags() {
+            return _tags;
+        }
+
+        public ImmutableMap<String, String> getGroup() {
+            return _group;
+        }
+
+        private QueryTagGroupBy(final Builder builder) {
+            super(builder);
+            _tags = builder._tags;
+            _group = builder._group;
+        }
+
+        private final ImmutableList<String> _tags;
+        private final ImmutableMap<String, String> _group;
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryTagGroupBy}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryTagGroupBy> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(QueryTagGroupBy::new);
+            }
+
+            /**
+             * Sets the tags. Required. Cannot be null or empty.
+             *
+             * @param value the tags
+             * @return this {@link Builder}
+             */
+            public Builder setTags(final ImmutableList<String> value) {
+                _tags = value;
+                return self();
+            }
+
+            /**
+             * Sets the group. Required. Cannot be null or empty.
+             *
+             * @param value the group
+             * @return this {@link Builder}
+             */
+            public Builder setGroup(final ImmutableMap<String, String> value) {
+                _group = value;
+                return self();
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected Builder self() {
+                return this;
+            }
+
+            @NotNull
+            @NotEmpty
+            private ImmutableList<String> _tags;
+            @NotNull
+            @NotEmpty
+            private ImmutableMap<String, String> _group;
+        }
+    }
+
+    /**
+     * Model for the group_by fields of type "type" in the {@link QueryResult}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class QueryTypeGroupBy extends QueryGroupBy {
+        public String getType() {
+            return _type;
+        }
+
+        private QueryTypeGroupBy(final Builder builder) {
+            super(builder);
+            _type = builder._type;
+        }
+
+        private final String _type;
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryTypeGroupBy}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryTypeGroupBy> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(QueryTypeGroupBy::new);
+            }
+
+            /**
+             * Sets the type. Required. Cannot be null or empty.
+             *
+             * @param value the type
+             * @return this {@link Builder}
+             */
+            public Builder setType(final String value) {
+                _type = value;
+                return self();
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected Builder self() {
+                return this;
+            }
+
+            @NotNull
+            @NotEmpty
+            private String _type;
         }
     }
 

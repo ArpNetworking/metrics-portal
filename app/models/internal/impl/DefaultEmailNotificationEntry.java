@@ -39,6 +39,7 @@ import java.net.URI;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -73,20 +74,21 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
             mailMessage.setFrom(typesafeConfig.getString("alerts.email.from"));
             final String baseUrl = typesafeConfig.getString("alerts.baseUrl");
             final String alertUrl = URI.create(baseUrl).resolve("/#alert/edit/" + alert.getId()).toString();
-            final String subject = String.format("Alert '%s' in alarm", alert.getName());
+            final String subject = String.format("Alert '%s' on %s in alarm ", alert.getName(), getGroupByString(trigger));
             mailMessage.setSubject(subject);
             final MimeMultipart multipart = new MimeMultipart("alternative");
             final ImmutableMap<String, Object> templateObject = ImmutableMap.<String, Object>builder()
                     .put("alert", alert)
                     .put("trigger", trigger)
                     .put("alertUrl", alertUrl)
+                    .put("groupBy", getGroupByString(trigger))
                     .build();
 
-            addBodyPart(templateObject, configuration, multipart, "alert.text.ftlh", "text/plain; charset=utf-8");
-            addBodyPart(templateObject, configuration, multipart, "alert.html.ftlh", "text/html; charset=utf-8");
+            addBodyPart(multipart, "text/plain; charset=utf-8", renderTemplate(templateObject, configuration, "alert.text.ftlh"));
+            addBodyPart(multipart, "text/html; charset=utf-8", renderTemplate(templateObject, configuration, "alert.html.ftlh"));
 
             if (multipart.getCount() == 0) {
-                final String text = "Metric '" + alert.getName() + "' has gone into alert: \n"
+                final String text = "Alert '" + alert.getName() + "' on " + getGroupByString(trigger) + " has gone into alert: \n"
                         + "Details: " + trigger.getArgs().toString() + "\n";
                 final MimeBodyPart bodyText = new MimeBodyPart();
                 bodyText.setText(text, "utf-8");
@@ -96,40 +98,54 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
             mailMessage.setContent(multipart);
             Transport.send(mailMessage);
             return CompletableFuture.completedFuture(null);
-        } catch (final MessagingException e) {
+            // CHECKSTYLE.OFF: IllegalCatch - Make sure that template execution gets reported properly
+        } catch (final RuntimeException | MessagingException e) {
+            // CHECKSTYLE.ON: IllegalCatch
             final CompletableFuture<Void> future = new CompletableFuture<>();
             future.completeExceptionally(e);
             return future;
         }
     }
 
-    private void addBodyPart(
-            final ImmutableMap<String, Object> templateObject,
+    private String getGroupByString(final AlertTrigger trigger) {
+        return trigger.getGroupBy()
+                .entrySet()
+                .stream()
+                .map(entry -> String.format("%s %s", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(", "));
+    }
+
+    private String renderTemplate(final ImmutableMap<String, Object> templateObject,
             final Configuration configuration,
-            final MimeMultipart multipart,
-            final String template,
-            final String contentType)
-            throws MessagingException {
+            final String templateName) {
         try {
-            final MimeBodyPart part = new MimeBodyPart();
             final StringWriter stringWriter = new StringWriter();
-            final Template textTemplate = configuration.getTemplate(template);
-            textTemplate.process(templateObject, stringWriter);
-            part.setContent(stringWriter.toString(), contentType);
-            multipart.addBodyPart(part);
+            final Template template = configuration.getTemplate(templateName);
+            template.process(templateObject, stringWriter);
+            return stringWriter.toString();
         } catch (final IOException e) {
             LOGGER.warn()
                     .setMessage("Error loading alert template")
                     .setThrowable(e)
-                    .addData("template", template)
+                    .addData("template", templateName)
                     .log();
+            throw new RuntimeException("error processing template " + templateName, e);
         } catch (final TemplateException e) {
             LOGGER.warn()
                     .setMessage("Error processing alert template")
-                    .addData("template", template)
+                    .addData("template", templateName)
                     .setThrowable(e)
                     .log();
+            throw new RuntimeException("error processing template " + templateName, e);
         }
+    }
+
+    private void addBodyPart(
+            final MimeMultipart multipart, final String contentType, final String text)
+            throws MessagingException {
+            final MimeBodyPart part = new MimeBodyPart();
+            part.setContent(text, contentType);
+            multipart.addBodyPart(part);
     }
 
     @Override
