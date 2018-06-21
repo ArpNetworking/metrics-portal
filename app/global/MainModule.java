@@ -43,8 +43,10 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.util.JacksonCodec;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -54,6 +56,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -96,7 +99,14 @@ public class MainModule extends AbstractModule {
     protected void configure() {
         bind(Global.class).asEagerSingleton();
         bind(HealthProvider.class)
-                .toProvider(HealthProviderProvider.class);
+                .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(OrganizationProvider.class)
+                .toProvider(ConfigTypedProvider.provider("organizationProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(QueryExecutor.class)
+                .toProvider(ConfigTypedProvider.provider("query.executor.type"))
+                .in(Scopes.SINGLETON);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
@@ -117,8 +127,6 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
-        bind(OrganizationProvider.class)
-                .toProvider(OrganizationProviderProvider.class);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("AlertScheduler"))
                 .toProvider(AlertExecutionSchedulerProvider.class)
@@ -259,52 +267,6 @@ public class MainModule extends AbstractModule {
         final FiniteDuration delay = FiniteDuration.apply(500, TimeUnit.MILLISECONDS);
         actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
-    }
-
-    private static final class OrganizationProviderProvider implements Provider<OrganizationProvider> {
-        @Inject
-        OrganizationProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-        }
-
-        @Override
-        public OrganizationProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<OrganizationProvider>getType(_environment, _configuration, "organizationProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
-    }
-
-
-    private static final class HealthProviderProvider implements Provider<HealthProvider> {
-
-        @Inject
-        HealthProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-        }
-
-        @Override
-        public HealthProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<HealthProvider>getType(_environment, _configuration, "http.healthProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
     }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {

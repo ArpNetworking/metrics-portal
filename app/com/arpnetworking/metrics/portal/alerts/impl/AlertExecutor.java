@@ -25,12 +25,8 @@ import akka.persistence.AbstractPersistentActorWithTimers;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.mql.grammar.AlertTrigger;
-import com.arpnetworking.mql.grammar.CollectingErrorListener;
-import com.arpnetworking.mql.grammar.ExecutionException;
-import com.arpnetworking.mql.grammar.MqlLexer;
-import com.arpnetworking.mql.grammar.MqlParser;
-import com.arpnetworking.mql.grammar.QueryRunner;
 import com.arpnetworking.mql.grammar.TimeSeriesResult;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -44,9 +40,6 @@ import com.google.inject.Injector;
 import models.internal.Alert;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.atn.PredictionMode;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 import scala.concurrent.duration.FiniteDuration;
@@ -59,7 +52,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import javax.inject.Provider;
 
 /**
  * Actor responsible for executing and evaluating an alert query.
@@ -73,18 +65,18 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
      * Public constructor.
      *
      * @param alertRepository an alert repository
-     * @param queryRunnerProvider a query runner provider
+     * @param queryExecutor a query executor
      * @param injector injector to create dependencies
      * @param periodicMetrics periodic metrics instance to record against
      */
     @Inject
     public AlertExecutor(
             final AlertRepository alertRepository,
-            final Provider<QueryRunner> queryRunnerProvider,
+            final QueryExecutor queryExecutor,
             final Injector injector,
             final PeriodicMetrics periodicMetrics) {
         _alertRepository = alertRepository;
-        _queryRunner = queryRunnerProvider;
+        _queryExecutor = queryExecutor;
         _injector = injector;
         _periodicMetrics = periodicMetrics;
         LOGGER.debug()
@@ -135,7 +127,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                             .addData("alertId", _alertId)
                             .log();
                     _periodicMetrics.recordCounter(ALERT_EXECUTED_METRIC, 1);
-                    PatternsCS.pipe(_queryRunner.get().visitStatement(_parsedStatement), context().dispatcher()).to(self());
+                    PatternsCS.pipe(_queryExecutor.executeQuery(_query), context().dispatcher()).to(self());
                 })
                 .match(SendTo.class, sendTo -> {
                     if (_alertId == null) {
@@ -239,16 +231,6 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
             }
             if (!alert.getQuery().equals(_query)) {
                 _query = alert.getQuery();
-                try {
-                    _parsedStatement = null;
-                    _parsedStatement = parseQuery(_query);
-                } catch (final ExecutionException ex) {
-                    LOGGER.warn()
-                            .setMessage("Invalid query in alert")
-                            .addData("alertId", _alertId)
-                            .addData("query", _query)
-                            .log();
-                }
             }
             _periodicMetrics.recordCounter(ALERT_LOAD_METRIC, 1);
         } else {
@@ -261,33 +243,6 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
         }
     }
 
-    private MqlParser.StatementContext parseQuery(final String query) throws ExecutionException {
-        final MqlLexer lexer = new MqlLexer(new ANTLRInputStream(query));
-        final CommonTokenStream tokens = new CommonTokenStream(lexer);
-        final MqlParser parser = new MqlParser(tokens);
-        final CollectingErrorListener errorListener = new CollectingErrorListener();
-        parser.removeErrorListeners();
-        parser.addErrorListener(errorListener);
-
-        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-        MqlParser.StatementContext statement;
-        try {
-            statement = parser.statement(); // STAGE 1
-            // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
-        } catch (final RuntimeException ex) {
-            // CHECKSTYLE.ON: IllegalCatch
-            tokens.reset(); // rewind input stream
-            parser.reset();
-            parser.getInterpreter().setPredictionMode(PredictionMode.LL);
-            statement = parser.statement();  // STAGE 2
-        }
-
-        if (parser.getNumberOfSyntaxErrors() != 0) {
-            throw new ExecutionException(errorListener.getErrors());
-        }
-        return statement;
-    }
-
     private void flushNotificationActor(final FlushNotificationActor flush) {
         final ActorRef ref = flush.getRef();
         if (_shuttingDownNotifications.containsKey(ref)) {
@@ -297,7 +252,7 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
                     .log();
             context().stop(ref);
             _shuttingDownNotifications.remove(ref);
-// Check to see if there are any pending messages that would require re-launching
+            // Check to see if there are any pending messages that would require re-launching
             final String notificationId = _notificationActors.inverse().get(ref);
             _notificationActors.remove(notificationId);
             if (!_pendingMessages.get(notificationId).isEmpty()) {
@@ -346,9 +301,8 @@ public class AlertExecutor extends AbstractPersistentActorWithTimers {
     private Organization _organization;
     private Period _executePeriod;
     private String _query;
-    private MqlParser.StatementContext _parsedStatement;
 
-    private final Provider<QueryRunner> _queryRunner;
+    private final QueryExecutor _queryExecutor;
     private final Injector _injector;
     private final PeriodicMetrics _periodicMetrics;
     private final AlertRepository _alertRepository;
