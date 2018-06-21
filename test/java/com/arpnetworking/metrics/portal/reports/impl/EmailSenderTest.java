@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,6 +99,7 @@ public class EmailSenderTest {
                     TestBeanFactory.createRecipient(),
                     ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
             ).toCompletableFuture().get();
+            Assert.fail("Expected an exception to be thrown");
         } catch (final ExecutionException e) {
             if (e.getCause() instanceof MailException) {
                 throw (MailException) e.getCause();

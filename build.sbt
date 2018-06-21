@@ -20,6 +20,7 @@ lazy val main = (project in file("."))
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.8.3",
+      "org.webjars.npm" % "bootstrap-daterangepicker" % "2.1.17",
       "org.webjars.npm" % "d3" % "4.11.0",
       "org.webjars.npm" % "github-com-auth0-jwt-decode" % "2.1.0",
       "org.webjars.npm" % "graceful-readlink" % "1.0.1",

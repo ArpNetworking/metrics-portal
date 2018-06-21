@@ -21,10 +21,7 @@ import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.utility.test.ResourceHelper;
 import io.ebean.EbeanServer;
-import models.ebean.NagiosExtension;
 import models.internal.Alert;
-import models.internal.Context;
-import models.internal.Operator;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -82,22 +79,8 @@ public final class AlertControllerIT {
                     .findOne();
 
             assertNotNull(alert);
-            assertEquals(Context.CLUSTER, alert.getContext());
-            assertEquals("test-cluster", alert.getCluster());
             assertEquals("test-name", alert.getName());
-            assertEquals("test-metric", alert.getMetric());
-            assertEquals("test-service", alert.getService());
-            assertEquals(1, alert.getPeriod());
-            assertEquals(Operator.EQUAL_TO, alert.getOperator());
-            assertEquals(12, alert.getQuantityValue(), 0.01);
-            assertEquals("MEGABYTE", alert.getQuantityUnit());
-
-            final NagiosExtension extension = alert.getNagiosExtension();
-            assertNotNull(extension);
-            assertEquals("CRITICAL", extension.getSeverity());
-            assertEquals("abc@example.com", extension.getNotify());
-            assertEquals(3, extension.getMaxCheckAttempts());
-            assertEquals(300, extension.getFreshnessThreshold());
+            assertEquals(60, alert.getPeriod());
         }
     }
 
@@ -105,6 +88,17 @@ public final class AlertControllerIT {
     public void testCreateMissingBodyCase() throws IOException {
         final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
         request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
+            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void testCreatePeriodTooSmallCase() throws IOException {
+        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
+        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+        request.setEntity(createEntity("testCreatePeriodTooSmallCase"));
 
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
             assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
@@ -123,76 +117,10 @@ public final class AlertControllerIT {
     }
 
     @Test
-    public void testCreateMissingContextCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingContextCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateInvalidContextCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateInvalidContextCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
     public void testCreateMissingNameCase() throws IOException {
         final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
         request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
         request.setEntity(createEntity("testCreateMissingNameCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingClusterCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingClusterCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingMetricCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingMetricCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingStatisticCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingStatisticCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingServiceCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingServiceCase"));
 
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
             assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
@@ -206,7 +134,7 @@ public final class AlertControllerIT {
         request.setEntity(createEntity("testCreateMissingPeriodCase"));
 
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
+            assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
         }
     }
 
@@ -215,39 +143,6 @@ public final class AlertControllerIT {
         final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
         request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
         request.setEntity(createEntity("testCreateInvalidPeriodCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingOperatorCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingOperatorCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateInvalidOperatorCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateInvalidOperatorCase"));
-
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
-            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void testCreateMissingValueCase() throws IOException {
-        final HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/alerts"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(createEntity("testCreateMissingValueCase"));
 
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
             assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());

@@ -41,6 +41,8 @@ requirejs.config({
         'plugins/serializer': '../lib/durandal/js/plugins/serializer',
         'plugins/widget': '../lib/durandal/js/plugins/widget',
 
+        'daterangepicker': '../lib/bootstrap-daterangepicker/daterangepicker',
+        'datetimepicker' : '../lib/Eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
         'flotr2' : '../lib/flotr2/flotr2.amd',
         'jquery' : '../lib/jquery/jquery.min',
         'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
@@ -48,12 +50,11 @@ requirejs.config({
         'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
         'knockout' : '../lib/knockout/knockout',
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
+        'moment' : '../lib/moment/moment',
+        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
         'underscore' : '../lib/underscorejs/underscore-min', //Required by flotr2
-        'moment' : '../lib/moment/moment',
-        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
-        'datetimepicker' : '../lib/Eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
     },
     map : {
         '*': {

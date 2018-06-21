@@ -18,6 +18,7 @@ package models.ebean;
 import io.ebean.EbeanServer;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.impl.DefaultOrganization;
 
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -120,6 +121,15 @@ public class Organization {
 
     public void setUuid(final UUID value) {
         this.uuid = value;
+    }
+
+    /**
+     * Converts this model into an {@link models.internal.Organization}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Organization toInternal() {
+        return new DefaultOrganization.Builder().setId(uuid).build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
