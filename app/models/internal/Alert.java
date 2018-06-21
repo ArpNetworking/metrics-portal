@@ -18,7 +18,6 @@ package models.internal;
 import org.joda.time.Period;
 
 import java.util.UUID;
-import javax.annotation.Nullable;
 
 /**
  * Internal model interface for an alert.
@@ -35,11 +34,11 @@ public interface Alert {
     UUID getId();
 
     /**
-     * The context of the alert. Either a host or cluster.
+     * The organization that owns the alert.
      *
-     * @return The context of the alert.
+     * @return The organization that owns the alert.
      */
-    Context getContext();
+    Organization getOrganization();
 
     /**
      * The name of the alert.
@@ -49,59 +48,24 @@ public interface Alert {
     String getName();
 
     /**
-     * The name of the cluster for statistic identifier of condition left-hand side.
+     * The query to execute.
      *
-     * @return The name of the cluster for statistic identifier of condition left-hand side.
+     * @return The query to execute.
      */
-    String getCluster();
+    String getQuery();
 
     /**
-     * The name of the service for statistic identifier of condition left-hand side.
+     * The comment.
      *
-     * @return The name of the service for statistic identifier of condition left-hand side.
+     * @return The comment about
      */
-    String getService();
+    String getComment();
 
     /**
-     * The name of the metric for statistic identifier of condition left-hand side.
+     * The check interval to evaluate the condition on.
      *
-     * @return The name of the metric for statistic identifier of condition left-hand side.
+     * @return The checkInterval to evaluate the condition on.
      */
-    String getMetric();
-
-    /**
-     * The name of the statistic for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the statistic for statistic identifier of condition left-hand side.
-     */
-    String getStatistic();
-
-    /**
-     * The period to evaluate the condition in.
-     *
-     * @return The period to evaluate the condition in.
-     */
-    Period getPeriod();
-
-    /**
-     * The condition operator.
-     *
-     * @return The condition operator.
-     */
-    Operator getOperator();
-
-    /**
-     * The value of condition right-hand side.
-     *
-     * @return The value of condition right-hand side.
-     */
-    Quantity getValue();
-
-    /**
-     * Nagios specific extensions.
-     *
-     * @return Nagios specific extensions.
-     */
-    @Nullable
-    NagiosExtension getNagiosExtension();
+    Period getCheckInterval();
 }
+

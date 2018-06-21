@@ -15,104 +15,44 @@
  */
 package models.view;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableMap;
+import models.internal.Organization;
+import models.internal.impl.DefaultAlert;
+import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNull;
+import org.joda.time.Period;
+
+import java.util.UUID;
 
 /**
- * View model of <code>Alert</code>. Play view models are mutable.
+ * View model of <code>Alert</code>.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class Alert {
 
-    public void setId(final String value) {
-        _id = value;
-    }
-
-    public String getId() {
+    public UUID getId() {
         return _id;
-    }
-
-    public void setContext(final String value) {
-        _context = value;
-    }
-
-    public String getContext() {
-        return _context;
-    }
-
-    public void setName(final String value) {
-        _name = value;
     }
 
     public String getName() {
         return _name;
     }
 
-    public void setCluster(final String value) {
-        _cluster = value;
+    public String getQuery() {
+        return _query;
     }
 
-    public String getCluster() {
-        return _cluster;
+    public Period getCheckInterval() {
+        return _checkInterval;
     }
 
-    public void setService(final String value) {
-        _service = value;
-    }
-
-    public String getService() {
-        return _service;
-    }
-
-    public void setMetric(final String value) {
-        _metric = value;
-    }
-
-    public String getMetric() {
-        return _metric;
-    }
-
-    public void setStatistic(final String value) {
-        _statistic = value;
-    }
-
-    public String getStatistic() {
-        return _statistic;
-    }
-
-    public void setPeriod(final String value) {
-        _period = value;
-    }
-
-    public String getPeriod() {
-        return _period;
-    }
-
-    public void setOperator(final String value) {
-        _operator = value;
-    }
-
-    public String getOperator() {
-        return _operator;
-    }
-
-    public void setValue(final Quantity value) {
-        _value = value;
-    }
-
-    public Quantity getValue() {
-        return _value;
-    }
-
-    public void setExtensions(final ImmutableMap<String, Object> extensions) {
-        _extensions = extensions;
-    }
-
-    public ImmutableMap<String, Object> getExtensions() {
-        return _extensions;
+    public String getComment() {
+        return _comment;
     }
 
     @Override
@@ -121,28 +61,144 @@ public final class Alert {
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("class", this.getClass())
                 .add("Id", _id)
-                .add("Context", _context)
                 .add("Name", _name)
-                .add("Cluster", _cluster)
-                .add("Service", _service)
-                .add("Metric", _metric)
-                .add("Statistic", _statistic)
-                .add("Period", _period)
-                .add("Operator", _operator)
-                .add("Value", _value)
-                .add("Extensions", _extensions)
+                .add("Comment", _comment)
+                .add("Query", _query)
+                .add("Period", _checkInterval)
                 .toString();
     }
 
-    private String _id;
-    private String _context;
-    private String _name;
-    private String _cluster;
-    private String _service;
-    private String _metric;
-    private String _statistic;
-    private String _period;
-    private String _operator;
-    private Quantity _value;
-    private ImmutableMap<String, Object> _extensions;
+    /**
+     * Converts a view model to an internal model.
+     *
+     * @param organization organization the alert belongs to
+     * @param objectMapper object mapper to convert some values
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal(
+            final Organization organization,
+        final ObjectMapper objectMapper) {
+        final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
+                .setId(_id)
+                .setName(_name)
+                .setQuery(_query)
+                .setCheckInterval(_checkInterval)
+                .setComment(_comment)
+                .setOrganization(organization);
+
+        return alertBuilder.build();
+    }
+
+    /**
+     * Converts an internal model to a view model.
+     *
+     * @param alert the alert
+     * @return a new view model
+     */
+    public static Alert fromInternal(final models.internal.Alert alert) {
+        return new Alert.Builder()
+                .setId(alert.getId())
+                .setName(alert.getName())
+                .setQuery(alert.getQuery())
+                .setCheckInterval(alert.getCheckInterval())
+                .setComment(alert.getComment())
+                .build();
+    }
+
+    private final UUID _id;
+    private final String _name;
+    private final String _query;
+    private final Period _checkInterval;
+    private final String _comment;
+
+    private Alert(final Builder builder) {
+        _id = builder._id;
+        _name = builder._name;
+        _query = builder._query;
+        _checkInterval = builder._checkInterval;
+        _comment = builder._comment;
+    }
+
+    /**
+     * Implementation of the builder pattern for {@link Alert}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class Builder extends OvalBuilder<Alert> {
+
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(Alert::new);
+        }
+
+        /**
+         * Sets the id. Required.
+         *
+         * @param value the id
+         * @return this {@link Builder}
+         */
+        public Builder setId(final UUID value) {
+            _id = value;
+            return this;
+        }
+
+        /**
+         * Sets the name. Required.
+         *
+         * @param value the name of the query
+         * @return this {@link Builder}
+         */
+        public Builder setName(final String value) {
+            _name = value;
+            return this;
+        }
+
+        /**
+         * Sets the query. Required.
+         *
+         * @param value the query
+         * @return this {@link Builder}
+         */
+        public Builder setQuery(final String value) {
+            _query = value;
+            return this;
+        }
+
+        /**
+         * Sets the check interval. Optional. Defaults PT1M. Cannot be null.
+         *
+         * @param value the check interval
+         * @return this {@link Builder}
+         */
+        public Builder setCheckInterval(final Period value) {
+            _checkInterval = value;
+            return this;
+        }
+
+        /**
+         * Sets the comment. Optional. Defaults empty. Cannot be null.
+         *
+         * @param value the comment
+         * @return this {@link Builder}
+         */
+        public Builder setComment(final String value) {
+            _comment = value;
+            return this;
+        }
+
+        @NotNull
+        private UUID _id;
+        @NotNull
+        @NotEmpty
+        private String _name;
+        @NotNull
+        @NotEmpty
+        private String _query;
+        @NotNull
+        private Period _checkInterval = Period.minutes(1);
+        @NotNull
+        private String _comment = "";
+    }
 }

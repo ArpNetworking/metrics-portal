@@ -15,51 +15,36 @@
  */
 package models.view;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNull;
+
+import java.util.UUID;
 
 /**
- * View model of <code>Expression</code>. Play view models are mutable.
+ * View model of <code>Expression</code>.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Loggable
 public final class Expression {
 
-    public void setId(final String value) {
-        _id = value;
-    }
-
-    public String getId() {
+    public UUID getId() {
         return _id;
-    }
-
-    public void setCluster(final String value) {
-        _cluster = value;
     }
 
     public String getCluster() {
         return _cluster;
     }
 
-    public void setService(final String value) {
-        _service = value;
-    }
-
     public String getService() {
         return _service;
     }
 
-    public void setMetric(final String value) {
-        _metric = value;
-    }
-
     public String getMetric() {
         return _metric;
-    }
-
-    public void setScript(final String value) {
-        _script = value;
     }
 
     public String getScript() {
@@ -79,9 +64,103 @@ public final class Expression {
                 .toString();
     }
 
-    private String _id;
-    private String _cluster;
-    private String _service;
-    private String _metric;
-    private String _script;
+    private Expression(final Builder builder) {
+        _id = builder._id;
+        _cluster = builder._cluster;
+        _service = builder._service;
+        _metric = builder._metric;
+        _script = builder._script;
+    }
+
+    private final UUID _id;
+    private final String _cluster;
+    private final String _service;
+    private final String _metric;
+    private final String _script;
+
+    /**
+     * Implementation of the builder pattern for {@link Expression}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public static final class Builder extends OvalBuilder<Expression> {
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(Expression::new);
+        }
+
+        /**
+         * Sets the id. Required. Cannot be null or empty.
+         *
+         * @param value the value
+         * @return this {@link Builder}
+         */
+        public Builder setId(final UUID value) {
+            _id = value;
+            return this;
+        }
+
+        /**
+         * Sets the cluster. Required. Cannot be null or empty.
+         *
+         * @param value the value
+         * @return this {@link Builder}
+         */
+        public Builder setCluster(final String value) {
+            _cluster = value;
+            return this;
+        }
+
+        /**
+         * Sets the service. Required. Cannot be null or empty.
+         *
+         * @param value the value
+         * @return this {@link Builder}
+         */
+        public Builder setService(final String value) {
+            _service = value;
+            return this;
+        }
+
+        /**
+         * Sets the metric. Required. Cannot be null or empty.
+         *
+         * @param value the value
+         * @return this {@link Builder}
+         */
+        public Builder setMetric(final String value) {
+            _metric = value;
+            return this;
+        }
+
+        /**
+         * Sets the script. Required. Cannot be null or empty.
+         *
+         * @param value the value
+         * @return this {@link Builder}
+         */
+        public Builder setScript(final String value) {
+            _script = value;
+            return this;
+        }
+
+        @NotNull
+        @NotEmpty
+        private UUID _id;
+        @NotNull
+        @NotEmpty
+        private String _cluster;
+        @NotNull
+        @NotEmpty
+        private String _service;
+        @NotNull
+        @NotEmpty
+        private String _metric;
+        @NotNull
+        @NotEmpty
+        private String _script;
+    }
+
 }

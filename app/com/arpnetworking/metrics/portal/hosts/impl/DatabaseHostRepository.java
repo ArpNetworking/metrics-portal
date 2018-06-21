@@ -347,7 +347,7 @@ public class DatabaseHostRepository implements HostRepository {
                     orderBuilder.append("order by ts_rank(t0.name_idx_col, prefixQuery) * ts_rank(t0.name_idx_col, termQuery) "
                             + "/ char_length(t0.name) DESC, name ASC");
                 } else {
-                    // The user enters only removable tokens (e.g. space, period, etc.)
+                    // The user enters only removable tokens (e.g. space, checkInterval, etc.)
                     LOGGER.debug()
                             .setMessage("Skipping partial host name query clause")
                             .addData("organization", organization)

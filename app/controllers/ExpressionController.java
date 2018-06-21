@@ -22,7 +22,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
@@ -43,6 +42,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 /**
@@ -112,10 +112,15 @@ public class ExpressionController extends Controller {
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
+            @Nullable
             final String contains,
+            @Nullable
             final String cluster,
+            @Nullable
             final String service,
+            @Nullable
             final Integer limit,
+            @Nullable
             final Integer offset) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
@@ -124,7 +129,7 @@ public class ExpressionController extends Controller {
         final Optional<String> argCluster = Optional.ofNullable(cluster);
         final Optional<String> argService = Optional.ofNullable(service);
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
-        final int argLimit = Math.min(_maxLimit, Optional.of(MoreObjects.firstNonNull(limit, _maxLimit)).get());
+        final int argLimit = Math.min(_maxLimit, Optional.ofNullable(limit).orElse(_maxLimit));
         if (argLimit < 0) {
             return badRequest("Invalid limit; must be greater than or equal to 0");
         }
@@ -195,7 +200,7 @@ public class ExpressionController extends Controller {
     private Expression convertToInternalExpression(final models.view.Expression viewExpression) throws IOException {
         try {
             return new DefaultExpression.Builder()
-                    .setId(viewExpression.getId() == null ? null : UUID.fromString(viewExpression.getId()))
+                    .setId(viewExpression.getId())
                     .setCluster(viewExpression.getCluster())
                     .setMetric(viewExpression.getMetric())
                     .setService(viewExpression.getService())
@@ -209,13 +214,13 @@ public class ExpressionController extends Controller {
     }
 
     private models.view.Expression internalModelToViewModel(final Expression expression) {
-        final models.view.Expression viewExpression = new models.view.Expression();
-        viewExpression.setCluster(expression.getCluster());
-        viewExpression.setId(expression.getId().toString());
-        viewExpression.setMetric(expression.getMetric());
-        viewExpression.setScript(expression.getScript());
-        viewExpression.setService(expression.getService());
-        return viewExpression;
+        return new models.view.Expression.Builder()
+                .setCluster(expression.getCluster())
+                .setId(expression.getId())
+                .setMetric(expression.getMetric())
+                .setScript(expression.getScript())
+                .setService(expression.getService())
+                .build();
     }
 
     /**

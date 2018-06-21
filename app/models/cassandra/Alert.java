@@ -23,14 +23,14 @@ import com.datastax.driver.mapping.annotations.Param;
 import com.datastax.driver.mapping.annotations.PartitionKey;
 import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
-import models.internal.Context;
-import models.internal.Operator;
+import models.internal.Organization;
+import models.internal.impl.DefaultAlert;
+import models.internal.impl.DefaultOrganization;
 import org.joda.time.Instant;
+import org.joda.time.Period;
 
 import java.util.Map;
 import java.util.UUID;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Version;
 
 /**
@@ -58,34 +58,11 @@ public class Alert {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "cluster")
-    private String cluster;
-
-    @Column(name = "service")
-    private String service;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "context")
-    private Context context;
-
-    @Column(name = "metric")
-    private String metric;
-
-    @Column(name = "statistic")
-    private String statistic;
+    @Column(name = "query")
+    private String query;
 
     @Column(name = "period_in_seconds")
     private int periodInSeconds;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "operator")
-    private Operator operator;
-
-    @Column(name = "quantity_value")
-    private double quantityValue;
-
-    @Column(name = "quantity_unit")
-    private String quantityUnit;
 
     @Column(name = "organization")
     private UUID organization;
@@ -93,6 +70,9 @@ public class Alert {
     @Frozen
     @Column(name = "nagios_extensions")
     private Map<String, String> nagiosExtensions;
+
+    @Column(name = "comment")
+    private String comment = "";
 
     public Long getVersion() {
         return version;
@@ -134,44 +114,12 @@ public class Alert {
         name = value;
     }
 
-    public String getCluster() {
-        return cluster;
+    public String getQuery() {
+        return query;
     }
 
-    public void setCluster(final String value) {
-        cluster = value;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(final String value) {
-        service = value;
-    }
-
-    public Context getContext() {
-        return context;
-    }
-
-    public void setContext(final Context value) {
-        context = value;
-    }
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(final String value) {
-        metric = value;
-    }
-
-    public String getStatistic() {
-        return statistic;
-    }
-
-    public void setStatistic(final String value) {
-        statistic = value;
+    public void setQuery(final String value) {
+        query = value;
     }
 
     public int getPeriodInSeconds() {
@@ -182,30 +130,6 @@ public class Alert {
         periodInSeconds = value;
     }
 
-    public Operator getOperator() {
-        return operator;
-    }
-
-    public void setOperator(final Operator value) {
-        operator = value;
-    }
-
-    public double getQuantityValue() {
-        return quantityValue;
-    }
-
-    public void setQuantityValue(final double value) {
-        quantityValue = value;
-    }
-
-    public String getQuantityUnit() {
-        return quantityUnit;
-    }
-
-    public void setQuantityUnit(final String value) {
-        quantityUnit = value;
-    }
-
     public UUID getOrganization() {
         return organization;
     }
@@ -214,14 +138,30 @@ public class Alert {
         organization = value;
     }
 
-    public Map<String, String> getNagiosExtensions() {
-        return nagiosExtensions;
+    public String getComment() {
+        return comment;
     }
 
-    public void setNagiosExtensions(final Map<String, String> value) {
-        nagiosExtensions = value;
+    public void setComment(final String value) {
+        comment = value;
     }
 
+    /**
+     * Converts this model into an {@link models.internal.Alert}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal() {
+        final Organization org = new DefaultOrganization.Builder().setId(organization).build();
+        return new DefaultAlert.Builder()
+                .setId(getUuid())
+                .setName(getName())
+                .setQuery(getQuery())
+                .setCheckInterval(Period.seconds(getPeriodInSeconds()).normalizedStandard())
+                .setOrganization(org)
+                .setComment(comment)
+                .build();
+    }
 
     /**
      * Queries for alerts.

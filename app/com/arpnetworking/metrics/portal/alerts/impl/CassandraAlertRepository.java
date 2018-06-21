@@ -22,20 +22,15 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
-import com.google.common.collect.ImmutableMap;
 import models.internal.Alert;
 import models.internal.AlertQuery;
-import models.internal.NagiosExtension;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
-import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultQueryResult;
-import org.joda.time.Period;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.UUID;
@@ -43,7 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -94,7 +88,7 @@ public final class CassandraAlertRepository implements AlertRepository {
             return Optional.empty();
         }
 
-        return Optional.of(convertFromCassandraAlert(cassandraAlert));
+        return Optional.of(cassandraAlert.toInternal());
     }
 
     @Override
@@ -135,32 +129,16 @@ public final class CassandraAlertRepository implements AlertRepository {
 
         Stream<models.cassandra.Alert> alertStream = StreamSupport.stream(allAlerts, false);
 
-        if (query.getCluster().isPresent()) {
-            alertStream = alertStream.filter(alert -> alert.getCluster().equals(query.getCluster().get()));
-        }
-
-        if (query.getService().isPresent()) {
-            alertStream = alertStream.filter(alert -> alert.getService().equals(query.getService().get()));
-        }
-
-        if (query.getContext().isPresent()) {
-            alertStream = alertStream.filter(alert -> alert.getContext().equals(query.getContext().get()));
-        }
-
         if (query.getContains().isPresent()) {
             alertStream = alertStream.filter(alert -> {
-                final String contains = query.getContains().get();
-                return alert.getService().contains(contains)
-                        || alert.getCluster().contains(contains)
-                        || alert.getMetric().contains(contains)
-                        || alert.getOperator().toString().contains(contains)
-                        || alert.getName().contains(contains)
-                        || alert.getStatistic().contains(contains);
+                final String contains = query.getContains().get().toLowerCase(Locale.ENGLISH);
+                return alert.getQuery().toLowerCase(Locale.ENGLISH).contains(contains)
+                        || alert.getName().toLowerCase(Locale.ENGLISH).contains(contains);
             });
         }
 
         final List<Alert> alerts = alertStream
-                .map(this::convertFromCassandraAlert)
+                .map(models.cassandra.Alert::toInternal)
                 .collect(Collectors.toList());
         final List<Alert> paginated = alerts.stream().skip(start).limit(query.getLimit()).collect(Collectors.toList());
         return new DefaultQueryResult<>(paginated, alerts.size());
@@ -186,17 +164,10 @@ public final class CassandraAlertRepository implements AlertRepository {
         final models.cassandra.Alert cassAlert = new models.cassandra.Alert();
         cassAlert.setUuid(alert.getId());
         cassAlert.setOrganization(organization.getId());
-        cassAlert.setCluster(alert.getCluster());
-        cassAlert.setMetric(alert.getMetric());
-        cassAlert.setContext(alert.getContext());
-        cassAlert.setNagiosExtensions(convertToCassandraNagiosExtension(alert.getNagiosExtension()));
         cassAlert.setName(alert.getName());
-        cassAlert.setOperator(alert.getOperator());
-        cassAlert.setPeriodInSeconds(alert.getPeriod().toStandardSeconds().getSeconds());
-        cassAlert.setQuantityValue(alert.getValue().getValue());
-        cassAlert.setQuantityUnit(alert.getValue().getUnit().orElse(null));
-        cassAlert.setStatistic(alert.getStatistic());
-        cassAlert.setService(alert.getService());
+        cassAlert.setQuery(alert.getQuery());
+        cassAlert.setPeriodInSeconds(alert.getCheckInterval().toStandardSeconds().getSeconds());
+        cassAlert.setComment(alert.getComment());
 
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         mapper.save(cassAlert);
@@ -210,52 +181,6 @@ public final class CassandraAlertRepository implements AlertRepository {
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("Alert repository is not %s", expectedState ? "open" : "closed"));
         }
-    }
-
-    private Alert convertFromCassandraAlert(final models.cassandra.Alert cassandraAlert) {
-        return new DefaultAlert.Builder()
-                .setCluster(cassandraAlert.getCluster())
-                .setContext(cassandraAlert.getContext())
-                .setId(cassandraAlert.getUuid())
-                .setMetric(cassandraAlert.getMetric())
-                .setName(cassandraAlert.getName())
-                .setOperator(cassandraAlert.getOperator())
-                .setPeriod(Period.seconds(cassandraAlert.getPeriodInSeconds()).normalizedStandard())
-                .setService(cassandraAlert.getService())
-                .setStatistic(cassandraAlert.getStatistic())
-                .setValue(new DefaultQuantity.Builder()
-                        .setValue(cassandraAlert.getQuantityValue())
-                        .setUnit(cassandraAlert.getQuantityUnit())
-                        .build())
-                .setNagiosExtension(convertToInternalNagiosExtension(cassandraAlert.getNagiosExtensions()))
-                .build();
-    }
-
-    @Nullable
-    private NagiosExtension convertToInternalNagiosExtension(final Map<String, String> nagiosExtensions) {
-        if (nagiosExtensions == null) {
-            return null;
-        }
-
-        final NagiosExtension.Builder internal = new NagiosExtension.Builder();
-        Optional.ofNullable(nagiosExtensions.get("severity")).ifPresent(internal::setSeverity);
-        Optional.ofNullable(nagiosExtensions.get("notify")).ifPresent(internal::setNotify);
-        Optional.ofNullable(nagiosExtensions.get("attempts")).ifPresent(value ->
-                internal.setMaxCheckAttempts(Integer.parseInt(value)));
-        Optional.ofNullable(nagiosExtensions.get("freshness")).ifPresent(value ->
-                internal.setFreshnessThresholdInSeconds(Long.parseLong(value)));
-        return internal.build();
-    }
-
-    private Map<String, String> convertToCassandraNagiosExtension(final NagiosExtension nagiosExtension) {
-        final ImmutableMap.Builder<String, String> nagiosMapBuilder = new ImmutableMap.Builder<>();
-        if (nagiosExtension != null) {
-            nagiosMapBuilder.put("severity", nagiosExtension.getSeverity());
-            nagiosMapBuilder.put("notify", nagiosExtension.getNotify());
-            nagiosMapBuilder.put("attempts", Integer.toString(nagiosExtension.getMaxCheckAttempts()));
-            nagiosMapBuilder.put("freshness", Long.toString(nagiosExtension.getFreshnessThreshold().getStandardSeconds()));
-        }
-        return nagiosMapBuilder.build();
     }
 
     private final Session _cassandraSession;

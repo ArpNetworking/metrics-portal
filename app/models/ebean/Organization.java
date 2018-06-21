@@ -18,6 +18,7 @@ package models.ebean;
 import io.ebean.Finder;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.impl.DefaultOrganization;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -128,5 +129,14 @@ public class Organization {
     }
 
     private static final Finder<Long, Organization> FINDER = new Finder<>(Organization.class);
+
+    /**
+     * Converts this model into an {@link models.internal.Organization}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Organization toInternal() {
+        return new DefaultOrganization.Builder().setId(uuid).build();
+    }
 }
 // CHECKSTYLE.ON: MemberNameCheck

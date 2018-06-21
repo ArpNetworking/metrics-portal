@@ -1,0 +1,6 @@
+{
+    "id" : "18410734-aed7-11e1-8e54-00259060b618",
+    "name" : "test-name",
+    "query" : "select test_metric",
+    "checkInterval" : "PT1S"
+}

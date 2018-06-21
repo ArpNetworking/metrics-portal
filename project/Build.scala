@@ -70,7 +70,6 @@ object ApplicationBuild extends Build {
       "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
       "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.8.2",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",
-      "org.asynchttpclient" % "async-http-client" % "2.0.32",
       "com.chrisomeara" %% "pillar" % "2.3.0",
       "com.datastax.cassandra" % "cassandra-driver-core" % cassandraDriverVersion,
       "com.datastax.cassandra" % "cassandra-driver-mapping" % cassandraDriverVersion,
@@ -92,12 +91,14 @@ object ApplicationBuild extends Build {
       "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.58",
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "net.sf.oval" % "oval" % "1.82",
+      "org.asynchttpclient" % "async-http-client" % "2.0.32",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
       "org.flywaydb" %% "flyway-play" % "4.0.0",
       "org.java-websocket" % "Java-WebSocket" % "1.3.0",
       "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.3.7",
+      "org.webjars.npm" % "bootstrap-daterangepicker" % "2.1.17",
       "org.webjars.npm" % "d3" % "4.11.0",
 
       // Needed for dev
@@ -118,6 +119,7 @@ object ApplicationBuild extends Build {
       "org.webjars" % "requirejs-text" % "2.0.10-1",
       "org.webjars" % "typeaheadjs" % "0.10.4-1",
       "org.webjars" % "underscorejs" % "1.8.3",
+      "org.webjars.npm" % "moment" % "2.20.1",
       "org.webjars.npm" % "github-com-auth0-jwt-decode" % "2.1.0",
 
       "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",

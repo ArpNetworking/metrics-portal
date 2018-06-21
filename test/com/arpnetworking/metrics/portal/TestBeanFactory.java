@@ -15,11 +15,9 @@
  */
 package com.arpnetworking.metrics.portal;
 
-import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.Expression;
-import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -28,12 +26,10 @@ import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultOrganization;
-import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -65,19 +61,10 @@ public final class TestBeanFactory {
     public static DefaultAlert.Builder createAlertBuilder() {
         return new DefaultAlert.Builder()
                 .setId(UUID.randomUUID())
-                .setCluster(TEST_CLUSTER + RANDOM.nextInt(100))
-                .setMetric(TEST_METRIC + RANDOM.nextInt(100))
-                .setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())))
-                .setService(TEST_SERVICE + RANDOM.nextInt(100))
-                .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
-                .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard())
-                .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
-                .setValue(new DefaultQuantity.Builder()
-                        .setValue(100 + RANDOM.nextDouble())
-                        .setUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100))
-                        .build());
+                .setQuery("select metric where host = " + RANDOM.nextInt())
+                .setOrganization(Organization.DEFAULT)
+                .setCheckInterval(Period.seconds(60 + RANDOM.nextInt(100)).normalizedStandard());
     }
 
     public static Alert createAlert() {
@@ -90,17 +77,9 @@ public final class TestBeanFactory {
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
         ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
-        ebeanAlert.setNagiosExtension(createEbeanNagiosExtension());
+        ebeanAlert.setQuery("select metric where host = " + RANDOM.nextInt());
         ebeanAlert.setName(TEST_NAME + RANDOM.nextInt(100));
-        ebeanAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         ebeanAlert.setPeriod(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        ebeanAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
-        ebeanAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        ebeanAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        ebeanAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        ebeanAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
-        ebeanAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        ebeanAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
         return ebeanAlert;
     }
 
@@ -108,45 +87,10 @@ public final class TestBeanFactory {
         final models.cassandra.Alert cassandraAlert = new models.cassandra.Alert();
         cassandraAlert.setOrganization(UUID.randomUUID());
         cassandraAlert.setUuid(UUID.randomUUID());
-        cassandraAlert.setNagiosExtensions(createCassandraNagiosExtension());
+        cassandraAlert.setQuery("select metric where host = " + RANDOM.nextInt());
         cassandraAlert.setName(TEST_NAME + RANDOM.nextInt(100));
-        cassandraAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         cassandraAlert.setPeriodInSeconds(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        cassandraAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
-        cassandraAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        cassandraAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        cassandraAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        cassandraAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
-        cassandraAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        cassandraAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
         return cassandraAlert;
-    }
-
-    public static Map<String, String> createCassandraNagiosExtension() {
-        return new ImmutableMap.Builder<String, String>()
-                .put("severity", NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
-                .put("notify", TEST_NAGIOS_NOTIFY)
-                .put("attempts", Integer.toString(1 + RANDOM.nextInt(10)))
-                .put("freshness", Long.toString((long) RANDOM.nextInt(1000)))
-                .build();
-    }
-
-    public static models.internal.NagiosExtension createNagiosExtension() {
-        return new models.internal.NagiosExtension.Builder()
-                .setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
-                .setNotify(TEST_NAGIOS_NOTIFY)
-                .setMaxCheckAttempts(1 + RANDOM.nextInt(10))
-                .setFreshnessThresholdInSeconds((long) RANDOM.nextInt(1000))
-                .build();
-    }
-
-    public static NagiosExtension createEbeanNagiosExtension() {
-        final NagiosExtension nagiosExtension = new NagiosExtension();
-        nagiosExtension.setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())));
-        nagiosExtension.setNotify(TEST_NAGIOS_NOTIFY);
-        nagiosExtension.setMaxCheckAttempts(1 + RANDOM.nextInt(10));
-        nagiosExtension.setFreshnessThreshold((long) RANDOM.nextInt(1000));
-        return nagiosExtension;
     }
 
     public static Expression createEbeanExpression() {
