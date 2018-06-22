@@ -17,16 +17,17 @@ package com.arpnetworking.metrics.portal;
 
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
+import models.cassandra.Host;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
+import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultOrganization;
-import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
 import java.util.Arrays;
@@ -63,19 +64,11 @@ public final class TestBeanFactory {
     public static DefaultAlert.Builder createAlertBuilder() {
         return new DefaultAlert.Builder()
                 .setId(UUID.randomUUID())
-                .setCluster(TEST_CLUSTER + RANDOM.nextInt(100))
-                .setMetric(TEST_METRIC + RANDOM.nextInt(100))
-                .setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())))
-                .setService(TEST_SERVICE + RANDOM.nextInt(100))
                 .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
-                .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard())
-                .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
-                .setValue(new DefaultQuantity.Builder()
-                        .setValue(100 + RANDOM.nextDouble())
-                        .setUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100))
-                        .build());
+                .setQuery("select metric where host = " + RANDOM.nextInt())
+                .setOrganization(Organization.DEFAULT)
+                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard());
     }
 
     public static Alert createAlert() {
@@ -88,17 +81,10 @@ public final class TestBeanFactory {
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
         ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
+        ebeanAlert.setQuery("select metric where host = " + RANDOM.nextInt());
         ebeanAlert.setNagiosExtension(createEbeanNagiosExtension());
         ebeanAlert.setName(TEST_NAME + RANDOM.nextInt(100));
-        ebeanAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         ebeanAlert.setPeriod(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        ebeanAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
-        ebeanAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        ebeanAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        ebeanAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        ebeanAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
-        ebeanAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        ebeanAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
         return ebeanAlert;
     }
 
@@ -106,17 +92,10 @@ public final class TestBeanFactory {
         final models.cassandra.Alert cassandraAlert = new models.cassandra.Alert();
         cassandraAlert.setOrganization(UUID.randomUUID());
         cassandraAlert.setUuid(UUID.randomUUID());
+        cassandraAlert.setQuery("select metric where host = " + RANDOM.nextInt());
         cassandraAlert.setNagiosExtensions(createCassandraNagiosExtension());
         cassandraAlert.setName(TEST_NAME + RANDOM.nextInt(100));
-        cassandraAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         cassandraAlert.setPeriodInSeconds(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        cassandraAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
-        cassandraAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        cassandraAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        cassandraAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        cassandraAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
-        cassandraAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        cassandraAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
         return cassandraAlert;
     }
 
@@ -173,6 +152,16 @@ public final class TestBeanFactory {
         return createExpressionBuilder().build();
     }
 
+    public static Host createCassandraHost() {
+        final Host host = new Host();
+        host.setName(TEST_HOST + RANDOM.nextInt(100) + ".example.com");
+        host.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
+        host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
+        host.setOrganization(Organization.DEFAULT.getId());
+        return host;
+    }
+
+    private static final String TEST_HOST = "test-host";
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
     private static final String TEST_SERVICE = "test-service";

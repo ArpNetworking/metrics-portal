@@ -34,7 +34,6 @@ import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultHost;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
@@ -74,6 +73,7 @@ public class DatabaseHostRepository implements HostRepository {
                         environment,
                         config,
                         "hostRepository.hostQueryGenerator.type")
+                .getDeclaredConstructor()
                 .newInstance());
     }
 
@@ -115,7 +115,7 @@ public class DatabaseHostRepository implements HostRepository {
                     .where()
                     .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())
-                    .findUnique();
+                    .findOne();
             boolean isNewHost = false;
             if (ebeanHost == null) {
                 ebeanHost = new models.ebean.Host();
@@ -151,7 +151,7 @@ public class DatabaseHostRepository implements HostRepository {
                 .where()
                 .eq("name", hostname)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
+                .findOne();
         if (ebeanHost != null) {
             Ebean.delete(ebeanHost);
             LOGGER.info()
@@ -202,12 +202,8 @@ public class DatabaseHostRepository implements HostRepository {
         return new DefaultQueryResult<>(
                 pagedHosts.getList()
                         .stream()
-                        .map(host -> new DefaultHost.Builder()
-                                .setCluster(host.getCluster())
-                                .setHostname(host.getName())
-                                .setMetricsSoftwareState(MetricsSoftwareState.valueOf(host.getMetricsSoftwareState()))
-                                .build())
-                .collect(Collectors.toList()),
+                        .map(models.ebean.Host::toInternal)
+                        .collect(Collectors.toList()),
                 pagedHosts.getTotalCount(),
                 etag);
     }

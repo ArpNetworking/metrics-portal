@@ -17,20 +17,20 @@ package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
-import models.internal.Context;
-import models.internal.Operator;
+import models.internal.impl.DefaultAlert;
+import org.joda.time.Period;
 
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -69,37 +69,22 @@ public class Alert {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "cluster")
-    private String cluster;
-
-    @Column(name = "service")
-    private String service;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "context")
-    private Context context;
-
-    @Column(name = "metric")
-    private String metric;
-
-    @Column(name = "statistic")
-    private String statistic;
+    @Lob
+    @Column(name = "query")
+    private String query;
 
     @Column(name = "period_in_seconds")
     private int periodInSeconds;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "operator")
-    private Operator operator;
-
-    @Column(name = "quantity_value")
-    private double quantityValue;
-
-    @Column(name = "quantity_unit")
-    private String quantityUnit;
+    @Column(name = "comment")
+    private String comment;
 
     @OneToOne(mappedBy = "alert", cascade = CascadeType.ALL)
     private NagiosExtension nagiosExtension;
+
+    @ManyToOne
+    @JoinColumn(name = "notification_group")
+    private NotificationGroup notificationGroup;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization")
@@ -153,44 +138,12 @@ public class Alert {
         name = value;
     }
 
-    public String getCluster() {
-        return cluster;
+    public String getQuery() {
+        return query;
     }
 
-    public void setCluster(final String value) {
-        cluster = value;
-    }
-
-    public String getService() {
-        return service;
-    }
-
-    public void setService(final String value) {
-        service = value;
-    }
-
-    public Context getContext() {
-        return context;
-    }
-
-    public void setContext(final Context value) {
-        context = value;
-    }
-
-    public String getMetric() {
-        return metric;
-    }
-
-    public void setMetric(final String value) {
-        metric = value;
-    }
-
-    public String getStatistic() {
-        return statistic;
-    }
-
-    public void setStatistic(final String value) {
-        statistic = value;
+    public void setQuery(final String value) {
+        query = value;
     }
 
     public int getPeriod() {
@@ -201,30 +154,6 @@ public class Alert {
         periodInSeconds = value;
     }
 
-    public Operator getOperator() {
-        return operator;
-    }
-
-    public void setOperator(final Operator value) {
-        operator = value;
-    }
-
-    public double getQuantityValue() {
-        return quantityValue;
-    }
-
-    public void setQuantityValue(final double value) {
-        quantityValue = value;
-    }
-
-    public String getQuantityUnit() {
-        return quantityUnit;
-    }
-
-    public void setQuantityUnit(final String value) {
-        quantityUnit = value;
-    }
-
     public NagiosExtension getNagiosExtension() {
         return nagiosExtension;
     }
@@ -233,12 +162,53 @@ public class Alert {
         nagiosExtension = value;
     }
 
+    public NotificationGroup getNotificationGroup() {
+        return notificationGroup;
+    }
+
+    public void setNotificationGroup(final NotificationGroup value) {
+        notificationGroup = value;
+    }
+
     public Organization getOrganization() {
         return organization;
     }
 
-    public void setOrganization(final Organization organizationValue) {
-        this.organization = organizationValue;
+    public void setOrganization(final Organization value) {
+        organization = value;
     }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(final String value) {
+        comment = value;
+    }
+
+    /**
+     * Converts this model into an {@link models.internal.Alert}.
+     *
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal() {
+        final DefaultAlert.Builder builder = new DefaultAlert.Builder()
+                .setId(getUuid())
+                .setOrganization(organization.toInternal())
+                .setName(getName())
+                .setQuery(getQuery())
+                .setPeriod(Period.seconds(getPeriod()).normalizedStandard())
+                .setNagiosExtension(Optional.ofNullable(getNagiosExtension()).map(NagiosExtension::toInternal).orElse(null));
+
+        if (comment != null) {
+            builder.setComment(comment);
+        }
+        if (getNotificationGroup() != null) {
+            builder.setNotificationGroup(getNotificationGroup().toInternal());
+        }
+
+        return builder.build();
+    }
+
 }
 // CHECKSTYLE.ON: MemberNameCheck

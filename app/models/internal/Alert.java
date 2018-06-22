@@ -34,11 +34,11 @@ public interface Alert {
     UUID getId();
 
     /**
-     * The context of the alert. Either a host or cluster.
+     * The organization that owns the alert.
      *
-     * @return The context of the alert.
+     * @return The organization that owns the alert.
      */
-    Context getContext();
+    Organization getOrganization();
 
     /**
      * The name of the alert.
@@ -48,32 +48,18 @@ public interface Alert {
     String getName();
 
     /**
-     * The name of the cluster for statistic identifier of condition left-hand side.
+     * The query to execute.
      *
-     * @return The name of the cluster for statistic identifier of condition left-hand side.
+     * @return The query to execute.
      */
-    String getCluster();
+    String getQuery();
 
     /**
-     * The name of the service for statistic identifier of condition left-hand side.
+     * The comment.
      *
-     * @return The name of the service for statistic identifier of condition left-hand side.
+     * @return The comment about
      */
-    String getService();
-
-    /**
-     * The name of the metric for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the metric for statistic identifier of condition left-hand side.
-     */
-    String getMetric();
-
-    /**
-     * The name of the statistic for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the statistic for statistic identifier of condition left-hand side.
-     */
-    String getStatistic();
+    String getComment();
 
     /**
      * The period to evaluate the condition in.
@@ -83,18 +69,11 @@ public interface Alert {
     Period getPeriod();
 
     /**
-     * The condition operator.
+     * Converts the model to a view model.
      *
-     * @return The condition operator.
+     * @return a new view model
      */
-    Operator getOperator();
-
-    /**
-     * The value of condition right-hand side.
-     *
-     * @return The value of condition right-hand side.
-     */
-    Quantity getValue();
+    models.view.Alert toView();
 
     /**
      * Nagios specific extensions.
@@ -102,4 +81,11 @@ public interface Alert {
      * @return Nagios specific extensions.
      */
     NagiosExtension getNagiosExtension();
+
+    /**
+     * UUID of the notification group to notify when the alert triggers.
+     *
+     * @return The {@link NotificationGroup}'s UUID.
+     */
+    NotificationGroup getNotificationGroup();
 }

@@ -21,6 +21,8 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
+import akka.cluster.sharding.ClusterSharding;
+import akka.cluster.sharding.ClusterShardingSettings;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
@@ -29,13 +31,23 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.AlertExecutor;
+import com.arpnetworking.metrics.portal.alerts.impl.AlertMessageExtractor;
+import com.arpnetworking.metrics.portal.alerts.impl.AlertScheduler;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.util.JacksonCodec;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.utility.ConfigTypedProvider;
+import com.arpnetworking.utility.ParallelLeastShardAllocationStrategy;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -44,9 +56,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import freemarker.template.Configuration;
+import freemarker.template.TemplateExceptionHandler;
+import models.cassandra.NotificationRecipient;
 import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
@@ -55,13 +71,22 @@ import play.Environment;
 import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.FiniteDuration;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
 
 /**
  * Module that defines the main bindings.
@@ -74,13 +99,23 @@ public class MainModule extends AbstractModule {
     protected void configure() {
         bind(Global.class).asEagerSingleton();
         bind(HealthProvider.class)
-                .toProvider(HealthProviderProvider.class);
+                .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(OrganizationProvider.class)
+                .toProvider(ConfigTypedProvider.provider("organizationProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(QueryExecutor.class)
+                .toProvider(ConfigTypedProvider.provider("query.executor.type"))
+                .in(Scopes.SINGLETON);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
                 .asEagerSingleton();
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(NotificationRepository.class)
+                .toProvider(NotificationRepositoryProvider.class)
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
@@ -92,8 +127,10 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
-        bind(OrganizationProvider.class)
-                .toProvider(OrganizationProviderProvider.class);
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("AlertScheduler"))
+                .toProvider(AlertExecutionSchedulerProvider.class)
+                .asEagerSingleton();
     }
 
     @Singleton
@@ -128,11 +165,12 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private CodecRegistry provideCodecRegistry() {
+    private CodecRegistry provideCodecRegistry(final ObjectMapper mapper) {
         final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
         registry.register(InstantCodec.instance);
         registry.register(new EnumNameCodec<>(Operator.class));
         registry.register(new EnumNameCodec<>(Context.class));
+        registry.register(new JacksonCodec<>(mapper, NotificationRecipient.class));
         return registry;
     }
 
@@ -168,49 +206,67 @@ public class MainModule extends AbstractModule {
         return objectMapper;
     }
 
-    private static final class OrganizationProviderProvider implements Provider<OrganizationProvider> {
-        @Inject
-        OrganizationProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-        }
-
-        @Override
-        public OrganizationProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<OrganizationProvider>getType(_environment, _configuration, "organizationProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
+    @Provides
+    @Singleton
+    @Named("alert-execution-shard-region")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ActorRef provideAlertExecutorShardRegion(
+            final ActorSystem system,
+            final Injector injector,
+            final AlertMessageExtractor extractor) {
+        final ClusterSharding clusterSharding = ClusterSharding.get(system);
+        return clusterSharding.start(
+                "AlertExecutor",
+                GuiceActorCreator.props(injector, AlertExecutor.class),
+                ClusterShardingSettings.create(system).withRememberEntities(true),
+                extractor,
+                new ParallelLeastShardAllocationStrategy(
+                        100,
+                        3,
+                        Optional.empty()),
+                PoisonPill.getInstance());
     }
 
-    private static final class HealthProviderProvider implements Provider<HealthProvider> {
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Configuration provideFreemarkerConfig(final Config config) throws IOException {
+        final Configuration cfg = new Configuration(Configuration.VERSION_2_3_27);
+        cfg.setDirectoryForTemplateLoading(new File(config.getString("alerts.templateDirectory")));
+        cfg.setDefaultEncoding("UTF-8");
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setLogTemplateExceptions(false);
+        cfg.setWrapUncheckedExceptions(true);
+        return cfg;
+    }
 
-        @Inject
-        HealthProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Session provideMailSession(final Config config) {
+        final Properties props = new Properties();
+        final Config mailConfig = config.getConfig("mail.properties");
+        mailConfig.entrySet().forEach(entry -> props.put(entry.getKey(), entry.getValue().render()));
+
+        if (!config.getIsNull("mail.user") || !config.getIsNull("mail.password")) {
+            final Authenticator authenticator = new ConfiguredAuthenticated(config);
+            return Session.getInstance(props, authenticator);
+        } else {
+            return Session.getInstance(props);
         }
+    }
 
-        @Override
-        public HealthProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<HealthProvider>getType(_environment, _configuration, "http.healthProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private PeriodicMetrics providePeriodicMetrics(final MetricsFactory metricsFactory, final ActorSystem actorSystem) {
+        final TsdPeriodicMetrics periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(metricsFactory)
+                .setPollingExecutor(actorSystem.dispatcher())
+                .build();
+        final FiniteDuration delay = FiniteDuration.apply(500, TimeUnit.MILLISECONDS);
+        actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
+        return periodicMetrics;
     }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {
@@ -238,6 +294,39 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return hostRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class NotificationRepositoryProvider implements Provider<NotificationRepository> {
+
+        @Inject
+        NotificationRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public NotificationRepository get() {
+            final NotificationRepository repository = _injector.getInstance(
+                    ConfigurationHelper.<NotificationRepository>getType(_environment, _configuration, "notificationRepository.type"));
+            repository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        repository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return repository;
         }
 
         private final Injector _injector;
@@ -328,9 +417,9 @@ public class MainModule extends AbstractModule {
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(INDEXER_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
-                                _hostProviderProps,
-                                PoisonPill.getInstance(),
-                                ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
+                        _hostProviderProps,
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
                         "host-provider-scheduler");
             }
             return null;
@@ -340,6 +429,35 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class AlertExecutionSchedulerProvider implements Provider<ActorRef> {
+        @Inject
+        AlertExecutionSchedulerProvider(
+                final ActorSystem system,
+                final Injector injector) {
+            _system = system;
+            _injector = injector;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            // Start a singleton instance of the scheduler on a "alert_scheduler" node in the cluster.
+            if (cluster.selfRoles().contains(ALERT_SCHEDULER_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        GuiceActorCreator.props(_injector, AlertScheduler.class),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ALERT_SCHEDULER_ROLE)),
+                        "alert-execution-scheduler");
+            }
+            return null;
+        }
+
+        private final ActorSystem _system;
+        private final Injector _injector;
+
+        private static final String ALERT_SCHEDULER_ROLE = "alert_scheduler";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
@@ -356,5 +474,18 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final ActorSystem _system;
+    }
+
+    private static class ConfiguredAuthenticated extends Authenticator {
+        ConfiguredAuthenticated(final Config config) {
+            _config = config;
+        }
+
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(_config.getString("mail.user"), _config.getString("mail.password"));
+        }
+
+        private final Config _config;
     }
 }

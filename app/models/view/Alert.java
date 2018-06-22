@@ -16,8 +16,19 @@
 package models.view;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.notifications.NotificationRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+import models.internal.NagiosExtension;
+import models.internal.Organization;
+import models.internal.impl.DefaultAlert;
+import org.joda.time.Minutes;
+import org.joda.time.Period;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * View model of <code>Alert</code>. Play view models are mutable.
@@ -35,14 +46,6 @@ public final class Alert {
         return _id;
     }
 
-    public void setContext(final String value) {
-        _context = value;
-    }
-
-    public String getContext() {
-        return _context;
-    }
-
     public void setName(final String value) {
         _name = value;
     }
@@ -51,36 +54,12 @@ public final class Alert {
         return _name;
     }
 
-    public void setCluster(final String value) {
-        _cluster = value;
+    public String getQuery() {
+        return _query;
     }
 
-    public String getCluster() {
-        return _cluster;
-    }
-
-    public void setService(final String value) {
-        _service = value;
-    }
-
-    public String getService() {
-        return _service;
-    }
-
-    public void setMetric(final String value) {
-        _metric = value;
-    }
-
-    public String getMetric() {
-        return _metric;
-    }
-
-    public void setStatistic(final String value) {
-        _statistic = value;
-    }
-
-    public String getStatistic() {
-        return _statistic;
+    public void setQuery(final String query) {
+        _query = query;
     }
 
     public void setPeriod(final String value) {
@@ -91,22 +70,6 @@ public final class Alert {
         return _period;
     }
 
-    public void setOperator(final String value) {
-        _operator = value;
-    }
-
-    public String getOperator() {
-        return _operator;
-    }
-
-    public void setValue(final Quantity value) {
-        _value = value;
-    }
-
-    public Quantity getValue() {
-        return _value;
-    }
-
     public void setExtensions(final ImmutableMap<String, Object> extensions) {
         _extensions = extensions;
     }
@@ -115,34 +78,98 @@ public final class Alert {
         return _extensions;
     }
 
+    public UUID getNotificationGroupId() {
+        return _notificationGroupId;
+    }
+
+    public void setNotificationGroupId(final UUID notificationGroupId) {
+        _notificationGroupId = notificationGroupId;
+    }
+
+    public String getComment() {
+        return _comment;
+    }
+
+    public void setComment(final String comment) {
+        _comment = comment;
+    }
+
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", Integer.toHexString(System.identityHashCode(this)))
                 .add("class", this.getClass())
                 .add("Id", _id)
-                .add("Context", _context)
                 .add("Name", _name)
-                .add("Cluster", _cluster)
-                .add("Service", _service)
-                .add("Metric", _metric)
-                .add("Statistic", _statistic)
+                .add("Comment", _comment)
+                .add("Query", _query)
                 .add("Period", _period)
-                .add("Operator", _operator)
-                .add("Value", _value)
                 .add("Extensions", _extensions)
                 .toString();
     }
 
+    /**
+     * Converts a view model to an internal model.
+     *
+     * @param organization organization the alert belongs to
+     * @param notificationRepository notification repository to resolve notification groups
+     * @param objectMapper object mapper to convert some values
+     * @return a new internal model
+     */
+    public models.internal.Alert toInternal(
+            final Organization organization,
+        final NotificationRepository notificationRepository,
+        final ObjectMapper objectMapper) {
+        final DefaultAlert.Builder alertBuilder = new DefaultAlert.Builder()
+                .setName(_name)
+                .setQuery(_query)
+                .setOrganization(organization);
+        if (_id != null) {
+            alertBuilder.setId(UUID.fromString(_id));
+        }
+        if (_period != null) {
+            // Minimum period supported is 1 minute
+            Period period = Period.parse(_period);
+            if (period.toStandardMinutes().isLessThan(Minutes.ONE)) {
+                period = Period.minutes(1);
+            }
+            alertBuilder.setPeriod(period);
+
+        }
+        if (_comment != null) {
+            alertBuilder.setComment(_comment);
+        }
+        if (_extensions != null) {
+            alertBuilder.setNagiosExtension(toInternalNagiosExtension(_extensions, objectMapper).orElse(null));
+        }
+        if (_notificationGroupId != null) {
+            alertBuilder.setNotificationGroup(
+                    notificationRepository.getNotificationGroup(
+                            _notificationGroupId,
+                            organization)
+                            .orElse(null));
+        }
+        return alertBuilder.build();
+    }
+
+    private Optional<NagiosExtension> toInternalNagiosExtension(final Map<String, Object> extensionsMap, final ObjectMapper objectMapper) {
+        try {
+            return Optional.of(
+                    objectMapper
+                            .convertValue(extensionsMap, NagiosExtension.Builder.class)
+                            .build());
+            // CHECKSTYLE.OFF: IllegalCatch - Assume there is no Nagios data on build failure.
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            return Optional.empty();
+        }
+    }
+
     private String _id;
-    private String _context;
     private String _name;
-    private String _cluster;
-    private String _service;
-    private String _metric;
-    private String _statistic;
+    private String _query;
+    private String _comment;
     private String _period;
-    private String _operator;
-    private Quantity _value;
     private ImmutableMap<String, Object> _extensions;
+    private UUID _notificationGroupId;
 }
