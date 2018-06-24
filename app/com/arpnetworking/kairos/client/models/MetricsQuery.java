@@ -244,6 +244,17 @@ public final class MetricsQuery {
                 return this;
             }
 
+            /**
+             * Add an aggregator. Optional. Cannot be null.
+             *
+             * @param value the aggregator to add
+             * @return this {@link Builder}
+             */
+            public Builder addAggregator(final Aggregator value) {
+                _aggregators = ImmutableList.<Aggregator>builder().addAll(_aggregators).add(value).build();
+                return this;
+            }
+
             @NotNull
             @NotEmpty
             private String _name;
@@ -267,8 +278,12 @@ public final class MetricsQuery {
     public static final class Aggregator {
         private Aggregator(final Builder builder) {
             _name = builder._name;
-            _alignSampling = builder._alignSampling;
             _sampling = builder._sampling;
+            if (_sampling == null) {
+                _alignSampling = null;
+            } else {
+                _alignSampling = builder._alignSampling;
+            }
             _otherArgs = builder._otherArgs;
         }
 
@@ -277,10 +292,13 @@ public final class MetricsQuery {
         }
 
         @JsonProperty("align_sampling")
-        public boolean isAlignSampling() {
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @Nullable
+        public Boolean getAlignSampling() {
             return _alignSampling;
         }
 
+        @JsonInclude(value = JsonInclude.Include.NON_NULL)
         public Sampling getSampling() {
             return _sampling;
         }
@@ -291,7 +309,7 @@ public final class MetricsQuery {
         }
 
         private final String _name;
-        private final boolean _alignSampling;
+        private final Boolean _alignSampling;
         private final Sampling _sampling;
         private final ImmutableMap<String, Object> _otherArgs;
 
@@ -320,7 +338,7 @@ public final class MetricsQuery {
             }
 
             /**
-             * Sets the sampling of the aggregator. Optional. Cannot be null.
+             * Sets the sampling of the aggregator. Optional. Defaults to 1 minute.
              *
              * @param value the sampling for the aggregator
              * @return this {@link Builder}
@@ -357,8 +375,7 @@ public final class MetricsQuery {
             @NotNull
             @NotEmpty
             private String _name;
-            private boolean _alignSampling = true;
-            @NotNull
+            private Boolean _alignSampling = true;
             private Sampling _sampling = new Sampling.Builder().build();
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();

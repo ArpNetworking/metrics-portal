@@ -26,8 +26,8 @@
             <div data-bind="compose: { model: alerts, view: '/assets/html/components/Pager.html', mode: 'templated' }">
                 <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6">
                     <div class="left">
-                        <i class="fa" data-bind="css: contextStyle"></i>
-                        <i><span data-bind="text: service"></span></i>/<b><span data-bind="text: metric"></span></b>/<span data-bind="text: statistic"></span>
+                        <!--<i class="fa" data-bind="css: contextStyle"></i>-->
+                        <i><span data-bind="text: name"></span></i>
                     </div>
                     <div class="right">
                         <a data-bind="attr: { href: editUri }">

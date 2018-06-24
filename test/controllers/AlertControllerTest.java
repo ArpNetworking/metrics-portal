@@ -24,8 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ebean.Ebean;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
-import models.internal.Context;
-import models.internal.Operator;
 import models.internal.Organization;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -82,15 +80,34 @@ public class AlertControllerTest {
                 .findUnique();
 
         Assert.assertNotNull(alert);
-        Assert.assertEquals(Context.CLUSTER, alert.getContext());
-        Assert.assertEquals("test-cluster", alert.getCluster());
         Assert.assertEquals("test-name", alert.getName());
-        Assert.assertEquals("test-metric", alert.getMetric());
-        Assert.assertEquals("test-service", alert.getService());
-        Assert.assertEquals(1, alert.getPeriod());
-        Assert.assertEquals(Operator.EQUAL_TO, alert.getOperator());
-        Assert.assertEquals(12, alert.getQuantityValue(), 0.01);
-        Assert.assertEquals("MEGABYTE", alert.getQuantityUnit());
+        Assert.assertEquals(60, alert.getPeriod());
+
+        final NagiosExtension extension = alert.getNagiosExtension();
+        Assert.assertNotNull(extension);
+        Assert.assertEquals("CRITICAL", extension.getSeverity());
+        Assert.assertEquals("abc@example.com", extension.getNotify());
+        Assert.assertEquals(3, extension.getMaxCheckAttempts());
+        Assert.assertEquals(300, extension.getFreshnessThreshold());
+    }
+
+    @Test
+    public void testCreatePeriodTooSmallCase() throws IOException {
+        Http.RequestBuilder request = new Http.RequestBuilder()
+                .method("PUT")
+                .bodyJson(readTree("testCreatePeriodTooSmallCase"))
+                .header("Content-Type", "application/json")
+                .uri("/v1/alerts");
+        Result result = Helpers.route(app, request);
+        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
+                .where()
+                .eq("uuid", UUID.fromString("18410734-aed7-11e1-8e54-00259060b618"))
+                .findUnique();
+
+        Assert.assertNotNull(alert);
+        Assert.assertEquals("test-name", alert.getName());
+        Assert.assertEquals(60, alert.getPeriod());
 
         final NagiosExtension extension = alert.getNagiosExtension();
         Assert.assertNotNull(extension);
@@ -122,28 +139,6 @@ public class AlertControllerTest {
     }
 
     @Test
-    public void testCreateMissingContextCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingContextCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateInvalidContextCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateInvalidContextCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
     public void testCreateMissingNameCase() {
         Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
@@ -155,43 +150,10 @@ public class AlertControllerTest {
     }
 
     @Test
-    public void testCreateMissingClusterCase() {
+    public void testCreateMissingQueryCase() {
         Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
-                .bodyJson(readTree("testCreateMissingClusterCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateMissingMetricCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingMetricCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateMissingStatisticCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingStatisticCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateMissingServiceCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingServiceCase"))
+                .bodyJson(readTree("testCreateMissingQueryCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
@@ -214,39 +176,6 @@ public class AlertControllerTest {
         Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateInvalidPeriodCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateMissingOperatorCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingOperatorCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateInvalidOperatorCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateInvalidOperatorCase"))
-                .header("Content-Type", "application/json")
-                .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
-    }
-
-    @Test
-    public void testCreateMissingValueCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
-                .method("PUT")
-                .bodyJson(readTree("testCreateMissingValueCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);

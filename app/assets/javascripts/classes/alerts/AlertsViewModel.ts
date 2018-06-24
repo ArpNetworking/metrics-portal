@@ -22,17 +22,10 @@ import csrf from '../Csrf'
 class AlertsList extends PaginatedSearchableList<AlertData> {
     fetchData(query, callback) {
         $.getJSON("v1/alerts/query", query, (data) => {
-            var alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
+            const alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
                 v.id,
-                v.context,
                 v.name,
-                v.metric,
-                v.service,
-                v.cluster,
-                v.statistic,
                 v.period,
-                v.operator,
-                v.value,
                 v.extensions
             );});
             callback(alertsList, data.pagination);
