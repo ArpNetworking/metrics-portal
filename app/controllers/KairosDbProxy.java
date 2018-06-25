@@ -344,7 +344,7 @@ public class KairosDbProxy extends Controller {
         private final CompletableFuture<Result> _promise;
         private final boolean _isHttp10;
         private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
-        private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(CONTENT_TYPE, CONTENT_LENGTH);
+        private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(CONTENT_TYPE, CONTENT_LENGTH, TRANSFER_ENCODING);
     }
 }
 
