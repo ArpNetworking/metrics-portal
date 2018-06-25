@@ -188,7 +188,7 @@ public class KairosDbProxy extends Controller {
 
     private static ImmutableList<String> filterMetricNames(final List<String> metricNames, final String containing) {
         if (containing == null || containing.isEmpty()) {
-            return ImmutableList.of();
+            return ImmutableList.copyOf(metricNames);
         }
 
         final String lowerContaining = containing.toLowerCase(Locale.ENGLISH);
