@@ -36,6 +36,7 @@ import play.sbt.routes.RoutesKeys.routesGenerator
 import RjsKeys._
 import sbt._
 import Keys._
+import com.simplytyped.Antlr4Plugin._
 import com.typesafe.sbt.packager.archetypes.JavaServerAppPackaging
 import com.typesafe.sbt.packager.archetypes.systemloader.SystemVPlugin
 import play.sbt.PlayImport._
@@ -56,7 +57,8 @@ object ApplicationBuild extends Build {
     val jacksonVersion = "2.9.2"
     val cassandraDriverVersion = "3.2.0"
 
-    val s = checkstyleSettings ++ aspectjSettings
+    val s = checkstyleSettings ++ aspectjSettings ++ antlr4Settings
+
 
     val appDependencies = Seq(
       javaWs,
@@ -131,6 +133,9 @@ object ApplicationBuild extends Build {
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj, JavaServerAppPackaging, SystemVPlugin, UniversalPlugin).settings(
+      antlr4PackageName in Antlr4 := Some("com.arpnetworking.metrics.portal.query.impl.mql.grammar"),
+      antlr4GenVisitor in Antlr4 := true,
+      antlr4Version in Antlr4 := "4.6",
 
       organization := "com.arpnetworking.metrics",
       organizationName := "Arpnetworking Inc",
@@ -342,7 +347,7 @@ object ApplicationBuild extends Build {
 
       // Findbugs
       findbugsFailOnError := true,
-      findbugsReportType := Some(FindBugsReportType.Xml),
+      findbugsReportType := Some(FindBugsReportType.XmlWithMessages),
       findbugsReportPath := Some(target.value / "findbugs" / "findbugs.html"),
       findbugsPriority := FindBugsPriority.Low,
       findbugsEffort := FindBugsEffort.Maximum,
@@ -371,6 +376,12 @@ object ApplicationBuild extends Build {
           </Match>
           <Match>
             <Class name="~controllers\.Reverse.*"/>
+          </Match>
+          <Match>
+            <Class name="~com\.arpnetworking\.metrics\.portal\.query\.impl\.mql\.grammar\.MqlParser.*"/>
+          </Match>
+          <Match>
+            <Class name="~com\.arpnetworking\.metrics\.portal\.query\.impl\.mql\.grammar\.MqlLexer.*"/>
           </Match>
         </FindBugsFilter>
       )
