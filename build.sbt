@@ -275,7 +275,6 @@ val main = (project in file(".")).enablePlugins(play.sbt.PlayJava, play.ebean.sb
   devSettings := Seq("play.server.http.port" -> "8080"),
   javaOptions += "-Dconfig.file=conf/portal.application.conf",
   javaOptions in Test += "-Dlogger.resource=logback-test.xml",
-  javaOptions in Universal += s"-Dpidfile.path=/var/run/$appName/play.pid",
 
   JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,
   routesGenerator := InjectedRoutesGenerator,
