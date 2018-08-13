@@ -29,6 +29,7 @@ import org.joda.time.Period;
 
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Default internal model implementation for an alert.
@@ -306,7 +307,7 @@ public final class DefaultAlert implements Alert {
          * @param value The extensions.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setNagiosExtension(final NagiosExtension value) {
+        public Builder setNagiosExtension(@Nullable final NagiosExtension value) {
             _nagiosExtension = value;
             return this;
         }
@@ -336,6 +337,7 @@ public final class DefaultAlert implements Alert {
         private Operator _operator;
         @NotNull
         private Quantity _value;
+        @Nullable
         private NagiosExtension _nagiosExtension;
     }
 }

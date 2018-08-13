@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.annotation.Nullable;
 import javax.persistence.PersistenceException;
 
 /**
@@ -264,7 +265,8 @@ public class DatabaseAlertRepository implements AlertRepository {
     }
 
 
-    private models.internal.NagiosExtension convertToInternalNagiosExtension(final NagiosExtension ebeanExtension) {
+    @Nullable
+    private models.internal.NagiosExtension convertToInternalNagiosExtension(@Nullable final NagiosExtension ebeanExtension) {
         if (ebeanExtension == null) {
             return null;
         }
@@ -276,7 +278,8 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .build();
     }
 
-    private NagiosExtension convertToEbeanNagiosExtension(final models.internal.NagiosExtension internalExtension) {
+    @Nullable
+    private NagiosExtension convertToEbeanNagiosExtension(@Nullable final models.internal.NagiosExtension internalExtension) {
         if (internalExtension == null) {
             return null;
         }
