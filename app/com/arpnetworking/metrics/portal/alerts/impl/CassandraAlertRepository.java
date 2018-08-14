@@ -171,7 +171,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         final models.cassandra.Alert.AlertQueries accessor = mapper.getManager().createAccessor(models.cassandra.Alert.AlertQueries.class);
         final Result<models.cassandra.Alert> result = accessor.getAlertsForOrganization(organization.getId());
-        return result.all().stream().count();
+        return StreamSupport.stream(result.spliterator(), false).count();
     }
 
     @Override

@@ -18,6 +18,8 @@ package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.MetricsSoftwareState;
+import models.internal.impl.DefaultHost;
 
 import java.sql.Timestamp;
 import javax.persistence.Column;
@@ -132,6 +134,19 @@ public class Host {
 
     public void setOrganization(final Organization organizationValue) {
         this.organization = organizationValue;
+    }
+
+    /**
+     * Converts the EBean model to an internal model.
+     *
+     * @return an internal model
+     */
+    public models.internal.Host toInternal() {
+        return new DefaultHost.Builder()
+                .setCluster(getCluster())
+                .setHostname(getName())
+                .setMetricsSoftwareState(MetricsSoftwareState.valueOf(getMetricsSoftwareState()))
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

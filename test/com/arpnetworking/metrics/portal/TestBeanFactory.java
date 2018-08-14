@@ -17,10 +17,12 @@ package com.arpnetworking.metrics.portal;
 
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
+import models.cassandra.Host;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
+import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
@@ -173,6 +175,16 @@ public final class TestBeanFactory {
         return createExpressionBuilder().build();
     }
 
+    public static Host createCassandraHost() {
+        final Host host = new Host();
+        host.setName(TEST_HOST + RANDOM.nextInt(100) + ".example.com");
+        host.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
+        host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
+        host.setOrganization(Organization.DEFAULT.getId());
+        return host;
+    }
+
+    private static final String TEST_HOST = "test-host";
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
     private static final String TEST_SERVICE = "test-service";
