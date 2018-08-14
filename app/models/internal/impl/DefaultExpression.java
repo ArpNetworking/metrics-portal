@@ -24,6 +24,7 @@ import net.sf.oval.constraint.NotNull;
 
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Default internal model implementation for an expression.
@@ -131,7 +132,7 @@ public final class DefaultExpression implements Expression {
          * @param value The identifier.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setId(final UUID value) {
+        public Builder setId(@Nullable final UUID value) {
             _id = value;
             return this;
         }

@@ -22,6 +22,7 @@ import models.internal.Operator;
 
 import java.sql.Timestamp;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -225,6 +226,7 @@ public class Alert {
         quantityUnit = value;
     }
 
+    @Nullable
     public NagiosExtension getNagiosExtension() {
         return nagiosExtension;
     }

@@ -18,6 +18,7 @@ package models.internal;
 import org.joda.time.Period;
 
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Internal model interface for an alert.
@@ -101,5 +102,6 @@ public interface Alert {
      *
      * @return Nagios specific extensions.
      */
+    @Nullable
     NagiosExtension getNagiosExtension();
 }

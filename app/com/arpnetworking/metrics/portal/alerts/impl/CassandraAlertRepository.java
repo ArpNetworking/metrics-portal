@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -230,6 +231,7 @@ public final class CassandraAlertRepository implements AlertRepository {
                 .build();
     }
 
+    @Nullable
     private NagiosExtension convertToInternalNagiosExtension(final Map<String, String> nagiosExtensions) {
         if (nagiosExtensions == null) {
             return null;
