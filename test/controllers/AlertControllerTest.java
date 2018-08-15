@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
@@ -54,6 +55,7 @@ public class AlertControllerTest {
         app = new GuiceApplicationBuilder()
                 .overrides(
                         Bindings.bind(AlertRepository.class).toInstance(alertRepo))
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         Helpers.start(app);
