@@ -39,6 +39,13 @@ public interface Features {
     boolean isProxyEnabled();
 
     /**
+     * Proxy feature. Sets proxy before direct connect.
+     *
+     * @return true if and only if proxy is tried first.
+     */
+    boolean isProxyPreferred();
+
+    /**
      * Live logging feature.
      *
      * @return true if and only if live logging is enabled.
