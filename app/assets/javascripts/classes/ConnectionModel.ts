@@ -184,11 +184,10 @@ class ConnectionModel {
         this.cvm.connected(false);
         this.cvm.status("disconnected");
         app.trigger('connection_closed', this.cvm);
+        console.error("connection closed to " + this.server);
         if (this.disconnect) {
-            console.info("connection closed to " + this.server);
             return;
         }
-        console.error("connection closed to " + this.server);
         if (this.connectedAt > 0) {
             this.cvm.status("reconnecting");
             // We connected successfully and then got a disconnect

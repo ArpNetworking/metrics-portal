@@ -43,12 +43,6 @@ class LiveLoggingViewModel implements ViewModel {
     app.on('receive_event').then((data, cvm) => {
       this.processMessage(data, cvm);
     });
-
-    // if the connection was established before opening the logs view, we would have missed the 'logsList'
-    // command so let's make sure we are not missing anything
-    if(this.available_log_names.length == 0){
-        this.connections().forEach((cvm: ConnectionVM) => cvm.model.protocol.getLogs());
-    }
   }
 
   addLog(log_name: string, cvm: ConnectionVM) {

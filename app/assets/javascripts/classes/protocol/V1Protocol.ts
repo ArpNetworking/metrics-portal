@@ -73,12 +73,6 @@ class V1Protocol extends BaseProtocol {
     public heartbeat(): void {
         this.send({ command: "heartbeat" });
     }
-
-    public getLogs(): void { }
-
-    public subscribeLog(log: string, regexes: string[]): void { }
-
-    public unsubscribeLog(log: string, regexes: string[]): void { }
 }
 
 export = V1Protocol;

@@ -40,12 +40,6 @@ class BaseProtocol implements Protocol {
     send(command: WSCommand) {
         this.connectionModel.send(command);
     }
-
-    getLogs(): void { }
-
-    subscribeLog(log: string, regexes: string[]): void { }
-
-    unsubscribeLog(log: string, regexes: string[]): void { }
 }
 
 export = BaseProtocol;
