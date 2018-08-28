@@ -68,7 +68,6 @@ class V2Protocol extends BaseProtocol {
 
     public connectionInitialized():void {
         this.send({ command: "getMetrics" });
-        this.send({ command: "getLogs" });
     }
 
     public heartbeat():void {
