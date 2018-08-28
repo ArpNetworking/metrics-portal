@@ -38,6 +38,15 @@ interface Protocol {
 
     // Method called periodically while the connection is open.
     heartbeat(): void;
+
+    // Gets a list of log files for live logging
+    getLogs(): void;
+
+    // Subscribe to events from a log file that match any of the list of regexes
+    subscribeLog(log: string, regexes: string[]): void;
+
+    // Unubscribe to events from a log file that match any of the list of regexes
+    unsubscribeLog(log: string, regexes: string[]): void;
 }
 
 export = Protocol;
