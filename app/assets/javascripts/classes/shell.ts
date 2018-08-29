@@ -22,7 +22,6 @@ class shell {
         router.map([
             { route: '', title: 'Telemetry', moduleId: 'classes/GraphViewModel', nav: false },
             { route: 'graph/*spec', title: 'Telemetry', moduleId: 'classes/GraphViewModel', nav: false },
-            { route: 'live-logging', title: 'Live Logging', moduleId: 'classes/logging/LiveLoggingViewModel', nav: false },
             { route: 'host-registry', title: 'Host Registry', moduleId: 'classes/hostregistry/HostRegistryViewModel', nav: false },
             { route: 'expressions', title: 'Expressions', moduleId: 'classes/expressions/ExpressionsViewModel', nav: false },
             { route: 'alerts', title: 'Alerts', moduleId: 'classes/alerts/AlertsViewModel', nav: false },

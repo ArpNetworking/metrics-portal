@@ -73,20 +73,6 @@ class V2Protocol extends BaseProtocol {
     public heartbeat():void {
         this.send({ command: "heartbeat" });
     }
-
-    public getLogs(): void {
-        this.send({ command: "getLogs" });
-    }
-
-    public subscribeToLog(log: string, regexes: string[]) : void {
-        //TODO(barp): Wire up the UI [MAI-335]
-        this.send({ command: "subscribeLog" })
-    }
-
-    public unsubscribeToLog(log: string, regexes: string[]) : void {
-        //TODO(barp): Wire up the UI [MAI-335]
-        this.send({ command: "unsubscribeLog" })
-    }
 }
 
 export = V2Protocol;

@@ -46,13 +46,6 @@ public interface Features {
     boolean isProxyPreferred();
 
     /**
-     * Live logging feature.
-     *
-     * @return true if and only if live logging is enabled.
-     */
-    boolean isLiveLoggingEnabled();
-
-    /**
      * Host registry feature.
      *
      * @return true if and only if host registry is enabled.
