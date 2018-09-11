@@ -67,6 +67,12 @@ import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
+import org.commonmark.Extension;
+import org.commonmark.ext.autolink.AutolinkExtension;
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import play.Environment;
 import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
@@ -76,7 +82,9 @@ import scala.concurrent.duration.FiniteDuration;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -254,6 +262,32 @@ public class MainModule extends AbstractModule {
         } else {
             return Session.getInstance(props);
         }
+    }
+
+    @Provides
+    @Singleton
+    @Named("markdown-extensions")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private List<Extension> provideMarkdownExtensions() {
+        return Arrays.asList(TablesExtension.create(), AutolinkExtension.create(), StrikethroughExtension.create());
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Parser provideMarkdownParser(@Named("markdown-extensions") final List<Extension> extensionList) {
+        return Parser.builder()
+                .extensions(extensionList)
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private HtmlRenderer provideMarkdownRenderer(@Named("markdown-extensions") final List<Extension> extensionList) {
+        return HtmlRenderer.builder()
+                .extensions(extensionList)
+                .build();
     }
 
     @Provides

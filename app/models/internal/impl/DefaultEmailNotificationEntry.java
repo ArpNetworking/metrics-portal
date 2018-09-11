@@ -31,6 +31,8 @@ import models.internal.AlertTrigger;
 import models.internal.NotificationEntry;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -66,6 +68,10 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
                 .log();
         final Configuration configuration = injector.getInstance(Configuration.class);
         final Config typesafeConfig = injector.getInstance(Config.class);
+
+        // Markdown rendering
+        final Parser parser = injector.getInstance(Parser.class);
+        final HtmlRenderer renderer = injector.getInstance(HtmlRenderer.class);
         try {
             final Session mailSession = injector.getInstance(Session.class);
             final MimeMessage mailMessage = new MimeMessage(mailSession);
@@ -78,12 +84,13 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
             final MimeMultipart multipart = new MimeMultipart("alternative");
             final ImmutableMap<String, Object> templateObject = ImmutableMap.<String, Object>builder()
                     .put("alert", alert)
+                    .put("htmlComment", renderer.render(parser.parse(alert.getComment())))
                     .put("trigger", trigger)
                     .put("alertUrl", alertUrl)
                     .put("groupBy", getGroupByString(trigger))
                     .build();
 
-            addBodyPart(multipart, "text/plain; charset=utf-8", renderTemplate(templateObject, configuration, "alert.text.ftlh"));
+            addBodyPart(multipart, "text/plain; charset=utf-8", renderTemplate(templateObject, configuration, "alert.text.ftl"));
             addBodyPart(multipart, "text/html; charset=utf-8", renderTemplate(templateObject, configuration, "alert.html.ftlh"));
 
             if (multipart.getCount() == 0) {

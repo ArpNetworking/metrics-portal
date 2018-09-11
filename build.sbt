@@ -42,6 +42,7 @@ val akkaVersion = "2.5.6"
 val akkaHttpVersion = "10.0.11"
 val jacksonVersion = "2.9.2"
 val cassandraDriverVersion = "3.2.0"
+val markdownRendererVersion = "0.11.0"
 
 val s = checkstyleSettings ++ aspectjSettings
 
@@ -85,6 +86,10 @@ val appDependencies = Seq(
   "org.flywaydb" %% "flyway-play" % "4.0.0",
   "org.freemarker" % "freemarker" % "2.3.27-incubating",
   "org.java-websocket" % "Java-WebSocket" % "1.3.0",
+  "com.atlassian.commonmark" % "commonmark" % markdownRendererVersion,
+  "com.atlassian.commonmark" % "commonmark-ext-autolink" % markdownRendererVersion,
+  "com.atlassian.commonmark" % "commonmark-ext-gfm-strikethrough" % markdownRendererVersion,
+  "com.atlassian.commonmark" % "commonmark-ext-gfm-tables" % markdownRendererVersion,
   "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
   "org.webjars" % "bean" % "1.0.14",
   "org.webjars" % "bootstrap" % "3.3.7",
