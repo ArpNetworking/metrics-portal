@@ -2,9 +2,10 @@ cache:
   directories:
   - "$HOME/.ivy2"
   - "$HOME/.jdk"
+  - "$HOME/.sbt"
 sudo: false
 services:
-  - docker
+- docker
 addons:
   apt:
     packages:
@@ -16,6 +17,7 @@ env:
   - secure: VUOZR3nnFyUd5Rgex0+BIF48lLaDZHMKtwXQZxbw0n/FCXrMnbIGWrOftNCCsppu8P4+LyIckXsZ6k4NilScyLIgjdN/DMKJPkq9MRkxscvjIYcfHsNYaeNycwNrYZ8qj929ClxJ8iYIpFvPN1XArlbGFHiCucsyjUO30t6d2YlhA7Iwlje6Us4lIt6JlRP6LYgPgXge/0+GQBoIvsZUyGg7MBkQcd7WsVA+vwYdMEriEnH2+XuDxCGDEe7CgY8674R3TfUSmi9BfCCMl10rHryoTu6E/Wi/n1+a8Hj+YPzgQ5jwAITil+BA90OafieIy08c1nGvwVOenWK4v1lTT5x37hK7rr03ETzA1FIKtwK/G9UltCuP9/K/s9jnoPIJbPG5Bs/9LVKFwLMPFheTzFt05hYIqAhqfJj96ZvLTigCZNnxjao7/KM3E+knvyJDrVf37X/SMl0L6wxb03UX1lRVi5XxSubGpmR7KQKivU+D5+LR3w511TYMHEDcNhyOvx9Mnlk2RwHzI3/vDa3Cmxa26i9kkZTqegY9hdhrrFyONz8VgO1JYmoqrpEe/dffa/U1r0rWNCGqQGujbJRpC9zsVv9KS5E8BOrCCzuvIGR86651ZdR2eLkAfyoVHrhAgqXce9wGMrbVUk33tgozTIAwhOqCbB+6oqZaBYyPNyQ=
   - secure: m2RsbL4XLT1gSpyivs/YY6SGAxaK7buVtTeOHHhAwgLphpUgIBLOAxECUX1rl+IKd0+o6AHQCPySqfxbGtyw5pgeBPUwGW1Th8jJ/ZUzJuWDfoWVzUy8FxdG+55DNnhoLSWyxrIaLrfHG7J0nPtL5XBYCCbkQs8MXbCSNJA2oJC/Wdqi7QB4AJwmmcvAvcuMUOtsMS0ihn5k8TS601rj6v10xx8o6xADNz2uZhrdTplAcgsuwdnJBOt1QoIa9YW+SwOiFpzPJX9ZLVUI+9AGTwggWVc7pl/le+9P1IICrPk/dNCWy/Zb6iwHPjRDOkv2Hd5tgmLkN3xBNA5E3ZcGuiB9e0nFdAOqZXQmAsxc3psR9DZNi/YQkN1ljuqMkVJMIUqfLYvXel0UvyciYGJQncOTSHRnblVFpNCDmU7ytl+2DWt9aA8nKkNzma95pPTTTrwzQ94e9CWaiJ3M7L97NvlOiKSt2fhYPTUca2sfbri3qF5SyMAde2jPttzT5wi87d3GxWrEmXsyzEUcTQoqfBijOTRyGJ01o4x9Mxo82MaBoPvJYhxUZkclemAy5zCrpj5lINlYjB7wWhQv9YzMlvEkTbm2WcQKxpdRSAuoIunMnCP/JmIf4oAciLU5yzKFdu/Kq1E3wmugo80V5tPGcAJyucMfEfTUFx6dbT6paJA=
   - secure: WzcQT+QU5rgeKURGtWF2ab3AwNaGZUmiIxUneF7bACH6zF34nrHA8BrJ119KjpGoj2Y3NBQLcyRC0LdJdErpPRaErWyTciUx1C1nNTuUZLv+H1O1WxghjZ7GRypdTf/GUEfX824fDgOybu9GrAtswRV0+t7crlO+tNjiR2hLduT9Ra9QlunHNnxAvzIXoo9Gu1FK4SyieShoMlM8QE7nrVsYz5Fo4JXHEhVN7znNaP7+1lKlyUyuFmBbuPWrrV8OdYq7Zerm33eQoO95VMnXFx6NoZX3vKdtMSJfFMM+9f1u2qA/ix4o889qPVYaRHdhfn6Ca1/rd6U9eP5Y17grBM90y1Jix9UxZobKPpfpbcls07yJILUAuJKyWp7vSB4ZaUp/YpichOpG4+UhXRaaySkN2l71q2ORmaXAzBps30wAIrGH5stPp9UJ/ZFA40jOhLcYrQTWKryXLHwL75y31VJer5GcPoV+BCWdFpIpTbe4tmcEde05eOl0INkXoLd9yDnBeW3hvD/u+QPK5H6mgOTOn+H0FsV2mU2QQB3loQMr+1/T61lgw4HS7JS5Ad+TI3R2jNw/JUpP6zga0RuGD0t+7B3QsBgukP2ZWb4VSSwZ4D9fhIef7xQspbQY2MZbzrKFeLvsiqWzWeKHInBzj45/aeKZvFeynqOf8pCRhIY=
+  - secure: Hie0NIirNwBSJnlBUKF+vw1+73EztAgr2vZ4FZFxFRbOEDQDWCO6XuYnQJDZUr07+ZjKAqfVMeUrlVSEoSFNujJSHMT3Cu75l4FsG1GvL4ikehQVE7nswnrR0jpq2GE6bOlQozdSIoxT/r0CTQmbA71qVNtW6jKGGoPHAk1CsQ6xwMmsZtc02bAvSSAiiupICvbjjytAKocDx9+i/AjpAPZmc2eAXnRywEb13VYiijRsP83KzRzdbAhDdGLtT9UvXPxukdhzG8aAusrnlyrZ79Ghu7cmZ/5evGJ/r1Wg9+mbwoGuQL5oMt9rayXRP/c2NX0M+5hkReoWumpZQD6s3Balhavc8IePneOzmV70tMjVB1kx9nmiQFaPk55S9+MCu/FS4zcsA8BkwZUKhNXH+/Y5kjdAwj4q7erAyOcgvOaPsNPnMssd/EubCVyroQZieKD3y+z83cw+IVHLYX68J/VpaQkCZnaXZj0l04e2j/eS7HVLw4b+fWUM3+rvTzhU2f0guzcdnGnLxvPD7vb/g0ATW27T7/0pxKOIC6s3TwifNQs4hOVjGNiY3iSZBXIck6ZSpF4J5lCZCB58lfI8F3hVHuJBCc3KdFc9tmzVLmGqNHjwg0gXz46rLfL/P6yvhVLFFvYkaoCTxqZ0/cefJFMalX216EWe8H5q35fKarY=
 install: true
 before_script:
 - gpg --import arpnetworking.key
@@ -24,7 +26,8 @@ before_script:
 script:
 - "./jdk-wrapper.sh ./sbt clean ${TARGET}"
 - docker build -t arpnetworking/metrics-portal:foo .
-- echo ${DH_PASS} | docker login --username ${DH_USER} --password-stdin && docker push arpnetworking/metrics-portal:foo
+- echo ${DH_PASSWORD} | docker login --username ${DH_USER} --password-stdin && docker
+  push arpnetworking/metrics-portal:foo
 deploy:
   provider: releases
   api_key:
