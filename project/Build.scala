@@ -25,6 +25,7 @@ import SbtCheckstyle._
 import com.typesafe.sbt.digest.Import._
 import com.typesafe.sbt.gzip.Import._
 import com.typesafe.sbt.jse.JsEngineImport.JsEngineKeys
+import com.typesafe.sbt.packager.docker._
 import com.typesafe.sbt.pgp.PgpKeys._
 import com.typesafe.sbt.rjs.Import._
 import com.typesafe.sbt.web.Import._
@@ -38,6 +39,8 @@ import sbt._
 import Keys._
 import com.typesafe.sbt.packager.archetypes.JavaServerAppPackaging
 import com.typesafe.sbt.packager.archetypes.systemloader.SystemVPlugin
+import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport._
+import com.typesafe.sbt.packager.linux.LinuxPlugin.autoImport._
 import play.sbt.PlayImport._
 import com.typesafe.sbt.packager.rpm._
 import com.typesafe.sbt.packager.rpm.RpmPlugin.autoImport._
@@ -118,7 +121,7 @@ object ApplicationBuild extends Build {
       "org.mockito" % "mockito-core" % "1.10.19" % "test"
     )
 
-    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj, JavaServerAppPackaging, SystemVPlugin, UniversalPlugin).settings(
+    val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj, JavaServerAppPackaging, SystemVPlugin, UniversalPlugin, DockerPlugin).settings(
 
       organization := "com.arpnetworking.metrics",
       organizationName := "Arpnetworking Inc",
@@ -314,6 +317,11 @@ object ApplicationBuild extends Build {
           release
         }
       },
+      dockerBaseImage := "openjdk:8u181-jre",
+      dockerUsername := Some("arpnetworking"),
+      defaultLinuxInstallLocation in Docker := "/opt/metrics-portal",
+      dockerExposedPorts := Seq(8080),
+      dockerEntrypoint += "-Dconfig.file=conf/portal.application.conf",
       releaseProcess := Seq[ReleaseStep](
         checkSnapshotDependencies,
         inquireVersions,
