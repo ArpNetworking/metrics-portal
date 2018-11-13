@@ -267,8 +267,12 @@ public final class MetricsQuery {
     public static final class Aggregator {
         private Aggregator(final Builder builder) {
             _name = builder._name;
-            _alignSampling = builder._alignSampling;
             _sampling = builder._sampling;
+            if (!_sampling.isPresent()) {
+                _alignSampling = Optional.empty();
+            } else {
+                _alignSampling = builder._alignSampling;
+            }
             _otherArgs = builder._otherArgs;
         }
 
@@ -277,11 +281,13 @@ public final class MetricsQuery {
         }
 
         @JsonProperty("align_sampling")
-        public boolean isAlignSampling() {
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        public Optional<Boolean> getAlignSampling() {
             return _alignSampling;
         }
 
-        public Sampling getSampling() {
+        @JsonInclude(value = JsonInclude.Include.NON_NULL)
+        public Optional<Sampling> getSampling() {
             return _sampling;
         }
 
@@ -291,8 +297,8 @@ public final class MetricsQuery {
         }
 
         private final String _name;
-        private final boolean _alignSampling;
-        private final Sampling _sampling;
+        private final Optional<Boolean> _alignSampling;
+        private final Optional<Sampling> _sampling;
         private final ImmutableMap<String, Object> _otherArgs;
 
         /**
@@ -320,13 +326,24 @@ public final class MetricsQuery {
             }
 
             /**
-             * Sets the sampling of the aggregator. Optional. Cannot be null.
+             * Sets the sampling of the aggregator. Optional. Defaults to 1 minute.
              *
              * @param value the sampling for the aggregator
              * @return this {@link Builder}
              */
-            public Builder setSampling(final Sampling value) {
+            public Builder setSampling(final Optional<Sampling> value) {
                 _sampling = value;
+                return this;
+            }
+
+            /**
+             * Sets the align_sampling of the aggregator. Optional. Defaults to true.
+             *
+             * @param value the align_sampling for the aggregator
+             * @return this {@link Builder}
+             */
+            public Builder setAlignSampling(final Optional<Boolean> value) {
+                _alignSampling = value;
                 return this;
             }
 
@@ -357,9 +374,10 @@ public final class MetricsQuery {
             @NotNull
             @NotEmpty
             private String _name;
-            private boolean _alignSampling = true;
             @NotNull
-            private Sampling _sampling = new Sampling.Builder().build();
+            private Optional<Boolean> _alignSampling = Optional.of(true);
+            @NotNull
+            private Optional<Sampling> _sampling = Optional.of(new Sampling.Builder().build());
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
         }

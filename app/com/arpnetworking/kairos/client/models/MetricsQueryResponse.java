@@ -23,8 +23,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.Min;
+import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
 
@@ -118,13 +120,13 @@ public final class MetricsQueryResponse {
             return _sampleSize;
         }
 
-        public List<QueryResult> getResults() {
+        public ImmutableList<QueryResult> getResults() {
             return _results;
         }
 
         private final ImmutableMap<String, Object> _otherArgs;
         private final long _sampleSize;
-        private final List<QueryResult> _results;
+        private final ImmutableList<QueryResult> _results;
 
         /**
          * Implementation of the builder pattern for {@link Query}.
@@ -190,22 +192,34 @@ public final class MetricsQueryResponse {
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
     public static final class QueryResult {
-        @JsonAnyGetter
-        public ImmutableMap<String, Object> getOtherArgs() {
-            return _otherArgs;
+        public String getName() {
+            return _name;
         }
 
         public ImmutableList<DataPoint> getValues() {
             return _values;
         }
 
+        public ImmutableMultimap<String, String> getTags() {
+            return _tags;
+        }
+
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
         private QueryResult(final Builder builder) {
             _otherArgs = builder._otherArgs;
             _values = builder._values;
+            _name = builder._name;
+            _tags = builder._tags;
         }
 
         private final ImmutableMap<String, Object> _otherArgs;
         private final ImmutableList<DataPoint> _values;
+        private final String _name;
+        private final ImmutableMultimap<String, String> _tags;
 
         /**
          * Implementation of the builder pattern for a {@link QueryResult}.
@@ -234,6 +248,18 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Set other args. Optional.
+             *
+             * @param value value for the other args
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
              * Sets the values list. Optional. Cannot be null.
              *
              * @param value the values
@@ -244,10 +270,38 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            /**
+             * Sets the name. Required. Cannot be null or empty.
+             *
+             * @param value the name of the metric
+             * @return this {@link Builder}
+             */
+            public Builder setName(final String value) {
+                _name = value;
+                return this;
+            }
+
+            /**
+             * Sets the tags. Required. Cannot be null or empty.
+             *
+             * @param value the tags
+             * @return this {@link Builder}
+             */
+            public Builder setTags(final ImmutableMultimap<String, String> value) {
+                _tags = value;
+                return this;
+            }
+
+            @NotNull
+            @NotEmpty
+            private String _name;
             @NotNull
             private ImmutableList<DataPoint> _values = ImmutableList.of();
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+            @NotNull
+            @NotEmpty
+            private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
         }
     }
 
