@@ -51,8 +51,8 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.4.18"
-    val akkaHttpVersion = "10.0.6"
+    val akkaVersion = "2.5.6"
+    val akkaHttpVersion = "10.0.11"
     val jacksonVersion = "2.9.2"
     val cassandraDriverVersion = "3.2.0"
 
@@ -85,8 +85,11 @@ object ApplicationBuild extends Build {
       "com.h2database" % "h2" % "1.4.192",
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+      "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+      "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.58",
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "net.sf.oval" % "oval" % "1.82",
       "org.elasticsearch" % "elasticsearch" % "1.7.2",
@@ -96,6 +99,10 @@ object ApplicationBuild extends Build {
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.3.7",
       "org.webjars.npm" % "d3" % "4.11.0",
+
+      // Needed for dev
+      "org.iq80.leveldb"            % "leveldb"          % "0.9",
+      "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",
 
       // Needed as a transitive of d3, but we need v 1.0.1 as opposed to the default 1.0.0
       "org.webjars.npm" % "graceful-readlink" % "1.0.1",
