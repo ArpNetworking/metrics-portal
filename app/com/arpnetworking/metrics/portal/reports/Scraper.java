@@ -20,7 +20,7 @@ import java.io.PrintWriter;
  *
  * @author Kenan Klisura
  */
-public class TakeScreenshot {
+public class Scraper {
     public static void main(String[] args) throws Exception {
         final ChromeDevToolsService devToolsService = createDevToolsService();
         devToolsService.getSecurity().setIgnoreCertificateErrors(true);
@@ -43,10 +43,17 @@ public class TakeScreenshot {
     }
 
     public static ChromeDevToolsService createDevToolsService() {
+        return createDevToolsService(false);
+    }
+    public static ChromeDevToolsService createDevToolsService(boolean ignoreCertificateErrors) {
         final ChromeLauncher launcher = new ChromeLauncher();
         final ChromeService chromeService = launcher.launch(true);
         final ChromeTab tab = chromeService.createTab();
-        return chromeService.createDevToolsService(tab);
+        ChromeDevToolsService result = chromeService.createDevToolsService(tab);
+        if (ignoreCertificateErrors) {
+            result.getSecurity().setIgnoreCertificateErrors(true);
+        }
+        return result;
     }
 
     public static class Snapshot { public String html; public byte[] pdf;
@@ -55,6 +62,21 @@ public class TakeScreenshot {
             this.html = html;
             this.pdf = pdf;
         }
+    }
+
+    public static Optional<Snapshot> takeGrafanaReportScreenshot(ChromeDevToolsService devToolsService, String url, long timeoutMillis) {
+        return takeScreenshot(
+                devToolsService,
+                url,
+                "(() => {\n" +
+                        "    var e = document.getElementsByClassName('rendered-markdown-container')[0];\n" +
+                        "    if (!e) return false;\n" +
+                        "    var s = e.srcdoc;\n" +
+                        "    document.open(); document.write(s); document.close();\n" +
+                        "    return true;\n" +
+                        "})()",
+                timeoutMillis
+        );
     }
 
     public static Optional<Snapshot> takeScreenshot(ChromeDevToolsService devToolsService, String url, String jsPrepareCmd, long timeoutMillis) {

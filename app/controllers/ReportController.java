@@ -15,13 +15,20 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.portal.reports.EmailBuilder;
+import com.arpnetworking.metrics.portal.reports.Scraper;
+import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import play.mvc.Controller;
 import play.mvc.Result;
-import com.arpnetworking.metrics.portal.reports.ScreenshotAndEmail;
 
 import javax.inject.Singleton;
+import javax.mail.MessagingException;
+import javax.mail.Transport;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
@@ -30,6 +37,14 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class ReportController extends Controller {
+
+    private static Map<String, String> REPORT_ID_TO_GRAFANA_REPORT_URL = new HashMap<>();
+    static {
+        REPORT_ID_TO_GRAFANA_REPORT_URL.put(
+                "webperf-demo",
+                "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light"
+        );
+    }
 
     /**
      * Public constructor.
@@ -42,18 +57,32 @@ public class ReportController extends Controller {
     }
 
     /**
-     * Sends an alert
+     * Runs a report
      *
      * @param id id of the report to run
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        if (!id.equals("webperf-demo")) return notFound("no report has id="+id);
+        String url = REPORT_ID_TO_GRAFANA_REPORT_URL.get(id);
+        if (url == null) return notFound("no report has id="+id);
+
+        final ChromeDevToolsService devToolsService = Scraper.createDevToolsService(true);
+        final Optional<Scraper.Snapshot> snapshot = Scraper.takeGrafanaReportScreenshot(
+                devToolsService,
+                url,
+                10000
+        );
+        if (!snapshot.isPresent()) return internalServerError("timed out while taking snapshot");
         try {
-            ScreenshotAndEmail.main();
-            return ok("sent");
-        } catch (Exception e) {
-            return internalServerError("failure: "+e);
+            Transport.send(EmailBuilder.buildImageEmail(
+                    "spencerpearson@dropbox.com",
+                    "Example webperf report",
+                    snapshot.get().html,
+                    snapshot.get().pdf
+            ));
+        } catch (MessagingException e) {
+            return internalServerError("failed building/sending message: "+e);
         }
+        return ok("sent");
     }
 }

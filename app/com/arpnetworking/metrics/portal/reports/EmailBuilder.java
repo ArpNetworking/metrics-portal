@@ -4,23 +4,20 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import javax.mail.BodyPart;
-import javax.mail.Message;
-import javax.mail.Session;
-import javax.mail.Transport;
+import javax.mail.*;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 
-public class SendEmailExample {
-    public static MimeMessage buildImageEmail(String recipient, String subject, String html, byte[] pdf) throws Exception {
+public class EmailBuilder {
+    public static MimeMessage buildImageEmail(String recipient, String subject, String html, byte[] pdf) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.smtp.host", "localhost");
-        props.put("mail.smtp.port", "43545");
+        props.put("mail.smtp.port", "25");
         final MimeMessage mailMessage = new MimeMessage(Session.getDefaultInstance(props));
         mailMessage.addRecipients(Message.RecipientType.TO, recipient);
-        mailMessage.setFrom("no-reply+spencerpearson@dropbox.com");
+        mailMessage.setFrom("no-reply+amp-reporting@dropbox.com");
         mailMessage.setSubject(subject);
 
         final MimeMultipart multipart = new MimeMultipart();
@@ -34,14 +31,5 @@ public class SendEmailExample {
         mailMessage.setContent(multipart);
 
         return mailMessage;
-    }
-
-    public static void main(String args[]) throws Exception {
-        Transport.send(buildImageEmail(
-                "spencerpearson@dropbox.com",
-                "TestMail",
-                new String(Files.readAllBytes(Paths.get(args[0]))),
-                Files.readAllBytes(Paths.get(args[1]))
-        ));
     }
 }
