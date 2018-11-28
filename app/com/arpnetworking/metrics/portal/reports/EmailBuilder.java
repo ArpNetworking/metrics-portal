@@ -1,10 +1,11 @@
 package com.arpnetworking.metrics.portal.reports;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Properties;
 
-import javax.mail.*;
+import javax.mail.BodyPart;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
