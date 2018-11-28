@@ -100,6 +100,10 @@ object ApplicationBuild extends Build {
       "org.webjars" % "bootstrap" % "3.3.7",
       "org.webjars.npm" % "d3" % "4.11.0",
 
+      // Screenshots / Reporting
+      "com.sun.mail" % "javax.mail" % "1.6.0",
+      "com.github.kklisura.cdt" % "cdt-java-client" % "1.3.2",
+
       // Needed for dev
       "org.iq80.leveldb"            % "leveldb"          % "0.9",
       "org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8",

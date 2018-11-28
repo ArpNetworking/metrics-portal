@@ -47,6 +47,9 @@ PUT        /v1/expressions                      controllers.ExpressionController
 GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
+# Reporting
+POST       /v1/reports/run/:id                  controllers.ReportController.run(id: String)
+
 # Kairosdb proxying
 # The original Kairos routes start with /api/v1 and this is a direct
 # replacement for them
