@@ -38,11 +38,29 @@ import java.util.Optional;
 @Singleton
 public class ReportController extends Controller {
 
-    private static Map<String, String> REPORT_ID_TO_GRAFANA_REPORT_URL = new HashMap<>();
+    private static long SCREENSHOT_TIMEOUT_MS = 10000;
+
+    // TODO: store report definitions in an actual database instead of hardcoding them.
+    private static class Report {
+        public String recipient;
+        public String subjectLine;
+        public String grafanaReportPanelUrl;
+
+        public Report(String recipient, String subjectLine, String grafanaReportPanelUrl) {
+            this.recipient = recipient;
+            this.subjectLine = subjectLine;
+            this.grafanaReportPanelUrl = grafanaReportPanelUrl;
+        }
+    }
+    private static Map<String, Report> REPORT_ID_TO_GRAFANA_REPORT_URL = new HashMap<>();
     static {
         REPORT_ID_TO_GRAFANA_REPORT_URL.put(
                 "webperf-demo",
-                "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light"
+                new Report(
+                        "spencerpearson@dropbox.com",
+                        "Demo Webperf Report",
+                        "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light"
+                )
         );
     }
 
@@ -57,26 +75,26 @@ public class ReportController extends Controller {
     }
 
     /**
-     * Runs a report
+     * Executes a report and emails a snapshot of the Grafana report panel to its recipients.
      *
      * @param id id of the report to run
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        String url = REPORT_ID_TO_GRAFANA_REPORT_URL.get(id);
-        if (url == null) return notFound("no report has id="+id);
+        Report report = REPORT_ID_TO_GRAFANA_REPORT_URL.get(id);
+        if (report == null) return notFound("no report has id="+id);
 
         final ChromeDevToolsService devToolsService = Scraper.createDevToolsService(true);
         final Optional<Scraper.Snapshot> snapshot = Scraper.takeGrafanaReportScreenshot(
                 devToolsService,
-                url,
-                10000
+                report.grafanaReportPanelUrl,
+                SCREENSHOT_TIMEOUT_MS
         );
         if (!snapshot.isPresent()) return internalServerError("timed out while taking snapshot");
         try {
             Transport.send(EmailBuilder.buildImageEmail(
-                    "spencerpearson@dropbox.com",
-                    "Example webperf report",
+                    report.recipient,
+                    report.subjectLine,
                     snapshot.get().html,
                     snapshot.get().pdf
             ));
