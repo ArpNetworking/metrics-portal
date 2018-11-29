@@ -45,11 +45,13 @@ public class ReportController extends Controller {
         public String recipient;
         public String subjectLine;
         public String grafanaReportPanelUrl;
+        public Scraper.Dimensions pdfSizeInches;
 
-        public Report(String recipient, String subjectLine, String grafanaReportPanelUrl) {
+        public Report(String recipient, String subjectLine, String grafanaReportPanelUrl, Scraper.Dimensions pdfSizeInches) {
             this.recipient = recipient;
             this.subjectLine = subjectLine;
             this.grafanaReportPanelUrl = grafanaReportPanelUrl;
+            this.pdfSizeInches = pdfSizeInches;
         }
     }
     private static Map<String, Report> REPORT_ID_TO_GRAFANA_REPORT_URL = new HashMap<>();
@@ -59,7 +61,8 @@ public class ReportController extends Controller {
                 new Report(
                         "spencerpearson@dropbox.com",
                         "Demo Webperf Report",
-                        "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light"
+                        "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light",
+                        new Scraper.Dimensions(8.5, 30)
                 )
         );
     }
@@ -88,6 +91,7 @@ public class ReportController extends Controller {
         final Optional<Scraper.Snapshot> snapshot = Scraper.takeGrafanaReportScreenshot(
                 devToolsService,
                 report.grafanaReportPanelUrl,
+                report.pdfSizeInches,
                 SCREENSHOT_TIMEOUT_MS
         );
         if (!snapshot.isPresent()) return internalServerError("timed out while taking snapshot");

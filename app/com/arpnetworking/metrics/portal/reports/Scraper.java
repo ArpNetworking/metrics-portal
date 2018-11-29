@@ -15,11 +15,7 @@ import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
 import java.io.PrintWriter;
 
-/**
- * Takes a page screenshot.
- *
- * @author Kenan Klisura
- */
+
 public class Scraper {
     public static void main(String[] args) throws Exception {
         final ChromeDevToolsService devToolsService = createDevToolsService();
@@ -35,6 +31,7 @@ public class Scraper {
                 "    document.open(); document.write(s); document.close();\n" +
                 "    return true;\n" +
                 "})()",
+                new Dimensions(8.5, 30.0),
                 10000
         );
         if (screenshot.isPresent()) Files.write(Paths.get("screenshot.pdf"), screenshot.get().pdf);
@@ -56,15 +53,29 @@ public class Scraper {
         return result;
     }
 
-    public static class Snapshot { public String html; public byte[] pdf;
+    public static class Dimensions {
+        public double width, height;
+        public Dimensions(double width, double height) {
+            this.width = width;
+            this.height = height;
+        }
+    }
 
+    public static class Snapshot {
+        public String html;
+        public byte[] pdf;
         public Snapshot(String html, byte[] pdf) {
             this.html = html;
             this.pdf = pdf;
         }
     }
 
-    public static Optional<Snapshot> takeGrafanaReportScreenshot(ChromeDevToolsService devToolsService, String url, long timeoutMillis) {
+    public static Optional<Snapshot> takeGrafanaReportScreenshot(
+            ChromeDevToolsService devToolsService,
+            String url,
+            Dimensions pdfSizeInches,
+            long timeoutMillis
+    ) {
         return takeScreenshot(
                 devToolsService,
                 url,
@@ -75,21 +86,35 @@ public class Scraper {
                         "    document.open(); document.write(s); document.close();\n" +
                         "    return true;\n" +
                         "})()",
+                pdfSizeInches,
                 timeoutMillis
         );
     }
 
-    public static Optional<Snapshot> takeScreenshot(ChromeDevToolsService devToolsService, String url, String jsPrepareCmd, long timeoutMillis) {
+    public static Optional<Snapshot> takeScreenshot(
+            ChromeDevToolsService devToolsService,
+            String url,
+            String jsPrepareCmd,
+            Dimensions pdfSizeInches,
+            long timeoutMillis
+    ) {
         return takeScreenshot(
                 devToolsService,
                 url,
                 (ChromeDevToolsService dts) -> dts.getRuntime().evaluate(jsPrepareCmd).getResult().getValue().equals(true),
+                pdfSizeInches,
                 timeoutMillis
         );
     }
 
-    public static Optional<Snapshot> takeScreenshot(ChromeDevToolsService devToolsService, String url, Function<ChromeDevToolsService, Boolean> prepare, long timeoutMillis) {
-        System.out.println("in takeScreenshot");
+    public static Optional<Snapshot> takeScreenshot(
+            ChromeDevToolsService devToolsService,
+            String url,
+            Function<ChromeDevToolsService, Boolean> prepare,
+            Dimensions pdfSizeInches,
+            long timeoutMillis
+    ) {
+        // adapted from https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-examples/src/main/java/com/github/kklisura/cdt/examples/TakeScreenshotExample.java
 
         final Page page = devToolsService.getPage();
 
@@ -108,21 +133,21 @@ public class Scraper {
                                     result.set(Optional.of(new Snapshot(
                                             (String)devToolsService.getRuntime().evaluate("document.documentElement.outerHTML").getResult().getValue(),
                                             Base64.getDecoder().decode(devToolsService.getPage().printToPDF(
-                                                    true, // landscape
-                                                    false, // displayHeaderFooter
-                                                    false, // printBackground
-                                                    1.0, // scale
-                                                    30.0, // height -- misdocumented as paperWidth
-                                                    8.5, // width -- misdocumented as paperHeight
-                                                    0.4, // marginTop
-                                                    0.4, // marginBottom
-                                                    0.4, // marginLeft
-                                                    0.4, // marginRight
-                                                    "", // pageRanges
-                                                    true, // ignoreInvalidPageRanges
-                                                    "", // headerTemplate
-                                                    "", // footerTemplate
-                                                    true// preferCSSPageSize
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    1.0,
+                                                    pdfSizeInches.width,
+                                                    pdfSizeInches.height,
+                                                    0.4,
+                                                    0.4,
+                                                    0.4,
+                                                    0.4,
+                                                    "",
+                                                    true,
+                                                    "",
+                                                    "",
+                                                    true
                                             )))));
 
                                     System.out.println("Done!");
