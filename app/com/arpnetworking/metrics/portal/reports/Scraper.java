@@ -166,7 +166,6 @@ public class Scraper {
                         System.out.println("o no: " + err);
                         err.printStackTrace(new PrintWriter(System.err));
                     } finally {
-//                        try {Thread.sleep(10000);} catch (InterruptedException e) {}
                         devToolsService.close();
                     }
                 }
