@@ -33,7 +33,6 @@ import java.util.Optional;
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
 @Singleton
 public class ReportController extends Controller {
@@ -54,9 +53,9 @@ public class ReportController extends Controller {
             this.pdfSizeInches = pdfSizeInches;
         }
     }
-    private static Map<String, Report> REPORT_ID_TO_GRAFANA_REPORT_URL = new HashMap<>();
+    private static Map<String, Report> REPORT_DEFNS = new HashMap<>();
     static {
-        REPORT_ID_TO_GRAFANA_REPORT_URL.put(
+        REPORT_DEFNS.put(
                 "webperf-demo",
                 new Report(
                         "spencerpearson@dropbox.com",
@@ -84,7 +83,7 @@ public class ReportController extends Controller {
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        Report report = REPORT_ID_TO_GRAFANA_REPORT_URL.get(id);
+        Report report = REPORT_DEFNS.get(id);
         if (report == null) return notFound("no report has id="+id);
 
         final ChromeDevToolsService devToolsService = Scraper.createDevToolsService(true);
