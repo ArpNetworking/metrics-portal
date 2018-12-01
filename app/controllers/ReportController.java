@@ -15,8 +15,8 @@
  */
 package controllers;
 
-import com.arpnetworking.metrics.portal.reports.EmailBuilder;
-import com.arpnetworking.metrics.portal.reports.Scraper;
+import akka.japi.Pair;
+import com.arpnetworking.metrics.portal.reports.*;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -39,29 +39,30 @@ public class ReportController extends Controller {
 
     private static long SCREENSHOT_TIMEOUT_MS = 10000;
 
-    // TODO: store report definitions in an actual database instead of hardcoding them.
-    private static class Report {
-        public String recipient;
-        public String subjectLine;
-        public String grafanaReportPanelUrl;
-        public Scraper.Dimensions pdfSizeInches;
+    private static class ReportSpec {
+        public ReportGenerator generator;
+        public ReportSink sink;
 
-        public Report(String recipient, String subjectLine, String grafanaReportPanelUrl, Scraper.Dimensions pdfSizeInches) {
-            this.recipient = recipient;
-            this.subjectLine = subjectLine;
-            this.grafanaReportPanelUrl = grafanaReportPanelUrl;
-            this.pdfSizeInches = pdfSizeInches;
+        public ReportSpec(ReportGenerator generator, ReportSink sink) {
+            this.generator = generator;
+            this.sink = sink;
         }
     }
-    private static Map<String, Report> REPORT_DEFNS = new HashMap<>();
+
+    // TODO: store report definitions in an actual database instead of hardcoding them.
+    private static Map<String, ReportSpec> REPORT_DEFNS = new HashMap<>();
     static {
         REPORT_DEFNS.put(
                 "webperf-demo",
-                new Report(
-                        "spencerpearson@dropbox.com",
-                        "Demo Webperf Report",
-                        "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light",
-                        new Scraper.Dimensions(8.5, 30)
+                new ReportSpec(
+                        new GrafanaReportPanelScreenshotReportGenerator(
+                                "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light",
+                                true,
+                                10000,
+                                8.5,
+                                30
+                        ),
+                        new EmailReportSink("spencerpearson@dropbox.com", "Demo Webperf Report")
                 )
         );
     }
@@ -83,27 +84,26 @@ public class ReportController extends Controller {
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        Report report = REPORT_DEFNS.get(id);
-        if (report == null) return notFound("no report has id="+id);
+        ReportSpec spec = REPORT_DEFNS.get(id);
+        if (spec == null) return notFound("no report has id="+id);
 
-        final ChromeDevToolsService devToolsService = Scraper.createDevToolsService(true);
-        final Optional<Scraper.Snapshot> snapshot = Scraper.takeGrafanaReportScreenshot(
-                devToolsService,
-                report.grafanaReportPanelUrl,
-                report.pdfSizeInches,
-                SCREENSHOT_TIMEOUT_MS
-        );
-        if (!snapshot.isPresent()) return internalServerError("timed out while taking snapshot");
-        try {
-            Transport.send(EmailBuilder.buildImageEmail(
-                    report.recipient,
-                    report.subjectLine,
-                    snapshot.get().html,
-                    snapshot.get().pdf
-            ));
-        } catch (MessagingException e) {
-            return internalServerError("failed building/sending message: "+e);
+        final Map<String,String[]> params = request().queryString();
+        if (params.get("sendEmail") != null && params.get("sendEmail")[0].equals("true")) {
+
         }
+
+        Report r = null;
+        try {
+            r = spec.generator.generateReport();
+        } catch (Exception e) {
+            r = new Report("Report '"+id+"' failed", "Reason: <pre>"+e+"</pre>", null);
+        }
+        try {
+            spec.sink.send(r);
+        } catch (Exception e) {
+            return internalServerError("unable to send report");
+        }
+
         return ok("sent");
     }
 }

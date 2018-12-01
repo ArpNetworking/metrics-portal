@@ -21,13 +21,23 @@ import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 
-public class EmailBuilder {
-    public static MimeMessage buildImageEmail(String recipient, String subject, String html, byte[] pdf) throws MessagingException {
+public class EmailReportSink implements ReportSink {
+    private String recipient;
+    private String subject;
+
+    public EmailReportSink(String recipient, String subject) {
+        this.recipient = recipient;
+        this.subject = subject;
+    }
+
+    @Override
+    public void send(Report r) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.smtp.host", "localhost");
         props.put("mail.smtp.port", "25");
@@ -37,15 +47,19 @@ public class EmailBuilder {
         mailMessage.setSubject(subject);
 
         final MimeMultipart multipart = new MimeMultipart();
-        BodyPart pdfPart = new MimeBodyPart();
-        pdfPart.setContent(pdf, "application/pdf");
-        multipart.addBodyPart(pdfPart);
-        BodyPart htmlPart = new MimeBodyPart();
-        htmlPart.setContent(html, "text/html");
-        multipart.addBodyPart(htmlPart);
+        if (r.getPdf() != null) {
+            BodyPart pdfPart = new MimeBodyPart();
+            pdfPart.setContent(r.getPdf(), "application/pdf");
+            multipart.addBodyPart(pdfPart);
+        }
+        if (r.getHtml() != null) {
+            BodyPart htmlPart = new MimeBodyPart();
+            htmlPart.setContent(r.getHtml(), "text/html");
+            multipart.addBodyPart(htmlPart);
+        }
 
         mailMessage.setContent(multipart);
 
-        return mailMessage;
+        Transport.send(mailMessage);
     }
 }

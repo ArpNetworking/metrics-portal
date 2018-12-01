@@ -79,10 +79,12 @@ object ApplicationBuild extends Build {
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonVersion,
+      "com.github.kklisura.cdt" % "cdt-java-client" % "1.3.2",
       "com.google.code.findbugs" % "annotations" % "3.0.1",
       "com.google.guava" % "guava" % "19.0",
       "com.google.inject" % "guice" % "4.0",
       "com.h2database" % "h2" % "1.4.192",
+      "com.sun.mail" % "javax.mail" % "1.6.0",
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
@@ -99,10 +101,6 @@ object ApplicationBuild extends Build {
       "org.webjars" % "bean" % "1.0.14",
       "org.webjars" % "bootstrap" % "3.3.7",
       "org.webjars.npm" % "d3" % "4.11.0",
-
-      // Screenshots / Reporting
-      "com.sun.mail" % "javax.mail" % "1.6.0",
-      "com.github.kklisura.cdt" % "cdt-java-client" % "1.3.2",
 
       // Needed for dev
       "org.iq80.leveldb"            % "leveldb"          % "0.9",

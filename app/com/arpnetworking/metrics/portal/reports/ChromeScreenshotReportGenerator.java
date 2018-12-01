@@ -15,9 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.reports;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,33 +28,31 @@ import com.github.kklisura.cdt.services.types.ChromeTab;
 import java.io.PrintWriter;
 
 
-public class Scraper {
-    public static void main(String[] args) throws Exception {
-        final ChromeDevToolsService devToolsService = createDevToolsService();
-        devToolsService.getSecurity().setIgnoreCertificateErrors(true);
+public class ChromeScreenshotReportGenerator implements ReportGenerator {
 
-        final Optional<Snapshot> screenshot = takeScreenshot(
-                devToolsService,
-                "https://localhost:9450/d/tdJITcBmz/playground?orgId=1&theme=light",
-                "(() => {\n" +
-                "    var e = document.getElementsByClassName('rendered-markdown-container')[0];\n" +
-                "    if (!e) return false;\n" +
-                "    var s = e.srcdoc;\n" +
-                "    document.open(); document.write(s); document.close();\n" +
-                "    return true;\n" +
-                "})()",
-                new Dimensions(8.5, 30.0),
-                10000
-        );
-        if (screenshot.isPresent()) Files.write(Paths.get("screenshot.pdf"), screenshot.get().pdf);
-        if (screenshot.isPresent()) Files.write(Paths.get("screenshot.html"), screenshot.get().html.getBytes());
-        else {System.out.println("timed out");}
+    public ChromeScreenshotReportGenerator(String url, Function<ChromeDevToolsService, Boolean> checkReady, boolean ignoreCertificateErrors, long timeoutMillis, double pdfWidthInches, double pdfHeightInches) {
+        this.url = url;
+        this.checkReady = checkReady;
+        this.ignoreCertificateErrors = ignoreCertificateErrors;
+        this.timeoutMillis = timeoutMillis;
+        this.pdfWidthInches = pdfWidthInches;
+        this.pdfHeightInches = pdfHeightInches;
     }
 
-    public static ChromeDevToolsService createDevToolsService() {
-        return createDevToolsService(false);
+    private String url;
+    private Function<ChromeDevToolsService, Boolean> checkReady;
+    private boolean ignoreCertificateErrors = false;
+    private long timeoutMillis = 10000;
+    private double pdfWidthInches;
+    private double pdfHeightInches;
+
+    @Override
+    public Report generateReport() {
+        ChromeDevToolsService dts = createDevToolsService();
+        return takeScreenshot(dts);
     }
-    public static ChromeDevToolsService createDevToolsService(boolean ignoreCertificateErrors) {
+
+    private ChromeDevToolsService createDevToolsService() {
         final ChromeLauncher launcher = new ChromeLauncher();
         final ChromeService chromeService = launcher.launch(true);
         final ChromeTab tab = chromeService.createTab();
@@ -68,72 +63,14 @@ public class Scraper {
         return result;
     }
 
-    public static class Dimensions {
-        public double width, height;
-        public Dimensions(double width, double height) {
-            this.width = width;
-            this.height = height;
-        }
-    }
-
-    public static class Snapshot {
-        public String html;
-        public byte[] pdf;
-        public Snapshot(String html, byte[] pdf) {
-            this.html = html;
-            this.pdf = pdf;
-        }
-    }
-
-    public static Optional<Snapshot> takeGrafanaReportScreenshot(
-            ChromeDevToolsService devToolsService,
-            String url,
-            Dimensions pdfSizeInches,
-            long timeoutMillis
-    ) {
-        return takeScreenshot(
-                devToolsService,
-                url,
-                "(() => {\n" +
-                        "    var e = document.getElementsByClassName('rendered-markdown-container')[0];\n" +
-                        "    if (!e) return false;\n" +
-                        "    var s = e.srcdoc;\n" +
-                        "    document.open(); document.write(s); document.close();\n" +
-                        "    return true;\n" +
-                        "})()",
-                pdfSizeInches,
-                timeoutMillis
-        );
-    }
-
-    public static Optional<Snapshot> takeScreenshot(
-            ChromeDevToolsService devToolsService,
-            String url,
-            String jsPrepareCmd,
-            Dimensions pdfSizeInches,
-            long timeoutMillis
-    ) {
-        return takeScreenshot(
-                devToolsService,
-                url,
-                (ChromeDevToolsService dts) -> dts.getRuntime().evaluate(jsPrepareCmd).getResult().getValue().equals(true),
-                pdfSizeInches,
-                timeoutMillis
-        );
-    }
-
-    public static Optional<Snapshot> takeScreenshot(
-            ChromeDevToolsService devToolsService,
-            String url,
-            Function<ChromeDevToolsService, Boolean> prepare,
-            Dimensions pdfSizeInches,
-            long timeoutMillis
+    public Report takeScreenshot(
+            ChromeDevToolsService devToolsService
     ) {
         // adapted from https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-examples/src/main/java/com/github/kklisura/cdt/examples/TakeScreenshotExample.java
 
         final Page page = devToolsService.getPage();
 
-        AtomicReference<Optional<Snapshot>> result = new AtomicReference<>(Optional.empty());
+        AtomicReference<Report> result = new AtomicReference<>(null);
         AtomicBoolean firstLoad = new AtomicBoolean(true);
         page.onLoadEventFired(
                 event -> {
@@ -143,17 +80,18 @@ public class Scraper {
                         long tf = t0 + timeoutMillis;
                         while (System.currentTimeMillis() < tf) {
                             try {
-                                if (prepare.apply(devToolsService)) {
+                                if (checkReady.apply(devToolsService)) {
                                     System.out.println("Taking screenshot...");
-                                    result.set(Optional.of(new Snapshot(
+                                    result.set(new Report(
+                                            "Screenshot",
                                             (String)devToolsService.getRuntime().evaluate("document.documentElement.outerHTML").getResult().getValue(),
                                             Base64.getDecoder().decode(devToolsService.getPage().printToPDF(
                                                     false,
                                                     false,
                                                     false,
                                                     1.0,
-                                                    pdfSizeInches.width,
-                                                    pdfSizeInches.height,
+                                                    pdfWidthInches,
+                                                    pdfHeightInches,
                                                     0.4,
                                                     0.4,
                                                     0.4,
@@ -163,7 +101,7 @@ public class Scraper {
                                                     "",
                                                     "",
                                                     true
-                                            )))));
+                                            ))));
 
                                     System.out.println("Done!");
                                     return;
