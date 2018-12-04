@@ -15,19 +15,51 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
 
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
+import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.ReportSpec;
+import com.arpnetworking.play.ProxyClient;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.Duration;
 
 public class ReportScheduler extends AbstractPersistentActorWithTimers {
+
+    private static class ReportExecutor extends AbstractActor {
+        public static Props props(final ReportRepository repository, final String specId) {
+            return Props.create(ReportExecutor.class, () -> new ReportExecutor(repository, specId));
+        }
+
+        public ReportExecutor(ReportRepository repository, String specId) {
+            ReportSpec spec = repository.getSpec(specId);
+            if (spec == null) {
+                LOGGER.warn("attempting to run job with id="+specId+", but does not exist in repository");
+                return;
+            }
+            try {
+                spec.run();
+            } catch (Exception e) {
+                LOGGER.error("error executing job id="+specId+": "+e);
+            }
+        }
+
+        @Override
+        public Receive createReceive() {
+            return receiveBuilder().build();
+        }
+        private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
+    }
 
     /**
      * Props factory.
@@ -48,11 +80,21 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
             this.nextRun = nextRun;
             this.period = period;
         }
+        public Job nextJob() {
+            return new Job(id, nextRun.plus(period), period);
+        }
         private static final long serialVersionUID = 1L;
     }
 
     private static class Tick implements Serializable {
         private static final long serialVersionUID = 1L;
+        private Tick() {}
+        public static final Tick INSTANCE = new Tick();
+    }
+    private static class ExecuteNext implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private ExecuteNext() {}
+        public static final ExecuteNext INSTANCE = new ExecuteNext();
     }
     public static class Schedule implements Serializable {
         public Job job;
@@ -65,20 +107,16 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
     private PriorityQueue<Job> plan = new PriorityQueue<>();
 
     private ReportRepository repository;
+    @Inject
     public ReportScheduler(final ReportRepository repository) {
         this.repository = repository;
-        timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(1, TimeUnit.SECONDS));
+        timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(3, TimeUnit.SECONDS /* TODO: when done testing, MINUTES */));
     }
 
     @Override
     public Receive createReceiveRecover() {
         return receiveBuilder()
-                .match(Tick.class, e -> {
-                    System.out.println("(recovering) tick; "+plan.size()+" elements in plan; first is for "+(plan.peek()==null ? "<never>" : plan.peek().nextRun.toString()));
-                    while (plan.peek().nextRun.isBefore(Instant.now())) {
-                        plan.remove();
-                    }
-                })
+                .match(ExecuteNext.class, e -> plan.remove())
                 .match(Schedule.class, e -> plan.add(e.job))
                 .build();
     }
@@ -87,16 +125,27 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, e -> {
-                    System.out.println("tick; "+plan.size()+" elements in plan; first is for "+(plan.peek()==null ? "<never>" : plan.peek().nextRun.toString()));
-                    while (plan.peek().nextRun.isBefore(Instant.now())) {
-                        Job j = plan.peek();
-                        self().tell(new Schedule(new Job(j.id, j.nextRun.plus(j.period), j.period)), self());
-                        plan.remove();
-                        System.out.println("Running job: "+j.id);
-                        repository.getSpec(j.id);
+                    if (plan.size() > 0 && plan.peek().nextRun.isBefore(Instant.now())) {
+                        self().tell(ExecuteNext.INSTANCE, self());
                     }
                 })
-                .match(Schedule.class, e -> plan.add(e.job))
+                .match(ExecuteNext.class, e -> {
+                    Job j;
+                    try {
+                        j = plan.remove();
+                    } catch (NoSuchElementException err) {
+                        LOGGER.warn("received ExecuteNext, but no jobs are planned");
+                        return;
+                    }
+                    plan.add(j.nextJob());
+
+                    context().actorOf(ReportExecutor.props(repository, j.id));
+                    self().tell(Tick.INSTANCE, self());
+                })
+                .match(Schedule.class, e -> {
+                    LOGGER.info("scheduling new job id="+e.job.id);
+                    plan.add(e.job);
+                })
                 .build();
     }
 
@@ -104,4 +153,6 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
     public String persistenceId() {
         return "com.arpnetworking.metrics.portal.reports.impl.ReportScheduler";
     }
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
+
 }

@@ -23,6 +23,8 @@ import akka.actor.Props;
 import akka.cluster.Cluster;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
+import akka.cluster.singleton.ClusterSingletonProxy;
+import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -356,12 +358,15 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "report_scheduler" node in the cluster.
-            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.props(
+            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) { // TODO(spencerpearson): file an issue for the wrong implementation of this that's already committed
+                _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, ReportScheduler.class),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)),
                         "report-execution-scheduler");
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        "/user/report-execution-scheduler",
+                        ClusterSingletonProxySettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)));
             }
             return null;
         }

@@ -29,7 +29,7 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
@@ -57,20 +57,27 @@ public class ReportController extends Controller {
     }
 
     /**
+     * List all report ids.
+     *
+     * @return Ok, with newline-separated report ids
+     */
+    public Result list() {
+        return ok(String.join("\n", repository.listSpecs().collect(Collectors.toList())));
+    }
+
+    /**
      * Creates a new report.
      *
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
-    public Result createEmailedGrafanaReport() {
+    public Result createEmailedGrafanaReport(
+            String name,
+            int periodMinutes,
+            String recipient,
+            String subject,
+            String reportUrl,
+            double pdfHeightInches) {
         try {
-            final Map<String, String[]> params = request().queryString();
-            String name = params.get("name")[0];
-            int periodMinutes = Integer.parseInt(params.get("periodMinutes")[0]);
-            String recipient = params.get("recipient")[0];
-            String subject = params.get("subject")[0];
-            String reportUrl = params.get("reportUrl")[0];
-            double pdfHeightInches = Double.parseDouble(params.get("pdfHeightInches")[0]);
-
             String id = repository.add(
                     new ReportSpec(
                             name,
@@ -85,7 +92,12 @@ public class ReportController extends Controller {
                     )
             );
 
-            scheduler.tell(new ReportScheduler.Schedule(new ReportScheduler.Job(id, Instant.now(), java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES))), null);
+            scheduler.tell(
+                    new ReportScheduler.Schedule(new ReportScheduler.Job(
+                            id,
+                            Instant.now(),
+                            java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES))),
+                    null);
             return ok(id);
         } catch (Exception e) {
             return internalServerError("augh: "+e);
@@ -99,13 +111,12 @@ public class ReportController extends Controller {
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        System.out.println("running");
         ReportSpec spec = this.repository.getSpec(id);
         if (spec == null) return notFound("no report has id="+id);
         try {
             spec.run();
         } catch (Exception e) {
-            return internalServerError();
+            return internalServerError("failed to send, sorry");
         }
         return ok("Did it!");
     }

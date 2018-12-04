@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class MapReportRepository implements ReportRepository {
     @Inject
@@ -20,6 +21,11 @@ public class MapReportRepository implements ReportRepository {
     @Override
     public @Nullable ReportSpec getSpec(String id) {
         return this.specs.get(id);
+    }
+
+    @Override
+    public Stream<String> listSpecs() {
+        return specs.keySet().stream();
     }
 
     @Override

@@ -49,7 +49,8 @@ GET        /assets/html/HeaderViewModel.html    controllers.ApplicationControlle
 
 # Reporting
 GET        /v1/reports/run/:id                  controllers.ReportController.run(id: String)
-POST       /v1/reports/create                   controllers.ReportController.createEmailedGrafanaReport()
+POST       /v1/reports/create                   controllers.ReportController.createEmailedGrafanaReport(name: String, periodMinutes: Int, recipient: String, subject: String, reportUrl: String, pdfHeightInches: Double)
+GET        /v1/reports/list                     controllers.ReportController.list()
 
 # Kairosdb proxying
 # The original Kairos routes start with /api/v1 and this is a direct
