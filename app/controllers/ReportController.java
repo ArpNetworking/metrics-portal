@@ -15,20 +15,21 @@
  */
 package controllers;
 
-import akka.japi.Pair;
+import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.reports.*;
-import com.github.kklisura.cdt.services.ChromeDevToolsService;
+import com.arpnetworking.metrics.portal.reports.impl.EmailReportSink;
+import com.arpnetworking.metrics.portal.reports.impl.GrafanaReportPanelScreenshotReportGenerator;
+import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import javax.inject.Named;
 import javax.inject.Singleton;
-import javax.mail.MessagingException;
-import javax.mail.Transport;
-import java.util.HashMap;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
@@ -37,44 +38,58 @@ import java.util.Optional;
 @Singleton
 public class ReportController extends Controller {
 
-    private static long SCREENSHOT_TIMEOUT_MS = 10000;
-
-    private static class ReportSpec {
-        public ReportGenerator generator;
-        public ReportSink sink;
-
-        public ReportSpec(ReportGenerator generator, ReportSink sink) {
-            this.generator = generator;
-            this.sink = sink;
-        }
-    }
-
-    // TODO: store report definitions in an actual database instead of hardcoding them.
-    private static Map<String, ReportSpec> REPORT_DEFNS = new HashMap<>();
-    static {
-        REPORT_DEFNS.put(
-                "webperf-demo",
-                new ReportSpec(
-                        new GrafanaReportPanelScreenshotReportGenerator(
-                                "https://localhost:9450/d/tdJITcBmz/playground?panelId=2&fullscreen&orgId=1&theme=light",
-                                true,
-                                10000,
-                                8.5,
-                                30
-                        ),
-                        new EmailReportSink("spencerpearson@dropbox.com", "Demo Webperf Report")
-                )
-        );
-    }
+    private ActorRef scheduler;
+    private ReportRepository repository;
 
     /**
      * Public constructor.
      *
+     * @param scheduler The reports.ReportScheduler
      * @param configuration Instance of Play's {@link Config}.
      */
     @Inject
     public ReportController(
+            @Named("ReportScheduler") ActorRef scheduler,
+            ReportRepository repository,
             final Config configuration) {
+        this.scheduler = scheduler;
+        this.repository = repository;
+    }
+
+    /**
+     * Creates a new report.
+     *
+     * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
+     */
+    public Result createEmailedGrafanaReport() {
+        try {
+            final Map<String, String[]> params = request().queryString();
+            String name = params.get("name")[0];
+            int periodMinutes = Integer.parseInt(params.get("periodMinutes")[0]);
+            String recipient = params.get("recipient")[0];
+            String subject = params.get("subject")[0];
+            String reportUrl = params.get("reportUrl")[0];
+            double pdfHeightInches = Double.parseDouble(params.get("pdfHeightInches")[0]);
+
+            String id = repository.add(
+                    new ReportSpec(
+                            name,
+                            new GrafanaReportPanelScreenshotReportGenerator(
+                                    reportUrl,
+                                    true,
+                                    10000,
+                                    8.5,
+                                    pdfHeightInches
+                            ),
+                            new EmailReportSink(recipient, subject)
+                    )
+            );
+
+            scheduler.tell(new ReportScheduler.Schedule(new ReportScheduler.Job(id, Instant.now(), java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES))), null);
+            return ok(id);
+        } catch (Exception e) {
+            return internalServerError("augh: "+e);
+        }
     }
 
     /**
@@ -84,26 +99,14 @@ public class ReportController extends Controller {
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result run(String id) {
-        ReportSpec spec = REPORT_DEFNS.get(id);
+        System.out.println("running");
+        ReportSpec spec = this.repository.getSpec(id);
         if (spec == null) return notFound("no report has id="+id);
-
-        final Map<String,String[]> params = request().queryString();
-        if (params.get("sendEmail") != null && params.get("sendEmail")[0].equals("true")) {
-
-        }
-
-        Report r = null;
         try {
-            r = spec.generator.generateReport();
+            spec.run();
         } catch (Exception e) {
-            r = new Report("Report '"+id+"' failed", "Reason: <pre>"+e+"</pre>", null);
+            return internalServerError();
         }
-        try {
-            spec.sink.send(r);
-        } catch (Exception e) {
-            return internalServerError("unable to send report");
-        }
-
-        return ok("sent");
+        return ok("Did it!");
     }
 }

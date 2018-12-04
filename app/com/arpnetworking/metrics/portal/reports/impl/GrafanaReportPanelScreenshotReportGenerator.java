@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports;
+package com.arpnetworking.metrics.portal.reports.impl;
 
 public class GrafanaReportPanelScreenshotReportGenerator extends ChromeScreenshotReportGenerator {
 

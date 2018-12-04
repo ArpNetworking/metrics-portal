@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports;
+package com.arpnetworking.metrics.portal.reports.impl;
+
+import com.arpnetworking.metrics.portal.reports.Report;
+import com.arpnetworking.metrics.portal.reports.ReportSink;
 
 import java.util.Properties;
 

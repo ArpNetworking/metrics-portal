@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports;
+package com.arpnetworking.metrics.portal.reports.impl;
 
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import com.arpnetworking.metrics.portal.reports.Report;
+import com.arpnetworking.metrics.portal.reports.ReportGenerator;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.protocol.commands.Page;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;

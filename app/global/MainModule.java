@@ -35,6 +35,8 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
@@ -88,6 +90,9 @@ public class MainModule extends AbstractModule {
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(ReportRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
                 .asEagerSingleton();
@@ -97,6 +102,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("ReportScheduler"))
+                .toProvider(ReportSchedulerProvider.class)
                 .asEagerSingleton();
     }
 
@@ -272,6 +281,39 @@ public class MainModule extends AbstractModule {
         private final ApplicationLifecycle _lifecycle;
     }
 
+    private static final class ReportRepositoryProvider implements Provider<ReportRepository> {
+
+        @Inject
+        ReportRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public ReportRepository get() {
+            final ReportRepository reportRepository = _injector.getInstance(
+                    ConfigurationHelper.<ReportRepository>getType(_environment, _configuration, "reportRepository.type"));
+            reportRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        reportRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return reportRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
     private static final class HostProviderProvider implements Provider<ActorRef> {
         @Inject
         HostProviderProvider(
@@ -300,6 +342,32 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class ReportSchedulerProvider implements Provider<ActorRef> {
+        @Inject
+        ReportSchedulerProvider(
+                final ActorSystem system,
+                final Injector injector) {
+            _system = system;
+            _injector = injector;
+        }
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            // Start a singleton instance of the scheduler on a "report_scheduler" node in the cluster.
+            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        GuiceActorCreator.props(_injector, ReportScheduler.class),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)),
+                        "report-execution-scheduler");
+            }
+            return null;
+        }
+        private final ActorSystem _system;
+        private final Injector _injector;
+        private static final String REPORT_SCHEDULER_ROLE = "report_scheduler";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
