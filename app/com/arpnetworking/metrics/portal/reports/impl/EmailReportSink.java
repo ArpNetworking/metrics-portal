@@ -41,10 +41,7 @@ public class EmailReportSink implements ReportSink {
 
     @Override
     public void send(Report r) throws MessagingException {
-        Properties props = new Properties();
-        props.put("mail.smtp.host", "localhost");
-        props.put("mail.smtp.port", "25");
-        final MimeMessage mailMessage = new MimeMessage(Session.getDefaultInstance(props));
+        final MimeMessage mailMessage = new MimeMessage(Session.getDefaultInstance(System.getProperties()));
         mailMessage.addRecipients(Message.RecipientType.TO, recipient);
         mailMessage.setFrom("no-reply+amp-reporting@dropbox.com");
         mailMessage.setSubject(subject);
