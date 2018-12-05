@@ -60,6 +60,8 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import freemarker.template.Configuration;
+import freemarker.template.TemplateExceptionHandler;
 import models.cassandra.NotificationRecipient;
 import models.internal.Context;
 import models.internal.Features;
@@ -71,14 +73,20 @@ import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
 
 /**
  * Module that defines the main bindings.
@@ -217,6 +225,35 @@ public class MainModule extends AbstractModule {
                         3,
                         Optional.empty()),
                 PoisonPill.getInstance());
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Configuration provideFreemarkerConfig(final Config config) throws IOException {
+        final Configuration cfg = new Configuration(Configuration.VERSION_2_3_27);
+        cfg.setDirectoryForTemplateLoading(new File(config.getString("alerts.templateDirectory")));
+        cfg.setDefaultEncoding("UTF-8");
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setLogTemplateExceptions(false);
+        cfg.setWrapUncheckedExceptions(true);
+        return cfg;
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Session provideMailSession(final Config config) {
+        final Properties props = new Properties();
+        final Config mailConfig = config.getConfig("mail.properties");
+        mailConfig.entrySet().forEach(entry -> props.put(entry.getKey(), entry.getValue().render()));
+
+        if (!config.getIsNull("mail.user") || !config.getIsNull("mail.password")) {
+            final Authenticator authenticator = new ConfiguredAuthenticated(config);
+            return Session.getInstance(props, authenticator);
+        } else {
+            return Session.getInstance(props);
+        }
     }
 
     @Provides
@@ -437,5 +474,18 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final ActorSystem _system;
+    }
+
+    private static class ConfiguredAuthenticated extends Authenticator {
+        ConfiguredAuthenticated(final Config config) {
+            _config = config;
+        }
+
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(_config.getString("mail.user"), _config.getString("mail.password"));
+        }
+
+        private final Config _config;
     }
 }

@@ -19,17 +19,33 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Injector;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import models.internal.Alert;
 import models.internal.AlertTrigger;
 import models.internal.NotificationEntry;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
 /**
  * Represents a notification by email.
@@ -43,13 +59,92 @@ public final class DefaultEmailNotificationEntry implements NotificationEntry {
     @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION",
             justification = "Bug in findbugs: https://github.com/findbugsproject/findbugs/issues/79")
     public CompletionStage<Void> notifyRecipient(final Alert alert, final AlertTrigger trigger, final Injector injector) {
-        // TODO(brandon): fire the email
         LOGGER.debug()
                 .setMessage("Sending email notification")
                 .addData("address", _address)
                 .addData("trigger", trigger)
                 .log();
-        return CompletableFuture.completedFuture(null);
+        final Configuration configuration = injector.getInstance(Configuration.class);
+        final Config typesafeConfig = injector.getInstance(Config.class);
+        try {
+            final Session mailSession = injector.getInstance(Session.class);
+            final MimeMessage mailMessage = new MimeMessage(mailSession);
+            mailMessage.addRecipients(Message.RecipientType.TO, _address);
+            mailMessage.setFrom(typesafeConfig.getString("alerts.email.from"));
+            final String baseUrl = typesafeConfig.getString("alerts.baseUrl");
+            final String alertUrl = URI.create(baseUrl).resolve("/#alert/edit/" + alert.getId()).toString();
+            final String subject = String.format("Alert '%s' on %s in alarm ", alert.getName(), getGroupByString(trigger));
+            mailMessage.setSubject(subject);
+            final MimeMultipart multipart = new MimeMultipart("alternative");
+            final ImmutableMap<String, Object> templateObject = ImmutableMap.<String, Object>builder()
+                    .put("alert", alert)
+                    .put("trigger", trigger)
+                    .put("alertUrl", alertUrl)
+                    .put("groupBy", getGroupByString(trigger))
+                    .build();
+
+            addBodyPart(multipart, "text/plain; charset=utf-8", renderTemplate(templateObject, configuration, "alert.text.ftlh"));
+            addBodyPart(multipart, "text/html; charset=utf-8", renderTemplate(templateObject, configuration, "alert.html.ftlh"));
+
+            if (multipart.getCount() == 0) {
+                final String text = "Alert '" + alert.getName() + "' on " + getGroupByString(trigger) + " has gone into alert: \n"
+                        + "Details: " + trigger.getArgs().toString() + "\n";
+                final MimeBodyPart bodyText = new MimeBodyPart();
+                bodyText.setText(text, "utf-8");
+                multipart.addBodyPart(bodyText);
+            }
+
+            mailMessage.setContent(multipart);
+            Transport.send(mailMessage);
+            return CompletableFuture.completedFuture(null);
+            // CHECKSTYLE.OFF: IllegalCatch - Make sure that template execution gets reported properly
+        } catch (final RuntimeException | MessagingException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            final CompletableFuture<Void> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
+    }
+
+    private String getGroupByString(final AlertTrigger trigger) {
+        return trigger.getGroupBy()
+                .entrySet()
+                .stream()
+                .map(entry -> String.format("%s %s", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(", "));
+    }
+
+    private String renderTemplate(final ImmutableMap<String, Object> templateObject,
+            final Configuration configuration,
+            final String templateName) {
+        try {
+            final StringWriter stringWriter = new StringWriter();
+            final Template template = configuration.getTemplate(templateName);
+            template.process(templateObject, stringWriter);
+            return stringWriter.toString();
+        } catch (final IOException e) {
+            LOGGER.warn()
+                    .setMessage("Error loading alert template")
+                    .setThrowable(e)
+                    .addData("template", templateName)
+                    .log();
+            throw new RuntimeException("error processing template " + templateName, e);
+        } catch (final TemplateException e) {
+            LOGGER.warn()
+                    .setMessage("Error processing alert template")
+                    .addData("template", templateName)
+                    .setThrowable(e)
+                    .log();
+            throw new RuntimeException("error processing template " + templateName, e);
+        }
+    }
+
+    private void addBodyPart(
+            final MimeMultipart multipart, final String contentType, final String text)
+            throws MessagingException {
+            final MimeBodyPart part = new MimeBodyPart();
+            part.setContent(text, contentType);
+            multipart.addBodyPart(part);
     }
 
     @Override
