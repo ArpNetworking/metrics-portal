@@ -36,7 +36,7 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
-import play.db.ebean.EbeanDynamicEvolutions;
+import play.db.ebean.orm.EbeanDynamicEvolutions;
 
 import java.util.ArrayList;
 import java.util.List;

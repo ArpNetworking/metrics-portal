@@ -55,7 +55,7 @@ public class AlertEtags {
      */
     public static void incrementEtag(final Organization organization) {
         AlertEtags etag = FINDER.query()
-                .setForUpdate(true)
+                .forUpdate()
                 .where()
                 .eq("organization", organization)
                 .findOne();

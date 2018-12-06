@@ -37,7 +37,7 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
-import play.db.ebean.EbeanDynamicEvolutions;
+import play.db.ebean.orm.EbeanDynamicEvolutions;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

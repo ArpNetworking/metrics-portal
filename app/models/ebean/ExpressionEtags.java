@@ -55,7 +55,7 @@ public class ExpressionEtags {
      */
     public static void incrementEtag(final Organization organization) {
         ExpressionEtags etag = FINDER.query()
-                .setForUpdate(true)
+                .forUpdate()
                 .where()
                 .eq("organization", organization)
                 .findOne();

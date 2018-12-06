@@ -36,7 +36,7 @@ import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultExpressionQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
-import play.db.ebean.EbeanDynamicEvolutions;
+import play.db.ebean.orm.EbeanDynamicEvolutions;
 
 import java.util.Optional;
 import java.util.UUID;
