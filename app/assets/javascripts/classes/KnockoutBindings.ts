@@ -139,15 +139,16 @@ module kobindings {
             let valueUnwrapped: any = ko.utils.unwrapObservable(value);
             let ranges = {
                    "Last hour" : [() => moment().subtract(1, 'hour'), () => moment()],
-                   "Last 2 hours" : [() => moment().subtract(2, 'hour'), () => moment()],
-                   "Last 3 hours" : [() => moment().subtract(3, 'hour'), () => moment()],
-                   "Last 6 hours" : [() => moment().subtract(6, 'hour'), () => moment()],
+                   "Last 12 hours" : [() => moment().subtract(12, 'hour'), () => moment()],
+                   "Last 24 hours" : [() => moment().subtract(24, 'hour'), () => moment()],
+                   "Last 2 days" : [() => moment().subtract(48, 'hour'), () => moment()],
                    "Today": [() => moment().startOf('day'), () => moment().endOf('day')]
                };
 
             let defaultOptions = {
-               ranges: _.mapObject(ranges, (o) => [o[0](), o[1]()]),
-               autoApply: true
+                ranges: _.mapObject(ranges, (o) => [o[0](), o[1]()]),
+                autoApply: true,
+                alwaysShowCalendars: false
             };
 
             let options = Object.assign({}, defaultOptions, valueUnwrapped.options || {});
@@ -159,6 +160,11 @@ module kobindings {
                     valueUnwrapped.target({from: range[0](), to: range[1]()});
                 }
             });
+            console.log(range);
+            // el.on('cancel.daterangepicker', function(ev, picker) {
+            //    do something, like clearing an input
+            //
+            // };
 
         }
     }
