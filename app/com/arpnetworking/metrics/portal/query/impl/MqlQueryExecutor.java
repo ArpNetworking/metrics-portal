@@ -26,6 +26,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import models.internal.TimeSeriesResult;
 import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 
@@ -56,7 +57,7 @@ public class MqlQueryExecutor implements QueryExecutor{
     }
 
     private MqlParser.StatementContext parseQuery(final String query) throws ExecutionException {
-        final MqlLexer lexer = new MqlLexer(new ANTLRInputStream(query));
+        final MqlLexer lexer = new MqlLexer(CharStreams.fromString(query));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
         final MqlParser parser = new MqlParser(tokens);
         final CollectingErrorListener errorListener = new CollectingErrorListener();
@@ -70,7 +71,7 @@ public class MqlQueryExecutor implements QueryExecutor{
             // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
         } catch (final RuntimeException ex) {
             // CHECKSTYLE.ON: IllegalCatch
-            tokens.reset(); // rewind input stream
+            tokens.seek(0); // rewind input stream
             parser.reset();
             parser.getInterpreter().setPredictionMode(PredictionMode.LL);
             statement = parser.statement();  // STAGE 2
