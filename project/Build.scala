@@ -274,7 +274,7 @@ object ApplicationBuild extends Build {
         "-Xlint:-processing"
       ),
 
-      devSettings := Seq(("config.resource", "dev.conf"), "play.server.http.port" -> "8080"),
+      devSettings := Seq("play.server.http.port" -> "8080"),
       javaOptions += "-Dconfig.file=conf/portal.application.conf",
       javaOptions in Test += "-Dlogger.resource=logback-test.xml",
 
