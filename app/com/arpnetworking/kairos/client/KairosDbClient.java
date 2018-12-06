@@ -76,7 +76,7 @@ public final class KairosDbClient {
     }
 
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final Class<T> responseType) {
-        return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)), _materializer)
+        return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)))
                 .thenCompose(httpResponse -> {
                     final HttpEncoding encoding = httpResponse.encoding();
                     final Coder flow;

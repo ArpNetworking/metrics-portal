@@ -35,6 +35,7 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
@@ -80,6 +81,9 @@ public class MainModule extends AbstractModule {
                 .in(Scopes.SINGLETON);
         bind(OrganizationProvider.class)
                 .toProvider(ConfigTypedProvider.provider("organizationProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(QueryExecutor.class)
+                .toProvider(ConfigTypedProvider.provider("query.executor.type"))
                 .in(Scopes.SINGLETON);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
