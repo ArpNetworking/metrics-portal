@@ -45,6 +45,7 @@ import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
@@ -103,6 +104,9 @@ public class MainModule extends AbstractModule {
         bind(Global.class).asEagerSingleton();
         bind(HealthProvider.class)
                 .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(QueryExecutor.class)
+                .toProvider(ConfigTypedProvider.provider("query.executor.type"))
                 .in(Scopes.SINGLETON);
 
         // Databases
