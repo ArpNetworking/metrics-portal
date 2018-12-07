@@ -17,49 +17,31 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Report;
 import com.arpnetworking.metrics.portal.reports.ReportSink;
+import com.google.inject.Inject;
+import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.email.EmailPopulatingBuilder;
+import org.simplejavamail.mailer.Mailer;
 
-import java.util.Properties;
-
-import javax.mail.BodyPart;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-
+import java.util.concurrent.CompletableFuture;
 
 public class EmailReportSink implements ReportSink {
     private String recipient;
-    private String subject;
+    private Mailer mailer;
 
-    public EmailReportSink(String recipient, String subject) {
+    public EmailReportSink(String recipient, Mailer mailer) {
         this.recipient = recipient;
-        this.subject = subject;
+        this.mailer = mailer;
     }
 
     @Override
-    public void send(Report r) throws MessagingException {
-        final MimeMessage mailMessage = new MimeMessage(Session.getDefaultInstance(System.getProperties()));
-        mailMessage.addRecipients(Message.RecipientType.TO, recipient);
-        mailMessage.setFrom("no-reply+amp-reporting@dropbox.com");
-        mailMessage.setSubject(subject);
-
-        final MimeMultipart multipart = new MimeMultipart();
-        if (r.getPdf() != null) {
-            BodyPart pdfPart = new MimeBodyPart();
-            pdfPart.setContent(r.getPdf(), "application/pdf");
-            multipart.addBodyPart(pdfPart);
-        }
-        if (r.getHtml() != null) {
-            BodyPart htmlPart = new MimeBodyPart();
-            htmlPart.setContent(r.getHtml(), "text/html");
-            multipart.addBodyPart(htmlPart);
-        }
-
-        mailMessage.setContent(multipart);
-
-        Transport.send(mailMessage);
+    public CompletableFuture<Void> send(Report r) {
+        EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
+                .from("no-reply+amp-reporting@dropbox.com")
+                .to(recipient)
+                .withSubject("[Report] "+r.getTitle());
+        if (r.getHtml() != null) builder = builder.withHTMLText(r.getHtml());
+        if (r.getPdf() != null) builder = builder.withAttachment("report", r.getPdf(), "application/pdf");
+        mailer.sendMail(builder.buildEmail());
+        return new CompletableFuture<>();
     }
 }

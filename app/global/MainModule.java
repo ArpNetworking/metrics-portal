@@ -37,7 +37,7 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
-import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
@@ -57,17 +57,19 @@ import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
+import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.mailer.MailerBuilder;
 import play.Environment;
 import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 
-import java.net.URI;
-import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.net.URI;
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Module that defines the main bindings.
@@ -92,7 +94,7 @@ public class MainModule extends AbstractModule {
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
                 .asEagerSingleton();
-        bind(ReportRepository.class)
+        bind(JobRepository.class)
                 .toProvider(ReportRepositoryProvider.class)
                 .asEagerSingleton();
         bind(AlertRepository.class)
@@ -132,6 +134,15 @@ public class MainModule extends AbstractModule {
                                 .build()
                 ))
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Mailer getEmailTransport() {
+        return MailerBuilder
+                .withSMTPServer("localhost", 25)
+                .buildMailer();
     }
 
     @Provides
@@ -283,7 +294,7 @@ public class MainModule extends AbstractModule {
         private final ApplicationLifecycle _lifecycle;
     }
 
-    private static final class ReportRepositoryProvider implements Provider<ReportRepository> {
+    private static final class ReportRepositoryProvider implements Provider<JobRepository> {
 
         @Inject
         ReportRepositoryProvider(
@@ -298,16 +309,16 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
-        public ReportRepository get() {
-            final ReportRepository reportRepository = _injector.getInstance(
-                    ConfigurationHelper.<ReportRepository>getType(_environment, _configuration, "reportRepository.type"));
-            reportRepository.open();
+        public JobRepository get() {
+            final JobRepository jobRepository = _injector.getInstance(
+                    ConfigurationHelper.<JobRepository>getType(_environment, _configuration, "jobRepository.type"));
+            jobRepository.open();
             _lifecycle.addStopHook(
                     () -> {
-                        reportRepository.close();
+                        jobRepository.close();
                         return CompletableFuture.completedFuture(null);
                     });
-            return reportRepository;
+            return jobRepository;
         }
 
         private final Injector _injector;

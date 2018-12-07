@@ -1,6 +1,7 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.Job;
+import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.metrics.portal.reports.ReportSpec;
 import com.google.inject.Inject;
 
@@ -9,17 +10,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class MapReportRepository implements ReportRepository {
+public class MapJobRepository implements JobRepository {
+
     @Inject
-    public MapReportRepository() {
+    public MapJobRepository() {
         this.nonce = 0L;
         this.specs = new HashMap<>();
     }
 
     private Long nonce;
-    private Map<String, ReportSpec> specs;
+    private Map<String, Job> specs;
     @Override
-    public @Nullable ReportSpec getSpec(String id) {
+    public @Nullable
+    Job get(String id) {
         return this.specs.get(id);
     }
 
@@ -29,7 +32,7 @@ public class MapReportRepository implements ReportRepository {
     }
 
     @Override
-    public String add(ReportSpec spec) {
+    public String add(Job spec) {
         String id = (this.nonce++).toString();
         this.specs.put(id, spec);
         return id;

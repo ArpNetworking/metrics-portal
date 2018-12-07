@@ -18,17 +18,23 @@ package controllers;
 import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.reports.*;
 import com.arpnetworking.metrics.portal.reports.impl.EmailReportSink;
-import com.arpnetworking.metrics.portal.reports.impl.GrafanaReportPanelScreenshotReportGenerator;
+import com.arpnetworking.metrics.portal.reports.impl.GrafanaScreenshotReportSpec;
 import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import org.simplejavamail.mailer.Mailer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import play.mvc.Controller;
 import play.mvc.Result;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 /**
@@ -39,7 +45,8 @@ import java.util.stream.Collectors;
 public class ReportController extends Controller {
 
     private ActorRef scheduler;
-    private ReportRepository repository;
+    private JobRepository repository;
+    private Mailer mailer;
 
     /**
      * Public constructor.
@@ -50,10 +57,12 @@ public class ReportController extends Controller {
     @Inject
     public ReportController(
             @Named("ReportScheduler") ActorRef scheduler,
-            ReportRepository repository,
-            final Config configuration) {
+            JobRepository repository,
+            final Config configuration,
+            Mailer mailer) {
         this.scheduler = scheduler;
         this.repository = repository;
+        this.mailer = mailer;
     }
 
     /**
@@ -74,30 +83,29 @@ public class ReportController extends Controller {
             String name,
             int periodMinutes,
             String recipient,
-            String subject,
+            String title,
             String reportUrl,
             double pdfHeightInches) {
         try {
             String id = repository.add(
-                    new ReportSpec(
-                            name,
-                            new GrafanaReportPanelScreenshotReportGenerator(
+                    new Job(
+                            new GrafanaScreenshotReportSpec(
                                     reportUrl,
+                                    title,
                                     true,
-                                    10000,
+                                    Duration.of(10, ChronoUnit.SECONDS),
                                     8.5,
                                     pdfHeightInches
                             ),
-                            new EmailReportSink(recipient, subject)
+                            new EmailReportSink(recipient, mailer),
+                            java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES)
                     )
             );
 
             scheduler.tell(
-                    new ReportScheduler.Schedule(new ReportScheduler.Job(
-                            id,
-                            Instant.now(),
-                            java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES))),
-                    null);
+                    new ReportScheduler.Schedule(new ReportScheduler.ScheduledJob(Instant.now(), id)),
+                    null
+            );
             return ok(id);
         } catch (Exception e) {
             return internalServerError("augh: "+e);
@@ -110,14 +118,22 @@ public class ReportController extends Controller {
      * @param id id of the report to run
      * @return Ok if the alert was created or updated successfully, a failure HTTP status code otherwise.
      */
-    public Result run(String id) {
-        ReportSpec spec = this.repository.getSpec(id);
-        if (spec == null) return notFound("no report has id="+id);
-        try {
-            spec.run();
-        } catch (Exception e) {
-            return internalServerError("failed to send, sorry");
+    public CompletionStage<Result> run(String id) {
+        Job j = this.repository.get(id);
+        if (j == null) {
+            return CompletableFuture.completedFuture(notFound());
         }
-        return ok("Did it!");
+
+        return j.getSpec().render()
+                .thenCompose(r -> j.getSink().send(r))
+                .handle((nothing, err) -> {
+                    if (err != null) {
+                        LOGGER.error("Failed running job id=%s: %s", id, err);
+                        return internalServerError();
+                    }
+                    return ok("ran job id="+id);
+                });
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
 }

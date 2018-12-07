@@ -15,20 +15,21 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import akka.persistence.SnapshotOffer;
+import com.arpnetworking.metrics.portal.reports.Job;
+import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.metrics.portal.reports.ReportSpec;
-import com.arpnetworking.play.ProxyClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,30 +37,8 @@ import scala.concurrent.duration.Duration;
 
 public class ReportScheduler extends AbstractPersistentActorWithTimers {
 
-    private static class ReportExecutor extends AbstractActor {
-        public static Props props(final ReportRepository repository, final String specId) {
-            return Props.create(ReportExecutor.class, () -> new ReportExecutor(repository, specId));
-        }
+    private static final int SNAPSHOT_INTERVAL = 1000;
 
-        public ReportExecutor(ReportRepository repository, String specId) {
-            ReportSpec spec = repository.getSpec(specId);
-            if (spec == null) {
-                LOGGER.warn("attempting to run job with id="+specId+", but does not exist in repository");
-                return;
-            }
-            try {
-                spec.run();
-            } catch (Exception e) {
-                LOGGER.error("error executing job id="+specId+": "+e);
-            }
-        }
-
-        @Override
-        public Receive createReceive() {
-            return receiveBuilder().build();
-        }
-        private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
-    }
 
     /**
      * Props factory.
@@ -67,23 +46,34 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
      * @param repository a
      * @return a new props to create this actor
      */
-    public static Props props(final ReportRepository repository) {
+    public static Props props(final JobRepository repository) {
         return Props.create(ReportScheduler.class, () -> new ReportScheduler(repository));
     }
 
-    public static class Job implements Serializable {
-        public String id;
-        public Instant nextRun;
-        public TemporalAmount period;
-        public Job(String id, Instant nextRun, TemporalAmount period) {
-            this.id = id;
-            this.nextRun = nextRun;
-            this.period = period;
+    public static class ScheduledJob {
+        private Instant whenRun;
+        private String jobId;
+
+        public ScheduledJob(Instant whenRun, String jobId) {
+            this.whenRun = whenRun;
+            this.jobId = jobId;
         }
-        public Job nextJob() {
-            return new Job(id, nextRun.plus(period), period);
+
+        public Instant getWhenRun() {
+            return whenRun;
         }
-        private static final long serialVersionUID = 1L;
+
+        public void setWhenRun(Instant whenRun) {
+            this.whenRun = whenRun;
+        }
+
+        public String getJobId() {
+            return jobId;
+        }
+
+        public void setJobId(String jobId) {
+            this.jobId = jobId;
+        }
     }
 
     private static class Tick implements Serializable {
@@ -97,18 +87,18 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
         public static final ExecuteNext INSTANCE = new ExecuteNext();
     }
     public static class Schedule implements Serializable {
-        public Job job;
-        public Schedule(Job job) {
+        public ScheduledJob job;
+        public Schedule(ScheduledJob job) {
             this.job = job;
         }
         private static final long serialVersionUID = 1L;
     }
 
-    private PriorityQueue<Job> plan = new PriorityQueue<>();
+    private PriorityQueue<ScheduledJob> plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
 
-    private ReportRepository repository;
+    private JobRepository repository;
     @Inject
-    public ReportScheduler(final ReportRepository repository) {
+    public ReportScheduler(final JobRepository repository) {
         this.repository = repository;
         timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(3, TimeUnit.SECONDS /* TODO: when done testing, MINUTES */));
     }
@@ -118,34 +108,66 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
         return receiveBuilder()
                 .match(ExecuteNext.class, e -> plan.remove())
                 .match(Schedule.class, e -> plan.add(e.job))
+                .match(SnapshotOffer.class, ss -> {
+                    plan.clear(); getContext().getSystem().scheduler();
+                    try {
+                        // This is basically just `plan = new PriorityQueue<>(ss.snapshot())`,
+                        //  but needs to be more convoluted to avoid delayed ClassCastExceptions.
+                        // There might be a more elegant way.
+                        for (Object j : (PriorityQueue) ss.snapshot()) {
+                            plan.add((ScheduledJob) j);
+                        }
+                    } catch (ClassCastException e) {
+                        LOGGER.error("expected snapshot of type PriorityQueue<Job>, but got type "+ss.snapshot().getClass());
+                    }
+                })
                 .build();
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(Tick.class, e -> {
-                    if (plan.size() > 0 && plan.peek().nextRun.isBefore(Instant.now())) {
+                .match(Tick.class, tick -> {
+                    if (plan.size() > 0 && plan.peek().getWhenRun().isBefore(Instant.now())) {
                         self().tell(ExecuteNext.INSTANCE, self());
                     }
+                    if (lastSequenceNr() > SNAPSHOT_INTERVAL) {
+                        saveSnapshot(new PriorityQueue<>(plan));
+                    }
                 })
-                .match(ExecuteNext.class, e -> {
-                    Job j;
+                .match(ExecuteNext.class, execute -> {
+                    final ScheduledJob sj;
                     try {
-                        j = plan.remove();
+                        sj = plan.peek();
                     } catch (NoSuchElementException err) {
                         LOGGER.warn("received ExecuteNext, but no jobs are planned");
                         return;
                     }
-                    plan.add(j.nextJob());
 
-                    context().actorOf(ReportExecutor.props(repository, j.id));
-                    self().tell(Tick.INSTANCE, self());
+                    final String id = sj.getJobId();
+
+                    final Job j = repository.get(id);
+                    if (j == null) {
+                        LOGGER.warn("found job id="+sj.getJobId()+", but no such job exists");
+                        return;
+                    }
+
+                    ScheduledJob next = new ScheduledJob(sj.whenRun.plus(j.getPeriod()), id);
+                    persistAll(new ArrayList<Object>(/*execute, next*/), persisted -> {
+                        if (persisted == execute)
+                        LOGGER.info("executing job id="+id);
+                        plan.add(next);
+                        context().actorOf(JobExecutor.props(j)); // Does this even need to be in a separate actor?
+                        self().tell(Tick.INSTANCE, self());
+                    });
+
                 })
-                .match(Schedule.class, e -> {
-                    LOGGER.info("scheduling new job id="+e.job.id);
-                    plan.add(e.job);
-                })
+                .match(Schedule.class, e ->
+                    persist(e, _e -> {
+                        LOGGER.info("scheduling new job id="+_e.job.getJobId());
+                        plan.add(_e.job);
+                    })
+                )
                 .build();
     }
 

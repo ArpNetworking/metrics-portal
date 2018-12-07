@@ -1,5 +1,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface ReportSink {
-    void send(Report r) throws Exception;
+    CompletableFuture<Void> send(Report r);
 }
