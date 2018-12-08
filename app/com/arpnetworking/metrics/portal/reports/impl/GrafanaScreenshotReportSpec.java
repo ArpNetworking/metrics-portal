@@ -23,17 +23,4 @@ public class GrafanaScreenshotReportSpec extends ChromeScreenshotReportSpec {
     public GrafanaScreenshotReportSpec(String url, String title, boolean ignoreCertificateErrors, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
         super(url, title, ignoreCertificateErrors, "reportrendered", timeout, pdfWidthInches, pdfHeightInches);
     }
-    @Override
-    boolean prepare(ChromeDevToolsService dts) {
-        return dts.getRuntime().evaluate(JS_CHECK_READY).getResult().getValue().equals(true);
-    }
-
-    private static final String JS_CHECK_READY = "(() => {\n" +
-        "    var e = document.getElementsByClassName('rendered-markdown-container')[0];\n" +
-        "    if (!e) return false;\n" +
-        "    var s = e.srcdoc;\n" +
-        "    document.open(); document.write(s); document.close();\n" +
-        "    return true;\n" +
-        "})()";
-
 }

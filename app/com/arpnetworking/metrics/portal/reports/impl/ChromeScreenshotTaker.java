@@ -1,16 +1,15 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Report;
-import com.arpnetworking.metrics.portal.reports.ReportRenderer;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
+import com.github.kklisura.cdt.protocol.commands.Page;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import play.libs.Json;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -22,28 +21,48 @@ public class ChromeScreenshotTaker {
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     public CompletionStage<Report> render(ChromeScreenshotReportSpec spec) {
+        return render(spec, createDevToolsService(spec.isIgnoreCertificateErrors()));
+    }
+
+    private static final String TRIGGER_MESSAGE = "com.arpnetworking.metrics.portal.reports.impl.ChromeScreenshotTaker says, take the screenshot now please";
+    protected CompletionStage<Report> render(ChromeScreenshotReportSpec spec, ChromeDevToolsService dts) {
         if (!isStarted.getAndSet(true)) {
-            String domain;
-            try {
-                domain = new URI(spec.getUrl()).getAuthority();
-            } catch (URISyntaxException e) {
-                LOGGER.error("spec has malformed uri %s", spec.getUrl());
-                result.completeExceptionally(e);
-                return result;
-            }
-            ChromeDevToolsService dts = createDevToolsService(spec.isIgnoreCertificateErrors());
-            dts.addEventListener(
-                    domain,
-                    spec.getTriggeringEventName(),
-                    e -> {
-                        try {
-                            result.complete(reportFromPage(dts, spec.getTitle(), spec.getPdfWidthInches(), spec.getPdfHeightInches()));
-                        } catch (Throwable err) {
-                            result.completeExceptionally(err);
-                        }
-                    },
-                    Object.class // TODO(spencerpearson): what even is this
-            );
+            dts.getConsole().enable();
+            dts.getConsole().onMessageAdded(e -> {
+                if (e.getMessage().getText().equals(TRIGGER_MESSAGE)) {
+                    LOGGER.info()
+                            .setMessage("taking screenshot")
+                            .addData("url", spec.getUrl())
+                            .log();
+                    try {
+                        System.out.println("about to take screenshot");
+                        Report r = reportFromPage(dts, spec.getTitle(), spec.getPdfWidthInches(), spec.getPdfHeightInches());
+                        System.out.println("did it");
+                        result.complete(r);
+                        LOGGER.debug()
+                                .setMessage("took screenshot successfully")
+                                .addData("url", spec.getUrl())
+                                .addData("html_length", (r.getHtml()==null) ? "<null>" : r.getHtml().length())
+                                .log();
+                    } catch (Throwable err) {
+                        System.out.println("failed: "+err);
+                        result.completeExceptionally(err);
+                        LOGGER.info()
+                                .setMessage("failed to take screenshot")
+                                .addData("url", spec.getUrl())
+                                .setThrowable(err)
+                                .log();
+                    }
+                }
+            });
+
+            final Page page = dts.getPage();
+            page.onLoadEventFired(_e -> {
+                System.out.println("load fired");
+                dts.getRuntime().evaluate("window.addEventListener("+Json.toJson(spec.getTriggeringEventName())+", console.log("+Json.toJson(TRIGGER_MESSAGE)+"))");
+            });
+            page.enable();
+            page.navigate(spec.getUrl());
         }
         return result;
     }
@@ -83,5 +102,5 @@ public class ChromeScreenshotTaker {
         return new Report(title, html, pdf);
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChromeScreenshotTaker.class);
 }

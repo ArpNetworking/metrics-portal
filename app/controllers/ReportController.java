@@ -20,11 +20,11 @@ import com.arpnetworking.metrics.portal.reports.*;
 import com.arpnetworking.metrics.portal.reports.impl.EmailReportSink;
 import com.arpnetworking.metrics.portal.reports.impl.GrafanaScreenshotReportSpec;
 import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.simplejavamail.mailer.Mailer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -128,7 +128,11 @@ public class ReportController extends Controller {
                 .thenCompose(r -> j.getSink().send(r))
                 .handle((nothing, err) -> {
                     if (err != null) {
-                        LOGGER.error("Failed running job id=%s: %s", id, err);
+                        LOGGER.error()
+                                .setMessage("Failed running job")
+                                .addData("id", id)
+                                .setThrowable(err)
+                                .log();
                         return internalServerError();
                     }
                     return ok("ran job id="+id);

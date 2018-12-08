@@ -17,6 +17,13 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
+import akka.persistence.SnapshotOffer;
+import com.arpnetworking.metrics.portal.reports.Job;
+import com.arpnetworking.metrics.portal.reports.JobRepository;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.google.inject.Inject;
+import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -25,15 +32,6 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
-
-import akka.persistence.SnapshotOffer;
-import com.arpnetworking.metrics.portal.reports.Job;
-import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.ReportSpec;
-import com.google.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import scala.concurrent.duration.Duration;
 
 public class ReportScheduler extends AbstractPersistentActorWithTimers {
 
@@ -118,7 +116,11 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
                             plan.add((ScheduledJob) j);
                         }
                     } catch (ClassCastException e) {
-                        LOGGER.error("expected snapshot of type PriorityQueue<Job>, but got type "+ss.snapshot().getClass());
+                        LOGGER.error()
+                                .setMessage("got non-PriorityQueue<Job> snapshot")
+                                .setThrowable(e)
+                                .addData("actual_type", ss.snapshot().getClass().getCanonicalName())
+                                .log();
                     }
                 })
                 .build();
@@ -140,7 +142,10 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
                     try {
                         sj = plan.peek();
                     } catch (NoSuchElementException err) {
-                        LOGGER.warn("received ExecuteNext, but no jobs are planned");
+                        LOGGER.warn()
+                                .setMessage("received ExecuteNext, but no jobs are planned")
+                                .setThrowable(err)
+                                .log();
                         return;
                     }
 
@@ -148,14 +153,17 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
 
                     final Job j = repository.get(id);
                     if (j == null) {
-                        LOGGER.warn("found job id="+sj.getJobId()+", but no such job exists");
+                        LOGGER.warn()
+                                .setMessage("found scheduled job with nonexistent id")
+                                .addData("id", sj.getJobId())
+                                .log();
                         return;
                     }
 
                     ScheduledJob next = new ScheduledJob(sj.whenRun.plus(j.getPeriod()), id);
                     persistAll(new ArrayList<Object>(/*execute, next*/), persisted -> {
                         if (persisted == execute)
-                        LOGGER.info("executing job id="+id);
+                        LOGGER.info().setMessage("executing job").addData("id", id).log();
                         plan.add(next);
                         context().actorOf(JobExecutor.props(j)); // Does this even need to be in a separate actor?
                         self().tell(Tick.INSTANCE, self());
@@ -164,7 +172,7 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
                 })
                 .match(Schedule.class, e ->
                     persist(e, _e -> {
-                        LOGGER.info("scheduling new job id="+_e.job.getJobId());
+                        LOGGER.info().setMessage("scheduling new job").addData("id", _e.job.getJobId());
                         plan.add(_e.job);
                     })
                 )
@@ -175,6 +183,7 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
     public String persistenceId() {
         return "com.arpnetworking.metrics.portal.reports.impl.ReportScheduler";
     }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
 
 }

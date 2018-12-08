@@ -35,13 +35,16 @@ public class EmailReportSink implements ReportSink {
 
     @Override
     public CompletableFuture<Void> send(Report r) {
-        EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
-                .from("no-reply+amp-reporting@dropbox.com")
-                .to(recipient)
-                .withSubject("[Report] "+r.getTitle());
-        if (r.getHtml() != null) builder = builder.withHTMLText(r.getHtml());
-        if (r.getPdf() != null) builder = builder.withAttachment("report", r.getPdf(), "application/pdf");
-        mailer.sendMail(builder.buildEmail());
-        return new CompletableFuture<>();
+        return CompletableFuture.supplyAsync(() -> {
+            EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
+                    .from("no-reply+amp-reporting@dropbox.com")
+                    .to(recipient)
+                    .withSubject("[Report] " + r.getTitle());
+            if (r.getHtml() != null) builder = builder.withHTMLText(r.getHtml());
+            if (r.getPdf() != null)
+                builder = builder.withAttachment("report", r.getPdf(), "application/pdf");
+            mailer.sendMail(builder.buildEmail());
+            return null;
+        });
     }
 }

@@ -16,17 +16,13 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Report;
-import com.arpnetworking.metrics.portal.reports.ReportRenderer;
 import com.arpnetworking.metrics.portal.reports.ReportSpec;
-import com.github.kklisura.cdt.services.ChromeDevToolsService;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 
-public abstract class ChromeScreenshotReportSpec implements ReportSpec {
-
-    abstract boolean prepare(ChromeDevToolsService devToolsService);
+public class ChromeScreenshotReportSpec implements ReportSpec {
 
     public ChromeScreenshotReportSpec(String url, String title, boolean ignoreCertificateErrors, String triggeringEventName, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
         this.url = url;
