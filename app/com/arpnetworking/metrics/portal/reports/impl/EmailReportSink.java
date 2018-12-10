@@ -46,12 +46,10 @@ public class EmailReportSink implements ReportSink {
             if (r.getPdf() != null)
                 builder = builder.withAttachment("report", r.getPdf(), "application/pdf");
             LOGGER.info().setMessage("sending email").addData("recipient", recipient).log();
-            System.out.println("sending email");
             mailer.sendMail(builder.buildEmail());
             return null;
         }).handle((nothing, err) -> {
             if (err != null) {
-                System.out.println("error: "+err);
                 LOGGER.error().setMessage("failed to send email").setThrowable(err).log();
             }
             return null;

@@ -35,9 +35,7 @@ public class ChromeScreenshotTaker {
                             .addData("url", spec.getUrl())
                             .log();
                     try {
-                        System.out.println("about to take screenshot");
                         Report r = reportFromPage(dts, spec.getTitle(), spec.getPdfWidthInches(), spec.getPdfHeightInches());
-                        System.out.println("did it");
                         result.complete(r);
                         LOGGER.debug()
                                 .setMessage("took screenshot successfully")
@@ -45,7 +43,6 @@ public class ChromeScreenshotTaker {
                                 .addData("html_length", (r.getHtml()==null) ? "<null>" : r.getHtml().length())
                                 .log();
                     } catch (Throwable err) {
-                        System.out.println("failed: "+err);
                         result.completeExceptionally(err);
                         LOGGER.info()
                                 .setMessage("failed to take screenshot")
@@ -59,18 +56,9 @@ public class ChromeScreenshotTaker {
             });
 
             final Page page = dts.getPage();
-            Function<String, Void> runJs = js -> {
-                System.out.println("running: "+js);
-                dts.getRuntime().evaluate(js);
-                return null;
-            };
             page.onLoadEventFired(_e -> {
-                System.out.println("load fired");
-                runJs.apply("(() => {"+spec.getJsRunOnLoad()+"})()");
-                runJs.apply("window.addEventListener('click', () => console.log('click!'))");
-                runJs.apply("window.addEventListener('reportrendered', () => console.log('reportrendered event received from devtools js'))");
-                runJs.apply("window.addEventListener('pagereplacedwithreport', () => console.log('pagereplacedwithreport event received from devtools js'))");
-                runJs.apply("window.addEventListener("+Json.toJson(spec.getTriggeringEventName())+", () => console.log("+Json.toJson(TRIGGER_MESSAGE)+"))");
+                dts.getRuntime().evaluate("(() => {"+spec.getJsRunOnLoad()+"})()");
+                dts.getRuntime().evaluate("window.addEventListener("+Json.toJson(spec.getTriggeringEventName())+", () => console.log("+Json.toJson(TRIGGER_MESSAGE)+"))");
             });
             page.enable();
             page.navigate(spec.getUrl());

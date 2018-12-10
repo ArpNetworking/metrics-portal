@@ -142,7 +142,6 @@ public class MainModule extends AbstractModule {
     private Mailer getEmailTransport() {
         String host = System.getProperty("mail.smtp.host", "localhost");
         Integer port = Integer.parseInt(System.getProperty("mail.smtp.port", "25"));
-        System.out.println("host = "+host+" -- port = "+port);
         return MailerBuilder
                 .withSMTPServer(host, port)
                 .buildMailer();
