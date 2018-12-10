@@ -85,6 +85,7 @@ object ApplicationBuild extends Build {
       "com.google.inject" % "guice" % "4.0",
       "com.h2database" % "h2" % "1.4.192",
       "org.simplejavamail" % "simple-java-mail" % "5.0.0",
+      "net.markenwerk" % "utils-mail-dkim" % "1.1.11",
       "com.typesafe.akka" %% "akka-actor" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
       "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
