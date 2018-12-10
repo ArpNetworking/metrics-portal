@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
-public class ReportScheduler extends AbstractPersistentActorWithTimers {
+public class JobScheduler extends AbstractPersistentActorWithTimers {
 
     private static final int SNAPSHOT_INTERVAL = 1000;
 
@@ -45,7 +45,7 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
      * @return a new props to create this actor
      */
     public static Props props(final JobRepository repository) {
-        return Props.create(ReportScheduler.class, () -> new ReportScheduler(repository));
+        return Props.create(JobScheduler.class, () -> new JobScheduler(repository));
     }
 
     public static class ScheduledJob {
@@ -96,7 +96,7 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
 
     private JobRepository repository;
     @Inject
-    public ReportScheduler(final JobRepository repository) {
+    public JobScheduler(final JobRepository repository) {
         this.repository = repository;
         timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(3, TimeUnit.SECONDS /* TODO: when done testing, MINUTES */));
     }
@@ -181,9 +181,9 @@ public class ReportScheduler extends AbstractPersistentActorWithTimers {
 
     @Override
     public String persistenceId() {
-        return "com.arpnetworking.metrics.portal.reports.impl.ReportScheduler";
+        return "com.arpnetworking.metrics.portal.reports.impl.JobScheduler";
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReportScheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
 
 }

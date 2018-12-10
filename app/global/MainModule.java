@@ -38,7 +38,7 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
+import com.arpnetworking.metrics.portal.reports.impl.JobScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
@@ -108,8 +108,8 @@ public class MainModule extends AbstractModule {
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
-                .annotatedWith(Names.named("ReportScheduler"))
-                .toProvider(ReportSchedulerProvider.class)
+                .annotatedWith(Names.named("JobScheduler"))
+                .toProvider(JobSchedulerProvider.class)
                 .asEagerSingleton();
     }
 
@@ -359,9 +359,9 @@ public class MainModule extends AbstractModule {
         private static final String INDEXER_ROLE = "host_indexer";
     }
 
-    private static final class ReportSchedulerProvider implements Provider<ActorRef> {
+    private static final class JobSchedulerProvider implements Provider<ActorRef> {
         @Inject
-        ReportSchedulerProvider(
+        JobSchedulerProvider(
                 final ActorSystem system,
                 final Injector injector) {
             _system = system;
@@ -373,7 +373,7 @@ public class MainModule extends AbstractModule {
             // Start a singleton instance of the scheduler on a "report_scheduler" node in the cluster.
             if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) { // TODO(spencerpearson): file an issue for the wrong implementation of this that's already committed
                 _system.actorOf(ClusterSingletonManager.props(
-                        GuiceActorCreator.props(_injector, ReportScheduler.class),
+                        GuiceActorCreator.props(_injector, JobScheduler.class),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)),
                         "report-execution-scheduler");

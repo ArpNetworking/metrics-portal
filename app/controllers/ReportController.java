@@ -19,7 +19,7 @@ import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.reports.*;
 import com.arpnetworking.metrics.portal.reports.impl.EmailReportSink;
 import com.arpnetworking.metrics.portal.reports.impl.GrafanaScreenshotReportSpec;
-import com.arpnetworking.metrics.portal.reports.impl.ReportScheduler;
+import com.arpnetworking.metrics.portal.reports.impl.JobScheduler;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
@@ -51,12 +51,12 @@ public class ReportController extends Controller {
     /**
      * Public constructor.
      *
-     * @param scheduler The reports.ReportScheduler
+     * @param scheduler The reports.JobScheduler
      * @param configuration Instance of Play's {@link Config}.
      */
     @Inject
     public ReportController(
-            @Named("ReportScheduler") ActorRef scheduler,
+            @Named("JobScheduler") ActorRef scheduler,
             JobRepository repository,
             final Config configuration,
             Mailer mailer) {
@@ -103,7 +103,7 @@ public class ReportController extends Controller {
             );
 
             scheduler.tell(
-                    new ReportScheduler.Schedule(new ReportScheduler.ScheduledJob(Instant.now(), id)),
+                    new JobScheduler.Schedule(new JobScheduler.ScheduledJob(Instant.now(), id)),
                     null
             );
             return ok(id);
