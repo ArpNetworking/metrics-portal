@@ -52,6 +52,8 @@ public class ChromeScreenshotTaker {
                                 .addData("url", spec.getUrl())
                                 .setThrowable(err)
                                 .log();
+                    } finally {
+                        dts.close();
                     }
                 }
             });
