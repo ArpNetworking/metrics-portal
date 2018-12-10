@@ -59,9 +59,18 @@ public class ChromeScreenshotTaker {
             });
 
             final Page page = dts.getPage();
+            Function<String, Void> runJs = js -> {
+                System.out.println("running: "+js);
+                dts.getRuntime().evaluate(js);
+                return null;
+            };
             page.onLoadEventFired(_e -> {
                 System.out.println("load fired");
-                dts.getRuntime().evaluate("window.addEventListener("+Json.toJson(spec.getTriggeringEventName())+", console.log("+Json.toJson(TRIGGER_MESSAGE)+"))");
+                runJs.apply("(() => {"+spec.getJsRunOnLoad()+"})()");
+                runJs.apply("window.addEventListener('click', () => console.log('click!'))");
+                runJs.apply("window.addEventListener('reportrendered', () => console.log('reportrendered event received from devtools js'))");
+                runJs.apply("window.addEventListener('pagereplacedwithreport', () => console.log('pagereplacedwithreport event received from devtools js'))");
+                runJs.apply("window.addEventListener("+Json.toJson(spec.getTriggeringEventName())+", () => console.log("+Json.toJson(TRIGGER_MESSAGE)+"))");
             });
             page.enable();
             page.navigate(spec.getUrl());

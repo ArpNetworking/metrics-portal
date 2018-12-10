@@ -15,12 +15,24 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import com.github.kklisura.cdt.services.ChromeDevToolsService;
-
 import java.time.Duration;
 
 public class GrafanaScreenshotReportSpec extends ChromeScreenshotReportSpec {
     public GrafanaScreenshotReportSpec(String url, String title, boolean ignoreCertificateErrors, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
-        super(url, title, ignoreCertificateErrors, "reportrendered", timeout, pdfWidthInches, pdfHeightInches);
+        super(
+                url,
+                title,
+                ignoreCertificateErrors,
+                "console.log('starting jsRunOnLoad');\n" +
+                        "window.addEventListener('reportrendered', () => {\n" +
+                        "  console.log('in jsRunOnLoad callback'); var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n" +
+                        "  document.open(); document.write(body); document.close();\n" +
+                        "  setTimeout(() => window.dispatchEvent(new Event('pagereplacedwithreport')), 100);\n" +
+                        "});\n" +
+                        "console.log('finishing jsRunOnLoad');",
+                "pagereplacedwithreport",
+                timeout,
+                pdfWidthInches,
+                pdfHeightInches);
     }
 }
