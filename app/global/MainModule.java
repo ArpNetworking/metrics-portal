@@ -140,8 +140,11 @@ public class MainModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Mailer getEmailTransport() {
+        String host = System.getProperty("mail.smtp.host", "localhost");
+        Integer port = Integer.parseInt(System.getProperty("mail.smtp.port", "25"));
+        System.out.println("host = "+host+" -- port = "+port);
         return MailerBuilder
-                .withSMTPServer("localhost", 25)
+                .withSMTPServer(host, port)
                 .buildMailer();
     }
 
