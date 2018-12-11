@@ -27,9 +27,9 @@ import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -79,16 +79,26 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         private Tick() {}
         public static final Tick INSTANCE = new Tick();
     }
-    private static class ExecuteNext implements Serializable {
-        private static final long serialVersionUID = 1L;
-        private ExecuteNext() {}
-        public static final ExecuteNext INSTANCE = new ExecuteNext();
-    }
-    public static class Schedule implements Serializable {
+
+    private interface Command {}
+    public static class ScheduleCmd implements Command {
         public ScheduledJob job;
-        public Schedule(ScheduledJob job) {
+        public ScheduleCmd(ScheduledJob job) {
             this.job = job;
         }
+    }
+
+    private interface Event {}
+    private static class AddJobEvt implements Event, Serializable {
+        public ScheduledJob job;
+        public AddJobEvt(ScheduledJob job) {
+            this.job = job;
+        }
+        private static final long serialVersionUID = 1L;
+    }
+    private static class RemoveJobEvt implements Event, Serializable {
+        private RemoveJobEvt() {}
+        public static final RemoveJobEvt INSTANCE = new RemoveJobEvt();
         private static final long serialVersionUID = 1L;
     }
 
@@ -104,10 +114,9 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
     @Override
     public Receive createReceiveRecover() {
         return receiveBuilder()
-                .match(ExecuteNext.class, e -> plan.remove())
-                .match(Schedule.class, e -> plan.add(e.job))
+                .match(Event.class, this::updateState)
                 .match(SnapshotOffer.class, ss -> {
-                    plan.clear(); getContext().getSystem().scheduler();
+                    plan.clear();
                     try {
                         // This is basically just `plan = new PriorityQueue<>(ss.snapshot())`,
                         //  but needs to be more convoluted to avoid delayed ClassCastExceptions.
@@ -117,7 +126,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                         }
                     } catch (ClassCastException e) {
                         LOGGER.error()
-                                .setMessage("got non-PriorityQueue<Job> snapshot")
+                                .setMessage("got non-PriorityQueue<ScheduledJob> snapshot")
                                 .setThrowable(e)
                                 .addData("actual_type", ss.snapshot().getClass().getCanonicalName())
                                 .log();
@@ -126,56 +135,53 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                 .build();
     }
 
+    protected void updateState(Event e) {
+        if (e instanceof AddJobEvt) {
+            plan.add(((AddJobEvt) e).job);
+        }
+        else if (e instanceof RemoveJobEvt) {
+            plan.remove();
+        }
+        else {
+            LOGGER.error()
+                    .setMessage("got Event of unrecognized type")
+                    .addData("type", e.getClass())
+                    .log();
+        }
+    }
+
+    protected void runNext() {
+        final ScheduledJob sj = plan.peek();
+        final String id = sj.getJobId();
+
+        final Job j = repository.get(id);
+        if (j == null) {
+            LOGGER.error()
+                    .setMessage("job in queue with nonexistent id")
+                    .addData("id", sj.getJobId())
+                    .log();
+            return;
+        }
+
+        List<Event> events = Arrays.asList(
+                RemoveJobEvt.INSTANCE,
+                new AddJobEvt(new ScheduledJob(sj.whenRun.plus(j.getPeriod()), id)));
+        persistAll(events, this::updateState);
+
+        j.getSpec().render().thenAccept(j.getSink()::send);
+    }
+
+    protected void tick() {
+        while (plan.size() > 0 && plan.peek().getWhenRun().isBefore(Instant.now())) {
+            this.runNext();
+        }
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(Tick.class, tick -> {
-                    if (plan.size() > 0 && plan.peek().getWhenRun().isBefore(Instant.now())) {
-                        self().tell(ExecuteNext.INSTANCE, self());
-                    }
-                    if (lastSequenceNr() > SNAPSHOT_INTERVAL) {
-                        saveSnapshot(new PriorityQueue<>(plan));
-                    }
-                })
-                .match(ExecuteNext.class, execute -> {
-                    final ScheduledJob sj;
-                    try {
-                        sj = plan.peek();
-                    } catch (NoSuchElementException err) {
-                        LOGGER.warn()
-                                .setMessage("received ExecuteNext, but no jobs are planned")
-                                .setThrowable(err)
-                                .log();
-                        return;
-                    }
-
-                    final String id = sj.getJobId();
-
-                    final Job j = repository.get(id);
-                    if (j == null) {
-                        LOGGER.warn()
-                                .setMessage("found scheduled job with nonexistent id")
-                                .addData("id", sj.getJobId())
-                                .log();
-                        return;
-                    }
-
-                    ScheduledJob next = new ScheduledJob(sj.whenRun.plus(j.getPeriod()), id);
-                    persistAll(new ArrayList<Object>(/*execute, next*/), persisted -> {
-                        if (persisted == execute)
-                        LOGGER.info().setMessage("executing job").addData("id", id).log();
-                        plan.add(next);
-                        context().actorOf(JobExecutor.props(j)); // Does this even need to be in a separate actor?
-                        self().tell(Tick.INSTANCE, self());
-                    });
-
-                })
-                .match(Schedule.class, e ->
-                    persist(e, _e -> {
-                        LOGGER.info().setMessage("scheduling new job").addData("id", _e.job.getJobId());
-                        plan.add(_e.job);
-                    })
-                )
+                .match(Tick.class, e -> tick())
+                .match(ScheduleCmd.class, e -> updateState(new AddJobEvt(e.job)))
                 .build();
     }
 

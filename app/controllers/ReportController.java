@@ -103,7 +103,7 @@ public class ReportController extends Controller {
             );
 
             scheduler.tell(
-                    new JobScheduler.Schedule(new JobScheduler.ScheduledJob(Instant.now(), id)),
+                    new JobScheduler.ScheduleCmd(new JobScheduler.ScheduledJob(Instant.now(), id)),
                     null
             );
             return ok(id);
