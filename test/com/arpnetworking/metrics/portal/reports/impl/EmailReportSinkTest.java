@@ -35,9 +35,9 @@ public class EmailReportSinkTest {
     @Test
     public void testSend() throws IOException {
         Mailer mailer = Mockito.mock(Mailer.class);
-        EmailReportSink sink = new EmailReportSink("recip@invalid", mailer);
+        EmailReportSink sink = new EmailReportSink("recip@invalid", "Today's P75 TTI", mailer);
 
-        sink.send(new Report("Today's P75 TTI", "my html", "my pdf".getBytes()));
+        sink.send(new Report("my html", "my pdf".getBytes()));
         ArgumentCaptor<Email> message = ArgumentCaptor.forClass(Email.class);
         Mockito.verify(mailer).sendMail(message.capture());
 

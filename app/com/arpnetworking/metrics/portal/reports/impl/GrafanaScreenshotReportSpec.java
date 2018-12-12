@@ -18,10 +18,9 @@ package com.arpnetworking.metrics.portal.reports.impl;
 import java.time.Duration;
 
 public class GrafanaScreenshotReportSpec extends ChromeScreenshotReportSpec {
-    public GrafanaScreenshotReportSpec(String url, String title, boolean ignoreCertificateErrors, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
+    public GrafanaScreenshotReportSpec(String url, boolean ignoreCertificateErrors, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
         super(
                 url,
-                title,
                 ignoreCertificateErrors,
                 "console.log('starting jsRunOnLoad');\n" +
                         "window.addEventListener('reportrendered', () => {\n" +

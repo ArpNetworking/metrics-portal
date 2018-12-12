@@ -24,9 +24,8 @@ import java.util.concurrent.CompletionStage;
 
 public class ChromeScreenshotReportSpec implements ReportSpec {
 
-    public ChromeScreenshotReportSpec(String url, String title, boolean ignoreCertificateErrors, String jsRunOnLoad, String triggeringEventName, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
+    public ChromeScreenshotReportSpec(String url, boolean ignoreCertificateErrors, String jsRunOnLoad, String triggeringEventName, Duration timeout, double pdfWidthInches, double pdfHeightInches) {
         this.url = url;
-        this.title = title;
         this.jsRunOnLoad = jsRunOnLoad;
         this.ignoreCertificateErrors = ignoreCertificateErrors;
         this.triggeringEventName = triggeringEventName;
@@ -37,10 +36,6 @@ public class ChromeScreenshotReportSpec implements ReportSpec {
 
     public String getUrl() {
         return url;
-    }
-
-    public String getTitle() {
-        return title;
     }
 
     public boolean isIgnoreCertificateErrors() {
@@ -73,7 +68,6 @@ public class ChromeScreenshotReportSpec implements ReportSpec {
     }
 
     private final String url;
-    private final String title;
     private final boolean ignoreCertificateErrors;
     private final String jsRunOnLoad;
     private final String triggeringEventName;

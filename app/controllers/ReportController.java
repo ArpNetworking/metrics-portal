@@ -84,7 +84,7 @@ public class ReportController extends Controller {
             String name,
             int periodMinutes,
             String recipient,
-            String title,
+            String subject,
             String reportUrl,
             double pdfHeightInches) {
         try {
@@ -92,13 +92,12 @@ public class ReportController extends Controller {
                     new Job(
                             new GrafanaScreenshotReportSpec(
                                     reportUrl,
-                                    title,
                                     true,
                                     Duration.of(10, ChronoUnit.SECONDS),
                                     8.5,
                                     pdfHeightInches
                             ),
-                            new EmailReportSink(recipient, mailer),
+                            new EmailReportSink(recipient, subject, mailer),
                             new PeriodicSchedule(Duration.of(periodMinutes, ChronoUnit.MINUTES))
                     )
             );

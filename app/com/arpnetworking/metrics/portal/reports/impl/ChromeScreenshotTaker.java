@@ -24,7 +24,7 @@ public class ChromeScreenshotTaker {
         return render(spec, createDevToolsService(spec.isIgnoreCertificateErrors()));
     }
 
-    private static final String TRIGGER_MESSAGE = "com.arpnetworking.metrics.portal.reports.impl.ChromeScreenshotTaker says, take the screenshot now please";
+    protected static final String TRIGGER_MESSAGE = "com.arpnetworking.metrics.portal.reports.impl.ChromeScreenshotTaker says, take the screenshot now please";
     protected CompletionStage<Report> render(ChromeScreenshotReportSpec spec, ChromeDevToolsService dts) {
         if (!isStarted.getAndSet(true)) {
             dts.getConsole().enable();
@@ -35,7 +35,7 @@ public class ChromeScreenshotTaker {
                             .addData("url", spec.getUrl())
                             .log();
                     try {
-                        Report r = reportFromPage(dts, spec.getTitle(), spec.getPdfWidthInches(), spec.getPdfHeightInches());
+                        Report r = reportFromPage(dts, spec.getPdfWidthInches(), spec.getPdfHeightInches());
                         result.complete(r);
                         LOGGER.debug()
                                 .setMessage("took screenshot successfully")
@@ -77,7 +77,7 @@ public class ChromeScreenshotTaker {
         return result;
     }
 
-    private Report reportFromPage(ChromeDevToolsService devToolsService, String title, Double pdfWidthInches, Double pdfHeightInches) {
+    private Report reportFromPage(ChromeDevToolsService devToolsService, Double pdfWidthInches, Double pdfHeightInches) {
         String html = (String)devToolsService.getRuntime().evaluate("document.documentElement.outerHTML").getResult().getValue();
 
         byte[] pdf = Base64.getDecoder().decode(devToolsService.getPage().printToPDF(
@@ -98,7 +98,7 @@ public class ChromeScreenshotTaker {
                     true
             ));
 
-        return new Report(title, html, pdf);
+        return new Report(html, pdf);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChromeScreenshotTaker.class);

@@ -28,10 +28,12 @@ import java.util.concurrent.CompletableFuture;
 
 public class EmailReportSink implements ReportSink {
     private final String recipient;
+    private final String subject;
     private final Mailer mailer;
 
-    public EmailReportSink(String recipient, Mailer mailer) {
+    public EmailReportSink(String recipient, String subject, Mailer mailer) {
         this.recipient = recipient;
+        this.subject = subject;
         this.mailer = mailer;
     }
 
@@ -41,7 +43,7 @@ public class EmailReportSink implements ReportSink {
             EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
                     .from("no-reply+amp-reporting@dropbox.com")
                     .to(recipient)
-                    .withSubject("[Report] " + r.getTitle());
+                    .withSubject("[Report] " + subject);
             if (r.getHtml() != null) builder = builder.withHTMLText(r.getHtml());
             if (r.getPdf() != null)
                 builder = builder.withAttachment("report", r.getPdf(), "application/pdf");

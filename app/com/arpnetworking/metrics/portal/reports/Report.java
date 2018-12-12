@@ -6,12 +6,7 @@ import java.util.Objects;
 
 public class Report {
 
-    public String getTitle() {
-        return title;
-    }
-
-    public Report(String title, @Nullable String html, @Nullable byte[] pdf) {
-        this.title = title;
+    public Report(@Nullable String html, @Nullable byte[] pdf) {
         this.html = html;
         this.pdf = pdf;
     }
@@ -27,8 +22,7 @@ public class Report {
     @Override
     public String toString() {
         return "Report{"
-                +"title='"+title+"'"
-                +", html.length="+(html == null ? "<null>" : html.length())
+                +"html.length="+(html == null ? "<null>" : html.length())
                 +", pdf.length="+(pdf == null ? "<null>" : pdf.length)
                 +"}";
     }
@@ -38,20 +32,18 @@ public class Report {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Report report = (Report) o;
-        return Objects.equals(title, report.title) &&
-                Objects.equals(html, report.html) &&
+        return Objects.equals(html, report.html) &&
                 Arrays.equals(pdf, report.pdf);
     }
 
     @Override
     public int hashCode() {
 
-        int result = Objects.hash(title, html);
+        int result = Objects.hash(html);
         result = 31 * result + Arrays.hashCode(pdf);
         return result;
     }
 
-    private final String title;
     private final @Nullable String html;
     private final @Nullable byte[] pdf;
 }
