@@ -24,6 +24,7 @@ import org.simplejavamail.email.EmailPopulatingBuilder;
 import org.simplejavamail.mailer.Mailer;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 public class EmailReportSink implements ReportSink {
     private final String recipient;
@@ -37,8 +38,8 @@ public class EmailReportSink implements ReportSink {
     }
 
     @Override
-    public CompletableFuture<Void> send(Report r) {
-        return CompletableFuture.supplyAsync(() -> {
+    public CompletionStage<Void> send(CompletionStage<Report> fr) {
+        return fr.thenAccept(r -> {
             EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
                     .from("no-reply+amp-reporting@dropbox.com")
                     .to(recipient)
@@ -48,7 +49,6 @@ public class EmailReportSink implements ReportSink {
                 builder = builder.withAttachment("report", r.getPdf(), "application/pdf");
             LOGGER.info().setMessage("sending email").addData("recipient", recipient).log();
             mailer.sendMail(builder.buildEmail());
-            return null;
         }).handle((nothing, err) -> {
             if (err != null) {
                 LOGGER.error().setMessage("failed to send email").setThrowable(err).log();

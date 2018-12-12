@@ -17,13 +17,18 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Report;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Tests class <code>EmailReportSink</code>.
@@ -32,13 +37,20 @@ import java.io.IOException;
  */
 public class EmailReportSinkTest {
 
+    @Captor
+    private ArgumentCaptor<Email> message;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
     @Test
     public void testSend() throws IOException {
         Mailer mailer = Mockito.mock(Mailer.class);
         EmailReportSink sink = new EmailReportSink("recip@invalid", "Today's P75 TTI", mailer);
 
-        sink.send(new Report("my html", "my pdf".getBytes()));
-        ArgumentCaptor<Email> message = ArgumentCaptor.forClass(Email.class);
+        sink.send(CompletableFuture.completedFuture(new Report("my html", "my pdf".getBytes())));
         Mockito.verify(mailer).sendMail(message.capture());
 
         Assert.assertEquals("[Report] Today's P75 TTI", message.getValue().getSubject());

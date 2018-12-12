@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ChromeScreenshotTaker {
 
     @Inject
-    private static ChromeDevToolsFactory devToolsFactory;
+    public static ChromeDevToolsFactory devToolsFactory;
 
     private final CompletableFuture<Report> result = new CompletableFuture<>();
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
