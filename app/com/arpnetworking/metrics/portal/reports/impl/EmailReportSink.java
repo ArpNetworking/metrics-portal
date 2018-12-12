@@ -19,7 +19,6 @@ import com.arpnetworking.metrics.portal.reports.Report;
 import com.arpnetworking.metrics.portal.reports.ReportSink;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.email.EmailPopulatingBuilder;
 import org.simplejavamail.mailer.Mailer;

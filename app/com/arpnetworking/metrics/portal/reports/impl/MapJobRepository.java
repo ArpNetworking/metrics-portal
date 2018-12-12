@@ -2,7 +2,6 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Job;
 import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.ReportSpec;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
