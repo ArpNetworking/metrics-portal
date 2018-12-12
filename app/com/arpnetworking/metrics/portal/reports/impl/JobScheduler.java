@@ -49,8 +49,8 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
     }
 
     public static class ScheduledJob {
-        private Instant whenRun;
-        private String jobId;
+        private final Instant whenRun;
+        private final String jobId;
 
         public ScheduledJob(Instant whenRun, String jobId) {
             this.whenRun = whenRun;
@@ -61,16 +61,8 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
             return whenRun;
         }
 
-        public void setWhenRun(Instant whenRun) {
-            this.whenRun = whenRun;
-        }
-
         public String getJobId() {
             return jobId;
-        }
-
-        public void setJobId(String jobId) {
-            this.jobId = jobId;
         }
     }
 
@@ -104,7 +96,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
 
     private PriorityQueue<ScheduledJob> plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
 
-    private JobRepository repository;
+    private final JobRepository repository;
     @Inject
     public JobScheduler(final JobRepository repository) {
         this.repository = repository;

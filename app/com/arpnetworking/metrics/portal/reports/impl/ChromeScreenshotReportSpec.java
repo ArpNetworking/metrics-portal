@@ -39,64 +39,32 @@ public class ChromeScreenshotReportSpec implements ReportSpec {
         return url;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public boolean isIgnoreCertificateErrors() {
         return ignoreCertificateErrors;
     }
 
-    public void setIgnoreCertificateErrors(boolean ignoreCertificateErrors) {
-        this.ignoreCertificateErrors = ignoreCertificateErrors;
-    }
-
     public String getJsRunOnLoad() {
         return jsRunOnLoad;
-    }
-
-    public void setJsRunOnLoad(String jsRunOnLoad) {
-        this.jsRunOnLoad = jsRunOnLoad;
     }
 
     public String getTriggeringEventName() {
         return triggeringEventName;
     }
 
-    public void setTriggeringEventName(String triggeringEventName) {
-        this.triggeringEventName = triggeringEventName;
-    }
-
     public Duration getTimeout() {
         return timeout;
-    }
-
-    public void setTimeout(Duration timeout) {
-        this.timeout = timeout;
     }
 
     public double getPdfWidthInches() {
         return pdfWidthInches;
     }
 
-    public void setPdfWidthInches(double pdfWidthInches) {
-        this.pdfWidthInches = pdfWidthInches;
-    }
-
     public double getPdfHeightInches() {
         return pdfHeightInches;
-    }
-
-    public void setPdfHeightInches(double pdfHeightInches) {
-        this.pdfHeightInches = pdfHeightInches;
     }
 
     @Override
@@ -104,12 +72,12 @@ public class ChromeScreenshotReportSpec implements ReportSpec {
         return new ChromeScreenshotTaker().render(this);
     }
 
-    private String url;
-    private String title;
-    private boolean ignoreCertificateErrors;
-    private String jsRunOnLoad;
-    private String triggeringEventName;
-    private Duration timeout;
-    private double pdfWidthInches;
-    private double pdfHeightInches;
+    private final String url;
+    private final String title;
+    private final boolean ignoreCertificateErrors;
+    private final String jsRunOnLoad;
+    private final String triggeringEventName;
+    private final Duration timeout;
+    private final double pdfWidthInches;
+    private final double pdfHeightInches;
 }

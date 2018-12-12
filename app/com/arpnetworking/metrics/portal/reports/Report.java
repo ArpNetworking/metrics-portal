@@ -10,12 +10,7 @@ public class Report {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public Report(String title, @Nullable String html, @Nullable byte[] pdf) {
-
         this.title = title;
         this.html = html;
         this.pdf = pdf;
@@ -25,16 +20,8 @@ public class Report {
         return html;
     }
 
-    public void setHtml(String html) {
-        this.html = html;
-    }
-
     public @Nullable byte[] getPdf() {
         return pdf;
-    }
-
-    public void setPdf(byte[] pdf) {
-        this.pdf = pdf;
     }
 
     @Override
@@ -64,7 +51,7 @@ public class Report {
         return result;
     }
 
-    private String title;
-    private @Nullable String html;
-    private @Nullable byte[] pdf;
+    private final String title;
+    private final @Nullable String html;
+    private final @Nullable byte[] pdf;
 }

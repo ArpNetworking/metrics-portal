@@ -27,8 +27,8 @@ import org.simplejavamail.mailer.Mailer;
 import java.util.concurrent.CompletableFuture;
 
 public class EmailReportSink implements ReportSink {
-    private String recipient;
-    private Mailer mailer;
+    private final String recipient;
+    private final Mailer mailer;
 
     public EmailReportSink(String recipient, Mailer mailer) {
         this.recipient = recipient;

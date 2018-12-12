@@ -8,18 +8,16 @@ import com.google.inject.Inject;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public class MapJobRepository implements JobRepository {
 
     @Inject
-    public MapJobRepository() {
-        this.nonce = 0L;
-        this.specs = new HashMap<>();
-    }
+    public MapJobRepository() {}
 
-    private Long nonce;
-    private Map<String, Job> specs;
+    private final AtomicLong nonce = new AtomicLong(0);
+    private final Map<String, Job> specs = new HashMap<>();
     @Override
     public @Nullable
     Job get(String id) {
@@ -33,7 +31,7 @@ public class MapJobRepository implements JobRepository {
 
     @Override
     public String add(Job spec) {
-        String id = (this.nonce++).toString();
+        String id = Long.toString(this.nonce.getAndIncrement());
         this.specs.put(id, spec);
         return id;
     }
