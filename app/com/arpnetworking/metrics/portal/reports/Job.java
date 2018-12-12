@@ -1,16 +1,14 @@
 package com.arpnetworking.metrics.portal.reports;
 
-import java.time.temporal.TemporalAmount;
-
 public class Job {
     private ReportSpec spec;
     private ReportSink sink;
-    private TemporalAmount period;
+    private Schedule schedule;
 
-    public Job(ReportSpec spec, ReportSink sink, TemporalAmount period) {
+    public Job(ReportSpec spec, ReportSink sink, Schedule schedule) {
         this.spec = spec;
         this.sink = sink;
-        this.period = period;
+        this.schedule = schedule;
     }
 
     public ReportSpec getSpec() {
@@ -29,12 +27,12 @@ public class Job {
         this.sink = sink;
     }
 
-    public TemporalAmount getPeriod() {
-        return period;
+    public Schedule getSchedule() {
+        return schedule;
     }
 
-    public void setPeriod(TemporalAmount period) {
-        this.period = period;
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
     }
 }
 

@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.reports.*;
 import com.arpnetworking.metrics.portal.reports.impl.EmailReportSink;
 import com.arpnetworking.metrics.portal.reports.impl.GrafanaScreenshotReportSpec;
 import com.arpnetworking.metrics.portal.reports.impl.JobScheduler;
+import com.arpnetworking.metrics.portal.reports.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
@@ -98,7 +99,7 @@ public class ReportController extends Controller {
                                     pdfHeightInches
                             ),
                             new EmailReportSink(recipient, mailer),
-                            java.time.Duration.of(periodMinutes, ChronoUnit.MINUTES)
+                            new PeriodicSchedule(Duration.of(periodMinutes, ChronoUnit.MINUTES))
                     )
             );
 

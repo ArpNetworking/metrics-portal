@@ -165,7 +165,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
 
         List<Event> events = Arrays.asList(
                 RemoveJobEvt.INSTANCE,
-                new AddJobEvt(new ScheduledJob(sj.whenRun.plus(j.getPeriod()), id)));
+                new AddJobEvt(new ScheduledJob(j.getSchedule().nextRun(sj.whenRun), id)));
         persistAll(events, this::updateState);
 
         j.getSpec().render().thenAccept(j.getSink()::send);
