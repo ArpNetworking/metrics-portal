@@ -79,15 +79,15 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
     }
 
-    private interface Event {}
-    private static class AddJobEvt implements Event, Serializable {
+    private interface Event extends Serializable {}
+    private static class AddJobEvt implements Event {
         public ScheduledJob job;
         public AddJobEvt(ScheduledJob job) {
             this.job = job;
         }
         private static final long serialVersionUID = 1L;
     }
-    private static class RemoveJobEvt implements Event, Serializable {
+    private static class RemoveJobEvt implements Event {
         public static final RemoveJobEvt INSTANCE = new RemoveJobEvt();
         private static final long serialVersionUID = 1L;
     }
