@@ -16,28 +16,31 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Report;
-import com.github.kklisura.cdt.protocol.support.types.EventHandler;
-import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Tests class <code>EmailReportSink</code>.
  *
- * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ * @author Spencer Pearson
  */
 public class ChromeScreenshotTakerTest {
 
     @Captor
-    ArgumentCaptor<EventHandler<Object>> handler;
+    ArgumentCaptor<Runnable> loadHandler;
+    @Captor
+    ArgumentCaptor<Consumer<String>> logHandler;
 
     @Before
     public void setUp() {
@@ -47,11 +50,13 @@ public class ChromeScreenshotTakerTest {
     @Test
     public void testCallbackRegistration() throws InterruptedException {
         ChromeDevToolsService dts = Mockito.mock(ChromeDevToolsService.class);
+        Mockito.doReturn("page html").when(dts).evaluate("document.body.outerHTML");
+        Mockito.doReturn("page pdf".getBytes()).when(dts).printToPdf(8.5, 11.0);
 
         ChromeScreenshotReportSpec spec = new ChromeScreenshotReportSpec(
                 "http://foo.bar.com:8080/baz?quuz",
-                "Report Title",
                 true,
+                "console.log('here is some js')",
                 "someevent",
                 Duration.of(1, ChronoUnit.MINUTES),
                 8.5,
@@ -61,13 +66,22 @@ public class ChromeScreenshotTakerTest {
         final AtomicReference<Report> r = new AtomicReference<>();
         CompletionStage<Void> cs = new ChromeScreenshotTaker().render(spec, dts).thenAccept(r::set);
 
-        Mockito.verify(dts).addEventListener("foo.bar.com:8080", "someevent", handler.capture(), Object.class);
+        Mockito.verify(dts, Mockito.never()).evaluate("(() => {console.log('here is some js')})()");
+        Mockito.verify(dts).onLoad(loadHandler.capture());
+        loadHandler.getValue().run();
+        Mockito.verify(dts).evaluate("(() => {console.log('here is some js')})()");
+        dts.evaluate("window.addEventListener(\"someevent\", () => console.log(\""+ChromeScreenshotTaker.TRIGGER_MESSAGE+"\"))");
 
-        cs.wait(100);
+        Mockito.verify(dts).onLog(logHandler.capture());
+
         Assert.assertNull(r.get());
-        handler.getValue().onEvent(new Object());
-        cs.wait(100);
+        logHandler.getValue().accept("meaningless message");
+        Assert.assertNull(r.get());
+
+        Mockito.verify(dts, Mockito.never()).close();
+        logHandler.getValue().accept(ChromeScreenshotTaker.TRIGGER_MESSAGE);
         Assert.assertNotNull(r.get());
+        Mockito.verify(dts).close();
     }
 
 }
