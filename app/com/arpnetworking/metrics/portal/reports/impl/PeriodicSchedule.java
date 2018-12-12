@@ -2,6 +2,7 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.Schedule;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 
@@ -14,7 +15,7 @@ public class PeriodicSchedule implements Schedule {
     }
 
     @Override
-    public Instant nextRun(Instant lastRun) {
+    public @Nullable Instant nextRun(Instant lastRun) {
         return lastRun.plus(period);
     }
 
