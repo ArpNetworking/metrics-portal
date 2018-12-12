@@ -68,7 +68,6 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
 
     private static class Tick implements Serializable {
         private static final long serialVersionUID = 1L;
-        private Tick() {}
         public static final Tick INSTANCE = new Tick();
     }
 
@@ -89,7 +88,6 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         private static final long serialVersionUID = 1L;
     }
     private static class RemoveJobEvt implements Event, Serializable {
-        private RemoveJobEvt() {}
         public static final RemoveJobEvt INSTANCE = new RemoveJobEvt();
         private static final long serialVersionUID = 1L;
     }
