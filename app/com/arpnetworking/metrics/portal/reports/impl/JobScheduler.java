@@ -78,6 +78,9 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
             this.job = job;
         }
     }
+    public static class GetPlanCmd implements Command {
+        public static final GetPlanCmd INSTANCE = new GetPlanCmd();
+    }
 
     private interface Event extends Serializable {}
     private static class AddJobEvt implements Event {
@@ -123,6 +126,21 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                     }
                 })
                 .build();
+    }
+
+    private Object handleCommand(Command c) {
+        if (c instanceof ScheduleCmd) {
+            updateState(new AddJobEvt(((ScheduleCmd) c).job));
+            return true;
+        } else if (c instanceof GetPlanCmd) {
+            return new PriorityQueue<>(plan);
+        } else {
+            LOGGER.error()
+                    .setMessage("got Command of unrecognized type")
+                    .addData("type", c.getClass())
+                    .log();
+            return null;
+        }
     }
 
     protected void updateState(Event e) {
@@ -174,7 +192,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, e -> tick())
-                .match(ScheduleCmd.class, e -> updateState(new AddJobEvt(e.job)))
+                .match(Command.class, c -> getSender().tell(this.handleCommand(c), getSelf()))
                 .build();
     }
 
