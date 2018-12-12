@@ -160,7 +160,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                 new AddJobEvt(new ScheduledJob(j.getSchedule().nextRun(sj.whenRun), id)));
         persistAll(events, this::updateState);
 
-        j.getSpec().render().thenAccept(j.getSink()::send);
+        getContext().actorOf(JobExecutor.props(j));
     }
 
     protected void tick() {
