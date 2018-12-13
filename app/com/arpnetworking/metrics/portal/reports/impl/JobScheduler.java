@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
 import akka.persistence.SnapshotOffer;
@@ -22,14 +23,15 @@ import com.arpnetworking.metrics.portal.reports.Job;
 import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
 import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +47,10 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
      * @return a new props to create this actor
      */
     public static Props props(final JobRepository repository) {
-        return Props.create(JobScheduler.class, () -> new JobScheduler(repository));
+        return props(repository, Clock.systemUTC());
+    }
+    protected static Props props(final JobRepository repository, final Clock clock) {
+        return Props.create(JobScheduler.class, () -> new JobScheduler(repository, clock));
     }
 
     public static class ScheduledJob {
@@ -66,7 +71,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
     }
 
-    private static class Tick implements Serializable {
+    protected static class Tick implements Serializable {
         private static final long serialVersionUID = 1L;
         public static final Tick INSTANCE = new Tick();
     }
@@ -95,12 +100,18 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         private static final long serialVersionUID = 1L;
     }
 
-    private PriorityQueue<ScheduledJob> plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
+    private static class State {
+        public PriorityQueue<ScheduledJob> plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
+    }
+
+    private State state = new State();
 
     private final JobRepository repository;
-    @Inject
-    public JobScheduler(final JobRepository repository) {
+    private final Clock clock;
+
+    private JobScheduler(final JobRepository repository, final Clock clock) {
         this.repository = repository;
+        this.clock = clock;
         timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(3, TimeUnit.SECONDS /* TODO: when done testing, MINUTES */));
     }
 
@@ -109,17 +120,11 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         return receiveBuilder()
                 .match(Event.class, this::updateState)
                 .match(SnapshotOffer.class, ss -> {
-                    plan.clear();
                     try {
-                        // This is basically just `plan = new PriorityQueue<>(ss.snapshot())`,
-                        //  but needs to be more convoluted to avoid delayed ClassCastExceptions.
-                        // There might be a more elegant way.
-                        for (Object j : (PriorityQueue) ss.snapshot()) {
-                            plan.add((ScheduledJob) j);
-                        }
+                        state = (State) ss.snapshot();
                     } catch (ClassCastException e) {
                         LOGGER.error()
-                                .setMessage("got non-PriorityQueue<ScheduledJob> snapshot")
+                                .setMessage("got non-JobScheduler.State snapshot")
                                 .setThrowable(e)
                                 .addData("actual_type", ss.snapshot().getClass().getCanonicalName())
                                 .log();
@@ -133,7 +138,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
             updateState(new AddJobEvt(((ScheduleCmd) c).job));
             return true;
         } else if (c instanceof GetPlanCmd) {
-            return new PriorityQueue<>(plan);
+            return new PriorityQueue<>(state.plan);
         } else {
             LOGGER.error()
                     .setMessage("got Command of unrecognized type")
@@ -143,12 +148,12 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
     }
 
-    protected void updateState(Event e) {
+    private void updateState(Event e) {
         if (e instanceof AddJobEvt) {
-            plan.add(((AddJobEvt) e).job);
+            state.plan.add(((AddJobEvt) e).job);
         }
         else if (e instanceof RemoveJobEvt) {
-            plan.remove();
+            state.plan.remove();
         }
         else {
             LOGGER.error()
@@ -158,8 +163,11 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
     }
 
-    protected void runNext() {
-        final ScheduledJob sj = plan.peek();
+    private void runNext(ActorRef notifiee) {
+        final ScheduledJob sj = state.plan.peek();
+        if (sj == null) {
+            throw new NoSuchElementException("can't run next job when none are scheduled");
+        }
         final String id = sj.getJobId();
 
         final Job j = repository.get(id);
@@ -168,6 +176,8 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                     .setMessage("job in queue with nonexistent id")
                     .addData("id", sj.getJobId())
                     .log();
+            // We need to remove the job from the plan, or else it'll block everything else.
+            persist(RemoveJobEvt.INSTANCE, this::updateState);
             return;
         }
 
@@ -179,19 +189,18 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
         persistAll(events, this::updateState);
 
-        getContext().actorOf(JobExecutor.props(j));
-    }
-
-    protected void tick() {
-        while (plan.size() > 0 && plan.peek().getWhenRun().isBefore(Instant.now())) {
-            this.runNext();
-        }
+        getContext().actorOf(JobExecutor.props(j, notifiee));
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(Tick.class, e -> tick())
+                .match(Tick.class, e -> {
+                    if (state.plan.size() > 0 && state.plan.peek().getWhenRun().isBefore(clock.instant())) {
+                        this.runNext(getSender());
+                        getSelf().tell(Tick.INSTANCE, getSelf());
+                    }
+                })
                 .match(Command.class, c -> getSender().tell(this.handleCommand(c), getSelf()))
                 .build();
     }

@@ -16,16 +16,38 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.arpnetworking.metrics.portal.reports.Job;
 
 public class JobExecutor extends AbstractActor {
-    public static Props props(final Job j) {
-        return Props.create(JobExecutor.class, () -> new JobExecutor(j));
+    public static Props props(final Job j, ActorRef notifiee) {
+        return Props.create(JobExecutor.class, () -> new JobExecutor(j, notifiee));
     }
 
-    public JobExecutor(Job j) {
-        j.getSpec().render().thenAccept(r -> j.getSink().send(r));
+    public static class Success {public static final Success INSTANCE = new Success();}
+    public static class Failure {
+        private final Throwable throwable;
+
+        public Failure(Throwable throwable) {
+            this.throwable = throwable;
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
+        }
+    }
+
+    public JobExecutor(Job j, ActorRef notifiee) {
+        j.getSpec().render()
+                .thenAccept(r -> j.getSink().send(r))
+                .handle((nil, err) -> {
+                    notifiee.tell(
+                            (err == null) ? Success.INSTANCE : new Failure(err),
+                            getSelf()
+                    );
+                    return null;
+        });
     }
 
     @Override
