@@ -28,10 +28,11 @@ import scala.concurrent.duration.Duration;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -60,6 +61,29 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         public ScheduledJob(Instant whenRun, String jobId) {
             this.whenRun = whenRun;
             this.jobId = jobId;
+        }
+
+        @Override
+        public String toString() {
+            return "ScheduledJob{" +
+                    "whenRun=" + whenRun +
+                    ", jobId='" + jobId + '\'' +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ScheduledJob that = (ScheduledJob) o;
+            return Objects.equals(whenRun, that.whenRun) &&
+                    Objects.equals(jobId, that.jobId);
+        }
+
+        @Override
+        public int hashCode() {
+
+            return Objects.hash(whenRun, jobId);
         }
 
         public Instant getWhenRun() {
@@ -182,7 +206,8 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
         }
 
 
-        List<Event> events = Arrays.asList(RemoveJobEvt.INSTANCE);
+        List<Event> events = new ArrayList<>();
+        events.add(RemoveJobEvt.INSTANCE);
         Instant nextRun = j.getSchedule().nextRun(sj.whenRun);
         if (nextRun != null) {
             events.add(new AddJobEvt(new ScheduledJob(j.getSchedule().nextRun(sj.whenRun), id)));

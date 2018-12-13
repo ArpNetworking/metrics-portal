@@ -33,6 +33,8 @@ import scala.concurrent.duration.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
@@ -42,9 +44,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class JobSchedulerTest {
 
     private static final Instant t0 = Instant.ofEpochMilli(0);
-    private JobRepository repo = new MapJobRepository();
-    private List<String> jobIds = new ArrayList<>();
+    private static final java.time.Duration tickSize = java.time.Duration.ofSeconds(1);
 
+    private JobRepository repo = new MapJobRepository();
     private ManualClock clock;
     private ActorSystem system;
 
@@ -52,14 +54,8 @@ public class JobSchedulerTest {
 
     @Before
     public void setUp() {
-        clock = new ManualClock(t0, java.time.Duration.ofSeconds(1), ZoneId.systemDefault());
-        for (int i=0; i<3; i++) {
-            jobIds.add(repo.add(new Job(
-                    DummyReportSpec.INSTANCE,
-                    DummyReportSink.INSTANCE,
-                    OneOffSchedule.INSTANCE)));
-        }
-
+        clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
+        repo = new MapJobRepository();
         system = ActorSystem.create(
                 "test-"+systemNameNonce.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
@@ -78,50 +74,70 @@ public class JobSchedulerTest {
         return result;
     }
 
-    private PriorityQueue<JobScheduler.ScheduledJob> getPlan(TestKit tk, ActorRef scheduler) {
+    private List<JobScheduler.ScheduledJob> getPlan(TestKit tk, ActorRef scheduler) {
         scheduler.tell(JobScheduler.GetPlanCmd.INSTANCE, tk.getRef());
-        return castPlan(tk.receiveOne(Duration.fromNanos(30e9)));
+        List<JobScheduler.ScheduledJob> result = new ArrayList<>(castPlan(tk.receiveOne(Duration.fromNanos(1e9))));
+        result.sort(Comparator.comparing(JobScheduler.ScheduledJob::getWhenRun));
+        return result;
     }
 
     @Test
     public void testBasics() {
+        String jobId = repo.add(new Job(DummyReportSpec.INSTANCE, DummyReportSink.INSTANCE, OneOffSchedule.INSTANCE));
+
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
 
-        Assert.assertEquals(0, getPlan(tk, scheduler).size());
+        Assert.assertTrue(getPlan(tk, scheduler).isEmpty());
 
-        scheduler.tell(new JobScheduler.ScheduleCmd(new JobScheduler.ScheduledJob(t0, jobIds.get(0))), tk.getRef());
+        JobScheduler.ScheduledJob job = new JobScheduler.ScheduledJob(t0, jobId);
+        scheduler.tell(new JobScheduler.ScheduleCmd(job), tk.getRef());
         tk.expectMsg(true);
 
-        Assert.assertEquals(1, getPlan(tk, scheduler).size());
+        Assert.assertEquals(Collections.singletonList(job), getPlan(tk, scheduler));
     }
 
     @Test
     public void testTick() {
+        /* In a situation like
+
+                   t=0                  t=1         |        t=2
+                                                   job
+
+           the first tick should do nothing; and the second tick should run+reschedule the job.
+         */
+
         final Report report = new Report("egrraeg", "hhloio".getBytes());
         final AtomicReference<Report> sentReport = new AtomicReference<>();
         String jobId = repo.add(new Job(
                 () -> CompletableFuture.completedFuture(report),
-                fr -> {fr.thenAccept(sentReport::set); return CompletableFuture.completedFuture(null);},
-                OneOffSchedule.INSTANCE));
+                fr -> fr.thenAccept(sentReport::set),
+                t -> t.plus(tickSize)));
+
+        Instant t1 = t0.plus(tickSize.multipliedBy(3).dividedBy(2));
+
+        JobScheduler.ScheduledJob job = new JobScheduler.ScheduledJob(t1, jobId);
 
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
-        scheduler.tell(new JobScheduler.ScheduleCmd(new JobScheduler.ScheduledJob(t0, jobId)), tk.getRef());
+        scheduler.tell(new JobScheduler.ScheduleCmd(job), tk.getRef());
         tk.expectMsg(true);
-
-        scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
-        PriorityQueue<JobScheduler.ScheduledJob> plan = getPlan(tk, scheduler);
-        Assert.assertEquals(1, plan.size());
-        Assert.assertEquals(jobId, plan.peek().getJobId());
+        Assert.assertEquals(Collections.singletonList(job), getPlan(tk, scheduler));
 
         clock.tick();
+        scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
+        tk.expectNoMsg();
+        Assert.assertEquals(Collections.singletonList(job), getPlan(tk, scheduler));
 
+        clock.tick();
         scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
         tk.expectMsg(JobExecutor.Success.INSTANCE);
         Assert.assertEquals(report, sentReport.get());
 
-        Assert.assertEquals(0, getPlan(tk, scheduler).size());
+        System.out.println(getPlan(tk, scheduler));
+        Assert.assertEquals(
+                Collections.singletonList(new JobScheduler.ScheduledJob(t1.plus(tickSize), jobId)),
+                getPlan(tk, scheduler));
     }
 
 }
