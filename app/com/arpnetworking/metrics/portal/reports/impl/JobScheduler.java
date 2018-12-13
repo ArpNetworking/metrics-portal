@@ -185,6 +185,9 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
                     .addData("type", e.getClass())
                     .log();
         }
+        if (lastSequenceNr() % SNAPSHOT_INTERVAL == 0) {
+            saveSnapshot(state);
+        }
     }
 
     private void runNext(ActorRef notifiee) {
