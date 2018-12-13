@@ -19,5 +19,8 @@ import javax.annotation.Nullable;
 import java.time.Instant;
 
 public interface Schedule {
+    // TODO(spencerpearson): should the input be [the last time it ran] or [the current time]?
+    //  Argument for [the current time]: we don't need to store the last time each job ran in case the scheduler dies and forgets its plan.
+    //  Argument for [the last time it ran]: PeriodicSchedule can't be implemented with just the current time.
     @Nullable Instant nextRun(Instant lastRun);
 }
