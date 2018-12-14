@@ -31,6 +31,19 @@ public class ChromeScreenshotTaker {
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     public CompletionStage<Report> render(ChromeScreenshotReportSpec spec) {
+        // Yes, the ChromeDevToolsService should be Guiced.
+        // But then _this_ class would have to be Guiced,
+        //   and then either ReportSpecs would always have to be Guiced
+        //     (unacceptable; they're practically structs)
+        //   or ReportSpec.render() would have to be split out into a separate ReportRenderer class
+        //   which would also have to be Guiced
+        //   and then the JobExecutor would have to be Guiced
+        //   and then the JobScheduler would have to be Guiced
+        //   --well, it already is. But this would still be a huge refactor.
+        // And it doesn't _actually_ buy us anything.
+        //   Testability? No, we can just test the two-argument render().
+        //   Flexability? I... don't really see how.
+        // Thank you for reading my essay.
         return render(spec, ChromeDevToolsFactory.create(spec.isIgnoreCertificateErrors()));
     }
 
