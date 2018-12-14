@@ -35,7 +35,7 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Host provider that uses the Consul API to get host data.
+ * Host provider that uses the Consul API to getJob host data.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */

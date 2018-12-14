@@ -51,7 +51,7 @@ class AlertsViewModel {
             this.deletingId = alert.id;
             console.log("set deletingId: ", this, this.deletingId);
 
-            $("#confirm-delete-modal").modal('show');
+            $("#confirm-deleteJob-modal").modal('show');
         };
     }
 
@@ -64,7 +64,7 @@ class AlertsViewModel {
             },
             contentType: "application/json"
         }).done(() => {
-            $("#confirm-delete-modal").modal('hide');
+            $("#confirm-deleteJob-modal").modal('hide');
             this.alerts.query();
             this.deletingId = null;
         });

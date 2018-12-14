@@ -35,7 +35,7 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Host provider that uses the Foreman API to get host data.
+ * Host provider that uses the Foreman API to getJob host data.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */

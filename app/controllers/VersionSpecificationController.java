@@ -285,7 +285,7 @@ public class VersionSpecificationController extends Controller {
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
             LOGGER.error()
-                    .setMessage("Failed to delete VersionSpecification")
+                    .setMessage("Failed to deleteJob VersionSpecification")
                     .addData("Uuid", uuid)
                     .setThrowable(e)
                     .log();

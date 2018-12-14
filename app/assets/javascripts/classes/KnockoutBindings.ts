@@ -10,7 +10,7 @@ import _ = require('underscore');
 module kobindings {
     ko.bindingHandlers['slider'] = {
         update: function(element, valueAccessor) {
-            // First get the latest data that we're bound to
+            // First getJob the latest data that we're bound to
             var value = valueAccessor();
             var valueUnwrapped: any = ko.utils.unwrapObservable(value);
             $(element).rangeSlider(valueUnwrapped);
@@ -59,10 +59,10 @@ module kobindings {
 
     ko.bindingHandlers['legendBlock'] = {
         update: function(element, valueAccessor) {
-            // First get the latest data that we're bound to
+            // First getJob the latest data that we're bound to
             var value = valueAccessor();
 
-            // Next, whether or not the supplied model property is observable, get its current value
+            // Next, whether or not the supplied model property is observable, getJob its current value
             var valueUnwrapped = ko.utils.unwrapObservable(value);
 
             var context = element.getContext('2d');

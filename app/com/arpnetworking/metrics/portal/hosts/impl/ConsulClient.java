@@ -39,7 +39,7 @@ import java.util.concurrent.CompletionStage;
 public final class ConsulClient {
 
     /**
-     * Calls the Consul API to get a list of hosts.
+     * Calls the Consul API to getJob a list of hosts.
      *
      * @return A Promise containing a {@code List} of {@link Host}
      */

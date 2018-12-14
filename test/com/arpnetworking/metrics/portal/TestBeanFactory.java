@@ -18,8 +18,7 @@ package com.arpnetworking.metrics.portal;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
-import models.ebean.Expression;
-import models.ebean.NagiosExtension;
+import models.ebean.*;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -31,6 +30,8 @@ import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,27 @@ import java.util.UUID;
  * @author Deepika Misra (deepika at groupon dot com)
  */
 public final class TestBeanFactory {
+
+    public static ReportingJob createEbeanReportingJob() {
+        ReportingSchedule schedule = new ReportingSchedule();
+        schedule.setSendAt(Timestamp.from(Instant.now()));
+        schedule.setValidAfter(Timestamp.from(Instant.now()));
+
+        ReportingJob job = new ReportingJob();
+        job.setUuid(UUID.randomUUID());
+        job.setSchedule(schedule);
+        job.setName(TEST_NAME);
+        return job;
+    }
+
+    public static ReportRecipientGroup createEbeanReportRecipientGroup() {
+        final UUID groupUuid = UUID.randomUUID();
+        ReportRecipientGroup group = new ReportRecipientGroup();
+        group.setUuid(groupUuid);
+        group.addRecipient(ReportRecipient.newEmailRecipient(TEST_EMAIL));
+        group.setName(TEST_GROUP);
+        return group;
+    }
 
     public static Organization organizationFrom(final models.ebean.Organization organization) {
         return new DefaultOrganization.Builder()
@@ -184,6 +206,8 @@ public final class TestBeanFactory {
         return host;
     }
 
+    private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
+    private static final String TEST_GROUP = "test-group";
     private static final String TEST_HOST = "test-host";
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";

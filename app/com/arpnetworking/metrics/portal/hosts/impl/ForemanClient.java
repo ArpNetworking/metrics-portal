@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  */
 public final class ForemanClient {
     /**
-     * Calls the Foreman API to get a page of hosts.
+     * Calls the Foreman API to getJob a page of hosts.
      *
      * @param page The page number to start at
      * @return A Promise containing a {@link HostPageResponse}
@@ -50,7 +50,7 @@ public final class ForemanClient {
     }
 
     /**
-     * Calls the Foreman API to get a page of hosts.
+     * Calls the Foreman API to getJob a page of hosts.
      *
      * @param page The page number to start at
      * @param perPage The number of hosts per page

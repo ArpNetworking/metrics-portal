@@ -18,7 +18,7 @@ package com.arpnetworking.database.h2.triggers;
 import models.ebean.ExpressionEtags;
 
 /**
- * Trigger to update Etag after every insert, delete or update statement.
+ * Trigger to update Etag after every insert, deleteJob or update statement.
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
