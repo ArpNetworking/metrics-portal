@@ -19,6 +19,12 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+/**
+ * Data Model for SQL storage of a chrome screenshot based report generation scheme.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @DiscriminatorValue("chromeScreenshot")
 public class ChromeScreenshotReportSource extends ReportSource {
@@ -44,52 +50,53 @@ public class ChromeScreenshotReportSource extends ReportSource {
         return url;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setUrl(final String value) {
+        url = value;
     }
 
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setTitle(final String value) {
+        title =  value;
     }
 
     public boolean isIgnoreCertificateErrors() {
         return ignoreCertificateErrors;
     }
 
-    public void setIgnoreCertificateErrors(boolean ignoreCertificateErrors) {
-        this.ignoreCertificateErrors = ignoreCertificateErrors;
+    public void setIgnoreCertificateErrors(final boolean value) {
+        ignoreCertificateErrors = value;
     }
 
     public String getTriggeringEventName() {
         return triggeringEventName;
     }
 
-    public void setTriggeringEventName(String triggeringEventName) {
-        this.triggeringEventName = triggeringEventName;
+    public void setTriggeringEventName(final String value) {
+        triggeringEventName = value;
     }
 
     public double getPdfWidthInches() {
         return pdfWidthInches;
     }
 
-    public void setPdfWidthInches(double pdfWidthInches) {
-        this.pdfWidthInches = pdfWidthInches;
+    public void setPdfWidthInches(final double value) {
+        pdfWidthInches = value;
     }
 
     public double getPdfHeightInches() {
         return pdfHeightInches;
     }
 
-    public void setPdfHeightInches(double pdfHeightInches) {
-        this.pdfHeightInches = pdfHeightInches;
+    public void setPdfHeightInches(final double value) {
+        pdfHeightInches = value;
     }
 
     @Override
     public void toInternal() {
-        // FIXME: Implement this
+        // TODO(cbriones): Implement this
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

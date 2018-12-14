@@ -52,9 +52,8 @@ CREATE TABLE portal.report_recipients (
 
 CREATE TABLE portal.report_schedules (
     id BIGSERIAL PRIMARY KEY,
-    valid_after TIMESTAMP NOT NULL DEFAULT now(),
     send_at TIMESTAMP NOT NULL,
-    is_recurring BIT DEFAULT 0,
+    recurrence_type VARCHAR(255) NOT NULL,
 );
 
 CREATE TABLE portal.reporting_jobs (

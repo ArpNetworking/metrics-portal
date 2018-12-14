@@ -108,7 +108,7 @@ public final class RandomHostProvider extends AbstractActor {
                         if (_hostRemove > 0) {
                             final String deletedHostName = "test-app" + _hostRemove + ".example..com";
                             LOGGER.debug()
-                                    .setMessage("Found host to deleteJob")
+                                    .setMessage("Found host to delete")
                                     .addData("actor", self())
                                     .addData("hostname", deletedHostName)
                                     .log();

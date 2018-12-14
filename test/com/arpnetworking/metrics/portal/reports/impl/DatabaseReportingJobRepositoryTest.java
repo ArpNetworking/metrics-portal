@@ -22,7 +22,9 @@ import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
 import models.ebean.ReportingJob;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
@@ -31,31 +33,27 @@ import play.test.WithApplication;
 
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import org.junit.Assert;
-
 import javax.persistence.PersistenceException;
 
-import static org.junit.Assert.assertThat;
-
-public class DatabaseReportRepositoryTest extends WithApplication {
+/**
+ * Put a real doc here before committing.
+ * @author Christian Briones
+ */
+public class DatabaseReportingJobRepositoryTest extends WithApplication {
 
     private static final String ORIGINAL_JOB_NAME = "Original Job Name";
     private static final String ALTERED_JOB_NAME = "Altered Job Name";
 
-    private final DatabaseReportRepository repository = new DatabaseReportRepository();
+    private final DatabaseReportingJobRepository _repository = new DatabaseReportingJobRepository();
 
     @Before
     public void setup() {
-        repository.open();
+        _repository.open();
     }
 
     @After
     public void teardown() {
-        repository.close();
+        _repository.close();
     }
 
     @Override
@@ -69,77 +67,74 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     @Test
     public void testGetJobWithInvalidId() {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(repository.getJob(uuid).isPresent());
+        Assert.assertFalse(_repository.getJob(uuid).isPresent());
     }
 
     @Test
     public void testCreateNewJob() {
-        ReportingJob job = newJob();
-        boolean added = repository.addOrUpdateJob(job);
-        Assert.assertTrue(added);
-        assertThat(job.getUpdatedAt(), not(nullValue()));
-        assertThat(job.getCreatedAt(), not(nullValue()));
-        assertThat("schedule should have been created", job.getSchedule().getId(), not(nullValue()));
-        assertThat(job.getReportSource().getId(), not(nullValue()));
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        Assert.assertThat(job.getUpdatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
+        Assert.assertThat(job.getCreatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
+        Assert.assertThat("schedule should have been created",
+                job.getSchedule().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
+        Assert.assertThat("report source should have been created",
+                job.getReportSource().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
+        Assert.assertThat("recipient group should have been created",
+                job.getRecipientGroup().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
     }
 
     @Test
     public void testUpdateExistingJob() {
-        ReportingJob job = newJob();
+        final ReportingJob job = newJob();
+
         job.setName(ORIGINAL_JOB_NAME);
-        boolean added = repository.addOrUpdateJob(job);
-        Assert.assertTrue(added);
+        _repository.addOrUpdateJob(job);
 
         job.setName(ALTERED_JOB_NAME);
-        Assert.assertFalse(repository.addOrUpdateJob(job));
+        _repository.addOrUpdateJob(job);
 
-        Optional<ReportingJob> optUpdatedJob = repository.getJob(job.getUuid());
-        assertThat(optUpdatedJob.get().getName(), equalTo(ALTERED_JOB_NAME));
+        final Optional<ReportingJob> optUpdatedJob = _repository.getJob(job.getUuid());
+        Assert.assertThat(optUpdatedJob.get().getName(), CoreMatchers.equalTo(ALTERED_JOB_NAME));
     }
 
     @Test(expected = PersistenceException.class)
     public void testCreateJobWithoutASchedule() {
-        ReportingJob job = newJob();
+        final ReportingJob job = newJob();
         job.setSchedule(null);
-        repository.addOrUpdateJob(job);
+        _repository.addOrUpdateJob(job);
         System.out.println(job);
     }
 
     @Test(expected = PersistenceException.class)
     public void testCreateJobWithoutASource() {
-        ReportingJob job = newJob();
+        final ReportingJob job = newJob();
         job.setReportSource(null);
-        repository.addOrUpdateJob(job);
+        _repository.addOrUpdateJob(job);
     }
 
     @Test(expected = PersistenceException.class)
     public void testCreateJobWithoutARecipientGroup() {
-        ReportingJob job = newJob();
+        final ReportingJob job = newJob();
         job.setRecipientGroup(null);
-        repository.addOrUpdateJob(job);
+        _repository.addOrUpdateJob(job);
     }
 
     @Test
     public void testDeleteJob() {
-        ReportingJob job = newJob();
-        boolean added = repository.addOrUpdateJob(job);
-        Assert.assertTrue(added);
-
-        repository.deleteJob(job);
-        Assert.assertFalse(repository.getJob(job.getUuid()).isPresent());
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        _repository.deleteJob(job.getUuid());
+        Assert.assertFalse(_repository.getJob(job.getUuid()).isPresent());
     }
 
     private ReportingJob newJob() {
         final UUID sourceUuid = UUID.randomUUID();
 
-        ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
-        repository.addOrUpdateRecipientGroup(group);
-
-        ReportSource source = new ChromeScreenshotReportSource();
+        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
+        final ReportSource source = new ChromeScreenshotReportSource();
         source.setUuid(sourceUuid);
-        repository.addOrUpdateSource(source);
-
-        ReportingJob job = TestBeanFactory.createEbeanReportingJob();
+        final ReportingJob job = TestBeanFactory.createEbeanReportingJob();
         job.setReportSource(source);
         job.setRecipientGroup(group);
         return job;

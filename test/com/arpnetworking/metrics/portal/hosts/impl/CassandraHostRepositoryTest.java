@@ -152,12 +152,12 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //    @Test
 //    public void testAddOrUpdateAlertAddCase() {
 //        final UUID uuid = UUID.randomUUID();
-//        Assert.assertFalse(_alertRepo.getJob(uuid, Organization.DEFAULT).isPresent());
+//        Assert.assertFalse(_alertRepo.get(uuid, Organization.DEFAULT).isPresent());
 //        final Alert actualAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
 //        _alertRepo.addOrUpdateAlert(actualAlert, Organization.DEFAULT);
-//        final Optional<Alert> expected = _alertRepo.getJob(uuid, Organization.DEFAULT);
+//        final Optional<Alert> expected = _alertRepo.get(uuid, Organization.DEFAULT);
 //        Assert.assertTrue(expected.isPresent());
-//        Assert.assertEquals(expected.getJob(), actualAlert);
+//        Assert.assertEquals(expected.get(), actualAlert);
 //    }
 //
 //    @Test
@@ -199,7 +199,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //        query.limit(2);
 //        final QueryResult<Alert> result = _alertRepo.query(query);
 //        Assert.assertEquals(1, result.values().size());
-//        Assert.assertThat(result.values().getJob(0).getId(), Matchers.anyOf(
+//        Assert.assertThat(result.values().get(0).getId(), Matchers.anyOf(
 //                Matchers.equalTo(alert1.getId()),
 //                Matchers.equalTo(alert2.getId()),
 //                Matchers.equalTo(alert3.getId())));

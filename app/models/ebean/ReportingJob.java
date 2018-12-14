@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2018 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,8 @@ package models.ebean;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
+import java.sql.Timestamp;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -29,11 +31,15 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-import java.sql.Timestamp;
-import java.util.UUID;
 
+/**
+ * Data Model for SQL storage of a reporting job.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @Table(name = "reporting_jobs", schema = "portal")
+// CHECKSTYLE.OFF: MemberNameCheck
 public class ReportingJob {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,24 +76,24 @@ public class ReportingJob {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public ReportSource getReportSource() {
         return reportSource;
     }
 
-    public void setReportSource(ReportSource reportSource) {
-        this.reportSource = reportSource;
+    public void setReportSource(final ReportSource value) {
+        reportSource = value;
     }
 
     public ReportRecipientGroup getRecipientGroup() {
         return recipientGroup;
     }
 
-    public void setRecipientGroup(ReportRecipientGroup recipientGroup) {
-        this.recipientGroup = recipientGroup;
+    public void setRecipientGroup(final ReportRecipientGroup value) {
+        this.recipientGroup = value;
     }
 
     public Timestamp getCreatedAt() {
@@ -102,8 +108,8 @@ public class ReportingJob {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setName(final String value) {
+        name = value;
     }
 
     public Long getId() {
@@ -114,7 +120,8 @@ public class ReportingJob {
         return schedule;
     }
 
-    public void setSchedule(@Nullable ReportingSchedule schedule) {
-        this.schedule = schedule;
+    public void setSchedule(@Nullable final ReportingSchedule value) {
+        schedule = value;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

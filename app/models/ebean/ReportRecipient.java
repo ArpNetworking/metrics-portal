@@ -26,20 +26,39 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+/**
+ * Data Model for SQL storage of a report recipient.
+ *
+ * @see ReportRecipient.RecipientType
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+// CHECKSTYLE.OFF: FinalClassCheck - Ebean requires the class to be non-final.
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "report_recipients", schema = "portal")
 public class ReportRecipient {
+    /**
+     * The type of report recipient.
+     */
     public enum RecipientType {
+        /**
+         * An email address.
+         */
         EMAIL
     }
 
-    private ReportRecipient(RecipientType type, String recipient) {
-        this.type = type;
-        this.recipient = recipient;
+    private ReportRecipient(final RecipientType typeValue, final String recipientValue) {
+        type = typeValue;
+        recipient = recipientValue;
     }
 
-    public static ReportRecipient newEmailRecipient(String recipient) {
-        return new ReportRecipient(RecipientType.EMAIL, recipient);
+    /**
+     * Create a new ReportRecipient with the given emailAddress.
+     * @param emailAddress The address of the recipient
+     * @return A new email recipient.
+     */
+    public static ReportRecipient newEmailRecipient(final String emailAddress) {
+        return new ReportRecipient(RecipientType.EMAIL, emailAddress);
     }
 
     @Id
@@ -62,6 +81,10 @@ public class ReportRecipient {
         return id;
     }
 
+    /**
+     * Get the address of this recipient.
+     * @return The address of the recipient.
+     */
     public String get() {
         return recipient;
     }
@@ -70,3 +93,5 @@ public class ReportRecipient {
         return type;
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck
+// CHECKSTYLE.ON: FinalClassCheck

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2018 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,41 @@
  */
 package models.ebean;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
+/**
+ * Data Model for SQL storage of report schedules.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @Table(name = "report_schedules", schema = "portal")
+// CHECKSTYLE.OFF: MemberNameCheck
 public class ReportingSchedule {
-    public Integer getId() {
-        return id;
+    /**
+     * The recurrence behaviour of a schedule.
+     */
+    public enum RecurrenceType {
+        /**
+         * A non-recurring schedule.
+         */
+        NONE,
+        /**
+         * A schedule which recurs daily.
+         */
+        DAILY,
+        /**
+         * A schedule which recurs weekly.
+         */
+        WEEKLY
     }
 
     @Id
@@ -30,46 +57,40 @@ public class ReportingSchedule {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "valid_after")
-    private Timestamp validAfter;
-
     @Column(name = "send_at")
     private Timestamp sendAt;
 
-    @Column(name = "is_recurring")
-    private boolean recurring;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recurrence_type")
+    private RecurrenceType recurrenceType = RecurrenceType.NONE;
 
-    public Timestamp getValidAfter() {
-        return validAfter;
-    }
-
-    public void setValidAfter(Timestamp validAfter) {
-        this.validAfter = validAfter;
+    public Integer getId() {
+        return id;
     }
 
     public Timestamp getSendAt() {
         return sendAt;
     }
 
-    public void setSendAt(Timestamp sendAt) {
-        this.sendAt = sendAt;
+    public void setSendAt(final Timestamp value) {
+        sendAt = value;
     }
 
-    public boolean isRecurring() {
-        return recurring;
+    public RecurrenceType getRecurrenceType() {
+        return recurrenceType;
     }
 
-    public void setRecurring(boolean recurring) {
-        this.recurring = recurring;
+    public void setRecurrenceType(final RecurrenceType value) {
+        recurrenceType = value;
     }
 
     @Override
     public String toString() {
-        return "ReportingSchedule{" +
-                "id=" + id +
-                ", validAfter=" + validAfter +
-                ", sendAt=" + sendAt +
-                ", recurring=" + recurring +
-                '}';
+        return "ReportingSchedule{"
+                + "id=" + id
+                + ", sendAt=" + sendAt
+                + ", recurrenceType=" + recurrenceType
+                + '}';
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

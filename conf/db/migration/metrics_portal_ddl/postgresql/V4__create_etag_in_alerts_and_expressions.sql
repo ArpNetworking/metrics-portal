@@ -7,7 +7,7 @@ BEGIN
     RETURN NEW;
 END;
 $update_alerts_etag$ LANGUAGE 'plpgsql';
--- Trigger to be executed after each insert, update and deleteJob statement --
+-- Trigger to be executed after each insert, update and delete statement --
 CREATE TRIGGER update_alerts_etag
 BEFORE INSERT OR DELETE OR UPDATE ON portal.alerts
 FOR EACH ROW
@@ -22,7 +22,7 @@ BEGIN
     RETURN NEW;
 END;
 $update_expressions_etag$ LANGUAGE 'plpgsql';
--- Trigger to be executed after each insert, update and deleteJob statement --
+-- Trigger to be executed after each insert, update and delete statement --
 CREATE TRIGGER update_expressions_etag
 BEFORE INSERT OR DELETE OR UPDATE ON portal.expressions
 FOR EACH ROW

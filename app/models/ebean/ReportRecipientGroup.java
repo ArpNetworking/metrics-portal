@@ -19,20 +19,31 @@ import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.PrivateOwned;
 import io.ebean.annotation.UpdatedTimestamp;
 
-import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
 
+/**
+ * Data Model for SQL storage of groups of report recipients.
+ *
+ * A recipient group can contain multiple {@link models.ebean.ReportRecipient} instances.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @Table(name = "report_recipient_groups", schema = "portal")
+// CHECKSTYLE.OFF: MemberNameCheck
 public class ReportRecipientGroup {
-
-    public ReportRecipientGroup() {
-        this.recipients = new ArrayList<>();
-    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,6 +68,13 @@ public class ReportRecipientGroup {
     @PrivateOwned
     private List<ReportRecipient> recipients;
 
+    /**
+     * Create a new, empty recipient group.
+     */
+    public ReportRecipientGroup() {
+        this.recipients = new ArrayList<>();
+    }
+
     public Long getId() {
         return id;
     }
@@ -65,16 +83,16 @@ public class ReportRecipientGroup {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setName(final String value) {
+        name = value;
     }
 
     public Timestamp getCreatedAt() {
@@ -89,11 +107,22 @@ public class ReportRecipientGroup {
         return recipients;
     }
 
-    public void addRecipient(ReportRecipient recipient) {
-        this.recipients.add(recipient);
+    /**
+     * Add a report recipient to this group.
+     *
+     * @param recipient - The <code>ReportRecipient</code> to add to this group.
+     */
+    public void addRecipient(final ReportRecipient recipient) {
+        recipients.add(recipient);
     }
 
-    public void addAllRecipients(ReportRecipient... recipient) {
-        this.recipients.addAll(Arrays.asList(recipient));
+    /**
+     * Add several report recipients to this group.
+     *
+     * @param values - The <code>ReportRecipient</code>s to add to this group.
+     */
+    public void addAllRecipients(final ReportRecipient... values) {
+        this.recipients.addAll(Arrays.asList(values));
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

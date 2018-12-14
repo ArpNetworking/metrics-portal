@@ -18,6 +18,8 @@ package models.ebean;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
+import java.sql.Timestamp;
+import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
@@ -27,13 +29,17 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
-import java.sql.Timestamp;
-import java.util.UUID;
 
+/**
+ * Data Model for SQL storage of a report generation scheme.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @Table(name = "report_sources", schema = "portal")
 @DiscriminatorColumn(name = "type")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+// CHECKSTYLE.OFF: MemberNameCheck
 public abstract class ReportSource {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,29 +64,33 @@ public abstract class ReportSource {
         return id;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
-    }
-
     public UUID getUuid() {
         return uuid;
+    }
+
+    public void setUuid(final UUID value) {
+        uuid = value;
     }
 
     public long getTimeoutInSeconds() {
         return timeoutInSeconds;
     }
 
-    public Timestamp getCreatedAt() {
-        return createdAt;
+    public void setTimeoutInSeconds(final long value) {
+        timeoutInSeconds = value;
     }
 
-    public void setTimeoutInSeconds(long timeoutInSeconds) {
-        this.timeoutInSeconds = timeoutInSeconds;
+    public Timestamp getCreatedAt() {
+        return createdAt;
     }
 
     public Timestamp getUpdatedAt() {
         return updatedAt;
     }
 
+    /**
+     * Create this object into its internal representation.
+     */
     public abstract void toInternal();
 }
+// CHECKSTYLE.ON: MemberNameCheck

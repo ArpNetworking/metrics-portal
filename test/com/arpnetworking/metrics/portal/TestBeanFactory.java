@@ -18,7 +18,12 @@ package com.arpnetworking.metrics.portal;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
-import models.ebean.*;
+import models.ebean.Expression;
+import models.ebean.NagiosExtension;
+import models.ebean.ReportRecipient;
+import models.ebean.ReportRecipientGroup;
+import models.ebean.ReportingJob;
+import models.ebean.ReportingSchedule;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -45,12 +50,34 @@ import java.util.UUID;
  */
 public final class TestBeanFactory {
 
-    public static ReportingJob createEbeanReportingJob() {
-        ReportingSchedule schedule = new ReportingSchedule();
-        schedule.setSendAt(Timestamp.from(Instant.now()));
-        schedule.setValidAfter(Timestamp.from(Instant.now()));
+    private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
+    private static final String TEST_GROUP = "test-group";
+    private static final String TEST_HOST = "test-host";
+    private static final String TEST_CLUSTER = "test-cluster";
+    private static final String TEST_METRIC = "test-metric";
+    private static final String TEST_SERVICE = "test-service";
+    private static final String TEST_SCRIPT = "test-script";
+    private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
+    private static final String TEST_NAME = "test-name";
+    private static final List<Operator> OPERATORS = Arrays.asList(
+            Operator.EQUAL_TO,
+            Operator.GREATER_THAN,
+            Operator.GREATER_THAN_OR_EQUAL_TO,
+            Operator.LESS_THAN_OR_EQUAL_TO,
+            Operator.LESS_THAN,
+            Operator.NOT_EQUAL_TO);
+    private static final int TEST_PERIOD_IN_SECONDS = 600;
+    private static final String TEST_STATISTIC = "metrics_seen_sum";
+    private static final String TEST_QUANTITY_UNIT = "test-unit";
+    private static final List<String> NAGIOS_SEVERITY = Arrays.asList("CRITICAL", "WARNING", "OK");
+    private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
+    private static final Random RANDOM = new Random();
 
-        ReportingJob job = new ReportingJob();
+    public static ReportingJob createEbeanReportingJob() {
+        final ReportingSchedule schedule = new ReportingSchedule();
+        schedule.setSendAt(Timestamp.from(Instant.now()));
+
+        final ReportingJob job = new ReportingJob();
         job.setUuid(UUID.randomUUID());
         job.setSchedule(schedule);
         job.setName(TEST_NAME);
@@ -59,7 +86,7 @@ public final class TestBeanFactory {
 
     public static ReportRecipientGroup createEbeanReportRecipientGroup() {
         final UUID groupUuid = UUID.randomUUID();
-        ReportRecipientGroup group = new ReportRecipientGroup();
+        final ReportRecipientGroup group = new ReportRecipientGroup();
         group.setUuid(groupUuid);
         group.addRecipient(ReportRecipient.newEmailRecipient(TEST_EMAIL));
         group.setName(TEST_GROUP);
@@ -206,26 +233,5 @@ public final class TestBeanFactory {
         return host;
     }
 
-    private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
-    private static final String TEST_GROUP = "test-group";
-    private static final String TEST_HOST = "test-host";
-    private static final String TEST_CLUSTER = "test-cluster";
-    private static final String TEST_METRIC = "test-metric";
-    private static final String TEST_SERVICE = "test-service";
-    private static final String TEST_SCRIPT = "test-script";
-    private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
-    private static final String TEST_NAME = "test-name";
-    private static final List<Operator> OPERATORS = Arrays.asList(
-            Operator.EQUAL_TO,
-            Operator.GREATER_THAN,
-            Operator.GREATER_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN,
-            Operator.NOT_EQUAL_TO);
-    private static final int TEST_PERIOD_IN_SECONDS = 600;
-    private static final String TEST_STATISTIC = "metrics_seen_sum";
-    private static final String TEST_QUANTITY_UNIT = "test-unit";
-    private static final List<String> NAGIOS_SEVERITY = Arrays.asList("CRITICAL", "WARNING", "OK");
-    private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
-    private static final Random RANDOM = new Random();
+    private TestBeanFactory() {}
 }
