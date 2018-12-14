@@ -27,3 +27,4 @@ eclipse-bin/
 # Mac
 .DS_Store
 journal/
+snapshots/
