@@ -55,16 +55,23 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
     @Override
     public Optional<ReportingJob> getJob(final UUID identifier) {
         assertIsOpen();
-        return
-                Ebean.find(ReportingJob.class)
-                        .where()
-                        .eq("uuid", identifier)
-                        .findOneOrEmpty();
+        LOGGER.debug()
+                .setMessage("Getting reporting job")
+                .addData("uuid", identifier)
+                .log();
+        return Ebean.find(ReportingJob.class)
+                    .where()
+                    .eq("uuid", identifier)
+                    .findOneOrEmpty();
     }
 
     @Override
     public void deleteJob(final UUID uuid) {
         assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Deleting reporting job")
+                .addData("uuid", uuid)
+                .log();
         try {
             Ebean.find(ReportingJob.class)
                 .where()
@@ -73,6 +80,11 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
+            LOGGER.error()
+                    .setMessage("Failed to delete reporting job")
+                    .addData("uuid", uuid)
+                    .setThrowable(e)
+                    .log();
             throw new PersistenceException(e);
         }
     }
@@ -80,6 +92,10 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
     @Override
     public void addOrUpdateJob(final ReportingJob job) {
         assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Upserting reporting job")
+                .addData("job", job)
+                .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
             Ebean.save(job.getRecipientGroup());
             Ebean.save(job.getReportSource());
@@ -88,9 +104,19 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
             final boolean created = !existingJob.isPresent();
             Ebean.save(job);
             transaction.commit();
+            LOGGER.debug()
+                    .setMessage("Upserted reporting job")
+                    .addData("job", job)
+                    .addData("created", created)
+                    .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
+            LOGGER.error()
+                    .setMessage("Failed to upsert reporting job")
+                    .addData("job", job)
+                    .setThrowable(e)
+                    .log();
             throw new PersistenceException(e);
         }
     }
