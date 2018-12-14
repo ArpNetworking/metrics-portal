@@ -27,14 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ChromeScreenshotTaker {
 
-    @Inject
-    public static ChromeDevToolsFactory devToolsFactory;
-
     private final CompletableFuture<Report> result = new CompletableFuture<>();
     private final AtomicBoolean isStarted = new AtomicBoolean(false);
 
     public CompletionStage<Report> render(ChromeScreenshotReportSpec spec) {
-        return render(spec, devToolsFactory.create(spec.isIgnoreCertificateErrors()));
+        return render(spec, ChromeDevToolsFactory.create(spec.isIgnoreCertificateErrors()));
     }
 
     protected static final String TRIGGER_MESSAGE = "com.arpnetworking.metrics.portal.reports.impl.ChromeScreenshotTaker says, take the screenshot now please";

@@ -23,6 +23,7 @@ import com.arpnetworking.metrics.portal.reports.Job;
 import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.inject.Inject;
 import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
@@ -133,6 +134,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
     private final JobRepository repository;
     private final Clock clock;
 
+    @Inject
     private JobScheduler(final JobRepository repository, final Clock clock) {
         this.repository = repository;
         this.clock = clock;

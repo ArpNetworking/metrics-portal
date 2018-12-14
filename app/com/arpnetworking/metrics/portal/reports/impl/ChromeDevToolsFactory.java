@@ -19,19 +19,25 @@ import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
-import com.google.inject.Inject;
+
+import javax.annotation.Nullable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ChromeDevToolsFactory {
 
-    private final ChromeLauncher launcher = new ChromeLauncher();
-    private final ChromeService chromeService = launcher.launch(true);
+    private static @Nullable ChromeService chromeService = null;
+    private static final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    @Inject
-    public ChromeDevToolsFactory() {}
+    private static ChromeService getService() {
+        if (!initialized.getAndSet(true)) {
+            chromeService = new ChromeLauncher().launch(true);
+        }
+        return chromeService;
+    }
 
-    public ChromeDevToolsServiceWrapper create(boolean ignoreCertificateErrors) {
-        final ChromeTab tab = chromeService.createTab();
-        ChromeDevToolsService result = chromeService.createDevToolsService(tab);
+    public static ChromeDevToolsServiceWrapper create(boolean ignoreCertificateErrors) {
+        final ChromeTab tab = getService().createTab();
+        ChromeDevToolsService result = getService().createDevToolsService(tab);
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }

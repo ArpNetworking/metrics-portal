@@ -68,6 +68,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
@@ -119,6 +120,13 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Config config) {
         return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
+    }
+
+    @Singleton
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Clock getClock() {
+        return Clock.systemUTC();
     }
 
     @Provides
