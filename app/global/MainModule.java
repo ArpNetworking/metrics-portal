@@ -379,7 +379,7 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "report_scheduler" node in the cluster.
-            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) { // TODO(spencerpearson): file an issue for the wrong implementation of this that's already committed
+            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) {
                 _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, JobScheduler.class),
                         PoisonPill.getInstance(),

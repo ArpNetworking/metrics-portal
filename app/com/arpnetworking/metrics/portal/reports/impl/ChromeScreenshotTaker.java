@@ -43,7 +43,6 @@ public class ChromeScreenshotTaker {
                     return;
                 }
 
-                System.out.println("Got trigger message");
                 LOGGER.info()
                         .setMessage("taking screenshot")
                         .addData("url", spec.getUrl())
