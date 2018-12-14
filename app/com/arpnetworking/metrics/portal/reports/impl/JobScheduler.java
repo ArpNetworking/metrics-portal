@@ -136,7 +136,7 @@ public class JobScheduler extends AbstractPersistentActorWithTimers {
     private JobScheduler(final JobRepository repository, final Clock clock) {
         this.repository = repository;
         this.clock = clock;
-        timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(3, TimeUnit.SECONDS /* TODO: when done testing, MINUTES */));
+        timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(1, TimeUnit.MINUTES));
     }
 
     @Override
