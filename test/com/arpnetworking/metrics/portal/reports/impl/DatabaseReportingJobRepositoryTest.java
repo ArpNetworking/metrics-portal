@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import models.ebean.ChromeScreenshotReportSource;
+import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
 import models.ebean.ReportingJob;
@@ -31,7 +32,8 @@ import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 
@@ -94,8 +96,54 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         job.setName(ALTERED_JOB_NAME);
         _repository.addOrUpdateJob(job);
 
-        final Optional<ReportingJob> optUpdatedJob = _repository.getJob(job.getUuid());
-        Assert.assertThat(optUpdatedJob.get().getName(), CoreMatchers.equalTo(ALTERED_JOB_NAME));
+        final ReportingJob optUpdatedJob = _repository.getJob(job.getUuid()).get();
+        Assert.assertThat(optUpdatedJob.getName(), CoreMatchers.equalTo(ALTERED_JOB_NAME));
+    }
+
+    @Test
+    public void testUpdateExistingReportingSource() {
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        final ReportSource reportSource = job.getReportSource();
+        reportSource.setTimeoutInSeconds(424242L);
+        _repository.addOrUpdateJob(job);
+
+        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
+        Assert.assertThat(retrievedJob.getReportSource().getUuid(), CoreMatchers.equalTo(reportSource.getUuid()));
+        Assert.assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), CoreMatchers.equalTo(reportSource.getTimeoutInSeconds()));
+        Assert.assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), CoreMatchers.equalTo(424242L));
+    }
+
+    @Test
+    public void testUpdateExistingReportingGroup() {
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        final ReportRecipientGroup group = job.getRecipientGroup();
+        final List<ReportRecipient> newRecipients = new ArrayList<>(group.getRecipients());
+        newRecipients.add(ReportRecipient.newEmailRecipient("some-new-email@test.com"));
+        group.setRecipients(newRecipients);
+        _repository.addOrUpdateJob(job);
+
+        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
+        final ReportRecipientGroup retrievedGroup = retrievedJob.getRecipientGroup();
+
+        Assert.assertThat(retrievedGroup.getUuid(), CoreMatchers.equalTo(group.getUuid()));
+        Assert.assertThat(retrievedGroup.getName(), CoreMatchers.equalTo(group.getName()));
+        Assert.assertThat(retrievedGroup.getRecipients(), CoreMatchers.equalTo(newRecipients));
+    }
+
+    // FAILED
+    @Test
+    public void testUpdateExistingJobWithNewSource() {
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        final ReportSource reportSource = new ChromeScreenshotReportSource();
+        reportSource.setUuid(UUID.randomUUID());
+        job.setReportSource(reportSource);
+        _repository.addOrUpdateJob(job);
+
+        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
+        Assert.assertThat(retrievedJob.getReportSource().getUuid(), CoreMatchers.equalTo(reportSource.getUuid()));
     }
 
     @Test(expected = PersistenceException.class)

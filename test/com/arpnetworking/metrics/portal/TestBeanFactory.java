@@ -38,6 +38,7 @@ import org.joda.time.Period;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -88,7 +89,7 @@ public final class TestBeanFactory {
         final UUID groupUuid = UUID.randomUUID();
         final ReportRecipientGroup group = new ReportRecipientGroup();
         group.setUuid(groupUuid);
-        group.addRecipient(ReportRecipient.newEmailRecipient(TEST_EMAIL));
+        group.setRecipients(Collections.singletonList(ReportRecipient.newEmailRecipient(TEST_EMAIL)));
         group.setName(TEST_GROUP);
         return group;
     }

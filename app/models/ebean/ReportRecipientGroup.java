@@ -20,8 +20,6 @@ import io.ebean.annotation.PrivateOwned;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.CascadeType;
@@ -35,7 +33,7 @@ import javax.persistence.Table;
 
 /**
  * Data Model for SQL storage of groups of report recipients.
- *
+ * <p>
  * A recipient group can contain multiple {@link models.ebean.ReportRecipient} instances.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
@@ -69,10 +67,9 @@ public class ReportRecipientGroup {
     private List<ReportRecipient> recipients;
 
     /**
-     * Create a new, empty recipient group.
+     * Create a new recipient group.
      */
     public ReportRecipientGroup() {
-        this.recipients = new ArrayList<>();
     }
 
     public Long getId() {
@@ -103,26 +100,22 @@ public class ReportRecipientGroup {
         return updatedAt;
     }
 
+    /**
+     * Set the report recipients for this group.
+     *
+     * @param value - The new <code>ReportRecipient</code>s for this group.
+     */
+    public void setRecipients(final List<ReportRecipient> value) {
+        recipients = value;
+    }
+
+    /**
+     * Get the report recipients for this group.
+     *
+     * @return The <code>ReportRecipient</code>s
+     */
     public List<ReportRecipient> getRecipients() {
         return recipients;
-    }
-
-    /**
-     * Add a report recipient to this group.
-     *
-     * @param recipient - The <code>ReportRecipient</code> to add to this group.
-     */
-    public void addRecipient(final ReportRecipient recipient) {
-        recipients.add(recipient);
-    }
-
-    /**
-     * Add several report recipients to this group.
-     *
-     * @param values - The <code>ReportRecipient</code>s to add to this group.
-     */
-    public void addAllRecipients(final ReportRecipient... values) {
-        this.recipients.addAll(Arrays.asList(values));
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
