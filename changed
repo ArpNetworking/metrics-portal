@@ -1,0 +1,15 @@
+app/com/arpnetworking/metrics/portal/reports/ReportingJobRepository.java
+app/com/arpnetworking/metrics/portal/reports/impl/DatabaseReportingJobRepository.java
+app/com/arpnetworking/metrics/portal/reports/impl/package-info.java
+app/com/arpnetworking/metrics/portal/reports/package-info.java
+app/models/ebean/ChromeScreenshotReportSource.java
+app/models/ebean/ReportRecipient.java
+app/models/ebean/ReportRecipientGroup.java
+app/models/ebean/ReportSource.java
+app/models/ebean/ReportingJob.java
+app/models/ebean/ReportingSchedule.java
+conf/db/migration/metrics_portal_ddl/common/V11__create_reporting_tables.sql
+test/com/arpnetworking/metrics/portal/TestBeanFactory.java
+test/com/arpnetworking/metrics/portal/package-info.java
+test/com/arpnetworking/metrics/portal/reports/impl/DatabaseReportingJobRepositoryTest.java
+test/com/arpnetworking/metrics/portal/reports/impl/package-info.java

@@ -105,18 +105,18 @@ public class ReportRecipient {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ReportRecipient that = (ReportRecipient) o;
-        return Objects.equals(id, that.id) &&
-                Objects.equals(recipientGroup, that.recipientGroup) &&
-                Objects.equals(recipient, that.recipient) &&
-                type == that.type;
+        final ReportRecipient that = (ReportRecipient) o;
+        return Objects.equals(id, that.id)
+                && Objects.equals(recipientGroup, that.recipientGroup)
+                && Objects.equals(recipient, that.recipient)
+                && type == that.type;
     }
 
     @Override

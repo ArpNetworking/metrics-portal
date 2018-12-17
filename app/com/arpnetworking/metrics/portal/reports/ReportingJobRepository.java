@@ -24,6 +24,8 @@ import java.util.UUID;
 
 /**
  * A repository for storing and retrieving instances of <code>ReportingJob</code>.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
  */
 public interface ReportingJobRepository {
     /**
