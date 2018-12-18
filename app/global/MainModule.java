@@ -23,6 +23,8 @@ import akka.actor.Props;
 import akka.cluster.Cluster;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
+import akka.cluster.singleton.ClusterSingletonProxy;
+import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -35,6 +37,8 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.reports.JobRepository;
+import com.arpnetworking.metrics.portal.reports.impl.JobScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
@@ -59,6 +63,7 @@ import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 
 import java.net.URI;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
@@ -88,6 +93,9 @@ public class MainModule extends AbstractModule {
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(JobRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
                 .asEagerSingleton();
@@ -98,6 +106,10 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("JobScheduler"))
+                .toProvider(JobSchedulerProvider.class)
+                .asEagerSingleton();
     }
 
     @Singleton
@@ -106,6 +118,13 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Config config) {
         return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
+    }
+
+    @Singleton
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Clock getClock() {
+        return Clock.systemUTC();
     }
 
     @Provides
@@ -272,6 +291,39 @@ public class MainModule extends AbstractModule {
         private final ApplicationLifecycle _lifecycle;
     }
 
+    private static final class ReportRepositoryProvider implements Provider<JobRepository> {
+
+        @Inject
+        ReportRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public JobRepository get() {
+            final JobRepository jobRepository = _injector.getInstance(
+                    ConfigurationHelper.<JobRepository>getType(_environment, _configuration, "jobRepository.type"));
+            jobRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        jobRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return jobRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
     private static final class HostProviderProvider implements Provider<ActorRef> {
         @Inject
         HostProviderProvider(
@@ -300,6 +352,35 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class JobSchedulerProvider implements Provider<ActorRef> {
+        @Inject
+        JobSchedulerProvider(
+                final ActorSystem system,
+                final Injector injector) {
+            _system = system;
+            _injector = injector;
+        }
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            // Start a singleton instance of the scheduler on a "report_scheduler" node in the cluster.
+            if (cluster.selfRoles().contains(REPORT_SCHEDULER_ROLE)) {
+                _system.actorOf(ClusterSingletonManager.props(
+                        GuiceActorCreator.props(_injector, JobScheduler.class),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)),
+                        "report-execution-scheduler");
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        "/user/report-execution-scheduler",
+                        ClusterSingletonProxySettings.create(_system).withRole(REPORT_SCHEDULER_ROLE)));
+            }
+            return null;
+        }
+        private final ActorSystem _system;
+        private final Injector _injector;
+        private static final String REPORT_SCHEDULER_ROLE = "report_scheduler";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {

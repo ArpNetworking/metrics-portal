@@ -4,6 +4,10 @@ project/target
 conf/evolutions/
 conf/dev.conf
 
+# Akka persistence
+journal/
+snapshots/
+
 # Output
 target/
 logs/
