@@ -27,7 +27,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import scala.concurrent.duration.Duration;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
@@ -37,6 +36,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Manages execution of recurring {@link Job}s.
