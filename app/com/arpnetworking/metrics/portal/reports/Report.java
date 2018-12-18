@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson
  */
-public class Report {
+public final class Report {
 
     /**
      * @param html The HTML version of the report, if that makes sense (else null).

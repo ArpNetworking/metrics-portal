@@ -188,7 +188,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
      */
-    protected static class Tick implements Serializable {
+    protected static final class Tick implements Serializable {
         private static final long serialVersionUID = 1L;
         public static final Tick INSTANCE = new Tick();
     }
@@ -198,7 +198,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
      * Tells the scheduler to enqueue a {@link ScheduledJob}.
      * Gets a Boolean reply indicating whether the scheduling succeeded.
      */
-    public static class ScheduleCmd implements Command {
+    public static final class ScheduleCmd implements Command {
         private final ScheduledJob _job;
         /**
          * @param job The {@link ScheduledJob} to add to the plan.
@@ -224,7 +224,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
     }
 
     private interface Event extends Serializable {}
-    private static class AddJobEvt implements Event {
+    private static final class AddJobEvt implements Event {
         private final ScheduledJob _job;
         AddJobEvt(final ScheduledJob job) {
             _job = job;
@@ -236,12 +236,12 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
         private static final long serialVersionUID = 1L;
     }
-    private static class RemoveJobEvt implements Event {
+    private static final class RemoveJobEvt implements Event {
         public static final RemoveJobEvt INSTANCE = new RemoveJobEvt();
         private static final long serialVersionUID = 1L;
     }
 
-    private static class State {
+    private static final class State {
         private final PriorityQueue<ScheduledJob> _plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
 
         public PriorityQueue<ScheduledJob> getPlan() {

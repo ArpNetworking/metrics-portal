@@ -25,7 +25,7 @@ import java.util.Objects;
  *
  * @author Spencer Pearson
  */
-public class ScheduledJob {
+public final class ScheduledJob {
     private final Instant _whenRun;
     private final String _jobId;
 

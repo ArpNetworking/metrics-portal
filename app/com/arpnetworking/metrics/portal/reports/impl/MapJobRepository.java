@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson
  */
-public class MapJobRepository implements JobRepository {
+public final class MapJobRepository implements JobRepository {
 
     /**
      * Guice constructor.

@@ -26,7 +26,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson
  */
-public class DummyReportSpec implements ReportSpec {
+public final class DummyReportSpec implements ReportSpec {
 
     /**
      * The only instance of DummyReportSpec. (They all behave the same: there's no point having more than one.)

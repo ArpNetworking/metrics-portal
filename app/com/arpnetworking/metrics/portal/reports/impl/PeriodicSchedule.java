@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson
  */
-public class PeriodicSchedule implements Schedule {
+public final class PeriodicSchedule implements Schedule {
 
     private final TemporalAmount _period;
 

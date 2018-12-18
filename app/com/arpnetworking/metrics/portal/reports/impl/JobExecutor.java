@@ -91,7 +91,7 @@ public final class JobExecutor extends AbstractActor {
     /**
      * A message sent to an executor's <code>notifiee</code> if rendering/sending fails.
      */
-    public static class Failure {
+    public static final class Failure {
         private final Throwable _throwable;
 
         /**

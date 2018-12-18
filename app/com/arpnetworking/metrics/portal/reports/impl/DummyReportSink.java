@@ -25,7 +25,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson
  */
-public class DummyReportSink implements ReportSink {
+public final class DummyReportSink implements ReportSink {
 
     /**
      * The only instance of DummyReportSink. (They all behave the same: there's no point having more than one.)
