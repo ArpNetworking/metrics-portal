@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.base.MoreObjects;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -25,7 +26,7 @@ import java.util.Objects;
  *
  * @author Spencer Pearson
  */
-public final class ScheduledJob {
+public final class ScheduledJob implements Serializable {
     private final Instant _whenRun;
     private final String _jobId;
 
