@@ -15,9 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.reports;
 
+import akka.protobuf.ByteString;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
 
-import java.util.Arrays;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -28,20 +29,16 @@ import javax.annotation.Nullable;
  */
 public final class Report {
 
-    /**
-     * @param html The HTML version of the report, if that makes sense (else null).
-     * @param pdf The PDF version of the report, if that makes sense (else null).
-     */
-    public Report(@Nullable final String html, @Nullable final byte[] pdf) {
-        _html = html;
-        _pdf = pdf;
+    private Report(final Builder builder) {
+        _html = builder._html;
+        _pdf = builder._pdf;
     }
 
     public @Nullable String getHtml() {
         return _html;
     }
 
-    public @Nullable byte[] getPdf() {
+    public @Nullable ByteString getPdf() {
         return _pdf;
     }
 
@@ -49,7 +46,7 @@ public final class Report {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("html.length", _html == null ? "<null>" : _html.length())
-                .add("pdf.length", _pdf == null ? "<null>" : _pdf.length)
+                .add("pdf.length", _pdf == null ? "<null>" : _pdf.size())
                 .toString();
     }
 
@@ -63,17 +60,59 @@ public final class Report {
         }
         final Report report = (Report) o;
         return Objects.equals(_html, report._html)
-                && Arrays.equals(_pdf, report._pdf);
+               && Objects.equals(_pdf, report._pdf);
     }
 
     @Override
     public int hashCode() {
-
-        int result = Objects.hash(_html);
-        result = 31 * result + Arrays.hashCode(_pdf);
-        return result;
+        return Objects.hash(_html, _pdf);
     }
 
     private @Nullable final String _html;
-    private @Nullable final byte[] _pdf;
+    private @Nullable final ByteString _pdf;
+
+
+    /**
+     * Builder implementation for {@link Report}.
+     */
+    public static final class Builder extends OvalBuilder<Report> {
+
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(Report::new);
+        }
+
+        /**
+         * @param value The HTML version of the report, if that makes sense (else null).
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setHtml(final String value) {
+            _html = value;
+            return this;
+        }
+
+        /**
+         * @param value The PDF version of the report, if that makes sense (else null).
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setPdf(final ByteString value) {
+            _pdf = value;
+            return this;
+        }
+
+        /**
+         * @param value The PDF version of the report, if that makes sense (else null).
+         * @return This instance of <code>Builder</code>.
+         */
+        public Builder setPdf(final byte[] value) {
+            _pdf = ByteString.copyFrom(value);
+            return this;
+        }
+
+        private String _html;
+        private ByteString _pdf;
+    }
+
 }

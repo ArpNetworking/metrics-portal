@@ -35,6 +35,6 @@ public final class DummyReportSpec implements ReportSpec {
 
     @Override
     public CompletionStage<Report> render() {
-        return CompletableFuture.completedFuture(new Report(null, null));
+        return CompletableFuture.completedFuture(new Report.Builder().build());
     }
 }

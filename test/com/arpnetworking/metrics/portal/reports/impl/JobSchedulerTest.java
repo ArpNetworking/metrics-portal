@@ -113,7 +113,7 @@ public class JobSchedulerTest {
            the first tick should do nothing; and the second tick should run+reschedule the job.
          */
 
-        final Report report = new Report("egrraeg", "hhloio".getBytes());
+        final Report report = new Report.Builder().setHtml("egrraeg").setPdf("hhloio".getBytes()).build();
         final AtomicReference<Report> sentReport = new AtomicReference<>();
         String jobId = repo.add(
                 new Job.Builder()
