@@ -73,4 +73,6 @@ public final class ScheduledJob implements Serializable {
     public String getJobId() {
         return _jobId;
     }
+
+    private static final long serialVersionUID = 1L;
 }
