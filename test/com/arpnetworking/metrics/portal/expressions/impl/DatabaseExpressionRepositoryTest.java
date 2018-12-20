@@ -26,18 +26,21 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultExpressionQuery;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
+import javax.persistence.PersistenceException;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.PersistenceException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests <code>DatabaseExpressionRepository</code> class.
@@ -58,13 +61,13 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
 
     @Test
     public void testGetForInvalidId() {
-        Assert.assertFalse(exprRepo.get(UUID.randomUUID(), Organization.DEFAULT).isPresent());
+        assertFalse(exprRepo.get(UUID.randomUUID(), Organization.DEFAULT).isPresent());
     }
 
     @Test
     public void testGetForValidId() throws IOException {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(exprRepo.get(uuid, Organization.DEFAULT).isPresent());
+        assertFalse(exprRepo.get(uuid, Organization.DEFAULT).isPresent());
         final models.ebean.Expression ebeanExpression = TestBeanFactory.createEbeanExpression();
         ebeanExpression.setUuid(uuid);
         ebeanExpression.setOrganization(models.ebean.Organization.findByOrganization(Organization.DEFAULT));
@@ -74,18 +77,18 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         }
 
         final Optional<Expression> expected = exprRepo.get(uuid, Organization.DEFAULT);
-        Assert.assertTrue(expected.isPresent());
-        Assert.assertTrue(isExpressionEbeanEquivalent(expected.get(), ebeanExpression));
+        assertTrue(expected.isPresent());
+        assertTrue(isExpressionEbeanEquivalent(expected.get(), ebeanExpression));
     }
 
     @Test
     public void testGetExpressionCountWithNoExpr() {
-        Assert.assertEquals(0, exprRepo.getExpressionCount(Organization.DEFAULT));
+        assertEquals(0, exprRepo.getExpressionCount(Organization.DEFAULT));
     }
 
     @Test
     public void testGetExpressionCountWithMultipleExpr() throws IOException {
-        Assert.assertEquals(0, exprRepo.getExpressionCount(Organization.DEFAULT));
+        assertEquals(0, exprRepo.getExpressionCount(Organization.DEFAULT));
         try (Transaction transaction = Ebean.beginTransaction()) {
             final models.ebean.Expression ebeanExpression1 = TestBeanFactory.createEbeanExpression();
             ebeanExpression1.setUuid(UUID.randomUUID());
@@ -97,20 +100,20 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
             Ebean.save(ebeanExpression2);
             transaction.commit();
         }
-        Assert.assertEquals(2, exprRepo.getExpressionCount(Organization.DEFAULT));
+        assertEquals(2, exprRepo.getExpressionCount(Organization.DEFAULT));
     }
 
     @Test
     public void addOrUpdateExpressionAddCase() {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(exprRepo.get(uuid, Organization.DEFAULT).isPresent());
+        assertFalse(exprRepo.get(uuid, Organization.DEFAULT).isPresent());
         final Expression actual = TestBeanFactory.createExpressionBuilder()
                 .setId(uuid)
                 .build();
         exprRepo.addOrUpdateExpression(actual, Organization.DEFAULT);
         final Optional<Expression> expected = exprRepo.get(uuid, Organization.DEFAULT);
-        Assert.assertTrue(expected.isPresent());
-        Assert.assertEquals(expected.get(), actual);
+        assertTrue(expected.isPresent());
+        assertEquals(expected.get(), actual);
     }
 
     @Test
@@ -130,7 +133,7 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
                 .build();
         exprRepo.addOrUpdateExpression(actual, TestBeanFactory.organizationFrom(organization));
         final Expression expected = exprRepo.get(uuid, TestBeanFactory.organizationFrom(organization)).get();
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test(expected = PersistenceException.class)
@@ -171,11 +174,11 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         final ExpressionQuery successQuery = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         successQuery.cluster(Optional.of("my-test-cluster"));
         final QueryResult<Expression> successResult = exprRepo.query(successQuery);
-        Assert.assertEquals(1, successResult.total());
+        assertEquals(1, successResult.total());
         final ExpressionQuery failQuery = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         failQuery.cluster(Optional.of("some-random-cluster"));
         final QueryResult<Expression> failResult = exprRepo.query(failQuery);
-        Assert.assertEquals(0, failResult.total());
+        assertEquals(0, failResult.total());
     }
 
     @Test
@@ -192,11 +195,11 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         final ExpressionQuery successQuery = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         successQuery.service(Optional.of("my-test-service"));
         final QueryResult<Expression> successResult = exprRepo.query(successQuery);
-        Assert.assertEquals(1, successResult.total());
+        assertEquals(1, successResult.total());
         final ExpressionQuery failQuery = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         failQuery.cluster(Optional.of("some-random-service"));
         final QueryResult<Expression> failResult = exprRepo.query(failQuery);
-        Assert.assertEquals(0, failResult.total());
+        assertEquals(0, failResult.total());
     }
 
     @Test
@@ -218,13 +221,13 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         query1.cluster(Optional.of("my-test-cluster"));
         query1.limit(1);
         final QueryResult<Expression> result1 = exprRepo.query(query1);
-        Assert.assertEquals(1, result1.values().size());
+        assertEquals(1, result1.values().size());
         final ExpressionQuery query2 = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         query2.service(Optional.of("my-test-service"));
         query2.cluster(Optional.of("my-test-cluster"));
         query2.limit(2);
         final QueryResult<Expression> result2 = exprRepo.query(query2);
-        Assert.assertEquals(2, result2.values().size());
+        assertEquals(2, result2.values().size());
     }
 
     @Test
@@ -253,8 +256,8 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         query.offset(Optional.of(2));
         query.limit(2);
         final QueryResult<Expression> result = exprRepo.query(query);
-        Assert.assertEquals(1, result.values().size());
-        Assert.assertEquals(expr3.getId(), result.values().get(0).getId());
+        assertEquals(1, result.values().size());
+        assertEquals(expr3.getId(), result.values().get(0).getId());
     }
 
     @Test
@@ -281,10 +284,10 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         final ExpressionQuery query = new DefaultExpressionQuery(exprRepo, Organization.DEFAULT);
         query.contains(Optional.of("contained"));
         final QueryResult<Expression> result = exprRepo.query(query);
-        Assert.assertEquals(3, result.values().size());
-        Assert.assertEquals(expr1.getId(), result.values().get(0).getId());
-        Assert.assertEquals(expr2.getId(), result.values().get(1).getId());
-        Assert.assertEquals(expr3.getId(), result.values().get(2).getId());
+        assertEquals(3, result.values().size());
+        assertEquals(expr1.getId(), result.values().get(0).getId());
+        assertEquals(expr2.getId(), result.values().get(1).getId());
+        assertEquals(expr3.getId(), result.values().get(2).getId());
     }
 
     @Test
@@ -309,9 +312,9 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         query.contains(Optional.of("contained"));
         query.cluster(Optional.of("my-cluster"));
         final QueryResult<Expression> result = exprRepo.query(query);
-        Assert.assertEquals(2, result.values().size());
-        Assert.assertEquals(expr1.getId(), result.values().get(0).getId());
-        Assert.assertEquals(expr2.getId(), result.values().get(1).getId());
+        assertEquals(2, result.values().size());
+        assertEquals(expr1.getId(), result.values().get(0).getId());
+        assertEquals(expr2.getId(), result.values().get(1).getId());
     }
 
     @Test
@@ -336,9 +339,9 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
         query.contains(Optional.of("contained"));
         query.service(Optional.of("my-service"));
         final QueryResult<Expression> result = exprRepo.query(query);
-        Assert.assertEquals(2, result.values().size());
-        Assert.assertEquals(expr1.getId(), result.values().get(0).getId());
-        Assert.assertEquals(expr2.getId(), result.values().get(1).getId());
+        assertEquals(2, result.values().size());
+        assertEquals(expr1.getId(), result.values().get(0).getId());
+        assertEquals(expr2.getId(), result.values().get(1).getId());
     }
 
     @Override

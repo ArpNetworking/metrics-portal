@@ -27,7 +27,6 @@ import models.internal.impl.DefaultHost;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,6 +34,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for <code>ElasticSearchHostRegistry</code>.
@@ -87,8 +89,8 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of(expectedHost.getHostname()));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final Host actualHost = Iterables.getFirst(result.values(), null);
-        Assert.assertEquals(expectedHost, actualHost);
-        Assert.assertEquals(1, result.total());
+        assertEquals(expectedHost, actualHost);
+        assertEquals(1, result.total());
     }
 
     @Test
@@ -102,8 +104,8 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of(expectedHost.getHostname()));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final Host actualHost = Iterables.getFirst(result.values(), null);
-        Assert.assertEquals(expectedHost, actualHost);
-        Assert.assertEquals(1, result.total());
+        assertEquals(expectedHost, actualHost);
+        assertEquals(1, result.total());
     }
 
     @Test
@@ -116,8 +118,8 @@ public class ElasticSearchHostRegistryTest {
 
         final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of(deletedHost.getHostname()));
         final QueryResult<Host> result = _repository.query(hostQuery);
-        Assert.assertTrue(result.values().isEmpty());
-        Assert.assertEquals(0, result.total());
+        assertTrue(result.values().isEmpty());
+        assertEquals(0, result.total());
     }
 
     @Test
@@ -133,11 +135,11 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).limit(10);
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(4, hosts.size());
-        Assert.assertTrue(hosts.contains(expectedHost1));
-        Assert.assertTrue(hosts.contains(expectedHost2));
-        Assert.assertTrue(hosts.contains(expectedHost3));
-        Assert.assertTrue(hosts.contains(expectedHost4));
+        assertEquals(4, hosts.size());
+        assertTrue(hosts.contains(expectedHost1));
+        assertTrue(hosts.contains(expectedHost2));
+        assertTrue(hosts.contains(expectedHost3));
+        assertTrue(hosts.contains(expectedHost4));
     }
 
     @Test
@@ -151,8 +153,8 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of("testFindHostsWithName-host1"));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(expectedHost, Iterables.getFirst(hosts, null));
+        assertEquals(1, hosts.size());
+        assertEquals(expectedHost, Iterables.getFirst(hosts, null));
     }
 
     @Test
@@ -166,8 +168,8 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery query = _repository.createQuery(Organization.DEFAULT).cluster(Optional.of("cluster1"));
         final QueryResult<Host> result = _repository.query(query);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(expectedHost, Iterables.getFirst(hosts, null));
+        assertEquals(1, hosts.size());
+        assertEquals(expectedHost, Iterables.getFirst(hosts, null));
     }
 
     @Test
@@ -183,16 +185,16 @@ public class ElasticSearchHostRegistryTest {
         final HostQuery hostQuery1 = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of("testFindHostsWithNamePrefix"));
         final QueryResult<Host> result1 = _repository.query(hostQuery1);
         final List<? extends Host> hosts1 = result1.values();
-        Assert.assertEquals(2, hosts1.size());
-        Assert.assertTrue(hosts1.contains(expectedHost1));
-        Assert.assertTrue(hosts1.contains(expectedHost2));
+        assertEquals(2, hosts1.size());
+        assertTrue(hosts1.contains(expectedHost1));
+        assertTrue(hosts1.contains(expectedHost2));
 
         final HostQuery hostQuery2 = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of("host"));
         final QueryResult<Host> result2 = _repository.query(hostQuery2);
         final List<? extends Host> hosts2 = result2.values();
-        Assert.assertEquals(2, hosts2.size());
-        Assert.assertTrue(hosts2.contains(expectedHost3));
-        Assert.assertTrue(hosts2.contains(expectedHost4));
+        assertEquals(2, hosts2.size());
+        assertTrue(hosts2.contains(expectedHost3));
+        assertTrue(hosts2.contains(expectedHost4));
     }
 
     @Test
@@ -210,8 +212,8 @@ public class ElasticSearchHostRegistryTest {
                 .metricsSoftwareState(Optional.of(MetricsSoftwareState.OLD_VERSION_INSTALLED));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertTrue(hosts.contains(expectedHost));
+        assertEquals(1, hosts.size());
+        assertTrue(hosts.contains(expectedHost));
     }
 
     @Test
@@ -229,7 +231,7 @@ public class ElasticSearchHostRegistryTest {
                 .limit(1);
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(1, hosts.size());
+        assertEquals(1, hosts.size());
     }
 
     @Test
@@ -244,9 +246,9 @@ public class ElasticSearchHostRegistryTest {
                 .partialHostname(Optional.of("host"));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(2, hosts.size());
-        Assert.assertEquals(expectedHost2, hosts.get(0));
-        Assert.assertEquals(expectedHost1, hosts.get(1));
+        assertEquals(2, hosts.size());
+        assertEquals(expectedHost2, hosts.get(0));
+        assertEquals(expectedHost1, hosts.get(1));
     }
 
     @Test
@@ -262,9 +264,9 @@ public class ElasticSearchHostRegistryTest {
                 .sortBy(Optional.of(HostQuery.Field.HOSTNAME));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(2, hosts.size());
-        Assert.assertEquals(expectedHost1, hosts.get(0));
-        Assert.assertEquals(expectedHost2, hosts.get(1));
+        assertEquals(2, hosts.size());
+        assertEquals(expectedHost1, hosts.get(0));
+        assertEquals(expectedHost2, hosts.get(1));
     }
 
     @Test
@@ -284,11 +286,11 @@ public class ElasticSearchHostRegistryTest {
                 .sortBy(Optional.of(HostQuery.Field.HOSTNAME));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
-        Assert.assertEquals(3, hosts.size());
-        Assert.assertEquals(expectedHost1, hosts.get(0));
-        Assert.assertEquals(expectedHost2, hosts.get(1));
-        Assert.assertEquals(expectedHost3, hosts.get(2));
-        Assert.assertEquals(5, result.total());
+        assertEquals(3, hosts.size());
+        assertEquals(expectedHost1, hosts.get(0));
+        assertEquals(expectedHost2, hosts.get(1));
+        assertEquals(expectedHost3, hosts.get(2));
+        assertEquals(5, result.total());
     }
 
     @Test
@@ -301,10 +303,10 @@ public class ElasticSearchHostRegistryTest {
         // Indexing is asynchronous at an interval of 1 second (see @Before)
         Thread.sleep(2000);
 
-        Assert.assertEquals(4, _repository.getHostCount(Organization.DEFAULT));
-        Assert.assertEquals(3, _repository.getHostCount(MetricsSoftwareState.LATEST_VERSION_INSTALLED, Organization.DEFAULT));
-        Assert.assertEquals(1, _repository.getHostCount(MetricsSoftwareState.OLD_VERSION_INSTALLED, Organization.DEFAULT));
-        Assert.assertEquals(0, _repository.getHostCount(MetricsSoftwareState.NOT_INSTALLED, Organization.DEFAULT));
+        assertEquals(4, _repository.getHostCount(Organization.DEFAULT));
+        assertEquals(3, _repository.getHostCount(MetricsSoftwareState.LATEST_VERSION_INSTALLED, Organization.DEFAULT));
+        assertEquals(1, _repository.getHostCount(MetricsSoftwareState.OLD_VERSION_INSTALLED, Organization.DEFAULT));
+        assertEquals(0, _repository.getHostCount(MetricsSoftwareState.NOT_INSTALLED, Organization.DEFAULT));
     }
 
     private Host addOrUpdateHost(final String name, final MetricsSoftwareState state, final String cluster) {

@@ -22,9 +22,12 @@ import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
-import org.junit.Assert;
 import org.junit.Test;
 import play.Environment;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 interface TestInterface {}
 class TestClass implements TestInterface { }
@@ -60,8 +63,8 @@ public class ConfigTypedProviderTest {
 
         final Injector injector = Guice.createInjector(module);
         final TestInterface instance = injector.getInstance(TestInterface.class);
-        Assert.assertNotNull(instance);
-        Assert.assertEquals(TestClass.class, instance.getClass());
+        assertNotNull(instance);
+        assertEquals(TestClass.class, instance.getClass());
     }
 
     @Test
@@ -82,10 +85,10 @@ public class ConfigTypedProviderTest {
 
         final Injector injector = Guice.createInjector(module);
         final TestInterface instance = injector.getInstance(TestInterface.class);
-        Assert.assertNotNull(instance);
-        Assert.assertEquals(TestClassInjected.class, instance.getClass());
+        assertNotNull(instance);
+        assertEquals(TestClassInjected.class, instance.getClass());
         final TestClassInjected testClassInjected = (TestClassInjected) instance;
-        Assert.assertSame(injectedClass, testClassInjected.getInjected());
+        assertSame(injectedClass, testClassInjected.getInjected());
 
     }
 }
