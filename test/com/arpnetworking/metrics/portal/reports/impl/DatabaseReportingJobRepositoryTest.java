@@ -15,6 +15,12 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.hamcrest.CoreMatchers.equalTo;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
@@ -24,9 +30,7 @@ import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
 import models.ebean.ReportingJob;
-import org.hamcrest.CoreMatchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
@@ -39,11 +43,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 
 /**
  * Put a real doc here before committing.
+ *
  * @author Christian Briones
  */
 public class DatabaseReportingJobRepositoryTest extends WithApplication {
@@ -74,7 +80,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test
     public void testGetJobWithInvalidId() {
         final UUID uuid = UUID.randomUUID();
-        Assert.assertFalse(_repository.getJob(uuid).isPresent());
+        assertFalse(_repository.getJob(uuid).isPresent());
     }
 
     @Test
@@ -84,14 +90,11 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
 
         final ReportRecipientGroup group = job.getRecipientGroups().stream().findFirst().get();
 
-        Assert.assertThat(job.getUpdatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
-        Assert.assertThat(job.getCreatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
-        Assert.assertThat("schedule should have been created",
-                job.getSchedule().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
-        Assert.assertThat("report source should have been created",
-                job.getReportSource().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
-        Assert.assertThat("recipient group should have been created",
-                group.getId(), CoreMatchers.not(CoreMatchers.nullValue()));
+        assertThat(job.getUpdatedAt(), not(nullValue()));
+        assertThat(job.getCreatedAt(), not(nullValue()));
+        assertThat("schedule should have been created", job.getSchedule().getId(), not(nullValue()));
+        assertThat("report source should have been created", job.getReportSource().getId(), not(nullValue()));
+        assertThat("recipient group should have been created", group.getId(), not(nullValue()));
     }
 
     @Test
@@ -104,8 +107,8 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         job.setName(ALTERED_JOB_NAME);
         _repository.addOrUpdateJob(job);
 
-        final ReportingJob optUpdatedJob = _repository.getJob(job.getUuid()).get();
-        Assert.assertThat(optUpdatedJob.getName(), CoreMatchers.equalTo(ALTERED_JOB_NAME));
+        final Optional<String> updatedName = _repository.getJob(job.getUuid()).map(ReportingJob::getName);
+        assertThat(updatedName, equalTo(Optional.of(ALTERED_JOB_NAME)));
     }
 
     @Test
@@ -117,9 +120,9 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         _repository.addOrUpdateJob(job);
 
         final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        Assert.assertThat(retrievedJob.getReportSource().getUuid(), CoreMatchers.equalTo(reportSource.getUuid()));
-        Assert.assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), CoreMatchers.equalTo(reportSource.getTimeoutInSeconds()));
-        Assert.assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), CoreMatchers.equalTo(424242L));
+        assertThat(retrievedJob.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
+        assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), equalTo(reportSource.getTimeoutInSeconds()));
+        assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), equalTo(424242L));
     }
 
     @Test
@@ -136,9 +139,9 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
         final ReportRecipientGroup retrievedGroup = retrievedJob.getRecipientGroups().stream().findFirst().get();
 
-        Assert.assertThat(retrievedGroup.getUuid(), CoreMatchers.equalTo(group.getUuid()));
-        Assert.assertThat(retrievedGroup.getName(), CoreMatchers.equalTo(group.getName()));
-        Assert.assertThat(retrievedGroup.getRecipients(), CoreMatchers.equalTo(newRecipients));
+        assertThat(retrievedGroup.getUuid(), equalTo(group.getUuid()));
+        assertThat(retrievedGroup.getName(), equalTo(group.getName()));
+        assertThat(retrievedGroup.getRecipients(), equalTo(newRecipients));
     }
 
     @Test
@@ -155,7 +158,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         _repository.addOrUpdateJob(job);
 
         final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        Assert.assertThat(retrievedJob.getSchedule(), CoreMatchers.equalTo(recurringSchedule));
+        assertThat(retrievedJob.getSchedule(), equalTo(recurringSchedule));
     }
 
     @Test
@@ -168,7 +171,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         _repository.addOrUpdateJob(job);
 
         final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        Assert.assertThat(retrievedJob.getReportSource().getUuid(), CoreMatchers.equalTo(reportSource.getUuid()));
+        assertThat(retrievedJob.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
     }
 
     @Test(expected = PersistenceException.class)
