@@ -29,27 +29,27 @@ import java.util.UUID;
  */
 public interface ReportingJobRepository {
     /**
-     * Open the <code>ReportingJobRepository</code>.
+     * Open the {@code ReportingJobRepository}.
      */
     void open();
 
     /**
-     * Close the <code>ReportingJobRepository</code>.
+     * Close the {@code ReportingJobRepository}.
      */
     void close();
 
     /**
-     * Get a <code>ReportingJob</code> by identifier.
+     * Get a {@code ReportingJob} by identifier.
      *
-     * @param identifier The <code>ReportingJob</code> identifier.
-     * @return The matching <code>ReportingJob</code>, if any, otherwise <code>Optional.empty()</code>.
+     * @param identifier The {@code ReportingJob} identifier.
+     * @return The matching {@code ReportingJob}, if any, otherwise {@link Optional#empty()}.
      */
     Optional<ReportingJob> getJob(UUID identifier);
 
     /**
-     * Create or update a <code>ReportingJob</code>.
+     * Create or update a {@code ReportingJob}.
      *
-     * @param job The <code>ReportingJob</code> to create or update.
+     * @param job The {@code ReportingJob} to create or update.
      */
     void addOrUpdateJob(ReportingJob job);
 }

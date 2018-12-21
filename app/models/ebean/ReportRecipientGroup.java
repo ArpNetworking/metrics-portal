@@ -36,7 +36,7 @@ import javax.persistence.Table;
 
 /**
  * Data Model for SQL storage of groups of report recipients.
- * <p>
+ * <br>
  * A recipient group can contain multiple {@link models.ebean.ReportRecipient} instances.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
@@ -113,7 +113,7 @@ public class ReportRecipientGroup {
     /**
      * Get the report recipients for this group.
      *
-     * @return The <code>ReportRecipient</code>s
+     * @return The {@code ReportRecipient}s
      */
     public List<ReportRecipient> getRecipients() {
         return recipients;
@@ -122,7 +122,7 @@ public class ReportRecipientGroup {
     /**
      * Set the report recipients for this group.
      *
-     * @param value - The new <code>ReportRecipient</code>s for this group.
+     * @param value - The new {@code ReportRecipient}s for this group.
      */
     public void setRecipients(final List<ReportRecipient> value) {
         recipients = value;

@@ -50,7 +50,7 @@ import javax.persistence.PersistenceException;
 /**
  * Put a real doc here before committing.
  *
- * @author Christian Briones
+ * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DatabaseReportingJobRepositoryTest extends WithApplication {
 
