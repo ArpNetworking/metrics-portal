@@ -56,12 +56,10 @@ public class ReportingJob {
     private String name;
 
     @JoinColumn(name = "report_source_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, cascade = CascadeType.PERSIST)
     private ReportSource reportSource;
 
-    //    @JoinColumn(name = "recipient_group_id")
-//    @ManyToOne(optional = false)
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.PERSIST)
     private Set<ReportRecipientGroup> recipientGroups;
 
     @CreatedTimestamp
@@ -72,9 +70,12 @@ public class ReportingJob {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @OneToOne(optional = false, cascade = CascadeType.ALL)
+    @OneToOne(optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "report_schedule_id")
     private ReportingSchedule schedule;
+
+    @Column(name = "disabled")
+    private boolean disabled;
 
     public UUID getUuid() {
         return uuid;
@@ -116,7 +117,7 @@ public class ReportingJob {
         return schedule;
     }
 
-    public void setSchedule(@Nullable final ReportingSchedule value) {
+    public void setSchedule(final ReportingSchedule value) {
         schedule = value;
     }
 
@@ -126,6 +127,10 @@ public class ReportingJob {
 
     public void setRecipientGroups(final Set<ReportRecipientGroup> value) {
         recipientGroups = value;
+    }
+
+    public boolean getDisabled() {
+        return disabled;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

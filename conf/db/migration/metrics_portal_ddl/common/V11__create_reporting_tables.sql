@@ -54,6 +54,7 @@ CREATE TABLE portal.reporting_jobs (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     name VARCHAR(255) NOT NULL,
+    disabled bit DEFAULT 0,
 
     report_source_id BIGINT NOT NULL references portal.report_sources(id),
     report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
@@ -91,3 +92,4 @@ CREATE TABLE portal.report_formats (
 
 CREATE UNIQUE INDEX reporting_jobs_uuid_idx ON portal.reporting_jobs (uuid);
 CREATE UNIQUE INDEX reporting_jobs_name_idx ON portal.reporting_jobs (name);
+CREATE INDEX reporting_jobs_disabled_idx ON portal.reporting_jobs (disabled);

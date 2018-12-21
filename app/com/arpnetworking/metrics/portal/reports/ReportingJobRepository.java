@@ -48,16 +48,9 @@ public interface ReportingJobRepository {
 
     /**
      * Create or update a <code>ReportingJob</code>.
-
+     *
      * @param job The <code>ReportingJob</code> to create or update.
      */
     void addOrUpdateJob(ReportingJob job);
-
-    /**
-     * Delete a <code>ReportingJob</code> by identifier.
-     *
-     * @param identifier - The <code>ReportingJob</code> identifier.
-     */
-    void deleteJob(UUID identifier);
 }
 

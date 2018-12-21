@@ -80,9 +80,9 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test
     public void testCreateNewJob() {
         final ReportingJob job = newJob();
-        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
-        job.setRecipientGroups(Collections.singleton(group));
         _repository.addOrUpdateJob(job);
+
+        final ReportRecipientGroup group = job.getRecipientGroups().stream().findFirst().get();
 
         Assert.assertThat(job.getUpdatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
         Assert.assertThat(job.getCreatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
@@ -125,10 +125,9 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test
     public void testUpdateExistingReportingGroup() {
         final ReportingJob job = newJob();
-        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
-        job.setRecipientGroups(Collections.singleton(group));
         _repository.addOrUpdateJob(job);
 
+        final ReportRecipientGroup group = job.getRecipientGroups().stream().findFirst().get();
         final List<ReportRecipient> newRecipients = new ArrayList<>(group.getRecipients());
         newRecipients.add(ReportRecipient.newEmailRecipient("some-new-email@test.com"));
         group.setRecipients(newRecipients);
@@ -175,6 +174,8 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test(expected = PersistenceException.class)
     public void testCreateJobWithoutASchedule() {
         final ReportingJob job = newJob();
+        // Intentionally setting report source to null for test.
+        //noinspection ConstantConditions
         job.setSchedule(null);
         _repository.addOrUpdateJob(job);
         System.out.println(job);
@@ -183,16 +184,10 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test(expected = PersistenceException.class)
     public void testCreateJobWithoutASource() {
         final ReportingJob job = newJob();
+        // Intentionally setting report source to null for test.
+        //noinspection ConstantConditions
         job.setReportSource(null);
         _repository.addOrUpdateJob(job);
-    }
-
-    @Test
-    public void testDeleteJob() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
-        _repository.deleteJob(job.getUuid());
-        Assert.assertFalse(_repository.getJob(job.getUuid()).isPresent());
     }
 
     private ReportingJob newJob() {
@@ -203,7 +198,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         source.setUuid(sourceUuid);
         final ReportingJob job = TestBeanFactory.createEbeanReportingJob();
         job.setReportSource(source);
-//        job.setRecipientGroup(group);
+        job.setRecipientGroups(Collections.singleton(group));
         return job;
     }
 }

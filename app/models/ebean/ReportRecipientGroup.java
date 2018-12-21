@@ -69,8 +69,7 @@ public class ReportRecipientGroup {
     @JoinColumn(name = "reporting_job_id")
     private ReportingJob job;
 
-    @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL)
-    @PrivateOwned
+    @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportRecipient> recipients;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

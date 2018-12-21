@@ -60,33 +60,10 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
                 .addData("uuid", identifier)
                 .log();
         return Ebean.find(ReportingJob.class)
-                    .where()
-                    .eq("uuid", identifier)
-                    .findOneOrEmpty();
-    }
-
-    @Override
-    public void deleteJob(final UUID uuid) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Deleting reporting job")
-                .addData("uuid", uuid)
-                .log();
-        try {
-            Ebean.find(ReportingJob.class)
                 .where()
-                .eq("uuid", uuid)
-                .delete();
-            // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatchCheck
-            LOGGER.error()
-                    .setMessage("Failed to delete reporting job")
-                    .addData("uuid", uuid)
-                    .setThrowable(e)
-                    .log();
-            throw new PersistenceException(e);
-        }
+                .eq("uuid", identifier)
+                .eq("disabled", false)
+                .findOneOrEmpty();
     }
 
     @Override
@@ -97,10 +74,12 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
                 .addData("job", job)
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-//            Ebean.save(job.getRecipientGroup());
             Ebean.save(job.getReportSource());
-
-            final Optional<ReportingJob> existingJob = getJob(job.getUuid());
+            final Optional<ReportingJob> existingJob =
+                    Ebean.find(ReportingJob.class)
+                            .where()
+                            .eq("uuid", job.getUuid())
+                            .findOneOrEmpty();
             final boolean created = !existingJob.isPresent();
             Ebean.save(job);
             transaction.commit();

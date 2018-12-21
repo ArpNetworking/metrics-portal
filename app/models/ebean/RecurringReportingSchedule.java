@@ -20,6 +20,7 @@ import com.google.common.base.MoreObjects;
 
 import java.sql.Date;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -39,11 +40,12 @@ public class RecurringReportingSchedule extends ReportingSchedule {
     @Column(name = "max_occurrences")
     private Integer maxOccurrences;
 
+    @Nullable
     public Date getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(final Date value) {
+    public void setEndDate(@Nullable final Date value) {
         endDate = value;
     }
 
