@@ -97,7 +97,7 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
                 .addData("job", job)
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-            Ebean.save(job.getRecipientGroup());
+//            Ebean.save(job.getRecipientGroup());
             Ebean.save(job.getReportSource());
 
             final Optional<ReportingJob> existingJob = getJob(job.getUuid());

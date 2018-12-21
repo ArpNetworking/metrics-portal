@@ -21,6 +21,7 @@ import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -28,6 +29,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -62,9 +65,17 @@ public class ReportRecipientGroup {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "reporting_job_id")
+    private ReportingJob job;
+
     @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL)
     @PrivateOwned
     private List<ReportRecipient> recipients;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "recipient_group_id", referencedColumnName = "id")
+    private Set<ReportFormat> formats;
 
     /**
      * Create a new recipient group.
@@ -101,6 +112,15 @@ public class ReportRecipientGroup {
     }
 
     /**
+     * Get the report recipients for this group.
+     *
+     * @return The <code>ReportRecipient</code>s
+     */
+    public List<ReportRecipient> getRecipients() {
+        return recipients;
+    }
+
+    /**
      * Set the report recipients for this group.
      *
      * @param value - The new <code>ReportRecipient</code>s for this group.
@@ -109,13 +129,12 @@ public class ReportRecipientGroup {
         recipients = value;
     }
 
-    /**
-     * Get the report recipients for this group.
-     *
-     * @return The <code>ReportRecipient</code>s
-     */
-    public List<ReportRecipient> getRecipients() {
-        return recipients;
+    public Set<ReportFormat> getFormats() {
+        return formats;
+    }
+
+    public void setFormats(final Set<ReportFormat> value) {
+        formats = value;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

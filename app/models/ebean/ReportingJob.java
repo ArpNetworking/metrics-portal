@@ -19,6 +19,7 @@ import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
+import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
@@ -29,8 +30,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
 
 /**
  * Data Model for SQL storage of a reporting job.
@@ -56,9 +59,10 @@ public class ReportingJob {
     @ManyToOne(optional = false)
     private ReportSource reportSource;
 
-    @JoinColumn(name = "recipient_group_id")
-    @ManyToOne(optional = false)
-    private ReportRecipientGroup recipientGroup;
+    //    @JoinColumn(name = "recipient_group_id")
+//    @ManyToOne(optional = false)
+    @OneToMany(cascade = CascadeType.ALL)
+    private Set<ReportRecipientGroup> recipientGroups;
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -88,14 +92,6 @@ public class ReportingJob {
         reportSource = value;
     }
 
-    public ReportRecipientGroup getRecipientGroup() {
-        return recipientGroup;
-    }
-
-    public void setRecipientGroup(final ReportRecipientGroup value) {
-        this.recipientGroup = value;
-    }
-
     public Timestamp getCreatedAt() {
         return createdAt;
     }
@@ -122,6 +118,14 @@ public class ReportingJob {
 
     public void setSchedule(@Nullable final ReportingSchedule value) {
         schedule = value;
+    }
+
+    public Set<ReportRecipientGroup> getRecipientGroups() {
+        return recipientGroups;
+    }
+
+    public void setRecipientGroups(final Set<ReportRecipientGroup> value) {
+        recipientGroups = value;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

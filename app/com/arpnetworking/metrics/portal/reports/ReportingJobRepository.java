@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A repository for storing and retrieving instances of <code>ReportingJob</code>.
+ * A repository for storing and retrieving instances of {@link ReportingJob}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */

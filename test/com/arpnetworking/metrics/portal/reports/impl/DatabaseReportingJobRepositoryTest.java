@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import models.ebean.ChromeScreenshotReportSource;
+import models.ebean.RecurringReportingSchedule;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
@@ -32,7 +33,11 @@ import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
@@ -75,7 +80,10 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test
     public void testCreateNewJob() {
         final ReportingJob job = newJob();
+        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
+        job.setRecipientGroups(Collections.singleton(group));
         _repository.addOrUpdateJob(job);
+
         Assert.assertThat(job.getUpdatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
         Assert.assertThat(job.getCreatedAt(), CoreMatchers.not(CoreMatchers.nullValue()));
         Assert.assertThat("schedule should have been created",
@@ -83,7 +91,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         Assert.assertThat("report source should have been created",
                 job.getReportSource().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
         Assert.assertThat("recipient group should have been created",
-                job.getRecipientGroup().getId(), CoreMatchers.not(CoreMatchers.nullValue()));
+                group.getId(), CoreMatchers.not(CoreMatchers.nullValue()));
     }
 
     @Test
@@ -117,22 +125,40 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     @Test
     public void testUpdateExistingReportingGroup() {
         final ReportingJob job = newJob();
+        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
+        job.setRecipientGroups(Collections.singleton(group));
         _repository.addOrUpdateJob(job);
-        final ReportRecipientGroup group = job.getRecipientGroup();
+
         final List<ReportRecipient> newRecipients = new ArrayList<>(group.getRecipients());
         newRecipients.add(ReportRecipient.newEmailRecipient("some-new-email@test.com"));
         group.setRecipients(newRecipients);
         _repository.addOrUpdateJob(job);
 
         final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        final ReportRecipientGroup retrievedGroup = retrievedJob.getRecipientGroup();
+        final ReportRecipientGroup retrievedGroup = retrievedJob.getRecipientGroups().stream().findFirst().get();
 
         Assert.assertThat(retrievedGroup.getUuid(), CoreMatchers.equalTo(group.getUuid()));
         Assert.assertThat(retrievedGroup.getName(), CoreMatchers.equalTo(group.getName()));
         Assert.assertThat(retrievedGroup.getRecipients(), CoreMatchers.equalTo(newRecipients));
     }
 
-    // FAILED
+    @Test
+    public void testUpdateSchedule() {
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+
+        final RecurringReportingSchedule recurringSchedule = new RecurringReportingSchedule();
+        recurringSchedule.setStartDate(Date.valueOf("2018-12-01"));
+        recurringSchedule.setAvailableAt(Timestamp.from(Instant.now()));
+        recurringSchedule.setEndDate(null);
+        recurringSchedule.setMaxOccurrences(30);
+        job.setSchedule(recurringSchedule);
+        _repository.addOrUpdateJob(job);
+
+        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
+        Assert.assertThat(retrievedJob.getSchedule(), CoreMatchers.equalTo(recurringSchedule));
+    }
+
     @Test
     public void testUpdateExistingJobWithNewSource() {
         final ReportingJob job = newJob();
@@ -161,13 +187,6 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         _repository.addOrUpdateJob(job);
     }
 
-    @Test(expected = PersistenceException.class)
-    public void testCreateJobWithoutARecipientGroup() {
-        final ReportingJob job = newJob();
-        job.setRecipientGroup(null);
-        _repository.addOrUpdateJob(job);
-    }
-
     @Test
     public void testDeleteJob() {
         final ReportingJob job = newJob();
@@ -184,7 +203,7 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         source.setUuid(sourceUuid);
         final ReportingJob job = TestBeanFactory.createEbeanReportingJob();
         job.setReportSource(source);
-        job.setRecipientGroup(group);
+//        job.setRecipientGroup(group);
         return job;
     }
 }

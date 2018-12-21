@@ -15,14 +15,19 @@
  */
 package models.ebean;
 
+import com.google.common.base.MoreObjects;
+
+import java.sql.Date;
 import java.sql.Timestamp;
 import javax.persistence.Column;
+import javax.persistence.DiscriminatorColumn;
+import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 /**
@@ -30,67 +35,55 @@ import javax.persistence.Table;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+// CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "report_schedules", schema = "portal")
-// CHECKSTYLE.OFF: MemberNameCheck
+@DiscriminatorColumn(name = "type")
+@DiscriminatorValue("ONE_SHOT")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class ReportingSchedule {
-    /**
-     * The recurrence behaviour of a schedule.
-     */
-    public enum RecurrenceType {
-        /**
-         * A non-recurring schedule.
-         */
-        NONE,
-        /**
-         * A schedule which recurs daily.
-         */
-        DAILY,
-        /**
-         * A schedule which recurs weekly.
-         */
-        WEEKLY
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "send_at")
-    private Timestamp sendAt;
+    @Column(name = "start_date")
+    private Date startDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "recurrence_type")
-    private RecurrenceType recurrenceType = RecurrenceType.NONE;
+    @Column(name = "available_at")
+    private Timestamp availableAt;
+
+    public Timestamp getAvailableAt() {
+        return availableAt;
+    }
+
+    public void setAvailableAt(final Timestamp value) {
+        availableAt = value;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(final Date value) {
+        startDate = value;
+    }
+
+    public void setId(final Integer value) {
+        id = value;
+    }
 
     public Integer getId() {
         return id;
     }
 
-    public Timestamp getSendAt() {
-        return sendAt;
-    }
-
-    public void setSendAt(final Timestamp value) {
-        sendAt = value;
-    }
-
-    public RecurrenceType getRecurrenceType() {
-        return recurrenceType;
-    }
-
-    public void setRecurrenceType(final RecurrenceType value) {
-        recurrenceType = value;
-    }
-
     @Override
     public String toString() {
-        return "ReportingSchedule{"
-                + "id=" + id
-                + ", sendAt=" + sendAt
-                + ", recurrenceType=" + recurrenceType
-                + '}';
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
+                .add("startDate", startDate)
+                .add("availableAt", availableAt)
+                .toString();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

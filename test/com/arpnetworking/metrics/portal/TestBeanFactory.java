@@ -20,6 +20,8 @@ import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
+import models.ebean.PDFReportFormat;
+import models.ebean.ReportFormat;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportingJob;
@@ -35,6 +37,7 @@ import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Arrays;
@@ -76,21 +79,30 @@ public final class TestBeanFactory {
 
     public static ReportingJob createEbeanReportingJob() {
         final ReportingSchedule schedule = new ReportingSchedule();
-        schedule.setSendAt(Timestamp.from(Instant.now()));
+        schedule.setStartDate(new Date(System.currentTimeMillis()));
+        schedule.setAvailableAt(Timestamp.from(Instant.now()));
 
         final ReportingJob job = new ReportingJob();
         job.setUuid(UUID.randomUUID());
         job.setSchedule(schedule);
         job.setName(TEST_NAME);
+
         return job;
     }
 
     public static ReportRecipientGroup createEbeanReportRecipientGroup() {
         final UUID groupUuid = UUID.randomUUID();
+
+        final PDFReportFormat format = new PDFReportFormat();
+        format.setHeightInches(1.0f);
+        format.setWidthInches(1.0f);
+
         final ReportRecipientGroup group = new ReportRecipientGroup();
         group.setUuid(groupUuid);
         group.setRecipients(Collections.singletonList(ReportRecipient.newEmailRecipient(TEST_EMAIL)));
         group.setName(TEST_GROUP);
+        group.setFormats(Collections.singleton(format));
+
         return group;
     }
 

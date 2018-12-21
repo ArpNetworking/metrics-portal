@@ -15,6 +15,8 @@
  */
 package models.ebean;
 
+import com.google.common.base.MoreObjects;
+
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,38 +32,14 @@ import javax.persistence.Table;
 /**
  * Data Model for SQL storage of a report recipient.
  *
- * @see ReportRecipient.RecipientType
  * @author Christian Briones (cbriones at dropbox dot com)
+ * @see ReportRecipient.RecipientType
  */
 // CHECKSTYLE.OFF: FinalClassCheck - Ebean requires the class to be non-final.
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "report_recipients", schema = "portal")
 public class ReportRecipient {
-    /**
-     * The type of report recipient.
-     */
-    public enum RecipientType {
-        /**
-         * An email address.
-         */
-        EMAIL
-    }
-
-    private ReportRecipient(final RecipientType typeValue, final String recipientValue) {
-        type = typeValue;
-        recipient = recipientValue;
-    }
-
-    /**
-     * Create a new ReportRecipient with the given emailAddress.
-     * @param emailAddress The address of the recipient
-     * @return A new email recipient.
-     */
-    public static ReportRecipient newEmailRecipient(final String emailAddress) {
-        return new ReportRecipient(RecipientType.EMAIL, emailAddress);
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -78,12 +56,28 @@ public class ReportRecipient {
     @Column(name = "type")
     private RecipientType type;
 
+    private ReportRecipient(final RecipientType typeValue, final String recipientValue) {
+        type = typeValue;
+        recipient = recipientValue;
+    }
+
+    /**
+     * Create a new ReportRecipient with the given emailAddress.
+     *
+     * @param emailAddress The address of the recipient
+     * @return A new email recipient.
+     */
+    public static ReportRecipient newEmailRecipient(final String emailAddress) {
+        return new ReportRecipient(RecipientType.EMAIL, emailAddress);
+    }
+
     public Long getId() {
         return id;
     }
 
     /**
      * Get the address of this recipient.
+     *
      * @return The address of the recipient.
      */
     public String get() {
@@ -96,12 +90,12 @@ public class ReportRecipient {
 
     @Override
     public String toString() {
-        return "ReportRecipient{"
-                + "id=" + id
-                + ", recipient='" + recipient + '\''
-                + ", group.uuid='" + recipientGroup.getUuid() + '\''
-                + ", type=" + type
-                + '}';
+        return MoreObjects.toStringHelper(this)
+                .add("id", id)
+                .add("recipient", recipient)
+                .add("group.uuid", recipientGroup.getUuid())
+                .add("type", type)
+                .toString();
     }
 
     @Override
@@ -109,7 +103,7 @@ public class ReportRecipient {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || !getClass().equals(o.getClass())) {
             return false;
         }
         final ReportRecipient that = (ReportRecipient) o;
@@ -122,6 +116,16 @@ public class ReportRecipient {
     @Override
     public int hashCode() {
         return Objects.hash(id, recipientGroup, recipient, type);
+    }
+
+    /**
+     * The type of report recipient.
+     */
+    public enum RecipientType {
+        /**
+         * An email address.
+         */
+        EMAIL
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

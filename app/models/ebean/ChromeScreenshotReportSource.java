@@ -26,7 +26,7 @@ import javax.persistence.Entity;
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@DiscriminatorValue("chromeScreenshot")
+@DiscriminatorValue("CHROME_SCREENSHOT")
 public class ChromeScreenshotReportSource extends ReportSource {
     @Column(name = "url")
     private String url;
@@ -39,12 +39,6 @@ public class ChromeScreenshotReportSource extends ReportSource {
 
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
-
-    @Column(name = "pdf_width_inches")
-    private double pdfWidthInches;
-
-    @Column(name = "pdf_height_inches")
-    private double pdfHeightInches;
 
     public String getUrl() {
         return url;
@@ -76,22 +70,6 @@ public class ChromeScreenshotReportSource extends ReportSource {
 
     public void setTriggeringEventName(final String value) {
         triggeringEventName = value;
-    }
-
-    public double getPdfWidthInches() {
-        return pdfWidthInches;
-    }
-
-    public void setPdfWidthInches(final double value) {
-        pdfWidthInches = value;
-    }
-
-    public double getPdfHeightInches() {
-        return pdfHeightInches;
-    }
-
-    public void setPdfHeightInches(final double value) {
-        pdfHeightInches = value;
     }
 
     @Override
