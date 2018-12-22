@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import com.arpnetworking.metrics.portal.reports.Job;
-import com.arpnetworking.metrics.portal.reports.JobRepository;
+import com.arpnetworking.metrics.portal.scheduling.Job;
+import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 /**
@@ -39,32 +38,17 @@ public final class MapJobRepository implements JobRepository {
     public MapJobRepository() {}
 
     private final AtomicLong _nonce = new AtomicLong(0);
-    private final Map<String, Job> _specs = Maps.newConcurrentMap();
-    @Override
-    public @Nullable
-    Job get(final String id) {
-        return _specs.get(id);
-    }
+    private final Map<String, Job> _map = Maps.newHashMap();
 
-    @Override
-    public Stream<String> listSpecs() {
-        return _specs.keySet().stream();
-    }
-
-    @Override
-    public String add(final Job spec) {
+    public String add(final Job j) {
         final String id = Long.toString(_nonce.getAndIncrement());
-        _specs.put(id, spec);
+        _map.put(id, j);
         return id;
     }
 
+    @Nullable
     @Override
-    public void open() {
-
-    }
-
-    @Override
-    public void close() {
-
+    public Job get(final String id) {
+        return _map.get(id);
     }
 }

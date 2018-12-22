@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.metrics.portal.scheduling.Job;
+
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
@@ -23,7 +25,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson
  */
-public interface JobRepository {
+public interface JobRepository extends com.arpnetworking.metrics.portal.scheduling.JobRepository {
     /**
      * Retrieve a job from the repository.
      *

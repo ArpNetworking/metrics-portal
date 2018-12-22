@@ -13,22 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports;
+package com.arpnetworking.metrics.portal.scheduling.impl;
+
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.Job;
 
 import java.time.Instant;
 import javax.annotation.Nullable;
 
 /**
- * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
+ * Schedule for a {@link Job} that should be executed exactly once.
  *
  * @author Spencer Pearson
  */
-public interface Schedule {
+public final class OneOffSchedule implements Schedule {
+
     /**
-     * Determines when next to run the job.
-     *
-     * @param lastRun The last time the job was run.
-     * @return The next time to run the job, or null if it should never be run again.
+     * The only instance of OneOffSchedule. (They all behave the same.)
      */
-    @Nullable Instant nextRun(Instant lastRun);
+    public static final OneOffSchedule INSTANCE = new OneOffSchedule();
+
+    private OneOffSchedule() {}
+
+    @Override
+    public @Nullable Instant nextRun(final Instant lastRun, final Instant now) {
+        return null;
+    }
+
 }

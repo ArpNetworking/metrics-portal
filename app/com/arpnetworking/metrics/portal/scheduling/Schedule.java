@@ -13,36 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
-
-import com.arpnetworking.metrics.portal.reports.Schedule;
+package com.arpnetworking.metrics.portal.scheduling;
 
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
 import javax.annotation.Nullable;
 
 /**
- * Schedule for a job that repeats periodically.
+ * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
  *
  * @author Spencer Pearson
  */
-public final class PeriodicSchedule implements Schedule {
-
-    private final TemporalAmount _period;
-
+public interface Schedule {
     /**
-     * @param period The interval over which the job repeats.
+     * Determines when next to run the job.
+     *
+     * @param lastRun The last time the job was run.
+     * @param now The current time.
+     * @return The next time to run the job. Must be strictly in the future.
      */
-    public PeriodicSchedule(final TemporalAmount period) {
-        _period = period;
-    }
-
-    @Override
-    public @Nullable Instant nextRun(final Instant lastRun) {
-        return lastRun.plus(_period);
-    }
-
-    public TemporalAmount getPeriod() {
-        return _period;
-    }
+    @Nullable Instant nextRun(Instant lastRun, Instant now);
 }

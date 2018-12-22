@@ -38,7 +38,7 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.impl.JobScheduler;
+import com.arpnetworking.metrics.portal.scheduling.JobScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;

@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
 import akka.persistence.SnapshotOffer;
-import com.arpnetworking.metrics.portal.reports.Job;
-import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.ScheduledJob;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
@@ -46,6 +43,7 @@ import javax.annotation.Nullable;
 public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
     private static final int SNAPSHOT_INTERVAL = 1000;
+//    TODO(spencerpearson): make JobExecutor terminate when it finishes work
 
     private State _state = new State();
 
@@ -155,13 +153,16 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
         final List<Event> events = new ArrayList<>();
         events.add(RemoveJobEvt.INSTANCE);
-        final Instant nextRun = j.getSchedule().nextRun(sj.getWhenRun());
+        final Instant nextRun = j.getSchedule().nextRun(sj.getWhenRun(), _clock.instant());
         if (nextRun != null) {
             events.add(new AddJobEvt(new ScheduledJob(nextRun, id)));
         }
         persistAll(events, this::updateState);
 
-        getContext().actorOf(JobExecutor.props()).tell(new JobExecutor.Execute(j, notifiee), notifiee);
+        getContext().actorOf(JobExecutor.props()).tell(
+                new JobExecutor.Execute.Builder().setRepo(_repository).setJobId(id).setNotifiee(notifiee).build(),
+                notifiee
+        );
     }
 
     @Override
@@ -179,7 +180,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
     @Override
     public String persistenceId() {
-        return "com.arpnetworking.metrics.portal.reports.impl.JobScheduler";
+        return "com.arpnetworking.metrics.portal.scheduling.JobScheduler";
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);

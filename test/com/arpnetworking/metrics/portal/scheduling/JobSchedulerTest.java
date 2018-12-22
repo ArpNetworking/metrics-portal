@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.reports.Job;
-import com.arpnetworking.metrics.portal.reports.JobRepository;
-import com.arpnetworking.metrics.portal.reports.Report;
-import com.arpnetworking.metrics.portal.reports.ScheduledJob;
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.typesafe.config.ConfigFactory;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,19 +38,32 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class JobSchedulerTest {
 
     private static final Instant t0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration tickSize = java.time.Duration.ofSeconds(1);
 
-    private JobRepository repo = new MapJobRepository();
+    private MapJobRepository repo = new MapJobRepository();
     private ManualClock clock;
     private ActorSystem system;
 
     private static final AtomicLong systemNameNonce = new AtomicLong(0);
+
+    private static final class DummyJob implements Job {
+        public static final DummyJob INSTANCE = new DummyJob();
+        @Override
+        public Schedule getSchedule() {
+            return new PeriodicSchedule(tickSize);
+        }
+
+        @Override
+        public CompletionStage<Void> start() {
+            return CompletableFuture.completedFuture(null);
+        }
+    }
 
     @Before
     public void setUp() {
@@ -84,12 +96,7 @@ public class JobSchedulerTest {
 
     @Test
     public void testBasics() {
-        String jobId = repo.add(
-                new Job.Builder()
-                        .setSpec(DummyReportSpec.INSTANCE)
-                        .setSink(DummyReportSink.INSTANCE)
-                        .setSchedule(OneOffSchedule.INSTANCE)
-                        .build());
+        String jobId = repo.add(DummyJob.INSTANCE);
 
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
@@ -113,14 +120,7 @@ public class JobSchedulerTest {
            the first tick should do nothing; and the second tick should run+reschedule the job.
          */
 
-        final Report report = new Report.Builder().setHtml("egrraeg").setPdf("hhloio".getBytes()).build();
-        final AtomicReference<Report> sentReport = new AtomicReference<>();
-        String jobId = repo.add(
-                new Job.Builder()
-                .setSpec(() -> CompletableFuture.completedFuture(report))
-                .setSink(fr -> fr.thenAccept(sentReport::set))
-                .setSchedule(t -> t.plus(tickSize))
-                .build());
+        String jobId = repo.add(DummyJob.INSTANCE);
 
         Instant t1 = t0.plus(tickSize.multipliedBy(3).dividedBy(2));
 
@@ -140,7 +140,7 @@ public class JobSchedulerTest {
         clock.tick();
         scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
         tk.expectMsg(JobExecutor.Success.INSTANCE);
-        Assert.assertEquals(report, sentReport.get());
+        tk.expectNoMsg();
 
         System.out.println(getPlan(tk, scheduler));
         Assert.assertEquals(

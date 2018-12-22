@@ -13,30 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.scheduling;
 
-import com.arpnetworking.metrics.portal.reports.Schedule;
-
-import java.time.Instant;
-import javax.annotation.Nullable;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Schedule for a {@link com.arpnetworking.metrics.portal.reports.Job} that should be executed exactly once.
+ * A (possibly recurring) job describing a task to perform and how often to repeat.
  *
  * @author Spencer Pearson
  */
-public final class OneOffSchedule implements Schedule {
+public interface Job {
+    /**
+     * @return The schedule on which the Job should be repeated.
+     */
+    Schedule getSchedule();
 
     /**
-     * The only instance of OneOffSchedule. (They all behave the same.)
+     * @return A {@link CompletionStage} completes exceptionally iff the job throws an exception.
      */
-    public static final OneOffSchedule INSTANCE = new OneOffSchedule();
-
-    private OneOffSchedule() {}
-
-    @Override
-    public @Nullable Instant nextRun(final Instant lastRun) {
-        return null;
-    }
-
+    CompletionStage<Void> start();
 }
+
