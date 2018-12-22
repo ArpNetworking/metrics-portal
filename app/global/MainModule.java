@@ -37,7 +37,6 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
-import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobScheduler;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
@@ -92,9 +91,6 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
-                .asEagerSingleton();
-        bind(JobRepository.class)
-                .toProvider(ReportRepositoryProvider.class)
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
@@ -283,39 +279,6 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return alertRepository;
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
-        private final ApplicationLifecycle _lifecycle;
-    }
-
-    private static final class ReportRepositoryProvider implements Provider<JobRepository> {
-
-        @Inject
-        ReportRepositoryProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration,
-                final ApplicationLifecycle lifecycle) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-            _lifecycle = lifecycle;
-        }
-
-        @Override
-        public JobRepository get() {
-            final JobRepository jobRepository = _injector.getInstance(
-                    ConfigurationHelper.<JobRepository>getType(_environment, _configuration, "jobRepository.type"));
-            jobRepository.open();
-            _lifecycle.addStopHook(
-                    () -> {
-                        jobRepository.close();
-                        return CompletableFuture.completedFuture(null);
-                    });
-            return jobRepository;
         }
 
         private final Injector _injector;

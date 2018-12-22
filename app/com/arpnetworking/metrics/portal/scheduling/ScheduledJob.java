@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import com.arpnetworking.metrics.portal.reports.JobRepository;
 import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;

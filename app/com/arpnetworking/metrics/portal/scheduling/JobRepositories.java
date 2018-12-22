@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
+
 import java.io.Serializable;
 
 /**
@@ -24,9 +26,9 @@ import java.io.Serializable;
  */
 public enum JobRepositories implements Serializable {
     /**
-     * todo: a doc.
+     * todo: doc.
      */
-    REPORTS(com.arpnetworking.metrics.portal.reports.JobRepository.class);
+    DUMMY(MapJobRepository.class);
 
     /**
      * Private constructor.
