@@ -1,0 +1,716 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2018 Dropbox
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>com.arpnetworking.build</groupId>
+    <artifactId>arpnetworking-parent-pom</artifactId>
+    <version>1.1.9</version>
+    <relativePath />
+  </parent>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.arpnetworking.metrics</groupId>
+  <artifactId>metrics-portal</artifactId>
+  <packaging>play2</packaging>
+  <name>Metrics Portal</name>
+  <description>Web user interface for managing the metrics stack.</description>
+  <version>0.9.0-SNAPSHOT</version>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>barp</id>
+      <name>Brandon Arp</name>
+      <email>brandon.arp@inscopemetrics.com</email>
+      <organization>Inscope Metrics</organization>
+      <organizationUrl>http://www.inscopemetrics.com</organizationUrl>
+      <roles>
+        <role>developer</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>vkoskela</id>
+      <name>Ville Koskela</name>
+      <email>ville.koskela@inscopemetrics.com</email>
+      <organization>Inscope Metrics</organization>
+      <organizationUrl>http://www.inscopemetrics.com</organizationUrl>
+      <roles>
+        <role>developer</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git@github.com:ArpNetworking/metrics-portal.git</connection>
+    <developerConnection>scm:git:git@github.com:ArpNetworking/metrics-portal.git</developerConnection>
+    <url>https://github.com/arpnetworking/metrics-portal</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <properties>
+    <!-- Dependency Versions -->
+    <akka.version>2.5.20</akka.version>
+    <akka.http.version>10.0.11</akka.http.version>
+    <akka.persistence.cassandra.version>0.58</akka.persistence.cassandra.version>
+    <akka.persistence.jdbc.version>3.5.0</akka.persistence.jdbc.version>
+    <anorm.version>2.6.2</anorm.version>
+    <arpnetworking.commons.version>1.18.0</arpnetworking.commons.version>
+    <cassandra.version>3.2.0</cassandra.version>
+    <cdt.java.client.version>1.3.2</cdt.java.client.version>
+    <cglib.version>3.2.1</cglib.version>
+    <chrisomeara.pillar.version>2.3.0</chrisomeara.pillar.version>
+    <elasticsearch.version>1.7.2</elasticsearch.version>
+    <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
+    <flyway.version>4.0.0</flyway.version>
+    <guava.version>19.0</guava.version>
+    <guice.version>4.0</guice.version>
+    <h2.version>1.4.192</h2.version>
+    <jackson.version>2.9.2</jackson.version>
+    <javassist.maven.core.version>0.2.1</javassist.maven.core.version>
+    <java.mail.version>5.0.0</java.mail.version>
+    <java.websocket.version>1.3.0</java.websocket.version>
+    <leveldb.version>0.9</leveldb.version>
+    <leveldb.jni.version>1.8</leveldb.jni.version>
+    <logback.steno.version>1.18.0</logback.steno.version>
+    <metrics.client.version>0.10.0</metrics.client.version>
+    <metrics.client.http.version>0.8.2</metrics.client.http.version>
+    <metrics.jvm.extra.version>0.7.0</metrics.jvm.extra.version>
+    <oval.version>1.90</oval.version>
+    <play2.version>2.6.15</play2.version>
+    <play2-ebean.version>4.1.3</play2-ebean.version>
+    <play2-enhancer.version>1.2.2</play2-enhancer.version>
+    <play2-webjars.version>2.6.3</play2-webjars.version>
+    <postgresql.version>9.4-1206-jdbc42</postgresql.version>
+    <scala.version>2.11.12</scala.version>
+
+    <!-- Web Jars -->
+    <webjar.auth0.version>2.1.0</webjar.auth0.version>
+    <webjar.bean.version>1.0.14</webjar.bean.version>
+    <webjar.bootstrap.version>3.3.7</webjar.bootstrap.version>
+    <webjar.bootstrap.datetimepicker.version>4.17.47</webjar.bootstrap.datetimepicker.version>
+    <webjar.d3.version>4.11.0</webjar.d3.version>
+    <webjar.durandal.version>2.2.0</webjar.durandal.version>
+    <webjar.flotr2.version>d43f8566e8</webjar.flotr2.version>
+    <webjar.font.awesome.version>4.3.0-2</webjar.font.awesome.version>
+    <webjar.iconv.lite.version>0.4.24</webjar.iconv.lite.version>
+    <webjar.graceful.readlink.version>1.0.1</webjar.graceful.readlink.version>
+    <webjar.jquery.version>3.2.1</webjar.jquery.version>
+    <webjar.jquery.ui.version>1.12.1</webjar.jquery.ui.version>
+    <webjar.jquery.ui.themes.version>1.12.1</webjar.jquery.ui.themes.version>
+    <webjar.knockout.version>3.4.0</webjar.knockout.version>
+    <webjar.moment.version>2.24.0</webjar.moment.version>
+    <webjar.moment.timezone.version>0.5.23</webjar.moment.timezone.version>
+    <webjar.qrangeslider.version>5.7.0</webjar.qrangeslider.version>
+    <webjar.requirejs.text.version>2.0.10-1</webjar.requirejs.text.version>
+    <webjar.typeaheadjs.version>0.10.4-1</webjar.typeaheadjs.version>
+    <webjar.underscorejs.version>1.8.3</webjar.underscorejs.version>
+
+    <!-- Test Dependency Versions -->
+    <cassandra.unit.version>3.1.3.2</cassandra.unit.version>
+    <junit.version>4.12</junit.version>
+    <mockito.version>1.10.19</mockito.version>
+
+    <!-- Additional Plugins -->
+    <aspectjtools.maven.plugin>1.9.1</aspectjtools.maven.plugin>
+    <aspectj.maven.plugin.version>1.8</aspectj.maven.plugin.version>
+    <docker.maven.plugin.version>0.26.0</docker.maven.plugin.version>
+    <javassist.maven.plugin.version>0.1.2</javassist.maven.plugin.version>
+    <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
+    <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
+    <play.maven.plugin.version>1.0.0-rc4</play.maven.plugin.version>
+    <sbt.compiler.plugin.version>1.0.0</sbt.compiler.plugin.version>
+    <sbtrun.maven.plugin.version>1.0.0-beta4</sbtrun.maven.plugin.version>
+
+    <!-- Scala -->
+    <scala.package.version>2.11</scala.package.version>
+
+    <!-- Code Coverage -->
+    <jacoco.check.line.coverage>1.0</jacoco.check.line.coverage>
+    <jacoco.check.branch.coverage>1.0</jacoco.check.branch.coverage>
+
+    <!-- JVM -->
+    <dockerJavaOptions />
+    <debugJavaPort>9002</debugJavaPort>
+
+    <!-- Docker Overrides -->
+    <skipDockerBuild>false</skipDockerBuild>
+
+    <!-- Assembly Overrides -->
+    <tgz.finalName>${project.build.finalName}</tgz.finalName>
+  </properties>
+
+  <build>
+    <sourceDirectory>${project.basedir}/app</sourceDirectory>
+    <testSourceDirectory>${project.basedir}/test</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/conf</directory>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/public</directory>
+        <targetPath>public</targetPath>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>com.google.code.play2-maven-plugin</groupId>
+        <artifactId>play2-maven-plugin</artifactId>
+        <version>${play.maven.plugin.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <mainLang>java</mainLang>
+          <routesGenerator>injected</routesGenerator>
+          <httpPort>8080</httpPort>
+          <!--<routesGenerator>injected</routesGenerator>-->
+          <!--<serverJvmArgs>-Dplay.evolutions.db.default.autoApply=true</serverJvmArgs>
+          <templateAdditionalImports>play.data._ play.core.j.PlayFormsMagicForJava._</templateAdditionalImports>
+          -->
+        </configuration>
+        <executions>
+          <!--<execution>
+            <id>default-play2-compile-assets</id>
+            <goals>
+              <goal>closure-compile</goal>
+            </goals>
+          </execution>-->
+          <execution>
+            <id>package-play-dist</id>
+            <phase>package</phase>
+            <goals>
+              <goal>dist</goal>
+              <goal>dist-exploded</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-play2-enhance</id>
+            <goals>
+              <goal>enhance</goal>
+              <goal>ebean-enhance</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--<plugin>
+        <groupId>com.google.code.sbtrun-maven-plugin</groupId>
+        <artifactId>sbtrun-maven-plugin</artifactId>
+        <version>${sbtrun.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>compile-assets</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <args>web-stage</args>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>-->
+      <plugin>
+        <groupId>com.google.code.sbt-compiler-maven-plugin</groupId>
+        <artifactId>sbt-compiler-maven-plugin</artifactId>
+        <version>${sbt.compiler.plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <!-- Play Framework -->
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-guice_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-akka-http-server_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-ahc-ws_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>filters-helpers_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-jdbc_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-java_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-java-forms_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-ebean_${scala.package.version}</artifactId>
+      <version>${play2-ebean.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-logback_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-enhancer</artifactId>
+      <version>${play2-enhancer.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>webjars-play_${scala.package.version}</artifactId>
+      <version>${play2-webjars.version}</version>
+    </dependency>
+
+    <!-- Akka -->
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-actor_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-sharding_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-tools_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-http_${scala.package.version}</artifactId>
+      <version>${akka.http.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-persistence_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-persistence-cassandra_${scala.package.version}</artifactId>
+      <version>${akka.persistence.cassandra.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.dnvriend</groupId>
+      <artifactId>akka-persistence-jdbc_${scala.package.version}</artifactId>
+      <version>${akka.persistence.jdbc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-slf4j_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+
+    <!-- Logging and Metrics -->
+    <dependency>
+      <groupId>com.arpnetworking.logback</groupId>
+      <artifactId>logback-steno</artifactId>
+      <version>${logback.steno.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.metrics</groupId>
+      <artifactId>metrics-client</artifactId>
+      <version>${metrics.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.metrics.extras</groupId>
+      <artifactId>apache-http-sink-extra</artifactId>
+      <version>${metrics.client.http.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.metrics.extras</groupId>
+      <artifactId>jvm-extra</artifactId>
+      <version>${metrics.jvm.extra.version}</version>
+    </dependency>
+
+    <!-- Jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-guava</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <!-- Framework -->
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib</artifactId>
+      <version>${cglib.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.commons</groupId>
+      <artifactId>commons</artifactId>
+      <version>${arpnetworking.commons.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.arpnetworking.commons</groupId>
+      <artifactId>javassist-maven-core</artifactId>
+      <version>${javassist.maven.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.chrisomeara</groupId>
+      <artifactId>pillar_${scala.package.version}</artifactId>
+      <version>${chrisomeara.pillar.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${findbugs.annotations.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${guice.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.oval</groupId>
+      <artifactId>oval</artifactId>
+      <version>${oval.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.java-websocket</groupId>
+      <artifactId>Java-WebSocket</artifactId>
+      <version>${java.websocket.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.kklisura.cdt</groupId>
+      <artifactId>cdt-java-client</artifactId>
+      <version>${cdt.java.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.simplejavamail</groupId>
+      <artifactId>simple-java-mail</artifactId>
+      <version>${java.mail.version}</version>
+    </dependency>
+
+    <!-- Data Stores -->
+    <dependency>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-core</artifactId>
+      <version>${cassandra.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-mapping</artifactId>
+      <version>${cassandra.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-extras</artifactId>
+      <version>${cassandra.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.elasticsearch</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${elasticsearch.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-play_${scala.package.version}</artifactId>
+      <version>${flyway.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${h2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
+    </dependency>
+
+    <!-- Dev Jars -->
+    <dependency>
+      <groupId>org.iq80.leveldb</groupId>
+      <artifactId>leveldb</artifactId>
+      <version>${leveldb.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.fusesource.leveldbjni</groupId>
+      <artifactId>leveldbjni-all</artifactId>
+      <version>${leveldb.jni.version}</version>
+    </dependency>
+
+    <!-- Web Jars -->
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>bean</artifactId>
+      <version>${webjar.bean.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>bootstrap</artifactId>
+      <version>${webjar.bootstrap.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>d3</artifactId>
+      <version>${webjar.d3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>durandal</artifactId>
+      <version>${webjar.durandal.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>flotr2</artifactId>
+      <version>${webjar.flotr2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>font-awesome</artifactId>
+      <version>${webjar.font.awesome.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>iconv-lite</artifactId>
+      <version>${webjar.iconv.lite.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>Eonasdan-bootstrap-datetimepicker</artifactId>
+      <version>${webjar.bootstrap.datetimepicker.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>moment</artifactId>
+      <version>${webjar.moment.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>moment-timezone</artifactId>
+      <version>${webjar.moment.timezone.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>jQRangeSlider</artifactId>
+      <version>${webjar.qrangeslider.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>jquery</artifactId>
+      <version>${webjar.jquery.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>jquery-ui</artifactId>
+      <version>${webjar.jquery.ui.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>jquery-ui-themes</artifactId>
+      <version>${webjar.jquery.ui.themes.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>knockout</artifactId>
+      <version>${webjar.knockout.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>requirejs-text</artifactId>
+      <version>${webjar.requirejs.text.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars</groupId>
+      <artifactId>typeaheadjs</artifactId>
+      <version>${webjar.typeaheadjs.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.webjars.npm</groupId>
+      <artifactId>github-com-auth0-jwt-decode</artifactId>
+      <version>${webjar.auth0.version}</version>
+    </dependency>
+
+    <!-- Testing -->
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-test_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-testkit_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <profiles>
+    <profile>
+      <id>rpm</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>rpm-maven-plugin</artifactId>
+            <version>${rpm.maven.plugin.version}</version>
+            <executions>
+              <execution>
+                <id>generate-rpm</id>
+                <goals>
+                  <goal>rpm</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <license>Apache 2 License</license>
+              <group>System Environment/Daemons</group>
+              <autoRequires>false</autoRequires>
+              <preinstallScriptlet>
+                <scriptFile>rpm/scripts/pre.sh</scriptFile>
+              </preinstallScriptlet>
+              <postinstallScriptlet>
+                <scriptFile>rpm/scripts/post.sh</scriptFile>
+              </postinstallScriptlet>
+              <preremoveScriptlet>
+                <scriptFile>rpm/scripts/preun.sh</scriptFile>
+              </preremoveScriptlet>
+              <postremoveScriptlet>
+                <scriptFile>rpm/scripts/postun.sh</scriptFile>
+              </postremoveScriptlet>
+              <requires>
+                <require>java &gt;= ${jdk.version}</require>
+                <require>initscripts</require>
+                <require>which</require>
+              </requires>
+              <mappings>
+                <mapping>
+                  <directory>/opt/metrics-portal</directory>
+                  <sources>
+                    <source>
+                      <location>${buildDirectory}/appassembler</location>
+                    </source>
+                  </sources>
+                </mapping>
+                <mapping>
+                  <directory>/opt/metrics-portal/config</directory>
+                  <sources>
+                    <source>
+                      <location>config</location>
+                    </source>
+                  </sources>
+                </mapping>
+                <mapping>
+                  <directory>/</directory>
+                  <sources>
+                    <source>
+                      <location>rpm/fs</location>
+                    </source>
+                  </sources>
+                </mapping>
+                <!-- symlink the start script -->
+                <mapping>
+                  <directory>/usr/local/bin</directory>
+                  <sources>
+                    <softlinkSource>
+                      <location>/opt/metrics-portal/bin/metrics-portal</location>
+                    </softlinkSource>
+                  </sources>
+                </mapping>
+              </mappings>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>debug</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>debug</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <dockerJavaOptions>-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${debugJavaPort},suspend=n</dockerJavaOptions>
+      </properties>
+    </profile>
+    <profile>
+      <id>no-docker</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <skipIntegrationTests>true</skipIntegrationTests>
+        <skipDockerBuild>true</skipDockerBuild>
+      </properties>
+    </profile>
+  </profiles>
+</project>
+
