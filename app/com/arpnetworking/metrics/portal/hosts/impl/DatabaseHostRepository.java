@@ -112,7 +112,7 @@ public class DatabaseHostRepository implements HostRepository {
 
         final Transaction transaction = Ebean.beginTransaction();
         try {
-            models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
+            final models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
                     .where()
                     .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())

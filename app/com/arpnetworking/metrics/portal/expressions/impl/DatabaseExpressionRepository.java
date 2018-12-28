@@ -167,7 +167,7 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                 .log();
 
         try (Transaction transaction = Ebean.beginTransaction()) {
-            models.ebean.Expression ebeanExpression = Ebean.find(models.ebean.Expression.class)
+            final models.ebean.Expression ebeanExpression = Ebean.find(models.ebean.Expression.class)
                     .where()
                     .eq("uuid", expression.getId())
                     .eq("organization.uuid", organization.getId())

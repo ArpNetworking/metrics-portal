@@ -187,7 +187,7 @@ public class DatabaseAlertRepository implements AlertRepository {
 
 
         try (Transaction transaction = Ebean.beginTransaction()) {
-            models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
+            final models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
                     .where()
                     .eq("uuid", alert.getId())
                     .eq("organization.uuid", organization.getId())
