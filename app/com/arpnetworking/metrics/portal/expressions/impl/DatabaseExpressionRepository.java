@@ -105,16 +105,12 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                 .addData("organization", organization)
                 .log();
 
-        final models.ebean.Expression ebeanExpression = Ebean.find(models.ebean.Expression.class)
+        return Ebean.find(models.ebean.Expression.class)
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
-        if (ebeanExpression == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(convertFromEbeanExpression(ebeanExpression));
+                .findOneOrEmpty()
+                .map(this::convertFromEbeanExpression);
     }
 
     @Override
@@ -175,12 +171,8 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
                     .where()
                     .eq("uuid", expression.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
-            boolean isNewExpression = false;
-            if (ebeanExpression == null) {
-                ebeanExpression = new models.ebean.Expression();
-                isNewExpression = true;
-            }
+                    .findOneOrEmpty()
+                    .orElse(new models.ebean.Expression());
 
             ebeanExpression.setCluster(expression.getCluster());
             ebeanExpression.setUuid(expression.getId());
@@ -194,7 +186,6 @@ public class DatabaseExpressionRepository implements ExpressionRepository {
             LOGGER.info()
                     .setMessage("Upserted expression")
                     .addData("expression", expression)
-                    .addData("isCreated", isNewExpression)
                     .addData("organization", organization)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck

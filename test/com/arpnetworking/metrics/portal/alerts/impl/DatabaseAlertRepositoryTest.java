@@ -151,11 +151,11 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         models.ebean.Alert ebeanAlert1 = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", uuid)
-                .findUnique();
+                .findOne();
         models.ebean.Alert ebeanAlert2 = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", uuid)
-                .findUnique();
+                .findOne();
         try (Transaction transaction = Ebean.beginTransaction()) {
             ebeanAlert1.setCluster("new-cluster1");
             ebeanAlert2.setCluster("new-cluster2");

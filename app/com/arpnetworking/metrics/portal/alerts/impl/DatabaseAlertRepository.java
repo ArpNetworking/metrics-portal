@@ -110,15 +110,12 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .addData("organization", organization)
                 .log();
 
-        final models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
+        return Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
-        if (ebeanAlert == null) {
-            return Optional.empty();
-        }
-        return Optional.of(convertFromEbeanAlert(ebeanAlert));
+                .findOneOrEmpty()
+                .map(this::convertFromEbeanAlert);
     }
 
     @Override
@@ -194,12 +191,8 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .where()
                     .eq("uuid", alert.getId())
                     .eq("organization.uuid", organization.getId())
-                    .findUnique();
-            boolean isNewAlert = false;
-            if (ebeanAlert == null) {
-                ebeanAlert = new models.ebean.Alert();
-                isNewAlert = true;
-            }
+                    .findOneOrEmpty()
+                    .orElse(new models.ebean.Alert());
 
             ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(organization));
             ebeanAlert.setCluster(alert.getCluster());
@@ -221,7 +214,6 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .setMessage("Upserted alert")
                     .addData("alert", alert)
                     .addData("organization", organization)
-                    .addData("isCreated", isNewAlert)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {

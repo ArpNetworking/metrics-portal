@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -115,12 +116,9 @@ public class DatabaseHostRepository implements HostRepository {
                     .where()
                     .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())
-                    .findUnique();
-            boolean isNewHost = false;
-            if (ebeanHost == null) {
-                ebeanHost = new models.ebean.Host();
-                isNewHost = true;
-            }
+                    .findOneOrEmpty()
+                    .orElse(new models.ebean.Host());
+
             ebeanHost.setCluster(host.getCluster().orElse(null));
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
@@ -132,7 +130,6 @@ public class DatabaseHostRepository implements HostRepository {
                     .setMessage("Upserted host")
                     .addData("host", host)
                     .addData("organization", organization)
-                    .addData("isCreated", isNewHost)
                     .log();
         } finally {
             transaction.end();
@@ -147,12 +144,12 @@ public class DatabaseHostRepository implements HostRepository {
                 .addData("hostname", hostname)
                 .addData("organization", organization)
                 .log();
-        final models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
+        final Optional<models.ebean.Host> ebeanHost = Ebean.find(models.ebean.Host.class)
                 .where()
                 .eq("name", hostname)
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
-        if (ebeanHost != null) {
+                .findOneOrEmpty();
+        if (ebeanHost.isPresent()) {
             Ebean.delete(ebeanHost);
             LOGGER.info()
                     .setMessage("Deleted host")
