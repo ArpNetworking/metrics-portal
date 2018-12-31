@@ -18,6 +18,7 @@ package models.ebean;
 import io.ebean.Ebean;
 import io.ebean.Finder;
 
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -54,17 +55,17 @@ public class ExpressionEtags {
      * @param organization the organization
      */
     public static void incrementEtag(final Organization organization) {
-        ExpressionEtags etag = FINDER.query()
-                .setForUpdate(true)
+        @Nullable ExpressionEtags etag = FINDER.query()
+                .forUpdate()
                 .where()
                 .eq("organization", organization)
-                .findUnique();
-        if (etag == null) {
+                .findOne();
+        if (etag != null) {
+            etag.setEtag(etag.getEtag() + 1);
+        } else {
             etag = new ExpressionEtags();
             etag.setOrganization(organization);
             etag.setEtag(1);
-        } else {
-            etag.setEtag(etag.getEtag() + 1);
         }
         Ebean.save(etag);
     }
@@ -76,14 +77,12 @@ public class ExpressionEtags {
      * @return the etag value, or 0 if a value does not exist in the table
      */
     public static long getEtagByOrganization(final models.internal.Organization organization) {
-        final ExpressionEtags etag = FINDER.query()
+        return FINDER.query()
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findUnique();
-        if (etag != null) {
-            return etag.getEtag();
-        }
-        return 0;
+                .findOneOrEmpty()
+                .map(ExpressionEtags::getEtag)
+                .orElse(0L);
     }
 
     public Long getId() {

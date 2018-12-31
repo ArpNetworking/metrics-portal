@@ -69,11 +69,10 @@ public class Organization {
      */
     @Nullable
     public static Organization findByOrganization(@Nonnull final models.internal.Organization organization) {
-        final Organization org = FINDER.query()
+        return FINDER.query()
                 .where()
                 .eq("uuid", organization.getId())
-                .findUnique();
-        return org;
+                .findOne();
     }
 
     /**

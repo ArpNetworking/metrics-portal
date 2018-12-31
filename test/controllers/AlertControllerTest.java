@@ -84,7 +84,7 @@ public class AlertControllerTest {
         final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", UUID.fromString("88410734-aed7-11e1-8e54-00259060b612"))
-                .findUnique();
+                .findOne();
 
         assertNotNull(alert);
         assertEquals(Context.CLUSTER, alert.getContext());
