@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.internal.Alert;
@@ -71,6 +72,9 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
     @Override
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
+                .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

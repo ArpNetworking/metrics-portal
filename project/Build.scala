@@ -275,7 +275,6 @@ object ApplicationBuild extends Build {
       ),
 
       devSettings := Seq("play.server.http.port" -> "8080"),
-      javaOptions += "-Dconfig.file=conf/portal.application.conf",
       javaOptions in Test += "-Dlogger.resource=logback-test.xml",
 
       JsEngineKeys.engineType := JsEngineKeys.EngineType.Node,

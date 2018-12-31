@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.expressions.impl.DatabaseExpressionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Expression;
 import models.internal.Organization;
 import org.junit.AfterClass;
@@ -51,7 +52,9 @@ public class ExpressionControllerTest {
     public static void instantiate() {
         exprRepo.open();
         app = new GuiceApplicationBuilder()
-                .overrides(Bindings.bind(ExpressionRepository.class).toInstance(exprRepo))
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("expressionRepository.type", DatabaseExpressionRepository.class.getName())
+                .configure("expressionRepository.expressionQueryGenerator.type", DatabaseExpressionRepository.GenericQueryGenerator.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

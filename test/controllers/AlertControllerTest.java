@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -37,6 +38,7 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
+import play.test.WithApplication;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -50,27 +52,29 @@ import static org.junit.Assert.fail;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-public class AlertControllerTest {
+public class AlertControllerTest extends WithApplication {
 
     @BeforeClass
     public static void instantiate() {
         alertRepo.open();
-        app = new GuiceApplicationBuilder()
-                .overrides(
-                        Bindings.bind(AlertRepository.class).toInstance(alertRepo))
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(H2ConnectionStringFactory.generateConfiguration())
-                .build();
-        Helpers.start(app);
     }
 
     @AfterClass
     public static void shutdown() {
         alertRepo.close();
-        if (app != null) {
-            Helpers.stop(app);
-        }
     }
+
+    @Override
+    protected Application provideApplication() {
+        return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
+                .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
+                .configure(H2ConnectionStringFactory.generateConfiguration())
+                .build();
+    }
+
 
     @Test
     public void testCreateValidCase() throws IOException {
@@ -304,7 +308,6 @@ public class AlertControllerTest {
         }
     }
 
-    private static Application app;
     private static final AlertRepository alertRepo = new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = AlertControllerTest.class.getSimpleName();

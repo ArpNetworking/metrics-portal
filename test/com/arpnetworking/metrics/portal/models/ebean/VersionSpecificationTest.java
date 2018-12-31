@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.models.ebean;
 
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
+import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
@@ -100,6 +101,7 @@ public class VersionSpecificationTest extends WithApplication {
     @Override
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

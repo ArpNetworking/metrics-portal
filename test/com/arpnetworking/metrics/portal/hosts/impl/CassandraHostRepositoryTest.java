@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -58,6 +59,8 @@ public class CassandraHostRepositoryTest extends WithApplication {
         final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
         final String host = EmbeddedCassandraServerHelper.getHost();
         _app = new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("hostRepository.type", CassandraHostRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
                 .configure(H2ConnectionStringFactory.generateConfiguration())
