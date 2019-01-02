@@ -24,11 +24,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
-import org.joda.time.Period;
 
 import java.util.List;
 import java.util.Map;
