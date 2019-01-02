@@ -13,32 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.scheduling;
+package models.internal.scheduling;
 
-import models.internal.scheduling.Job;
-
+import java.time.Instant;
 import javax.annotation.Nullable;
 
 /**
- * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
+ * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
  *
  * @author Spencer Pearson
  */
-public interface JobRepository {
+public interface Schedule {
     /**
-     * Add a new Job to the repository.
+     * Determines when next to run the job.
      *
-     * @param j The Job to record.
-     * @return A unique identifier for that job.
+     * @param lastRun The last time the job was run.
+     * @param now The current time.
+     * @return The next time to run the job. Must be strictly in the future.
      */
-    String add(Job j);
-
-    /**
-     * Retrieve a previously-stored Job.
-     *
-     * @param id The id assigned to the Job by a previous call to {@code add}.
-     * @return The Job stored with that key, or null if no job has that
-     */
-    @Nullable
-    Job get(String id);
+    @Nullable Instant nextRun(Instant lastRun, Instant now);
 }

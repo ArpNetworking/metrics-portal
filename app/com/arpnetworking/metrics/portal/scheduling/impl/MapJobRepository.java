@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import com.arpnetworking.metrics.portal.scheduling.Job;
+import models.internal.scheduling.Job;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;

@@ -22,6 +22,7 @@ import akka.persistence.SnapshotOffer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
+import models.internal.scheduling.Job;
 import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;

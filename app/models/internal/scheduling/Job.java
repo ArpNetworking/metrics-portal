@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.scheduling;
+package models.internal.scheduling;
 
-import java.time.Instant;
-import javax.annotation.Nullable;
+import java.util.concurrent.CompletionStage;
 
 /**
- * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
+ * A (possibly recurring) job describing a task to perform and how often to repeat.
  *
  * @author Spencer Pearson
  */
-public interface Schedule {
+public interface Job {
     /**
-     * Determines when next to run the job.
-     *
-     * @param lastRun The last time the job was run.
-     * @param now The current time.
-     * @return The next time to run the job. Must be strictly in the future.
+     * @return The schedule on which the Job should be repeated.
      */
-    @Nullable Instant nextRun(Instant lastRun, Instant now);
+    Schedule getSchedule();
+
+    /**
+     * @return A {@link CompletionStage} that completes exceptionally iff the job throws an exception.
+     */
+    CompletionStage<Void> start();
 }
+

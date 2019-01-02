@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Dropbox, Inc.
+ * Copyright 2018 Smartsheet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.scheduling;
 
-import java.util.concurrent.CompletionStage;
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package models.internal.scheduling;
 
-/**
- * A (possibly recurring) job describing a task to perform and how often to repeat.
- *
- * @author Spencer Pearson
- */
-public interface Job {
-    /**
-     * @return The schedule on which the Job should be repeated.
-     */
-    Schedule getSchedule();
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 
-    /**
-     * @return A {@link CompletionStage} that completes exceptionally iff the job throws an exception.
-     */
-    CompletionStage<Void> start();
-}
-
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -21,6 +21,7 @@ import akka.actor.Props;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import models.internal.scheduling.Job;
 
 import java.util.NoSuchElementException;
 

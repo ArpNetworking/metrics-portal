@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import models.internal.scheduling.Schedule;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
