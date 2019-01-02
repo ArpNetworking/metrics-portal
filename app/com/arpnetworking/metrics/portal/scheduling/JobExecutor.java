@@ -19,12 +19,14 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import models.internal.scheduling.Job;
 
 import java.util.NoSuchElementException;
+import java.util.concurrent.CompletionStage;
 
 /**
  * An actor that executes a {@link Job} and notifies another actor when finished.
@@ -62,13 +64,10 @@ public final class JobExecutor extends AbstractActor {
                         return;
                     }
 
-                    j.start().handle((result, err) -> {
-                        e.getNotifiee().tell(
-                                err == null ? Success.INSTANCE : new Failure(err),
-                                getSelf()
-                        );
-                        return null;
-                    });
+                    PatternsCS.pipe(
+                            j.start().handle((r, err) -> err == null ? Success.INSTANCE : new Failure(err)),
+                            getContext().dispatcher()
+                    ).to(e.getNotifiee());
                 })
                 .build();
     }
