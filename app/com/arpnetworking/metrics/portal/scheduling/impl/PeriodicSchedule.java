@@ -31,6 +31,8 @@ public final class PeriodicSchedule implements Schedule {
     private final TemporalAmount _period;
 
     /**
+     * Public constructor.
+     *
      * @param period The interval over which the job repeats.
      */
     public PeriodicSchedule(final TemporalAmount period) {
