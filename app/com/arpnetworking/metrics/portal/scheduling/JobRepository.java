@@ -25,6 +25,17 @@ import javax.annotation.Nullable;
  * @author Spencer Pearson
  */
 public interface JobRepository {
+
+    /**
+     * Open / connect to the repository. Must be called before any other methods.
+     */
+    void open();
+
+    /**
+     * Close the repository. Any further operations are illegal until the next open() call.
+     */
+    void close();
+
     /**
      * Add a new Job to the repository.
      *

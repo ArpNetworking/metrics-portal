@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 
 /**
- * A simple in-memory {@link JobRepository}. Not in any way persistent.
+ * A simple in-memory {@link JobRepository}. Not in any way persistent, probably not good for production usage.
  *
  * @author Spencer Pearson
  */
@@ -41,6 +41,12 @@ public final class MapJobRepository implements JobRepository {
 
     private final AtomicLong _nonce = new AtomicLong(0);
     private final Map<String, Job> _map = Maps.newHashMap();
+
+    @Override
+    public void open() {}
+
+    @Override
+    public void close() {}
 
     @Override
     public String add(final Job j) {
