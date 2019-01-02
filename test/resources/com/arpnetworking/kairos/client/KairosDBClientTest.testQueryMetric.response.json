@@ -1,0 +1,116 @@
+{
+  "queries": [
+    {
+      "sample_size": 709,
+      "results": [
+        {
+          "name": "cmf/web_perf/time_to_interactive_1d",
+          "group_by": [
+            {
+              "name": "type",
+              "type": "histogram"
+            }
+          ],
+          "tags": {
+            "browser_name": [
+              "Chrome",
+              "ChromeiOS",
+              "Edge",
+              "Firefox",
+              "Internet Explorer",
+              "NetFront",
+              "Opera",
+              "Safari",
+              "unknown"
+            ],
+            "navigation_type": [
+              "navigate"
+            ],
+            "office_ip": [
+              "False",
+              "True"
+            ],
+            "os_name": [
+              "BlackBerry",
+              "ChromeOS",
+              "Linux",
+              "Mac",
+              "Mac OS X",
+              "Windows",
+              "iOS",
+              "unknown"
+            ],
+            "product": [
+              "Home"
+            ],
+            "saved_from": [
+              "cmf/web_perf/time_to_interactive"
+            ]
+          },
+          "values": [
+            [
+              1544140800000,
+              9309235
+            ],
+            [
+              1544227200000,
+              9268738
+            ],
+            [
+              1544313600000,
+              9446959
+            ],
+            [
+              1544400000000,
+              1.0588767E7
+            ],
+            [
+              1544486400000,
+              1.2839945E7
+            ],
+            [
+              1544572800000,
+              1.2435492E7
+            ],
+            [
+              1544659200000,
+              1.3094636E7
+            ],
+            [
+              1544745600000,
+              1.3055932E7
+            ],
+            [
+              1544832000000,
+              1.3032597E7
+            ],
+            [
+              1544918400000,
+              1.296814E7
+            ],
+            [
+              1545004800000,
+              1.1378805E7
+            ],
+            [
+              1545091200000,
+              1.1200636E7
+            ],
+            [
+              1545177600000,
+              1.2469927E7
+            ],
+            [
+              1545264000000,
+              1.2202358E7
+            ],
+            [
+              1545350400000,
+              1.1700354E7
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
