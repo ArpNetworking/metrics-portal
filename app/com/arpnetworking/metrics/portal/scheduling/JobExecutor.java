@@ -44,6 +44,11 @@ public final class JobExecutor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Execute.class, e -> {
+
+                    // No matter what, we want this actor to shut down immediately after executing it job,
+                    //  because a one-off job-execution is this actor's entire purpose.
+                    getContext().getSystem().stop(getSelf());
+
                     final Job j = e.getRepo().get(e.getJobId());
                     if (j == null) {
                         LOGGER.error()
@@ -55,11 +60,10 @@ public final class JobExecutor extends AbstractActor {
                         return;
                     }
 
-                    final ActorRef self = getSelf();
                     j.start().handle((result, err) -> {
                         e.getNotifiee().tell(
                                 err == null ? Success.INSTANCE : new Failure(err),
-                                self
+                                getSelf()
                         );
                         return null;
                     });
@@ -96,23 +100,23 @@ public final class JobExecutor extends AbstractActor {
         }
 
         /**
-         * todo: a doc.
+         * Builder implementation for {@link JobExecutor}.
          */
         public static final class Builder extends OvalBuilder<Execute> {
             private JobRepository _repo;
             private String _jobId;
             private ActorRef _notifiee;
             /**
-             * todo: a doc.
+             * Public constructor.
              */
             public Builder() {
                 super(Execute::new);
             }
 
             /**
-             * todo: a doc.
+             * The {@link JobRepository} the JobExecutor should retrieve its job from. Required. Cannot be null.
              *
-             * @param repo todo: a doc.
+             * @param repo The repo.
              * @return This instance of <code>Builder</code>.
              */
             public Builder setRepo(final JobRepository repo) {
@@ -121,9 +125,9 @@ public final class JobExecutor extends AbstractActor {
             }
 
             /**
-             * todo: a doc.
+             * The id of the job that the Executor should retrieve from its repository.
              *
-             * @param jobId todo: a doc.
+             * @param jobId The job id.
              * @return This instance of <code>Builder</code>.
              */
             public Builder setJobId(final String jobId) {
@@ -132,9 +136,9 @@ public final class JobExecutor extends AbstractActor {
             }
 
             /**
-             * todo: a doc.
+             * The ActorRef that the {@link JobExecutor} should notify when the job finishes running.
              *
-             * @param notifiee todo: a doc.
+             * @param notifiee The ActorRef.
              * @return This instance of <code>Builder</code>.
              */
             public Builder setNotifiee(final ActorRef notifiee) {

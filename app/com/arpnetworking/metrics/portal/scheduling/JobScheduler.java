@@ -43,7 +43,6 @@ import javax.annotation.Nullable;
 public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
     private static final int SNAPSHOT_INTERVAL = 1000;
-//    TODO(spencerpearson): make JobExecutor terminate when it finishes work
 
     private State _state = new State();
 

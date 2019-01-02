@@ -18,25 +18,25 @@ package com.arpnetworking.metrics.portal.scheduling;
 import javax.annotation.Nullable;
 
 /**
- * todo: doc.
+ * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
  *
  * @author Spencer Pearson
  */
 public interface JobRepository {
     /**
-     * todo: doc.
+     * Add a new Job to the repository.
      *
-     * @param id todo: doc.
-     * @return todo: doc.
+     * @param j The Job to record.
+     * @return A unique identifier for that job.
+     */
+    String add(Job j);
+
+    /**
+     * Retrieve a previously-stored Job.
+     *
+     * @param id The id assigned to the Job by a previous call to {@code add}.
+     * @return The Job stored with that key, or null if no job has that
      */
     @Nullable
     Job get(String id);
-
-    /**
-     * todo: doc.
-     *
-     * @param j todo: doc.
-     * @return todo: doc.
-     */
-    String add(Job j);
 }
