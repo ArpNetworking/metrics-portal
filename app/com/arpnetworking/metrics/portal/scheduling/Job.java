@@ -29,7 +29,7 @@ public interface Job {
     Schedule getSchedule();
 
     /**
-     * @return A {@link CompletionStage} completes exceptionally iff the job throws an exception.
+     * @return A {@link CompletionStage} that completes exceptionally iff the job throws an exception.
      */
     CompletionStage<Void> start();
 }
