@@ -16,7 +16,7 @@
 package models.internal.scheduling;
 
 import java.time.Instant;
-import javax.annotation.Nullable;
+import java.util.Optional;
 
 /**
  * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
@@ -31,5 +31,5 @@ public interface Schedule {
      * @param now The current time.
      * @return The next time to run the job. Must be strictly in the future.
      */
-    @Nullable Instant nextRun(Instant lastRun, Instant now);
+    Optional<Instant> nextRun(Instant lastRun, Instant now);
 }

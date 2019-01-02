@@ -24,10 +24,10 @@ import com.google.inject.Inject;
 import models.internal.scheduling.Job;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.annotation.Nullable;
 
 /**
  * A simple in-memory {@link JobRepository}. Not in any way persistent, probably not good for production usage.
@@ -72,11 +72,10 @@ public final class MapJobRepository implements JobRepository {
         return id;
     }
 
-    @Nullable
     @Override
-    public Job get(final UUID id) {
+    public Optional<Job> get(final UUID id) {
         assertIsOpen();
-        return _map.get(id);
+        return Optional.ofNullable(_map.get(id));
     }
 
     private void assertIsOpen() {

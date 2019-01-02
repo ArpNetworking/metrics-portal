@@ -27,11 +27,11 @@ import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -140,8 +140,8 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
         }
         final UUID id = sj.getJobId();
 
-        final Job j = _repository.get(id);
-        if (j == null) {
+        final Optional<Job> j = _repository.get(id);
+        if (!j.isPresent()) {
             LOGGER.error()
                     .setMessage("job in queue with nonexistent id")
                     .addData("id", sj.getJobId())
@@ -154,10 +154,9 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
         final List<Event> events = new ArrayList<>();
         events.add(RemoveJobEvt.INSTANCE);
-        final Instant nextRun = j.getSchedule().nextRun(sj.getWhenRun(), _clock.instant());
-        if (nextRun != null) {
+        j.get().getSchedule().nextRun(sj.getWhenRun(), _clock.instant()).ifPresent(nextRun -> {
             events.add(new AddJobEvt(new ScheduledJob(nextRun, id)));
-        }
+        });
         persistAll(events, this::updateState);
 
         getContext().actorOf(JobExecutor.props()).tell(

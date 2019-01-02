@@ -19,7 +19,7 @@ import models.internal.scheduling.Schedule;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
-import javax.annotation.Nullable;
+import java.util.Optional;
 
 /**
  * Schedule for a job that repeats periodically.
@@ -40,12 +40,12 @@ public final class PeriodicSchedule implements Schedule {
     }
 
     @Override
-    public @Nullable Instant nextRun(final Instant lastRun, final Instant now) {
+    public Optional<Instant> nextRun(final Instant lastRun, final Instant now) {
         Instant result = lastRun.plus(_period);
         while (result.isBefore(now)) {
             result = result.plus(_period);
         }
-        return result;
+        return Optional.of(result);
     }
 
     public TemporalAmount getPeriod() {

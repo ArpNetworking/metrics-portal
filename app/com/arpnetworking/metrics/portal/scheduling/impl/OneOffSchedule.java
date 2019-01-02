@@ -19,7 +19,7 @@ import models.internal.scheduling.Job;
 import models.internal.scheduling.Schedule;
 
 import java.time.Instant;
-import javax.annotation.Nullable;
+import java.util.Optional;
 
 /**
  * Schedule for a {@link Job} that should be executed exactly once.
@@ -36,8 +36,8 @@ public final class OneOffSchedule implements Schedule {
     private OneOffSchedule() {}
 
     @Override
-    public @Nullable Instant nextRun(final Instant lastRun, final Instant now) {
-        return null;
+    public Optional<Instant> nextRun(final Instant lastRun, final Instant now) {
+        return Optional.empty();
     }
 
 }

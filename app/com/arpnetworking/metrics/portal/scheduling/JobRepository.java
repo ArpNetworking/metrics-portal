@@ -17,8 +17,8 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import models.internal.scheduling.Job;
 
+import java.util.Optional;
 import java.util.UUID;
-import javax.annotation.Nullable;
 
 /**
  * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
@@ -49,8 +49,7 @@ public interface JobRepository {
      * Retrieve a previously-stored Job.
      *
      * @param id The id assigned to the Job by a previous call to {@code add}.
-     * @return The Job stored with that key, or null if no job has that
+     * @return The Job stored with that key.
      */
-    @Nullable
-    Job get(UUID id);
+    Optional<Job> get(UUID id);
 }

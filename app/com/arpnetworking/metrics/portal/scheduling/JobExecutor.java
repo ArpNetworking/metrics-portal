@@ -26,6 +26,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import models.internal.scheduling.Job;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -53,8 +54,8 @@ public final class JobExecutor extends AbstractActor {
                     //  because a one-off job-execution is this actor's entire purpose.
                     getSelf().tell(PoisonPill.getInstance(), getSelf());
 
-                    final Job j = e.getRepo().get(e.getJobId());
-                    if (j == null) {
+                    final Optional<Job> j = e.getRepo().get(e.getJobId());
+                    if (!j.isPresent()) {
                         LOGGER.error()
                                 .setMessage("repository has no job with given id")
                                 .addData("repo", e.getRepo())
@@ -65,7 +66,7 @@ public final class JobExecutor extends AbstractActor {
                     }
 
                     PatternsCS.pipe(
-                            j.start().handle((r, err) -> err == null ? Success.INSTANCE : new Failure(err)),
+                            j.get().start().handle((r, err) -> err == null ? Success.INSTANCE : new Failure(err)),
                             getContext().dispatcher()
                     ).to(e.getNotifiee());
                 })
