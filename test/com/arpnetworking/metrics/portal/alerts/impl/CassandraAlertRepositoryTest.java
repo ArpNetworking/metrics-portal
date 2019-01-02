@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
@@ -67,12 +68,13 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
         final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
         final String host = EmbeddedCassandraServerHelper.getHost();
-        _app = new GuiceApplicationBuilder()
+        return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("alertRepository.type", CassandraAlertRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
-        return _app;
     }
 
     @BeforeClass
@@ -83,9 +85,8 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
     @Before
     public void setup() {
-        final Injector injector = _app.injector();
-        _mappingManager = injector.instanceOf(MappingManager.class);
-        _alertRepo = injector.instanceOf(CassandraAlertRepository.class);
+        _mappingManager = instanceOf(MappingManager.class);
+        _alertRepo = instanceOf(CassandraAlertRepository.class);
         _alertRepo.open();
     }
 
@@ -408,5 +409,4 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
     private CassandraAlertRepository _alertRepo;
     private MappingManager _mappingManager;
-    private Application _app;
 }
