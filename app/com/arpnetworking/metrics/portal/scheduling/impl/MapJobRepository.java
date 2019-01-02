@@ -22,9 +22,9 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.annotation.Nullable;
 
 /**
  * A simple in-memory {@link JobRepository}. Not in any way persistent.
