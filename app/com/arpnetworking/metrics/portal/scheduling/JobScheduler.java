@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -137,7 +138,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
         if (sj == null) {
             throw new NoSuchElementException("can't run next job when none are scheduled");
         }
-        final String id = sj.getJobId();
+        final UUID id = sj.getJobId();
 
         final Job j = _repository.get(id);
         if (j == null) {

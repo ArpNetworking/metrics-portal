@@ -20,6 +20,7 @@ import com.google.common.base.MoreObjects;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * A specification of some job to run at a future date.
@@ -28,13 +29,13 @@ import java.util.Objects;
  */
 public final class ScheduledJob implements Serializable {
     private final Instant _whenRun;
-    private final String _jobId;
+    private final UUID _jobId;
 
     /**
      * @param whenRun When the job should be executed.
      * @param jobId The id of the job to be executed, assigned by some {@link JobRepository}.
      */
-    public ScheduledJob(final Instant whenRun, final String jobId) {
+    public ScheduledJob(final Instant whenRun, final UUID jobId) {
         _whenRun = whenRun;
         _jobId = jobId;
     }
@@ -70,7 +71,7 @@ public final class ScheduledJob implements Serializable {
         return _whenRun;
     }
 
-    public String getJobId() {
+    public UUID getJobId() {
         return _jobId;
     }
 

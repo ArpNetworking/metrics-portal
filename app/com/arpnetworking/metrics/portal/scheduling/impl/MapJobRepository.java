@@ -19,10 +19,12 @@ import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
+import com.google.common.primitives.Longs;
 import com.google.inject.Inject;
 import models.internal.scheduling.Job;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
@@ -42,7 +44,7 @@ public final class MapJobRepository implements JobRepository {
 
     private final AtomicBoolean _open = new AtomicBoolean();
     private final AtomicLong _nonce = new AtomicLong(0);
-    private final Map<String, Job> _map = Maps.newHashMap();
+    private final Map<UUID, Job> _map = Maps.newHashMap();
 
     @Override
     public void open() {
@@ -58,9 +60,9 @@ public final class MapJobRepository implements JobRepository {
     }
 
     @Override
-    public String add(final Job j) {
+    public UUID add(final Job j) {
         assertIsOpen();
-        final String id = Long.toString(_nonce.getAndIncrement());
+        final UUID id = UUID.nameUUIDFromBytes(Longs.toByteArray(_nonce.getAndIncrement()));
         _map.put(id, j);
         LOGGER.debug()
                 .setMessage("created job")
@@ -72,7 +74,7 @@ public final class MapJobRepository implements JobRepository {
 
     @Nullable
     @Override
-    public Job get(final String id) {
+    public Job get(final UUID id) {
         assertIsOpen();
         return _map.get(id);
     }

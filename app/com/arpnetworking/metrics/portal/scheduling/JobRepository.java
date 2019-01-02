@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import models.internal.scheduling.Job;
 
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 /**
@@ -42,7 +43,7 @@ public interface JobRepository {
      * @param j The Job to record.
      * @return A unique identifier for that job.
      */
-    String add(Job j);
+    UUID add(Job j);
 
     /**
      * Retrieve a previously-stored Job.
@@ -51,5 +52,5 @@ public interface JobRepository {
      * @return The Job stored with that key, or null if no job has that
      */
     @Nullable
-    Job get(String id);
+    Job get(UUID id);
 }

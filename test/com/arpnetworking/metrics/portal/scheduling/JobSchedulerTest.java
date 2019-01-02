@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
@@ -98,7 +99,7 @@ public class JobSchedulerTest {
 
     @Test
     public void testBasics() {
-        String jobId = repo.add(DummyJob.INSTANCE);
+        UUID jobId = repo.add(DummyJob.INSTANCE);
 
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
@@ -122,7 +123,7 @@ public class JobSchedulerTest {
            the first tick should do nothing; and the second tick should run+reschedule the job.
          */
 
-        String jobId = repo.add(DummyJob.INSTANCE);
+        UUID jobId = repo.add(DummyJob.INSTANCE);
 
         Instant t1 = t0.plus(tickSize.multipliedBy(3).dividedBy(2));
 

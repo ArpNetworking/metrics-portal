@@ -26,7 +26,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import models.internal.scheduling.Job;
 
 import java.util.NoSuchElementException;
-import java.util.concurrent.CompletionStage;
+import java.util.UUID;
 
 /**
  * An actor that executes a {@link Job} and notifies another actor when finished.
@@ -60,7 +60,7 @@ public final class JobExecutor extends AbstractActor {
                                 .addData("repo", e.getRepo())
                                 .addData("jobId", e.getJobId())
                                 .log();
-                        e.getNotifiee().tell(new Failure(new NoSuchElementException(e.getJobId())), getSelf());
+                        e.getNotifiee().tell(new Failure(new NoSuchElementException(e.getJobId().toString())), getSelf());
                         return;
                     }
 
@@ -79,7 +79,7 @@ public final class JobExecutor extends AbstractActor {
      */
     public static final class Execute {
         private final JobRepository _repo;
-        private final String _jobId;
+        private final UUID _jobId;
         private final ActorRef _notifiee;
 
         private Execute(final Builder builder) {
@@ -92,7 +92,7 @@ public final class JobExecutor extends AbstractActor {
             return _repo;
         }
 
-        public String getJobId() {
+        public UUID getJobId() {
             return _jobId;
         }
 
@@ -105,7 +105,7 @@ public final class JobExecutor extends AbstractActor {
          */
         public static final class Builder extends OvalBuilder<Execute> {
             private JobRepository _repo;
-            private String _jobId;
+            private UUID _jobId;
             private ActorRef _notifiee;
             /**
              * Public constructor.
@@ -131,7 +131,7 @@ public final class JobExecutor extends AbstractActor {
              * @param jobId The job id.
              * @return This instance of <code>Builder</code>.
              */
-            public Builder setJobId(final String jobId) {
+            public Builder setJobId(final UUID jobId) {
                 _jobId = jobId;
                 return this;
             }
