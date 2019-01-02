@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.steno.Logger;
@@ -46,9 +47,9 @@ public final class JobExecutor extends AbstractActor {
         return receiveBuilder()
                 .match(Execute.class, e -> {
 
-                    // No matter what, we want this actor to shut down immediately after executing it job,
+                    // No matter what, we want this actor to shut down after executing its job,
                     //  because a one-off job-execution is this actor's entire purpose.
-                    getContext().getSystem().stop(getSelf());
+                    getSelf().tell(PoisonPill.getInstance(), getSelf());
 
                     final Job j = e.getRepo().get(e.getJobId());
                     if (j == null) {
