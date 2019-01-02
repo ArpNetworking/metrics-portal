@@ -83,7 +83,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
 
     @Before
-    public void setup() {
+    public void setUp() {
         _mappingManager = instanceOf(MappingManager.class);
         _alertRepo = instanceOf(CassandraAlertRepository.class);
         _alertRepo.open();

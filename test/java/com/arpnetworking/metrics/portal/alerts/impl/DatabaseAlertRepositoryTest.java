@@ -38,6 +38,7 @@ import play.test.WithApplication;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
@@ -75,6 +76,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
                 .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
+                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

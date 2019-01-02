@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Ruchita Venugopal (rvenugopal at groupon dot com)
  */
-public class ElasticSearchHostRegistryTest {
+public final class ElasticSearchHostRegistryTest {
 
     @Before
     public void before() {

@@ -39,6 +39,8 @@ import play.test.Helpers;
 import play.test.WithApplication;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -68,6 +70,7 @@ public class AlertControllerTest extends WithApplication {
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
                 .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
+                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

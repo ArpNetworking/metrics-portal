@@ -84,7 +84,7 @@
     <elasticsearch.version>1.7.2</elasticsearch.version>
     <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
     <flyway.version>4.0.0</flyway.version>
-    <guava.version>19.0</guava.version>
+    <guava.version>20.0</guava.version>
     <guice.version>4.0</guice.version>
     <h2.version>1.4.192</h2.version>
     <jackson.version>2.9.2</jackson.version>
@@ -129,8 +129,9 @@
 
     <!-- Test Dependency Versions -->
     <cassandra.unit.version>3.1.3.2</cassandra.unit.version>
+    <hamcrest.version>2.1</hamcrest.version>
     <junit.version>4.12</junit.version>
-    <mockito.version>1.10.19</mockito.version>
+    <mockito.version>2.23.4</mockito.version>
 
     <!-- Additional Plugins -->
     <aspectjtools.maven.plugin>1.9.1</aspectjtools.maven.plugin>
@@ -163,7 +164,7 @@
 
   <build>
     <sourceDirectory>${project.basedir}/app</sourceDirectory>
-    <testSourceDirectory>${project.basedir}/test</testSourceDirectory>
+    <testSourceDirectory>${project.basedir}/test/java</testSourceDirectory>
     <resources>
       <resource>
         <directory>${project.basedir}/conf</directory>
@@ -173,8 +174,102 @@
         <targetPath>public</targetPath>
       </resource>
     </resources>
+    <testResources>
+      <testResource>
+       <directory>${project.basedir}/test/resources</directory>
+      </testResource>
+    </testResources>
 
     <plugins>
+      <!-- Enable Inherited Plugins -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <!-- TODO(ville): Decouple unit test execution from Play configuration -->
+              <!-- 
+              Notes:
+                * Unit tests should execute independently from the Play Framework
+                * Integration tests should execute against the entire application (via Docker)
+                * Unit tests should mock dependencies/components behavior as needed
+              Next Steps:
+                * Separate existing "coupled" unit tests into integration tests and independent unit tests   
+              -->
+              <argLine>${argLine} -Xms512m -ea -Duser.timezone="UTC" -Dconfig.file=conf/portal.application.conf</argLine>
+              <!-- TODO(ville): Make unit tests thread safe -->
+              <!--
+              Notes:
+                * The following unit tests fail without the following configuration:
+                  * ElasticSearchHostRegistryTest
+                  * DatabaseExpressionRepositoryTest
+                  * DatabaseAlertRepositoryTest
+                  * AlertControllerTest
+                  * DatabaseExpressionRepositoryTest
+                  * DatabaseAlertRepositoryTest
+                * This is documented in Github issue #145 and likely caused at least in part by issue #39
+              -->
+              <parallel />
+              <threadCount>1</threadCount>
+              <perCoreThreadCount>false</perCoreThreadCount>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <dockerHostAddress>${docker.host.address}</dockerHostAddress>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>com.rimerosolutions.maven.plugins</groupId>
+        <artifactId>wrapper-maven-plugin</artifactId>
+        <inherited>false</inherited>
+      </plugin>
+
+      <!-- Project Specific Plugins -->
       <plugin>
         <groupId>com.google.code.play2-maven-plugin</groupId>
         <artifactId>play2-maven-plugin</artifactId>
@@ -184,18 +279,11 @@
           <mainLang>java</mainLang>
           <routesGenerator>injected</routesGenerator>
           <httpPort>8080</httpPort>
-          <!--<routesGenerator>injected</routesGenerator>-->
           <!--<serverJvmArgs>-Dplay.evolutions.db.default.autoApply=true</serverJvmArgs>
           <templateAdditionalImports>play.data._ play.core.j.PlayFormsMagicForJava._</templateAdditionalImports>
           -->
         </configuration>
         <executions>
-          <!--<execution>
-            <id>default-play2-compile-assets</id>
-            <goals>
-              <goal>closure-compile</goal>
-            </goals>
-          </execution>-->
           <execution>
             <id>package-play-dist</id>
             <phase>package</phase>
@@ -378,6 +466,16 @@
     </dependency>
 
     <!-- Jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -612,9 +710,15 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest</artifactId>
+      <version>${hamcrest.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.cassandraunit</groupId>
       <artifactId>cassandra-unit</artifactId>
-      <version>${cassandra.test.version}</version>
+      <version>${cassandra.unit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

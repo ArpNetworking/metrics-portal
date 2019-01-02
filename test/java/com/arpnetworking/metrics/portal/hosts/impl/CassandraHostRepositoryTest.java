@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2017 Smartsheet.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class CassandraHostRepositoryTest extends WithApplication {
+public final class CassandraHostRepositoryTest extends WithApplication {
 
     @Override
     protected Application provideApplication() {
@@ -75,7 +75,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
 
 
     @Before
-    public void setup() {
+    public void setUp() {
         final Injector injector = _app.injector();
         _mappingManager = injector.instanceOf(MappingManager.class);
         _hostRepo = injector.instanceOf(CassandraHostRepository.class);

@@ -33,6 +33,7 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -348,6 +349,7 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

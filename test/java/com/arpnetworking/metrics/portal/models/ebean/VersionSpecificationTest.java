@@ -34,6 +34,7 @@ import play.test.WithApplication;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -102,6 +103,7 @@ public class VersionSpecificationTest extends WithApplication {
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

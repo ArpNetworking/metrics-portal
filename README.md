@@ -14,41 +14,43 @@ Metrics Portal
          alt="Maven Artifact">
 </a>
 
-Provides a web interface for metrics. This includes viewing telemetry (aka streaming statistics) from one or more hosts running [Tsd Aggregator](https://github.com/ArpNetworking/metrics/blob/master/tsd/tsd-aggregator/README.md) and [ReMet Proxy](https://github.com/ArpNetworking/metrics/blob/master/remet-proxy/README.md). The web interface also provides for browsing hosts reporting metrics as well as viewing and editing alerts and expressions.
+Provides a web interface for managing the Inscope Metrics stack. This includes viewing telemetry (aka streaming
+statistics) from one or more hosts running [Metrics Aggregator Daemon](https://github.com/ArpNetworking/metrics-aggregator-daemon).
+The web interface also provides a feature for browsing hosts reporting metrics, viewing and editing alerts, scheduling
+and delivering reports and performing roll-ups in KairosDb.
 
 Setup
 -----
-
-### Building
-
-Prerequisites:
-* [JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-* [Node](https://nodejs.org/en/download/)
-
-Building:
-
-    metrics-portal> ./activator stage
 
 ### Installing
 
 #### Manual
 
-The artifacts from the build are in *metrics-portal/target/universal/stage* and should be copied to an appropriate directory on the Metrics Portal host(s).
+The artifacts from the build are in *metrics-portal/target/universal/stage* and should be copied to an appropriate
+directory on the Metrics Portal host(s).
 
 #### Docker
 
-If you use Docker, we publish a [base docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/) that makes it easy for you to layer configuration on top of.  Create a Docker image based on the image arpnetworking/metrics-portal.  Configuration files are currently embedded in the jar as resources.  You can override the configuration by importing portal.application.conf in your configuration file and then setting the CONFIG_FILE environment variable to -Dconfig.file="your_file_path".  In addition, you can specify CONFIG_FILE (defaults to -Dconfig.resource=portal.application.conf) and PARAMS (defaults to $CONFIG_FILE) environment variables to control startup.
-
+If you use Docker, we publish a [base docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/) that makes
+it easy for you to layer configuration on top of.  Create a Docker image based on the image arpnetworking/metrics-portal.
+Configuration files are currently embedded in the jar as resources.  You can override the configuration by importing
+portal.application.conf in your configuration file and then setting the CONFIG_FILE environment variable to
+-Dconfig.file="your_file_path".  In addition, you can specify CONFIG_FILE (defaults to
+-Dconfig.resource=portal.application.conf) and PARAMS (defaults to $CONFIG_FILE) environment variables to control
+startup.
 
 ### Execution
 
-In the installation's *bin* directory there are scripts to start the Metrics Portal: *metrics-portal* (Linux/Mac) and *metrics-portal.bat* (Windows).  One of these should be executed on system start with appropriate parameters.  For example:
+In the installation's *bin* directory there are scripts to start the Metrics Portal: *metrics-portal* (Linux/Mac) and
+*metrics-portal.bat* (Windows).  One of these should be executed on system start with appropriate parameters. For example:
 
     /usr/local/lib/metrics_portal/bin/metrics_portal -J-Xmn150m -J-XX:+UseG1GC -Dpidfile.path=/usr/local/var/METRICS_PORTAL_PID
 
 ### Configuration
 
-Aside from the JVM command line arguments, you may provide two additional configuration files. The first is the [LogBack](http://logback.qos.ch/) configuration file.  To use a custom logging configuration simply add the following argument to the command line above:
+Aside from the JVM command line arguments, you may provide two additional configuration files. The first is the
+[LogBack](http://logback.qos.ch/) configuration file.  To use a custom logging configuration simply add the following
+argument to the command line above:
 
     -Dlogger.file=/usr/local/lib/metrics_portal/logger.xml
 
@@ -85,21 +87,38 @@ Finally, your extending project's routes specification should include the custom
 
     -> / portal.Routes
 
-### Development
 
-To run the application in Play's debug mode execute:
+### IntelliJ
 
-    metrics-portal> ./activator run
+The project can be imported normally using "File / New / Project From Existing Sources..." with the Maven aspect.
+However, you will need to mark the `target/twirl` directory as a generated source directory. Further, to reflect
+changes to the templates within IntelliJ you will need to generate them from the command line using `mvn compile`.
 
-To run the application in Play's production execute:
+### Building
 
-    metrics-portal> ./activator "start -Dconfig.file=conf/portal.application.conf"
+Prerequisites:
+* [Docker](http://www.docker.com/) (for [Mac](https://docs.docker.com/docker-for-mac/))
+* [Node](https://nodejs.org/en/download/)
 
-The former is configured (see [Build.scala](project/Build.scala)) to automatically use the custom default configuration while the latter must be instructed explicitly.
+Building:
 
-To publish your development version of Metrics Portal locally for extension execute:
+    metrics-portal> ./jdk-wrapper.sh ./mvnw verify
 
-    metrics-portal> ./activator publishLocal
+To debug the server during run on port 8080:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -Ddebug=true docker:start
+
+To debug the server during integration tests on port 8080:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -Ddebug=true verify
+
+To execute performance tests:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -PperformanceTest test
+
+To use the local version in your project you must first install it locally:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw install
 
 License
 -------

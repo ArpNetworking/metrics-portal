@@ -34,6 +34,7 @@ import play.mvc.Result;
 import play.test.Helpers;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -52,8 +53,10 @@ public class ExpressionControllerTest {
         gApp = new GuiceApplicationBuilder()
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure("expressionRepository.type", DatabaseExpressionRepository.class.getName())
-                .configure("expressionRepository.expressionQueryGenerator.type",
+                .configure(
+                        "expressionRepository.expressionQueryGenerator.type",
                         DatabaseExpressionRepository.GenericQueryGenerator.class.getName())
+                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
