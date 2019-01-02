@@ -25,7 +25,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import java.util.NoSuchElementException;
 
 /**
- * An actor that executes a {@link Job}, i.e. renders it and sends out the resultant Report.
+ * An actor that executes a {@link Job} and notifies another actor when finished.
  *
  * @author Spencer Pearson
  */
@@ -125,7 +125,7 @@ public final class JobExecutor extends AbstractActor {
             }
 
             /**
-             * The id of the job that the Executor should retrieve from its repository.
+             * The id of the job that the Executor should retrieve from its repository. Required. Cannot be null.
              *
              * @param jobId The job id.
              * @return This instance of <code>Builder</code>.
@@ -136,7 +136,7 @@ public final class JobExecutor extends AbstractActor {
             }
 
             /**
-             * The ActorRef that the {@link JobExecutor} should notify when the job finishes running.
+             * The ActorRef that the {@link JobExecutor} should notify when the job finishes running. Required. Cannot be null.
              *
              * @param notifiee The ActorRef.
              * @return This instance of <code>Builder</code>.
