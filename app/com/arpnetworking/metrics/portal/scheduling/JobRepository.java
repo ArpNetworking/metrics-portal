@@ -31,4 +31,12 @@ public interface JobRepository {
      */
     @Nullable
     Job get(String id);
+
+    /**
+     * todo: doc.
+     *
+     * @param j todo: doc.
+     * @return todo: doc.
+     */
+    String add(Job j);
 }
