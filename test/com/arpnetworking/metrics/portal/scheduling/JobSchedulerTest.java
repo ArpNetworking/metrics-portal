@@ -70,6 +70,7 @@ public class JobSchedulerTest {
     public void setUp() {
         clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
         repo = new MapJobRepository();
+        repo.open();
         system = ActorSystem.create(
                 "test-"+systemNameNonce.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));

@@ -15,14 +15,15 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import models.internal.scheduling.Job;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import models.internal.scheduling.Job;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 
@@ -39,20 +40,29 @@ public final class MapJobRepository implements JobRepository {
     @Inject
     public MapJobRepository() {}
 
+    private final AtomicBoolean _open = new AtomicBoolean();
     private final AtomicLong _nonce = new AtomicLong(0);
     private final Map<String, Job> _map = Maps.newHashMap();
 
     @Override
-    public void open() {}
+    public void open() {
+        assertIsClosed();
+        LOGGER.debug().setMessage("opening JobRepository").log();
+        _open.set(true);
+    }
 
     @Override
-    public void close() {}
+    public void close() {
+        LOGGER.debug().setMessage("closing JobRepository").log();
+        assertIsOpen();
+    }
 
     @Override
     public String add(final Job j) {
+        assertIsOpen();
         final String id = Long.toString(_nonce.getAndIncrement());
         _map.put(id, j);
-        LOGGER.info()
+        LOGGER.debug()
                 .setMessage("created job")
                 .addData("id", id)
                 .addData("job", j)
@@ -63,7 +73,22 @@ public final class MapJobRepository implements JobRepository {
     @Nullable
     @Override
     public Job get(final String id) {
+        assertIsOpen();
         return _map.get(id);
+    }
+
+    private void assertIsOpen() {
+        assertIsOpen(true);
+    }
+
+    private void assertIsClosed() {
+        assertIsOpen(false);
+    }
+
+    private void assertIsOpen(final boolean expectedState) {
+        if (_open.get() != expectedState) {
+            throw new IllegalStateException("MapJobRepository is not " + (expectedState ? "open" : "closed"));
+        }
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MapJobRepository.class);
