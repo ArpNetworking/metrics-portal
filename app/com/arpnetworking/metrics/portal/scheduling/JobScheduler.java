@@ -129,9 +129,6 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
                     .log();
         }
         if (lastSequenceNr() % SNAPSHOT_INTERVAL == 0) {
-            // TODO(spencerpearson): State is not actually serializable because of comparator lambda
-            //   After discussion with cbriones: do we even need JobScheduler to be persistent?
-            //   Couldn't we reload its state in entirety from the JobRepository?
             saveSnapshot(_state);
         }
     }
@@ -245,12 +242,23 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class State {
-        private final PriorityQueue<ScheduledJob> _plan = new PriorityQueue<>(Comparator.comparing(ScheduledJob::getWhenRun));
+    private static final class State implements Serializable {
+        private final PriorityQueue<ScheduledJob> _plan = new PriorityQueue<>(MyComparator.INSTANCE);
 
         public PriorityQueue<ScheduledJob> getPlan() {
             return _plan;
         }
+
+        private static final class MyComparator implements Comparator<ScheduledJob>, Serializable {
+            private static final Comparator<ScheduledJob> COMPARATOR = Comparator.comparing(ScheduledJob::getWhenRun);
+            public static final MyComparator INSTANCE = new MyComparator();
+            @Override
+            public int compare(final ScheduledJob o1, final ScheduledJob o2) {
+                return COMPARATOR.compare(o1, o2);
+            }
+            private static final long serialVersionUID = 1L;
+        }
+        private static final long serialVersionUID = 1L;
     }
 
 }

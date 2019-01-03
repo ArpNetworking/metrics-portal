@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -41,9 +42,16 @@ public final class AkkaClusteringConfigFactory {
                 .put("akka.remote.netty.tcp.port", port)
                 .put("akka.persistence.snapshot-store.plugin", "akka.persistence.snapshot-store.local")
                 .put("akka.persistence.journal.plugin", "akka.persistence.journal.inmem")
+                .put(
+                        "akka.persistence.snapshot-store.local.dir",
+                        "test-snapshots/"
+                                + RUN_ID + "/"
+                                + nextCounter + "/"
+                )
                 .build();
     }
 
+    private static final UUID RUN_ID = UUID.randomUUID();
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);
     private static final int BASE_PORT = 20000;
 }

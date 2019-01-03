@@ -92,8 +92,8 @@ public class JobSchedulerTest {
         system.terminate();
     }
 
-    private PriorityQueue<ScheduledJob> castPlan(Object plan) {
-        PriorityQueue<ScheduledJob> result = new PriorityQueue<>();
+    private ArrayList<ScheduledJob> castPlan(Object plan) {
+        ArrayList<ScheduledJob> result = new ArrayList<>();
         for (Object o : (PriorityQueue) plan) {
             result.add((ScheduledJob) o);
         }
