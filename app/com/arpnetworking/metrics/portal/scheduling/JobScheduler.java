@@ -129,6 +129,9 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
                     .log();
         }
         if (lastSequenceNr() % SNAPSHOT_INTERVAL == 0) {
+            // TODO(spencerpearson): State is not actually serializable because of comparator lambda
+            //   After discussion with cbriones: do we even need JobScheduler to be persistent?
+            //   Couldn't we reload its state in entirety from the JobRepository?
             saveSnapshot(_state);
         }
     }
