@@ -122,7 +122,10 @@ object ApplicationBuild extends Build {
 
       "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",
       "junit" % "junit" % "4.12" % "test",
-      "org.mockito" % "mockito-core" % "1.10.19" % "test"
+      "org.mockito" % "mockito-core" % "1.10.19" % "test",
+      "com.github.tomakehurst" % "wiremock-standalone" % "2.19.0" % "test",
+      "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
+      "org.skyscreamer" % "jsonassert" % "1.5.0" % "test"
     )
 
     val main = Project(appName, file("."), settings = s).enablePlugins(play.sbt.PlayJava, play.ebean.sbt.PlayEbean, RpmPlugin, SbtAspectj, JavaServerAppPackaging, SystemVPlugin, UniversalPlugin).settings(
