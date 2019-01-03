@@ -19,7 +19,6 @@ import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
-import com.google.common.primitives.Longs;
 import com.google.inject.Inject;
 import models.internal.scheduling.Job;
 
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A simple in-memory {@link JobRepository}. Not in any way persistent, probably not good for production usage.
