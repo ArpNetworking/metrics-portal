@@ -36,7 +36,7 @@ public final class AkkaClusteringConfigFactory {
         final int nextCounter = UNIQUE_COUNTER.getAndIncrement();
         final int port = BASE_PORT + nextCounter;
         return ImmutableMap.of(
-                "akka.cluster.seed-nodes", Collections.singletonList(String.format("akka.tcp://application@127.0.0.1:%d", port)),
+                "akka.cluster.seed-nodes", Collections.singletonList(String.format("akka.tcp://mportal@127.0.0.1:%d", port)),
                 "akka.remote.netty.tcp.hostname", "127.0.0.1",
                 "akka.remote.netty.tcp.port", port);
     }

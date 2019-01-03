@@ -20,17 +20,21 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.MappingManager;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
+import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigObject;
 import play.Environment;
+import play.inject.ApplicationLifecycle;
 
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -66,9 +70,14 @@ public class PillarModule extends AbstractModule {
         final ConfigObject cassConfig = dbConfig.root();
         final Set<String> dbNames = cassConfig.keySet();
         final Provider<CodecRegistry> registryProvider = binder().getProvider(CodecRegistry.class);
+        final Provider<ApplicationLifecycle> lifecycle = binder().getProvider(ApplicationLifecycle.class);
         for (final String name : dbNames) {
+            bind(Cluster.class).annotatedWith(Names.named(name))
+                    .toProvider(new CassandraClusterProvider(cassConfig.toConfig().getConfig(name), registryProvider, lifecycle))
+                    .in(Scopes.SINGLETON);
+            final com.google.inject.Provider<Cluster> clusterProvider = binder().getProvider(Key.get(Cluster.class, Names.named(name)));
             bind(Session.class).annotatedWith(Names.named(name))
-                    .toProvider(new CassandraSessionProvider(cassConfig.toConfig().getConfig(name), registryProvider));
+                    .toProvider(new CassandraSessionProvider(clusterProvider, lifecycle));
             bind(MappingManager.class).annotatedWith(Names.named(name))
                     .toProvider(new CassandraMappingProvider(binder().getProvider(Key.get(Session.class, Names.named(name)))));
         }
@@ -80,16 +89,21 @@ public class PillarModule extends AbstractModule {
 
         bind(PillarInitializer.class).asEagerSingleton();
     }
+
     private final Config _configuration;
 
-    private static final class CassandraSessionProvider implements Provider<Session> {
-        CassandraSessionProvider(final Config config, final Provider<CodecRegistry> registryProvider) {
+    private static final class CassandraClusterProvider implements Provider<Cluster> {
+        CassandraClusterProvider(
+                final Config config,
+                final Provider<CodecRegistry> registryProvider,
+                final Provider<ApplicationLifecycle> lifecycleProvider) {
             _config = config;
             _registryProvider = registryProvider;
+            _lifecycleProvider = lifecycleProvider;
         }
 
         @Override
-        public Session get() {
+        public Cluster get() {
             final String clusterName = _config.getString("clusterName");
             final int port;
             if (_config.hasPath("port")) {
@@ -102,23 +116,52 @@ public class PillarModule extends AbstractModule {
                     .map(host -> {
                         try {
                             return InetAddress.getByName(host);
-                        // CHECKSTYLE.OFF: IllegalCatch - Cannot throw checked exceptions inside .map
+                            // CHECKSTYLE.OFF: IllegalCatch - Cannot throw checked exceptions inside .map
                         } catch (final Exception e) {
-                        // CHECKSTYLE.ON: IllegalCatch
+                            // CHECKSTYLE.ON: IllegalCatch
                             throw new RuntimeException(e);
                         }
                     }).collect(Collectors.toList());
-            return Cluster.builder()
+            final Cluster cluster = Cluster.builder()
                     .addContactPoints(hosts)
                     .withClusterName(clusterName)
                     .withPort(port)
                     .withCodecRegistry(_registryProvider.get())
-                    .build()
-                    .newSession();
+                    .build();
+            _lifecycleProvider.get().addStopHook(() -> {
+                final CompletableFuture<Void> done = new CompletableFuture<>();
+                cluster.closeAsync().addListener(() -> done.complete(null), MoreExecutors.directExecutor());
+                return done;
+            });
+            return cluster;
         }
 
         private final Config _config;
         private final Provider<CodecRegistry> _registryProvider;
+        private final Provider<ApplicationLifecycle> _lifecycleProvider;
+
+        private static final int DEFAULT_CASSANDRA_PORT = 9042;
+    }
+
+    private static final class CassandraSessionProvider implements Provider<Session> {
+        CassandraSessionProvider(final Provider<Cluster> clusterProvider, final Provider<ApplicationLifecycle> lifecycleProvider) {
+            _lifecycleProvider = lifecycleProvider;
+            _clusterProvider = clusterProvider;
+        }
+
+        @Override
+        public Session get() {
+            final Session session = _clusterProvider.get().newSession();
+            _lifecycleProvider.get().addStopHook(() -> {
+                final CompletableFuture<Void> done = new CompletableFuture<>();
+                session.closeAsync().addListener(() -> done.complete(null), MoreExecutors.directExecutor());
+                return done;
+            });
+            return session;
+        }
+
+        private final Provider<Cluster> _clusterProvider;
+        private final Provider<ApplicationLifecycle> _lifecycleProvider;
 
         private static final int DEFAULT_CASSANDRA_PORT = 9042;
     }

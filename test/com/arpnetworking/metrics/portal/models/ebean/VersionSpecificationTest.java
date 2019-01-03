@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.models.ebean;
 
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
+import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
@@ -25,7 +26,6 @@ import models.ebean.VersionSpecificationAttribute;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
@@ -36,6 +36,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test for <code>VersionSpecification</code>
@@ -85,19 +88,20 @@ public class VersionSpecificationTest extends WithApplication {
 
         List<VersionSpecification> allSpecs = Ebean.find(VersionSpecification.class).findList();
 
-        Assert.assertEquals(1, allSpecs.size());
+        assertEquals(1, allSpecs.size());
 
         Iterable<VersionSpecificationAttribute> attribs = allSpecs.get(0).getVersionSpecificationAttributes();
 
         Collection<Matcher<? super VersionSpecificationAttribute>> attribMatchers = new ArrayList<>();
         attribMatchers.add(hasKV("colo", "north-america"));
         attribMatchers.add(hasKV("dogfood-group", "alpha"));
-        Assert.assertThat(attribs, Matchers.containsInAnyOrder(attribMatchers));
+        assertThat(attribs, Matchers.containsInAnyOrder(attribMatchers));
     }
 
     @Override
     protected Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();

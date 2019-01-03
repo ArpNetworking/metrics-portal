@@ -36,6 +36,7 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.joda.InstantCodec;
@@ -44,6 +45,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -74,7 +76,11 @@ public class MainModule extends AbstractModule {
     protected void configure() {
         bind(Global.class).asEagerSingleton();
         bind(HealthProvider.class)
-                .toProvider(HealthProviderProvider.class);
+                .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
+                .in(Scopes.SINGLETON);
+        bind(OrganizationProvider.class)
+                .toProvider(ConfigTypedProvider.provider("organizationProvider.type"))
+                .in(Scopes.SINGLETON);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
@@ -92,8 +98,6 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
-        bind(OrganizationProvider.class)
-                .toProvider(OrganizationProviderProvider.class);
     }
 
     @Singleton
@@ -168,50 +172,6 @@ public class MainModule extends AbstractModule {
         return objectMapper;
     }
 
-    private static final class OrganizationProviderProvider implements Provider<OrganizationProvider> {
-        @Inject
-        OrganizationProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-        }
-
-        @Override
-        public OrganizationProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<OrganizationProvider>getType(_environment, _configuration, "organizationProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
-    }
-
-    private static final class HealthProviderProvider implements Provider<HealthProvider> {
-
-        @Inject
-        HealthProviderProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-        }
-
-        @Override
-        public HealthProvider get() {
-            return _injector.getInstance(
-                    ConfigurationHelper.<HealthProvider>getType(_environment, _configuration, "http.healthProvider.type"));
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
-    }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {
 

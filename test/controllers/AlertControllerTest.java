@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -29,7 +30,6 @@ import models.internal.Context;
 import models.internal.Operator;
 import models.internal.Organization;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
@@ -38,36 +38,43 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
+import play.test.WithApplication;
 
 import java.io.IOException;
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests class <code>AlertController</code>.
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-public class AlertControllerTest {
+public class AlertControllerTest extends WithApplication {
 
     @BeforeClass
     public static void instantiate() {
         alertRepo.open();
-        app = new GuiceApplicationBuilder()
-                .overrides(
-                        Bindings.bind(AlertRepository.class).toInstance(alertRepo))
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(H2ConnectionStringFactory.generateConfiguration())
-                .build();
-        Helpers.start(app);
     }
 
     @AfterClass
     public static void shutdown() {
         alertRepo.close();
-        if (app != null) {
-            Helpers.stop(app);
-        }
     }
+
+    @Override
+    protected Application provideApplication() {
+        return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
+                .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
+                .configure(AkkaClusteringConfigFactory.generateConfiguration())
+                .configure(H2ConnectionStringFactory.generateConfiguration())
+                .build();
+    }
+
 
     @Test
     public void testCreateValidCase() throws IOException {
@@ -77,29 +84,29 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
         final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", UUID.fromString("88410734-aed7-11e1-8e54-00259060b612"))
-                .findUnique();
+                .findOne();
 
-        Assert.assertNotNull(alert);
-        Assert.assertEquals(Context.CLUSTER, alert.getContext());
-        Assert.assertEquals("test-cluster", alert.getCluster());
-        Assert.assertEquals("test-name", alert.getName());
-        Assert.assertEquals("test-metric", alert.getMetric());
-        Assert.assertEquals("test-service", alert.getService());
-        Assert.assertEquals(1, alert.getPeriod());
-        Assert.assertEquals(Operator.EQUAL_TO, alert.getOperator());
-        Assert.assertEquals(12, alert.getQuantityValue(), 0.01);
-        Assert.assertEquals("MEGABYTE", alert.getQuantityUnit());
+        assertNotNull(alert);
+        assertEquals(Context.CLUSTER, alert.getContext());
+        assertEquals("test-cluster", alert.getCluster());
+        assertEquals("test-name", alert.getName());
+        assertEquals("test-metric", alert.getMetric());
+        assertEquals("test-service", alert.getService());
+        assertEquals(1, alert.getPeriod());
+        assertEquals(Operator.EQUAL_TO, alert.getOperator());
+        assertEquals(12, alert.getQuantityValue(), 0.01);
+        assertEquals("MEGABYTE", alert.getQuantityUnit());
 
         final NagiosExtension extension = alert.getNagiosExtension();
-        Assert.assertNotNull(extension);
-        Assert.assertEquals("CRITICAL", extension.getSeverity());
-        Assert.assertEquals("abc@example.com", extension.getNotify());
-        Assert.assertEquals(3, extension.getMaxCheckAttempts());
-        Assert.assertEquals(300, extension.getFreshnessThreshold());
+        assertNotNull(extension);
+        assertEquals("CRITICAL", extension.getSeverity());
+        assertEquals("abc@example.com", extension.getNotify());
+        assertEquals(3, extension.getMaxCheckAttempts());
+        assertEquals(300, extension.getFreshnessThreshold());
     }
 
     @Test
@@ -109,7 +116,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -120,7 +127,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -131,7 +138,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -142,7 +149,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -153,7 +160,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -164,7 +171,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -175,7 +182,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -186,7 +193,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -197,7 +204,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -208,7 +215,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -219,7 +226,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -230,7 +237,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -241,7 +248,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -252,7 +259,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -263,7 +270,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -274,7 +281,7 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -289,19 +296,18 @@ public class AlertControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     private JsonNode readTree(final String resourceSuffix) {
         try {
             return OBJECT_MAPPER.readTree(getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
-            Assert.fail("Failed with exception: " + e);
+            fail("Failed with exception: " + e);
             return null;
         }
     }
 
-    private static Application app;
     private static final AlertRepository alertRepo = new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = AlertControllerTest.class.getSimpleName();

@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -31,7 +32,6 @@ import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.thrift.transport.TTransportException;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -43,6 +43,8 @@ import play.test.WithApplication;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests class <code>CassandraAlertRepository</code>.
@@ -57,6 +59,8 @@ public class CassandraHostRepositoryTest extends WithApplication {
         final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
         final String host = EmbeddedCassandraServerHelper.getHost();
         _app = new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("hostRepository.type", CassandraHostRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
                 .configure(H2ConnectionStringFactory.generateConfiguration())
@@ -101,7 +105,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
     public void testQueryForInvalidHost() {
         final HostQuery query = _hostRepo.createQuery(Organization.DEFAULT);
         query.partialHostname(Optional.of(UUID.randomUUID().toString()));
-        Assert.assertEquals(0L, _hostRepo.query(query).total());
+        assertEquals(0L, _hostRepo.query(query).total());
     }
 
     @Test
@@ -113,25 +117,25 @@ public class CassandraHostRepositoryTest extends WithApplication {
 
         final HostQuery query = _hostRepo.createQuery(Organization.DEFAULT);
         query.partialHostname(Optional.of(cassandraHost.getName()));
-        Assert.assertEquals(0L, _hostRepo.query(query).total());
+        assertEquals(0L, _hostRepo.query(query).total());
 
         final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
         mapper.save(cassandraHost);
 
         final QueryResult<Host> result = _hostRepo.query(query);
-        Assert.assertEquals(1L, result.total());
+        assertEquals(1L, result.total());
         assertHostCassandraEquivalent(result.values().get(0), cassandraHost);
     }
 
     @Test
     public void testGetHostCountWithNoHost() {
-        Assert.assertEquals(0, _hostRepo.getHostCount(new DefaultOrganization.Builder().setId(UUID.randomUUID()).build()));
+        assertEquals(0, _hostRepo.getHostCount(new DefaultOrganization.Builder().setId(UUID.randomUUID()).build()));
     }
 
     @Test
     public void testGetHostCountWithMultipleHost() throws JsonProcessingException {
         final Organization org = new DefaultOrganization.Builder().setId(UUID.randomUUID()).build();
-        Assert.assertEquals(0, _hostRepo.getHostCount(org));
+        assertEquals(0, _hostRepo.getHostCount(org));
         final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
 
         final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost();
@@ -142,7 +146,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
         cassandraHost.setOrganization(org.getId());
         mapper.save(cassandraHost);
 
-        Assert.assertEquals(2, _hostRepo.getHostCount(org));
+        assertEquals(2, _hostRepo.getHostCount(org));
     }
 
 //    @Test
@@ -202,9 +206,9 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //    }
 
     private void assertHostCassandraEquivalent(final Host host, final models.cassandra.Host cassandraHost) {
-        Assert.assertEquals(host.getHostname(), cassandraHost.getName());
-        Assert.assertEquals(host.getCluster().orElse(null), cassandraHost.getCluster());
-        Assert.assertEquals(host.getMetricsSoftwareState().name(), cassandraHost.getMetricsSoftwareState());
+        assertEquals(host.getHostname(), cassandraHost.getName());
+        assertEquals(host.getCluster().orElse(null), cassandraHost.getCluster());
+        assertEquals(host.getMetricsSoftwareState().name(), cassandraHost.getMetricsSoftwareState());
     }
 
     private CassandraHostRepository _hostRepo;

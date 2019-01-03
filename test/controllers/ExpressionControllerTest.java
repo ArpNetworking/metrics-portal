@@ -22,10 +22,10 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.expressions.impl.DatabaseExpressionRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Expression;
 import models.internal.Organization;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
@@ -38,6 +38,9 @@ import play.test.Helpers;
 import java.io.IOException;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /**
  * Tests <code>ExpressionController</code>.
  *
@@ -49,7 +52,9 @@ public class ExpressionControllerTest {
     public static void instantiate() {
         exprRepo.open();
         app = new GuiceApplicationBuilder()
-                .overrides(Bindings.bind(ExpressionRepository.class).toInstance(exprRepo))
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .configure("expressionRepository.type", DatabaseExpressionRepository.class.getName())
+                .configure("expressionRepository.expressionQueryGenerator.type", DatabaseExpressionRepository.GenericQueryGenerator.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
@@ -73,7 +78,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
@@ -83,7 +88,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -94,7 +99,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -105,7 +110,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -116,7 +121,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -127,7 +132,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -138,7 +143,7 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
@@ -155,16 +160,16 @@ public class ExpressionControllerTest {
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
         Result result = Helpers.route(app, request);
-        Assert.assertEquals(Http.Status.NO_CONTENT, result.status());
+        assertEquals(Http.Status.NO_CONTENT, result.status());
         Expression expectedExpr = exprRepo.get(originalExpr.getId(), Organization.DEFAULT).get();
-        Assert.assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
+        assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
     }
 
     private JsonNode readTree(final String resourceSuffix) {
         try {
             return OBJECT_MAPPER.readTree(getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
-            Assert.fail("Failed with exception: " + e);
+            fail("Failed with exception: " + e);
             return null;
         }
     }

@@ -16,18 +16,12 @@
 
 package global;
 
-import actors.ClusterShutdownActor;
 import akka.actor.ActorSystem;
-import akka.actor.Terminated;
-import akka.cluster.Cluster;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.inject.ApplicationLifecycle;
-import scala.Function1;
-import scala.compat.java8.JFunction;
-import scala.concurrent.ExecutionContext$;
-import scala.util.Try;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -47,28 +41,19 @@ public final class Global {
     @Inject
     public Global(final ActorSystem akka, final ApplicationLifecycle lifecycle) {
         LOGGER.info().setMessage("Starting application...").log();
-
         _akka = akka;
         lifecycle.addStopHook(this::onStop);
-
-        _akka.actorOf(ClusterShutdownActor.props(_shutdownFuture));
 
         LOGGER.debug().setMessage("Startup complete").log();
     }
 
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "CompletableFuture can take a null arg")
     private CompletionStage<Void> onStop() {
         final CompletableFuture<Void> shutdownFuture = new CompletableFuture<>();
         LOGGER.info().setMessage("Shutting down application...").log();
 
-        final Cluster cluster = Cluster.get(_akka);
-        cluster.leave(cluster.selfAddress());
-
-        final Function1<Try<Terminated>, Boolean> shutdownComplete = JFunction.func(t -> {
-            LOGGER.debug().setMessage("Shutdown complete").log();
-            return shutdownFuture.complete(null);
-        });
-        _shutdownFuture.thenAccept(v -> _akka.terminate().onComplete(shutdownComplete, ExecutionContext$.MODULE$.global()));
-
+        LOGGER.info().setMessage("Shutdown complete").log();
+        shutdownFuture.complete(null);
         return shutdownFuture;
     }
 

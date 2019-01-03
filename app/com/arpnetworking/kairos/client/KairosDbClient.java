@@ -120,8 +120,8 @@ public final class KairosDbClient {
     private final URI _uri;
     private final FiniteDuration _readTimeout;
 
-    private static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
-    private static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
+    static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
+    static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
 
     /**
      * Implementation of the builder pattern for {@link KairosDbClient}.
