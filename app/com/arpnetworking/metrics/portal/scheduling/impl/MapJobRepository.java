@@ -43,7 +43,6 @@ public final class MapJobRepository implements JobRepository {
     public MapJobRepository() {}
 
     private final AtomicBoolean _open = new AtomicBoolean();
-    private final AtomicLong _nonce = new AtomicLong(0);
     private final Map<UUID, Job> _map = Maps.newHashMap();
 
     @Override
@@ -59,21 +58,24 @@ public final class MapJobRepository implements JobRepository {
         assertIsOpen();
     }
 
+    public Map<UUID, Job> getMap() {
+        return _map;
+    }
+
     @Override
-    public UUID add(final Job j) {
+    public void addOrUpdateJob(final Job j) {
         assertIsOpen();
-        final UUID id = UUID.nameUUIDFromBytes(Longs.toByteArray(_nonce.getAndIncrement()));
+        final UUID id = j.getId();
         _map.put(id, j);
         LOGGER.debug()
                 .setMessage("created job")
                 .addData("id", id)
                 .addData("job", j)
                 .log();
-        return id;
     }
 
     @Override
-    public Optional<Job> get(final UUID id) {
+    public Optional<Job> getJob(final UUID id) {
         assertIsOpen();
         return Optional.ofNullable(_map.get(id));
     }

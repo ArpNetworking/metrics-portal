@@ -55,7 +55,17 @@ public class JobSchedulerTest {
     private static final AtomicLong systemNameNonce = new AtomicLong(0);
 
     private static final class DummyJob implements Job {
-        public static final DummyJob INSTANCE = new DummyJob();
+        private final UUID _uuid;
+
+        public DummyJob(Object uuidSeed) {
+            _uuid = UUID.nameUUIDFromBytes(uuidSeed.toString().getBytes());
+        }
+
+        @Override
+        public UUID getId() {
+            return _uuid;
+        }
+
         @Override
         public Schedule getSchedule() {
             return new PeriodicSchedule(tickSize);
@@ -99,14 +109,15 @@ public class JobSchedulerTest {
 
     @Test
     public void testBasics() {
-        UUID jobId = repo.add(DummyJob.INSTANCE);
+        Job j = new DummyJob(0);
+        repo.addOrUpdateJob(j);
 
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
 
         Assert.assertTrue(getPlan(tk, scheduler).isEmpty());
 
-        ScheduledJob job = new ScheduledJob(t0, jobId);
+        ScheduledJob job = new ScheduledJob(t0, j.getId());
         scheduler.tell(new JobScheduler.ScheduleCmd(job), tk.getRef());
         tk.expectMsg(true);
 
@@ -123,11 +134,12 @@ public class JobSchedulerTest {
            the first tick should do nothing; and the second tick should run+reschedule the job.
          */
 
-        UUID jobId = repo.add(DummyJob.INSTANCE);
+        Job j = new DummyJob(0);
+        repo.addOrUpdateJob(j);
 
         Instant t1 = t0.plus(tickSize.multipliedBy(3).dividedBy(2));
 
-        ScheduledJob job = new ScheduledJob(t1, jobId);
+        ScheduledJob job = new ScheduledJob(t1, j.getId());
 
         TestKit tk = new TestKit(system);
         ActorRef scheduler = system.actorOf(JobScheduler.props(repo, clock));
@@ -147,7 +159,7 @@ public class JobSchedulerTest {
 
         System.out.println(getPlan(tk, scheduler));
         Assert.assertEquals(
-                Collections.singletonList(new ScheduledJob(t1.plus(tickSize), jobId)),
+                Collections.singletonList(new ScheduledJob(t1.plus(tickSize), j.getId())),
                 getPlan(tk, scheduler));
     }
 

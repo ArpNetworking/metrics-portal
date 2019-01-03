@@ -140,7 +140,7 @@ public final class JobScheduler extends AbstractPersistentActorWithTimers {
         }
         final UUID id = sj.getJobId();
 
-        final Optional<Job> j = _repository.get(id);
+        final Optional<Job> j = _repository.getJob(id);
         if (!j.isPresent()) {
             LOGGER.error()
                     .setMessage("job in queue with nonexistent id")

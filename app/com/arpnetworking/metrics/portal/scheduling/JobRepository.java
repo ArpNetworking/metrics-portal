@@ -38,12 +38,11 @@ public interface JobRepository {
     void close();
 
     /**
-     * Add a new Job to the repository.
+     * Create or update a {@link Job}.
      *
-     * @param j The Job to record.
-     * @return A unique identifier for that job.
+     * @param job The {@link Job} to create or update.
      */
-    UUID add(Job j);
+    void addOrUpdateJob(Job job);
 
     /**
      * Retrieve a previously-stored Job.
@@ -51,5 +50,5 @@ public interface JobRepository {
      * @param id The id assigned to the Job by a previous call to {@code add}.
      * @return The Job stored with that key.
      */
-    Optional<Job> get(UUID id);
+    Optional<Job> getJob(UUID id);
 }

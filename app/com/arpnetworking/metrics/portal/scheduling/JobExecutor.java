@@ -54,7 +54,7 @@ public final class JobExecutor extends AbstractActor {
                     //  because a one-off job-execution is this actor's entire purpose.
                     getSelf().tell(PoisonPill.getInstance(), getSelf());
 
-                    final Optional<Job> j = e.getRepo().get(e.getJobId());
+                    final Optional<Job> j = e.getRepo().getJob(e.getJobId());
                     if (!j.isPresent()) {
                         LOGGER.error()
                                 .setMessage("repository has no job with given id")

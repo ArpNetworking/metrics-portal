@@ -15,6 +15,7 @@
  */
 package models.internal.scheduling;
 
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -23,6 +24,14 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson
  */
 public interface Job {
+
+    /**
+     * The unique identifier of the job.
+     *
+     * @return The unique identifier of the job.
+     */
+    UUID getId();
+
     /**
      * @return The schedule on which the Job should be repeated.
      */
