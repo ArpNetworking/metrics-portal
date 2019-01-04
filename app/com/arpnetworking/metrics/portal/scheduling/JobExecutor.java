@@ -56,11 +56,6 @@ public final class JobExecutor extends AbstractActor {
 
                     final Optional<Job> job = e.getRepo().getJob(e.getJobId());
                     if (!job.isPresent()) {
-                        LOGGER.error()
-                                .setMessage("repository has no job with given id")
-                                .addData("repo", e.getRepo())
-                                .addData("jobId", e.getJobId())
-                                .log();
                         e.getNotifiee().tell(new Failure(new NoSuchElementException(e.getJobId().toString())), getSelf());
                         return;
                     }
