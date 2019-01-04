@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * An actor that executes a {@link Job} and notifies another actor when finished.
+ * A one-shot actor that executes a single {@link Job}, notifies another actor when finished, and then self-terminates.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
