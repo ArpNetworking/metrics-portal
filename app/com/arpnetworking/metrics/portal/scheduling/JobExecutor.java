@@ -32,7 +32,7 @@ import java.util.UUID;
 /**
  * An actor that executes a {@link Job} and notifies another actor when finished.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobExecutor extends AbstractActor {
 

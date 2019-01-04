@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface JobRepository {
 

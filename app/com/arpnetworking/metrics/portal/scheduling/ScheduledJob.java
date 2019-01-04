@@ -25,7 +25,7 @@ import java.util.UUID;
 /**
  * A specification of some job to run at a future date.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class ScheduledJob implements Serializable {
     private final Instant _whenRun;

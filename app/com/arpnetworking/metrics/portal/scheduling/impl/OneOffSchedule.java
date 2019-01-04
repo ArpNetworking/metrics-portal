@@ -24,7 +24,7 @@ import java.util.Optional;
 /**
  * Schedule for a {@link Job} that should be executed exactly once.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class OneOffSchedule implements Schedule {
 

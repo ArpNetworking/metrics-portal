@@ -21,7 +21,7 @@ import java.util.Optional;
 /**
  * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface Schedule {
     /**

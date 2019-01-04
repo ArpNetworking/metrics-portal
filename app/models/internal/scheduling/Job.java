@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * A (possibly recurring) job describing a task to perform and how often to repeat.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface Job {
 

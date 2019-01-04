@@ -24,7 +24,7 @@ import java.util.Optional;
 /**
  * Schedule for a job that repeats periodically.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class PeriodicSchedule implements Schedule {
 

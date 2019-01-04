@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
 /**
  * Manages execution of recurring {@link Job}s.
  *
- * @author Spencer Pearson
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobScheduler extends AbstractPersistentActorWithTimers {
 
