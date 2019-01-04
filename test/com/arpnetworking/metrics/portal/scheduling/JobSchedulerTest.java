@@ -157,7 +157,6 @@ public class JobSchedulerTest {
         tk.expectMsg(JobExecutor.Success.INSTANCE);
         tk.expectNoMsg();
 
-        System.out.println(getPlan(tk, scheduler));
         Assert.assertEquals(
                 Collections.singletonList(new ScheduledJob(t1.plus(tickSize), j.getId())),
                 getPlan(tk, scheduler));
