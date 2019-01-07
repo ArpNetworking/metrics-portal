@@ -17,18 +17,12 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.scheduling.BaseSchedule;
-import models.internal.scheduling.Schedule;
-import net.sf.oval.ConstraintViolation;
-import net.sf.oval.constraint.Assert;
-import net.sf.oval.constraint.MaxCheck;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
-import java.util.List;
 import java.util.Optional;
 
 /**
