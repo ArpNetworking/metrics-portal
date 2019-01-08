@@ -41,7 +41,6 @@ import play.test.WithApplication;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,7 +50,7 @@ import java.util.UUID;
 import javax.persistence.PersistenceException;
 
 /**
- * Put a real doc here before committing.
+ * Unit test suite for {@link DatabaseReportingJobRepository}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -206,7 +205,6 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         _repository.jobCompleted(job, result, now);
 
         final ReportingJobExecution execution = _repository.getMostRecentExecution(job).get();
-        final ZonedDateTime time = execution.getExecutedAt();
 
         assertThat(execution.getResult(), equalTo(result));
         assertThat(execution.getExecutedAt().toInstant(), equalTo(now.toInstant()));
