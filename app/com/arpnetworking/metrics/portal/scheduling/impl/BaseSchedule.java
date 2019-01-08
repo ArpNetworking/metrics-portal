@@ -67,8 +67,8 @@ public abstract class BaseSchedule implements Schedule {
     }
 
     /**
-     * Return the next time the schedule should run, much as {@link Schedule}{@code .nextRun} does.
-     * Will get restricted between {@code runAtAndAfter} and {@code runUntil} by {@code nextRun}.
+     * Return the next time the schedule should run, without regard for the bounds set by {@code runAtAndAfter}/{@code runUntil}.
+     * ({@code nextRun} wraps this method and enforces the window mask.)
      *
      * @param lastRun The last time the job was run.
      * @return The next time to run the job.
