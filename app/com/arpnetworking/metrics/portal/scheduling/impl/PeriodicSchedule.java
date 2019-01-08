@@ -32,54 +32,7 @@ import java.util.Optional;
  */
 public final class PeriodicSchedule extends BaseSchedule {
 
-    /**
-     *
-     */
-    public enum Period {
-        /** */
-        HOUR(Duration.ofHours(1)),
-        /** */
-        DAY(Duration.ofDays(1));
-
-        private Duration _duration;
-        Period(final Duration duration) {
-            _duration = duration;
-        }
-
-        public Duration getDuration() {
-            return _duration;
-        }
-
-        /**
-         * Rounds a time backwards to the nearest natural boundary of this period (e.g. __:00 for HOUR, midnight for DAY).
-         *
-         * @param time The time to round.
-         * @return The rounded time, guaranteed to be on a {period}-boundary in {@code time}'s time zone.
-         */
-        public ZonedDateTime floor(final ZonedDateTime time) {
-            final ZonedDateTime t0 = ZonedDateTime.parse("1970-01-01T00:00:00Z");
-            final long dtSeconds = ChronoUnit.SECONDS.between(t0, time);
-            final long step = _duration.toMillis() / 1000;
-            final long flooredDtSeconds = (dtSeconds / step) * step;
-            return t0.plus(Duration.ofSeconds(flooredDtSeconds));
-        }
-
-        /**
-         * Rounds a time forwards to the nearest natural boundary of this period (e.g. __:00 for HOUR, midnight for DAY).
-         *
-         * @param time The time to round.
-         * @return The rounded time, guaranteed to be on a {period}-boundary in {@code time}'s time zone.
-         */
-        public ZonedDateTime ceil(final ZonedDateTime time) {
-            final ZonedDateTime floor = floor(time);
-            if (time.equals(floor)) {
-                return floor;
-            }
-            return floor.plus(_duration);
-        }
-    }
-
-    private final Period _period;
+    private final ChronoUnit _period;
     private final Duration _offset;
 
     private PeriodicSchedule(final Builder builder) {
@@ -88,7 +41,7 @@ public final class PeriodicSchedule extends BaseSchedule {
         _offset = builder._offset;
     }
 
-    public Period getPeriod() {
+    public ChronoUnit getPeriod() {
         return _period;
     }
 
@@ -99,9 +52,13 @@ public final class PeriodicSchedule extends BaseSchedule {
     @Override
     protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
         if (!lastRun.isPresent()) {
-            return Optional.of(_period.ceil(getRunAtAndAfter()).plus(_offset));
+            ZonedDateTime alignedStart = getRunAtAndAfter().truncatedTo(_period);
+            if (alignedStart.isBefore(getRunAtAndAfter())) {
+                alignedStart = alignedStart.plus(Duration.of(1, _period));
+            }
+            return Optional.of(alignedStart.plus(_offset));
         }
-        return Optional.of(_period.floor(lastRun.get()).plus(_period.getDuration()).plus(_offset));
+        return Optional.of(lastRun.get().truncatedTo(_period).plus(Duration.of(1, _period)).plus(_offset));
     }
 
 
@@ -112,7 +69,7 @@ public final class PeriodicSchedule extends BaseSchedule {
      */
     public static final class Builder extends BaseSchedule.Builder<Builder, PeriodicSchedule> {
         @NotNull
-        private Period _period;
+        private ChronoUnit _period;
         @NotNull
         @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
         private Duration _offset = Duration.ZERO;
@@ -135,7 +92,7 @@ public final class PeriodicSchedule extends BaseSchedule {
          * @param period The period.
          * @return This instance of Builder.
          */
-        public Builder setPeriod(final Period period) {
+        public Builder setPeriod(final ChronoUnit period) {
             _period = period;
             return this;
         }

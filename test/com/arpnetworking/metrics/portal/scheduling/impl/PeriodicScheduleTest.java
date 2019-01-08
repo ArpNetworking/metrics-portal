@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -36,10 +37,10 @@ public final class PeriodicScheduleTest {
     @Test
     public void testNextRunWithAlignedBounds() {
         final Schedule schedule = new PeriodicSchedule.Builder()
-                .setPeriod(PeriodicSchedule.Period.DAY)
+                .setPeriod(ChronoUnit.DAYS)
                 .setOffset(Duration.ZERO)
                 .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00Z"))
-                .setRunUntil(     ZonedDateTime.parse("2019-01-03T00:00:00Z"))
+                .setRunUntil(ZonedDateTime.parse("2019-01-03T00:00:00Z"))
                 .build();
 
         // typical progression, from lastRun=null to lastRun>runUntil
@@ -68,10 +69,10 @@ public final class PeriodicScheduleTest {
     @Test
     public void testNextRunWithUnalignedBounds() {
         final Schedule schedule = new PeriodicSchedule.Builder()
-                .setPeriod(PeriodicSchedule.Period.DAY)
+                .setPeriod(ChronoUnit.DAYS)
                 .setOffset(Duration.ofHours(12))
                 .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T06:00:00Z"))
-                .setRunUntil(     ZonedDateTime.parse("2019-01-04T00:00:00Z"))
+                .setRunUntil(ZonedDateTime.parse("2019-01-04T00:00:00Z"))
                 .build();
 
         // typical progression, from lastRun=null to lastRun>runUntil
@@ -104,7 +105,7 @@ public final class PeriodicScheduleTest {
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderOffsetMustBeSmallerThanPeriod() {
         new PeriodicSchedule.Builder()
-                .setPeriod(PeriodicSchedule.Period.HOUR)
+                .setPeriod(ChronoUnit.HOURS)
                 .setOffset(Duration.ofHours(1))
                 .setRunAtAndAfter(t0)
                 .build();
@@ -113,7 +114,7 @@ public final class PeriodicScheduleTest {
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderOffsetCannotBeNegative() {
         new PeriodicSchedule.Builder()
-                .setPeriod(PeriodicSchedule.Period.HOUR)
+                .setPeriod(ChronoUnit.HOURS)
                 .setOffset(Duration.ofSeconds(-1))
                 .setRunAtAndAfter(t0)
                 .build();
@@ -122,7 +123,7 @@ public final class PeriodicScheduleTest {
     @Test
     public void testBuilderOffsetDefaultsToZero() {
         PeriodicSchedule schedule = new PeriodicSchedule.Builder()
-                .setPeriod(PeriodicSchedule.Period.HOUR)
+                .setPeriod(ChronoUnit.HOURS)
                 .setRunAtAndAfter(t0)
                 .build();
         assertEquals(
@@ -130,17 +131,14 @@ public final class PeriodicScheduleTest {
     }
 
     @Test
-    public void testPeriodFloor() {
-        assertEquals(t0, PeriodicSchedule.Period.HOUR.floor(t0));
-        assertEquals(t0, PeriodicSchedule.Period.HOUR.floor(t0.plus(Duration.ofSeconds(1))));
-        assertEquals(t0.minus(Duration.ofHours(1)), PeriodicSchedule.Period.HOUR.floor(t0.minus(Duration.ofSeconds(1))));
-    }
-
-    @Test
-    public void testPeriodCeil() {
-        assertEquals(t0, PeriodicSchedule.Period.HOUR.ceil(t0));
-        assertEquals(t0, PeriodicSchedule.Period.HOUR.ceil(t0.minus(Duration.ofSeconds(1))));
-        assertEquals(t0.plus(Duration.ofHours(1)), PeriodicSchedule.Period.HOUR.ceil(t0.plus(Duration.ofSeconds(1))));
+    public void testAlignsToCorrectTimeZone() {
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setPeriod(ChronoUnit.DAYS)
+                .setOffset(Duration.ofHours(12))
+                .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00+05:00"))
+                .setRunUntil(ZonedDateTime.parse("2019-01-04T00:00:00+05:00"))
+                .build();
+        assertEquals(Optional.of(ZonedDateTime.parse("2019-01-01T12:00:00+05:00")), schedule.nextRun(Optional.empty()));
     }
 
 }
