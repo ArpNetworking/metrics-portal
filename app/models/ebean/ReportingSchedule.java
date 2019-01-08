@@ -39,7 +39,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "report_schedules", schema = "portal")
 @DiscriminatorColumn(name = "type")
-@DiscriminatorValue("ONE_SHOT")
+@DiscriminatorValue("ONE_OFF")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public class ReportingSchedule {
     @Id

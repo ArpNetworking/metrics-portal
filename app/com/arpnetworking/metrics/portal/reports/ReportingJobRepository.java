@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.reports;
 // TODO(cwbriones): Decouple from ebean model and expose via the internal model.
 import models.ebean.ReportingJob;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,5 +53,14 @@ public interface ReportingJobRepository {
      * @param job The {@code ReportingJob} to create or update.
      */
     void addOrUpdateJob(ReportingJob job);
+
+    /**
+     * Mark a {@code ReportingJob} as completed.
+     *
+     * @param job The {@code ReportingJob} to update.
+     * @param result The completion result of the job, i.e whether it succeeded or failed.
+     * @param completionTime The time of completion.
+     */
+    void jobCompleted(ReportingJob job, ReportingJob.Result result, ZonedDateTime completionTime);
 }
 

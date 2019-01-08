@@ -38,13 +38,6 @@ CREATE TABLE portal.report_schedules (
 --  Recurring Events
     end_date DATE DEFAULT NULL,
     max_occurrences INTEGER DEFAULT NULL,
---  WEEKLY
---     days_of_week INTEGER,
---  MONTHLY_FIXED_DATE
---     day_of_month INTEGER,
---  MONTHLY_FIXED_DAY_OF_WEEK
---     kth_day INTEGER,
---     day_of_week INTEGER,
 );
 
 CREATE TABLE portal.reporting_jobs (
@@ -58,6 +51,13 @@ CREATE TABLE portal.reporting_jobs (
 
     report_source_id BIGINT NOT NULL references portal.report_sources(id),
     report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
+);
+
+CREATE TABLE portal.reporting_job_executions (
+    id BIGSERIAL PRIMARY KEY,
+    reporting_job_id BIGINT NOT NULL references portal.reporting_jobs(id),
+    executed_at TIMESTAMP NOT NULL DEFAULT now(),
+    result VARCHAR(255),
 );
 
 CREATE TABLE portal.report_recipient_groups (

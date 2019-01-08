@@ -21,7 +21,6 @@ import io.ebean.annotation.UpdatedTimestamp;
 import java.sql.Timestamp;
 import java.util.Set;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -44,6 +43,21 @@ import javax.persistence.Table;
 @Table(name = "reporting_jobs", schema = "portal")
 // CHECKSTYLE.OFF: MemberNameCheck
 public class ReportingJob {
+    /**
+     * The result of the job execution.
+     */
+    // TODO(cbriones): This should go into Job the interface.
+    public enum Result {
+        /**
+         * The job executed successfully.
+         */
+        SUCCESS,
+        /**
+         * The job failed.
+         */
+        FAILURE,
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

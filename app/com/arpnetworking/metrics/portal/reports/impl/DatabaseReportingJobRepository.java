@@ -21,7 +21,9 @@ import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.ReportingJob;
+import models.ebean.ReportingJobExecution;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -98,6 +100,52 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
                     .log();
             throw new PersistenceException(e);
         }
+    }
+
+    @Override
+    public void jobCompleted(final ReportingJob job, final ReportingJob.Result result, final ZonedDateTime completionTime) {
+        assertIsOpen();
+
+        final ReportingJobExecution execution = new ReportingJobExecution();
+        execution.setJob(job);
+        execution.setExecutedAt(completionTime);
+        execution.setResult(result);
+
+        LOGGER.debug()
+                .setMessage("Updating reporting job executions")
+                .addData("job", job)
+                .addData("completionTime", completionTime)
+                .addData("result", result)
+                .log();
+        try {
+            Ebean.save(execution);
+            LOGGER.debug()
+                    .setMessage("Updated reporting job execution")
+                    .addData("job", job)
+                    .addData("completionTime", completionTime)
+                    .addData("result", result)
+                    .log();
+            // CHECKSTYLE.OFF: IllegalCatchCheck
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatchCheck
+            LOGGER.error()
+                    .setMessage("Failed to update reporting job executions")
+                    .addData("job", job)
+                    .addData("completionTime", completionTime)
+                    .addData("result", result)
+                    .setThrowable(e)
+                    .log();
+            throw new PersistenceException(e);
+        }
+    }
+
+    Optional<ReportingJobExecution> getMostRecentExecution(final ReportingJob job) {
+        return Ebean.find(ReportingJobExecution.class)
+                .orderBy()
+                .desc("executedAt")
+                .where()
+                .eq("reporting_job_id", job.getId())
+                .findOneOrEmpty();
     }
 
     private void assertIsOpen() {

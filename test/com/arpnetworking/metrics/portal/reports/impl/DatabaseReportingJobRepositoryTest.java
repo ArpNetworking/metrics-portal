@@ -30,6 +30,7 @@ import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
 import models.ebean.ReportingJob;
+import models.ebean.ReportingJobExecution;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +41,8 @@ import play.test.WithApplication;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -191,6 +194,22 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
         //noinspection ConstantConditions
         job.setReportSource(null);
         _repository.addOrUpdateJob(job);
+    }
+
+    @Test
+    public void testJobCompleted() {
+        final ReportingJob job = newJob();
+        _repository.addOrUpdateJob(job);
+        final ZonedDateTime now = ZonedDateTime.now();
+
+        final ReportingJob.Result result = ReportingJob.Result.SUCCESS;
+        _repository.jobCompleted(job, result, now);
+
+        final ReportingJobExecution execution = _repository.getMostRecentExecution(job).get();
+        final ZonedDateTime time = execution.getExecutedAt();
+
+        assertThat(execution.getResult(), equalTo(result));
+        assertThat(execution.getExecutedAt().toInstant(), equalTo(now.toInstant()));
     }
 
     private ReportingJob newJob() {
