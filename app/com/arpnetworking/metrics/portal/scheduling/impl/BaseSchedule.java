@@ -43,7 +43,7 @@ public abstract class BaseSchedule implements Schedule {
      */
     protected BaseSchedule(final Builder<?, ?> builder) {
         _runAtAndAfter = builder._runAtAndAfter;
-        _runUntil = builder._runUntil;
+        _runUntil = Optional.ofNullable(builder._runUntil);
     }
 
     protected ZonedDateTime getRunAtAndAfter() {
@@ -87,8 +87,7 @@ public abstract class BaseSchedule implements Schedule {
         @NotNull
         @ValidateWithMethod(methodName = "validateRunAtAndAfter", parameterType = ZonedDateTime.class)
         protected ZonedDateTime _runAtAndAfter;
-        @NotNull
-        protected Optional<ZonedDateTime> _runUntil = Optional.empty();
+        protected ZonedDateTime _runUntil;
 
         /**
          * Protected constructor for subclasses.
@@ -125,7 +124,7 @@ public abstract class BaseSchedule implements Schedule {
          * @return This instance of {@code Builder}.
          */
         public B setRunUntil(@Nullable final ZonedDateTime runUntil) {
-            _runUntil = Optional.ofNullable(runUntil);
+            _runUntil = runUntil;
             return self();
         }
 
