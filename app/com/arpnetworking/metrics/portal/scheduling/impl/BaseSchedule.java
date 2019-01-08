@@ -108,7 +108,7 @@ public abstract class BaseSchedule implements Schedule {
         protected abstract B self();
 
         /**
-         * The earliest time at which the schedule should run.
+         * The earliest time at which the schedule should run. Required. Cannot be null.
          *
          * @param runAtAndAfter The time.
          * @return This instance of {@code Builder}.
@@ -119,7 +119,7 @@ public abstract class BaseSchedule implements Schedule {
         }
 
         /**
-         * The last time at which the schedule should ever run.
+         * The last time at which the schedule should ever run. Optional. Defaults to null.
          *
          * @param runUntil The time.
          * @return This instance of {@code Builder}.
