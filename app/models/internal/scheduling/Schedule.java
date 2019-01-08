@@ -19,7 +19,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /**
- * A schedule on which to render/send a report (e.g. "once", "daily", "weekly", "on the first of each month").
+ * A schedule on which to run a job (e.g. "once", "daily", "weekly", "on the first of each month").
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
