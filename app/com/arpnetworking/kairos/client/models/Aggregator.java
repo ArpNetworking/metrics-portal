@@ -109,6 +109,7 @@ public final class Aggregator {
          * @param value the align_sampling for the aggregator
          * @return this {@link Builder}
          */
+        @JsonProperty("align_sampling")
         public Builder setAlignSampling(final Optional<Boolean> value) {
             _alignSampling = value;
             return this;

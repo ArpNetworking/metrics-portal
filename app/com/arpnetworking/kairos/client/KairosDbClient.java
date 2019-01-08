@@ -31,15 +31,21 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.RollupResponse;
+import com.arpnetworking.kairos.client.models.RollupTask;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import net.sf.oval.constraint.NotNull;
 import scala.compat.java8.FutureConverters;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -75,7 +81,68 @@ public final class KairosDbClient {
         return fireRequest(request, KairosMetricNamesQueryResponse.class);
     }
 
+    /**
+     * Queries KairosDB for list of rollups.
+     *
+     * @return the response
+     */
+    public CompletionStage<List<RollupTask>> queryRollups() {
+        final HttpRequest request = HttpRequest.GET(createUri(ROLLUPS_PATH).toString());
+        return fireRequest(request, ROLLUP_LIST_TYPEREF);
+    }
+
+    /**
+     * Creates a rollup task in KairosDB.
+     *
+     * @param rollupTask the task to create
+     * @return the response
+     */
+    public CompletionStage<RollupResponse> createRollup(final RollupTask rollupTask) {
+        try {
+            final HttpRequest request = HttpRequest.POST(createUri(ROLLUPS_PATH).toString())
+                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(rollupTask));
+            return fireRequest(request, RollupResponse.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Updates an existing rollup task in KairosDB.
+     *
+     * @param rollupTask the task to update
+     * @return the response
+     */
+    public CompletionStage<RollupResponse> updateRollup(final RollupTask rollupTask) {
+        try {
+            final HttpRequest request = HttpRequest.PUT(createUri(ROLLUPS_PATH).toString() + "/" + rollupTask.getId())
+                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(rollupTask));
+            return fireRequest(request, RollupResponse.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Deletes an existing rollup task in KairosDB.
+     *
+     * @param id the id of task to delete
+     * @return the response
+     */
+    public CompletionStage<Void> deleteRollup(final String id) {
+        final HttpRequest request = HttpRequest.DELETE(createUri(ROLLUPS_PATH).toString() + "/" + id);
+        return fireRequest(request, Void.class);
+    }
+
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final Class<T> responseType) {
+        return fireRequest(request, TypeFactory.defaultInstance().constructType(responseType));
+    }
+
+    private <T> CompletionStage<T> fireRequest(final HttpRequest request, final TypeReference<T> responseType) {
+        return fireRequest(request, TypeFactory.defaultInstance().constructType(responseType));
+    }
+
+    private <T> CompletionStage<T> fireRequest(final HttpRequest request, final JavaType responseType) {
         return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)), _materializer)
                 .thenCompose(httpResponse -> {
                     final HttpEncoding encoding = httpResponse.encoding();
@@ -87,13 +154,23 @@ public final class KairosDbClient {
                     } else {
                         flow = NoCoding$.MODULE$;
                     }
+                    if (!httpResponse.status().isSuccess()) {
+                        throw new KairosDBRequestException(
+                                httpResponse.status().intValue(),
+                                httpResponse.status().reason(),
+                                request.getUri());
+                    }
                     return httpResponse.entity()
                             .toStrict(_readTimeout.toMillis(), _materializer)
                             .thenCompose(strict -> FutureConverters.toJava(flow.decode(strict.getData(), _materializer)));
                 })
                 .thenApply(body -> {
                     try {
-                        return _mapper.readValue(body.utf8String(), responseType);
+                        if (body.length() > 0) {
+                            return _mapper.readValue(body.utf8String(), responseType);
+                        } else {
+                            return null;
+                        }
                     } catch (final IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -122,6 +199,8 @@ public final class KairosDbClient {
 
     static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
+    static final URI ROLLUPS_PATH = URI.create("/api/v1/rollups");
+    private static final TypeReference<List<RollupTask>> ROLLUP_LIST_TYPEREF = new TypeReference<List<RollupTask>>() { };
 
     /**
      * Implementation of the builder pattern for {@link KairosDbClient}.

@@ -34,7 +34,7 @@ public final class Metric {
         return _name;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Multimap<String, String> getTags() {
         return _tags;
     }
@@ -104,6 +104,7 @@ public final class Metric {
          * @param value the group by clauses
          * @return this {@link Builder}
          */
+        @JsonProperty("group_by")
         public Builder setGroupBy(final ImmutableList<MetricsQuery.GroupBy> value) {
             _groupBy = value;
             return this;

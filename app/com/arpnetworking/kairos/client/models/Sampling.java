@@ -59,6 +59,7 @@ public final class Sampling {
 
         /**
          * Sets the value and unit from a {@link Period}.
+         * The value and unit will be overridden when units in seconds.
          *
          * @param value a {@link Period}
          * @return this {@link Builder}
@@ -66,6 +67,28 @@ public final class Sampling {
         public Builder setPeriod(final Period value) {
             _value = value.toStandardSeconds().getSeconds();
             _unit = "seconds";
+            return this;
+        }
+
+        /**
+         * Sets the count of units that the Sampling covers.
+         *
+         * @param value the count of units
+         * @return this {@link Builder}
+         */
+        public Builder setValue(final int value) {
+            _value = value;
+            return this;
+        }
+
+        /**
+         * Sets the unit the Sampling covers.
+         *
+         * @param value the unit
+         * @return this {@link Builder}
+         */
+        public Builder setUnit(final String value) {
+            _unit = value;
             return this;
         }
 
