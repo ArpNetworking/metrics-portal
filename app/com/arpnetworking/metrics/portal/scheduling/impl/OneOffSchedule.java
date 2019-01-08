@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.sf.oval.constraint.NotNull;
-import net.sf.oval.constraint.ValidateWithMethod;
-
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -29,15 +25,12 @@ import java.util.Optional;
  */
 public final class OneOffSchedule extends BaseSchedule {
 
-    private final ZonedDateTime _whenRun;
-
     private OneOffSchedule(final Builder builder) {
         super(builder);
-        _whenRun = builder._whenRun;
     }
 
     public ZonedDateTime getWhenRun() {
-        return _whenRun;
+        return getRunAtAndAfter();
     }
 
     @Override
@@ -45,7 +38,7 @@ public final class OneOffSchedule extends BaseSchedule {
         if (lastRun.isPresent()) {
             return Optional.empty();
         }
-        return Optional.of(_whenRun);
+        return Optional.of(getWhenRun());
     }
 
     /**
@@ -54,11 +47,6 @@ public final class OneOffSchedule extends BaseSchedule {
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
     public static final class Builder extends BaseSchedule.Builder<Builder, OneOffSchedule> {
-
-        @NotNull
-        @ValidateWithMethod(methodName = "validateWhenRun", parameterType = ZonedDateTime.class)
-        private ZonedDateTime _whenRun;
-
         /**
          * Public constructor.
          */
@@ -69,22 +57,6 @@ public final class OneOffSchedule extends BaseSchedule {
         @Override
         protected Builder self() {
             return this;
-        }
-
-        /**
-         * The time when the schedule should fire. Required. Cannot be null.
-         *
-         * @param whenRun The time.
-         * @return This instance of Builder.
-         */
-        public Builder setWhenRun(final ZonedDateTime whenRun) {
-            _whenRun = whenRun;
-            return this;
-        }
-
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
-        private boolean validateWhenRun(final ZonedDateTime whenRun) {
-            return !whenRun.isBefore(_runAtAndAfter) && (!_runUntil.isPresent() || !whenRun.isAfter(_runUntil.get()));
         }
     }
 }

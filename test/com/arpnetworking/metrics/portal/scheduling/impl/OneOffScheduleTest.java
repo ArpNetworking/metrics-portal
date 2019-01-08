@@ -36,7 +36,6 @@ public final class OneOffScheduleTest {
     @Test
     public void testNextRun() {
         final Schedule schedule = new OneOffSchedule.Builder()
-                .setWhenRun(ZonedDateTime.parse("2019-01-01T00:00:00Z"))
                 .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00Z"))
                 .build();
 
@@ -62,23 +61,6 @@ public final class OneOffScheduleTest {
         assertEquals(
                 Optional.empty(),
                 schedule.nextRun(Optional.of(ZonedDateTime.parse("9999-01-01T00:00:00Z"))));
-    }
-
-    @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
-    public void testBuilderRejectsRunBeforeRunAfter() {
-        new OneOffSchedule.Builder()
-                .setWhenRun(t0)
-                .setRunAtAndAfter(t0.plus(Duration.ofSeconds(1)))
-                .build();
-    }
-
-    @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
-    public void testBuilderRejectsRunAfterRunUntil() {
-        new OneOffSchedule.Builder()
-                .setRunAtAndAfter(t0.minus(Duration.ofSeconds(2)))
-                .setRunUntil(t0.minus(Duration.ofSeconds(1)))
-                .setWhenRun(t0)
-                .build();
     }
 
 }
