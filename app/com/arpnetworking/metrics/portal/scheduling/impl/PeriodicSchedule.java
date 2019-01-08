@@ -40,14 +40,6 @@ public final class PeriodicSchedule extends BaseSchedule {
         _offset = builder._offset;
     }
 
-    public ChronoUnit getPeriod() {
-        return _period;
-    }
-
-    public Duration getOffset() {
-        return _offset;
-    }
-
     @Override
     protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
         if (!lastRun.isPresent()) {

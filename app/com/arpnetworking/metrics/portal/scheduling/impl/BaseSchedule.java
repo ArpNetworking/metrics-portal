@@ -130,7 +130,7 @@ public abstract class BaseSchedule implements Schedule {
 
         @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateRunAtAndAfter(final ZonedDateTime runAtAndAfter) {
-            return !_runUntil.isPresent() || !runAtAndAfter.isAfter(_runUntil.get());
+            return (_runUntil == null) || !runAtAndAfter.isAfter(_runUntil);
         }
     }
 }

@@ -145,8 +145,7 @@ public final class PeriodicScheduleTest {
                 .setPeriod(ChronoUnit.HOURS)
                 .setRunAtAndAfter(t0)
                 .build();
-        assertEquals(
-                Duration.ZERO, schedule.getOffset());
+        assertEquals(Optional.of(t0), schedule.nextRun(Optional.empty()));
     }
 
     @Test
