@@ -30,14 +30,18 @@ public final class NeverSchedule extends BaseSchedule {
     /**
      * The only instance of {@code NeverSchedule}, since they're all identical.
      */
-    public static final NeverSchedule INSTANCE = new NeverSchedule(Builder.INSTANCE);
+    private static final NeverSchedule INSTANCE = new NeverSchedule(Builder.INSTANCE);
 
     private NeverSchedule(final Builder builder) {
         super(builder);
     }
 
+    public static NeverSchedule getInstance() {
+        return INSTANCE;
+    }
+
     @Override
-    public Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
         return Optional.empty();
     }
 

@@ -14,8 +14,8 @@ public class NeverScheduleTest {
     @Test
     public void testNextRun() {
         // Two interesting cases: lastRun=null, lastRun!=null
-        assertEquals(Optional.empty(), NeverSchedule.INSTANCE.nextRun(Optional.empty()));
-        assertEquals(Optional.empty(), NeverSchedule.INSTANCE.nextRun(Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z"))));
+        assertEquals(Optional.empty(), NeverSchedule.getInstance().nextRun(Optional.empty()));
+        assertEquals(Optional.empty(), NeverSchedule.getInstance().nextRun(Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z"))));
     }
 
 }
