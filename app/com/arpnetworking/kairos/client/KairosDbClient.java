@@ -109,13 +109,16 @@ public final class KairosDbClient {
 
     /**
      * Updates an existing rollup task in KairosDB.
+     * The id passed in the function arguments is used as the id of the RollupTask to update.  Any
+     * id present in the RollupTask object will be ignored by KairosDB.
      *
+     * @param id the id of the rollup task to update
      * @param rollupTask the task to update
      * @return the response
      */
-    public CompletionStage<RollupResponse> updateRollup(final RollupTask rollupTask) {
+    public CompletionStage<RollupResponse> updateRollup(final String id, final RollupTask rollupTask) {
         try {
-            final HttpRequest request = HttpRequest.PUT(createUri(ROLLUPS_PATH).toString() + "/" + rollupTask.getId())
+            final HttpRequest request = HttpRequest.PUT(createUri(ROLLUPS_PATH).toString() + "/" + id)
                     .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(rollupTask));
             return fireRequest(request, RollupResponse.class);
         } catch (final JsonProcessingException e) {
@@ -155,7 +158,7 @@ public final class KairosDbClient {
                         flow = NoCoding$.MODULE$;
                     }
                     if (!httpResponse.status().isSuccess()) {
-                        throw new KairosDBRequestException(
+                        throw new KairosDbRequestException(
                                 httpResponse.status().intValue(),
                                 httpResponse.status().reason(),
                                 request.getUri());

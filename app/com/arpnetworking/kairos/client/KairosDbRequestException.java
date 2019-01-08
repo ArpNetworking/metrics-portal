@@ -22,7 +22,7 @@ import akka.http.javadsl.model.Uri;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class KairosDBRequestException extends RuntimeException {
+public class KairosDbRequestException extends RuntimeException {
 
     public int getHttpStatus() {
         return _httpStatus;
@@ -43,7 +43,7 @@ public class KairosDBRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDBRequestException(final int httpStatus, final String httpMessage, final Uri requestUri) {
+    public KairosDbRequestException(final int httpStatus, final String httpMessage, final Uri requestUri) {
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
         _requestUri = requestUri;
@@ -57,7 +57,7 @@ public class KairosDBRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDBRequestException(final String message, final int httpStatus, final String httpMessage, final Uri requestUri) {
+    public KairosDbRequestException(final String message, final int httpStatus, final String httpMessage, final Uri requestUri) {
         super(message);
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
@@ -73,7 +73,7 @@ public class KairosDBRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDBRequestException(final String message,
+    public KairosDbRequestException(final String message,
                                     final Throwable cause,
                                     final int httpStatus,
                                     final String httpMessage,

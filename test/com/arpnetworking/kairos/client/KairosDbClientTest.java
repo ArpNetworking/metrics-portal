@@ -63,7 +63,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public class KairosDBClientTest {
+public class KairosDbClientTest {
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
@@ -72,7 +72,7 @@ public class KairosDBClientTest {
     private KairosDbClient _kairosDbClient;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = KairosDBClientTest.class.getSimpleName();
+    private static final String CLASS_NAME = KairosDbClientTest.class.getSimpleName();
 
     @Before
     public void setUp() throws Exception {
@@ -223,7 +223,7 @@ public class KairosDBClientTest {
                         )
         );
 
-        RollupResponse response = _kairosDbClient.updateRollup(new RollupTask.Builder()
+        RollupResponse response = _kairosDbClient.updateRollup(id, new RollupTask.Builder()
                 .setExecutionInterval(new Sampling.Builder().setValue(1).setUnit("days").build())
                 .setName("testRollup")
                 .setId(id)
@@ -284,7 +284,7 @@ public class KairosDBClientTest {
         assertNull(response);
     }
 
-    @Test(expected = KairosDBRequestException.class)
+    @Test(expected = KairosDbRequestException.class)
     public void testDeleteMissingRollup() throws Throwable {
         final String id = "rollup_id";
         _wireMock.givenThat(

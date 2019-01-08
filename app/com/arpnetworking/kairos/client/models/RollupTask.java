@@ -22,14 +22,17 @@ import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import javax.annotation.Nullable;
+import java.util.Optional;
+
 /**
  * Represents a KairosDB Rollup task definition.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class RollupTask {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public String getId() {
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<String> getId() {
         return _id;
     }
 
@@ -50,13 +53,13 @@ public final class RollupTask {
     }
 
     private RollupTask(final Builder builder) {
-        _id = builder._id;
+        _id = Optional.ofNullable(builder._id);
         _name = builder._name;
         _executionInterval = builder._executionInterval;
         _rollups = builder._rollups;
     }
 
-    private final String _id;
+    private final Optional<String> _id;
     private final String _name;
     private final Sampling _executionInterval;
     private final ImmutableList<Rollup> _rollups;
@@ -78,7 +81,7 @@ public final class RollupTask {
          * @param value the id
          * @return this {@link Builder}
          */
-        public Builder setId(final String value) {
+        public Builder setId(@Nullable final String value) {
             _id = value;
             return this;
         }

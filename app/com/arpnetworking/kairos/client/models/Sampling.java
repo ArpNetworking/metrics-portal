@@ -76,7 +76,7 @@ public final class Sampling {
          * @param value the count of units
          * @return this {@link Builder}
          */
-        public Builder setValue(final int value) {
+        public Builder setValue(final Integer value) {
             _value = value;
             return this;
         }
@@ -94,7 +94,9 @@ public final class Sampling {
 
         @JsonProperty("value")
         @Min(1)
-        private int _value = 1;
+        @NotNull
+        private Integer _value = 1;
+
         @JsonProperty("unit")
         @NotNull
         @NotEmpty
