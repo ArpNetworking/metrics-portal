@@ -60,9 +60,9 @@ public class OneOffScheduleTest {
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderRejectsRunAfterRunUntil() {
         new OneOffSchedule.Builder()
-                .setWhenRun(t0)
-                .setRunAtAndAfter(t0)
+                .setRunAtAndAfter(t0.minus(Duration.ofSeconds(2)))
                 .setRunUntil(t0.minus(Duration.ofSeconds(1)))
+                .setWhenRun(t0)
                 .build();
     }
 
