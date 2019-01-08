@@ -97,7 +97,7 @@ public final class PeriodicSchedule extends BaseSchedule {
     }
 
     @Override
-    public Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
         if (!lastRun.isPresent()) {
             return Optional.of(_period.ceil(getRunAtAndAfter()).plus(_offset));
         }

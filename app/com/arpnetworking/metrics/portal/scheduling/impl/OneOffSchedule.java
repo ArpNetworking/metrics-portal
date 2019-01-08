@@ -42,7 +42,7 @@ public final class OneOffSchedule extends BaseSchedule {
     }
 
     @Override
-    public Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
         if (lastRun.isPresent()) {
             return Optional.empty();
         }

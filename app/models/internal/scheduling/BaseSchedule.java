@@ -72,7 +72,7 @@ public abstract class BaseSchedule implements Schedule {
      * @param lastRun The last time the job was run.
      * @return The next time to run the job.
      */
-    public abstract Optional<ZonedDateTime> unboundedNextRun(Optional<ZonedDateTime> lastRun);
+    protected abstract Optional<ZonedDateTime> unboundedNextRun(Optional<ZonedDateTime> lastRun);
 
     /**
      * Builder implementation for {@link BaseSchedule} subclasses.
