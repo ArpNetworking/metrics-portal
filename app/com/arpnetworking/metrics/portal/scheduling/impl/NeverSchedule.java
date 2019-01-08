@@ -53,9 +53,6 @@ public final class NeverSchedule extends BaseSchedule {
     private static final class Builder extends BaseSchedule.Builder<Builder, NeverSchedule> {
 
         private static final Builder INSTANCE = new Builder();
-        /**
-         * Public constructor.
-         */
         private Builder() {
             super(NeverSchedule::new);
         }
