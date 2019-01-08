@@ -15,8 +15,11 @@
  */
 package models.internal.scheduling;
 
+import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -32,18 +35,31 @@ public interface Job<T> {
     /**
      * The unique identifier of the job.
      *
-     * @return The unique identifier of the job.
+     * @return The UUID.
      */
     UUID getId();
 
     /**
-     * @return The schedule on which the Job should be repeated.
+     * Returns the schedule on which the Job should be repeated.
+     *
+     * @return The schedule.
      */
     Schedule getSchedule();
 
     /**
-     * @return A {@link CompletionStage} that completes exceptionally iff the job throws an exception.
+     * Returns the last time the job was executed for (or {@code empty()} if it has never run).
+     *
+     * @return The time.
      */
-    CompletionStage<T> start();
+    Optional<Instant> getLastRun();
+
+    /**
+     * Starts a particular instant's execution of the job running.
+     *
+     * @param scheduler The Akka actor that's scheduling this job to be run.
+     * @param scheduled The instant that the job is running for. (Should probably have come from {@code getSchedule().nextRun(...)}.)
+     * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
+     */
+    CompletionStage<T> execute(ActorRef scheduler, Instant scheduled);
 }
 

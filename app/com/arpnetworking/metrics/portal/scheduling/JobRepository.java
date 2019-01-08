@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import models.internal.Organization;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
@@ -45,23 +46,56 @@ public interface JobRepository<T> {
      * Create or update a {@link Job}.
      *
      * @param job The {@link Job} to create or update.
+     * @param organization The organization owning the job.
      */
-    void addOrUpdateJob(Job<T> job);
+    void addOrUpdateJob(Job<T> job, Organization organization);
 
     /**
      * Retrieve a previously-stored Job.
      *
      * @param id The id assigned to the Job by a previous call to {@code add}.
+     * @param organization The organization owning the job.
      * @return The Job stored with that key.
      */
-    Optional<Job<T>> getJob(UUID id);
+    Optional<Job<T>> getJob(UUID id, Organization organization);
 
     /**
      * Get the last time that a job with a given UUID was run.
      *
      * @param id The id assigned to the Job by a previous call to {@code add}.
+     * @param organization The organization owning the job.
      * @return The last time that that job was executed.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<Instant> getLastRun(UUID id) throws NoSuchElementException;
+    Optional<Instant> getLastRun(UUID id, Organization organization) throws NoSuchElementException;
+
+    /**
+     * Notify the repository that a job has started executing.
+     *
+     * @param id The UUID of the job that completed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the job started running for.
+     */
+    void jobStarted(UUID id, Organization organization, Instant scheduled);
+
+    /**
+     * Notify the repository that a job finished executing successfully.
+     *
+     * @param id The UUID of the job that completed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the completed job-run was scheduled for.
+     * @param result The result that the job computed.
+     */
+    void jobSucceeded(UUID id, Organization organization, Instant scheduled, T result);
+
+    /**
+     * Notify the repository that a job encountered an error and aborted execution.
+     *
+     * @param id The UUID of the job that failed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the failed job-run was scheduled for.
+     * @param error The exception that caused the job to fail.
+     */
+    void jobFailed(UUID id, Organization organization, Instant scheduled, Throwable error);
+
 }
