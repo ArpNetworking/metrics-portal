@@ -45,17 +45,22 @@ public final class PeriodicScheduleTest {
 
         // typical progression, from lastRun=null to lastRun>runUntil
         assertEquals(
-                Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z")), schedule.nextRun(Optional.empty()));
+                Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z")),
+                schedule.nextRun(Optional.empty()));
         assertEquals(
-                Optional.of(ZonedDateTime.parse("2019-01-02T00:00:00Z")), schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z"))));
+                Optional.of(ZonedDateTime.parse("2019-01-02T00:00:00Z")),
+                schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z"))));
         assertEquals(
-                Optional.of(ZonedDateTime.parse("2019-01-03T00:00:00Z")), schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-02T00:00:00Z"))));
+                Optional.of(ZonedDateTime.parse("2019-01-03T00:00:00Z")),
+                schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-02T00:00:00Z"))));
         assertEquals(
-                Optional.empty(),                                         schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-03T00:00:00Z"))));
+                Optional.empty(),
+                schedule.nextRun(Optional.of(ZonedDateTime.parse("2019-01-03T00:00:00Z"))));
 
         // lastRun<runAfter: next run should be right at/after runAfter
         assertEquals(
-                Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z")), schedule.nextRun(Optional.of(ZonedDateTime.parse("2018-12-20T12:34:56Z"))));
+                Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z")),
+                schedule.nextRun(Optional.of(ZonedDateTime.parse("2018-12-20T12:34:56Z"))));
 
         // runAfter < lastRun < runUntil: should round correctly
         assertEquals(
@@ -63,7 +68,8 @@ public final class PeriodicScheduleTest {
 
         // lastRun>runUntil: should not run again
         assertEquals(
-                Optional.empty(),                                         schedule.nextRun(Optional.of(ZonedDateTime.parse("9999-01-01T00:00:00Z"))));
+                Optional.empty(),
+                schedule.nextRun(Optional.of(ZonedDateTime.parse("9999-01-01T00:00:00Z"))));
     }
 
     @Test
