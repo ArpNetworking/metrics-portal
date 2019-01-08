@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import models.internal.scheduling.BaseSchedule;
-
 import java.time.ZonedDateTime;
 import java.util.Optional;
 

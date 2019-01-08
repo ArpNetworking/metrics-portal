@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import models.internal.scheduling.BaseSchedule;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 

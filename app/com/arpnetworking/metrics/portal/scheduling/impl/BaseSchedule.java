@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal.scheduling;
+package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.scheduling.Schedule;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
