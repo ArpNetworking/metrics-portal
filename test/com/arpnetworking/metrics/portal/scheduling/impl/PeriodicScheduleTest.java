@@ -135,10 +135,10 @@ public final class PeriodicScheduleTest {
         final Schedule schedule = new PeriodicSchedule.Builder()
                 .setPeriod(ChronoUnit.DAYS)
                 .setOffset(Duration.ofHours(12))
-                .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00+05:00"))
-                .setRunUntil(ZonedDateTime.parse("2019-01-04T00:00:00+05:00"))
+                .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00+12:34"))
+                .setRunUntil(ZonedDateTime.parse("2019-01-04T00:00:00+12:34"))
                 .build();
-        assertEquals(Optional.of(ZonedDateTime.parse("2019-01-01T12:00:00+05:00")), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(ZonedDateTime.parse("2019-01-01T12:00:00+12:34")), schedule.nextRun(Optional.empty()));
     }
 
 }
