@@ -25,9 +25,11 @@ import java.util.UUID;
 /**
  * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
  *
+ * @param <T> The type of result produced by the {@link Job}s.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public interface JobRepository {
+public interface JobRepository<T> {
 
     /**
      * Open / connect to the repository. Must be called before any other methods.
@@ -44,7 +46,7 @@ public interface JobRepository {
      *
      * @param job The {@link Job} to create or update.
      */
-    void addOrUpdateJob(Job job);
+    void addOrUpdateJob(Job<T> job);
 
     /**
      * Retrieve a previously-stored Job.
@@ -52,7 +54,7 @@ public interface JobRepository {
      * @param id The id assigned to the Job by a previous call to {@code add}.
      * @return The Job stored with that key.
      */
-    Optional<Job> getJob(UUID id);
+    Optional<Job<T>> getJob(UUID id);
 
     /**
      * Get the last time that a job with a given UUID was run.

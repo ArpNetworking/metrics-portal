@@ -23,9 +23,11 @@ import java.util.concurrent.CompletionStage;
 /**
  * A (possibly recurring) job describing a task to perform and how often to repeat.
  *
+ * @param <T> The type of result the Job computes.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public interface Job {
+public interface Job<T> {
 
     /**
      * The unique identifier of the job.
@@ -42,6 +44,6 @@ public interface Job {
     /**
      * @return A {@link CompletionStage} that completes exceptionally iff the job throws an exception.
      */
-    CompletionStage<Void> start();
+    CompletionStage<T> start();
 }
 
