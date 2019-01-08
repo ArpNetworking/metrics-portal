@@ -108,6 +108,19 @@ public final class PeriodicScheduleTest {
                 schedule.nextRun(Optional.of(ZonedDateTime.parse("9999-01-01T00:00:00Z"))));
     }
 
+    @Test
+    public void testNextRunWithPathologicallySmallBounds() {
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setPeriod(ChronoUnit.DAYS)
+                .setOffset(Duration.ZERO)
+                .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T12:34:56Z"))
+                .setRunUntil(ZonedDateTime.parse("2019-01-01T12:34:57Z"))
+                .build();
+
+        assertEquals(Optional.empty(), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.empty(), schedule.nextRun(Optional.of(ZonedDateTime.parse("2018-01-01T00:00:00Z"))));
+    }
+
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderOffsetMustBeSmallerThanPeriod() {
         new PeriodicSchedule.Builder()
