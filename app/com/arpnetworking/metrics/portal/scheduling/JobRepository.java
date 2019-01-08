@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A storage medium for {@link Job}s. Essentially a Map that mints unique keys for new Job values.
+ * A storage medium for {@link Job}s.
  *
  * @param <T> The type of result produced by the {@link Job}s.
  *
