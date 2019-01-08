@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import models.internal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import org.junit.Test;
 
 import java.time.Duration;

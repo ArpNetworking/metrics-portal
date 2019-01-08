@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal.scheduling;
 
-import java.time.ZonedDateTime;
-import java.util.Optional;
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package com.arpnetworking.metrics.portal.scheduling;
 
-/**
- * A schedule on which to run a job (e.g. "once", "daily", "weekly", "on the first of each month").
- *
- * @author Spencer Pearson (spencerpearson at dropbox dot com)
- */
-public interface Schedule {
-    /**
-     * Determines when next to run the job.
-     *
-     * @param lastRun The last time the job was run.
-     * @return The next time to run the job.
-     */
-    Optional<ZonedDateTime> nextRun(Optional<ZonedDateTime> lastRun);
-}
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;
