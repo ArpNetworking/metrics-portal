@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class PeriodicScheduleTest {
+public final class PeriodicScheduleTest {
 
     private static final ZonedDateTime t0 = ZonedDateTime.parse("2019-01-01T00:00:00Z");
 

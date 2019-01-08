@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class NeverScheduleTest {
+public final class NeverScheduleTest {
 
     private static final ZonedDateTime t0 = ZonedDateTime.parse("2018-01-01T00:00:00Z");
 

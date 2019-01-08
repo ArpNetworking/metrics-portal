@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
-public class BaseScheduleTest {
+public final class BaseScheduleTest {
 
     private static final ZonedDateTime t0 = ZonedDateTime.parse("2018-01-01T00:00:00Z");
 
