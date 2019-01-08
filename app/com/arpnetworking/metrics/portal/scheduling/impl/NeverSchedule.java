@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /**
- * Schedule that should be executed exactly once.
+ * Schedule that should never fire.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
