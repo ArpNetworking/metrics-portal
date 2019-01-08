@@ -109,4 +109,18 @@ public class PeriodicScheduleTest {
                 Duration.ZERO, schedule.getOffset());
     }
 
+    @Test
+    public void testPeriodFloor() {
+        assertEquals(t0, PeriodicSchedule.Period.HOUR.floor(t0));
+        assertEquals(t0, PeriodicSchedule.Period.HOUR.floor(t0.plus(Duration.ofSeconds(1))));
+        assertEquals(t0.minus(Duration.ofHours(1)), PeriodicSchedule.Period.HOUR.floor(t0.minus(Duration.ofSeconds(1))));
+    }
+
+    @Test
+    public void testPeriodCeil() {
+        assertEquals(t0, PeriodicSchedule.Period.HOUR.ceil(t0));
+        assertEquals(t0, PeriodicSchedule.Period.HOUR.ceil(t0.minus(Duration.ofSeconds(1))));
+        assertEquals(t0.plus(Duration.ofHours(1)), PeriodicSchedule.Period.HOUR.ceil(t0.plus(Duration.ofSeconds(1))));
+    }
+
 }
