@@ -32,9 +32,9 @@ import javax.annotation.Nullable;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public abstract class BaseSchedule implements Schedule {
+
     private final ZonedDateTime _runAtAndAfter;
     private final Optional<ZonedDateTime> _runUntil;
-
 
     /**
      * Protected constructor.
@@ -46,11 +46,11 @@ public abstract class BaseSchedule implements Schedule {
         _runUntil = builder._runUntil;
     }
 
-    public ZonedDateTime getRunAtAndAfter() {
+    protected ZonedDateTime getRunAtAndAfter() {
         return _runAtAndAfter;
     }
 
-    public Optional<ZonedDateTime> getRunUntil() {
+    protected Optional<ZonedDateTime> getRunUntil() {
         return _runUntil;
     }
 
