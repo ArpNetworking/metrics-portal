@@ -46,15 +46,36 @@ public final class PeriodicSchedule extends BaseSchedule {
 
     @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
-        if (!lastRun.isPresent()) {
-            ZonedDateTime alignedStart = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone).truncatedTo(_period);
-            if (alignedStart.toInstant().isBefore(getRunAtAndAfter())) {
-                alignedStart = alignedStart.plus(Duration.of(1, _period));
-            }
-            return Optional.of(alignedStart.plus(_offset).toInstant());
+        final Instant runAfter = lastRun.orElse(getRunAtAndAfter().minus(Duration.ofNanos(1)));
+        return Optional.of(nextAlignedBoundaryAfter(runAfter).plus(_offset));
+    }
+
+    /**
+     * Returns the first instant after the given boundary that is [period]-aligned in our time zone.
+     *
+     * @param boundary The exclusive lower bound.
+     * @return A boundary that is guaranteed to be [period]-aligned and after the given boundary.
+     */
+    private Instant nextAlignedBoundaryAfter(final Instant boundary) {
+        final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(boundary, _zone);
+        ZonedDateTime aligned = zonedLastRun.truncatedTo(_period);
+        aligned = aligned.plus(_period.getDuration()).truncatedTo(_period);
+        if (!aligned.toInstant().isAfter(boundary)) {
+            aligned = aligned.plus(_period.getDuration()).truncatedTo(_period);
         }
-        final ZonedDateTime alignedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone).truncatedTo(_period);
-        return Optional.of(alignedLastRun.plus(Duration.of(1, _period)).plus(_offset).toInstant());
+        if (!aligned.toInstant().isAfter(boundary)) {
+            aligned = aligned.plus(_period.getDuration().multipliedBy(2)).truncatedTo(_period);
+        }
+        if (!aligned.toInstant().isAfter(boundary)) {
+            aligned = aligned.plus(_period.getDuration().multipliedBy(3)).truncatedTo(_period);
+        }
+        if (!aligned.toInstant().isAfter(boundary)) {
+            throw new AssertionError(String.format(
+                    "can't find next [%s]-aligned moment after [%s]",
+                    _period,
+                    boundary));
+        }
+        return aligned.toInstant();
     }
 
 

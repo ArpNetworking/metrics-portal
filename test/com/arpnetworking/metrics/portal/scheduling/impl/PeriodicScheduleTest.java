@@ -20,6 +20,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -94,6 +95,107 @@ public final class PeriodicScheduleTest {
         assertEquals(
                 Optional.empty(),
                 schedule.nextRun(Optional.of(Instant.parse("9999-01-01T00:00:00Z"))));
+    }
+
+    @Test
+    public void testDailyNextRunLandingInNonexistentHour() {
+        final Duration offset = Duration.ofMinutes(2 * 60 + 30);
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+        final Instant startOfDayBeforeDST = ZonedDateTime.of(LocalDateTime.of(2018, 3, 10, 0, 0, 0), zone).toInstant();
+        final Instant expectedFirstRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 10, 0, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 11, 0, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 12, 0, 0, 0), zone).toInstant().plus(offset);
+
+        // Make sure that the DST switchover happens when I think it does; otherwise this test is worthless
+        assertEquals(24, ChronoUnit.HOURS.between(expectedFirstRun, expectedSecondRun));
+        assertEquals(23, ChronoUnit.HOURS.between(expectedSecondRun, expectedThirdRun));
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.DAYS)
+                .setOffset(offset)
+                .setRunAtAndAfter(startOfDayBeforeDST)
+                .build();
+
+        assertEquals(Optional.of(expectedFirstRun), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(expectedSecondRun), schedule.nextRun(Optional.of(expectedFirstRun)));
+        assertEquals(Optional.of(expectedThirdRun), schedule.nextRun(Optional.of(expectedSecondRun)));
+    }
+
+    @Test
+    public void testDailyNextRunLandingInRepeatedHour() {
+        final Duration offset = Duration.ofMinutes(2 * 60 + 30);
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+        final Instant startOfDayBeforeDST = ZonedDateTime.of(LocalDateTime.of(2018, 11, 3, 0, 0, 0), zone).toInstant();
+        final Instant expectedFirstRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 3, 0, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 0, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 5, 0, 0, 0), zone).toInstant().plus(offset);
+
+        // Make sure that the DST switchover happens when I think it does; otherwise this test is worthless
+        assertEquals(24, ChronoUnit.HOURS.between(expectedFirstRun, expectedSecondRun));
+        assertEquals(25, ChronoUnit.HOURS.between(expectedSecondRun, expectedThirdRun));
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.DAYS)
+                .setOffset(offset)
+                .setRunAtAndAfter(startOfDayBeforeDST)
+                .build();
+
+        assertEquals(Optional.of(expectedFirstRun), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(expectedSecondRun), schedule.nextRun(Optional.of(expectedFirstRun)));
+        assertEquals(Optional.of(expectedThirdRun), schedule.nextRun(Optional.of(expectedSecondRun)));
+    }
+
+    @Test
+    public void testHourlyNextRunAcrossRepeatedHour() {
+        final Duration offset = Duration.ZERO;
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+        final Instant expectedFirstRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(Duration.ofHours(1)).plus(offset);
+        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(Duration.ofHours(2)).plus(offset);
+        final Instant expectedFourthRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 3, 0, 0), zone).toInstant().plus(offset);
+
+        // Make sure that the DST switchover happens when I think it does; otherwise this test is worthless
+        assertEquals(1, ChronoUnit.HOURS.between(expectedFirstRun, expectedSecondRun));
+        assertEquals(1, ChronoUnit.HOURS.between(expectedSecondRun, expectedThirdRun));
+        assertEquals(1, ChronoUnit.HOURS.between(expectedThirdRun, expectedFourthRun));
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.HOURS)
+                .setOffset(offset)
+                .setRunAtAndAfter(expectedFirstRun)
+                .build();
+
+        assertEquals(Optional.of(expectedFirstRun), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(expectedSecondRun), schedule.nextRun(Optional.of(expectedFirstRun)));
+        assertEquals(Optional.of(expectedThirdRun), schedule.nextRun(Optional.of(expectedSecondRun)));
+        assertEquals(Optional.of(expectedFourthRun), schedule.nextRun(Optional.of(expectedThirdRun)));
+    }
+
+    @Test
+    public void testHourlyNextRunAcrossNonexistentHour() {
+        final Duration offset = Duration.ZERO;
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+        final Instant expectedFirstRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 11, 0, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 11, 1, 0, 0), zone).toInstant().plus(offset);
+        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 3, 11, 3, 0, 0), zone).toInstant().plus(offset);
+
+        // Make sure that the DST switchover happens when I think it does; otherwise this test is worthless
+        assertEquals(1, ChronoUnit.HOURS.between(expectedFirstRun, expectedSecondRun));
+        assertEquals(1, ChronoUnit.HOURS.between(expectedSecondRun, expectedThirdRun));
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.HOURS)
+                .setOffset(offset)
+                .setRunAtAndAfter(expectedFirstRun)
+                .build();
+
+        assertEquals(Optional.of(expectedFirstRun), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(expectedSecondRun), schedule.nextRun(Optional.of(expectedFirstRun)));
+        assertEquals(Optional.of(expectedThirdRun), schedule.nextRun(Optional.of(expectedSecondRun)));
     }
 
     @Test
