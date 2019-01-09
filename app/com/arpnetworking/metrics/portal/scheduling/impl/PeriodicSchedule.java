@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
@@ -58,25 +60,43 @@ public final class PeriodicSchedule extends BaseSchedule {
      */
     private Instant nextAlignedBoundaryAfter(final Instant boundary) {
         final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(boundary, _zone);
-        ZonedDateTime aligned = zonedLastRun.truncatedTo(_period);
-        aligned = aligned.plus(_period.getDuration()).truncatedTo(_period);
-        if (!aligned.toInstant().isAfter(boundary)) {
-            aligned = aligned.plus(_period.getDuration()).truncatedTo(_period);
+        final ZonedDateTime truncated = zonedLastRun.truncatedTo(_period);
+        ZonedDateTime result = truncated.plus(_period.getDuration()).truncatedTo(_period);
+
+        // I am not intimately familiar with timekeeping standards, but:
+        //   it's conceivable that, for time-wonkiness reasons, the truncation might have moves us backwards
+        //   farther than adding `_period` moves us forward, meaning that `result` might still be too early.
+        // Just in case, and not very principled-ly, let's try larger steps.
+        if (!result.toInstant().isAfter(boundary)) {
+            result = truncated.plus(_period.getDuration().multipliedBy(2)).truncatedTo(_period);
         }
-        if (!aligned.toInstant().isAfter(boundary)) {
-            aligned = aligned.plus(_period.getDuration().multipliedBy(2)).truncatedTo(_period);
+        if (!result.toInstant().isAfter(boundary)) {
+            result = truncated.plus(_period.getDuration().multipliedBy(3)).truncatedTo(_period);
         }
-        if (!aligned.toInstant().isAfter(boundary)) {
-            aligned = aligned.plus(_period.getDuration().multipliedBy(3)).truncatedTo(_period);
-        }
-        if (!aligned.toInstant().isAfter(boundary)) {
+
+        if (!result.toInstant().isAfter(boundary)) {
+            // At this point, we've performed two truncations (which should move back no more than _period)
+            //   and three additions of _period. and somehow we're *still* not in the future.
+            // I have no idea how this might have happened.
+
+            // Log in addition to throwing an error because
+            //   (a) this should ~never happen, so log-noise will be low; and
+            //   (b) I'm not confident that anything up the call stack will catch-and-log the AssertionError.
+            LOGGER.error()
+                    .setMessage("can't find next aligned moment")
+                    .addData("boundary", boundary)
+                    .addData("period", _period)
+                    .addData("timezone", _zone)
+                    .log();
             throw new AssertionError(String.format(
                     "can't find next [%s]-aligned moment after [%s]",
                     _period,
                     boundary));
         }
-        return aligned.toInstant();
+        return result.toInstant();
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicSchedule.class);
 
 
     /**
