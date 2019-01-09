@@ -88,7 +88,7 @@ public final class PeriodicSchedule extends BaseSchedule {
         @NotNull
         private ChronoUnit _period;
         @NotNull
-        protected ZoneId _zone;
+        private ZoneId _zone;
         @NotNull
         @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
         private Duration _offset = Duration.ZERO;
