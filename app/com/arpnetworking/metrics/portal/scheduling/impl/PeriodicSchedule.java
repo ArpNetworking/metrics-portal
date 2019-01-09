@@ -21,6 +21,7 @@ import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -33,24 +34,26 @@ import java.util.Optional;
 public final class PeriodicSchedule extends BaseSchedule {
 
     private final ChronoUnit _period;
+    private final ZoneId _zone;
     private final Duration _offset;
 
     private PeriodicSchedule(final Builder builder) {
         super(builder);
         _period = builder._period;
+        _zone = builder._zone;
         _offset = builder._offset;
     }
 
     @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         if (!lastRun.isPresent()) {
-            ZonedDateTime alignedStart = ZonedDateTime.ofInstant(getRunAtAndAfter(), getZone()).truncatedTo(_period);
+            ZonedDateTime alignedStart = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone).truncatedTo(_period);
             if (alignedStart.toInstant().isBefore(getRunAtAndAfter())) {
                 alignedStart = alignedStart.plus(Duration.of(1, _period));
             }
             return Optional.of(alignedStart.plus(_offset).toInstant());
         }
-        final ZonedDateTime alignedLastRun = ZonedDateTime.ofInstant(lastRun.get(), getZone()).truncatedTo(_period);
+        final ZonedDateTime alignedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone).truncatedTo(_period);
         return Optional.of(alignedLastRun.plus(Duration.of(1, _period)).plus(_offset).toInstant());
     }
 
@@ -63,6 +66,8 @@ public final class PeriodicSchedule extends BaseSchedule {
     public static final class Builder extends BaseSchedule.Builder<Builder, PeriodicSchedule> {
         @NotNull
         private ChronoUnit _period;
+        @NotNull
+        protected ZoneId _zone;
         @NotNull
         @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
         private Duration _offset = Duration.ZERO;
@@ -87,6 +92,17 @@ public final class PeriodicSchedule extends BaseSchedule {
          */
         public Builder setPeriod(final ChronoUnit period) {
             _period = period;
+            return this;
+        }
+
+        /**
+         * The time zone the times should be computed in. Required. Cannot be null.
+         *
+         * @param zone The time zone.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setZone(final ZoneId zone) {
+            _zone = zone;
             return this;
         }
 

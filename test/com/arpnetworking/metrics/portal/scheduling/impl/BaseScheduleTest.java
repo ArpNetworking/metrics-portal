@@ -67,7 +67,6 @@ public final class BaseScheduleTest {
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderRejectsRunAfterAfterRunUntil() {
         new MinimalSchedule.Builder()
-                .setZone(ZoneId.of("+00:00"))
                 .setRunAtAndAfter(t0)
                 .setRunUntil(t0.minus(Duration.ofSeconds(1)))
                 .build();

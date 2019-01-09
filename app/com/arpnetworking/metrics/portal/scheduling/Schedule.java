@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 
 /**
@@ -32,11 +31,4 @@ public interface Schedule {
      * @return The next time to run the job.
      */
     Optional<Instant> nextRun(Optional<Instant> lastRun);
-
-    /**
-     * Gets the time zone that the schedule is most naturally expressed in.
-     *
-     * @return The time zone.
-     */
-    ZoneId getZone();
 }

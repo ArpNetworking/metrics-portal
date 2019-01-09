@@ -22,7 +22,6 @@ import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -34,7 +33,6 @@ import javax.annotation.Nullable;
  */
 public abstract class BaseSchedule implements Schedule {
 
-    private final ZoneId _zone;
     private final Instant _runAtAndAfter;
     private final Optional<Instant> _runUntil;
 
@@ -44,7 +42,6 @@ public abstract class BaseSchedule implements Schedule {
      * @param builder Instance of <code>Builder</code>.
      */
     protected BaseSchedule(final Builder<?, ?> builder) {
-        _zone = builder._zone;
         _runAtAndAfter = builder._runAtAndAfter;
         _runUntil = Optional.ofNullable(builder._runUntil);
     }
@@ -55,11 +52,6 @@ public abstract class BaseSchedule implements Schedule {
 
     protected Optional<Instant> getRunUntil() {
         return _runUntil;
-    }
-
-    @Override
-    public ZoneId getZone() {
-        return _zone;
     }
 
     @Override
@@ -93,8 +85,6 @@ public abstract class BaseSchedule implements Schedule {
      */
     protected abstract static class Builder<B extends Builder<B, S>, S extends BaseSchedule> extends OvalBuilder<S> {
         @NotNull
-        protected ZoneId _zone;
-        @NotNull
         @ValidateWithMethod(methodName = "validateRunAtAndAfter", parameterType = Instant.class)
         protected Instant _runAtAndAfter;
         protected Instant _runUntil;
@@ -115,17 +105,6 @@ public abstract class BaseSchedule implements Schedule {
          * @return instance with correct <code>Builder</code> class type.
          */
         protected abstract B self();
-
-        /**
-         * The time zone the schedule is most naturally expressed in. Required. Cannot be null.
-         *
-         * @param zone The time zone.
-         * @return This instance of {@code Builder}.
-         */
-        public B setZone(final ZoneId zone) {
-            _zone = zone;
-            return self();
-        }
 
         /**
          * The earliest time at which the schedule should run. Required. Cannot be null.

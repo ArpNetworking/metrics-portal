@@ -34,7 +34,6 @@ public final class OneOffScheduleTest {
     @Test
     public void testNextRun() {
         final Schedule schedule = new OneOffSchedule.Builder()
-                .setZone(ZoneId.of("+00:00"))
                 .setRunAtAndAfter(Instant.parse("2019-01-01T00:00:00Z"))
                 .build();
 
