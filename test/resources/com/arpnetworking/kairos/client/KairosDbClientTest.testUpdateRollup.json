@@ -1,0 +1,45 @@
+{
+  "name": "testRollup",
+  "id": "rollup_id",
+  "rollups": [
+    {
+      "save_as": "testMetric_1d",
+      "query": {
+        "metrics": [
+          {
+            "name": "testMetric",
+            "group_by": [
+              {
+                "name": "tag",
+                "tags": [
+                  "foo",
+                  "bar"
+                ]
+              }
+            ],
+            "aggregators": [
+              {
+                "name": "merge",
+                "align_end_time": false,
+                "align_sampling": true,
+                "align_start_time": true,
+                "sampling": {
+                  "value": 1,
+                  "unit": "days"
+                }
+              }
+            ]
+          }
+        ],
+        "start_relative": {
+          "value": 1,
+          "unit": "days"
+        }
+      }
+    }
+  ],
+  "execution_interval": {
+    "value": 1,
+    "unit": "days"
+  }
+}

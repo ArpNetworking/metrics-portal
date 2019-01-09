@@ -1,0 +1,18 @@
+{
+  "metrics": [{
+    "name": "metric.name",
+    "tags": {
+      "tag1": [ "tag1" ],
+      "tag2": [ "tag2" ]
+    },
+    "aggregators": [ {
+      "name": "avg",
+      "sampling": {
+        "value": 86400,
+        "unit": "seconds"
+      },
+      "align_sampling": true
+    }],
+    "group_by" : []
+  }]
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "54424169-e193-435b-9aae-751b85e75192",
+    "name": "cmf/web_perf/time_to_interactive_1h",
+    "rollups": [
+      {
+        "save_as": "cmf/web_perf/time_to_interactive_1h",
+        "query": {
+          "metrics": [
+            {
+              "name": "cmf/web_perf/time_to_interactive",
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": [
+                    "product",
+                    "browser_name",
+                    "navigation_type",
+                    "office_ip",
+                    "os_name"
+                  ]
+                }
+              ],
+              "aggregators": [
+                {
+                  "name": "merge",
+                  "align_end_time": false,
+                  "align_sampling": true,
+                  "align_start_time": true,
+                  "sampling": {
+                    "value": 1,
+                    "unit": "HOURS"
+                  }
+                }
+              ]
+            }
+          ],
+          "start_relative": {
+            "value": 1,
+            "unit": "hours"
+          }
+        }
+      }
+    ],
+    "execution_interval": {
+      "value": 1,
+      "unit": "hours"
+    }
+  },
+  {
+    "id": "ada6f6d2-b35a-4420-9e81-80008ef720af",
+    "name": "cmf/web_perf/time_to_interactive_1d",
+    "rollups": [
+      {
+        "save_as": "cmf/web_perf/time_to_interactive_1d",
+        "query": {
+          "metrics": [
+            {
+              "name": "cmf/web_perf/time_to_interactive",
+              "group_by": [
+                {
+                  "name": "tag",
+                  "tags": [
+                    "product",
+                    "browser_name",
+                    "navigation_type",
+                    "office_ip",
+                    "os_name"
+                  ]
+                }
+              ],
+              "aggregators": [
+                {
+                  "name": "merge",
+                  "align_end_time": false,
+                  "align_sampling": true,
+                  "align_start_time": true,
+                  "sampling": {
+                    "value": 1,
+                    "unit": "DAYS"
+                  }
+                }
+              ]
+            }
+          ],
+          "start_relative": {
+            "value": 1,
+            "unit": "hours"
+          }
+        }
+      }
+    ],
+    "execution_interval": {
+      "value": 1,
+      "unit": "days"
+    }
+  }
+]

@@ -59,6 +59,7 @@ public final class Sampling {
 
         /**
          * Sets the value and unit from a {@link Period}.
+         * The value and unit will be overridden when units in seconds.
          *
          * @param value a {@link Period}
          * @return this {@link Builder}
@@ -69,9 +70,33 @@ public final class Sampling {
             return this;
         }
 
+        /**
+         * Sets the count of units that the Sampling covers.
+         *
+         * @param value the count of units
+         * @return this {@link Builder}
+         */
+        public Builder setValue(final Integer value) {
+            _value = value;
+            return this;
+        }
+
+        /**
+         * Sets the unit the Sampling covers.
+         *
+         * @param value the unit
+         * @return this {@link Builder}
+         */
+        public Builder setUnit(final String value) {
+            _unit = value;
+            return this;
+        }
+
         @JsonProperty("value")
         @Min(1)
-        private int _value = 1;
+        @NotNull
+        private Integer _value = 1;
+
         @JsonProperty("unit")
         @NotNull
         @NotEmpty
