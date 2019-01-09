@@ -16,7 +16,6 @@
 
 package models.ebean;
 
-import java.sql.Timestamp;
 import java.time.ZonedDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,28 +28,28 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for a {@link ReportingJob}.
+ * An execution event for a {@link Report}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "reporting_job_executions", schema = "portal")
-public class ReportingJobExecution {
-    public ReportingJob getJob() {
-        return job;
+@Table(name = "report_executions", schema = "portal")
+public class ReportExecution {
+    public Report getReport() {
+        return report;
     }
 
-    public void setJob(final ReportingJob value) {
-        job = value;
+    public void setReport(final Report value) {
+        report = value;
     }
 
-    public ReportingJob.Result getResult() {
-        return result;
+    public Report.State getState() {
+        return state;
     }
 
-    public void setResult(final ReportingJob.Result value) {
-        result = value;
+    public void setState(final Report.State value) {
+        state = value;
     }
 
     public ZonedDateTime getExecutedAt() {
@@ -66,12 +65,12 @@ public class ReportingJobExecution {
 
     @Column
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "reporting_job_id")
-    private ReportingJob job;
+    @JoinColumn(name = "report_id")
+    private Report report;
 
-    @Column(name = "result")
+    @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    private ReportingJob.Result result;
+    private Report.State state;
 
     @Column(name = "executed_at")
     private ZonedDateTime executedAt;

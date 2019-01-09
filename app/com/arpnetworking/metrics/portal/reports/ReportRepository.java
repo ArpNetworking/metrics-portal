@@ -17,50 +17,50 @@
 package com.arpnetworking.metrics.portal.reports;
 
 // TODO(cwbriones): Decouple from ebean model and expose via the internal model.
-import models.ebean.ReportingJob;
+import models.ebean.Report;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A repository for storing and retrieving instances of {@link ReportingJob}.
+ * A repository for storing and retrieving instances of {@link Report}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface ReportingJobRepository {
+public interface ReportRepository {
     /**
-     * Open the {@code ReportingJobRepository}.
+     * Open the {@code ReportRepository}.
      */
     void open();
 
     /**
-     * Close the {@code ReportingJobRepository}.
+     * Close the {@code ReportRepository}.
      */
     void close();
 
     /**
-     * Get a {@code ReportingJob} by identifier.
+     * Get a {@code Report} by identifier.
      *
-     * @param identifier The {@code ReportingJob} identifier.
-     * @return The matching {@code ReportingJob}, if any, otherwise {@link Optional#empty()}.
+     * @param identifier The {@code Report} identifier.
+     * @return The matching {@code Report}, if any, otherwise {@link Optional#empty()}.
      */
-    Optional<ReportingJob> getJob(UUID identifier);
+    Optional<Report> getReport(UUID identifier);
 
     /**
-     * Create or update a {@code ReportingJob}.
+     * Create or update a {@code Report}.
      *
-     * @param job The {@code ReportingJob} to create or update.
+     * @param report The {@code Report} to create or update.
      */
-    void addOrUpdateJob(ReportingJob job);
+    void addOrUpdateReport(Report report);
 
     /**
-     * Mark a {@code ReportingJob} as completed.
+     * Mark a {@code Report} as completed.
      *
-     * @param job The {@code ReportingJob} to update.
-     * @param result The completion result of the job, i.e whether it succeeded or failed.
+     * @param report The {@code Report} to update.
+     * @param state The completion state of the job, i.e whether it succeeded or failed.
      * @param completionTime The time of completion.
      */
-    void jobCompleted(ReportingJob job, ReportingJob.Result result, ZonedDateTime completionTime);
+    void jobCompleted(Report report, Report.State state, ZonedDateTime completionTime);
 }
 

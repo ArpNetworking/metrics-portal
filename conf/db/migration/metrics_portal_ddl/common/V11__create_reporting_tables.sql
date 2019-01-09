@@ -40,7 +40,7 @@ CREATE TABLE portal.report_schedules (
     max_occurrences INTEGER DEFAULT NULL,
 );
 
-CREATE TABLE portal.reporting_jobs (
+CREATE TABLE portal.reports (
     id BIGSERIAL PRIMARY KEY,
     uuid UUID NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
@@ -53,11 +53,11 @@ CREATE TABLE portal.reporting_jobs (
     report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
 );
 
-CREATE TABLE portal.reporting_job_executions (
+CREATE TABLE portal.report_executions (
     id BIGSERIAL PRIMARY KEY,
-    reporting_job_id BIGINT NOT NULL references portal.reporting_jobs(id),
+    report_id BIGINT NOT NULL references portal.reports(id),
     executed_at TIMESTAMP NOT NULL DEFAULT now(),
-    result VARCHAR(255),
+    state VARCHAR(255),
 );
 
 CREATE TABLE portal.report_recipient_groups (
@@ -68,7 +68,7 @@ CREATE TABLE portal.report_recipient_groups (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
 
-    reporting_job_id BIGINT NOT NULL references portal.reporting_jobs(id),
+    report_id BIGINT NOT NULL references portal.reports(id),
 );
 
 CREATE TABLE portal.report_recipients (
@@ -90,6 +90,6 @@ CREATE TABLE portal.report_formats (
     height_inches FLOAT,
 );
 
-CREATE UNIQUE INDEX reporting_jobs_uuid_idx ON portal.reporting_jobs (uuid);
-CREATE UNIQUE INDEX reporting_jobs_name_idx ON portal.reporting_jobs (name);
-CREATE INDEX reporting_jobs_disabled_idx ON portal.reporting_jobs (disabled);
+CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
+CREATE UNIQUE INDEX reports_name_idx ON portal.reports (name);
+CREATE INDEX reports_disabled_idx ON portal.reports (disabled);

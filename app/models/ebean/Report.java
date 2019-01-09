@@ -35,19 +35,19 @@ import javax.persistence.Table;
 
 
 /**
- * Data Model for SQL storage of a reporting job.
+ * Data Model for SQL storage of a Report.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Entity
-@Table(name = "reporting_jobs", schema = "portal")
+@Table(name = "reports", schema = "portal")
 // CHECKSTYLE.OFF: MemberNameCheck
-public class ReportingJob {
+public class Report {
     /**
-     * The result of the job execution.
+     * The result of the report execution.
      */
     // TODO(cbriones): This should go into Job the interface.
-    public enum Result {
+    public enum State {
         /**
          * The job executed successfully.
          */

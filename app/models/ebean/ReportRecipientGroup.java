@@ -16,7 +16,6 @@
 package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
-import io.ebean.annotation.PrivateOwned;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
@@ -66,8 +65,8 @@ public class ReportRecipientGroup {
     private Timestamp updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "reporting_job_id")
-    private ReportingJob job;
+    @JoinColumn(name = "report_id")
+    private Report report;
 
     @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportRecipient> recipients;

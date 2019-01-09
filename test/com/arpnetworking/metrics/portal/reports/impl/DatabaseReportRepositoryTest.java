@@ -29,8 +29,8 @@ import models.ebean.RecurringReportingSchedule;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
-import models.ebean.ReportingJob;
-import models.ebean.ReportingJobExecution;
+import models.ebean.Report;
+import models.ebean.ReportExecution;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,16 +50,16 @@ import java.util.UUID;
 import javax.persistence.PersistenceException;
 
 /**
- * Unit test suite for {@link DatabaseReportingJobRepository}.
+ * Unit test suite for {@link DatabaseReportRepository}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class DatabaseReportingJobRepositoryTest extends WithApplication {
+public class DatabaseReportRepositoryTest extends WithApplication {
 
-    private static final String ORIGINAL_JOB_NAME = "Original Job Name";
-    private static final String ALTERED_JOB_NAME = "Altered Job Name";
+    private static final String ORIGINAL_REPORT_NAME = "Original Report Name";
+    private static final String ALTERED_REPORT_NAME = "Altered Report Name";
 
-    private final DatabaseReportingJobRepository _repository = new DatabaseReportingJobRepository();
+    private final DatabaseReportRepository _repository = new DatabaseReportRepository();
 
     @Before
     public void setup() {
@@ -80,66 +80,66 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testGetJobWithInvalidId() {
+    public void testGetReportWithInvalidId() {
         final UUID uuid = UUID.randomUUID();
-        assertFalse(_repository.getJob(uuid).isPresent());
+        assertFalse(_repository.getReport(uuid).isPresent());
     }
 
     @Test
-    public void testCreateNewJob() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
+    public void testCreateNewReport() {
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
 
-        final ReportRecipientGroup group = job.getRecipientGroups().stream().findFirst().get();
+        final ReportRecipientGroup group = report.getRecipientGroups().stream().findFirst().get();
 
-        assertThat(job.getUpdatedAt(), not(nullValue()));
-        assertThat(job.getCreatedAt(), not(nullValue()));
-        assertThat("schedule should have been created", job.getSchedule().getId(), not(nullValue()));
-        assertThat("report source should have been created", job.getReportSource().getId(), not(nullValue()));
+        assertThat(report.getUpdatedAt(), not(nullValue()));
+        assertThat(report.getCreatedAt(), not(nullValue()));
+        assertThat("schedule should have been created", report.getSchedule().getId(), not(nullValue()));
+        assertThat("report source should have been created", report.getReportSource().getId(), not(nullValue()));
         assertThat("recipient group should have been created", group.getId(), not(nullValue()));
     }
 
     @Test
-    public void testUpdateExistingJob() {
-        final ReportingJob job = newJob();
+    public void testUpdateExistingReport() {
+        final Report report = newReport();
 
-        job.setName(ORIGINAL_JOB_NAME);
-        _repository.addOrUpdateJob(job);
+        report.setName(ORIGINAL_REPORT_NAME);
+        _repository.addOrUpdateReport(report);
 
-        job.setName(ALTERED_JOB_NAME);
-        _repository.addOrUpdateJob(job);
+        report.setName(ALTERED_REPORT_NAME);
+        _repository.addOrUpdateReport(report);
 
-        final Optional<String> updatedName = _repository.getJob(job.getUuid()).map(ReportingJob::getName);
-        assertThat(updatedName, equalTo(Optional.of(ALTERED_JOB_NAME)));
+        final Optional<String> updatedName = _repository.getReport(report.getUuid()).map(Report::getName);
+        assertThat(updatedName, equalTo(Optional.of(ALTERED_REPORT_NAME)));
     }
 
     @Test
     public void testUpdateExistingReportingSource() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
-        final ReportSource reportSource = job.getReportSource();
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
+        final ReportSource reportSource = report.getReportSource();
         reportSource.setTimeoutInSeconds(424242L);
-        _repository.addOrUpdateJob(job);
+        _repository.addOrUpdateReport(report);
 
-        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        assertThat(retrievedJob.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
-        assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), equalTo(reportSource.getTimeoutInSeconds()));
-        assertThat(retrievedJob.getReportSource().getTimeoutInSeconds(), equalTo(424242L));
+        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        assertThat(retrievedReport.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
+        assertThat(retrievedReport.getReportSource().getTimeoutInSeconds(), equalTo(reportSource.getTimeoutInSeconds()));
+        assertThat(retrievedReport.getReportSource().getTimeoutInSeconds(), equalTo(424242L));
     }
 
     @Test
     public void testUpdateExistingReportingGroup() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
 
-        final ReportRecipientGroup group = job.getRecipientGroups().stream().findFirst().get();
+        final ReportRecipientGroup group = report.getRecipientGroups().stream().findFirst().get();
         final List<ReportRecipient> newRecipients = new ArrayList<>(group.getRecipients());
         newRecipients.add(ReportRecipient.newEmailRecipient("some-new-email@test.com"));
         group.setRecipients(newRecipients);
-        _repository.addOrUpdateJob(job);
+        _repository.addOrUpdateReport(report);
 
-        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        final ReportRecipientGroup retrievedGroup = retrievedJob.getRecipientGroups().stream().findFirst().get();
+        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        final ReportRecipientGroup retrievedGroup = retrievedReport.getRecipientGroups().stream().findFirst().get();
 
         assertThat(retrievedGroup.getUuid(), equalTo(group.getUuid()));
         assertThat(retrievedGroup.getName(), equalTo(group.getName()));
@@ -148,77 +148,77 @@ public class DatabaseReportingJobRepositoryTest extends WithApplication {
 
     @Test
     public void testUpdateSchedule() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
 
         final RecurringReportingSchedule recurringSchedule = new RecurringReportingSchedule();
         recurringSchedule.setStartDate(Date.valueOf("2018-12-01"));
         recurringSchedule.setAvailableAt(Timestamp.from(Instant.now()));
         recurringSchedule.setEndDate(null);
         recurringSchedule.setMaxOccurrences(30);
-        job.setSchedule(recurringSchedule);
-        _repository.addOrUpdateJob(job);
+        report.setSchedule(recurringSchedule);
+        _repository.addOrUpdateReport(report);
 
-        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        assertThat(retrievedJob.getSchedule(), equalTo(recurringSchedule));
+        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        assertThat(retrievedReport.getSchedule(), equalTo(recurringSchedule));
     }
 
     @Test
-    public void testUpdateExistingJobWithNewSource() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
+    public void testUpdateExistingReportWithNewSource() {
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
         final ReportSource reportSource = new ChromeScreenshotReportSource();
         reportSource.setUuid(UUID.randomUUID());
-        job.setReportSource(reportSource);
-        _repository.addOrUpdateJob(job);
+        report.setReportSource(reportSource);
+        _repository.addOrUpdateReport(report);
 
-        final ReportingJob retrievedJob = _repository.getJob(job.getUuid()).get();
-        assertThat(retrievedJob.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
+        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        assertThat(retrievedReport.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
     }
 
     @Test(expected = PersistenceException.class)
-    public void testCreateJobWithoutASchedule() {
-        final ReportingJob job = newJob();
+    public void testCreateReportWithoutASchedule() {
+        final Report report = newReport();
         // Intentionally setting report source to null for test.
         //noinspection ConstantConditions
-        job.setSchedule(null);
-        _repository.addOrUpdateJob(job);
-        System.out.println(job);
+        report.setSchedule(null);
+        _repository.addOrUpdateReport(report);
+        System.out.println(report);
     }
 
     @Test(expected = PersistenceException.class)
-    public void testCreateJobWithoutASource() {
-        final ReportingJob job = newJob();
+    public void testCreateReportWithoutASource() {
+        final Report report = newReport();
         // Intentionally setting report source to null for test.
         //noinspection ConstantConditions
-        job.setReportSource(null);
-        _repository.addOrUpdateJob(job);
+        report.setReportSource(null);
+        _repository.addOrUpdateReport(report);
     }
 
     @Test
     public void testJobCompleted() {
-        final ReportingJob job = newJob();
-        _repository.addOrUpdateJob(job);
+        final Report report = newReport();
+        _repository.addOrUpdateReport(report);
         final ZonedDateTime now = ZonedDateTime.now();
 
-        final ReportingJob.Result result = ReportingJob.Result.SUCCESS;
-        _repository.jobCompleted(job, result, now);
+        final Report.State state = Report.State.SUCCESS;
+        _repository.jobCompleted(report, state, now);
 
-        final ReportingJobExecution execution = _repository.getMostRecentExecution(job).get();
+        final ReportExecution execution = _repository.getMostRecentExecution(report).get();
 
-        assertThat(execution.getResult(), equalTo(result));
+        assertThat(execution.getState(), equalTo(state));
         assertThat(execution.getExecutedAt().toInstant(), equalTo(now.toInstant()));
     }
 
-    private ReportingJob newJob() {
+    private Report newReport() {
         final UUID sourceUuid = UUID.randomUUID();
 
         final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
         final ReportSource source = new ChromeScreenshotReportSource();
         source.setUuid(sourceUuid);
-        final ReportingJob job = TestBeanFactory.createEbeanReportingJob();
-        job.setReportSource(source);
-        job.setRecipientGroups(Collections.singleton(group));
-        return job;
+        final Report report = TestBeanFactory.createEbeanReport();
+        report.setReportSource(source);
+        report.setRecipientGroups(Collections.singleton(group));
+        return report;
     }
 }

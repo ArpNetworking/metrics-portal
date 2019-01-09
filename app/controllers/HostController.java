@@ -72,7 +72,7 @@ public class HostController extends Controller {
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @param sort_by The field to sort results by. Optional.
-     * @return <code>Result</code> paginated matching hosts.
+     * @return <code>State</code> paginated matching hosts.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(

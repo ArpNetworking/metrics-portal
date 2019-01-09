@@ -21,10 +21,9 @@ import models.cassandra.Host;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.ebean.PDFReportFormat;
-import models.ebean.ReportFormat;
+import models.ebean.Report;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
-import models.ebean.ReportingJob;
 import models.ebean.ReportingSchedule;
 import models.internal.Alert;
 import models.internal.Context;
@@ -77,12 +76,12 @@ public final class TestBeanFactory {
     private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
     private static final Random RANDOM = new Random();
 
-    public static ReportingJob createEbeanReportingJob() {
+    public static Report createEbeanReport() {
         final ReportingSchedule schedule = new ReportingSchedule();
         schedule.setStartDate(new Date(System.currentTimeMillis()));
         schedule.setAvailableAt(Timestamp.from(Instant.now()));
 
-        final ReportingJob job = new ReportingJob();
+        final Report job = new Report();
         job.setUuid(UUID.randomUUID());
         job.setSchedule(schedule);
         job.setName(TEST_NAME);

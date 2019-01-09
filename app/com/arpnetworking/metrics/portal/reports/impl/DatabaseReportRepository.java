@@ -15,13 +15,13 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import com.arpnetworking.metrics.portal.reports.ReportingJobRepository;
+import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
-import models.ebean.ReportingJob;
-import models.ebean.ReportingJobExecution;
+import models.ebean.Report;
+import models.ebean.ReportExecution;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -30,38 +30,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.persistence.PersistenceException;
 
 /**
- * Implementation of ReportRepository using a SQL database.
+ * Implementation of {@link ReportRepository} using a SQL database.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class DatabaseReportingJobRepository implements ReportingJobRepository {
+public final class DatabaseReportRepository implements ReportRepository {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportingJobRepository.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportRepository.class);
 
     private AtomicBoolean _isOpen = new AtomicBoolean(false);
 
     @Override
     public void open() {
         assertIsOpen(false);
-        LOGGER.debug().setMessage("Opening DatabaseReportingJobRepository").log();
+        LOGGER.debug().setMessage("Opening DatabaseReportRepository").log();
         _isOpen.set(true);
     }
 
     @Override
     public void close() {
         assertIsOpen();
-        LOGGER.debug().setMessage("Closing DatabaseReportingJobRepository").log();
+        LOGGER.debug().setMessage("Closing DatabaseReportRepository").log();
         _isOpen.set(false);
     }
 
     @Override
-    public Optional<ReportingJob> getJob(final UUID identifier) {
+    public Optional<Report> getReport(final UUID identifier) {
         assertIsOpen();
         LOGGER.debug()
-                .setMessage("Getting reporting job")
+                .setMessage("Getting report")
                 .addData("uuid", identifier)
                 .log();
-        return Ebean.find(ReportingJob.class)
+        return Ebean.find(Report.class)
                 .where()
                 .eq("uuid", identifier)
                 .eq("disabled", false)
@@ -69,33 +69,33 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
     }
 
     @Override
-    public void addOrUpdateJob(final ReportingJob job) {
+    public void addOrUpdateReport(final Report report) {
         assertIsOpen();
         LOGGER.debug()
-                .setMessage("Upserting reporting job")
-                .addData("job", job)
+                .setMessage("Upserting report")
+                .addData("report", report)
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-            Ebean.save(job.getReportSource());
-            final Optional<ReportingJob> existingJob =
-                    Ebean.find(ReportingJob.class)
+            Ebean.save(report.getReportSource());
+            final Optional<Report> existingReport =
+                    Ebean.find(Report.class)
                             .where()
-                            .eq("uuid", job.getUuid())
+                            .eq("uuid", report.getUuid())
                             .findOneOrEmpty();
-            final boolean created = !existingJob.isPresent();
-            Ebean.save(job);
+            final boolean created = !existingReport.isPresent();
+            Ebean.save(report);
             transaction.commit();
             LOGGER.debug()
-                    .setMessage("Upserted reporting job")
-                    .addData("job", job)
+                    .setMessage("Upserted report")
+                    .addData("report", report)
                     .addData("created", created)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
-                    .setMessage("Failed to upsert reporting job")
-                    .addData("job", job)
+                    .setMessage("Failed to upsert report")
+                    .addData("report", report)
                     .setThrowable(e)
                     .log();
             throw new PersistenceException(e);
@@ -103,48 +103,48 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
     }
 
     @Override
-    public void jobCompleted(final ReportingJob job, final ReportingJob.Result result, final ZonedDateTime completionTime) {
+    public void jobCompleted(final Report report, final Report.State state, final ZonedDateTime completionTime) {
         assertIsOpen();
 
-        final ReportingJobExecution execution = new ReportingJobExecution();
-        execution.setJob(job);
+        final ReportExecution execution = new ReportExecution();
+        execution.setReport(report);
         execution.setExecutedAt(completionTime);
-        execution.setResult(result);
+        execution.setState(state);
 
         LOGGER.debug()
-                .setMessage("Updating reporting job executions")
-                .addData("job", job)
+                .setMessage("Updating report executions")
+                .addData("report", report)
                 .addData("completionTime", completionTime)
-                .addData("result", result)
+                .addData("state", state)
                 .log();
         try {
             Ebean.save(execution);
             LOGGER.debug()
-                    .setMessage("Updated reporting job execution")
-                    .addData("job", job)
+                    .setMessage("Updated report execution")
+                    .addData("report", report)
                     .addData("completionTime", completionTime)
-                    .addData("result", result)
+                    .addData("state", state)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
-                    .setMessage("Failed to update reporting job executions")
-                    .addData("job", job)
+                    .setMessage("Failed to update report executions")
+                    .addData("report", report)
                     .addData("completionTime", completionTime)
-                    .addData("result", result)
+                    .addData("state", state)
                     .setThrowable(e)
                     .log();
             throw new PersistenceException(e);
         }
     }
 
-    Optional<ReportingJobExecution> getMostRecentExecution(final ReportingJob job) {
-        return Ebean.find(ReportingJobExecution.class)
+    Optional<ReportExecution> getMostRecentExecution(final Report report) {
+        return Ebean.find(ReportExecution.class)
                 .orderBy()
-                .desc("executedAt")
+                .desc("executed_at")
                 .where()
-                .eq("reporting_job_id", job.getId())
+                .eq("report_id", report.getId())
                 .findOneOrEmpty();
     }
 
@@ -154,7 +154,7 @@ public class DatabaseReportingJobRepository implements ReportingJobRepository {
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("DatabaseReportingJobRepository is not %s", expectedState ? "open" : "closed"));
+            throw new IllegalStateException(String.format("DatabaseReportRepository is not %s", expectedState ? "open" : "closed"));
         }
     }
 
