@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -39,7 +39,7 @@ public final class NeverSchedule extends BaseSchedule {
     }
 
     @Override
-    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         return Optional.empty();
     }
 

@@ -20,6 +20,7 @@ import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -41,15 +42,16 @@ public final class PeriodicSchedule extends BaseSchedule {
     }
 
     @Override
-    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         if (!lastRun.isPresent()) {
-            ZonedDateTime alignedStart = getRunAtAndAfter().truncatedTo(_period);
-            if (alignedStart.isBefore(getRunAtAndAfter())) {
+            ZonedDateTime alignedStart = ZonedDateTime.ofInstant(getRunAtAndAfter(), getZone()).truncatedTo(_period);
+            if (alignedStart.toInstant().isBefore(getRunAtAndAfter())) {
                 alignedStart = alignedStart.plus(Duration.of(1, _period));
             }
-            return Optional.of(alignedStart.plus(_offset));
+            return Optional.of(alignedStart.plus(_offset).toInstant());
         }
-        return Optional.of(lastRun.get().truncatedTo(_period).plus(Duration.of(1, _period)).plus(_offset));
+        final ZonedDateTime alignedLastRun = ZonedDateTime.ofInstant(lastRun.get(), getZone()).truncatedTo(_period);
+        return Optional.of(alignedLastRun.plus(Duration.of(1, _period)).plus(_offset).toInstant());
     }
 
 

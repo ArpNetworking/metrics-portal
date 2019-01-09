@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -30,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  */
 public final class BaseScheduleTest {
 
-    private static final ZonedDateTime t0 = ZonedDateTime.parse("2018-01-01T00:00:00Z");
+    private static final Instant t0 = Instant.parse("2018-01-01T00:00:00Z");
 
     private static final class MinimalSchedule extends BaseSchedule {
 
@@ -41,7 +43,7 @@ public final class BaseScheduleTest {
         }
 
         @Override
-        protected Optional<ZonedDateTime> unboundedNextRun(Optional<ZonedDateTime> lastRun) {
+        protected Optional<Instant> unboundedNextRun(Optional<Instant> lastRun) {
             return Optional.empty();
         }
 
@@ -65,6 +67,7 @@ public final class BaseScheduleTest {
     @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
     public void testBuilderRejectsRunAfterAfterRunUntil() {
         new MinimalSchedule.Builder()
+                .setZone(ZoneId.of("+00:00"))
                 .setRunAtAndAfter(t0)
                 .setRunUntil(t0.minus(Duration.ofSeconds(1)))
                 .build();

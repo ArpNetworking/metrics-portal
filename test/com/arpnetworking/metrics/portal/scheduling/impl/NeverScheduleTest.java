@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import org.junit.Test;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
@@ -33,7 +34,7 @@ public final class NeverScheduleTest {
     public void testNextRun() {
         // Two interesting cases: lastRun=null, lastRun!=null
         assertEquals(Optional.empty(), NeverSchedule.getInstance().nextRun(Optional.empty()));
-        assertEquals(Optional.empty(), NeverSchedule.getInstance().nextRun(Optional.of(ZonedDateTime.parse("2019-01-01T00:00:00Z"))));
+        assertEquals(Optional.empty(), NeverSchedule.getInstance().nextRun(Optional.of(Instant.parse("2019-01-01T00:00:00Z"))));
     }
 
 }
