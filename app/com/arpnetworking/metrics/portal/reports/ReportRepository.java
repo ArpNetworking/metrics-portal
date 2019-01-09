@@ -19,7 +19,7 @@ package com.arpnetworking.metrics.portal.reports;
 // TODO(cwbriones): Decouple from ebean model and expose via the internal model.
 import models.ebean.Report;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -61,6 +61,6 @@ public interface ReportRepository {
      * @param state The completion state of the job, i.e whether it succeeded or failed.
      * @param completionTime The time of completion.
      */
-    void jobCompleted(Report report, Report.State state, ZonedDateTime completionTime);
+    void jobCompleted(Report report, Report.State state, Instant completionTime);
 }
 

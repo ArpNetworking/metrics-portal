@@ -37,9 +37,6 @@ public class RecurringReportingSchedule extends ReportingSchedule {
     @Column(name = "end_date")
     private Date endDate;
 
-    @Column(name = "max_occurrences")
-    private Integer maxOccurrences;
-
     @Nullable
     public Date getEndDate() {
         return endDate;
@@ -49,20 +46,12 @@ public class RecurringReportingSchedule extends ReportingSchedule {
         endDate = value;
     }
 
-    public Integer getMaxOccurrences() {
-        return maxOccurrences;
-    }
-    public void setMaxOccurrences(final Integer value) {
-        maxOccurrences = value;
-    }
-
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", getId())
                 .add("availableAt", getAvailableAt())
                 .add("startDate", getStartDate())
-                .add("maxOccurences", maxOccurrences)
                 .add("endDate", endDate)
                 .toString();
     }
@@ -77,13 +66,12 @@ public class RecurringReportingSchedule extends ReportingSchedule {
         }
         RecurringReportingSchedule that = (RecurringReportingSchedule) o;
         return super.equals(o) &&
-            Objects.equals(getEndDate(), that.getEndDate()) &&
-            Objects.equals(getMaxOccurrences(), that.getMaxOccurrences());
+            Objects.equals(getEndDate(), that.getEndDate());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), getEndDate(), getMaxOccurrences());
+        return Objects.hash(super.hashCode(), getEndDate());
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

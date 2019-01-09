@@ -16,7 +16,7 @@
 
 package models.ebean;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -24,6 +24,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -52,12 +53,21 @@ public class ReportExecution {
         state = value;
     }
 
-    public ZonedDateTime getExecutedAt() {
-        return executedAt;
+    public Instant getStartedAt() {
+        return started_at;
     }
 
-    public void setExecutedAt(final ZonedDateTime value) {
-        executedAt = value;
+    public void setStartedAt(final Instant value) {
+        started_at = value;
+    }
+
+    // FIXME(cbriones): Is there a ByteString I can use here instead?
+    public byte[] getResult() {
+        return result;
+    }
+
+    public void setResult(final byte[] value) {
+        result = value;
     }
 
     @Id
@@ -72,7 +82,17 @@ public class ReportExecution {
     @Enumerated(value = EnumType.STRING)
     private Report.State state;
 
-    @Column(name = "executed_at")
-    private ZonedDateTime executedAt;
+    @Column(name = "scheduled_for")
+    private Instant scheduled_for;
+
+    @Column(name = "started_at")
+    private Instant started_at;
+
+    @Column(name = "completed_at")
+    private Instant completed_at;
+
+    @Lob
+    @Column(name = "result")
+    private byte[] result;
 }
 // CHECKSTYLE.ON: MemberNameCheck

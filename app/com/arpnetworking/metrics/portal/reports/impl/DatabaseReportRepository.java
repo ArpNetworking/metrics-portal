@@ -22,8 +22,9 @@ import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.Report;
 import models.ebean.ReportExecution;
+import models.ebean.ReportingSchedule;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,18 +104,18 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public void jobCompleted(final Report report, final Report.State state, final ZonedDateTime completionTime) {
+    public void jobCompleted(final Report report, final Report.State state, final Instant scheduled) {
         assertIsOpen();
 
         final ReportExecution execution = new ReportExecution();
         execution.setReport(report);
-        execution.setExecutedAt(completionTime);
+        execution.setStartedAt(scheduled);
         execution.setState(state);
 
         LOGGER.debug()
                 .setMessage("Updating report executions")
                 .addData("report", report)
-                .addData("completionTime", completionTime)
+                .addData("scheduled", scheduled)
                 .addData("state", state)
                 .log();
         try {
@@ -122,7 +123,7 @@ public final class DatabaseReportRepository implements ReportRepository {
             LOGGER.debug()
                     .setMessage("Updated report execution")
                     .addData("report", report)
-                    .addData("completionTime", completionTime)
+                    .addData("scheduled", scheduled)
                     .addData("state", state)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
@@ -131,7 +132,7 @@ public final class DatabaseReportRepository implements ReportRepository {
             LOGGER.error()
                     .setMessage("Failed to update report executions")
                     .addData("report", report)
-                    .addData("completionTime", completionTime)
+                    .addData("scheduled", scheduled)
                     .addData("state", state)
                     .setThrowable(e)
                     .log();
@@ -148,6 +149,19 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .findOneOrEmpty();
     }
 
+    private Report internalModelToBean(final com.arpnetworking.metrics.portal.reports.Report internalReport) {
+        final ReportingSchedule schedule = internalModelToBean(internalReport.getSchedule());
+
+        final Report report = new Report();
+        report.setUuid(internalReport.getId());
+        report.setSchedule(schedule);
+        return report;
+    }
+
+    private ReportingSchedule internalModelToBean(final com.arpnetworking.metrics.portal.scheduling.Schedule internalSchedule) {
+        return null;
+    }
+
     private void assertIsOpen() {
         assertIsOpen(true);
     }
@@ -157,6 +171,4 @@ public final class DatabaseReportRepository implements ReportRepository {
             throw new IllegalStateException(String.format("DatabaseReportRepository is not %s", expectedState ? "open" : "closed"));
         }
     }
-
 }
-// CHECKSTYLE.ON: IllegalCatchCheck

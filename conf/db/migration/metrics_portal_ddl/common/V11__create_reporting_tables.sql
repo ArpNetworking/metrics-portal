@@ -17,7 +17,6 @@ CREATE TABLE portal.report_sources (
     version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    timeout_seconds INTEGER NOT NULL,
     type VARCHAR(255) NOT NULL,
 
     -- CHROME_SCREENSHOT
@@ -32,7 +31,7 @@ CREATE UNIQUE INDEX report_sources_uuid_idx ON portal.report_sources (uuid);
 CREATE TABLE portal.report_schedules (
     id BIGSERIAL PRIMARY KEY,
     start_date DATE NOT NULL,
-    available_at TIMESTAMP NOT NULL DEFAULT '00:00:00',
+    offset BIGINT DEFAULT 0,
     type VARCHAR(255) NOT NULL,
 
 --  Recurring Events
@@ -56,8 +55,11 @@ CREATE TABLE portal.reports (
 CREATE TABLE portal.report_executions (
     id BIGSERIAL PRIMARY KEY,
     report_id BIGINT NOT NULL references portal.reports(id),
-    executed_at TIMESTAMP NOT NULL DEFAULT now(),
+    scheduled_for TIMESTAMP NOT NULL DEFAULT now(),
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
     state VARCHAR(255),
+    result BLOB,
 );
 
 CREATE TABLE portal.report_recipient_groups (

@@ -57,9 +57,6 @@ public abstract class ReportSource {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @Column(name = "timeout_seconds")
-    private long timeoutInSeconds;
-
     public Long getId() {
         return id;
     }
@@ -70,14 +67,6 @@ public abstract class ReportSource {
 
     public void setUuid(final UUID value) {
         uuid = value;
-    }
-
-    public long getTimeoutInSeconds() {
-        return timeoutInSeconds;
-    }
-
-    public void setTimeoutInSeconds(final long value) {
-        timeoutInSeconds = value;
     }
 
     public Timestamp getCreatedAt() {

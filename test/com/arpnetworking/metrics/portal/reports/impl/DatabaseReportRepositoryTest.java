@@ -32,6 +32,7 @@ import models.ebean.ReportSource;
 import models.ebean.Report;
 import models.ebean.ReportExecution;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
@@ -41,7 +42,6 @@ import play.test.WithApplication;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -118,13 +118,11 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         final Report report = newReport();
         _repository.addOrUpdateReport(report);
         final ReportSource reportSource = report.getReportSource();
-        reportSource.setTimeoutInSeconds(424242L);
         _repository.addOrUpdateReport(report);
 
         final Report retrievedReport = _repository.getReport(report.getUuid()).get();
         assertThat(retrievedReport.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
-        assertThat(retrievedReport.getReportSource().getTimeoutInSeconds(), equalTo(reportSource.getTimeoutInSeconds()));
-        assertThat(retrievedReport.getReportSource().getTimeoutInSeconds(), equalTo(424242L));
+        Assert.fail("This doesn't update anything, fix that.");
     }
 
     @Test
@@ -199,7 +197,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     public void testJobCompleted() {
         final Report report = newReport();
         _repository.addOrUpdateReport(report);
-        final ZonedDateTime now = ZonedDateTime.now();
+        final Instant now = Instant.now();
 
         final Report.State state = Report.State.SUCCESS;
         _repository.jobCompleted(report, state, now);
@@ -207,7 +205,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         final ReportExecution execution = _repository.getMostRecentExecution(report).get();
 
         assertThat(execution.getState(), equalTo(state));
-        assertThat(execution.getExecutedAt().toInstant(), equalTo(now.toInstant()));
+        assertThat(execution.getStartedAt(), equalTo(now));
     }
 
     private Report newReport() {
