@@ -16,43 +16,60 @@
 
 package models.ebean;
 
-import com.google.common.base.MoreObjects;
-
-import java.sql.Date;
 import java.util.Objects;
-import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 /**
- * Data Model for a simple recurring report schedule (i.e. recurs daily).
+ * Data Model for a periodically recurring report schedule (i.e. recurs daily).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@DiscriminatorValue("DAILY")
-public class RecurringReportingSchedule extends ReportingSchedule {
-    @Column(name = "end_date")
-    private Date endDate;
-
-    @Nullable
-    public Date getEndDate() {
-        return endDate;
+@DiscriminatorValue("PERIODIC")
+public class PeriodicReportSchedule extends ReportSchedule {
+    /**
+     * The period with which this schedule recurs.
+     */
+    public enum Period {
+        /**
+         * A period of 1 hour.
+         */
+        HOURLY,
+        /**
+         * A period of 1 day.
+         */
+        DAILY,
+        /**
+         * A period of 1 week.
+         */
+        WEEKLY,
+        /**
+         * A period of 1 month.
+         */
+        MONTHLY,
     }
 
-    public void setEndDate(@Nullable final Date value) {
-        endDate = value;
+    @Column(name = "period")
+    @Enumerated(EnumType.STRING)
+    private Period period;
+
+    public Period getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(final Period value) {
+        period = value;
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", getId())
-                .add("availableAt", getAvailableAt())
-                .add("startDate", getStartDate())
-                .add("endDate", endDate)
+        return toStringHelper()
+                .add("period", period)
                 .toString();
     }
 
@@ -64,7 +81,7 @@ public class RecurringReportingSchedule extends ReportingSchedule {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RecurringReportingSchedule that = (RecurringReportingSchedule) o;
+        PeriodicReportSchedule that = (PeriodicReportSchedule) o;
         return super.equals(o) &&
             Objects.equals(getEndDate(), that.getEndDate());
     }

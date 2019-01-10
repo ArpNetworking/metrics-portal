@@ -24,7 +24,7 @@ import models.ebean.PDFReportFormat;
 import models.ebean.Report;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
-import models.ebean.ReportingSchedule;
+import models.ebean.ReportSchedule;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -37,8 +37,7 @@ import models.internal.impl.DefaultQuantity;
 import org.joda.time.Period;
 
 import java.sql.Date;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -77,9 +76,9 @@ public final class TestBeanFactory {
     private static final Random RANDOM = new Random();
 
     public static Report createEbeanReport() {
-        final ReportingSchedule schedule = new ReportingSchedule();
+        final ReportSchedule schedule = new ReportSchedule();
         schedule.setStartDate(new Date(System.currentTimeMillis()));
-        schedule.setAvailableAt(Timestamp.from(Instant.now()));
+        schedule.setOffset(Duration.ofHours(1));
 
         final Report job = new Report();
         job.setUuid(UUID.randomUUID());

@@ -35,8 +35,8 @@ CREATE TABLE portal.report_schedules (
     type VARCHAR(255) NOT NULL,
 
 --  Recurring Events
+    period VARCHAR(255),
     end_date DATE DEFAULT NULL,
-    max_occurrences INTEGER DEFAULT NULL,
 );
 
 CREATE TABLE portal.reports (
@@ -61,6 +61,8 @@ CREATE TABLE portal.report_executions (
     state VARCHAR(255),
     result BLOB,
 );
+
+CREATE INDEX report_executions_scheduled_for_idx ON portal.report_executions (scheduled_for);
 
 CREATE TABLE portal.report_recipient_groups (
     id BIGSERIAL PRIMARY KEY,

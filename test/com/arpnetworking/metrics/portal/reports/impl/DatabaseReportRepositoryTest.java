@@ -25,7 +25,7 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import models.ebean.ChromeScreenshotReportSource;
-import models.ebean.RecurringReportingSchedule;
+import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSource;
@@ -41,6 +41,7 @@ import play.test.WithApplication;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -149,16 +150,16 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         final Report report = newReport();
         _repository.addOrUpdateReport(report);
 
-        final RecurringReportingSchedule recurringSchedule = new RecurringReportingSchedule();
-        recurringSchedule.setStartDate(Date.valueOf("2018-12-01"));
-        recurringSchedule.setAvailableAt(Timestamp.from(Instant.now()));
-        recurringSchedule.setEndDate(null);
-        recurringSchedule.setMaxOccurrences(30);
-        report.setSchedule(recurringSchedule);
+        final PeriodicReportSchedule periodicSchedule = new PeriodicReportSchedule();
+        periodicSchedule.setStartDate(Date.valueOf("2018-12-01"));
+        periodicSchedule.setOffset(Duration.ofHours(2));
+        periodicSchedule.setEndDate(null);
+
+        report.setSchedule(periodicSchedule);
         _repository.addOrUpdateReport(report);
 
         final Report retrievedReport = _repository.getReport(report.getUuid()).get();
-        assertThat(retrievedReport.getSchedule(), equalTo(recurringSchedule));
+        assertThat(retrievedReport.getSchedule(), equalTo(periodicSchedule));
     }
 
     @Test

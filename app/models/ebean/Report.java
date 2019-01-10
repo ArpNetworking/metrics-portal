@@ -86,7 +86,7 @@ public class Report {
 
     @OneToOne(optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "report_schedule_id")
-    private ReportingSchedule schedule;
+    private ReportSchedule schedule;
 
     @Column(name = "disabled")
     private boolean disabled;
@@ -127,11 +127,11 @@ public class Report {
         return id;
     }
 
-    public ReportingSchedule getSchedule() {
+    public ReportSchedule getSchedule() {
         return schedule;
     }
 
-    public void setSchedule(final ReportingSchedule value) {
+    public void setSchedule(final ReportSchedule value) {
         schedule = value;
     }
 

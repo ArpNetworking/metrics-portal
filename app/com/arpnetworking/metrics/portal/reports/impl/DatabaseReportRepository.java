@@ -22,7 +22,7 @@ import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.Report;
 import models.ebean.ReportExecution;
-import models.ebean.ReportingSchedule;
+import models.ebean.ReportSchedule;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -150,7 +150,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     private Report internalModelToBean(final com.arpnetworking.metrics.portal.reports.Report internalReport) {
-        final ReportingSchedule schedule = internalModelToBean(internalReport.getSchedule());
+        final ReportSchedule schedule = internalModelToBean(internalReport.getSchedule());
 
         final Report report = new Report();
         report.setUuid(internalReport.getId());
@@ -158,7 +158,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         return report;
     }
 
-    private ReportingSchedule internalModelToBean(final com.arpnetworking.metrics.portal.scheduling.Schedule internalSchedule) {
+    private ReportSchedule internalModelToBean(final com.arpnetworking.metrics.portal.scheduling.Schedule internalSchedule) {
         return null;
     }
 

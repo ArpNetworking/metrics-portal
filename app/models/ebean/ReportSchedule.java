@@ -18,7 +18,8 @@ package models.ebean;
 import com.google.common.base.MoreObjects;
 
 import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.Duration;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
@@ -41,7 +42,7 @@ import javax.persistence.Table;
 @DiscriminatorColumn(name = "type")
 @DiscriminatorValue("ONE_OFF")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-public class ReportingSchedule {
+public class ReportSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -50,15 +51,19 @@ public class ReportingSchedule {
     @Column(name = "start_date")
     private Date startDate;
 
-    @Column(name = "available_at")
-    private Timestamp availableAt;
+    @Nullable
+    @Column(name = "end_date")
+    private Date endDate;
 
-    public Timestamp getAvailableAt() {
-        return availableAt;
+    @Column(name = "offset")
+    private Duration offset;
+
+    public Duration getOffset() {
+        return offset;
     }
 
-    public void setAvailableAt(final Timestamp value) {
-        availableAt = value;
+    public void setOffset(final Duration value) {
+        offset = value;
     }
 
     public Date getStartDate() {
@@ -69,6 +74,15 @@ public class ReportingSchedule {
         startDate = value;
     }
 
+    @Nullable
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(@Nullable final Date value) {
+        endDate = value;
+    }
+
     public void setId(final Integer value) {
         id = value;
     }
@@ -77,13 +91,23 @@ public class ReportingSchedule {
         return id;
     }
 
-    @Override
-    public String toString() {
+    /**
+     * Creates a partially built {@link com.google.common.base.MoreObjects.ToStringHelper} so that
+     * subclasses do not have to specify all inherited fields.
+     *
+     * @return The partially built ToStringHelper.
+     */
+    protected MoreObjects.ToStringHelper toStringHelper() {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
                 .add("startDate", startDate)
-                .add("availableAt", availableAt)
-                .toString();
+                .add("endDate", endDate)
+                .add("offset", offset);
+    }
+
+    @Override
+    public String toString() {
+        return toStringHelper().toString();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
