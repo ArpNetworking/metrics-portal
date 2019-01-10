@@ -25,6 +25,7 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import models.ebean.ChromeScreenshotReportSource;
+import models.ebean.Organization;
 import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
@@ -32,7 +33,6 @@ import models.ebean.ReportSource;
 import models.ebean.Report;
 import models.ebean.ReportExecution;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import play.Application;
@@ -40,11 +40,9 @@ import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -83,12 +81,13 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     @Test
     public void testGetReportWithInvalidId() {
         final UUID uuid = UUID.randomUUID();
-        assertFalse(_repository.getReport(uuid).isPresent());
+        final Organization org = TestBeanFactory.createEbeanOrganization();
+        assertFalse(_repository.getReport(uuid, org).isPresent());
     }
 
     @Test
     public void testCreateNewReport() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         _repository.addOrUpdateReport(report);
 
         final ReportRecipientGroup group = report.getRecipientGroups().stream().findFirst().get();
@@ -102,7 +101,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
     @Test
     public void testUpdateExistingReport() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
 
         report.setName(ORIGINAL_REPORT_NAME);
         _repository.addOrUpdateReport(report);
@@ -110,25 +109,13 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         report.setName(ALTERED_REPORT_NAME);
         _repository.addOrUpdateReport(report);
 
-        final Optional<String> updatedName = _repository.getReport(report.getUuid()).map(Report::getName);
+        final Optional<String> updatedName = _repository.getReport(report.getUuid(), report.getOrganization()).map(Report::getName);
         assertThat(updatedName, equalTo(Optional.of(ALTERED_REPORT_NAME)));
     }
 
     @Test
-    public void testUpdateExistingReportingSource() {
-        final Report report = newReport();
-        _repository.addOrUpdateReport(report);
-        final ReportSource reportSource = report.getReportSource();
-        _repository.addOrUpdateReport(report);
-
-        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
-        assertThat(retrievedReport.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
-        Assert.fail("This doesn't update anything, fix that.");
-    }
-
-    @Test
     public void testUpdateExistingReportingGroup() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         _repository.addOrUpdateReport(report);
 
         final ReportRecipientGroup group = report.getRecipientGroups().stream().findFirst().get();
@@ -137,7 +124,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         group.setRecipients(newRecipients);
         _repository.addOrUpdateReport(report);
 
-        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        final Report retrievedReport = _repository.getReport(report.getUuid(), report.getOrganization()).get();
         final ReportRecipientGroup retrievedGroup = retrievedReport.getRecipientGroups().stream().findFirst().get();
 
         assertThat(retrievedGroup.getUuid(), equalTo(group.getUuid()));
@@ -147,7 +134,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
     @Test
     public void testUpdateSchedule() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         _repository.addOrUpdateReport(report);
 
         final PeriodicReportSchedule periodicSchedule = new PeriodicReportSchedule();
@@ -158,26 +145,26 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         report.setSchedule(periodicSchedule);
         _repository.addOrUpdateReport(report);
 
-        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        final Report retrievedReport = _repository.getReport(report.getUuid(), report.getOrganization()).get();
         assertThat(retrievedReport.getSchedule(), equalTo(periodicSchedule));
     }
 
     @Test
     public void testUpdateExistingReportWithNewSource() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         _repository.addOrUpdateReport(report);
         final ReportSource reportSource = new ChromeScreenshotReportSource();
         reportSource.setUuid(UUID.randomUUID());
         report.setReportSource(reportSource);
         _repository.addOrUpdateReport(report);
 
-        final Report retrievedReport = _repository.getReport(report.getUuid()).get();
+        final Report retrievedReport = _repository.getReport(report.getUuid(), report.getOrganization()).get();
         assertThat(retrievedReport.getReportSource().getUuid(), equalTo(reportSource.getUuid()));
     }
 
     @Test(expected = PersistenceException.class)
     public void testCreateReportWithoutASchedule() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         // Intentionally setting report source to null for test.
         //noinspection ConstantConditions
         report.setSchedule(null);
@@ -187,7 +174,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
     @Test(expected = PersistenceException.class)
     public void testCreateReportWithoutASource() {
-        final Report report = newReport();
+        final Report report = TestBeanFactory.createEbeanReport();
         // Intentionally setting report source to null for test.
         //noinspection ConstantConditions
         report.setReportSource(null);
@@ -196,28 +183,32 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
     @Test
     public void testJobCompleted() {
-        final Report report = newReport();
-        _repository.addOrUpdateReport(report);
-        final Instant now = Instant.now();
-
-        final Report.State state = Report.State.SUCCESS;
-        _repository.jobCompleted(report, state, now);
-
-        final ReportExecution execution = _repository.getMostRecentExecution(report).get();
-
-        assertThat(execution.getState(), equalTo(state));
-        assertThat(execution.getStartedAt(), equalTo(now));
+        testStateChange(ReportExecution.State.SUCCESS);
     }
 
-    private Report newReport() {
-        final UUID sourceUuid = UUID.randomUUID();
+    @Test
+    public void testJobFailed() {
+        testStateChange(ReportExecution.State.FAILURE);
+    }
 
-        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
-        final ReportSource source = new ChromeScreenshotReportSource();
-        source.setUuid(sourceUuid);
+    private void testStateChange(final ReportExecution.State state) {
         final Report report = TestBeanFactory.createEbeanReport();
-        report.setReportSource(source);
-        report.setRecipientGroups(Collections.singleton(group));
-        return report;
+        _repository.addOrUpdateReport(report);
+        final Instant scheduled = Instant.now();
+        switch (state) {
+            case SUCCESS:
+                _repository.jobCompleted(report.getUuid(), report.getOrganization(), scheduled);
+                break;
+            case FAILURE:
+                _repository.jobFailed(report.getUuid(), report.getOrganization(), scheduled);
+                break;
+            case STARTED:
+                _repository.jobStarted(report.getUuid(), report.getOrganization(), scheduled);
+                break;
+
+        }
+        final ReportExecution execution = _repository.getExecution(report.getUuid(), report.getOrganization(), scheduled).get();
+        assertThat(execution.getState(), equalTo(state));
+        assertThat(execution.getScheduledFor(), equalTo(scheduled));
     }
 }

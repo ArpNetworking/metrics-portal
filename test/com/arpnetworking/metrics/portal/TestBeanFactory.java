@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
+import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.ebean.PDFReportFormat;
@@ -25,6 +26,7 @@ import models.ebean.Report;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
+import models.ebean.ReportSource;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -80,12 +82,26 @@ public final class TestBeanFactory {
         schedule.setStartDate(new Date(System.currentTimeMillis()));
         schedule.setOffset(Duration.ofHours(1));
 
-        final Report job = new Report();
-        job.setUuid(UUID.randomUUID());
-        job.setSchedule(schedule);
-        job.setName(TEST_NAME);
+        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
+        final ReportSource source = TestBeanFactory.createEbeanReportSource();
 
-        return job;
+        final Report report = new Report();
+        report.setName(TEST_NAME);
+        report.setOrganization(TestBeanFactory.createEbeanOrganization());
+        report.setRecipientGroups(Collections.singleton(group));
+        report.setReportSource(source);
+        report.setSchedule(schedule);
+        report.setUuid(UUID.randomUUID());
+
+        Ebean.save(report.getOrganization());
+        return report;
+    }
+
+    public static ReportSource createEbeanReportSource() {
+        final UUID sourceUuid = UUID.randomUUID();
+        final ReportSource source = new ChromeScreenshotReportSource();
+        source.setUuid(sourceUuid);
+        return source;
     }
 
     public static ReportRecipientGroup createEbeanReportRecipientGroup() {

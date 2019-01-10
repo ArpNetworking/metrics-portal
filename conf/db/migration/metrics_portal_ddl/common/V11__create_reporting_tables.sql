@@ -31,17 +31,18 @@ CREATE UNIQUE INDEX report_sources_uuid_idx ON portal.report_sources (uuid);
 CREATE TABLE portal.report_schedules (
     id BIGSERIAL PRIMARY KEY,
     start_date DATE NOT NULL,
-    offset BIGINT DEFAULT 0,
+    offset_duration BIGINT DEFAULT 0,
     type VARCHAR(255) NOT NULL,
+    end_date DATE DEFAULT NULL,
 
 --  Recurring Events
     period VARCHAR(255),
-    end_date DATE DEFAULT NULL,
 );
 
 CREATE TABLE portal.reports (
     id BIGSERIAL PRIMARY KEY,
     uuid UUID NOT NULL,
+    organization_id BIGINT NOT NULL references portal.organizations(id),
     version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
@@ -52,17 +53,21 @@ CREATE TABLE portal.reports (
     report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
 );
 
+CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
+CREATE INDEX reports_disabled_idx ON portal.reports (disabled);
+
 CREATE TABLE portal.report_executions (
-    id BIGSERIAL PRIMARY KEY,
     report_id BIGINT NOT NULL references portal.reports(id),
     scheduled_for TIMESTAMP NOT NULL DEFAULT now(),
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     state VARCHAR(255),
     result BLOB,
+
+    PRIMARY KEY (report_id, scheduled_for),
 );
 
-CREATE INDEX report_executions_scheduled_for_idx ON portal.report_executions (scheduled_for);
+CREATE INDEX report_executions_state_idx ON portal.report_executions (state);
 
 CREATE TABLE portal.report_recipient_groups (
     id BIGSERIAL PRIMARY KEY,
@@ -93,7 +98,3 @@ CREATE TABLE portal.report_formats (
     width_inches FLOAT,
     height_inches FLOAT,
 );
-
-CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
-CREATE UNIQUE INDEX reports_name_idx ON portal.reports (name);
-CREATE INDEX reports_disabled_idx ON portal.reports (disabled);

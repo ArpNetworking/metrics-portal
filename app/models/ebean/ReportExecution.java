@@ -17,12 +17,12 @@
 package models.ebean;
 
 import java.time.Instant;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
-import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
@@ -37,6 +37,21 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "report_executions", schema = "portal")
 public class ReportExecution {
+    public enum State {
+        /**
+         * This report execution has been started.
+         */
+        STARTED,
+        /**
+         * This report execution completed successfully.
+         */
+        SUCCESS,
+        /**
+         * This report execution failed.
+         */
+        FAILURE,
+    }
+
     public Report getReport() {
         return report;
     }
@@ -45,20 +60,38 @@ public class ReportExecution {
         report = value;
     }
 
-    public Report.State getState() {
+    public State getState() {
         return state;
     }
 
-    public void setState(final Report.State value) {
+    public void setState(final State value) {
         state = value;
     }
 
+    @Nullable
     public Instant getStartedAt() {
         return started_at;
     }
 
     public void setStartedAt(final Instant value) {
         started_at = value;
+    }
+
+    public Instant getScheduledFor() {
+        return scheduled_for;
+    }
+
+    public void setScheduledFor(final Instant value) {
+        scheduled_for = value;
+    }
+
+    @Nullable
+    public Instant getCompletedAt() {
+        return completed_at;
+    }
+
+    public void setCompletedAt(final Instant value) {
+        completed_at = value;
     }
 
     // FIXME(cbriones): Is there a ByteString I can use here instead?
@@ -70,9 +103,6 @@ public class ReportExecution {
         result = value;
     }
 
-    @Id
-    private Long id;
-
     @Column
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id")
@@ -80,14 +110,16 @@ public class ReportExecution {
 
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
-    private Report.State state;
+    private State state;
 
     @Column(name = "scheduled_for")
     private Instant scheduled_for;
 
+    @Nullable
     @Column(name = "started_at")
     private Instant started_at;
 
+    @Nullable
     @Column(name = "completed_at")
     private Instant completed_at;
 

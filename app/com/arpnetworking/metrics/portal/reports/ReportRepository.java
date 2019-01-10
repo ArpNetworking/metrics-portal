@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
 // TODO(cwbriones): Decouple from ebean model and expose via the internal model.
+import models.ebean.Organization;
 import models.ebean.Report;
 
 import java.time.Instant;
@@ -45,7 +46,7 @@ public interface ReportRepository {
      * @param identifier The {@code Report} identifier.
      * @return The matching {@code Report}, if any, otherwise {@link Optional#empty()}.
      */
-    Optional<Report> getReport(UUID identifier);
+    Optional<Report> getReport(UUID identifier, Organization organization);
 
     /**
      * Create or update a {@code Report}.
@@ -57,10 +58,10 @@ public interface ReportRepository {
     /**
      * Mark a {@code Report} as completed.
      *
-     * @param report The {@code Report} to update.
-     * @param state The completion state of the job, i.e whether it succeeded or failed.
-     * @param completionTime The time of completion.
+     * @param reportId The id of the {@code Report} to update.
+     * @param organization The organization of the report.
+     * @param scheduled The time this job was scheduled.
      */
-    void jobCompleted(Report report, Report.State state, Instant completionTime);
+    void jobCompleted(UUID reportId, Organization organization, Instant scheduled);
 }
 

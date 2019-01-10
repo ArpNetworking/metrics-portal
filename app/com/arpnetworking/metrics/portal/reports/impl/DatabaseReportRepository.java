@@ -20,6 +20,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
+import models.ebean.Organization;
 import models.ebean.Report;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
@@ -28,6 +29,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
 /**
@@ -56,15 +58,17 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Report> getReport(final UUID identifier) {
+    public Optional<Report> getReport(final UUID identifier, Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting report")
                 .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getUuid())
                 .log();
         return Ebean.find(Report.class)
                 .where()
                 .eq("uuid", identifier)
+                .eq("organization_id", organization.getId())
                 .eq("disabled", false)
                 .findOneOrEmpty();
     }
@@ -103,35 +107,69 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    @Override
-    public void jobCompleted(final Report report, final Report.State state, final Instant scheduled) {
+    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
+        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.FAILURE);
+    }
 
-        final ReportExecution execution = new ReportExecution();
-        execution.setReport(report);
-        execution.setStartedAt(scheduled);
-        execution.setState(state);
+    public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
+        assertIsOpen();
+        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.STARTED);
+    }
 
+    @Override
+    public void jobCompleted(final UUID reportId, final Organization organization, final Instant scheduled) {
+        assertIsOpen();
+        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.SUCCESS);
+    }
+
+    private void updateExecutionState(final UUID reportId, final Organization organization, final Instant scheduled, final ReportExecution.State state) {
         LOGGER.debug()
                 .setMessage("Updating report executions")
-                .addData("report", report)
+                .addData("report.uuid", reportId)
                 .addData("scheduled", scheduled)
                 .addData("state", state)
                 .log();
-        try {
+        try (Transaction transaction = Ebean.beginTransaction()) {
+            final Optional<Report> report = Ebean.find(Report.class)
+                    .where()
+                    .eq("uuid", reportId)
+                    .eq("organization_id", organization.getId())
+                    .findOneOrEmpty();
+            if (!report.isPresent()) {
+                throw new EntityNotFoundException();
+            }
+
+            final ReportExecution execution = new ReportExecution();
+            execution.setReport(report.get());
+            execution.setScheduledFor(scheduled);
+            execution.setState(state);
+
+            switch (state) {
+                case SUCCESS:
+                    execution.setCompletedAt(Instant.now());
+                    break;
+                case FAILURE:
+                    execution.setCompletedAt(Instant.now());
+                    break;
+                case STARTED:
+                    execution.setStartedAt(Instant.now());
+            }
+
             Ebean.save(execution);
             LOGGER.debug()
                     .setMessage("Updated report execution")
-                    .addData("report", report)
+                    .addData("report.uuid", reportId)
                     .addData("scheduled", scheduled)
                     .addData("state", state)
                     .log();
+            transaction.commit();
             // CHECKSTYLE.OFF: IllegalCatchCheck
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to update report executions")
-                    .addData("report", report)
+                    .addData("report.uuid", reportId)
                     .addData("scheduled", scheduled)
                     .addData("state", state)
                     .setThrowable(e)
@@ -140,13 +178,26 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    Optional<ReportExecution> getMostRecentExecution(final Report report) {
-        return Ebean.find(ReportExecution.class)
-                .orderBy()
-                .desc("executed_at")
-                .where()
-                .eq("report_id", report.getId())
-                .findOneOrEmpty();
+    Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
+        return getReport(reportId, organization).flatMap(r ->
+                Ebean.find(ReportExecution.class)
+                        .where()
+                        .eq("report_id", r.getId())
+                        .eq("scheduled_for", scheduled)
+                        .findOneOrEmpty()
+        );
+    }
+
+    Optional<ReportExecution> getMostRecentExecution(final UUID reportId, final Organization organization) {
+        return getReport(reportId, organization).flatMap(r ->
+                Ebean.find(ReportExecution.class)
+                        .orderBy()
+                        .desc("completed_at")
+                        .where()
+                        .eq("report_id", r.getId())
+                        .eq("state", "SUCCESS")
+                        .findOneOrEmpty()
+        );
     }
 
     private Report internalModelToBean(final com.arpnetworking.metrics.portal.reports.Report internalReport) {

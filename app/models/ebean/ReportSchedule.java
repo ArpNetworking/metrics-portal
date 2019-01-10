@@ -55,7 +55,7 @@ public class ReportSchedule {
     @Column(name = "end_date")
     private Date endDate;
 
-    @Column(name = "offset")
+    @Column(name = "offset_duration")
     private Duration offset;
 
     public Duration getOffset() {

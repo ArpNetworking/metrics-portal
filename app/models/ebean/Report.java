@@ -43,21 +43,6 @@ import javax.persistence.Table;
 @Table(name = "reports", schema = "portal")
 // CHECKSTYLE.OFF: MemberNameCheck
 public class Report {
-    /**
-     * The result of the report execution.
-     */
-    // TODO(cbriones): This should go into Job the interface.
-    public enum State {
-        /**
-         * The job executed successfully.
-         */
-        SUCCESS,
-        /**
-         * The job failed.
-         */
-        FAILURE,
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -90,6 +75,10 @@ public class Report {
 
     @Column(name = "disabled")
     private boolean disabled;
+
+    @ManyToOne(optional = false)
+    @Column(name = "organization_id")
+    private Organization organization;
 
     public UUID getUuid() {
         return uuid;
@@ -145,6 +134,14 @@ public class Report {
 
     public boolean getDisabled() {
         return disabled;
+    }
+
+    public Organization getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(final Organization value) {
+        organization = value;
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
