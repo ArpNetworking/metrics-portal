@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -29,12 +29,12 @@ public final class OneOffSchedule extends BaseSchedule {
         super(builder);
     }
 
-    public ZonedDateTime getWhenRun() {
+    public Instant getWhenRun() {
         return getRunAtAndAfter();
     }
 
     @Override
-    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
+    protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         if (lastRun.isPresent()) {
             return Optional.empty();
         }

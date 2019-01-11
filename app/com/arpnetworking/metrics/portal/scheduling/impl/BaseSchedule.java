@@ -21,7 +21,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -33,8 +33,8 @@ import javax.annotation.Nullable;
  */
 public abstract class BaseSchedule implements Schedule {
 
-    private final ZonedDateTime _runAtAndAfter;
-    private final Optional<ZonedDateTime> _runUntil;
+    private final Instant _runAtAndAfter;
+    private final Optional<Instant> _runUntil;
 
     /**
      * Protected constructor.
@@ -46,17 +46,17 @@ public abstract class BaseSchedule implements Schedule {
         _runUntil = Optional.ofNullable(builder._runUntil);
     }
 
-    protected ZonedDateTime getRunAtAndAfter() {
+    protected Instant getRunAtAndAfter() {
         return _runAtAndAfter;
     }
 
-    protected Optional<ZonedDateTime> getRunUntil() {
+    protected Optional<Instant> getRunUntil() {
         return _runUntil;
     }
 
     @Override
-    public Optional<ZonedDateTime> nextRun(final Optional<ZonedDateTime> lastRun) {
-        Optional<ZonedDateTime> result = unboundedNextRun(lastRun);
+    public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
+        Optional<Instant> result = unboundedNextRun(lastRun);
         while (result.isPresent() && result.get().isBefore(_runAtAndAfter)) {
             result = unboundedNextRun(result);
         }
@@ -73,7 +73,7 @@ public abstract class BaseSchedule implements Schedule {
      * @param lastRun The last time the job was run.
      * @return The next time to run the job.
      */
-    protected abstract Optional<ZonedDateTime> unboundedNextRun(Optional<ZonedDateTime> lastRun);
+    protected abstract Optional<Instant> unboundedNextRun(Optional<Instant> lastRun);
 
     /**
      * Builder implementation for {@link BaseSchedule} subclasses.
@@ -85,9 +85,9 @@ public abstract class BaseSchedule implements Schedule {
      */
     protected abstract static class Builder<B extends Builder<B, S>, S extends BaseSchedule> extends OvalBuilder<S> {
         @NotNull
-        @ValidateWithMethod(methodName = "validateRunAtAndAfter", parameterType = ZonedDateTime.class)
-        protected ZonedDateTime _runAtAndAfter;
-        protected ZonedDateTime _runUntil;
+        @ValidateWithMethod(methodName = "validateRunAtAndAfter", parameterType = Instant.class)
+        protected Instant _runAtAndAfter;
+        protected Instant _runUntil;
 
         /**
          * Protected constructor for subclasses.
@@ -112,7 +112,7 @@ public abstract class BaseSchedule implements Schedule {
          * @param runAtAndAfter The time.
          * @return This instance of {@code Builder}.
          */
-        public B setRunAtAndAfter(final ZonedDateTime runAtAndAfter) {
+        public B setRunAtAndAfter(final Instant runAtAndAfter) {
             _runAtAndAfter = runAtAndAfter;
             return self();
         }
@@ -123,13 +123,13 @@ public abstract class BaseSchedule implements Schedule {
          * @param runUntil The time.
          * @return This instance of {@code Builder}.
          */
-        public B setRunUntil(@Nullable final ZonedDateTime runUntil) {
+        public B setRunUntil(@Nullable final Instant runUntil) {
             _runUntil = runUntil;
             return self();
         }
 
         @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
-        private boolean validateRunAtAndAfter(final ZonedDateTime runAtAndAfter) {
+        private boolean validateRunAtAndAfter(final Instant runAtAndAfter) {
             return (_runUntil == null) || !runAtAndAfter.isAfter(_runUntil);
         }
     }

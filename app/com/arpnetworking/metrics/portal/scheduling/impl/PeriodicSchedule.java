@@ -20,6 +20,8 @@ import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -32,24 +34,32 @@ import java.util.Optional;
 public final class PeriodicSchedule extends BaseSchedule {
 
     private final ChronoUnit _period;
+    private final ZoneId _zone;
     private final Duration _offset;
 
     private PeriodicSchedule(final Builder builder) {
         super(builder);
         _period = builder._period;
+        _zone = builder._zone;
         _offset = builder._offset;
     }
 
     @Override
-    protected Optional<ZonedDateTime> unboundedNextRun(final Optional<ZonedDateTime> lastRun) {
-        if (!lastRun.isPresent()) {
-            ZonedDateTime alignedStart = getRunAtAndAfter().truncatedTo(_period);
-            if (alignedStart.isBefore(getRunAtAndAfter())) {
-                alignedStart = alignedStart.plus(Duration.of(1, _period));
+    protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
+        final ZonedDateTime nextAlignedBoundary;
+        if (lastRun.isPresent()) {
+            final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone);
+            nextAlignedBoundary = _period.addTo(zonedLastRun.truncatedTo(_period), 1);
+        } else {
+            final ZonedDateTime zonedRunAt = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone);
+            final ZonedDateTime alignedRunAt = zonedRunAt.truncatedTo(_period);
+            if (alignedRunAt.toInstant().isBefore(getRunAtAndAfter())) {
+                nextAlignedBoundary = _period.addTo(alignedRunAt, 1);
+            } else {
+                nextAlignedBoundary = alignedRunAt;
             }
-            return Optional.of(alignedStart.plus(_offset));
         }
-        return Optional.of(lastRun.get().truncatedTo(_period).plus(Duration.of(1, _period)).plus(_offset));
+        return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
     }
 
 
@@ -61,6 +71,8 @@ public final class PeriodicSchedule extends BaseSchedule {
     public static final class Builder extends BaseSchedule.Builder<Builder, PeriodicSchedule> {
         @NotNull
         private ChronoUnit _period;
+        @NotNull
+        private ZoneId _zone;
         @NotNull
         @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
         private Duration _offset = Duration.ZERO;
@@ -89,6 +101,17 @@ public final class PeriodicSchedule extends BaseSchedule {
         }
 
         /**
+         * The time zone the times should be computed in. Required. Cannot be null.
+         *
+         * @param zone The time zone.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setZone(final ZoneId zone) {
+            _zone = zone;
+            return this;
+        }
+
+        /**
          * The offset from the period start when the schedule should fire. Defaults to zero. Cannot be null.
          * (e.g. {@code Duration.ofHours(2)} to run 2h after the start of the day, if period=DAY.
          *
@@ -103,7 +126,7 @@ public final class PeriodicSchedule extends BaseSchedule {
         @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateOffset(final Duration offset) {
             return !offset.isNegative()
-                   && _period.getDuration().toMillis() > offset.toMillis();
+                   && offset.minus(_period.getDuration()).isNegative();
         }
     }
 }
