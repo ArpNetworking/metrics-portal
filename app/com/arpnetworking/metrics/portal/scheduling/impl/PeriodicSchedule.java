@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
-import com.arpnetworking.steno.Logger;
-import com.arpnetworking.steno.LoggerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
@@ -48,55 +46,21 @@ public final class PeriodicSchedule extends BaseSchedule {
 
     @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
-        final Instant runAfter = lastRun.orElse(getRunAtAndAfter().minus(Duration.ofNanos(1)));
-        return Optional.of(nextAlignedBoundaryAfter(runAfter).plus(_offset));
+        final ZonedDateTime nextAlignedBoundary;
+        if (lastRun.isPresent()) {
+            final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone);
+            nextAlignedBoundary = _period.addTo(zonedLastRun.truncatedTo(_period), 1);
+        } else {
+            final ZonedDateTime zonedRunAt = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone);
+            final ZonedDateTime alignedRunAt = zonedRunAt.truncatedTo(_period);
+            if (alignedRunAt.toInstant().isBefore(getRunAtAndAfter())) {
+                nextAlignedBoundary = _period.addTo(alignedRunAt, 1);
+            } else {
+                nextAlignedBoundary = alignedRunAt;
+            }
+        }
+        return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
     }
-
-    /**
-     * Returns the first instant after the given boundary that is [period]-aligned in our time zone.
-     *
-     * @param boundary The exclusive lower bound.
-     * @return A boundary that is guaranteed to be [period]-aligned and after the given boundary.
-     */
-    private Instant nextAlignedBoundaryAfter(final Instant boundary) {
-        final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(boundary, _zone);
-        final ZonedDateTime truncated = zonedLastRun.truncatedTo(_period);
-        ZonedDateTime result = truncated.plus(_period.getDuration()).truncatedTo(_period);
-
-        // I am not intimately familiar with timekeeping standards, but:
-        //   it's conceivable that, for time-wonkiness reasons, the truncation might have moves us backwards
-        //   farther than adding `_period` moves us forward, meaning that `result` might still be too early.
-        // Just in case, and not very principled-ly, let's try larger steps.
-        if (!result.toInstant().isAfter(boundary)) {
-            result = truncated.plus(_period.getDuration().multipliedBy(2)).truncatedTo(_period);
-        }
-        if (!result.toInstant().isAfter(boundary)) {
-            result = truncated.plus(_period.getDuration().multipliedBy(3)).truncatedTo(_period);
-        }
-
-        if (!result.toInstant().isAfter(boundary)) {
-            // At this point, we've performed two truncations (which should move back no more than _period)
-            //   and three additions of _period. and somehow we're *still* not in the future.
-            // I have no idea how this might have happened.
-
-            // Log in addition to throwing an error because
-            //   (a) this should ~never happen, so log-noise will be low; and
-            //   (b) I'm not confident that anything up the call stack will catch-and-log the AssertionError.
-            LOGGER.error()
-                    .setMessage("can't find next aligned moment")
-                    .addData("boundary", boundary)
-                    .addData("period", _period)
-                    .addData("timezone", _zone)
-                    .log();
-            throw new AssertionError(String.format(
-                    "can't find next [%s]-aligned moment after [%s]",
-                    _period,
-                    boundary));
-        }
-        return result.toInstant();
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicSchedule.class);
 
 
     /**
@@ -162,7 +126,7 @@ public final class PeriodicSchedule extends BaseSchedule {
         @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateOffset(final Duration offset) {
             return !offset.isNegative()
-                   && _period.getDuration().toMillis() > offset.toMillis();
+                   && offset.minus(_period.getDuration()).isNegative();
         }
     }
 }
