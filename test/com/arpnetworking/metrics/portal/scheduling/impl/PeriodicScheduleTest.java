@@ -61,6 +61,10 @@ public final class PeriodicScheduleTest {
                 Optional.empty(),
                 schedule.nextRun(Optional.of(Instant.parse("2019-01-03T00:00:00Z"))));
 
+        // lastRun < runAfter: should round correctly
+        assertEquals(
+                Optional.of(Instant.parse("2019-01-01T00:00:00Z")), schedule.nextRun(Optional.of(Instant.parse("2018-12-20T12:34:56Z"))));
+
         // runAfter < lastRun < runUntil: should round correctly
         assertEquals(
                 Optional.of(Instant.parse("2019-01-03T00:00:00Z")), schedule.nextRun(Optional.of(Instant.parse("2019-01-02T12:34:56Z"))));
@@ -86,8 +90,15 @@ public final class PeriodicScheduleTest {
                 Optional.of(Instant.parse("2019-01-02T12:00:00Z")),
                 schedule.nextRun(Optional.empty()));
         assertEquals(
-                Optional.of(Instant.parse("2019-01-01T12:00:00Z")),
-                schedule.nextRun(Optional.of(Instant.parse("2018-12-20T12:34:56Z"))));
+                Optional.of(Instant.parse("2019-01-03T12:00:00Z")),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-02T12:00:00Z"))));
+        assertEquals(
+                Optional.empty(),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-03T12:00:00Z"))));
+
+        // lastRun < runAfter: should round correctly
+        assertEquals(
+                Optional.of(Instant.parse("2019-01-01T12:00:00Z")), schedule.nextRun(Optional.of(Instant.parse("2018-12-20T12:34:56Z"))));
 
         // runAfter < lastRun < runUntil: should round correctly
         assertEquals(
