@@ -55,8 +55,11 @@ public final class PeriodicScheduleTest {
                 Optional.of(Instant.parse("2019-01-02T00:00:00Z")),
                 schedule.nextRun(Optional.of(Instant.parse("2019-01-01T00:00:00Z"))));
         assertEquals(
-                Optional.of(Instant.parse("2019-01-01T00:00:00Z")),
-                schedule.nextRun(Optional.of(Instant.parse("2018-12-20T12:34:56Z"))));
+                Optional.of(Instant.parse("2019-01-03T00:00:00Z")),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-02T00:00:00Z"))));
+        assertEquals(
+                Optional.empty(),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-03T00:00:00Z"))));
 
         // runAfter < lastRun < runUntil: should round correctly
         assertEquals(
