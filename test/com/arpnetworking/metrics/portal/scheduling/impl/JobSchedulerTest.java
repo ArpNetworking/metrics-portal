@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class JobSchedulerTest {
@@ -122,6 +123,18 @@ public final class JobSchedulerTest {
         Mockito.verify(repo, Mockito.never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testExtraTicks() {
+        Duration jTickInterval = Duration.ofNanos(JobScheduler.TICK_INTERVAL.toNanos());
+        Duration jSleepSlop = Duration.ofNanos(JobScheduler.SLEEP_SLOP.toNanos());
+        assertEquals(
+                Optional.empty(),
+                JobScheduler.timeUntilExtraTick(t0, t0.plus(jTickInterval)));
+        assertEquals(
+                Optional.of(JobScheduler.TICK_INTERVAL.div(2).plus(JobScheduler.SLEEP_SLOP)),
+                JobScheduler.timeUntilExtraTick(t0, t0.plus(jTickInterval.dividedBy(2))));
     }
 
     private static abstract class DummyJob implements Job<UUID> {

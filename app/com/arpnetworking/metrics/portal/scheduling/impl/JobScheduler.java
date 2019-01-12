@@ -75,6 +75,15 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
+    protected static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
+        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
+        if (delta.lt(TICK_INTERVAL)) {
+            return Optional.of(delta.plus(SLEEP_SLOP));
+        } else {
+            return Optional.empty();
+        }
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -96,14 +105,13 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
                     final Instant nextRun = maybeNextRun.get();
                     if (nextRun.isAfter(_clock.instant())) {
                         // It's not time to execute the job yet, but it might be soon.
-                        // Let's ensure we wake up exactly when it's time to execute the job,
-                        //   else we might be late executing it by up to 1 tick.
+                        // Let's ensure we wake up "exactly" when it's time to execute the job,
+                        //   else we might be up to 1tick late executing it.
                         //   (Well-- "exactly" is a tall order, but we can at least ensure we wake up
                         //    _very slightly_ late.)
-                        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(_clock.instant(), nextRun));
-                        if (delta.lt(TICK_INTERVAL)) {
-                            timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta.plus(SLEEP_SLOP));
-                        }
+                        timeUntilExtraTick(_clock.instant(), nextRun).ifPresent(delta -> {
+                            timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta);
+                        });
                     } else {
                         final ActorRef sender = getSender();
                         PatternsCS.pipe(
@@ -125,8 +133,8 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
                 .build();
     }
 
-    private static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
-    private static final FiniteDuration SLEEP_SLOP = Duration.apply(10, TimeUnit.MILLISECONDS);
+    protected static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
+    protected static final FiniteDuration SLEEP_SLOP = Duration.apply(10, TimeUnit.MILLISECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
 
     /**
