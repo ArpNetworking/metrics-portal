@@ -44,4 +44,9 @@ public class PDFReportFormat extends ReportFormat {
     public void setWidthInches(final float value) {
         widthInches = value;
     }
+
+    @Override
+    /* package */ models.internal.reports.ReportFormat toInternal() {
+        return new models.internal.impl.PDFReportFormat(widthInches, heightInches);
+    }
 }

@@ -15,10 +15,12 @@
  */
 package models.ebean;
 
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.base.MoreObjects;
 
-import java.sql.Date;
 import java.time.Duration;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -48,39 +50,28 @@ public class ReportSchedule {
     @Column(name = "id")
     private Integer id;
 
-    @Column(name = "start_date")
-    private Date startDate;
+    @Column(name = "run_at")
+    private Instant runAt;
 
     @Nullable
-    @Column(name = "end_date")
-    private Date endDate;
+    @Column(name = "run_until")
+    private Instant runUntil;
 
-    @Column(name = "offset_duration")
-    private Duration offset;
-
-    public Duration getOffset() {
-        return offset;
+    public Instant getRunAt() {
+        return runAt;
     }
 
-    public void setOffset(final Duration value) {
-        offset = value;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(final Date value) {
-        startDate = value;
+    public void setRunAt(final Instant value) {
+        runAt = value;
     }
 
     @Nullable
-    public Date getEndDate() {
-        return endDate;
+    public Instant getRunUntil() {
+        return runUntil;
     }
 
-    public void setEndDate(@Nullable final Date value) {
-        endDate = value;
+    public void setRunUntil(@Nullable final Instant value) {
+        runUntil = value;
     }
 
     public void setId(final Integer value) {
@@ -100,14 +91,20 @@ public class ReportSchedule {
     protected MoreObjects.ToStringHelper toStringHelper() {
         return MoreObjects.toStringHelper(this)
                 .add("id", id)
-                .add("startDate", startDate)
-                .add("endDate", endDate)
-                .add("offset", offset);
+                .add("runAt", runAt)
+                .add("runUntil", runUntil);
     }
 
     @Override
     public String toString() {
         return toStringHelper().toString();
+    }
+
+    public Schedule toInternal() {
+        return new OneOffSchedule.Builder()
+                .setRunAtAndAfter(runAt)
+                .setRunUntil(runUntil)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

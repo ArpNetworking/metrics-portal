@@ -80,6 +80,6 @@ public abstract class ReportSource {
     /**
      * Create this object into its internal representation.
      */
-    public abstract void toInternal();
+    public abstract models.internal.reports.ReportSource toInternal();
 }
 // CHECKSTYLE.ON: MemberNameCheck

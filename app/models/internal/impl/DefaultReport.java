@@ -18,28 +18,25 @@ package models.internal.impl;
 
 import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.google.common.collect.ImmutableSet;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
 import models.internal.reports.ReportSource;
-import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Default implementation of {@link Report}.
- *
- * @author Christian Briones (cbriones at dropbox dot com)
  */
-@Loggable
-public final class DefaultReport implements Report {
+public class DefaultReport implements Report {
     private DefaultReport(final Builder builder) {
         _id = builder._id;
         _name = builder._name;
@@ -69,16 +66,17 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public ImmutableSet<RecipientGroup> getRecipientGroups() {
-        return _groups;
+    public Collection<RecipientGroup> getRecipientGroups() {
+        return Collections.unmodifiableCollection(_groups);
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = "NP_NONNULL_PARAM_VIOLATION",
-            justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
-    )
-    public CompletionStage<Result> execute(final ActorRef scheduler, final Instant scheduled) {
+    public Optional<Instant> getLastRun() {
+        return Optional.empty();
+    }
+
+    @Override
+    public CompletionStage<Report.Result> execute(final ActorRef scheduler, final Instant scheduled) {
         return CompletableFuture.completedFuture(null);
     }
 
@@ -86,70 +84,36 @@ public final class DefaultReport implements Report {
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
-    private final ImmutableSet<RecipientGroup> _groups;
+    private final Collection<RecipientGroup> _groups;
 
-    /**
-     * Builder implementation that constructs {@code DefaultReport}.
-     */
     public static final class Builder extends OvalBuilder<DefaultReport> {
-        /**
-         * Public Constructor.
-         */
         public Builder() {
             super(DefaultReport::new);
+            _schedule = NeverSchedule.getInstance();
+            _groups = Collections.emptySet();
         }
 
-        /**
-         * Set the report id. Required. Cannot be null.
-         *
-         * @param id The report id.
-         * @return This instance of {@code Builder}.
-         */
         public Builder setId(final UUID id) {
             _id = id;
             return this;
         }
 
-        /**
-         * Set the report name. Required. Cannot be null or empty.
-         *
-         * @param name The report name.
-         * @return This instance of {@code Builder}.
-         */
         public Builder setName(final String name) {
             _name = name;
             return this;
         }
 
-        /**
-         * Set the report schedule. Required. Cannot be null.
-         *
-         * @param schedule The report schedule.
-         * @return This instance of {@code Builder}.
-         */
         public Builder setSchedule(final Schedule schedule) {
             _schedule = schedule;
             return this;
         }
 
-        /**
-         * Set the report source. Required. Cannot be null.
-         *
-         * @param source The report source.
-         * @return This instance of {@code Builder}.
-         */
         public Builder setReportSource(final ReportSource source) {
             _source = source;
             return this;
         }
 
-        /**
-         * Set the report recipients. Required. Cannot be null.
-         *
-         * @param groups The report recipient groups.
-         * @return This instance of {@code Builder}.
-         */
-        public Builder setRecipientGroups(final ImmutableSet<RecipientGroup> groups) {
+        public Builder setRecipientGroups(final Collection<RecipientGroup> groups) {
             _groups = groups;
             return this;
         }
@@ -157,13 +121,10 @@ public final class DefaultReport implements Report {
         @NotNull
         private UUID _id;
         @NotNull
-        @NotEmpty
         private String _name;
         @NotNull
         private ReportSource _source;
-        @NotNull
-        private ImmutableSet<RecipientGroup> _groups;
-        @NotNull
+        private Collection<RecipientGroup> _groups;
         private Schedule _schedule;
     }
 }

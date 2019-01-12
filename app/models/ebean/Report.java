@@ -15,12 +15,16 @@
  */
 package models.ebean;
 
+import models.internal.reports.RecipientGroup;
+import models.internal.impl.DefaultReport;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -142,6 +146,21 @@ public class Report {
 
     public void setOrganization(final Organization value) {
         organization = value;
+    }
+
+    public models.internal.reports.Report toInternal() {
+        final Collection<RecipientGroup> groups =
+                recipientGroups
+                        .stream()
+                        .map(ReportRecipientGroup::toInternal)
+                        .collect(Collectors.toList());
+        return new DefaultReport.Builder()
+                .setId(uuid)
+                .setName(name)
+                .setRecipientGroups(groups)
+                .setSchedule(schedule.toInternal())
+                .setReportSource(reportSource.toInternal())
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

@@ -17,10 +17,10 @@
 package com.arpnetworking.metrics.portal.reports;
 
 // TODO(cwbriones): Decouple from ebean model and expose via the internal model.
-import models.ebean.Organization;
-import models.ebean.Report;
+import com.arpnetworking.metrics.portal.scheduling.JobRepository;
+import models.internal.Organization;
+import models.internal.reports.Report;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,17 +29,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface ReportRepository {
-    /**
-     * Open the {@code ReportRepository}.
-     */
-    void open();
-
-    /**
-     * Close the {@code ReportRepository}.
-     */
-    void close();
-
+public interface ReportRepository extends JobRepository<Report.Result> {
     /**
      * Get a {@code Report} by identifier.
      *
@@ -53,15 +43,6 @@ public interface ReportRepository {
      *
      * @param report The {@code Report} to create or update.
      */
-    void addOrUpdateReport(Report report);
-
-    /**
-     * Mark a {@code Report} as completed.
-     *
-     * @param reportId The id of the {@code Report} to update.
-     * @param organization The organization of the report.
-     * @param scheduled The time this job was scheduled.
-     */
-    void jobCompleted(UUID reportId, Organization organization, Instant scheduled);
+    void addOrUpdateReport(Report report, Organization organization);
 }
 

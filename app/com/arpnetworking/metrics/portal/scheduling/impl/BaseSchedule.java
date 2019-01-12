@@ -46,11 +46,11 @@ public abstract class BaseSchedule implements Schedule {
         _runUntil = Optional.ofNullable(builder._runUntil);
     }
 
-    protected Instant getRunAtAndAfter() {
+    public Instant getRunAtAndAfter() {
         return _runAtAndAfter;
     }
 
-    protected Optional<Instant> getRunUntil() {
+    public Optional<Instant> getRunUntil() {
         return _runUntil;
     }
 

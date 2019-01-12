@@ -30,13 +30,14 @@ CREATE UNIQUE INDEX report_sources_uuid_idx ON portal.report_sources (uuid);
 
 CREATE TABLE portal.report_schedules (
     id BIGSERIAL PRIMARY KEY,
-    start_date DATE NOT NULL,
-    offset_duration BIGINT DEFAULT 0,
+    run_at TIMESTAMP NOT NULL,
+    run_until TIMESTAMP DEFAULT NULL,
     type VARCHAR(255) NOT NULL,
-    end_date DATE DEFAULT NULL,
 
 --  Recurring Events
+    offset_duration BIGINT DEFAULT 0,
     period VARCHAR(255),
+    zone VARCHAR(255),
 );
 
 CREATE TABLE portal.reports (

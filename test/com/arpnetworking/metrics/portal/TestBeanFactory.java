@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
@@ -22,11 +23,9 @@ import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
 import models.ebean.PDFReportFormat;
-import models.ebean.Report;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
-import models.ebean.ReportSource;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -36,10 +35,12 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
+import models.internal.impl.DefaultReport;
+import models.internal.reports.ReportSource;
 import org.joda.time.Period;
 
-import java.sql.Date;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -77,15 +78,26 @@ public final class TestBeanFactory {
     private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
     private static final Random RANDOM = new Random();
 
-    public static Report createEbeanReport() {
+    public static DefaultReport.Builder createReportBuilder() {
+        final ReportSource source = createEbeanReportSource().toInternal();
+
+        return new DefaultReport.Builder()
+                .setId(UUID.randomUUID())
+                .setName(TEST_NAME)
+                .setRecipientGroups(Collections.emptySet())
+                .setReportSource(source)
+                .setSchedule(NeverSchedule.getInstance());
+    }
+
+    public static models.ebean.Report createEbeanReport() {
         final ReportSchedule schedule = new ReportSchedule();
-        schedule.setStartDate(new Date(System.currentTimeMillis()));
-        schedule.setOffset(Duration.ofHours(1));
+        schedule.setRunAt(Instant.now());
+        schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
 
         final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
-        final ReportSource source = TestBeanFactory.createEbeanReportSource();
+        final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
 
-        final Report report = new Report();
+        final models.ebean.Report report = new models.ebean.Report();
         report.setName(TEST_NAME);
         report.setOrganization(TestBeanFactory.createEbeanOrganization());
         report.setRecipientGroups(Collections.singleton(group));
@@ -97,21 +109,25 @@ public final class TestBeanFactory {
         return report;
     }
 
-    public static ReportSource createEbeanReportSource() {
+    public static models.ebean.ReportSource createEbeanReportSource() {
         final UUID sourceUuid = UUID.randomUUID();
-        final ReportSource source = new ChromeScreenshotReportSource();
+        final String testUrl = "http://test-url.com";
+        final models.ebean.ChromeScreenshotReportSource source = new ChromeScreenshotReportSource();
+        source.setUrl(testUrl);
         source.setUuid(sourceUuid);
+        source.setTitle("Test title");
+        source.setTriggeringEventName("onload");
         return source;
     }
 
-    public static ReportRecipientGroup createEbeanReportRecipientGroup() {
+    public static models.ebean.ReportRecipientGroup createEbeanReportRecipientGroup() {
         final UUID groupUuid = UUID.randomUUID();
 
-        final PDFReportFormat format = new PDFReportFormat();
+        final models.ebean.PDFReportFormat format = new PDFReportFormat();
         format.setHeightInches(1.0f);
         format.setWidthInches(1.0f);
 
-        final ReportRecipientGroup group = new ReportRecipientGroup();
+        final models.ebean.ReportRecipientGroup group = new ReportRecipientGroup();
         group.setUuid(groupUuid);
         group.setRecipients(Collections.singletonList(ReportRecipient.newEmailRecipient(TEST_EMAIL)));
         group.setName(TEST_GROUP);
@@ -260,5 +276,6 @@ public final class TestBeanFactory {
         return host;
     }
 
-    private TestBeanFactory() {}
+    private TestBeanFactory() {
+    }
 }

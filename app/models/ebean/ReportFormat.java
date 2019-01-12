@@ -16,6 +16,8 @@
 
 package models.ebean;
 
+import models.internal.impl.HTMLReportFormat;
+
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -36,5 +38,9 @@ public class ReportFormat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    /* package */ models.internal.reports.ReportFormat toInternal() {
+        return HTMLReportFormat.getInstance();
+    }
 }
 // CHECKSTYLE.ON: MemberNameCheck

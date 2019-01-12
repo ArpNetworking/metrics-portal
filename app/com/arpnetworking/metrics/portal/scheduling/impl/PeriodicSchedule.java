@@ -62,6 +62,18 @@ public final class PeriodicSchedule extends BaseSchedule {
         return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
     }
 
+    public ChronoUnit getPeriod() {
+        return _period;
+    }
+
+    public ZoneId getZone() {
+        return _zone;
+    }
+
+    public Duration getOffset() {
+        return _offset;
+    }
+
 
     /**
      * Implementation of builder pattern for {@link OneOffSchedule}.

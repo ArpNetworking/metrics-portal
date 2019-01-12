@@ -16,19 +16,37 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
-import models.ebean.Organization;
-import models.ebean.Report;
+import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportExecution;
+import models.ebean.ReportRecipient;
+import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
+import models.internal.Organization;
+import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.HTMLReportFormat;
+import models.internal.impl.PDFReportFormat;
+import models.internal.reports.RecipientGroup;
+import models.internal.reports.Report;
+import models.internal.reports.ReportFormat;
+import models.internal.reports.ReportSource;
+import models.internal.scheduling.Job;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
@@ -58,41 +76,75 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Report> getReport(final UUID identifier, Organization organization) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Getting report")
-                .addData("uuid", identifier)
-                .addData("organization.uuid", organization.getUuid())
-                .log();
-        return Ebean.find(Report.class)
-                .where()
-                .eq("uuid", identifier)
-                .eq("organization_id", organization.getId())
-                .eq("disabled", false)
-                .findOneOrEmpty();
+    public Optional<Job<Report.Result>> getJob(final UUID id, final Organization organization) {
+        return getReport(id, organization).map(Function.identity());
     }
 
     @Override
-    public void addOrUpdateReport(final Report report) {
+    public Optional<Instant> getLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
+        return getReport(reportId, organization)
+                .flatMap(r ->
+                        Ebean.find(ReportExecution.class)
+                                .orderBy()
+                                .desc("completed_at")
+                                .where()
+                                .eq("report_id", r.getId())
+                                .eq("state", "SUCCESS")
+                                .findOneOrEmpty()
+                )
+                .map(ReportExecution::getCompletedAt);
+    }
+
+    @Override
+    public Optional<Report> getReport(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+
+        LOGGER.debug()
+                .setMessage("Getting report")
+                .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getId())
+                .log();
+
+        return Optional.ofNullable(models.ebean.Organization.findByOrganization(organization))
+                .flatMap(beanOrg ->
+                        Ebean.find(models.ebean.Report.class)
+                                .where()
+                                .eq("uuid", identifier)
+                                .eq("organization_id", beanOrg.getId())
+                                .eq("disabled", false)
+                                .findOneOrEmpty()
+                                .map(models.ebean.Report::toInternal)
+                );
+    }
+
+    @Override
+    public void addOrUpdateReport(final Report report, final Organization organization) {
+        final models.ebean.Report ebeanReport = internalModelToBean(report);
+        final models.ebean.Organization ebeanOrg = models.ebean.Organization.findByOrganization(organization);
+        if (ebeanOrg == null) {
+            throw new EntityNotFoundException("Organization not found: " + organization.getId());
+        }
+        ebeanReport.setOrganization(ebeanOrg);
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Upserting report")
-                .addData("report", report)
+                .addData("report", ebeanReport)
+                .addData("organization.uuid", organization.getId())
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-            Ebean.save(report.getReportSource());
-            final Optional<Report> existingReport =
-                    Ebean.find(Report.class)
+            Ebean.save(ebeanReport.getReportSource());
+            final Optional<models.ebean.Report> existingReport =
+                    Ebean.find(models.ebean.Report.class)
                             .where()
-                            .eq("uuid", report.getUuid())
+                            .eq("uuid", ebeanReport.getUuid())
+                            .eq("organization.uuid", organization.getId())
                             .findOneOrEmpty();
             final boolean created = !existingReport.isPresent();
-            Ebean.save(report);
+            Ebean.save(ebeanReport);
             transaction.commit();
             LOGGER.debug()
                     .setMessage("Upserted report")
-                    .addData("report", report)
+                    .addData("report", ebeanReport)
                     .addData("created", created)
                     .log();
             // CHECKSTYLE.OFF: IllegalCatchCheck
@@ -100,25 +152,27 @@ public final class DatabaseReportRepository implements ReportRepository {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
                     .setMessage("Failed to upsert report")
-                    .addData("report", report)
+                    .addData("report", ebeanReport)
                     .setThrowable(e)
                     .log();
             throw new PersistenceException(e);
         }
     }
 
-    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled) {
+    @Override
+    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
         updateExecutionState(reportId, organization, scheduled, ReportExecution.State.FAILURE);
     }
 
+    @Override
     public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
         updateExecutionState(reportId, organization, scheduled, ReportExecution.State.STARTED);
     }
 
     @Override
-    public void jobCompleted(final UUID reportId, final Organization organization, final Instant scheduled) {
+    public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
         updateExecutionState(reportId, organization, scheduled, ReportExecution.State.SUCCESS);
     }
@@ -131,7 +185,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("state", state)
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-            final Optional<Report> report = Ebean.find(Report.class)
+            final Optional<models.ebean.Report> report = Ebean.find(models.ebean.Report.class)
                     .where()
                     .eq("uuid", reportId)
                     .eq("organization_id", organization.getId())
@@ -154,6 +208,8 @@ public final class DatabaseReportRepository implements ReportRepository {
                     break;
                 case STARTED:
                     execution.setStartedAt(Instant.now());
+                    break;
+                default:
             }
 
             Ebean.save(execution);
@@ -178,7 +234,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
+    /* package */ Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
         return getReport(reportId, organization).flatMap(r ->
                 Ebean.find(ReportExecution.class)
                         .where()
@@ -188,29 +244,96 @@ public final class DatabaseReportRepository implements ReportRepository {
         );
     }
 
-    Optional<ReportExecution> getMostRecentExecution(final UUID reportId, final Organization organization) {
-        return getReport(reportId, organization).flatMap(r ->
-                Ebean.find(ReportExecution.class)
-                        .orderBy()
-                        .desc("completed_at")
-                        .where()
-                        .eq("report_id", r.getId())
-                        .eq("state", "SUCCESS")
-                        .findOneOrEmpty()
-        );
-    }
-
-    private Report internalModelToBean(final com.arpnetworking.metrics.portal.reports.Report internalReport) {
+    private models.ebean.Report internalModelToBean(final Report internalReport) {
         final ReportSchedule schedule = internalModelToBean(internalReport.getSchedule());
+        final models.ebean.ReportSource source = internalModelToBean(internalReport.getSource());
 
-        final Report report = new Report();
-        report.setUuid(internalReport.getId());
-        report.setSchedule(schedule);
-        return report;
+        final Set<ReportRecipientGroup> ebeanGroups =
+                internalReport.getRecipientGroups()
+                        .stream()
+                        .map(this::internalModelToBean)
+                        .collect(Collectors.toSet());
+
+        final models.ebean.Report beanReport = new models.ebean.Report();
+        beanReport.setUuid(internalReport.getId());
+        beanReport.setSchedule(schedule);
+        beanReport.setReportSource(source);
+        beanReport.setRecipientGroups(ebeanGroups);
+        beanReport.setName(internalReport.getName());
+        return beanReport;
     }
 
-    private ReportSchedule internalModelToBean(final com.arpnetworking.metrics.portal.scheduling.Schedule internalSchedule) {
-        return null;
+    private ReportSchedule internalModelToBean(final Schedule internalSchedule) {
+        if (internalSchedule instanceof PeriodicSchedule) {
+            final PeriodicSchedule internalPeriodic = (PeriodicSchedule) internalSchedule;
+            final PeriodicReportSchedule beanPeriodic = new PeriodicReportSchedule();
+            final PeriodicReportSchedule.Period beanPeriod = PeriodicReportSchedule.Period.fromChronoUnit(internalPeriodic.getPeriod());
+            beanPeriodic.setRunAt(internalPeriodic.getRunAtAndAfter());
+            beanPeriodic.setRunUntil(internalPeriodic.getRunUntil().orElse(null));
+            beanPeriodic.setOffset(internalPeriodic.getOffset());
+            beanPeriodic.setPeriod(beanPeriod);
+            beanPeriodic.setZone(internalPeriodic.getZone());
+            return beanPeriodic;
+        } else if (internalSchedule instanceof OneOffSchedule) {
+            final OneOffSchedule internalOneOff = (OneOffSchedule) internalSchedule;
+            final ReportSchedule beanOneOff = new ReportSchedule();
+            beanOneOff.setRunAt(internalOneOff.getRunAtAndAfter());
+            beanOneOff.setRunUntil(internalOneOff.getRunUntil().orElse(null));
+            return beanOneOff;
+        }
+        throw new IllegalArgumentException("Unsupported internal model: " + internalSchedule.getClass().getSimpleName());
+    }
+
+    private models.ebean.ReportSource internalModelToBean(final ReportSource reportSource) {
+        if (reportSource instanceof ChromeScreenshotReportSource) {
+            final ChromeScreenshotReportSource internalChromeSource = (ChromeScreenshotReportSource) reportSource;
+
+            final models.ebean.ChromeScreenshotReportSource ebeanSource = new models.ebean.ChromeScreenshotReportSource();
+            ebeanSource.setUuid(reportSource.getId());
+            ebeanSource.setIgnoreCertificateErrors(internalChromeSource.ignoresCertificateErrors());
+            ebeanSource.setUrl(internalChromeSource.getUrl().toString());
+            ebeanSource.setTriggeringEventName(internalChromeSource.getTriggeringEventName());
+            ebeanSource.setTitle(internalChromeSource.getTitle());
+            return ebeanSource;
+        }
+        throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass().getSimpleName());
+    }
+
+    private ReportRecipientGroup internalModelToBean(final RecipientGroup group) {
+        final ReportFormat.Visitor<models.ebean.ReportFormat> internalToBeanVisitor =
+                new ReportFormat.Visitor<models.ebean.ReportFormat>() {
+                    @Override
+                    public models.ebean.ReportFormat visit(final PDFReportFormat internalFormat) {
+                        final models.ebean.PDFReportFormat beanFormat = new models.ebean.PDFReportFormat();
+                        beanFormat.setWidthInches(internalFormat.getWidth());
+                        beanFormat.setHeightInches(internalFormat.getHeight());
+                        return beanFormat;
+                    }
+
+                    @Override
+                    public models.ebean.ReportFormat visit(final HTMLReportFormat htmlFormat) {
+                        return new models.ebean.ReportFormat();
+                    }
+                };
+
+        final Set<models.ebean.ReportFormat> ebeanFormats =
+                group.getFormats()
+                        .stream()
+                        .map(f -> f.accept(internalToBeanVisitor))
+                        .collect(Collectors.toSet());
+
+        final List<ReportRecipient> recipients =
+                group.getMembers()
+                        .stream()
+                        .map(ReportRecipient::newEmailRecipient)
+                        .collect(Collectors.toList());
+
+        final ReportRecipientGroup ebeanGroup = new ReportRecipientGroup();
+        ebeanGroup.setName(group.getName());
+        ebeanGroup.setFormats(ebeanFormats);
+        ebeanGroup.setUuid(group.getId());
+        ebeanGroup.setRecipients(recipients);
+        return ebeanGroup;
     }
 
     private void assertIsOpen() {

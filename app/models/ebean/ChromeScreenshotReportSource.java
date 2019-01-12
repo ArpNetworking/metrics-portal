@@ -73,8 +73,14 @@ public class ChromeScreenshotReportSource extends ReportSource {
     }
 
     @Override
-    public void toInternal() {
-        // TODO(cbriones): Implement this
+    public models.internal.reports.ReportSource toInternal() {
+        return new models.internal.impl.ChromeScreenshotReportSource.Builder()
+                .setId(getUuid())
+                .setUrl(url)
+                .setTitle(title)
+                .setIgnoreCertificateErrors(ignoreCertificateErrors)
+                .setTriggeringEventName(triggeringEventName)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

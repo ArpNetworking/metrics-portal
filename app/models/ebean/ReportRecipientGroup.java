@@ -17,11 +17,15 @@ package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.impl.EmailRecipientGroup;
+import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -133,6 +137,29 @@ public class ReportRecipientGroup {
 
     public void setFormats(final Set<ReportFormat> value) {
         formats = value;
+    }
+
+    public RecipientGroup toInternal() {
+        final Map<ReportRecipient.RecipientType, List<ReportRecipient>> recipientsByType =
+                recipients.stream().collect(Collectors.groupingBy(ReportRecipient::getType));
+
+        final Set<String> recipientAddresses =
+                recipients
+                        .stream()
+                        .map(ReportRecipient::get)
+                        .collect(Collectors.toSet());
+
+        final List<models.internal.reports.ReportFormat> internalFormats =
+                formats.stream()
+                        .map(ReportFormat::toInternal)
+                        .collect(Collectors.toList());
+
+        return new EmailRecipientGroup.Builder()
+                .setId(uuid)
+                .setName(name)
+                .setEmails(recipientAddresses)
+                .setFormats(internalFormats)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
