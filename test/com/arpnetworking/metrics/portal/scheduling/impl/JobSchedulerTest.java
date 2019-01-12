@@ -156,7 +156,6 @@ public final class JobSchedulerTest {
         @Override
         public Schedule getSchedule() {
             return new OneOffSchedule.Builder()
-                    .setZone(ZoneId.of("UTC"))
                     .setRunAtAndAfter(_runAt)
                     .build();
         }
