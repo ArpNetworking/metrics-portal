@@ -26,9 +26,11 @@ import com.arpnetworking.steno.LoggerFactory;
 import models.internal.scheduling.Job;
 import scala.Serializable;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -70,7 +72,7 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
     private JobScheduler(final JobRef<T> jobRef, final Clock clock) {
         _jobRef = jobRef;
         _clock = clock;
-        timers().startPeriodicTimer("TICK", new Tick(), Duration.apply(1, TimeUnit.MINUTES));
+        timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
     @Override
@@ -92,7 +94,17 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
                         return;
                     }
                     final Instant nextRun = maybeNextRun.get();
-                    if (!nextRun.isAfter(_clock.instant())) {
+                    if (nextRun.isAfter(_clock.instant())) {
+                        // It's not time to execute the job yet, but it might be soon.
+                        // Let's ensure we wake up exactly when it's time to execute the job,
+                        //   else we might be late executing it by up to 1 tick.
+                        //   (Well-- "exactly" is a tall order, but we can at least ensure we wake up
+                        //    _very slightly_ late.)
+                        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(_clock.instant(), nextRun));
+                        if (delta.lt(TICK_INTERVAL)) {
+                            timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta.plus(SLEEP_SLOP));
+                        }
+                    } else {
                         final ActorRef sender = getSender();
                         PatternsCS.pipe(
                                 job.execute(getSelf(), nextRun)
@@ -113,6 +125,8 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
                 .build();
     }
 
+    private static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
+    private static final FiniteDuration SLEEP_SLOP = Duration.apply(10, TimeUnit.MILLISECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
 
     /**
