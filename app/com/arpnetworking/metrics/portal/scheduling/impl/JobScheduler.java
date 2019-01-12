@@ -41,27 +41,29 @@ import java.util.concurrent.TimeUnit;
  */
 public final class JobScheduler<T> extends AbstractActorWithTimers {
 
-    private JobRef<T> _jobRef;
+    private final JobRef<T> _jobRef;
     private final Clock _clock;
 
     /**
      * Props factory.
      *
+     * @param <T> The type of result produced by the {@link JobRef}'s job.
      * @param jobRef The job to intermittently execute.
      * @return A new props to create this actor.
      */
-    public static Props props(final JobRef<?> jobRef) {
+    public static <T> Props props(final JobRef<T> jobRef) {
         return props(jobRef, Clock.systemUTC());
     }
 
     /**
      * Props factory.
      *
+     * @param <T> The type of result produced by the {@link JobRef}'s job.
      * @param jobRef The job to intermittently execute.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @return A new props to create this actor.
      */
-    protected static Props props(final JobRef<?> jobRef, final Clock clock) {
+    protected static <T> Props props(final JobRef<T> jobRef, final Clock clock) {
         return Props.create(JobScheduler.class, () -> new JobScheduler<>(jobRef, clock));
     }
 
@@ -94,31 +96,19 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
                         final ActorRef sender = getSender();
                         PatternsCS.pipe(
                                 job.execute(getSelf(), nextRun)
-                                        .handle((result, error) ->
-                                                error == null
-                                                        ? new Success<>(_jobRef, nextRun, result, sender)
-                                                        : new Failure<>(_jobRef, nextRun, error, sender)),
-                                getContext().dispatcher()).to(getSelf());
+                                        .handle((result, error) -> {
+                                            if (error == null) {
+                                                _jobRef.jobSucceeded(nextRun, result);
+                                                return new Success<>(_jobRef, nextRun, result);
+                                            } else {
+                                                _jobRef.jobFailed(nextRun, error);
+                                                return new Failure<>(_jobRef, nextRun, error);
+                                            }
+                                        }),
+                                getContext().dispatcher())
+                                .to(sender);
                         _jobRef.jobStarted(nextRun);
                     }
-                })
-                .match(Success.class, message -> {
-                    final T result = null;
-                    try {
-//                        result = ((Success<T>) message).getResult();
-                    } catch (final ClassCastException error) {
-                        LOGGER.error()
-                                .setMessage("got Success containing unexpected type")
-                                .addData("expected", this.getClass().getTypeParameters()[0].getName())
-                                .addData("actual", message.getResult().getClass())
-                                .log();
-                        return;
-                    }
-                    _jobRef.jobSucceeded(message.getScheduled(), null);
-                    message.getNotifiee().tell(message, getSelf());
-                })
-                .match(Failure.class, message -> {
-                    _jobRef.jobFailed(message.getScheduled(), message.getError());
                 })
                 .build();
     }
@@ -140,13 +130,11 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
         private final JobRef<T> _jobRef;
         private final Instant _scheduled;
         private final T _result;
-        private final ActorRef _notifiee;
 
-        Success(final JobRef<T> jobRef, final Instant scheduled, final T result, final ActorRef notifiee) {
+        Success(final JobRef<T> jobRef, final Instant scheduled, final T result) {
             _jobRef = jobRef;
             _scheduled = scheduled;
             _result = result;
-            _notifiee = notifiee;
         }
 
         public JobRef<T> getJobRef() {
@@ -161,9 +149,7 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
             return _result;
         }
 
-        public ActorRef getNotifiee() {
-            return _notifiee;
-        }
+        private static final long serialVersionUID = 1L;
     }
 
     /**
@@ -173,13 +159,11 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
         private final JobRef<T> _jobRef;
         private final Instant _scheduled;
         private final Throwable _error;
-        private final ActorRef _notifiee;
 
-        Failure(final JobRef<T> jobRef, final Instant scheduled, final Throwable error, final ActorRef notifiee) {
+        Failure(final JobRef<T> jobRef, final Instant scheduled, final Throwable error) {
             _jobRef = jobRef;
             _scheduled = scheduled;
             _error = error;
-            _notifiee = notifiee;
         }
 
         public JobRef<T> getJobRef() {
@@ -194,9 +178,7 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
             return _error;
         }
 
-        public ActorRef getNotifiee() {
-            return _notifiee;
-        }
+        private static final long serialVersionUID = 1L;
     }
 
     /**
@@ -208,5 +190,7 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
             return INSTANCE;
         }
         private GetJobRef() {}
+
+        private static final long serialVersionUID = 1L;
     }
 }

@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A simple in-memory {@link JobRepository}. Not in any way persistent, probably not good for production usage.
  *
- * @param <T> The type of the results computed by the JobRepository.
+ * @param <T> The type of the results computed by the repository's {@link Job}s.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */

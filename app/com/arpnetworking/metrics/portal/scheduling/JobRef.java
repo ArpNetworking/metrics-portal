@@ -99,6 +99,8 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
         _repository.jobFailed(_id, _organization, scheduled, error);
     }
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Implementation of builder pattern for {@link JobRef}.
      *
@@ -127,7 +129,7 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
          * @param repository The repository.
          * @return This instance of Builder.
          */
-        public Builder setRepository(final JobRepository<T> repository) {
+        public Builder<T> setRepository(final JobRepository<T> repository) {
             _repository = repository;
             return this;
         }
@@ -138,7 +140,7 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
          * @param id The id.
          * @return This instance of Builder.
          */
-        public Builder setId(final UUID id) {
+        public Builder<T> setId(final UUID id) {
             _id = id;
             return this;
         }
@@ -149,7 +151,7 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
          * @param organization The organization.
          * @return This instance of Builder.
          */
-        public Builder setOrganization(final Organization organization) {
+        public Builder<T> setOrganization(final Organization organization) {
             _organization = organization;
             return this;
         }
