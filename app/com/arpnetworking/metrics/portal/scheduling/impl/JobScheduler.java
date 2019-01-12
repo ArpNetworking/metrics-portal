@@ -75,6 +75,13 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
+    /**
+     * Computes the time we should schedule an extra tick for, if we'll need an extra tick before the next naturally occurring one.
+     *
+     * @param now The current time.
+     * @param timeToAwaken The time we want to wake up right after.
+     * @return The time until we should wake up, if that's before the next tick; else {@code empty}.
+     */
     protected static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
         final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
         if (delta.lt(TICK_INTERVAL)) {
