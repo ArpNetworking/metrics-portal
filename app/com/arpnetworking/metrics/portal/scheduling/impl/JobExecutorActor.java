@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class JobScheduler<T> extends AbstractActorWithTimers {
+public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private final JobRef<T> _jobRef;
     private final Clock _clock;
@@ -66,10 +66,10 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
      * @return A new props to create this actor.
      */
     protected static <T> Props props(final JobRef<T> jobRef, final Clock clock) {
-        return Props.create(JobScheduler.class, () -> new JobScheduler<>(jobRef, clock));
+        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(jobRef, clock));
     }
 
-    private JobScheduler(final JobRef<T> jobRef, final Clock clock) {
+    private JobExecutorActor(final JobRef<T> jobRef, final Clock clock) {
         _jobRef = jobRef;
         _clock = clock;
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
@@ -142,7 +142,7 @@ public final class JobScheduler<T> extends AbstractActorWithTimers {
 
     protected static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     protected static final FiniteDuration SLEEP_SLOP = Duration.apply(10, TimeUnit.MILLISECONDS);
-    private static final Logger LOGGER = LoggerFactory.getLogger(JobScheduler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
