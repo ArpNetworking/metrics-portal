@@ -14,43 +14,47 @@
  * limitations under the License.
  */
 
-package models.internal.impl;
+package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.google.common.base.MoreObjects;
-import models.internal.reports.ReportFormat;
+import models.internal.reports.Report;
 
-/**
- * An HTML report format.
- *
- * @author Christian Briones (cbriones at dropbox dot com)
- */
-public final class HTMLReportFormat implements ReportFormat {
-    private static final HTMLReportFormat INSTANCE = new HTMLReportFormat();
+import java.util.Objects;
 
-    private HTMLReportFormat() {}
+public class TestReportResult implements Report.Result {
+    private Integer value;
 
-    public static HTMLReportFormat getInstance() {
-        return INSTANCE;
+    public TestReportResult() {}
+
+    public TestReportResult(final int value) {
+        this.value = value;
+    }
+
+    public int getValue() {
+        return value;
     }
 
     @Override
-    public <T> T accept(final Visitor<T> formatVisitor) {
-        return formatVisitor.visit(this);
-    }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return super.equals(obj);
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final TestReportResult that = (TestReportResult) o;
+        return Objects.equals(getValue(), that.getValue());
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(getValue());
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("value", value)
                 .toString();
     }
 }

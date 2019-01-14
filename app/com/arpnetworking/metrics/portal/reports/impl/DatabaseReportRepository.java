@@ -30,8 +30,8 @@ import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
-import models.internal.impl.HTMLReportFormat;
-import models.internal.impl.PDFReportFormat;
+import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.PdfReportFormat;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.persistence.EntityNotFoundException;
@@ -105,15 +106,18 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("organization.uuid", organization.getId())
                 .log();
 
+        return getBeanReport(identifier, organization).map(models.ebean.Report::toInternal);
+    }
+
+    private Optional<models.ebean.Report> getBeanReport(final UUID reportId, final Organization organization) {
         return Optional.ofNullable(models.ebean.Organization.findByOrganization(organization))
                 .flatMap(beanOrg ->
                         Ebean.find(models.ebean.Report.class)
                                 .where()
-                                .eq("uuid", identifier)
-                                .eq("organization_id", beanOrg.getId())
+                                .eq("uuid", reportId)
+                                .eq("organization.uuid", beanOrg.getUuid())
                                 .eq("disabled", false)
                                 .findOneOrEmpty()
-                                .map(models.ebean.Report::toInternal)
                 );
     }
 
@@ -133,13 +137,11 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
             Ebean.save(ebeanReport.getReportSource());
-            final Optional<models.ebean.Report> existingReport =
-                    Ebean.find(models.ebean.Report.class)
-                            .where()
-                            .eq("uuid", ebeanReport.getUuid())
-                            .eq("organization.uuid", organization.getId())
-                            .findOneOrEmpty();
+
+            final Optional<models.ebean.Report> existingReport = getBeanReport(report.getId(), organization);
+
             final boolean created = !existingReport.isPresent();
+
             Ebean.save(ebeanReport);
             transaction.commit();
             LOGGER.debug()
@@ -162,22 +164,49 @@ public final class DatabaseReportRepository implements ReportRepository {
     @Override
     public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.FAILURE);
+        updateExecutionState(
+                reportId,
+                organization,
+                scheduled,
+                ReportExecution.State.FAILURE,
+                execution -> execution.setCompletedAt(Instant.now())
+        );
     }
 
     @Override
     public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.STARTED);
+        updateExecutionState(
+                reportId,
+                organization,
+                scheduled,
+                ReportExecution.State.STARTED,
+                execution -> execution.setStartedAt(Instant.now())
+        );
     }
 
     @Override
     public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
-        updateExecutionState(reportId, organization, scheduled, ReportExecution.State.SUCCESS);
+        updateExecutionState(
+                reportId,
+                organization,
+                scheduled,
+                ReportExecution.State.SUCCESS,
+                execution -> {
+                    execution.setCompletedAt(Instant.now());
+                    execution.setResult(result);
+                }
+        );
     }
 
-    private void updateExecutionState(final UUID reportId, final Organization organization, final Instant scheduled, final ReportExecution.State state) {
+    private void updateExecutionState(
+            final UUID reportId,
+            final Organization organization,
+            final Instant scheduled,
+            final ReportExecution.State state,
+            final Consumer<ReportExecution> executionUpdater
+    ) {
         LOGGER.debug()
                 .setMessage("Updating report executions")
                 .addData("report.uuid", reportId)
@@ -185,34 +214,19 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("state", state)
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
-            final Optional<models.ebean.Report> report = Ebean.find(models.ebean.Report.class)
-                    .where()
-                    .eq("uuid", reportId)
-                    .eq("organization_id", organization.getId())
-                    .findOneOrEmpty();
+            final Optional<models.ebean.Report> report = getBeanReport(reportId, organization);
             if (!report.isPresent()) {
-                throw new EntityNotFoundException();
+                final String message = String.format("Could not find report with uuid=%s, organization.uuid=%s", reportId.toString(), organization.getId());
+                throw new EntityNotFoundException(message);
             }
 
             final ReportExecution execution = new ReportExecution();
             execution.setReport(report.get());
             execution.setScheduledFor(scheduled);
             execution.setState(state);
-
-            switch (state) {
-                case SUCCESS:
-                    execution.setCompletedAt(Instant.now());
-                    break;
-                case FAILURE:
-                    execution.setCompletedAt(Instant.now());
-                    break;
-                case STARTED:
-                    execution.setStartedAt(Instant.now());
-                    break;
-                default:
-            }
-
+            executionUpdater.accept(execution);
             Ebean.save(execution);
+
             LOGGER.debug()
                     .setMessage("Updated report execution")
                     .addData("report.uuid", reportId)
@@ -235,7 +249,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     /* package */ Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
-        return getReport(reportId, organization).flatMap(r ->
+        return getBeanReport(reportId, organization).flatMap(r ->
                 Ebean.find(ReportExecution.class)
                         .where()
                         .eq("report_id", r.getId())
@@ -291,7 +305,7 @@ public final class DatabaseReportRepository implements ReportRepository {
             final models.ebean.ChromeScreenshotReportSource ebeanSource = new models.ebean.ChromeScreenshotReportSource();
             ebeanSource.setUuid(reportSource.getId());
             ebeanSource.setIgnoreCertificateErrors(internalChromeSource.ignoresCertificateErrors());
-            ebeanSource.setUrl(internalChromeSource.getUrl().toString());
+            ebeanSource.setUri(internalChromeSource.getUri());
             ebeanSource.setTriggeringEventName(internalChromeSource.getTriggeringEventName());
             ebeanSource.setTitle(internalChromeSource.getTitle());
             return ebeanSource;
@@ -303,15 +317,15 @@ public final class DatabaseReportRepository implements ReportRepository {
         final ReportFormat.Visitor<models.ebean.ReportFormat> internalToBeanVisitor =
                 new ReportFormat.Visitor<models.ebean.ReportFormat>() {
                     @Override
-                    public models.ebean.ReportFormat visit(final PDFReportFormat internalFormat) {
+                    public models.ebean.ReportFormat visit(final PdfReportFormat internalFormat) {
                         final models.ebean.PDFReportFormat beanFormat = new models.ebean.PDFReportFormat();
-                        beanFormat.setWidthInches(internalFormat.getWidth());
-                        beanFormat.setHeightInches(internalFormat.getHeight());
+                        beanFormat.setWidthInches(internalFormat.getWidthInches());
+                        beanFormat.setHeightInches(internalFormat.getHeightInches());
                         return beanFormat;
                     }
 
                     @Override
-                    public models.ebean.ReportFormat visit(final HTMLReportFormat htmlFormat) {
+                    public models.ebean.ReportFormat visit(final HtmlReportFormat htmlFormat) {
                         return new models.ebean.ReportFormat();
                     }
                 };
@@ -319,7 +333,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         final Set<models.ebean.ReportFormat> ebeanFormats =
                 group.getFormats()
                         .stream()
-                        .map(f -> f.accept(internalToBeanVisitor))
+                        .map(internalToBeanVisitor::visit)
                         .collect(Collectors.toSet());
 
         final List<ReportRecipient> recipients =

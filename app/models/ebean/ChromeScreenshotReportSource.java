@@ -15,6 +15,7 @@
  */
 package models.ebean;
 
+import java.net.URI;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -29,7 +30,7 @@ import javax.persistence.Entity;
 @DiscriminatorValue("CHROME_SCREENSHOT")
 public class ChromeScreenshotReportSource extends ReportSource {
     @Column(name = "url")
-    private String url;
+    private URI uri;
 
     @Column(name = "title")
     private String title;
@@ -40,12 +41,12 @@ public class ChromeScreenshotReportSource extends ReportSource {
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
 
-    public String getUrl() {
-        return url;
+    public URI getUri() {
+        return uri;
     }
 
-    public void setUrl(final String value) {
-        url = value;
+    public void setUri(final URI value) {
+        uri = value;
     }
 
     public String getTitle() {
@@ -76,7 +77,7 @@ public class ChromeScreenshotReportSource extends ReportSource {
     public models.internal.reports.ReportSource toInternal() {
         return new models.internal.impl.ChromeScreenshotReportSource.Builder()
                 .setId(getUuid())
-                .setUrl(url)
+                .setUri(uri)
                 .setTitle(title)
                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
                 .setTriggeringEventName(triggeringEventName)

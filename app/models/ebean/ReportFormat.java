@@ -16,7 +16,7 @@
 
 package models.ebean;
 
-import models.internal.impl.HTMLReportFormat;
+import models.internal.impl.HtmlReportFormat;
 
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
@@ -40,7 +40,7 @@ public class ReportFormat {
     private Integer id;
 
     /* package */ models.internal.reports.ReportFormat toInternal() {
-        return HTMLReportFormat.getInstance();
+        return HtmlReportFormat.getInstance();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

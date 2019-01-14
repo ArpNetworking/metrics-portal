@@ -54,7 +54,7 @@ public final class ChromeScreenshotReportSource implements ReportSource {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
-                .add("uri", _uri)
+                .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
                 .add("triggeringEventName", _triggeringEventName)

@@ -16,6 +16,8 @@
 
 package models.ebean;
 
+import models.internal.impl.PdfReportFormat;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -47,6 +49,9 @@ public class PDFReportFormat extends ReportFormat {
 
     @Override
     /* package */ models.internal.reports.ReportFormat toInternal() {
-        return new models.internal.impl.PDFReportFormat(widthInches, heightInches);
+        return new PdfReportFormat.Builder()
+                .setWidthInches(widthInches)
+                .setHeightInches(heightInches)
+                .build();
     }
 }

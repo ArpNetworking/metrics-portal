@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal;
 
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
@@ -39,6 +40,7 @@ import models.internal.impl.DefaultReport;
 import models.internal.reports.ReportSource;
 import org.joda.time.Period;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -84,7 +86,7 @@ public final class TestBeanFactory {
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
                 .setName(TEST_NAME)
-                .setRecipientGroups(Collections.emptySet())
+                .setRecipientGroups(ImmutableSet.of())
                 .setReportSource(source)
                 .setSchedule(NeverSchedule.getInstance());
     }
@@ -111,9 +113,9 @@ public final class TestBeanFactory {
 
     public static models.ebean.ReportSource createEbeanReportSource() {
         final UUID sourceUuid = UUID.randomUUID();
-        final String testUrl = "http://test-url.com";
+        final URI testUri = URI.create("http://test-url.com");
         final models.ebean.ChromeScreenshotReportSource source = new ChromeScreenshotReportSource();
-        source.setUrl(testUrl);
+        source.setUri(testUri);
         source.setUuid(sourceUuid);
         source.setTitle("Test title");
         source.setTriggeringEventName("onload");

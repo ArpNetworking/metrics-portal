@@ -15,6 +15,8 @@
  */
 package models.ebean;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.EmailRecipientGroup;
@@ -22,7 +24,6 @@ import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.PersistenceException;
 import javax.persistence.Table;
 
 /**
@@ -140,20 +142,28 @@ public class ReportRecipientGroup {
     }
 
     public RecipientGroup toInternal() {
-        final Map<ReportRecipient.RecipientType, List<ReportRecipient>> recipientsByType =
-                recipients.stream().collect(Collectors.groupingBy(ReportRecipient::getType));
+        final long recipientTypes =
+                recipients.stream()
+                        .map(ReportRecipient::getType)
+                        .distinct()
+                        .count();
 
-        final Set<String> recipientAddresses =
+        if (recipientTypes > 1) {
+            throw new PersistenceException("A group's members should all have the same type");
+        }
+
+        final ImmutableSet<String> recipientAddresses =
                 recipients
                         .stream()
                         .map(ReportRecipient::get)
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.collectingAndThen(Collectors.toSet(), ImmutableSet::copyOf));
 
-        final List<models.internal.reports.ReportFormat> internalFormats =
+        final ImmutableList<models.internal.reports.ReportFormat> internalFormats =
                 formats.stream()
                         .map(ReportFormat::toInternal)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf));
 
+        // FIXME(cbriones): single type per group.
         return new EmailRecipientGroup.Builder()
                 .setId(uuid)
                 .setName(name)

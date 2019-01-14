@@ -16,15 +16,15 @@
 
 package models.ebean;
 
+import io.ebean.annotation.DbJson;
+
 import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
@@ -94,17 +94,17 @@ public class ReportExecution {
         completed_at = value;
     }
 
-    // FIXME(cbriones): Is there a ByteString I can use here instead?
-    public byte[] getResult() {
+    @Nullable
+    public models.internal.reports.Report.Result getResult() {
         return result;
     }
 
-    public void setResult(final byte[] value) {
+    public void setResult(final models.internal.reports.Report.Result value) {
         result = value;
     }
 
     @Column
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false)
     @JoinColumn(name = "report_id")
     private Report report;
 
@@ -123,8 +123,9 @@ public class ReportExecution {
     @Column(name = "completed_at")
     private Instant completed_at;
 
-    @Lob
+    @Nullable
+    @DbJson
     @Column(name = "result")
-    private byte[] result;
+    private models.internal.reports.Report.Result result;
 }
 // CHECKSTYLE.ON: MemberNameCheck

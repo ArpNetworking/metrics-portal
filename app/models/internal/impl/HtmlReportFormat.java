@@ -16,6 +16,8 @@
 
 package models.internal.impl;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 
@@ -24,14 +26,11 @@ import models.internal.reports.ReportFormat;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class HTMLReportFormat implements ReportFormat {
-    private static final HTMLReportFormat INSTANCE = new HTMLReportFormat();
+@Loggable
+public final class HtmlReportFormat implements ReportFormat {
+    private static final HtmlReportFormat INSTANCE = new HtmlReportFormat(Builder.INSTANCE);
 
-    private HTMLReportFormat() {}
-
-    public static HTMLReportFormat getInstance() {
-        return INSTANCE;
-    }
+    private HtmlReportFormat(final Builder builder) {}
 
     @Override
     public <T> T accept(final Visitor<T> formatVisitor) {
@@ -52,5 +51,24 @@ public final class HTMLReportFormat implements ReportFormat {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .toString();
+    }
+
+    /**
+     * Builder implementation that constructs {@code HtmlReportFormat}.
+     */
+    public static final class Builder extends OvalBuilder<HtmlReportFormat> {
+        private static final Builder INSTANCE = new Builder();
+
+        /**
+         * Public Constructor.
+         */
+        public Builder() {
+            super(HtmlReportFormat::new);
+        }
+
+        @Override
+        public HtmlReportFormat build() {
+            return HtmlReportFormat.INSTANCE;
+        }
     }
 }

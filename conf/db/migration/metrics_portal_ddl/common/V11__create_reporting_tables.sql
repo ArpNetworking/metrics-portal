@@ -63,7 +63,7 @@ CREATE TABLE portal.report_executions (
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     state VARCHAR(255),
-    result BLOB,
+    result CLOB,
 
     PRIMARY KEY (report_id, scheduled_for),
 );

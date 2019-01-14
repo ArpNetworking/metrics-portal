@@ -15,6 +15,7 @@
  */
 package models.ebean;
 
+import com.google.common.collect.ImmutableSet;
 import models.internal.reports.RecipientGroup;
 import models.internal.impl.DefaultReport;
 import io.ebean.annotation.CreatedTimestamp;
@@ -153,11 +154,12 @@ public class Report {
                 recipientGroups
                         .stream()
                         .map(ReportRecipientGroup::toInternal)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.collectingAndThen(Collectors.toSet(), ImmutableSet::copyOf));
+
         return new DefaultReport.Builder()
                 .setId(uuid)
                 .setName(name)
-                .setRecipientGroups(groups)
+                .setRecipientGroups(ImmutableSet.copyOf(groups))
                 .setSchedule(schedule.toInternal())
                 .setReportSource(reportSource.toInternal())
                 .build();
