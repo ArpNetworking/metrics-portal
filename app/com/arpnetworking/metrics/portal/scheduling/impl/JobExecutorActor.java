@@ -72,6 +72,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private JobExecutorActor(final JobRef<T> jobRef, final Clock clock) {
         _jobRef = jobRef;
         _clock = clock;
+    }
+
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
