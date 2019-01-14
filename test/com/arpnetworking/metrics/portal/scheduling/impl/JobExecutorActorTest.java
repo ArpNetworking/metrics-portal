@@ -1,3 +1,18 @@
+/*
+ * Copyright 2018 Dropbox, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import akka.actor.ActorRef;
@@ -23,15 +38,18 @@ import static org.junit.Assert.assertEquals;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class JobSchedulerTest {
+/**
+ * Tests for {@link JobExecutorActor}.
+ *
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
+ */
+public final class JobExecutorActorTest {
 
 
     private static final Instant t0 = Instant.ofEpochMilli(0);
@@ -84,10 +102,10 @@ public final class JobSchedulerTest {
         final Job<UUID> j = makeSuccessfulJob();
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobScheduler.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
 
-        scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
-        tk.expectMsgClass(JobScheduler.Success.class);
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
+        tk.expectMsgClass(JobExecutorActor.Success.class);
         Mockito.verify(repo).jobSucceeded(
                 j.getId(),
                 organization,
@@ -100,10 +118,10 @@ public final class JobSchedulerTest {
         final FailingJob j = makeFailingJob();
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobScheduler.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
 
-        scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
-        tk.expectMsgClass(JobScheduler.Failure.class);
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
+        tk.expectMsgClass(JobExecutorActor.Failure.class);
         Mockito.verify(repo).jobFailed(
                 j.getId(),
                 organization,
@@ -116,9 +134,9 @@ public final class JobSchedulerTest {
         final Job<UUID> j = makeSuccessfulJob(t0.plus(Duration.ofMinutes(1)));
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobScheduler.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
 
-        scheduler.tell(JobScheduler.Tick.INSTANCE, tk.getRef());
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
         tk.expectNoMsg();
         Mockito.verify(repo, Mockito.never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -127,14 +145,14 @@ public final class JobSchedulerTest {
 
     @Test
     public void testExtraTicks() {
-        Duration jTickInterval = Duration.ofNanos(JobScheduler.TICK_INTERVAL.toNanos());
-        Duration jSleepSlop = Duration.ofNanos(JobScheduler.SLEEP_SLOP.toNanos());
+        Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
+        Duration jSleepSlop = Duration.ofNanos(JobExecutorActor.SLEEP_SLOP.toNanos());
         assertEquals(
                 Optional.empty(),
-                JobScheduler.timeUntilExtraTick(t0, t0.plus(jTickInterval)));
+                JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval)));
         assertEquals(
-                Optional.of(JobScheduler.TICK_INTERVAL.div(2).plus(JobScheduler.SLEEP_SLOP)),
-                JobScheduler.timeUntilExtraTick(t0, t0.plus(jTickInterval.dividedBy(2))));
+                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2).plus(JobExecutorActor.SLEEP_SLOP)),
+                JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval.dividedBy(2))));
     }
 
     private static abstract class DummyJob implements Job<UUID> {
