@@ -21,8 +21,11 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.scheduling.JobRef;
+import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.inject.Injector;
+import models.internal.Organization;
 import models.internal.scheduling.Job;
 import scala.Serializable;
 import scala.concurrent.duration.Duration;
@@ -32,6 +35,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,6 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
+    private final Injector _injector;
     private final JobRef<T> _jobRef;
     private final Clock _clock;
 
@@ -50,26 +55,29 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * Props factory.
      *
      * @param <T> The type of result produced by the {@link JobRef}'s job.
+     * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param jobRef The job to intermittently execute.
      * @return A new props to create this actor.
      */
-    public static <T> Props props(final JobRef<T> jobRef) {
-        return props(jobRef, Clock.systemUTC());
+    public static <T> Props props(final Injector injector, final JobRef<T> jobRef) {
+        return props(injector, jobRef, Clock.systemUTC());
     }
 
     /**
      * Props factory.
      *
      * @param <T> The type of result produced by the {@link JobRef}'s job.
+     * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param jobRef The job to intermittently execute.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @return A new props to create this actor.
      */
-    protected static <T> Props props(final JobRef<T> jobRef, final Clock clock) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(jobRef, clock));
+    protected static <T> Props props(final Injector injector, final JobRef<T> jobRef, final Clock clock) {
+        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, jobRef, clock));
     }
 
-    private JobExecutorActor(final JobRef<T> jobRef, final Clock clock) {
+    private JobExecutorActor(final Injector injector, final JobRef<T> jobRef, final Clock clock) {
+        _injector = injector;
         _jobRef = jobRef;
         _clock = clock;
     }
@@ -100,7 +108,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, message -> {
-                    final Optional<Job<T>> maybeJob = _jobRef.get();
+                    final JobRepository<T> repo = _jobRef.getRepository(_injector);
+                    final Optional<Job<T>> maybeJob = _jobRef.get(_injector);
                     if (!maybeJob.isPresent()) {
                         LOGGER.error()
                                 .setMessage("no such job")
@@ -109,7 +118,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
                     final Job<T> job = maybeJob.get();
-                    final Optional<Instant> maybeNextRun = job.getSchedule().nextRun(_jobRef.getLastRun());
+                    final UUID id = _jobRef.getId();
+                    final Organization org = _jobRef.getOrganization();
+                    final Optional<Instant> maybeNextRun = job.getSchedule().nextRun(repo.getLastRun(id, org));
                     if (!maybeNextRun.isPresent()) {
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
@@ -130,16 +141,16 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                 job.execute(getSelf(), nextRun)
                                         .handle((result, error) -> {
                                             if (error == null) {
-                                                _jobRef.jobSucceeded(nextRun, result);
+                                                repo.jobSucceeded(id, org, nextRun, result);
                                                 return new Success<>(_jobRef, nextRun, result);
                                             } else {
-                                                _jobRef.jobFailed(nextRun, error);
+                                                repo.jobFailed(id, org, nextRun, error);
                                                 return new Failure<>(_jobRef, nextRun, error);
                                             }
                                         }),
                                 getContext().dispatcher())
                                 .to(sender);
-                        _jobRef.jobStarted(nextRun);
+                        repo.jobStarted(id, org, nextRun);
                     }
                 })
                 .build();
@@ -157,10 +168,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     /**
+     * Indicates that a job has finished executing and the repository has been updated.
      *
-     * @param <T>
+     * @param <T> The type of the job's result.
      */
-    public static final class Success<T> implements Serializable {
+    protected static final class Success<T> implements Serializable {
         private final JobRef<T> _jobRef;
         private final Instant _scheduled;
         private final T _result;
@@ -187,9 +199,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     /**
-     * @param <T>
+     * Indicates that a job has failed while executing and the repository has been updated.
+     *
+     * @param <T> The type that the job's result would have had.
      */
-    public static final class Failure<T> implements Serializable {
+    protected static final class Failure<T> implements Serializable {
         private final JobRef<T> _jobRef;
         private final Instant _scheduled;
         private final Throwable _error;

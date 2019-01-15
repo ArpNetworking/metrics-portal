@@ -23,6 +23,9 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobRef;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
@@ -38,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -51,13 +55,25 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class JobExecutorActorTest {
 
+    private static class MockableJobRepository implements JobRepository<UUID> {
+         @Override public void open() {}
+         @Override public void close() {}
+         @Override public void addOrUpdateJob(final Job<UUID> job, final Organization organization) {}
+         @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
+         @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
+         @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
+         @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
+         @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
+    }
+
 
     private static final Instant t0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration tickSize = java.time.Duration.ofSeconds(1);
     private static final Organization organization = Organization.DEFAULT;
 
+    private Injector injector;
     @Mock
-    private JobRepository<UUID> repo;
+    private MockableJobRepository repo;
     private ManualClock clock;
     private ActorSystem system;
 
@@ -66,7 +82,16 @@ public final class JobExecutorActorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+
+        injector = Guice.createInjector(new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(MockableJobRepository.class).toInstance(repo);
+            }
+        });
+
         clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
+
         system = ActorSystem.create(
                 "test-"+systemNameNonce.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
@@ -97,12 +122,21 @@ public final class JobExecutorActorTest {
         return result;
     }
 
+    private ActorRef makeExecutorActor(final Job<UUID> job) {
+        final JobRef<UUID> ref = new JobRef.Builder<UUID>()
+                .setRepositoryType(MockableJobRepository.class)
+                .setId(job.getId())
+                .setOrganization(organization)
+                .build();
+        return system.actorOf(JobExecutorActor.props(injector, ref, clock));
+    }
+
     @Test
     public void testJobSuccess() {
         final Job<UUID> j = makeSuccessfulJob();
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = makeExecutorActor(j);
 
         scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
         tk.expectMsgClass(JobExecutorActor.Success.class);
@@ -118,7 +152,7 @@ public final class JobExecutorActorTest {
         final FailingJob j = makeFailingJob();
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = makeExecutorActor(j);
 
         scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
         tk.expectMsgClass(JobExecutorActor.Failure.class);
@@ -134,7 +168,7 @@ public final class JobExecutorActorTest {
         final Job<UUID> j = makeSuccessfulJob(t0.plus(Duration.ofMinutes(1)));
 
         final TestKit tk = new TestKit(system);
-        final ActorRef scheduler = system.actorOf(JobExecutorActor.props(new JobRef.Builder<UUID>().setRepository(repo).setId(j.getId()).setOrganization(organization).build(), clock));
+        final ActorRef scheduler = makeExecutorActor(j);
 
         scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
         tk.expectNoMsg();
@@ -146,7 +180,6 @@ public final class JobExecutorActorTest {
     @Test
     public void testExtraTicks() {
         Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
-        Duration jSleepSlop = Duration.ofNanos(JobExecutorActor.SLEEP_SLOP.toNanos());
         assertEquals(
                 Optional.empty(),
                 JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval)));

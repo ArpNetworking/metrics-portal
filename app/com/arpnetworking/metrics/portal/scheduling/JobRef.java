@@ -16,15 +16,14 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 /**
  * A serializable reference to a {@link Job}.
@@ -33,24 +32,35 @@ import java.util.function.Supplier;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>> {
-    private final JobRepository<T> _repository;
+public final class JobRef<T> implements Serializable {
+    private final Class<? extends JobRepository<T>> _repositoryType;
     private final UUID _id;
     private final Organization _organization;
 
     private JobRef(final Builder<T> builder) {
-        _repository = builder._repository;
+        _repositoryType = builder._repositoryType;
         _id = builder._id;
         _organization = builder._organization;
     }
 
-    @Override
-    public Optional<Job<T>> get() {
-        return _repository.getJob(_id, _organization);
+    /**
+     * Loads the {@link Job} that this ref refers to.
+     *
+     * @param injector The Guice injector to load the repository through.
+     * @return The referenced job, or {@code empty} if the repository contains no such job.
+     */
+    public Optional<Job<T>> get(final Injector injector) {
+        return getRepository(injector).getJob(_id, _organization);
     }
 
-    public JobRepository<T> getRepository() {
-        return _repository;
+    /**
+     * Loads the {@link JobRepository} that {@code repositoryType} refers to.
+     *
+     * @param injector The Guice injector to load the repository through.
+     * @return The repository that the given injector has for this ref's {@code repositoryType}.
+     */
+    public JobRepository<T> getRepository(final Injector injector) {
+        return injector.getInstance(_repositoryType);
     }
 
     public UUID getId() {
@@ -59,44 +69,6 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
 
     public Organization getOrganization() {
         return _organization;
-    }
-
-    /**
-     * Convenience function to get the last time the job was run from the underlying {@link JobRepository}.
-     *
-     * @return The time.
-     */
-    public Optional<Instant> getLastRun() {
-        return _repository.getLastRun(_id, _organization);
-    }
-
-    /**
-     * Convenience function to mark a particular run of the job as having started in the underlying {@link JobRepository}.
-     *
-     * @param scheduled The time the run was scheduled for.
-     */
-    public void jobStarted(final Instant scheduled) {
-        _repository.jobStarted(_id, _organization, scheduled);
-    }
-
-    /**
-     * Convenience function to mark a particular run of the job as having completed successfully in the underlying {@link JobRepository}.
-     *
-     * @param scheduled The time the run was scheduled for.
-     * @param result The result that the job computed.
-     */
-    public void jobSucceeded(final Instant scheduled, final T result) {
-        _repository.jobSucceeded(_id, _organization, scheduled, result);
-    }
-
-    /**
-     * Convenience function to mark a particular run of the job as having failed in the underlying {@link JobRepository}.
-     *
-     * @param scheduled The time the run was scheduled for.
-     * @param error The exception that caused the job to abort.
-     */
-    public void jobFailed(final Instant scheduled, final Throwable error) {
-        _repository.jobFailed(_id, _organization, scheduled, error);
     }
 
     private static final long serialVersionUID = 1L;
@@ -110,7 +82,7 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
      */
     public static final class Builder<T> extends OvalBuilder<JobRef<T>> {
         @NotNull
-        private JobRepository<T> _repository;
+        private Class<? extends JobRepository<T>> _repositoryType;
         @NotNull
         private UUID _id;
         @NotNull
@@ -124,13 +96,13 @@ public final class JobRef<T> implements Serializable, Supplier<Optional<Job<T>>>
         }
 
         /**
-         * The {@link JobRepository} that contains the job. Required. Cannot be null.
+         * The type of the {@link JobRepository} that contains the job. Required. Cannot be null.
          *
-         * @param repository The repository.
+         * @param repositoryType The type of the repository, later used to load the repository via Guice.
          * @return This instance of Builder.
          */
-        public Builder<T> setRepository(final JobRepository<T> repository) {
-            _repository = repository;
+        public Builder<T> setRepositoryType(final Class<? extends JobRepository<T>> repositoryType) {
+            _repositoryType = repositoryType;
             return this;
         }
 
