@@ -24,7 +24,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
-import scala.Serializable;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
