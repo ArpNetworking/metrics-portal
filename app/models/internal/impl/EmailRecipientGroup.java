@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.MinSize;
@@ -26,6 +27,7 @@ import net.sf.oval.constraint.NotNull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -65,6 +67,36 @@ public final class EmailRecipientGroup implements RecipientGroup {
     @Override
     public Collection<ReportFormat> getFormats() {
         return _formats;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final EmailRecipientGroup that = (EmailRecipientGroup) o;
+        return Objects.equals(getId(), that.getId())
+                && Objects.equals(getName(), that.getName())
+                && Objects.equals(_emails, that._emails)
+                && Objects.equals(getFormats(), that.getFormats());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId(), getName(), _emails, getFormats());
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", _id)
+                .add("name", _name)
+                .add("emails", _emails)
+                .add("formats", _formats)
+                .toString();
     }
 
     /**
