@@ -91,7 +91,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param timeToAwaken The time we want to wake up right after.
      * @return The time until we should wake up, if that's before the next tick; else {@code empty}.
      */
-    protected static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
+    /* package private */ static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
         final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
         if (delta.lt(TICK_INTERVAL)) {
             return Optional.of(delta);
@@ -163,14 +163,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .build();
     }
 
-    protected static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
+    /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
      * Intended only for internal use and testing.
      */
-    protected static final class Tick {
+    /* package private */ static final class Tick {
         public static final Tick INSTANCE = new Tick();
     }
 }
