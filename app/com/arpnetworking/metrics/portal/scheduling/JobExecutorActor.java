@@ -138,10 +138,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     final JobRepository<T> repo = _jobRef.getRepository(_injector);
                     final Optional<Job<T>> job = _jobRef.get(_injector);
                     if (!job.isPresent()) {
-                        LOGGER.error()
+                        LOGGER.warn()
                                 .setMessage("no such job")
                                 .addData("jobRef", _jobRef)
                                 .log();
+                        getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
                     final UUID id = _jobRef.getId();
