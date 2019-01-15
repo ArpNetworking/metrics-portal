@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import com.arpnetworking.steno.Logger;
@@ -102,7 +101,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             final Job<T> job,
             final Instant scheduled
     ) {
-        final ActorRef sender = getSender();
         job.execute(getSelf(), scheduled)
                 .handle((result, error) -> {
                     if (error == null) {
