@@ -157,14 +157,13 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    public void testJobInFutureNotRun() throws InterruptedException {
+    public void testJobInFutureNotRun() {
         final Job<UUID> j = makeSuccessfulJob(t0.plus(Duration.ofMinutes(1)));
 
         final ActorRef scheduler = makeExecutorActor(j);
 
         scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
-        Thread.sleep(1000);
-        Mockito.verify(repo, Mockito.never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(repo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
