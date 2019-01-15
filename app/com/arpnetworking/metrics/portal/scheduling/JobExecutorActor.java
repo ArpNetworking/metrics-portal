@@ -95,7 +95,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     protected static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
         final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
         if (delta.lt(TICK_INTERVAL)) {
-            return Optional.of(delta.plus(SLEEP_SLOP));
+            return Optional.of(delta);
         } else {
             return Optional.empty();
         }
@@ -165,7 +165,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     protected static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
-    protected static final FiniteDuration SLEEP_SLOP = Duration.apply(10, TimeUnit.MILLISECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
     /**

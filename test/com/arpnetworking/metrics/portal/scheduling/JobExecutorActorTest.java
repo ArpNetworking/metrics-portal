@@ -176,7 +176,7 @@ public final class JobExecutorActorTest {
                 Optional.empty(),
                 JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval)));
         assertEquals(
-                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2).plus(JobExecutorActor.SLEEP_SLOP)),
+                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2)),
                 JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval.dividedBy(2))));
     }
 
