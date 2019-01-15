@@ -19,7 +19,6 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
-import akka.pattern.PatternsCS;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Injector;
@@ -119,19 +118,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             });
         } else {
             final ActorRef sender = getSender();
-            PatternsCS.pipe(
-                    job.execute(getSelf(), scheduled)
-                            .handle((result, error) -> {
-                                if (error == null) {
-                                    repo.jobSucceeded(job.getId(), org, scheduled, result);
-                                    return new Success<>(_jobRef, scheduled, result);
-                                } else {
-                                    repo.jobFailed(job.getId(), org, scheduled, error);
-                                    return new Failure<>(_jobRef, scheduled, error);
-                                }
-                            }),
-                    getContext().dispatcher())
-                    .to(sender);
+            job.execute(getSelf(), scheduled)
+                    .handle((result, error) -> {
+                        if (error == null) {
+                            repo.jobSucceeded(job.getId(), org, scheduled, result);
+                        } else {
+                            repo.jobFailed(job.getId(), org, scheduled, error);
+                        }
+                        return null;
+                    });
             repo.jobStarted(job.getId(), org, scheduled);
         }
     }
@@ -167,83 +162,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
+     * Intended only for internal use and testing.
      */
     protected static final class Tick {
         public static final Tick INSTANCE = new Tick();
-    }
-
-    /**
-     * Indicates that a job has finished executing and the repository has been updated.
-     *
-     * @param <T> The type of the job's result.
-     */
-    protected static final class Success<T> implements Serializable {
-        private final JobRef<T> _jobRef;
-        private final Instant _scheduled;
-        private final T _result;
-
-        Success(final JobRef<T> jobRef, final Instant scheduled, final T result) {
-            _jobRef = jobRef;
-            _scheduled = scheduled;
-            _result = result;
-        }
-
-        public JobRef<T> getJobRef() {
-            return _jobRef;
-        }
-
-        public Instant getScheduled() {
-            return _scheduled;
-        }
-
-        public T getResult() {
-            return _result;
-        }
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    /**
-     * Indicates that a job has failed while executing and the repository has been updated.
-     *
-     * @param <T> The type that the job's result would have had.
-     */
-    protected static final class Failure<T> implements Serializable {
-        private final JobRef<T> _jobRef;
-        private final Instant _scheduled;
-        private final Throwable _error;
-
-        Failure(final JobRef<T> jobRef, final Instant scheduled, final Throwable error) {
-            _jobRef = jobRef;
-            _scheduled = scheduled;
-            _error = error;
-        }
-
-        public JobRef<T> getJobRef() {
-            return _jobRef;
-        }
-
-        public Instant getScheduled() {
-            return _scheduled;
-        }
-
-        public Throwable getError() {
-            return _error;
-        }
-
-        private static final long serialVersionUID = 1L;
-    }
-
-    /**
-     * Message to ask the JobScheduler for its {@link JobRef}.
-     */
-    public static final class GetJobRef implements Serializable {
-        private static final GetJobRef INSTANCE = new GetJobRef();
-        public GetJobRef getInstance() {
-            return INSTANCE;
-        }
-        private GetJobRef() {}
-
-        private static final long serialVersionUID = 1L;
     }
 }

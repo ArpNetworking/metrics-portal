@@ -17,13 +17,8 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
-import com.arpnetworking.metrics.portal.scheduling.JobRef;
-import com.arpnetworking.metrics.portal.scheduling.JobRepository;
-import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -136,13 +131,11 @@ public final class JobExecutorActorTest {
     @Test
     public void testJobSuccess() {
         final Job<UUID> j = makeSuccessfulJob();
-
-        final TestKit tk = new TestKit(system);
         final ActorRef scheduler = makeExecutorActor(j);
 
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
-        tk.expectMsgClass(JobExecutorActor.Success.class);
-        Mockito.verify(repo).jobSucceeded(
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
+
+        Mockito.verify(repo, Mockito.timeout(1000)).jobSucceeded(
                 j.getId(),
                 organization,
                 j.getSchedule().nextRun(Optional.empty()).get(),
@@ -153,12 +146,10 @@ public final class JobExecutorActorTest {
     public void testJobFailure() {
         final FailingJob j = makeFailingJob();
 
-        final TestKit tk = new TestKit(system);
         final ActorRef scheduler = makeExecutorActor(j);
 
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
-        tk.expectMsgClass(JobExecutorActor.Failure.class);
-        Mockito.verify(repo).jobFailed(
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
+        Mockito.verify(repo, Mockito.timeout(1000)).jobFailed(
                 j.getId(),
                 organization,
                 j.getSchedule().nextRun(Optional.empty()).get(),
@@ -166,14 +157,13 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    public void testJobInFutureNotRun() {
+    public void testJobInFutureNotRun() throws InterruptedException {
         final Job<UUID> j = makeSuccessfulJob(t0.plus(Duration.ofMinutes(1)));
 
-        final TestKit tk = new TestKit(system);
         final ActorRef scheduler = makeExecutorActor(j);
 
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, tk.getRef());
-        tk.expectNoMsg();
+        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
+        Thread.sleep(1000);
         Mockito.verify(repo, Mockito.never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
