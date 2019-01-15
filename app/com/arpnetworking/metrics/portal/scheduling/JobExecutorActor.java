@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.scheduling.impl;
+package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
-import com.arpnetworking.metrics.portal.scheduling.JobRef;
-import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Injector;
