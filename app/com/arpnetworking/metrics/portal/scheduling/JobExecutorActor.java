@@ -102,54 +102,61 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
     }
 
+    private void executeOrScheduleIfNecessary(
+            final JobRepository<T> repo,
+            final Organization org,
+            final Job<T> job,
+            final Instant scheduled
+    ) {
+        if (scheduled.isAfter(_clock.instant())) {
+            // It's not time to execute the job yet, but it might be soon.
+            // Let's ensure we wake up "exactly" when it's time to execute the job,
+            //   else we might be up to 1tick late executing it.
+            //   (Well-- "exactly" is a tall order, but we can at least ensure we wake up
+            //    _very slightly_ late.)
+            timeUntilExtraTick(_clock.instant(), scheduled).ifPresent(delta -> {
+                timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta);
+            });
+        } else {
+            final ActorRef sender = getSender();
+            PatternsCS.pipe(
+                    job.execute(getSelf(), scheduled)
+                            .handle((result, error) -> {
+                                if (error == null) {
+                                    repo.jobSucceeded(job.getId(), org, scheduled, result);
+                                    return new Success<>(_jobRef, scheduled, result);
+                                } else {
+                                    repo.jobFailed(job.getId(), org, scheduled, error);
+                                    return new Failure<>(_jobRef, scheduled, error);
+                                }
+                            }),
+                    getContext().dispatcher())
+                    .to(sender);
+            repo.jobStarted(job.getId(), org, scheduled);
+        }
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, message -> {
                     final JobRepository<T> repo = _jobRef.getRepository(_injector);
-                    final Optional<Job<T>> maybeJob = _jobRef.get(_injector);
-                    if (!maybeJob.isPresent()) {
+                    final Optional<Job<T>> job = _jobRef.get(_injector);
+                    if (!job.isPresent()) {
                         LOGGER.error()
                                 .setMessage("no such job")
                                 .addData("jobRef", _jobRef)
                                 .log();
                         return;
                     }
-                    final Job<T> job = maybeJob.get();
                     final UUID id = _jobRef.getId();
                     final Organization org = _jobRef.getOrganization();
-                    final Optional<Instant> maybeNextRun = job.getSchedule().nextRun(repo.getLastRun(id, org));
+                    final Optional<Instant> maybeNextRun = job.get().getSchedule().nextRun(repo.getLastRun(id, org));
                     if (!maybeNextRun.isPresent()) {
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
-                    final Instant nextRun = maybeNextRun.get();
-                    if (nextRun.isAfter(_clock.instant())) {
-                        // It's not time to execute the job yet, but it might be soon.
-                        // Let's ensure we wake up "exactly" when it's time to execute the job,
-                        //   else we might be up to 1tick late executing it.
-                        //   (Well-- "exactly" is a tall order, but we can at least ensure we wake up
-                        //    _very slightly_ late.)
-                        timeUntilExtraTick(_clock.instant(), nextRun).ifPresent(delta -> {
-                            timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta);
-                        });
-                    } else {
-                        final ActorRef sender = getSender();
-                        PatternsCS.pipe(
-                                job.execute(getSelf(), nextRun)
-                                        .handle((result, error) -> {
-                                            if (error == null) {
-                                                repo.jobSucceeded(id, org, nextRun, result);
-                                                return new Success<>(_jobRef, nextRun, result);
-                                            } else {
-                                                repo.jobFailed(id, org, nextRun, error);
-                                                return new Failure<>(_jobRef, nextRun, error);
-                                            }
-                                        }),
-                                getContext().dispatcher())
-                                .to(sender);
-                        repo.jobStarted(id, org, nextRun);
-                    }
+                    executeOrScheduleIfNecessary(repo, org, job.get(), maybeNextRun.get());
                 })
                 .build();
     }
