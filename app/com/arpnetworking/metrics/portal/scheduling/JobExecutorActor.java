@@ -147,12 +147,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     }
                     final UUID id = _jobRef.getId();
                     final Organization org = _jobRef.getOrganization();
-                    final Optional<Instant> maybeNextRun = job.get().getSchedule().nextRun(repo.getLastRun(id, org));
-                    if (!maybeNextRun.isPresent()) {
+                    final Optional<Instant> nextRun = job.get().getSchedule().nextRun(repo.getLastRun(id, org));
+                    if (!nextRun.isPresent()) {
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
-                    executeOrScheduleIfNecessary(repo, org, job.get(), maybeNextRun.get());
+                    executeOrScheduleIfNecessary(repo, org, job.get(), nextRun.get());
                 })
                 .build();
     }
