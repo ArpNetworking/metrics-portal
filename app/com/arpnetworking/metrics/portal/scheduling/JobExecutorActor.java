@@ -91,43 +91,28 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param timeToAwaken The time we want to wake up right after.
      * @return The time until we should wake up, if that's before the next tick; else {@code empty}.
      */
-    /* package private */ static Optional<FiniteDuration> timeUntilExtraTick(final Instant now, final Instant timeToAwaken) {
+    /* package private */ static FiniteDuration timeUntilNextTick(final Instant now, final Instant timeToAwaken) {
         final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
-        if (delta.lt(TICK_INTERVAL)) {
-            return Optional.of(delta);
-        } else {
-            return Optional.empty();
-        }
+        return delta.lt(TICK_INTERVAL) ? delta : TICK_INTERVAL;
     }
 
-    private void executeOrScheduleIfNecessary(
+    private void execute(
             final JobRepository<T> repo,
             final Organization org,
             final Job<T> job,
             final Instant scheduled
     ) {
-        if (scheduled.isAfter(_clock.instant())) {
-            // It's not time to execute the job yet, but it might be soon.
-            // Let's ensure we wake up "exactly" when it's time to execute the job,
-            //   else we might be up to 1tick late executing it.
-            //   (Well-- "exactly" is a tall order, but we can at least ensure we wake up
-            //    _very slightly_ late.)
-            timeUntilExtraTick(_clock.instant(), scheduled).ifPresent(delta -> {
-                timers().startSingleTimer("TICK_ONEOFF", Tick.INSTANCE, delta);
-            });
-        } else {
-            final ActorRef sender = getSender();
-            job.execute(getSelf(), scheduled)
-                    .handle((result, error) -> {
-                        if (error == null) {
-                            repo.jobSucceeded(job.getId(), org, scheduled, result);
-                        } else {
-                            repo.jobFailed(job.getId(), org, scheduled, error);
-                        }
-                        return null;
-                    });
-            repo.jobStarted(job.getId(), org, scheduled);
-        }
+        final ActorRef sender = getSender();
+        job.execute(getSelf(), scheduled)
+                .handle((result, error) -> {
+                    if (error == null) {
+                        repo.jobSucceeded(job.getId(), org, scheduled, result);
+                    } else {
+                        repo.jobFailed(job.getId(), org, scheduled, error);
+                    }
+                    return null;
+                });
+        repo.jobStarted(job.getId(), org, scheduled);
     }
 
     @Override
@@ -144,6 +129,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
+
                     final UUID id = _jobRef.getId();
                     final Organization org = _jobRef.getOrganization();
                     final Optional<Instant> lastRun = repo.getLastRun(id, org);
@@ -158,7 +144,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
-                    executeOrScheduleIfNecessary(repo, org, job.get(), nextRun.get());
+
+                    final Instant now = _clock.instant();
+                    timers().startSingleTimer("TICK", Tick.INSTANCE, timeUntilNextTick(now, nextRun.get()));
+                    if (nextRun.get().isBefore(now)) {
+                        execute(repo, org, job.get(), nextRun.get());
+                    }
                 })
                 .build();
     }

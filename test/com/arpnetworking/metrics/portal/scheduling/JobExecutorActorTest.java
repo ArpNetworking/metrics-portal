@@ -173,11 +173,11 @@ public final class JobExecutorActorTest {
     public void testExtraTicks() {
         Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
         assertEquals(
-                Optional.empty(),
-                JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval)));
+                JobExecutorActor.TICK_INTERVAL,
+                JobExecutorActor.timeUntilNextTick(t0, t0.plus(jTickInterval.multipliedBy(100))));
         assertEquals(
-                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2)),
-                JobExecutorActor.timeUntilExtraTick(t0, t0.plus(jTickInterval.dividedBy(2))));
+                JobExecutorActor.TICK_INTERVAL.div(2),
+                JobExecutorActor.timeUntilNextTick(t0, t0.plus(jTickInterval.dividedBy(2))));
     }
 
     private static abstract class DummyJob implements Job<UUID> {
