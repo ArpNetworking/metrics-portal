@@ -16,7 +16,8 @@
 
 package models.internal.reports;
 
-import java.util.Collection;
+import com.google.common.collect.ImmutableCollection;
+
 import java.util.UUID;
 
 /**
@@ -38,14 +39,14 @@ public interface RecipientGroup {
      *
      * @return A collection containing the group members.
      */
-    Collection<String> getMembers();
+    ImmutableCollection<String> getMembers();
 
     /**
      * Get the formats requested by this group.
      *
      * @return A collection of formats requested by this group.
      */
-    Collection<ReportFormat> getFormats();
+    ImmutableCollection<ReportFormat> getFormats();
 
     /**
      * Get the name of this group.

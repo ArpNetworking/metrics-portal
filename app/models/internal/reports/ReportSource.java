@@ -31,3 +31,4 @@ public interface ReportSource {
      */
     UUID getId();
 }
+

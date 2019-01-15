@@ -29,8 +29,8 @@ import javax.annotation.Nonnegative;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class PDFReportFormat implements ReportFormat {
-    private PDFReportFormat(final Builder builder) {
+public final class PdfReportFormat implements ReportFormat {
+    private PdfReportFormat(final Builder builder) {
         _widthInches = builder._widthInches;
         _heightInches = builder._heightInches;
     }
@@ -74,32 +74,33 @@ public final class PDFReportFormat implements ReportFormat {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final PDFReportFormat that = (PDFReportFormat) o;
-        return Float.compare(that.getWidthInches(), getWidthInches()) == 0
-                && Float.compare(that.getHeightInches(), getHeightInches()) == 0;
+        final PdfReportFormat that = (PdfReportFormat) o;
+        return Float.compare(that._widthInches, _widthInches) == 0
+                && Float.compare(that._heightInches, _heightInches) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getWidthInches(), getHeightInches());
+        return Objects.hash(_widthInches, _heightInches);
     }
 
     private final float _widthInches;
     private final float _heightInches;
 
     /**
-     * Builder implementation that constructs {@code PDFReportFormat}.
+     * Builder implementation that constructs {@code PdfReportFormat}.
      */
-    public static final class Builder extends OvalBuilder<PDFReportFormat> {
+    public static final class Builder extends OvalBuilder<PdfReportFormat> {
         /**
          * Public constructor.
          */
         public Builder() {
-            super(PDFReportFormat::new);
+            super(PdfReportFormat::new);
         }
 
         /**
          * Set the width. Required. Must be a positive value.
+         *
          * @param widthInches The width, in inches.
          * @return This instance of {@code Builder}.
          */
@@ -110,6 +111,7 @@ public final class PDFReportFormat implements ReportFormat {
 
         /**
          * Set the height. Required. Must be a positive value.
+         *
          * @param heightInches The height, in inches.
          * @return This instance of {@code Builder}.
          */

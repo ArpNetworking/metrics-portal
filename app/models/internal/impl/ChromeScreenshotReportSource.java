@@ -20,9 +20,11 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.AssertURL;
+import net.sf.oval.constraint.AssertURLCheck;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.net.URI;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -33,14 +35,14 @@ import java.util.UUID;
  */
 public final class ChromeScreenshotReportSource implements ReportSource {
     private final UUID _id;
-    private final String _url;
+    private final URI _uri;
     private final String _title;
     private final boolean _ignoreCertificateErrors;
     private final String _triggeringEventName;
 
     private ChromeScreenshotReportSource(final Builder builder) {
         _id = builder._id;
-        _url = builder._url;
+        _uri = builder._uri;
         _title = builder._title;
         _ignoreCertificateErrors = builder._ignoreCertificateErrors;
         _triggeringEventName = builder._triggeringEventName;
@@ -50,7 +52,7 @@ public final class ChromeScreenshotReportSource implements ReportSource {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
-                .add("url", _url)
+                .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
                 .add("triggeringEventName", _triggeringEventName)
@@ -63,12 +65,12 @@ public final class ChromeScreenshotReportSource implements ReportSource {
     }
 
     /**
-     * Get the URL for this report source.
+     * Get the URI for this report source.
      *
-     * @return the URL for this report source.
+     * @return the URI for this report source.
      */
-    public String getUrl() {
-        return _url;
+    public URI getUri() {
+        return _uri;
     }
 
     /**
@@ -111,15 +113,15 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         }
         final ChromeScreenshotReportSource that = (ChromeScreenshotReportSource) o;
         return _ignoreCertificateErrors == that._ignoreCertificateErrors
-                && Objects.equals(getId(), that.getId())
-                && Objects.equals(getUrl(), that.getUrl())
-                && Objects.equals(getTitle(), that.getTitle())
-                && Objects.equals(getTriggeringEventName(), that.getTriggeringEventName());
+                && Objects.equals(_id, that._id)
+                && Objects.equals(_uri, that._uri)
+                && Objects.equals(_title, that._title)
+                && Objects.equals(_triggeringEventName, that._triggeringEventName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getUrl(), getTitle(), _ignoreCertificateErrors, getTriggeringEventName());
+        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _triggeringEventName);
     }
 
     /**
@@ -131,11 +133,11 @@ public final class ChromeScreenshotReportSource implements ReportSource {
          */
         public Builder() {
             super(ChromeScreenshotReportSource::new);
-            _ignoreCertificateErrors = false;
         }
 
         /**
          * The source id. Required. Cannot be null or empty.
+         *
          * @param id The id.
          * @return This instance of {@code Builder}
          */
@@ -146,16 +148,18 @@ public final class ChromeScreenshotReportSource implements ReportSource {
 
         /**
          * The source URL. Required. Cannot be null or empty.
-         * @param url The URL.
+         *
+         * @param uri The URL.
          * @return This instance of {@code Builder}
          */
-        public Builder setUrl(final String url) {
-            _url = url;
+        public Builder setUri(final URI uri) {
+            _uri = uri;
             return this;
         }
 
         /**
          * The source title. Required. Cannot be null or empty.
+         *
          * @param title The title.
          * @return This instance of {@code Builder}
          */
@@ -166,6 +170,7 @@ public final class ChromeScreenshotReportSource implements ReportSource {
 
         /**
          * The triggering event name for the source. Required. Cannot be null or empty.
+         *
          * @param triggeringEventName The event name.
          * @return This instance of {@code Builder}
          */
@@ -175,29 +180,29 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         }
 
         /**
-         * Determine if the source should ignore certificate errors. Defaults to false.
+         * Determine if the source should ignore certificate errors. Cannot be null. Defaults to false.
+         *
          * @param ignoreCertificateErrors Whether this source should ignore certificate errors.
          * @return This instance of {@code Builder}
          */
-        public Builder setIgnoreCertificateErrors(final boolean ignoreCertificateErrors) {
+        public Builder setIgnoreCertificateErrors(final Boolean ignoreCertificateErrors) {
             _ignoreCertificateErrors = ignoreCertificateErrors;
             return this;
         }
 
         @NotNull
-        @NotEmpty
         private UUID _id;
         @NotNull
-        @NotEmpty
-        @AssertURL
-        private String _url;
+        @AssertURL(permittedURISchemes = {AssertURLCheck.URIScheme.HTTP, AssertURLCheck.URIScheme.HTTPS})
+        private URI _uri;
         @NotNull
         @NotEmpty
         private String _title;
         @NotNull
         @NotEmpty
         private String _triggeringEventName;
-        private boolean _ignoreCertificateErrors;
+        @NotNull
+        private Boolean _ignoreCertificateErrors = false;
 
     }
 }

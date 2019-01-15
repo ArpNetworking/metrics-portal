@@ -16,8 +16,8 @@
 
 package models.internal.reports;
 
-import models.internal.impl.HTMLReportFormat;
-import models.internal.impl.PDFReportFormat;
+import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.PdfReportFormat;
 
 /**
  * A format for a report.
@@ -42,21 +42,24 @@ public interface ReportFormat {
      */
     interface Visitor<T> {
         /**
-         * Visit an {@code PDFReportFormat}.
+         * Visit an {@code PdfReportFormat}.
+         *
          * @param pdfReportFormat The format to visit.
          * @return The result of applying the visitor.
          */
-        T visit(PDFReportFormat pdfReportFormat);
+        T visit(PdfReportFormat pdfReportFormat);
 
         /**
-         * Visit an {@code HTMLReportFormat}.
+         * Visit an {@code HtmlReportFormat}.
+         *
          * @param htmlReportFormat The format to visit.
          * @return The result of applying the visitor.
          */
-        T visit(HTMLReportFormat htmlReportFormat);
+        T visit(HtmlReportFormat htmlReportFormat);
 
         /**
          * Convenience method equivalent to {@code format.accept(this) }.
+         *
          * @param format The format to visit.
          * @return The result of applying the visitor
          */

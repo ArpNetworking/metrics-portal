@@ -19,7 +19,8 @@ package models.internal.impl;
 import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
 import models.internal.reports.ReportSource;
@@ -27,8 +28,6 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -69,8 +68,8 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public Collection<RecipientGroup> getRecipientGroups() {
-        return Collections.unmodifiableCollection(_groups);
+    public ImmutableSet<RecipientGroup> getRecipientGroups() {
+        return _groups;
     }
 
     @Override
@@ -79,7 +78,11 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public CompletionStage<Report.Result> execute(final ActorRef scheduler, final Instant scheduled) {
+    @SuppressFBWarnings(
+            value = "NP_NONNULL_PARAM_VIOLATION",
+            justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
+    )
+    public CompletionStage<Result> execute(final ActorRef scheduler, final Instant scheduled) {
         return CompletableFuture.completedFuture(null);
     }
 
@@ -87,7 +90,7 @@ public final class DefaultReport implements Report {
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
-    private final Collection<RecipientGroup> _groups;
+    private final ImmutableSet<RecipientGroup> _groups;
 
     /**
      * Builder implementation that constructs {@code DefaultReport}.
@@ -98,12 +101,11 @@ public final class DefaultReport implements Report {
          */
         public Builder() {
             super(DefaultReport::new);
-            _schedule = NeverSchedule.getInstance();
-            _groups = Collections.emptySet();
         }
 
         /**
          * Set the report id. Required. Cannot be null.
+         *
          * @param id The report id.
          * @return This instance of {@code Builder}.
          */
@@ -114,6 +116,7 @@ public final class DefaultReport implements Report {
 
         /**
          * Set the report name. Required. Cannot be null or empty.
+         *
          * @param name The report name.
          * @return This instance of {@code Builder}.
          */
@@ -124,6 +127,7 @@ public final class DefaultReport implements Report {
 
         /**
          * Set the report schedule. Required. Cannot be null.
+         *
          * @param schedule The report schedule.
          * @return This instance of {@code Builder}.
          */
@@ -134,6 +138,7 @@ public final class DefaultReport implements Report {
 
         /**
          * Set the report source. Required. Cannot be null.
+         *
          * @param source The report source.
          * @return This instance of {@code Builder}.
          */
@@ -144,10 +149,11 @@ public final class DefaultReport implements Report {
 
         /**
          * Set the report recipients. Required. Cannot be null.
+         *
          * @param groups The report recipient groups.
          * @return This instance of {@code Builder}.
          */
-        public Builder setRecipientGroups(final Collection<RecipientGroup> groups) {
+        public Builder setRecipientGroups(final ImmutableSet<RecipientGroup> groups) {
             _groups = groups;
             return this;
         }
@@ -160,7 +166,7 @@ public final class DefaultReport implements Report {
         @NotNull
         private ReportSource _source;
         @NotNull
-        private Collection<RecipientGroup> _groups;
+        private ImmutableSet<RecipientGroup> _groups;
         @NotNull
         private Schedule _schedule;
     }

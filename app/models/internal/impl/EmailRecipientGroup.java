@@ -18,17 +18,16 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.ReportFormat;
+import net.sf.oval.constraint.Email;
 import net.sf.oval.constraint.MinSize;
 import net.sf.oval.constraint.NotBlank;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -39,14 +38,14 @@ import java.util.UUID;
 public final class EmailRecipientGroup implements RecipientGroup {
     private final UUID _id;
     private final String _name;
-    private final Set<String> _emails;
-    private final List<ReportFormat> _formats;
+    private final ImmutableSet<String> _emails;
+    private final ImmutableList<ReportFormat> _formats;
 
     private EmailRecipientGroup(final Builder builder) {
         _id = builder._id;
         _name = builder._name;
-        _emails = Collections.unmodifiableSet(builder._emails);
-        _formats = Collections.unmodifiableList(builder._formats);
+        _emails = builder._emails;
+        _formats = builder._formats;
     }
 
     @Override
@@ -60,12 +59,12 @@ public final class EmailRecipientGroup implements RecipientGroup {
     }
 
     @Override
-    public Collection<String> getMembers() {
+    public ImmutableSet<String> getMembers() {
         return _emails;
     }
 
     @Override
-    public Collection<ReportFormat> getFormats() {
+    public ImmutableList<ReportFormat> getFormats() {
         return _formats;
     }
 
@@ -78,15 +77,15 @@ public final class EmailRecipientGroup implements RecipientGroup {
             return false;
         }
         final EmailRecipientGroup that = (EmailRecipientGroup) o;
-        return Objects.equals(getId(), that.getId())
-                && Objects.equals(getName(), that.getName())
+        return Objects.equals(_id, that._id)
+                && Objects.equals(_name, that._name)
                 && Objects.equals(_emails, that._emails)
-                && Objects.equals(getFormats(), that.getFormats());
+                && Objects.equals(_formats, that._formats);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getName(), _emails, getFormats());
+        return Objects.hash(_id, _name, _emails, _formats);
     }
 
     @Override
@@ -103,6 +102,19 @@ public final class EmailRecipientGroup implements RecipientGroup {
      * Builder implementation that constructs {@code EmailRecipientGroup}.
      */
     public static final class Builder extends OvalBuilder<EmailRecipientGroup> {
+        @NotNull
+        private UUID _id;
+        @NotNull
+        @NotBlank
+        private String _name;
+        @NotNull
+        @MinSize(value = 1)
+        @Email
+        private ImmutableSet<String> _emails;
+        @NotNull
+        @MinSize(value = 1)
+        private ImmutableList<ReportFormat> _formats;
+
         /**
          * Public constructor.
          */
@@ -112,6 +124,7 @@ public final class EmailRecipientGroup implements RecipientGroup {
 
         /**
          * The group id. Required. Cannot be null or empty.
+         *
          * @param id The id of the group.
          * @return This instance of {@code Builder}.
          */
@@ -122,6 +135,7 @@ public final class EmailRecipientGroup implements RecipientGroup {
 
         /**
          * The group name. Required. Cannot be null or empty.
+         *
          * @param name The name of the group.
          * @return This instance of {@code Builder}.
          */
@@ -132,34 +146,24 @@ public final class EmailRecipientGroup implements RecipientGroup {
 
         /**
          * The email group members. Required. Cannot be null or empty.
+         *
          * @param emails The emails for the group.
          * @return This instance of {@code Builder}.
          */
-        public Builder setEmails(final Set<String> emails) {
+        public Builder setEmails(final ImmutableSet<String> emails) {
             _emails = emails;
             return this;
         }
 
         /**
          * The group formats. Required. Cannot be null or empty.
+         *
          * @param formats The formats for the group.
          * @return This instance of {@code Builder}.
          */
-        public Builder setFormats(final List<ReportFormat> formats) {
+        public Builder setFormats(final ImmutableList<ReportFormat> formats) {
             _formats = formats;
             return this;
         }
-
-        @NotNull
-        private UUID _id;
-        @NotNull
-        @NotBlank
-        private String _name;
-        @NotNull
-        @MinSize(value = 1)
-        private Set<String> _emails;
-        @NotNull
-        @MinSize(value = 1)
-        private List<ReportFormat> _formats;
     }
 }

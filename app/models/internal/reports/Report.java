@@ -16,9 +16,8 @@
 
 package models.internal.reports;
 
+import com.google.common.collect.ImmutableCollection;
 import models.internal.scheduling.Job;
-
-import java.util.Collection;
 
 /**
  * Internal model for a Report.
@@ -45,10 +44,10 @@ public interface Report extends Job<Report.Result> {
      *
      * @return The recipient groups that will receive this report.
      */
-    Collection<RecipientGroup> getRecipientGroups();
+    ImmutableCollection<RecipientGroup> getRecipientGroups();
 
     /**
-     * Marker interface for a result created from a report.
+     * Internal model for a result created from a report.
      */
     interface Result {}
 }
