@@ -147,8 +147,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     }
                     final UUID id = _jobRef.getId();
                     final Organization org = _jobRef.getOrganization();
-                    final Optional<Instant> nextRun = job.get().getSchedule().nextRun(repo.getLastRun(id, org));
+                    final Optional<Instant> lastRun = repo.getLastRun(id, org);
+                    final Optional<Instant> nextRun = job.get().getSchedule().nextRun(lastRun);
                     if (!nextRun.isPresent()) {
+                        LOGGER.info()
+                                .setMessage("job has no more scheduled runs")
+                                .addData("jobRef", _jobRef)
+                                .addData("schedule", job.get().getSchedule())
+                                .addData("lastRun", lastRun)
+                                .log();
                         getSelf().tell(PoisonPill.getInstance(), getSelf());
                         return;
                     }
