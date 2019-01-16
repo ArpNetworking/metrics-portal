@@ -93,12 +93,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     /**
      * Returns the time until the actor should next wake up.
      *
-     * @param now The current time.
      * @param timeToAwaken The next time the job should run.
      * @return The time until we should wake up. Non-negative.
      */
-    /* package private */ static FiniteDuration timeUntilNextTick(final Instant now, final Instant timeToAwaken) {
-        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
+    /* package private */ FiniteDuration timeUntilNextTick(final Instant timeToAwaken) {
+        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(_clock.instant(), timeToAwaken));
         if (delta.lt(Duration.Zero())) {
             return Duration.Zero();
         } else if (delta.lt(TICK_INTERVAL)) {
@@ -158,9 +157,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
 
-                    final Instant now = _clock.instant();
-                    timers().startSingleTimer("TICK", Tick.INSTANCE, timeUntilNextTick(now, nextRun.get()));
-                    if (nextRun.get().isBefore(now)) {
+                    timers().startSingleTimer("TICK", Tick.INSTANCE, timeUntilNextTick(nextRun.get()));
+                    if (nextRun.get().isBefore(_clock.instant())) {
                         execute(repo, org, job.get(), nextRun.get());
                     }
                 })

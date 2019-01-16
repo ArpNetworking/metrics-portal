@@ -17,6 +17,8 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.testkit.TestActorRef;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -123,13 +125,17 @@ public final class JobExecutorActorTest {
         return result;
     }
 
-    private ActorRef makeExecutorActor(final Job<UUID> job) {
+    private Props makeExecutorActorProps(final Job<UUID> job) {
         final JobRef<UUID> ref = new JobRef.Builder<UUID>()
                 .setRepositoryType(MockableJobRepository.class)
                 .setId(job.getId())
                 .setOrganization(organization)
                 .build();
-        return system.actorOf(JobExecutorActor.props(injector, ref, clock));
+        return JobExecutorActor.props(injector, ref, clock);
+    }
+
+    private ActorRef makeExecutorActor(final Job<UUID> job) {
+        return system.actorOf(makeExecutorActorProps(job));
     }
 
     @Test
@@ -174,16 +180,18 @@ public final class JobExecutorActorTest {
 
     @Test
     public void testExtraTicks() {
+        final TestActorRef<JobExecutorActor<UUID>> testActor = TestActorRef.create(system, makeExecutorActorProps(makeSuccessfulJob()));
+        final JobExecutorActor<UUID> scheduler = testActor.underlyingActor();
         Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
         assertEquals(
                 scala.concurrent.duration.Duration.Zero(),
-                JobExecutorActor.timeUntilNextTick(t0, t0.minus(Duration.ofDays(1))));
+                scheduler.timeUntilNextTick(t0.minus(Duration.ofDays(1))));
         assertEquals(
                 JobExecutorActor.TICK_INTERVAL.div(2),
-                JobExecutorActor.timeUntilNextTick(t0, t0.plus(jTickInterval.dividedBy(2))));
+                scheduler.timeUntilNextTick(t0.plus(jTickInterval.dividedBy(2))));
         assertEquals(
                 JobExecutorActor.TICK_INTERVAL,
-                JobExecutorActor.timeUntilNextTick(t0, t0.plus(Duration.ofDays(1))));
+                scheduler.timeUntilNextTick(t0.plus(Duration.ofDays(1))));
     }
 
     private static abstract class DummyJob implements Job<UUID> {
