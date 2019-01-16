@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
@@ -33,6 +34,7 @@ import java.util.UUID;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@Loggable
 public final class JobRef<T> implements Serializable {
     private final Class<? extends JobRepository<T>> _repositoryType;
     private final UUID _jobId;
