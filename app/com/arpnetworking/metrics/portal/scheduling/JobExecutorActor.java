@@ -138,7 +138,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, message -> {
-                    _periodicMetrics.recordCounter("JobExecutorActor-ticks", 1);
+                    _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
 
                     final JobRepository<T> repo = _jobRef.getRepository(_injector);
                     final Optional<Job<T>> job = _jobRef.get(_injector);
