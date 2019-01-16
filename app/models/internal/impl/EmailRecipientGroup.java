@@ -109,7 +109,6 @@ public final class EmailRecipientGroup implements RecipientGroup {
         private String _name;
         @NotNull
         @MinSize(value = 1)
-        @Email
         private ImmutableSet<String> _emails;
         @NotNull
         @MinSize(value = 1)
