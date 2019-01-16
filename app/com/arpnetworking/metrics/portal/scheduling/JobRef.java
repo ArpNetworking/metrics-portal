@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.inject.Injector;
 import models.internal.Organization;
+import models.internal.impl.DefaultOrganization;
 import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 
@@ -34,13 +35,13 @@ import java.util.UUID;
  */
 public final class JobRef<T> implements Serializable {
     private final Class<? extends JobRepository<T>> _repositoryType;
-    private final UUID _id;
-    private final Organization _organization;
+    private final UUID _jobId;
+    private final UUID _orgId;
 
     private JobRef(final Builder<T> builder) {
         _repositoryType = builder._repositoryType;
-        _id = builder._id;
-        _organization = builder._organization;
+        _jobId = builder._jobId;
+        _orgId = builder._orgId;
     }
 
     /**
@@ -50,7 +51,7 @@ public final class JobRef<T> implements Serializable {
      * @return The referenced job, or {@code empty} if the repository contains no such job.
      */
     public Optional<Job<T>> get(final Injector injector) {
-        return getRepository(injector).getJob(_id, _organization);
+        return getRepository(injector).getJob(_jobId, getOrganization());
     }
 
     /**
@@ -63,12 +64,12 @@ public final class JobRef<T> implements Serializable {
         return injector.getInstance(_repositoryType);
     }
 
-    public UUID getId() {
-        return _id;
+    public UUID getJobId() {
+        return _jobId;
     }
 
     public Organization getOrganization() {
-        return _organization;
+        return new DefaultOrganization.Builder().setId(_orgId).build();
     }
 
     private static final long serialVersionUID = 1L;
@@ -84,9 +85,9 @@ public final class JobRef<T> implements Serializable {
         @NotNull
         private Class<? extends JobRepository<T>> _repositoryType;
         @NotNull
-        private UUID _id;
+        private UUID _jobId;
         @NotNull
-        private Organization _organization;
+        private UUID _orgId;
 
         /**
          * Public constructor.
@@ -113,7 +114,7 @@ public final class JobRef<T> implements Serializable {
          * @return This instance of Builder.
          */
         public Builder<T> setId(final UUID id) {
-            _id = id;
+            _jobId = id;
             return this;
         }
 
@@ -124,7 +125,7 @@ public final class JobRef<T> implements Serializable {
          * @return This instance of Builder.
          */
         public Builder<T> setOrganization(final Organization organization) {
-            _organization = organization;
+            _orgId = organization.getId();
             return this;
         }
     }

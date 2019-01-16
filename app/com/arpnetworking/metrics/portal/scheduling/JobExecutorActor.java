@@ -143,7 +143,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
 
-                    final UUID id = _jobRef.getId();
+                    final UUID id = _jobRef.getJobId();
                     final Organization org = _jobRef.getOrganization();
                     final Optional<Instant> lastRun = repo.getLastRun(id, org);
                     final Optional<Instant> nextRun = job.get().getSchedule().nextRun(lastRun);
