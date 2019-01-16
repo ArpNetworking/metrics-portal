@@ -118,6 +118,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             final Instant scheduled
     ) {
         final Optional<Instant> nextScheduled = job.getSchedule().nextRun(Optional.of(scheduled));
+        repo.jobStarted(job.getId(), org, scheduled);
         job.execute(getSelf(), scheduled)
                 .handle((result, error) -> {
                     if (error == null) {
@@ -131,7 +132,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     nextScheduled.ifPresent(this::scheduleNextTick);
                     return null;
                 });
-        repo.jobStarted(job.getId(), org, scheduled);
     }
 
     @Override
