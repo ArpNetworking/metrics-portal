@@ -18,6 +18,9 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.arpnetworking.commons.java.time.ManualClock;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.inject.AbstractModule;
@@ -84,6 +87,7 @@ public final class JobExecutorActorTest {
             @Override
             protected void configure() {
                 bind(MockableJobRepository.class).toInstance(repo);
+                bind(MetricsFactory.class).toInstance(TsdMetricsFactory.newInstance("test", "test"));
             }
         });
 

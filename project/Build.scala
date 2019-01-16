@@ -69,6 +69,7 @@ object ApplicationBuild extends Build {
       "com.arpnetworking.logback" % "logback-steno" % "1.18.0",
       "com.arpnetworking.metrics" % "metrics-client" % "0.10.0",
       "com.arpnetworking.metrics.extras" % "apache-http-sink-extra" % "0.8.2",
+      "com.arpnetworking.metrics.extras" % "incubator-extra" % "0.6.3",
       "com.arpnetworking.metrics.extras" % "jvm-extra" % "0.7.0",
       "org.asynchttpclient" % "async-http-client" % "2.0.32",
       "com.chrisomeara" %% "pillar" % "2.3.0",

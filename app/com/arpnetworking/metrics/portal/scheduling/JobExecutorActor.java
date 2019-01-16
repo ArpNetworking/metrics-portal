@@ -18,6 +18,9 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Injector;
@@ -45,6 +48,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final Injector _injector;
     private final JobRef<T> _jobRef;
     private final Clock _clock;
+    private PeriodicMetrics _periodicMetrics;
 
     /**
      * Props factory.
@@ -75,6 +79,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         _injector = injector;
         _jobRef = jobRef;
         _clock = clock;
+        _periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(injector.getInstance(MetricsFactory.class))
+                .build();
     }
 
     @Override
@@ -117,6 +124,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(Tick.class, message -> {
+                    _periodicMetrics.recordCounter("JobExecutorActor-ticks", 1);
+
                     final JobRepository<T> repo = _jobRef.getRepository(_injector);
                     final Optional<Job<T>> job = _jobRef.get(_injector);
                     if (!job.isPresent()) {
