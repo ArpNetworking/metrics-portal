@@ -87,19 +87,25 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
+        timers().startSingleTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
     /**
-     * If we'll need an extra tick before the next naturally occurring one, returns the time until that tick should happen.
+     * Returns the time until the actor should next wake up.
      *
      * @param now The current time.
-     * @param timeToAwaken The time we want to wake up right after.
-     * @return The time until we should wake up, if that's before the next tick; else {@code empty}.
+     * @param timeToAwaken The next time the job should run.
+     * @return The time until we should wake up. Non-negative.
      */
     /* package private */ static FiniteDuration timeUntilNextTick(final Instant now, final Instant timeToAwaken) {
         final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(now, timeToAwaken));
-        return delta.lt(TICK_INTERVAL) ? delta : TICK_INTERVAL;
+        if (delta.lt(Duration.Zero())) {
+            return Duration.Zero();
+        } else if (delta.lt(TICK_INTERVAL)) {
+            return delta;
+        } else {
+            return TICK_INTERVAL;
+        }
     }
 
     private void execute(

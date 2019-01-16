@@ -176,11 +176,14 @@ public final class JobExecutorActorTest {
     public void testExtraTicks() {
         Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
         assertEquals(
-                JobExecutorActor.TICK_INTERVAL,
-                JobExecutorActor.timeUntilNextTick(t0, t0.plus(jTickInterval.multipliedBy(100))));
+                scala.concurrent.duration.Duration.Zero(),
+                JobExecutorActor.timeUntilNextTick(t0, t0.minus(Duration.ofDays(1))));
         assertEquals(
                 JobExecutorActor.TICK_INTERVAL.div(2),
                 JobExecutorActor.timeUntilNextTick(t0, t0.plus(jTickInterval.dividedBy(2))));
+        assertEquals(
+                JobExecutorActor.TICK_INTERVAL,
+                JobExecutorActor.timeUntilNextTick(t0, t0.plus(Duration.ofDays(1))));
     }
 
     private static abstract class DummyJob implements Job<UUID> {
