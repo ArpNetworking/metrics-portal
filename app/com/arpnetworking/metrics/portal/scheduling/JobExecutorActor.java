@@ -107,12 +107,17 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
     }
 
-    private void execute(
+    private void scheduleNextTick(final Instant wakeUpBy) {
+        timers().startSingleTimer("TICK", Tick.INSTANCE, timeUntilNextTick(wakeUpBy));
+    }
+
+    private void executeAndScheduleNextTick(
             final JobRepository<T> repo,
             final Organization org,
             final Job<T> job,
             final Instant scheduled
     ) {
+        final Optional<Instant> nextScheduled = job.getSchedule().nextRun(Optional.of(scheduled));
         job.execute(getSelf(), scheduled)
                 .handle((result, error) -> {
                     if (error == null) {
@@ -120,6 +125,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     } else {
                         repo.jobFailed(job.getId(), org, scheduled, error);
                     }
+                    return null;
+                })
+                .thenApply(whatever -> {
+                    nextScheduled.ifPresent(this::scheduleNextTick);
                     return null;
                 });
         repo.jobStarted(job.getId(), org, scheduled);
@@ -157,9 +166,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
 
-                    timers().startSingleTimer("TICK", Tick.INSTANCE, timeUntilNextTick(nextRun.get()));
                     if (nextRun.get().isBefore(_clock.instant())) {
-                        execute(repo, org, job.get(), nextRun.get());
+                        executeAndScheduleNextTick(repo, org, job.get(), nextRun.get());
+                    } else {
+                        scheduleNextTick(nextRun.get());
                     }
                 })
                 .build();
