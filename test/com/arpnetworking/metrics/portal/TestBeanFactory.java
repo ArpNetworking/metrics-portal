@@ -15,7 +15,8 @@
  */
 package com.arpnetworking.metrics.portal;
 
-import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import io.ebean.Ebean;
@@ -83,12 +84,17 @@ public final class TestBeanFactory {
     public static DefaultReport.Builder createReportBuilder() {
         final ReportSource source = createEbeanReportSource().toInternal();
 
+        final Schedule schedule = new OneOffSchedule.Builder()
+                .setRunAtAndAfter(Instant.now().plus(Duration.ofHours(1)))
+                .setRunUntil(null)
+                .build();
+
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
                 .setName(TEST_NAME)
                 .setRecipientGroups(ImmutableSet.of())
                 .setReportSource(source)
-                .setSchedule(NeverSchedule.getInstance());
+                .setSchedule(schedule);
     }
 
     public static models.ebean.Report createEbeanReport() {

@@ -59,13 +59,14 @@ CREATE INDEX reports_disabled_idx ON portal.reports (disabled);
 
 CREATE TABLE portal.report_executions (
     report_id BIGINT NOT NULL references portal.reports(id),
-    scheduled_for TIMESTAMP NOT NULL DEFAULT now(),
+    scheduled TIMESTAMP NOT NULL DEFAULT now(),
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     state VARCHAR(255),
     result CLOB,
+    error VARCHAR(255),
 
-    PRIMARY KEY (report_id, scheduled_for),
+    PRIMARY KEY (report_id, scheduled),
 );
 
 CREATE INDEX report_executions_state_idx ON portal.report_executions (state);

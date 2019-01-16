@@ -18,10 +18,16 @@ package com.arpnetworking.metrics.portal.reports.impl;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
+import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.DefaultReport;
+import models.internal.impl.DefaultReportResult;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
+import models.internal.reports.ReportSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,12 +35,17 @@ import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
+import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.equalToIgnoringWhiteSpace;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -160,16 +171,29 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 //        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
 //        assertThat(retrievedReport.getSchedule(), equalTo(updatedSchedule));
 //    }
-//
+
+    @Test
+    public void testIdempotentSave() {
+        final Report report = TestBeanFactory.createEbeanReport().toInternal();
+        _repository.addOrUpdateReport(report, Organization.DEFAULT);
+        final UUID reportId = report.getId();
+        final UUID sourceId = report.getSource().getId();
+        _repository.addOrUpdateReport(report, Organization.DEFAULT);
+
+        assertThat("Report ID should remain unchanged", reportId, equalTo(report.getId()));
+        assertThat("Source ID should remain unchanged", sourceId, equalTo(report.getSource().getId()));
+    }
+
 //    @Test
-//    public void testUpdateSource() {
+//    public void testUpdateReportSource() {
 //        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+//
 //        final ChromeScreenshotReportSource.Builder sourceBuilder =
 //                new ChromeScreenshotReportSource.Builder()
 //                        .setId(UUID.randomUUID())
 //                        .setTitle("Test title")
 //                        .setTriggeringEventName("onload")
-//                        .setUrl("https://foo.test.com");
+//                        .setUri(URI.create("https://foo.test.com"));
 //
 //        // Initial report
 //        final Report report = reportBuilder.setReportSource(sourceBuilder.build()).build();
@@ -184,8 +208,8 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 //        assertThat(retrievedReport.getSource(), equalTo(updatedSource));
 //    }
 
-    @Test(expected = EntityNotFoundException.class)
-    public void testJobCompletedWithUnknownJob() {
+    @Test(expected = PersistenceException.class)
+    public void testUnknownJobCompleted() {
         final Instant scheduled = Instant.now();
         _repository.jobSucceeded(UUID.randomUUID(), Organization.DEFAULT, scheduled, new TestReportResult(42));
     }
@@ -196,7 +220,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         _repository.addOrUpdateReport(report, Organization.DEFAULT);
         final Instant scheduled = Instant.now();
 
-        final Report.Result result = new TestReportResult(42);
+        final Report.Result result = new DefaultReportResult();
         _repository.jobSucceeded(report.getId(), Organization.DEFAULT, scheduled, result);
 
         final ReportExecution execution = _repository.getExecution(report.getId(), Organization.DEFAULT, scheduled).get();
@@ -204,7 +228,11 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getCompletedAt(), not(nullValue()));
         assertThat(execution.getReport(), not(nullValue()));
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
-        assertThat(execution.getResult(), equalTo(result));
+        assertThat(execution.getResult(), not(nullValue()));
+        assertThat(execution.getError(), nullValue());
+
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
+        assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
     @Test
@@ -221,7 +249,11 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getCompletedAt(), not(nullValue()));
         assertThat(execution.getReport(), not(nullValue()));
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
-//        assertThat(execution.getResult(), equalTo(result));
+        assertThat(execution.getResult(), nullValue());
+        assertThat(execution.getError(), equalTo(throwable.toString()));
+
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
+        assertThat(lastRun, equalTo(Optional.empty()));
     }
 
     @Test
@@ -237,7 +269,11 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getCompletedAt(), nullValue());
         assertThat(execution.getStartedAt(), not(nullValue()));
         assertThat(execution.getResult(), nullValue());
+        assertThat(execution.getError(), nullValue());
         assertThat(execution.getReport(), not(nullValue()));
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
+
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
+        assertThat(lastRun, equalTo(Optional.empty()));
     }
 }

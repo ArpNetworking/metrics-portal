@@ -16,7 +16,8 @@
 
 package models.ebean;
 
-import io.ebean.annotation.DbJson;
+import io.ebean.annotation.DbJsonB;
+import models.internal.impl.DefaultReportResult;
 
 import java.time.Instant;
 import javax.annotation.Nullable;
@@ -37,6 +38,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "report_executions", schema = "portal")
 public class ReportExecution {
+
     public enum State {
         /**
          * This report execution has been started.
@@ -77,12 +79,12 @@ public class ReportExecution {
         started_at = value;
     }
 
-    public Instant getScheduledFor() {
-        return scheduled_for;
+    public Instant getScheduled() {
+        return scheduled;
     }
 
-    public void setScheduledFor(final Instant value) {
-        scheduled_for = value;
+    public void setScheduled(final Instant value) {
+        scheduled = value;
     }
 
     @Nullable
@@ -95,12 +97,21 @@ public class ReportExecution {
     }
 
     @Nullable
-    public models.internal.reports.Report.Result getResult() {
+    public DefaultReportResult getResult() {
         return result;
     }
 
-    public void setResult(final models.internal.reports.Report.Result value) {
+    public void setResult(final DefaultReportResult value) {
         result = value;
+    }
+
+    @Nullable
+    public String getError() {
+        return error;
+    }
+
+    public void setError(final String value) {
+        error = value;
     }
 
     @Column
@@ -112,8 +123,8 @@ public class ReportExecution {
     @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name = "scheduled_for")
-    private Instant scheduled_for;
+    @Column(name = "scheduled")
+    private Instant scheduled;
 
     @Nullable
     @Column(name = "started_at")
@@ -124,8 +135,12 @@ public class ReportExecution {
     private Instant completed_at;
 
     @Nullable
-    @DbJson
+    @DbJsonB
     @Column(name = "result")
-    private models.internal.reports.Report.Result result;
+    private DefaultReportResult result;
+
+    @Nullable
+    @Column(name = "error")
+    private String error;
 }
 // CHECKSTYLE.ON: MemberNameCheck

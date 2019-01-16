@@ -29,6 +29,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 // CHECKSTYLE.OFF: MemberNameCheck
+// FIXME(cbriones): Pull out into a separate type just in case HtmlFormat ever stores any additional state.
 @Entity
 @Table(name = "report_formats", schema = "portal")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
