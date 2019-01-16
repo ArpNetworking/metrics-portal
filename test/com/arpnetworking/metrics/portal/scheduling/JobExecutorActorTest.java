@@ -38,8 +38,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -49,6 +47,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for {@link JobExecutorActor}.
