@@ -166,7 +166,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
 
-                    if (nextRun.get().isBefore(_clock.instant())) {
+                    if (!_clock.instant().isBefore(nextRun.get())) {
                         executeAndScheduleNextTick(repo, org, job.get(), nextRun.get());
                     } else {
                         scheduleNextTick(nextRun.get());
