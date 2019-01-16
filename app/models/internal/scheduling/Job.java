@@ -19,7 +19,6 @@ import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -45,13 +44,6 @@ public interface Job<T> {
      * @return The schedule.
      */
     Schedule getSchedule();
-
-    /**
-     * Returns the last time the job was executed for (or {@code empty()} if it has never run).
-     *
-     * @return The time.
-     */
-    Optional<Instant> getLastRun();
 
     /**
      * Starts a particular instant's execution of the job running.
