@@ -20,12 +20,14 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.ReportFormat;
-import net.sf.oval.constraint.Email;
+import net.sf.oval.constraint.EmailCheck;
 import net.sf.oval.constraint.MinSize;
 import net.sf.oval.constraint.NotBlank;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -102,13 +104,16 @@ public final class EmailRecipientGroup implements RecipientGroup {
      * Builder implementation that constructs {@code EmailRecipientGroup}.
      */
     public static final class Builder extends OvalBuilder<EmailRecipientGroup> {
+        private static final EmailCheck EMAIL_CHECK = new EmailCheck();
         @NotNull
         private UUID _id;
         @NotNull
         @NotBlank
         private String _name;
-        @NotNull
-        @MinSize(value = 1)
+        @ValidateWithMethod(
+                methodName = "validateEmails",
+                parameterType = ImmutableSet.class
+        )
         private ImmutableSet<String> _emails;
         @NotNull
         @MinSize(value = 1)
@@ -163,6 +168,19 @@ public final class EmailRecipientGroup implements RecipientGroup {
         public Builder setFormats(final ImmutableList<ReportFormat> formats) {
             _formats = formats;
             return this;
+        }
+
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Called by OvalBuilder generated validation code.")
+        private boolean validateEmails(final ImmutableSet<?> emails) {
+            // TODO(cbriones): Replace this method and static EmailCheck with the appropriate field annotation once supported.
+            //
+            // An @Email annotation would only apply to the ImmutableSet, not its members. This is because OvalBuilder doesn't
+            // support the appliesTo argument in its validation processor.
+            //
+            // See: https://github.com/ArpNetworking/commons/issues/79
+            return emails
+                    .stream()
+                    .allMatch(e -> EMAIL_CHECK.isSatisfied(this, e, null, null));
         }
     }
 }

@@ -28,7 +28,6 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -70,11 +69,6 @@ public final class DefaultReport implements Report {
     @Override
     public ImmutableSet<RecipientGroup> getRecipientGroups() {
         return _groups;
-    }
-
-    @Override
-    public Optional<Instant> getLastRun() {
-        return Optional.empty();
     }
 
     @Override
