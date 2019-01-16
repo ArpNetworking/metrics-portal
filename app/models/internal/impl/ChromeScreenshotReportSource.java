@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.AssertURL;
@@ -33,6 +34,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class ChromeScreenshotReportSource implements ReportSource {
     private final UUID _id;
     private final URI _uri;

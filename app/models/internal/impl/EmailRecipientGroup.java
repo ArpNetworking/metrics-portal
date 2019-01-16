@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -37,6 +38,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class EmailRecipientGroup implements RecipientGroup {
     private final UUID _id;
     private final String _name;

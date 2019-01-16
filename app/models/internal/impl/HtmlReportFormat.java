@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 
@@ -25,6 +26,7 @@ import models.internal.reports.ReportFormat;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class HtmlReportFormat implements ReportFormat {
     private static final HtmlReportFormat INSTANCE = new HtmlReportFormat(Builder.INSTANCE);
 

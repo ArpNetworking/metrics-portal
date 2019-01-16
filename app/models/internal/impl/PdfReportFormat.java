@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.NotEqual;
@@ -29,6 +30,7 @@ import javax.annotation.Nonnegative;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class PdfReportFormat implements ReportFormat {
     private PdfReportFormat(final Builder builder) {
         _widthInches = builder._widthInches;

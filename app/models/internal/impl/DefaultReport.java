@@ -18,6 +18,7 @@ package models.internal.impl;
 
 import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -37,6 +38,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class DefaultReport implements Report {
     private DefaultReport(final Builder builder) {
         _id = builder._id;
