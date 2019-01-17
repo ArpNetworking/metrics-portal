@@ -114,7 +114,6 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .where()
                 .eq("uuid", reportId)
                 .eq("organization.uuid", organization.getId())
-                .eq("disabled", false)
                 .findOneOrEmpty();
     }
 

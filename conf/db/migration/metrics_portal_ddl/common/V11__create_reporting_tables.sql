@@ -48,14 +48,14 @@ CREATE TABLE portal.reports (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     name VARCHAR(255) NOT NULL,
-    disabled bit DEFAULT 0,
+    deleted bit DEFAULT 0,
 
     report_source_id BIGINT NOT NULL references portal.report_sources(id),
     report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
 );
 
 CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
-CREATE INDEX reports_disabled_idx ON portal.reports (disabled);
+CREATE INDEX reports_deleted_idx ON portal.reports (deleted);
 
 CREATE TABLE portal.report_executions (
     report_id BIGINT NOT NULL references portal.reports(id),

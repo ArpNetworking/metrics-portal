@@ -16,10 +16,11 @@
 package models.ebean;
 
 import com.google.common.collect.ImmutableSet;
-import models.internal.reports.RecipientGroup;
-import models.internal.impl.DefaultReport;
 import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
+import models.internal.impl.DefaultReport;
+import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -36,7 +37,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -86,8 +86,9 @@ public class Report {
     @JoinColumn(name = "report_schedule_id")
     private ReportSchedule schedule;
 
-    @Column(name = "disabled")
-    private boolean disabled;
+    @SoftDelete
+    @Column(name = "deleted")
+    private boolean deleted;
 
     @ManyToOne(optional = false)
     @Column(name = "organization_id")
@@ -149,8 +150,8 @@ public class Report {
         recipientGroups = value;
     }
 
-    public boolean getDisabled() {
-        return disabled;
+    public boolean getDeleted() {
+        return deleted;
     }
 
     public Organization getOrganization() {
