@@ -20,11 +20,16 @@ import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.DefaultReportResult;
+import models.internal.impl.EmailRecipientGroup;
+import models.internal.impl.HtmlReportFormat;
 import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
 import models.internal.reports.ReportSource;
@@ -38,14 +43,14 @@ import play.test.WithApplication;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.equalToIgnoringWhiteSpace;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -105,72 +110,94 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat("groups should match", retrievedReport.getRecipientGroups(), contains(groups));
     }
 
-//    @Test
-//    public void testUpdateExistingReport() {
-//        // FIXME(cbriones): Persist neverschedule?
-//        final Schedule schedule = new OneOffSchedule.Builder()
-//                .setRunAtAndAfter(Instant.now())
-//                .setRunUntil(Instant.now().plus(Duration.ofHours(1)))
-//                .build();
-//
-//        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder().setSchedule(schedule);
-//        final Report report = reportBuilder.setName(ORIGINAL_REPORT_NAME).build();
-//        _repository.addOrUpdateReport(report, Organization.DEFAULT);
-//        assertThat(report.getName(), equalTo(ORIGINAL_REPORT_NAME));
-//
-//        final Report updatedReport = reportBuilder.setName(ALTERED_REPORT_NAME).build();
-//        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
-//        final Optional<String> updatedName = _repository.getReport(report.getId(), Organization.DEFAULT).map(Report::getName);
-//        assertThat(updatedName, equalTo(Optional.of(ALTERED_REPORT_NAME)));
-//    }
+    @Test
+    public void testUpdateExistingReport() {
+        final Schedule schedule = new OneOffSchedule.Builder()
+                .setRunAtAndAfter(Instant.now())
+                .setRunUntil(Instant.now().plus(Duration.ofHours(1)))
+                .build();
 
-//    @Test
-//    public void testUpdateRecipientGroups() {
-//        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
-//
-//        // Initial report
-//        final Report report = reportBuilder.build();
-//        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
-//
-//        // Update the recipients
-//        final RecipientGroup newGroup = new EmailRecipientGroup.Builder()
-//                .setId(UUID.randomUUID())
-//                .setEmails(Collections.singleton("somenewemail@test.com"))
-//                .setFormats(Collections.singletonList(HtmlReportFormat.getInstance()))
-//                .setName("New recipient group")
-//                .build();
-//        final Report updatedReport = reportBuilder.setRecipientGroups(Collections.singleton(newGroup)).build();
-//        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
-//
-//
-//        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
-//        assertThat(retrievedReport.getRecipientGroups(), hasSize(1));
-//        assertThat(retrievedReport.getRecipientGroups(), contains(newGroup));
-//    }
-//
-//    @Test
-//    public void testUpdateSchedule() {
-//        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
-//        final PeriodicSchedule.Builder scheduleBuilder =
-//                new PeriodicSchedule.Builder()
-//                        .setRunAtAndAfter(Instant.now())
-//                        .setRunUntil(null)
-//                        .setOffset(Duration.ofHours(1))
-//                        .setPeriod(ChronoUnit.DAYS)
-//                        .setZone(ZoneId.systemDefault());
-//
-//        // Initial report
-//        final Report report = reportBuilder.build();
-//        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
-//
-//        // Update the schedule
-//        final Schedule updatedSchedule = scheduleBuilder.setPeriod(ChronoUnit.HOURS).build();
-//        reportBuilder.setSchedule(updatedSchedule);
-//        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
-//
-//        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
-//        assertThat(retrievedReport.getSchedule(), equalTo(updatedSchedule));
-//    }
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder().setSchedule(schedule);
+        final Report report = reportBuilder.setName(ORIGINAL_REPORT_NAME).build();
+        _repository.addOrUpdateReport(report, Organization.DEFAULT);
+        assertThat(report.getName(), equalTo(ORIGINAL_REPORT_NAME));
+
+        final Report updatedReport = reportBuilder.setName(ALTERED_REPORT_NAME).build();
+        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
+        final Optional<String> updatedName = _repository.getReport(report.getId(), Organization.DEFAULT).map(Report::getName);
+        assertThat(updatedName, equalTo(Optional.of(ALTERED_REPORT_NAME)));
+    }
+
+    @Test
+    public void testUpdateRecipientGroups() {
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+
+        // Initial report
+        final Report report = reportBuilder.build();
+        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
+
+        // Update the recipients
+        final RecipientGroup newGroup = new EmailRecipientGroup.Builder()
+                .setId(UUID.randomUUID())
+                .setEmails(ImmutableSet.of("somenewemail@test.com"))
+                .setFormats(ImmutableList.of(HtmlReportFormat.getInstance()))
+                .setName("New recipient group")
+                .build();
+        final Report updatedReport = reportBuilder.setRecipientGroups(ImmutableSet.of(newGroup)).build();
+        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
+
+        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
+        assertThat(retrievedReport.getRecipientGroups(), hasSize(1));
+        assertThat(retrievedReport.getRecipientGroups(), contains(newGroup));
+    }
+
+    @Test
+    public void testUpdateSchedule() {
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+        final PeriodicSchedule.Builder scheduleBuilder =
+                new PeriodicSchedule.Builder()
+                        .setRunAtAndAfter(Instant.now())
+                        .setRunUntil(null)
+                        .setOffset(Duration.ofMinutes(10))
+                        .setPeriod(ChronoUnit.DAYS)
+                        .setZone(ZoneId.systemDefault());
+
+        // Initial report
+        final Report report = reportBuilder.build();
+        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
+
+        // Update the schedule
+        final Schedule updatedSchedule = scheduleBuilder.setPeriod(ChronoUnit.HOURS).build();
+        reportBuilder.setSchedule(updatedSchedule);
+        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
+
+        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
+        assertThat(retrievedReport.getSchedule(), equalTo(updatedSchedule));
+    }
+
+    @Test
+    public void testUpdateReportSource() {
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+
+        final ChromeScreenshotReportSource.Builder sourceBuilder =
+                new ChromeScreenshotReportSource.Builder()
+                        .setId(UUID.randomUUID())
+                        .setTitle("Test title")
+                        .setTriggeringEventName("onload")
+                        .setUri(URI.create("https://foo.test.com"));
+
+        // Initial report
+        final Report report = reportBuilder.setReportSource(sourceBuilder.build()).build();
+        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
+
+        // Update the source
+        final ReportSource updatedSource = sourceBuilder.setTitle("updated title").build();
+        final Report updatedReport = reportBuilder.setReportSource(updatedSource).build();
+        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
+
+        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
+        assertThat(retrievedReport.getSource(), equalTo(updatedSource));
+    }
 
     @Test
     public void testIdempotentSave() {
@@ -184,34 +211,11 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat("Source ID should remain unchanged", sourceId, equalTo(report.getSource().getId()));
     }
 
-//    @Test
-//    public void testUpdateReportSource() {
-//        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
-//
-//        final ChromeScreenshotReportSource.Builder sourceBuilder =
-//                new ChromeScreenshotReportSource.Builder()
-//                        .setId(UUID.randomUUID())
-//                        .setTitle("Test title")
-//                        .setTriggeringEventName("onload")
-//                        .setUri(URI.create("https://foo.test.com"));
-//
-//        // Initial report
-//        final Report report = reportBuilder.setReportSource(sourceBuilder.build()).build();
-//        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
-//
-//        // Update the source
-//        final ReportSource updatedSource = sourceBuilder.setTitle("updated title").build();
-//        final Report updatedReport = reportBuilder.setReportSource(updatedSource).build();
-//        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
-//
-//        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
-//        assertThat(retrievedReport.getSource(), equalTo(updatedSource));
-//    }
-
     @Test(expected = PersistenceException.class)
     public void testUnknownJobCompleted() {
         final Instant scheduled = Instant.now();
-        _repository.jobSucceeded(UUID.randomUUID(), Organization.DEFAULT, scheduled, new TestReportResult(42));
+        final Report.Result result = new DefaultReportResult();
+        _repository.jobSucceeded(UUID.randomUUID(), Organization.DEFAULT, scheduled, result);
     }
 
     @Test

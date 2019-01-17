@@ -23,6 +23,7 @@ import models.internal.impl.EmailRecipientGroup;
 import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -34,6 +35,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.PersistenceException;
@@ -70,9 +72,8 @@ public class ReportRecipientGroup {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
-    @ManyToOne
-    @JoinColumn(name = "report_id")
-    private Report report;
+    @ManyToMany(mappedBy = "recipientGroups")
+    private Collection<Report> reports;
 
     @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportRecipient> recipients;
@@ -85,6 +86,10 @@ public class ReportRecipientGroup {
      * Create a new recipient group.
      */
     public ReportRecipientGroup() {
+    }
+
+    public void setId(final Long value) {
+        id = value;
     }
 
     public Long getId() {

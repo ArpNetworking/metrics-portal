@@ -78,8 +78,6 @@ CREATE TABLE portal.report_recipient_groups (
     name VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
-
-    report_id BIGINT NOT NULL references portal.reports(id),
 );
 
 CREATE TABLE portal.report_recipients (
@@ -87,6 +85,12 @@ CREATE TABLE portal.report_recipients (
     recipient_group_id BIGINT NOT NULL references portal.report_recipient_groups,
     recipient VARCHAR NOT NULL,
     type VARCHAR(255) NOT NULL,
+);
+
+CREATE TABLE portal.reports_to_recipient_groups (
+  report_id BIGINT NOT NULL references portal.reports(id),
+  recipient_group_id BIGINT NOT NULL references portal.report_recipient_groups(id),
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
 );
 
 CREATE UNIQUE INDEX report_recipient_groups_uuid_idx ON portal.report_recipient_groups (uuid);

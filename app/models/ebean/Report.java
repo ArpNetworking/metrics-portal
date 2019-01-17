@@ -33,6 +33,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -60,10 +62,16 @@ public class Report {
     private String name;
 
     @JoinColumn(name = "report_source_id")
-    @ManyToOne(optional = false, cascade = CascadeType.PERSIST)
+    @ManyToOne(optional = false)
     private ReportSource reportSource;
 
-    @OneToMany(cascade = CascadeType.PERSIST)
+    @ManyToMany
+    @JoinTable(
+            name = "reports_to_recipient_groups",
+            schema = "portal",
+            joinColumns = @JoinColumn(name = "recipient_group_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "report_id", referencedColumnName = "id")
+    )
     private Set<ReportRecipientGroup> recipientGroups;
 
     @CreatedTimestamp
@@ -115,6 +123,10 @@ public class Report {
 
     public void setName(final String value) {
         name = value;
+    }
+
+    public void setId(final Long value) {
+        id = value;
     }
 
     public Long getId() {

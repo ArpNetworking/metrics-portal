@@ -133,12 +133,29 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("organization.uuid", organization.getId())
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
+
             updateReportSource(ebeanReport.getReportSource());
+
+            for (ReportRecipientGroup group : ebeanReport.getRecipientGroups()) {
+                updateRecipientGroup(group);
+            }
 
             final Optional<models.ebean.Report> existingReport = getBeanReport(report.getId(), organization);
             final boolean created = !existingReport.isPresent();
 
-            Ebean.save(ebeanReport);
+            LOGGER.debug()
+                    .setMessage("Attempting save report")
+                    .addData("reportSource.id", ebeanReport.getReportSource().getId())
+                    .addData("reportSource.uuid", ebeanReport.getReportSource().getUuid())
+                    .addData("created", created)
+                    .log();
+
+            if (created) {
+                Ebean.save(ebeanReport);
+            } else {
+                ebeanReport.setId(existingReport.get().getId());
+                Ebean.update(ebeanReport);
+            }
 
             transaction.commit();
             LOGGER.debug()
@@ -159,15 +176,36 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
+    private void updateRecipientGroup(final models.ebean.ReportRecipientGroup group) {
+        final Optional<Long> groupId =
+                Ebean.find(models.ebean.ReportRecipientGroup.class)
+                        .select("id")
+                        .where()
+                        .eq("uuid", group.getUuid())
+                        .findOneOrEmpty()
+                        .map(models.ebean.ReportRecipientGroup::getId);
+        if (groupId.isPresent()) {
+            group.setId(groupId.get());
+            Ebean.update(group);
+        } else {
+            Ebean.save(group);
+        }
+    }
+
     private void updateReportSource(final models.ebean.ReportSource source) {
-        Ebean.find(models.ebean.ReportSource.class)
-                .select("id")
-                .where()
-                .eq("uuid", source.getUuid())
-                .findOneOrEmpty()
-                .map(models.ebean.ReportSource::getId)
-                .ifPresent(source::setId);
-        Ebean.save(source);
+        final Optional<Long> sourceId =
+            Ebean.find(models.ebean.ReportSource.class)
+                    .select("id")
+                    .where()
+                    .eq("uuid", source.getUuid())
+                    .findOneOrEmpty()
+                    .map(models.ebean.ReportSource::getId);
+        if (sourceId.isPresent()) {
+            source.setId(sourceId.get());
+            Ebean.update(source);
+        } else {
+            Ebean.save(source);
+        }
     }
 
     @Override
