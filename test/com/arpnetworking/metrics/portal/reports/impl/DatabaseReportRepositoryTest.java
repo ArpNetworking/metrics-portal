@@ -140,7 +140,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         final RecipientGroup newGroup = new EmailRecipientGroup.Builder()
                 .setId(UUID.randomUUID())
                 .setEmails(ImmutableSet.of("somenewemail@test.com"))
-                .setFormats(ImmutableList.of(HtmlReportFormat.getInstance()))
+                .setFormats(ImmutableList.of(new HtmlReportFormat.Builder().build()))
                 .setName("New recipient group")
                 .build();
         final Report updatedReport = reportBuilder.setRecipientGroups(ImmutableSet.of(newGroup)).build();

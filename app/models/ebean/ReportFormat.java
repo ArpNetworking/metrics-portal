@@ -41,7 +41,7 @@ public class ReportFormat {
     private Integer id;
 
     /* package */ models.internal.reports.ReportFormat toInternal() {
-        return HtmlReportFormat.getInstance();
+        return new HtmlReportFormat.Builder().build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
