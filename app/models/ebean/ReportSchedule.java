@@ -19,7 +19,6 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.base.MoreObjects;
 
-import java.time.Duration;
 import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -57,7 +56,7 @@ public class ReportSchedule {
     @Column(name = "run_until")
     private Instant runUntil;
 
-    public Instant getRunAt() {
+    /* package */ Instant getRunAt() {
         return runAt;
     }
 
@@ -66,7 +65,7 @@ public class ReportSchedule {
     }
 
     @Nullable
-    public Instant getRunUntil() {
+    /* package */ Instant getRunUntil() {
         return runUntil;
     }
 
@@ -100,6 +99,11 @@ public class ReportSchedule {
         return toStringHelper().toString();
     }
 
+    /**
+     * Convert this schedule to its internal representation.
+     *
+     * @return the internal representation of this schedule.
+     */
     public Schedule toInternal() {
         return new OneOffSchedule.Builder()
                 .setRunAtAndAfter(runAt)

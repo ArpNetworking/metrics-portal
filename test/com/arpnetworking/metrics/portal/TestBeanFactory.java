@@ -24,7 +24,7 @@ import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
-import models.ebean.PDFReportFormat;
+import models.ebean.PdfReportFormat;
 import models.ebean.ReportRecipient;
 import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
@@ -131,7 +131,7 @@ public final class TestBeanFactory {
     public static models.ebean.ReportRecipientGroup createEbeanReportRecipientGroup() {
         final UUID groupUuid = UUID.randomUUID();
 
-        final models.ebean.PDFReportFormat format = new PDFReportFormat();
+        final PdfReportFormat format = new PdfReportFormat();
         format.setHeightInches(1.0f);
         format.setWidthInches(1.0f);
 

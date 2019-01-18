@@ -36,7 +36,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.PersistenceException;
 import javax.persistence.Table;
@@ -78,7 +77,7 @@ public class ReportRecipientGroup {
     @OneToMany(mappedBy = "recipientGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReportRecipient> recipients;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "recipient_group_id", referencedColumnName = "id")
     private Set<ReportFormat> formats;
 
@@ -135,6 +134,14 @@ public class ReportRecipientGroup {
      * @param value - The new {@code ReportRecipient}s for this group.
      */
     public void setRecipients(final List<ReportRecipient> value) {
+        final long distinctTypes =
+            value.stream()
+                    .map(ReportRecipient::getType)
+                    .distinct()
+                    .count();
+        if (distinctTypes > 1) {
+            throw new IllegalArgumentException("A report recipient group must only have one type of recipient");
+        }
         recipients = value;
     }
 
@@ -146,6 +153,10 @@ public class ReportRecipientGroup {
         formats = value;
     }
 
+    /**
+     * Convert this model to its internal representation.
+     * @return The internal representation of this {@code RecipientGroup}.
+     */
     public RecipientGroup toInternal() {
         final long recipientTypes =
                 recipients.stream()
@@ -168,7 +179,7 @@ public class ReportRecipientGroup {
                         .map(ReportFormat::toInternal)
                         .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf));
 
-        // FIXME(cbriones): single type per group.
+        // TODO(cbriones): single type per group.
         return new EmailRecipientGroup.Builder()
                 .setId(uuid)
                 .setName(name)

@@ -23,6 +23,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.typesafe.config.ConfigFactory;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
@@ -82,6 +83,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     @Override
     public Application provideApplication() {
         return new GuiceApplicationBuilder()
+                .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
@@ -197,18 +199,6 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
         assertThat(retrievedReport.getSource(), equalTo(updatedSource));
-    }
-
-    @Test
-    public void testIdempotentSave() {
-        final Report report = TestBeanFactory.createEbeanReport().toInternal();
-        _repository.addOrUpdateReport(report, Organization.DEFAULT);
-        final UUID reportId = report.getId();
-        final UUID sourceId = report.getSource().getId();
-        _repository.addOrUpdateReport(report, Organization.DEFAULT);
-
-        assertThat("Report ID should remain unchanged", reportId, equalTo(report.getId()));
-        assertThat("Source ID should remain unchanged", sourceId, equalTo(report.getSource().getId()));
     }
 
     @Test(expected = PersistenceException.class)

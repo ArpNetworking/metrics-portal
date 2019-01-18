@@ -15,12 +15,10 @@
  */
 package models.ebean;
 
-import io.ebean.Finder;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
-import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -43,7 +41,6 @@ import javax.persistence.Table;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 // CHECKSTYLE.OFF: MemberNameCheck
 public abstract class ReportSource {
-    private static final Finder<Long, ReportSource> FINDER = new Finder<>(ReportSource.class);
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -56,19 +53,6 @@ public abstract class ReportSource {
     @UpdatedTimestamp
     @Column(name = "updated_at")
     private Timestamp updatedAt;
-
-    /**
-     * Finds a {@code ReportSource} given a {@code models.internal.reports.ReportSource}.
-     *
-     * @param source The source to find.
-     * @return An optional containing the source, if any, otherwise {@code Optional.empty()}.
-     */
-    public static Optional<ReportSource> findByReportSource(models.internal.reports.ReportSource source) {
-        return FINDER.query()
-                .where()
-                .eq("uuid", source.getId())
-                .findOneOrEmpty();
-    }
 
     public Long getId() {
         return id;
@@ -95,7 +79,9 @@ public abstract class ReportSource {
     }
 
     /**
-     * Create this object into its internal representation.
+     * Transform this object into its internal representation.
+     *
+     * @return The internal representation of this {@code ReportSource}.
      */
     public abstract models.internal.reports.ReportSource toInternal();
 }

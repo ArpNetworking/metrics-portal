@@ -162,6 +162,12 @@ public class Report {
         organization = value;
     }
 
+
+    /**
+     * Transform this object into its internal representation.
+     *
+     * @return The internal representation of this {@code Report}.
+     */
     public models.internal.reports.Report toInternal() {
         final Collection<RecipientGroup> groups =
                 recipientGroups

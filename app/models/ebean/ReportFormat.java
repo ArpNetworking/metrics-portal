@@ -16,10 +16,7 @@
 
 package models.ebean;
 
-import models.internal.impl.HtmlReportFormat;
-
 import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -29,19 +26,41 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 // CHECKSTYLE.OFF: MemberNameCheck
-// FIXME(cbriones): Pull out into a separate type just in case HtmlFormat ever stores any additional state.
+
+/**
+ * Data model for a report format.
+ *
+ * This should be treated as an abstract class and never instantiated.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+// TODO(cbriones): Make this class abstract, when (if?) possible.
+// If the abstract keyword is added, ebean does not generate cascading INSERT operations when a parent entity is added.
+// This might be a bug in ebean. This is reproducible using the DatabaseReportRepository tests with ReportRecipientGroup.
 @Entity
 @Table(name = "report_formats", schema = "portal")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "type")
-@DiscriminatorValue("HTML")
 public class ReportFormat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    protected Integer id;
+
+    /**
+     * Default constructor to prevent instantiation outside of subclasses.
+     */
+    protected ReportFormat() { }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(final Integer value) {
+        id = value;
+    }
 
     /* package */ models.internal.reports.ReportFormat toInternal() {
-        return new HtmlReportFormat.Builder().build();
+        throw new UnsupportedOperationException("A bare report format should not be converted to an internal model.");
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

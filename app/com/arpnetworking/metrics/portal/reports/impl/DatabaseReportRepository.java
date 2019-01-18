@@ -64,6 +64,22 @@ public final class DatabaseReportRepository implements ReportRepository {
 
     private AtomicBoolean _isOpen = new AtomicBoolean(false);
 
+    private static final ReportFormat.Visitor<models.ebean.ReportFormat> INTERNAL_TO_BEAN_FORMAT_VISITOR =
+            new ReportFormat.Visitor<models.ebean.ReportFormat>() {
+                @Override
+                public models.ebean.ReportFormat visit(final PdfReportFormat internalFormat) {
+                    final models.ebean.PdfReportFormat beanFormat = new models.ebean.PdfReportFormat();
+                    beanFormat.setWidthInches(internalFormat.getWidthInches());
+                    beanFormat.setHeightInches(internalFormat.getHeightInches());
+                    return beanFormat;
+                }
+
+                @Override
+                public models.ebean.ReportFormat visit(final HtmlReportFormat htmlFormat) {
+                    return new models.ebean.HtmlReportFormat();
+                }
+            };
+
     @Override
     public void open() {
         assertIsOpen(false);
@@ -91,7 +107,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .where()
                 .eq("report.uuid", reportId)
                 .eq("report.organization.uuid", organization.getId())
-                .eq("state", "SUCCESS")
+                .eq("state", ReportExecution.State.SUCCESS)
                 .findOneOrEmpty()
                 .map(ReportExecution::getCompletedAt);
     }
@@ -133,10 +149,10 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .log();
         try (Transaction transaction = Ebean.beginTransaction()) {
 
-            updateReportSource(ebeanReport.getReportSource());
+            addOrUpdateReportSource(ebeanReport.getReportSource());
 
             for (ReportRecipientGroup group : ebeanReport.getRecipientGroups()) {
-                updateRecipientGroup(group);
+                addOrUpdateRecipientGroup(group);
             }
 
             final Optional<models.ebean.Report> existingReport = getBeanReport(report.getId(), organization);
@@ -149,11 +165,11 @@ public final class DatabaseReportRepository implements ReportRepository {
                     .addData("created", created)
                     .log();
 
-            if (created) {
-                Ebean.save(ebeanReport);
-            } else {
+            if (existingReport.isPresent()) {
                 ebeanReport.setId(existingReport.get().getId());
                 Ebean.update(ebeanReport);
+            } else {
+                Ebean.save(ebeanReport);
             }
 
             transaction.commit();
@@ -175,7 +191,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    private void updateRecipientGroup(final models.ebean.ReportRecipientGroup group) {
+    private void addOrUpdateRecipientGroup(final models.ebean.ReportRecipientGroup group) {
         final Optional<Long> groupId =
                 Ebean.find(models.ebean.ReportRecipientGroup.class)
                         .select("id")
@@ -191,14 +207,14 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    private void updateReportSource(final models.ebean.ReportSource source) {
+    private void addOrUpdateReportSource(final models.ebean.ReportSource source) {
         final Optional<Long> sourceId =
-            Ebean.find(models.ebean.ReportSource.class)
-                    .select("id")
-                    .where()
-                    .eq("uuid", source.getUuid())
-                    .findOneOrEmpty()
-                    .map(models.ebean.ReportSource::getId);
+                Ebean.find(models.ebean.ReportSource.class)
+                        .select("id")
+                        .where()
+                        .eq("uuid", source.getUuid())
+                        .findOneOrEmpty()
+                        .map(models.ebean.ReportSource::getId);
         if (sourceId.isPresent()) {
             source.setId(sourceId.get());
             Ebean.update(source);
@@ -269,7 +285,11 @@ public final class DatabaseReportRepository implements ReportRepository {
         try (Transaction transaction = Ebean.beginTransaction()) {
             final Optional<models.ebean.Report> report = getBeanReport(reportId, organization);
             if (!report.isPresent()) {
-                final String message = String.format("Could not find report with uuid=%s, organization.uuid=%s", reportId.toString(), organization.getId());
+                final String message = String.format(
+                        "Could not find report with uuid=%s, organization.uuid=%s",
+                        reportId.toString(),
+                        organization.getId()
+                );
                 throw new EntityNotFoundException(message);
             }
 
@@ -371,26 +391,10 @@ public final class DatabaseReportRepository implements ReportRepository {
             throw new IllegalArgumentException("Unsupported internal model: " + group.getClass());
         }
 
-        final ReportFormat.Visitor<models.ebean.ReportFormat> internalToBeanVisitor =
-                new ReportFormat.Visitor<models.ebean.ReportFormat>() {
-                    @Override
-                    public models.ebean.ReportFormat visit(final PdfReportFormat internalFormat) {
-                        final models.ebean.PDFReportFormat beanFormat = new models.ebean.PDFReportFormat();
-                        beanFormat.setWidthInches(internalFormat.getWidthInches());
-                        beanFormat.setHeightInches(internalFormat.getHeightInches());
-                        return beanFormat;
-                    }
-
-                    @Override
-                    public models.ebean.ReportFormat visit(final HtmlReportFormat htmlFormat) {
-                        return new models.ebean.ReportFormat();
-                    }
-                };
-
         final Set<models.ebean.ReportFormat> ebeanFormats =
                 group.getFormats()
                         .stream()
-                        .map(internalToBeanVisitor::visit)
+                        .map(INTERNAL_TO_BEAN_FORMAT_VISITOR::visit)
                         .collect(Collectors.toSet());
 
         final List<ReportRecipient> recipients =

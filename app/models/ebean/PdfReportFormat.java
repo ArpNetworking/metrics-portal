@@ -16,15 +16,19 @@
 
 package models.ebean;
 
-import models.internal.impl.PdfReportFormat;
-
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
+/**
+ * Ebean data model for a PDF report format.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @DiscriminatorValue("PDF")
-public class PDFReportFormat extends ReportFormat {
+// CHECKSTYLE.OFF: MemberNameCheck
+public class PdfReportFormat extends ReportFormat {
     @Column(name = "height_inches")
     private Float heightInches;
 
@@ -49,9 +53,10 @@ public class PDFReportFormat extends ReportFormat {
 
     @Override
     /* package */ models.internal.reports.ReportFormat toInternal() {
-        return new PdfReportFormat.Builder()
+        return new models.internal.impl.PdfReportFormat.Builder()
                 .setWidthInches(widthInches)
                 .setHeightInches(heightInches)
                 .build();
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

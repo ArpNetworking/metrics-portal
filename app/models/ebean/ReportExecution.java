@@ -39,6 +39,9 @@ import javax.persistence.Table;
 @Table(name = "report_executions", schema = "portal")
 public class ReportExecution {
 
+    /**
+     * The state of execution for this particular report job.
+     */
     public enum State {
         /**
          * This report execution has been started.

@@ -34,6 +34,7 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * Get a {@code Report} by identifier.
      *
      * @param identifier The {@code Report} identifier.
+     * @param organization The {@code Organization} which owns the report.
      * @return The matching {@code Report}, if any, otherwise {@link Optional#empty()}.
      */
     Optional<Report> getReport(UUID identifier, Organization organization);
@@ -42,6 +43,7 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * Create or update a {@code Report}.
      *
      * @param report The {@code Report} to create or update.
+     * @param organization The {@code Organization} which owns the report.
      */
     void addOrUpdateReport(Report report, Organization organization);
 }

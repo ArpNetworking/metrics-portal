@@ -59,6 +59,11 @@ public class PeriodicReportSchedule extends ReportSchedule {
          */
         MONTHLY;
 
+        /**
+         * Convert this period to a ChronoUnit.
+         *
+         * @return the analogous {@code ChronoUnit} instance
+         */
         public ChronoUnit toChronoUnit() {
             switch (this) {
                 case HOURLY:
@@ -74,6 +79,12 @@ public class PeriodicReportSchedule extends ReportSchedule {
             }
         }
 
+        /**
+         * Convert a {@code ChronoUnit} to a {@code Period}.
+         *
+         * @param unit the chronounit to convert.
+         * @return the analogous {@code Period} instance
+         */
         public static Period fromChronoUnit(final ChronoUnit unit) {
             if (unit.equals(ChronoUnit.HOURS)) {
                 return HOURLY;
@@ -123,17 +134,17 @@ public class PeriodicReportSchedule extends ReportSchedule {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PeriodicReportSchedule that = (PeriodicReportSchedule) o;
-        return Objects.equals(getOffset(), that.getOffset()) &&
-                getPeriod() == that.getPeriod() &&
-                Objects.equals(getZone(), that.getZone());
+        final PeriodicReportSchedule that = (PeriodicReportSchedule) o;
+        return Objects.equals(getOffset(), that.getOffset())
+                && getPeriod() == that.getPeriod()
+                && Objects.equals(getZone(), that.getZone());
     }
 
     @Override
