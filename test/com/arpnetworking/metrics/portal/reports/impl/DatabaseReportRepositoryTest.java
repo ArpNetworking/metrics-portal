@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports.impl;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
@@ -34,6 +35,7 @@ import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
+import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +49,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -55,6 +59,8 @@ import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -309,5 +315,69 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getResult(), nullValue());
         assertThat(execution.getCompletedAt(), notNullValue());
         assertThat(execution.getError(), notNullValue());
+    }
+
+    @Test
+    public void testQueryAllReports() {
+        final List<Report> reports = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            final Report report =
+                    TestBeanFactory.createReportBuilder()
+                            .setName("test report #" + i)
+                            .build();
+            _repository.addOrUpdateReport(report, Organization.DEFAULT);
+            reports.add(report);
+        }
+        final Report[] reportsArray = new Report[reports.size()];
+        reports.toArray(reportsArray);
+
+        final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
+
+        final List<? extends Job<Report.Result>> results = query.execute().values();
+        assertThat(results, hasSize(5));
+        assertThat(results, containsInAnyOrder(reportsArray));
+    }
+
+    @Test
+    public void testQueryReportsWithOffset() {
+        for (int i = 0; i < 5; i++) {
+            final Report report = TestBeanFactory.createReportBuilder().build();
+            _repository.addOrUpdateReport(report, Organization.DEFAULT);
+        }
+
+        final JobQuery<Report.Result> baseQuery = _repository.createQuery(Organization.DEFAULT);
+
+        final List<? extends Job<Report.Result>> results = baseQuery.offset(3).execute().values();
+        assertThat(results, hasSize(2));
+
+        final List<? extends Job<Report.Result>> emptyResults = baseQuery.offset(10).execute().values();
+        assertThat(emptyResults, empty());
+    }
+
+    @Test
+    public void testQueryReportsWithLimit() {
+        for (int i = 0; i < 5; i++) {
+            final Report report = TestBeanFactory.createReportBuilder().build();
+            _repository.addOrUpdateReport(report, Organization.DEFAULT);
+        }
+
+        final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
+
+        final List<? extends Job<Report.Result>> results = query.limit(1).execute().values();
+        assertThat(results, hasSize(1));
+
+        final List<? extends Job<Report.Result>> allResults = query.limit(10).execute().values();
+        assertThat(allResults, hasSize(5));
+
+        final List<? extends Job<Report.Result>> emptyResults = query.limit(0).execute().values();
+        assertThat(emptyResults, empty());
+    }
+
+    @Test
+    public void testQueryAllReportsReturnsNothing() {
+        final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
+
+        final List<? extends Job<Report.Result>> results = query.execute().values();
+        assertThat(results, empty());
     }
 }

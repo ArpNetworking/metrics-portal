@@ -15,12 +15,14 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
@@ -93,6 +95,16 @@ public final class MapJobRepository<T> implements JobRepository<T> {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
                 .compute(id, (id_, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
+    }
+
+    @Override
+    public JobQuery<T> createQuery(final Organization organization) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public QueryResult<? extends Job<T>> query(final JobQuery<T> query) {
+        throw new UnsupportedOperationException();
     }
 
     private void assertIsOpen() {

@@ -21,6 +21,8 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
@@ -32,9 +34,12 @@ import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link Report}.
@@ -85,12 +90,45 @@ public final class DefaultReport implements Report {
         return CompletableFuture.completedFuture(null);
     }
 
+    @Override
+    public String toString() {
+        final List<UUID> groupIds = _groups.stream().map(RecipientGroup::getId).collect(Collectors.toList());
+        return MoreObjects.toStringHelper(this)
+                .add("id", _id)
+                .add("name", _name)
+                .add("schedule", _schedule)
+                .add("groups.id", groupIds)
+                .add("source.id", _source.getId())
+                .toString();
+    }
+
     private final UUID _id;
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
 
     private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final DefaultReport that = (DefaultReport) o;
+        return Objects.equals(_id, that._id)
+                && Objects.equals(_name, that._name)
+                && Objects.equals(_schedule, that._schedule)
+                && Objects.equals(_source, that._source)
+                && Objects.equals(_groups, that._groups);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_id, _name, _schedule, _source, _groups);
+    }
 
     /**
      * Builder implementation that constructs {@code DefaultReport}.

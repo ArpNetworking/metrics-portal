@@ -29,6 +29,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
@@ -57,13 +58,23 @@ import static org.junit.Assert.assertEquals;
 public final class JobExecutorActorTest {
 
     private static class MockableJobRepository implements JobRepository<UUID> {
-         @Override public void open() {}
-         @Override public void close() {}
-         @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
-         @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
-         @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
-         @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
-         @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
+        @Override public void open() {}
+        @Override public void close() {}
+        @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
+        @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
+        @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
+        @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
+        @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
+
+        @Override
+        public JobQuery<UUID> createQuery(final Organization organization) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public QueryResult<? extends Job<UUID>> query(final JobQuery<UUID> query) {
+            throw new UnsupportedOperationException();
+        }
     }
 
 

@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
@@ -24,13 +25,19 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.DuplicateKeyException;
 import io.ebean.Ebean;
+import io.ebean.PagedList;
+import io.ebean.Query;
 import io.ebean.Transaction;
 import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultJobQuery;
+import models.internal.impl.DefaultQueryResult;
+import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
@@ -59,9 +66,6 @@ import javax.persistence.PersistenceException;
 public final class DatabaseReportRepository implements ReportRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportRepository.class);
-
-    private AtomicBoolean _isOpen = new AtomicBoolean(false);
-
     private static final ReportFormat.Visitor<models.ebean.ReportFormat> INTERNAL_TO_BEAN_FORMAT_VISITOR =
             new ReportFormat.Visitor<models.ebean.ReportFormat>() {
                 @Override
@@ -77,6 +81,12 @@ public final class DatabaseReportRepository implements ReportRepository {
                     return new models.ebean.HtmlReportFormat();
                 }
             };
+    private AtomicBoolean _isOpen = new AtomicBoolean(false);
+    private final ReportQueryGenerator _reportQueryGenerator;
+
+    public DatabaseReportRepository() {
+        _reportQueryGenerator = new GenericQueryGenerator();
+    }
 
     private static final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
             new Recipient.Visitor<models.ebean.Recipient>() {
@@ -226,6 +236,36 @@ public final class DatabaseReportRepository implements ReportRepository {
                 null,
                 error
         );
+    }
+
+    @Override
+    public JobQuery<Report.Result> createQuery(final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Preparing query")
+                .addData("organization", organization)
+                .log();
+        return new DefaultJobQuery<>(this, organization);
+    }
+
+    @Override
+    public QueryResult<Report> query(final JobQuery<Report.Result> query) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Querying")
+                .addData("query", query)
+                .log();
+
+        final PagedList<models.ebean.Report> pagedReports = _reportQueryGenerator.createReportQuery(query);
+
+        final List<Report> reports =
+                pagedReports
+                        .getList()
+                        .stream()
+                        .map(models.ebean.Report::toInternal)
+                        .collect(Collectors.toList());
+
+        return new DefaultQueryResult<>(reports, pagedReports.getTotalCount());
     }
 
     @Override
@@ -407,6 +447,37 @@ public final class DatabaseReportRepository implements ReportRepository {
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("DatabaseReportRepository is not %s", expectedState ? "open" : "closed"));
+        }
+    }
+
+    /**
+     * Inteface for database query generation.
+     */
+    public interface ReportQueryGenerator {
+        /**
+         * Translate the {@code JobQuery} to an ebean {@link Query}.
+         *
+         * @param query The repository agnostic {@code JobQuery}.
+         * @return The database specific {@code PagedList} query result.
+         */
+        PagedList<models.ebean.Report> createReportQuery(JobQuery<Report.Result> query);
+    }
+
+    /**
+     * RDBMS agnostic query for reports.
+     */
+    public static final class GenericQueryGenerator implements ReportQueryGenerator {
+        @Override
+        public PagedList<models.ebean.Report> createReportQuery(final JobQuery<Report.Result> query) {
+            final int offset = query.getOffset().orElse(0);
+
+            return Ebean.find(models.ebean.Report.class)
+                    .where()
+                    .eq("organization.uuid", query.getOrganization().getId())
+                    .query()
+                    .setFirstRow(offset)
+                    .setMaxRows(query.getLimit())
+                    .findPagedList();
         }
     }
 }
