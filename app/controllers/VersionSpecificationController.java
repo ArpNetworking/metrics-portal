@@ -80,7 +80,7 @@ public class VersionSpecificationController extends Controller {
      * appropriate version set as determined by the set of <code>VersionSpecifications</code> and their
      * associated <code>VersionSets</code>. See the README.md for more information.
      *
-     * @return <code>State</code> VersionSet
+     * @return <code>Result</code> VersionSet
      */
     public Result lookupHostVersionSet() {
 
@@ -119,7 +119,7 @@ public class VersionSpecificationController extends Controller {
      * Get the <code>VersionSet</code> associated with the given UUID.
      *
      * @param uuid The UUID.
-     * @return <code>State</code> version set.
+     * @return <code>Result</code> version set.
      */
     public Result getVersionSet(final UUID uuid) {
         final Optional<models.internal.VersionSet> maybeVersionSet = _versionSpecificationRepository.getVersionSet(uuid);
@@ -133,7 +133,7 @@ public class VersionSpecificationController extends Controller {
      * Update or create a VersionSet with the given UUID.
      *
      * @param uuid The UUID.
-     * @return <code>State</code> status code indicating success or failure.
+     * @return <code>Result</code> status code indicating success or failure.
      */
     public Result updateCreateVersionSet(final UUID uuid) {
         final String bodyText = request().body().asText();
@@ -181,7 +181,7 @@ public class VersionSpecificationController extends Controller {
      *
      * @param offset The number of version specifications to skip in the response
      * @param limit The maximum number of version specifications to return.
-     * @return <code>State</code> paginated list of version specifications.
+     * @return <code>Result</code> paginated list of version specifications.
      */
     public Result listVersionSpecifications(@Nullable final Integer offset, @Nullable final Integer limit) {
         final int validOffset = Optional.ofNullable(offset).orElse(0);
@@ -209,7 +209,7 @@ public class VersionSpecificationController extends Controller {
      * Update or create a <code>VersionSpecification</code> specified by the given UUID.
      *
      * @param uuid The UUID.
-     * @return <code>State</code> status code indicating success or failure.
+     * @return <code>Result</code> status code indicating success or failure.
      */
     public Result updateCreateVersionSpecification(final UUID uuid) {
         final String bodyText = request().body().asText();
@@ -253,7 +253,7 @@ public class VersionSpecificationController extends Controller {
      * Get the <code>VersionSpecification</code> associated with the given UUID.
      *
      * @param uuid The UUID.
-     * @return <code>State</code> version specification.
+     * @return <code>Result</code> version specification.
      */
     public Result getVersionSpecification(final UUID uuid) {
         final Optional<models.internal.VersionSpecification> versionSpecification =
@@ -269,7 +269,7 @@ public class VersionSpecificationController extends Controller {
      * Delete a <code>VersionSpecification</code> specified by the given UUID.
      *
      * @param uuid The UUID.
-     * @return <code>State</code> status code indicating success or failure.
+     * @return <code>Result</code> status code indicating success or failure.
      */
     public Result deleteVersionSpecification(final UUID uuid) {
         final Optional<models.internal.VersionSpecification> versionSpecification =

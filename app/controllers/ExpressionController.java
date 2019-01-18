@@ -108,7 +108,7 @@ public class ExpressionController extends Controller {
      * @param service The service of the statistic to evaluate as part of the expression. Optional.
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
-     * @return <code>State</code> paginated matching expressions.
+     * @return <code>Result</code> paginated matching expressions.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(

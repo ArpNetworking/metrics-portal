@@ -116,7 +116,7 @@ public class AlertController extends Controller {
      * @param service The service of the statistic to evaluate as part of the alert. Optional.
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
-     * @return <code>State</code> paginated matching alerts.
+     * @return <code>Result</code> paginated matching alerts.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(

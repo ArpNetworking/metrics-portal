@@ -179,7 +179,7 @@ download_if_needed "${jdkw_wrapper}" "${jdkw_path}"
 
 # Execute the provided command
 eval ${jdkw_path}/${jdkw_impl} ${command}
-state=$?
+result=$?
 
 # Check whether this wrapper is the one specified for this version
 jdkw_download="${jdkw_path}/${jdkw_wrapper}"
@@ -190,4 +190,4 @@ if [ "$(checksum "${jdkw_download}")" != "$(checksum "${jdkw_current}")" ]; then
   printf "cp \"%s\" \"%s\"\n" "${jdkw_download}" "${jdkw_current}"
 fi
 
-exit ${state}
+exit ${result}
