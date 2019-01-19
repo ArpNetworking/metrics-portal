@@ -51,8 +51,5 @@ public final class CassandraConnectionFactory {
                 .build();
     }
 
-    /**
-     * Utility class, should not have callable constructor.
-     */
-    private CassandraConnectionFactory(){}
+    private CassandraConnectionFactory() {}
 }

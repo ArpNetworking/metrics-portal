@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import static org.junit.Assert.assertArrayEquals;
+
 import org.junit.Test;
 
 import java.util.List;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Tests for <code>DatabaseHostRepository</code>.
@@ -36,8 +36,10 @@ public class DatabaseHostRepositoryTest {
         assertArrayEquals("Actual = " + tokens, new String[] {"test", "app", "1", "snc", "1"}, tokens.toArray());
 
         tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("a1--b2  c3- d4..host1234app");
-        assertArrayEquals("Actual = " + tokens,
-                new String[]{"a", "1", "b", "2", "c", "3", "d", "4", "host", "1234", "app"}, tokens.toArray());
+        assertArrayEquals(
+                "Actual = " + tokens,
+                new String[]{"a", "1", "b", "2", "c", "3", "d", "4", "host", "1234", "app"},
+                tokens.toArray());
 
         tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("");
         assertArrayEquals("Actual = " + tokens, new String[]{}, tokens.toArray());

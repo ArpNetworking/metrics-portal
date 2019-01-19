@@ -15,6 +15,9 @@
  */
 package controllers;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
@@ -37,9 +40,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 /**
  * Tests <code>ExpressionController</code>.
  *
@@ -49,8 +49,8 @@ public class ExpressionControllerTest {
 
     @BeforeClass
     public static void instantiate() {
-        EXPR_REPO.open();
-        gApp = new GuiceApplicationBuilder()
+        EXPRESSION_REPOSITORY.open();
+        gApplication = new GuiceApplicationBuilder()
                 .loadConfig(ConfigFactory.load("portal.application.conf"))
                 .configure("expressionRepository.type", DatabaseExpressionRepository.class.getName())
                 .configure(
@@ -60,14 +60,14 @@ public class ExpressionControllerTest {
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
-        Helpers.start(gApp);
+        Helpers.start(gApplication);
     }
 
     @AfterClass
     public static void shutdown() {
-        EXPR_REPO.close();
-        if (gApp != null) {
-            Helpers.stop(gApp);
+        EXPRESSION_REPOSITORY.close();
+        if (gApplication != null) {
+            Helpers.stop(gApplication);
         }
     }
 
@@ -79,7 +79,7 @@ public class ExpressionControllerTest {
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
@@ -89,7 +89,7 @@ public class ExpressionControllerTest {
                 .method("PUT")
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -100,7 +100,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingIdCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -111,7 +111,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingClusterCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -122,7 +122,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingMetricCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -133,7 +133,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingScriptCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -144,7 +144,7 @@ public class ExpressionControllerTest {
                 .bodyJson(readTree("testCreateMissingServiceCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
@@ -154,31 +154,31 @@ public class ExpressionControllerTest {
         final Expression originalExpr = TestBeanFactory.createExpressionBuilder()
                 .setId(uuid)
                 .build();
-        EXPR_REPO.addOrUpdateExpression(originalExpr, TestBeanFactory.getDefautOrganization());
+        EXPRESSION_REPOSITORY.addOrUpdateExpression(originalExpr, TestBeanFactory.getDefautOrganization());
         final JsonNode body = OBJECT_MAPPER.valueToTree(TestBeanFactory.createExpressionBuilder().setId(uuid).build());
         final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/expressions");
-        final Result result = Helpers.route(gApp, request);
+        final Result result = Helpers.route(gApplication, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
-        final Expression expectedExpr = EXPR_REPO.get(originalExpr.getId(), TestBeanFactory.getDefautOrganization()).get();
+        final Expression expectedExpr = EXPRESSION_REPOSITORY.get(originalExpr.getId(), TestBeanFactory.getDefautOrganization()).get();
         assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
     }
 
     private JsonNode readTree(final String resourceSuffix) {
         try {
-            return OBJECT_MAPPER.readTree(
-                    getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
+            return OBJECT_MAPPER.readTree(getClass().getClassLoader().getResource(
+                    "controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;
         }
     }
 
-    private static Application gApp;
-    private static final ExpressionRepository EXPR_REPO =
+    private static Application gApplication;
+    private static final ExpressionRepository EXPRESSION_REPOSITORY =
             new DatabaseExpressionRepository(new DatabaseExpressionRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = ExpressionControllerTest.class.getSimpleName();

@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
@@ -43,8 +45,6 @@ import play.test.WithApplication;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests class <code>CassandraAlertRepository</code>.

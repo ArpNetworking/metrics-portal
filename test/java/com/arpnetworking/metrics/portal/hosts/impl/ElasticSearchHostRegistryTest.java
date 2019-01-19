@@ -153,8 +153,7 @@ public final class ElasticSearchHostRegistryTest {
         // Indexing is asynchronous at an interval of 1 second (see @Before)
         Thread.sleep(2000);
 
-        final HostQuery hostQuery = _repository
-                .createQuery(TestBeanFactory.getDefautOrganization())
+        final HostQuery hostQuery = _repository.createQuery(TestBeanFactory.getDefautOrganization())
                 .partialHostname(Optional.of("testFindHostsWithName-host1"));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
@@ -164,7 +163,10 @@ public final class ElasticSearchHostRegistryTest {
 
     @Test
     public void testFindHostsWithCluster() throws InterruptedException {
-        final Host expectedHost = addOrUpdateHost("testFindHostsWithName-host1", MetricsSoftwareState.LATEST_VERSION_INSTALLED, "cluster1");
+        final Host expectedHost = addOrUpdateHost(
+                "testFindHostsWithName-host1",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                "cluster1");
         addOrUpdateHost("host-foo", MetricsSoftwareState.LATEST_VERSION_INSTALLED, "cluster2");
 
         // Indexing is asynchronous at an interval of 1 second (see @Before)
@@ -179,16 +181,27 @@ public final class ElasticSearchHostRegistryTest {
 
     @Test
     public void testFindHostsWithNamePrefix() throws InterruptedException {
-        final Host expectedHost1 = addOrUpdateHost("testFindHostsWithNamePrefix-Foo", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
-        final Host expectedHost2 = addOrUpdateHost("testFindHostsWithNamePrefix-Bar", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
-        final Host expectedHost3 = addOrUpdateHost("hostfoo", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
-        final Host expectedHost4 = addOrUpdateHost("hostbar", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
+        final Host expectedHost1 = addOrUpdateHost(
+                "testFindHostsWithNamePrefix-Foo",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                null);
+        final Host expectedHost2 = addOrUpdateHost(
+                "testFindHostsWithNamePrefix-Bar",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                null);
+        final Host expectedHost3 = addOrUpdateHost(
+                "hostfoo",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                null);
+        final Host expectedHost4 = addOrUpdateHost(
+                "hostbar",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                null);
 
         // Indexing is asynchronous at an interval of 1 second (see @Before)
         Thread.sleep(2000);
 
-        final HostQuery hostQuery1 = _repository
-                .createQuery(TestBeanFactory.getDefautOrganization())
+        final HostQuery hostQuery1 = _repository.createQuery(TestBeanFactory.getDefautOrganization())
                 .partialHostname(Optional.of("testFindHostsWithNamePrefix"));
         final QueryResult<Host> result1 = _repository.query(hostQuery1);
         final List<? extends Host> hosts1 = result1.values();
@@ -196,7 +209,8 @@ public final class ElasticSearchHostRegistryTest {
         assertTrue(hosts1.contains(expectedHost1));
         assertTrue(hosts1.contains(expectedHost2));
 
-        final HostQuery hostQuery2 = _repository.createQuery(TestBeanFactory.getDefautOrganization()).partialHostname(Optional.of("host"));
+        final HostQuery hostQuery2 = _repository.createQuery(TestBeanFactory.getDefautOrganization())
+                .partialHostname(Optional.of("host"));
         final QueryResult<Host> result2 = _repository.query(hostQuery2);
         final List<? extends Host> hosts2 = result2.values();
         assertEquals(2, hosts2.size());
@@ -206,8 +220,14 @@ public final class ElasticSearchHostRegistryTest {
 
     @Test
     public void testFindHostsWithNameAndState() throws InterruptedException {
-        addOrUpdateHost("testFindHostsWithNameAndState-host1", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
-        final Host expectedHost = addOrUpdateHost("testFindHostsWithNameAndState-host2", MetricsSoftwareState.OLD_VERSION_INSTALLED, null);
+        addOrUpdateHost(
+                "testFindHostsWithNameAndState-host1",
+                MetricsSoftwareState.LATEST_VERSION_INSTALLED,
+                null);
+        final Host expectedHost = addOrUpdateHost(
+                "testFindHostsWithNameAndState-host2",
+                MetricsSoftwareState.OLD_VERSION_INSTALLED,
+                null);
         addOrUpdateHost("host-foo", MetricsSoftwareState.LATEST_VERSION_INSTALLED, null);
         addOrUpdateHost("host-bar", MetricsSoftwareState.OLD_VERSION_INSTALLED, null);
 

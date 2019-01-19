@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.models.ebean;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.typesafe.config.ConfigFactory;
@@ -34,19 +37,15 @@ import play.test.WithApplication;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * Test for <code>VersionSpecification</code>.
  *
  * @author Matthew Hayter (mhayter at groupon dot com)
  */
-public class VersionSpecificationTest extends WithApplication {
+public final class VersionSpecificationTest extends WithApplication {
 
     @Test
     public void testCreateVersionSpecification() throws Exception {
@@ -118,10 +117,7 @@ public class VersionSpecificationTest extends WithApplication {
             }
         };
         final FeatureMatcher<VersionSpecificationAttribute, String> valueMatcher =
-                new FeatureMatcher<VersionSpecificationAttribute, String>(
-                        Matchers.equalTo(v),
-                        "value",
-                        "value") {
+                new FeatureMatcher<VersionSpecificationAttribute, String>(Matchers.equalTo(v), "value", "value") {
             @Override
             protected String featureValueOf(final VersionSpecificationAttribute versionSpecificationAttribute) {
                 return versionSpecificationAttribute.getValue();

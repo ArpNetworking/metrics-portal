@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
@@ -30,8 +32,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests for <code>ConsulClient</code>.

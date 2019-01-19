@@ -15,6 +15,11 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
@@ -43,11 +48,6 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.PersistenceException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 /**
  * Tests class <code>DatabaseAlertRepository</code>.
  *
@@ -56,7 +56,7 @@ import static org.junit.Assert.assertTrue;
 public class DatabaseAlertRepositoryTest extends WithApplication {
 
     @Before
-    public void setup() {
+    public void setUp() {
         _alertRepo.open();
     }
 

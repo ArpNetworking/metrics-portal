@@ -51,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 public class DatabaseExpressionRepositoryTest extends WithApplication {
 
     @Before
-    public void setup() {
+    public void setUp() {
         _exprRepo.open();
     }
 
@@ -367,5 +367,6 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
 
     private final DatabaseExpressionRepository.ExpressionQueryGenerator _queryGenerator =
             new DatabaseExpressionRepository.GenericQueryGenerator();
-    private final DatabaseExpressionRepository _exprRepo = new DatabaseExpressionRepository(_queryGenerator);
+    private final DatabaseExpressionRepository _exprRepo =
+            new DatabaseExpressionRepository(_queryGenerator);
 }

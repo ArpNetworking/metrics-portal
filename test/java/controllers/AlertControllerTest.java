@@ -15,6 +15,10 @@
  */
 package controllers;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
@@ -40,12 +44,7 @@ import play.test.WithApplication;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * Tests class <code>AlertController</code>.
@@ -56,12 +55,12 @@ public class AlertControllerTest extends WithApplication {
 
     @BeforeClass
     public static void instantiate() {
-        ALERT_REPO.open();
+        ALERT_REPOSITORY.open();
     }
 
     @AfterClass
     public static void shutdown() {
-        ALERT_REPO.close();
+        ALERT_REPOSITORY.close();
     }
 
     @Override
@@ -289,7 +288,7 @@ public class AlertControllerTest extends WithApplication {
     public void testUpdateValidCase() throws IOException {
         final UUID uuid = UUID.fromString("e62368dc-1421-11e3-91c1-00259069c2f0");
         final Alert originalAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-        ALERT_REPO.addOrUpdateAlert(originalAlert, TestBeanFactory.getDefautOrganization());
+        ALERT_REPOSITORY.addOrUpdateAlert(originalAlert, TestBeanFactory.getDefautOrganization());
         final JsonNode body = readTree("testUpdateValidCase");
         final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
@@ -302,15 +301,16 @@ public class AlertControllerTest extends WithApplication {
 
     private JsonNode readTree(final String resourceSuffix) {
         try {
-            return OBJECT_MAPPER.readTree(
-                    getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
+            return OBJECT_MAPPER.readTree(getClass().getClassLoader().getResource(
+                    "controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;
         }
     }
 
-    private static final AlertRepository ALERT_REPO = new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
+    private static final AlertRepository ALERT_REPOSITORY =
+            new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = AlertControllerTest.class.getSimpleName();
 }

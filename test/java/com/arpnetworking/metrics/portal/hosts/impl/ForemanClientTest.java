@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import org.junit.Test;
@@ -27,10 +31,6 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests for <code>ForemanClient</code>.

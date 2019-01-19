@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.build</groupId>
     <artifactId>arpnetworking-parent-pom</artifactId>
-    <version>1.1.9</version>
+    <version>1.1.11-SNAPSHOT</version>
     <relativePath />
   </parent>
 
@@ -146,6 +146,9 @@
 
     <!-- Scala -->
     <scala.package.version>2.11</scala.package.version>
+
+    <!-- Checkstyle -->
+    <checkstyleExtraSuppressions>${project.basedir}/extra-checkstyle-suppressions.xml</checkstyleExtraSuppressions>
 
     <!-- Code Coverage -->
     <jacoco.check.line.coverage>1.0</jacoco.check.line.coverage>
@@ -707,12 +710,6 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest</artifactId>
-      <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -30,11 +30,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 /**
- * ConfigTypedProvider test cases.
+ * Tests for {@link ConfigTypedProvider}.
  *
- * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public class ConfigTypedProviderTest {
+public final class ConfigTypedProviderTest {
 
     @Test
     public void createBasic() {
@@ -78,7 +78,6 @@ public class ConfigTypedProviderTest {
         assertEquals(TestClassInjected.class, instance.getClass());
         final TestClassInjected testClassInjected = (TestClassInjected) instance;
         assertSame(injectedClass, testClassInjected.getInjected());
-
     }
 
     /**
