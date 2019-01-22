@@ -17,7 +17,9 @@ package models.ebean;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.EmailRecipientGroup;
 import models.internal.reports.RecipientGroup;
@@ -27,7 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -48,9 +49,9 @@ import javax.persistence.Table;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Entity
-@Table(name = "report_recipient_groups", schema = "portal")
+@Table(name = "recipient_groups", schema = "portal")
 // CHECKSTYLE.OFF: MemberNameCheck
-public class ReportRecipientGroup {
+public final class ReportRecipientGroup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -80,6 +81,10 @@ public class ReportRecipientGroup {
     @OneToMany(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "recipient_group_id", referencedColumnName = "id")
     private Set<ReportFormat> formats;
+
+    @SoftDelete
+    @Column(name = "deleted")
+    private boolean deleted;
 
     /**
      * Create a new recipient group.
@@ -158,28 +163,28 @@ public class ReportRecipientGroup {
      * @return The internal representation of this {@code RecipientGroup}.
      */
     public RecipientGroup toInternal() {
-        final long recipientTypes =
+        final ImmutableSet<ReportRecipient.RecipientType> recipientTypes =
                 recipients.stream()
                         .map(ReportRecipient::getType)
-                        .distinct()
-                        .count();
+                        .collect(ImmutableSet.toImmutableSet());
 
-        if (recipientTypes > 1) {
-            throw new PersistenceException("A group's members should all have the same type");
+        final Set<ReportRecipient.RecipientType> unsupportedTypes =
+                Sets.difference(recipientTypes, ImmutableSet.of(ReportRecipient.RecipientType.EMAIL));
+        if (!unsupportedTypes.isEmpty()) {
+            throw new PersistenceException("Unsupported recipient type: " + unsupportedTypes);
         }
 
         final ImmutableSet<String> recipientAddresses =
                 recipients
                         .stream()
                         .map(ReportRecipient::get)
-                        .collect(Collectors.collectingAndThen(Collectors.toSet(), ImmutableSet::copyOf));
+                        .collect(ImmutableSet.toImmutableSet());
 
         final ImmutableList<models.internal.reports.ReportFormat> internalFormats =
                 formats.stream()
                         .map(ReportFormat::toInternal)
-                        .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf));
+                        .collect(ImmutableList.toImmutableList());
 
-        // TODO(cbriones): single type per group.
         return new EmailRecipientGroup.Builder()
                 .setId(uuid)
                 .setName(name)

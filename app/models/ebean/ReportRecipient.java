@@ -35,11 +35,10 @@ import javax.persistence.Table;
  * @author Christian Briones (cbriones at dropbox dot com)
  * @see ReportRecipient.RecipientType
  */
-// CHECKSTYLE.OFF: FinalClassCheck - Ebean requires the class to be non-final.
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "report_recipients", schema = "portal")
-public class ReportRecipient {
+@Table(name = "recipients", schema = "portal")
+public final class ReportRecipient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -129,4 +128,3 @@ public class ReportRecipient {
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck
-// CHECKSTYLE.ON: FinalClassCheck

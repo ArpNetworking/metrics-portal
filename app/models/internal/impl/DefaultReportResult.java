@@ -24,5 +24,9 @@ import models.internal.reports.Report;
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  */
-public class DefaultReportResult implements Report.Result {
+public final class DefaultReportResult implements Report.Result {
+    /**
+     * Default Constructor.
+     */
+    public DefaultReportResult() {}
 }

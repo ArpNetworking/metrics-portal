@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import io.ebean.DuplicateKeyException;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.PeriodicReportSchedule;
@@ -30,7 +31,6 @@ import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
-import models.internal.impl.DefaultReportResult;
 import models.internal.impl.EmailRecipientGroup;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
@@ -47,9 +47,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
@@ -101,13 +101,14 @@ public final class DatabaseReportRepository implements ReportRepository {
 
     @Override
     public Optional<Instant> getLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
+        assertIsOpen();
         return Ebean.find(ReportExecution.class)
                 .orderBy()
                 .desc("completed_at")
                 .where()
                 .eq("report.uuid", reportId)
                 .eq("report.organization.uuid", organization.getId())
-                .eq("state", ReportExecution.State.SUCCESS)
+                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
                 .findOneOrEmpty()
                 .map(ReportExecution::getCompletedAt);
     }
@@ -135,13 +136,13 @@ public final class DatabaseReportRepository implements ReportRepository {
 
     @Override
     public void addOrUpdateReport(final Report report, final Organization organization) {
+        assertIsOpen();
         final models.ebean.Report ebeanReport = internalModelToBean(report);
         final models.ebean.Organization ebeanOrg = models.ebean.Organization.findByOrganization(organization);
         if (ebeanOrg == null) {
             throw new EntityNotFoundException("Organization not found: " + organization.getId());
         }
         ebeanReport.setOrganization(ebeanOrg);
-        assertIsOpen();
         LOGGER.debug()
                 .setMessage("Upserting report")
                 .addData("report", ebeanReport)
@@ -231,10 +232,8 @@ public final class DatabaseReportRepository implements ReportRepository {
                 organization,
                 scheduled,
                 ReportExecution.State.FAILURE,
-                execution -> {
-                    execution.setCompletedAt(Instant.now());
-                    execution.setError(error.toString());
-                }
+                null,
+                error
         );
     }
 
@@ -246,26 +245,21 @@ public final class DatabaseReportRepository implements ReportRepository {
                 organization,
                 scheduled,
                 ReportExecution.State.STARTED,
-                execution -> execution.setStartedAt(Instant.now())
+                null,
+                null
         );
     }
 
     @Override
     public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
-        if (!(result instanceof DefaultReportResult)) {
-            throw new UnsupportedOperationException("Unsupported result type");
-        }
-        final DefaultReportResult resultImpl = (DefaultReportResult) result;
         updateExecutionState(
                 reportId,
                 organization,
                 scheduled,
                 ReportExecution.State.SUCCESS,
-                execution -> {
-                    execution.setCompletedAt(Instant.now());
-                    execution.setResult(resultImpl);
-                }
+                result,
+                null
         );
     }
 
@@ -274,7 +268,8 @@ public final class DatabaseReportRepository implements ReportRepository {
             final Organization organization,
             final Instant scheduled,
             final ReportExecution.State state,
-            final Consumer<ReportExecution> executionUpdater
+            @Nullable final Report.Result result,
+            @Nullable final Throwable error
     ) {
         LOGGER.debug()
                 .setMessage("Updating report executions")
@@ -294,12 +289,30 @@ public final class DatabaseReportRepository implements ReportRepository {
             }
 
             final ReportExecution execution = new ReportExecution();
+            execution.setError(error);
             execution.setReport(report.get());
+            execution.setResult(result);
             execution.setScheduled(scheduled);
             execution.setState(state);
-            executionUpdater.accept(execution);
 
-            Ebean.save(execution);
+            switch (state) {
+                case STARTED:
+                    execution.setStartedAt(Instant.now());
+                    execution.setCompletedAt(null);
+                    break;
+                case FAILURE:
+                case SUCCESS:
+                    execution.setCompletedAt(Instant.now());
+                    break;
+                default:
+                    throw new AssertionError("unreachable branch");
+            }
+
+            try {
+                Ebean.save(execution);
+            } catch (final DuplicateKeyException ignore) {
+                Ebean.update(execution);
+            }
 
             LOGGER.debug()
                     .setMessage("Updated report execution")
@@ -323,6 +336,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     /* package */ Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
+        assertIsOpen();
         return Ebean.find(ReportExecution.class)
                 .where()
                 .eq("report.uuid", reportId)

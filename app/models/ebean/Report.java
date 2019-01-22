@@ -23,10 +23,8 @@ import models.internal.impl.DefaultReport;
 import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -169,16 +167,16 @@ public class Report {
      * @return The internal representation of this {@code Report}.
      */
     public models.internal.reports.Report toInternal() {
-        final Collection<RecipientGroup> groups =
+        final ImmutableSet<RecipientGroup> groups =
                 recipientGroups
                         .stream()
                         .map(ReportRecipientGroup::toInternal)
-                        .collect(Collectors.collectingAndThen(Collectors.toSet(), ImmutableSet::copyOf));
+                        .collect(ImmutableSet.toImmutableSet());
 
         return new DefaultReport.Builder()
                 .setId(uuid)
                 .setName(name)
-                .setRecipientGroups(ImmutableSet.copyOf(groups))
+                .setRecipientGroups(groups)
                 .setSchedule(schedule.toInternal())
                 .setReportSource(reportSource.toInternal())
                 .build();

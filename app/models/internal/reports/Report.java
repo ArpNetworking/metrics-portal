@@ -16,7 +16,10 @@
 
 package models.internal.reports;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableCollection;
+import models.internal.impl.DefaultReportResult;
 import models.internal.scheduling.Job;
 
 /**
@@ -49,5 +52,13 @@ public interface Report extends Job<Report.Result> {
     /**
      * Internal model for a result created from a report.
      */
+    @JsonTypeInfo(
+            include = JsonTypeInfo.As.PROPERTY,
+            use = JsonTypeInfo.Id.NAME,
+            property = "type"
+    )
+    @JsonSubTypes(
+            @JsonSubTypes.Type(value = DefaultReportResult.class, name = "DefaultReportResult")
+    )
     interface Result {}
 }

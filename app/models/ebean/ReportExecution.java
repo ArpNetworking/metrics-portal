@@ -16,12 +16,17 @@
 
 package models.ebean;
 
+import com.google.common.base.Throwables;
 import io.ebean.annotation.DbJsonB;
-import models.internal.impl.DefaultReportResult;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -37,25 +42,35 @@ import javax.persistence.Table;
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "report_executions", schema = "portal")
-public class ReportExecution {
+public final class ReportExecution {
 
-    /**
-     * The state of execution for this particular report job.
-     */
-    public enum State {
-        /**
-         * This report execution has been started.
-         */
-        STARTED,
-        /**
-         * This report execution completed successfully.
-         */
-        SUCCESS,
-        /**
-         * This report execution failed.
-         */
-        FAILURE,
-    }
+    private static final String EXCEPTION_KEY = "exception";
+
+    @EmbeddedId
+    private ReportExecutionKey key;
+    @Column
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "report_id")
+    private Report report;
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
+    private State state;
+    @Column(name = "scheduled", insertable = false, updatable = false)
+    private Instant scheduled;
+    @Nullable
+    @Column(name = "started_at")
+    private Instant started_at;
+    @Nullable
+    @Column(name = "completed_at")
+    private Instant completed_at;
+    @Nullable
+    @DbJsonB
+    @Column(name = "result")
+    private models.internal.reports.Report.Result result;
+    @Nullable
+    @DbJsonB
+    @Column(name = "error")
+    private Map<String, String> error;
 
     public Report getReport() {
         return report;
@@ -95,55 +110,94 @@ public class ReportExecution {
         return completed_at;
     }
 
-    public void setCompletedAt(final Instant value) {
+    public void setCompletedAt(@Nullable final Instant value) {
         completed_at = value;
     }
 
     @Nullable
-    public DefaultReportResult getResult() {
+    public models.internal.reports.Report.Result getResult() {
         return result;
     }
 
-    public void setResult(final DefaultReportResult value) {
+    public void setResult(@Nullable final models.internal.reports.Report.Result value) {
         result = value;
     }
 
+    /**
+     * Get the error associated with this execution, if any.
+     *
+     * @return The error encoded as a string.
+     */
     @Nullable
     public String getError() {
-        return error;
+        return error == null ? null : error.get(EXCEPTION_KEY);
     }
 
-    public void setError(final String value) {
-        error = value;
+    /**
+     * Set the error associated with this execution.
+     *
+     * @param value the error
+     */
+    public void setError(@Nullable final Throwable value) {
+        if (value == null) {
+            error = null;
+            return;
+        }
+        error = Collections.singletonMap(EXCEPTION_KEY, Throwables.getStackTraceAsString(value));
     }
 
-    @Column
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "report_id")
-    private Report report;
+    /**
+     * The state of execution for this particular report job.
+     */
+    public enum State {
+        /**
+         * This report execution has been started.
+         */
+        STARTED,
+        /**
+         * This report execution completed successfully.
+         */
+        SUCCESS,
+        /**
+         * This report execution failed.
+         */
+        FAILURE,
+    }
 
-    @Column(name = "state")
-    @Enumerated(value = EnumType.STRING)
-    private State state;
+    /**
+     * Composite Key used by Ebean.
+     */
+    @Embeddable
+    protected static final class ReportExecutionKey {
+        @Nullable
+        @Column(name = "report_id")
+        private Long _reportId;
 
-    @Column(name = "scheduled")
-    private Instant scheduled;
+        @Nullable
+        @Column(name = "scheduled")
+        private Instant _scheduled;
 
-    @Nullable
-    @Column(name = "started_at")
-    private Instant started_at;
+        ReportExecutionKey(@Nullable final Long reportId, @Nullable final Instant scheduled) {
+            _reportId = reportId;
+            _scheduled = scheduled;
+        }
 
-    @Nullable
-    @Column(name = "completed_at")
-    private Instant completed_at;
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final ReportExecutionKey key = (ReportExecutionKey) o;
+            return Objects.equals(_reportId, key._reportId) && Objects.equals(_scheduled, key._scheduled);
+        }
 
-    @Nullable
-    @DbJsonB
-    @Column(name = "result")
-    private DefaultReportResult result;
-
-    @Nullable
-    @Column(name = "error")
-    private String error;
+        @Override
+        public int hashCode() {
+            return Objects.hash(_reportId, _scheduled);
+        }
+    }
 }
 // CHECKSTYLE.ON: MemberNameCheck

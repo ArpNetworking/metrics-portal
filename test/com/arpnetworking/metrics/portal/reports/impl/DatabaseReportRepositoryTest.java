@@ -51,9 +51,11 @@ import java.util.UUID;
 import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -108,7 +110,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         // We need to convert this to an array first to resolve `contains` to its varargs overload.
         // If we do not, Hamcrest will attempt to match against an Iterable<Collection<_>>, which is not what we want.
-        final RecipientGroup[] groups = report.getRecipientGroups().toArray(new RecipientGroup[] {});
+        final RecipientGroup[] groups = report.getRecipientGroups().toArray(new RecipientGroup[]{});
         assertThat("groups should match", retrievedReport.getRecipientGroups(), contains(groups));
     }
 
@@ -224,6 +226,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getResult(), not(nullValue()));
         assertThat(execution.getError(), nullValue());
+        assertThat(execution.getScheduled(), equalTo(scheduled));
 
         final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
         assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
@@ -235,7 +238,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         _repository.addOrUpdateReport(report, Organization.DEFAULT);
         final Instant scheduled = Instant.now();
 
-        final Throwable throwable = new RuntimeException("Whoops!");
+        final Throwable throwable = new IllegalStateException("Whoops!", new RuntimeException("the cause"));
         _repository.jobFailed(report.getId(), Organization.DEFAULT, scheduled, throwable);
 
         final ReportExecution execution = _repository.getExecution(report.getId(), Organization.DEFAULT, scheduled).get();
@@ -244,10 +247,14 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getReport(), not(nullValue()));
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getResult(), nullValue());
-        assertThat(execution.getError(), equalTo(throwable.toString()));
+        assertThat(execution.getScheduled(), equalTo(scheduled));
 
+        final String retrievedError = execution.getError();
+        assertThat(retrievedError, notNullValue());
+        assertThat(retrievedError, containsString(throwable.getMessage()));
+        assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
         final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
-        assertThat(lastRun, equalTo(Optional.empty()));
+        assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
     @Test
@@ -266,8 +273,34 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         assertThat(execution.getError(), nullValue());
         assertThat(execution.getReport(), not(nullValue()));
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
+        assertThat(execution.getScheduled(), equalTo(scheduled));
 
         final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), Organization.DEFAULT);
         assertThat(lastRun, equalTo(Optional.empty()));
+    }
+
+    @Test
+    public void testStateChangeClearsFields() {
+        final Report report = TestBeanFactory.createEbeanReport().toInternal();
+        _repository.addOrUpdateReport(report, Organization.DEFAULT);
+        final Instant scheduled = Instant.now();
+
+        _repository.jobStarted(report.getId(), Organization.DEFAULT, scheduled);
+        _repository.jobSucceeded(report.getId(), Organization.DEFAULT, scheduled, new DefaultReportResult());
+
+        // A succeeded updated should *not* clear the start time
+        ReportExecution execution = _repository.getExecution(report.getId(), Organization.DEFAULT, scheduled).get();
+        assertThat(execution.getStartedAt(), notNullValue());
+        assertThat(execution.getResult(), notNullValue());
+        assertThat(execution.getCompletedAt(), notNullValue());
+        assertThat(execution.getError(), nullValue());
+
+        // A failed updated should *not* clear the start time but it should clear the result
+        _repository.jobFailed(report.getId(), Organization.DEFAULT, scheduled, new IllegalStateException("whoops!"));
+        execution = _repository.getExecution(report.getId(), Organization.DEFAULT, scheduled).get();
+        assertThat(execution.getStartedAt(), notNullValue());
+        assertThat(execution.getResult(), nullValue());
+        assertThat(execution.getCompletedAt(), notNullValue());
+        assertThat(execution.getError(), notNullValue());
     }
 }

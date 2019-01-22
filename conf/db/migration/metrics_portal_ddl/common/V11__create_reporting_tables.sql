@@ -18,6 +18,7 @@ CREATE TABLE portal.report_sources (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     type VARCHAR(255) NOT NULL,
+    deleted bit DEFAULT 0,
 
     -- CHROME_SCREENSHOT
     url VARCHAR(255),
@@ -55,7 +56,6 @@ CREATE TABLE portal.reports (
 );
 
 CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
-CREATE INDEX reports_deleted_idx ON portal.reports (deleted);
 
 CREATE TABLE portal.report_executions (
     report_id BIGINT NOT NULL references portal.reports(id),
@@ -64,41 +64,42 @@ CREATE TABLE portal.report_executions (
     completed_at TIMESTAMP,
     state VARCHAR(255),
     result CLOB,
-    error VARCHAR(255),
+    error CLOB,
 
     PRIMARY KEY (report_id, scheduled),
 );
 
-CREATE INDEX report_executions_state_idx ON portal.report_executions (state);
+CREATE INDEX report_executions_state_completed_at_idx ON portal.report_executions (report_id, completed_at desc, state);
 
-CREATE TABLE portal.report_recipient_groups (
+CREATE TABLE portal.recipient_groups (
     id BIGSERIAL PRIMARY KEY,
     uuid UUID NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
     name VARCHAR(255) DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    deleted bit DEFAULT 0,
 );
 
-CREATE TABLE portal.report_recipients (
+CREATE TABLE portal.recipients (
     id BIGSERIAL PRIMARY KEY,
-    recipient_group_id BIGINT NOT NULL references portal.report_recipient_groups,
+    recipient_group_id BIGINT NOT NULL references portal.recipient_groups,
     recipient VARCHAR NOT NULL,
     type VARCHAR(255) NOT NULL,
 );
 
 CREATE TABLE portal.reports_to_recipient_groups (
   report_id BIGINT NOT NULL references portal.reports(id),
-  recipient_group_id BIGINT NOT NULL references portal.report_recipient_groups(id),
+  recipient_group_id BIGINT NOT NULL references portal.recipient_groups(id),
   created_at TIMESTAMP NOT NULL DEFAULT now(),
 );
 
-CREATE UNIQUE INDEX report_recipient_groups_uuid_idx ON portal.report_recipient_groups (uuid);
-CREATE UNIQUE INDEX report_recipient_groups_name_idx ON portal.report_recipient_groups (name);
+CREATE UNIQUE INDEX recipient_groups_uuid_idx ON portal.recipient_groups (uuid);
+CREATE UNIQUE INDEX recipient_groups_name_idx ON portal.recipient_groups (name);
 
 CREATE TABLE portal.report_formats (
     id BIGSERIAL PRIMARY KEY,
-    recipient_group_id BIGINT NOT NULL references portal.report_recipient_groups(id),
+    recipient_group_id BIGINT NOT NULL references portal.recipient_groups(id),
     type VARCHAR(255) NOT NULL,
     -- PDF
     width_inches FLOAT,

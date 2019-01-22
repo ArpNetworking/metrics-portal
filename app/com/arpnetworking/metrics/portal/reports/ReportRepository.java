@@ -16,7 +16,6 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-// TODO(cwbriones): Decouple from ebean model and expose via the internal model.
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import models.internal.Organization;
 import models.internal.reports.Report;

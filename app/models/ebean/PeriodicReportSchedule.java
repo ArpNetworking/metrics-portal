@@ -38,69 +38,13 @@ import javax.persistence.Enumerated;
 @Entity
 @DiscriminatorValue("PERIODIC")
 public class PeriodicReportSchedule extends ReportSchedule {
-    /**
-     * The period with which this schedule recurs.
-     */
-    public enum Period {
-        /**
-         * A period of 1 hour.
-         */
-        HOURLY,
-        /**
-         * A period of 1 day.
-         */
-        DAILY,
-        /**
-         * A period of 1 week.
-         */
-        WEEKLY,
-        /**
-         * A period of 1 month.
-         */
-        MONTHLY;
-
-        /**
-         * Convert this period to a ChronoUnit.
-         *
-         * @return the analogous {@code ChronoUnit} instance
-         */
-        public ChronoUnit toChronoUnit() {
-            switch (this) {
-                case HOURLY:
-                    return ChronoUnit.HOURS;
-                case DAILY:
-                    return ChronoUnit.DAYS;
-                case WEEKLY:
-                    return ChronoUnit.WEEKS;
-                case MONTHLY:
-                    return ChronoUnit.MONTHS;
-                default:
-                    throw new RuntimeException("unreachable");
-            }
-        }
-
-        /**
-         * Convert a {@code ChronoUnit} to a {@code Period}.
-         *
-         * @param unit the chronounit to convert.
-         * @return the analogous {@code Period} instance
-         */
-        public static Period fromChronoUnit(final ChronoUnit unit) {
-            if (unit.equals(ChronoUnit.HOURS)) {
-                return HOURLY;
-            } else if (unit.equals(ChronoUnit.DAYS)) {
-                return DAILY;
-            } else if (unit.equals(ChronoUnit.WEEKS)) {
-                return WEEKLY;
-            } else if (unit.equals(ChronoUnit.MONTHS)) {
-                return MONTHLY;
-            }
-            throw new IllegalArgumentException("Unsupported ChronoUnit: " + unit.toString());
-        }
-    }
-
     @Column(name = "offset_duration")
     private Duration offset;
+    @Column(name = "period")
+    @Enumerated(EnumType.STRING)
+    private Period period;
+    @Column(name = "zone")
+    private ZoneId zone;
 
     public Duration getOffset() {
         return offset;
@@ -109,13 +53,6 @@ public class PeriodicReportSchedule extends ReportSchedule {
     public void setOffset(final Duration value) {
         offset = value;
     }
-
-    @Column(name = "period")
-    @Enumerated(EnumType.STRING)
-    private Period period;
-
-    @Column(name = "zone")
-    private ZoneId zone;
 
     public Period getPeriod() {
         return period;
@@ -170,6 +107,69 @@ public class PeriodicReportSchedule extends ReportSchedule {
                 .setZone(zone)
                 .setPeriod(period.toChronoUnit())
                 .build();
+    }
+
+    /**
+     * The period with which this schedule recurs.
+     */
+    public enum Period {
+        /**
+         * A period of 1 hour.
+         */
+        HOURLY,
+        /**
+         * A period of 1 day.
+         */
+        DAILY,
+        /**
+         * A period of 1 week.
+         */
+        WEEKLY,
+        /**
+         * A period of 1 month.
+         */
+        MONTHLY;
+
+        /**
+         * Convert a {@code ChronoUnit} to a {@code Period}.
+         *
+         * @param unit the chronounit to convert.
+         * @return the analogous {@code Period} instance
+         */
+        public static Period fromChronoUnit(final ChronoUnit unit) {
+            switch (unit) {
+                case HOURS:
+                    return Period.HOURLY;
+                case DAYS:
+                    return Period.DAILY;
+                case WEEKS:
+                    return Period.WEEKLY;
+                case MONTHS:
+                    return Period.MONTHLY;
+                default:
+                    throw new IllegalArgumentException("Unsupported ChronoUnit: " + unit.toString());
+            }
+        }
+
+        /**
+         * Convert this period to a ChronoUnit.
+         *
+         * @return the analogous {@code ChronoUnit} instance
+         */
+        public ChronoUnit toChronoUnit() {
+            switch (this) {
+                case HOURLY:
+                    return ChronoUnit.HOURS;
+                case DAILY:
+                    return ChronoUnit.DAYS;
+                case WEEKLY:
+                    return ChronoUnit.WEEKS;
+                case MONTHLY:
+                    return ChronoUnit.MONTHS;
+                default:
+                    throw new AssertionError("unreachable branch");
+            }
+        }
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

@@ -16,6 +16,7 @@
 package models.ebean;
 
 import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
@@ -53,6 +54,9 @@ public abstract class ReportSource {
     @UpdatedTimestamp
     @Column(name = "updated_at")
     private Timestamp updatedAt;
+    @SoftDelete
+    @Column(name = "deleted")
+    private boolean deleted;
 
     public Long getId() {
         return id;
