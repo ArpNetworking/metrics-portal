@@ -93,14 +93,14 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(RELOAD_TOPIC, getSelf()), getSelf());
+        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(BROADCAST_TOPIC, getSelf()), getSelf());
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
     @Override
     public void postRestart(final Throwable reason) throws Exception {
         super.postRestart(reason);
-        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(RELOAD_TOPIC, getSelf()), getSelf());
+        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(BROADCAST_TOPIC, getSelf()), getSelf());
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
@@ -257,7 +257,7 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
         return "com.arpnetworking.metrics.portal.scheduling.JobExecutorActor:" + id;
     }
 
-    /* package private */ static final String RELOAD_TOPIC = "JobExecutorActor.refresh";
+    /* package private */ static final String BROADCAST_TOPIC = "JobExecutorActor.broadcast";
     /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
     private static final Unit NANOS = new TsdUnit.Builder()
