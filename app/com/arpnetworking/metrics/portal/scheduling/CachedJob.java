@@ -73,7 +73,7 @@ public final class CachedJob<T> implements Job<T> {
     public void reload() {
         final Optional<Job<T>> loaded = _ref.get(_injector);
         if (!loaded.isPresent()) {
-            throw new NoSuchElementException("TODO(spencerpearson)");
+            throw new NoSuchElementException(_ref.toString());
         }
         _cached = loaded.get();
         _lastRun = _ref.getRepository(_injector).getLastRun(_ref.getJobId(), _ref.getOrganization());
