@@ -24,6 +24,7 @@ import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
@@ -89,7 +90,7 @@ public final class JobExecutorActorTest {
             @Override
             protected void configure() {
                 bind(MockableIntJobRepository.class).toInstance(repo);
-                bind(Clock.class).toInstance(clock);
+                bind(MetricsFactory.class).toInstance(TsdMetricsFactory.newInstance("test", "test"));
             }
         });
 
@@ -114,7 +115,7 @@ public final class JobExecutorActorTest {
     }
 
     private Props makeExecutorActorProps() {
-        return JobExecutorActor.props(injector, clock, periodicMetrics);
+        return JobExecutorActor.props(injector, clock);
     }
 
     private ActorRef makeExecutorActor() {

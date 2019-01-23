@@ -20,11 +20,13 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.persistence.SnapshotOffer;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Unit;
 import com.arpnetworking.metrics.impl.BaseScale;
 import com.arpnetworking.metrics.impl.BaseUnit;
 import com.arpnetworking.metrics.impl.TsdUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
@@ -66,21 +68,20 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
-     * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
     public static Props props(final Injector injector,
-                              final Clock clock,
-                              final PeriodicMetrics periodicMetrics) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, periodicMetrics));
+                              final Clock clock) {
+        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock));
     }
 
     private JobExecutorActor(final Injector injector,
-                             final Clock clock,
-                             final PeriodicMetrics periodicMetrics) {
+                             final Clock clock) {
         _injector = injector;
         _clock = clock;
-        _periodicMetrics = periodicMetrics;
+        _periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(injector.getInstance(MetricsFactory.class))
+                .build();
     }
 
     @Override
