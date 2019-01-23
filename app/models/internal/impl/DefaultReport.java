@@ -31,7 +31,6 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -48,6 +47,7 @@ import java.util.concurrent.CompletionStage;
 public final class DefaultReport implements Report {
     private DefaultReport(final Builder builder) {
         _id = builder._id;
+        _eTag = builder._eTag;
         _name = builder._name;
         _schedule = builder._schedule;
         _source = builder._source;
@@ -61,7 +61,7 @@ public final class DefaultReport implements Report {
 
     @Override
     public String getETag() {
-        return DigestUtils.sha1Hex(toString());
+        return _eTag;
     }
 
     @Override
@@ -104,6 +104,7 @@ public final class DefaultReport implements Report {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
+                .add("eTag", _eTag)
                 .add("name", _name)
                 .add("schedule", _schedule)
                 .add("source", _source)
@@ -112,6 +113,7 @@ public final class DefaultReport implements Report {
     }
 
     private final UUID _id;
+    private final String _eTag;
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
@@ -137,6 +139,19 @@ public final class DefaultReport implements Report {
          */
         public Builder setId(final UUID id) {
             _id = id;
+            return this;
+        }
+
+        /**
+         * Set the report ETag. Required. Cannot be null or empty.
+         *
+         * The ETag should function like a strong hash of the report and all its transitive dependencies.
+         *
+         * @param eTag The ETag.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setETag(final String eTag) {
+            _eTag = eTag;
             return this;
         }
 
@@ -186,6 +201,9 @@ public final class DefaultReport implements Report {
 
         @NotNull
         private UUID _id;
+        @NotNull
+        @NotEmpty
+        private String _eTag;
         @NotNull
         @NotEmpty
         private String _name;
