@@ -15,11 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
-import akka.cluster.pubsub.DistributedPubSub;
-import akka.cluster.pubsub.DistributedPubSubMediator;
-import akka.persistence.AbstractPersistentActorWithTimers;
 import akka.persistence.SnapshotOffer;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.Unit;
@@ -54,12 +52,11 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers {
+public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
 
     private final Injector _injector;
     private final Clock _clock;
-    private final DistributedPubSub _reloadPubSub;
     private final PeriodicMetrics _periodicMetrics;
     private final Semaphore _executionMutex = new Semaphore(1);
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
@@ -69,38 +66,32 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
      *
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
-     * @param reloadPubSub The {@link DistributedPubSub} that this actor should subscribe to for periodic reload commands.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
     public static Props props(final Injector injector,
                               final Clock clock,
-                              final DistributedPubSub reloadPubSub,
                               final PeriodicMetrics periodicMetrics) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, reloadPubSub, periodicMetrics));
+        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, periodicMetrics));
     }
 
     private JobExecutorActor(final Injector injector,
                              final Clock clock,
-                             final DistributedPubSub reloadPubSub,
                              final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
-        _reloadPubSub = reloadPubSub;
         _periodicMetrics = periodicMetrics;
     }
 
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(BROADCAST_TOPIC, getSelf()), getSelf());
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
     @Override
     public void postRestart(final Throwable reason) throws Exception {
         super.postRestart(reason);
-        _reloadPubSub.mediator().tell(new DistributedPubSubMediator.Subscribe(BROADCAST_TOPIC, getSelf()), getSelf());
         timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
     }
 
@@ -150,7 +141,6 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
                     .setMessage("initializing")
                     .addData("ref", ref)
                     .log();
-            saveSnapshot(ref);
             _cachedJob = Optional.of(new CachedJob<>(_injector, ref));
         }
 
@@ -227,34 +217,7 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
                         stopForever();
                     }
                 })
-                .match(EnsureJobStillExists.class, message -> {
-                    if (_cachedJob.isPresent()) {
-                        _cachedJob.get().reload();
-                    } else {
-                        LOGGER.warn()
-                                .setMessage("uninitialized, but got an EnsureJobStillExists message")
-                                .log();
-                    }
-                })
                 .build();
-    }
-
-    @Override
-    public Receive createReceiveRecover() {
-        return receiveBuilder()
-                .match(SnapshotOffer.class, snapshot -> {
-                    // THIS MAKES ME SO SAD. But there's simply no way to plumb the type information through Akka.
-                    @SuppressWarnings("unchecked")
-                    final JobRef<T> jobRef = (JobRef<T>) snapshot.snapshot();
-                    getSelf().tell(new Reload.Builder<T>().setJobRef(jobRef).build(), getSelf());
-                })
-                .build();
-    }
-
-    @Override
-    public String persistenceId() {
-        final String id = _cachedJob.map(cj -> cj.getRef().getJobId().toString()).orElse("UNINITIALIZED");
-        return "com.arpnetworking.metrics.portal.scheduling.JobExecutorActor:" + id;
     }
 
     /* package private */ static final String BROADCAST_TOPIC = "JobExecutorActor.broadcast";
@@ -366,11 +329,6 @@ public final class JobExecutorActor<T> extends AbstractPersistentActorWithTimers
                 return this;
             }
         }
-    }
-
-    /* package private */ static final class EnsureJobStillExists implements Serializable {
-        /* package private */ static final EnsureJobStillExists INSTANCE = new EnsureJobStillExists();
-        private static final long serialVersionUID = 1L;
     }
 
 }

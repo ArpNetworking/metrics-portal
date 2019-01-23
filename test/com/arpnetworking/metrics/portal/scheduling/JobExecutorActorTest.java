@@ -49,7 +49,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -74,7 +73,6 @@ public final class JobExecutorActorTest {
     private ManualClock clock;
     private PeriodicMetrics periodicMetrics;
     private ActorSystem system;
-    private DistributedPubSub reloadPubSub;
 
     private static final AtomicLong systemNameNonce = new AtomicLong(0);
 
@@ -102,8 +100,6 @@ public final class JobExecutorActorTest {
         system = ActorSystem.create(
                 "test-"+systemNameNonce.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
-
-        reloadPubSub = DistributedPubSub.get(system);
     }
 
     @After
@@ -118,7 +114,7 @@ public final class JobExecutorActorTest {
     }
 
     private Props makeExecutorActorProps() {
-        return JobExecutorActor.props(injector, clock, reloadPubSub, periodicMetrics);
+        return JobExecutorActor.props(injector, clock, periodicMetrics);
     }
 
     private ActorRef makeExecutorActor() {
@@ -223,37 +219,6 @@ public final class JobExecutorActorTest {
         assertEquals(
                 Optional.empty(),
                 scheduler.timeUntilExtraTick(t0.plus(Duration.ofDays(1))));
-    }
-
-    @Test
-    public void testEnsureJobStillExists() throws Exception {
-        final Job<Integer> fineJob = addJobToRepo(new DummyJob.Builder<Integer>()
-                .setId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"))
-                .setOneOffSchedule(t0)
-                .setResult(123)
-                .build());
-        final ActorRef fineScheduler = makeAndInitializeExecutorActor(fineJob);
-
-        final Job<Integer> danglingJob = new DummyJob.Builder<Integer>()
-                .setId(UUID.fromString("00000000-0000-0000-0000-000000000000"))
-                .setOneOffSchedule(t0)
-                .setResult(123)
-                .build();
-        final ActorRef danglingScheduler = makeAndInitializeExecutorActor(danglingJob);
-
-        final TestKit tk = new TestKit(system);
-        tk.watch(fineScheduler);
-        tk.watch(danglingScheduler);
-
-        reloadPubSub.mediator().tell(
-                new DistributedPubSubMediator.Publish(
-                        JobExecutorActor.BROADCAST_TOPIC,
-                        JobExecutorActor.EnsureJobStillExists.INSTANCE),
-                null);
-
-        Thread.sleep(1000);
-        tk.expectMsg(new Terminated(danglingScheduler, true, true));
-        tk.expectNoMsg();
     }
 
 }
