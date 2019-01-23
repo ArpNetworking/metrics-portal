@@ -16,7 +16,7 @@
 package controllers;
 
 import akka.stream.javadsl.StreamConverters;
-import com.arpnetworking.kairos.client.KairosDbClientImpl;
+import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
@@ -77,7 +77,7 @@ public class KairosDbProxy extends Controller {
     public KairosDbProxy(
             final Config configuration,
             final WSClient client,
-            final KairosDbClientImpl kairosDbClient,
+            final KairosDbClient kairosDbClient,
             final ObjectMapper mapper) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
@@ -227,7 +227,7 @@ public class KairosDbProxy extends Controller {
 
 
     private final ProxyClient _client;
-    private final KairosDbClientImpl _kairosDbClient;
+    private final KairosDbClient _kairosDbClient;
     private final ObjectMapper _mapper;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
