@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -35,12 +36,23 @@ public final class AkkaClusteringConfigFactory {
     public static Map<String, Object> generateConfiguration() {
         final int nextCounter = UNIQUE_COUNTER.getAndIncrement();
         final int port = BASE_PORT + nextCounter;
-        return ImmutableMap.of(
-                "akka.cluster.seed-nodes", Collections.singletonList(String.format("akka.tcp://mportal@127.0.0.1:%d", port)),
-                "akka.remote.netty.tcp.hostname", "127.0.0.1",
-                "akka.remote.netty.tcp.port", port);
+        return ImmutableMap.<String, Object>builder()
+                .put("akka.cluster.seed-nodes", Collections.singletonList(String.format("akka.tcp://mportal@127.0.0.1:%d", port)))
+                .put("akka.actor.provider", "akka.cluster.ClusterActorRefProvider")
+                .put("akka.remote.netty.tcp.hostname", "127.0.0.1")
+                .put("akka.remote.netty.tcp.port", port)
+                .put("akka.persistence.snapshot-store.plugin", "akka.persistence.snapshot-store.local")
+                .put("akka.persistence.journal.plugin", "akka.persistence.journal.inmem")
+                .put(
+                        "akka.persistence.snapshot-store.local.dir",
+                        "test-snapshots/"
+                                + RUN_ID + "/"
+                                + nextCounter + "/"
+                )
+                .build();
     }
 
+    private static final UUID RUN_ID = UUID.randomUUID();
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);
     private static final int BASE_PORT = 20000;
 }
