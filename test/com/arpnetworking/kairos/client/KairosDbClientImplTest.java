@@ -63,22 +63,22 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-public class KairosDbClientTest {
+public class KairosDbClientImplTest {
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
     private URI _baseURI;
     private ActorSystem _actorSystem;
-    private KairosDbClient _kairosDbClient;
+    private KairosDbClientImpl _kairosDbClient;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = KairosDbClientTest.class.getSimpleName();
+    private static final String CLASS_NAME = KairosDbClientImplTest.class.getSimpleName();
 
     @Before
     public void setUp() throws Exception {
         _baseURI = new URI("http://localhost:" + _wireMock.port());
         _actorSystem = ActorSystem.create();
-        _kairosDbClient = new KairosDbClient.Builder()
+        _kairosDbClient = new KairosDbClientImpl.Builder()
                 .setUri(_baseURI)
                 .setActorSystem(_actorSystem)
                 .setMapper(OBJECT_MAPPER)
@@ -94,7 +94,7 @@ public class KairosDbClientTest {
     @Test
     public void testQueryMetricNames() throws Exception {
         _wireMock.givenThat(
-                get(urlEqualTo(KairosDbClient.METRICS_NAMES_PATH.toString()))
+                get(urlEqualTo(KairosDbClientImpl.METRICS_NAMES_PATH.toString()))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
                                 .withBody("{\"results\":[\"foo\"]}")
@@ -109,7 +109,7 @@ public class KairosDbClientTest {
         DateTime now = DateTime.now();
 
         _wireMock.givenThat(
-                post(urlEqualTo(KairosDbClient.METRICS_QUERY_PATH.toString()))
+                post(urlEqualTo(KairosDbClientImpl.METRICS_QUERY_PATH.toString()))
                         .withRequestBody(equalToJson(readResource("testQueryMetric"), true, true))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
@@ -139,9 +139,34 @@ public class KairosDbClientTest {
     }
 
     @Test
+    public void testQueryMetricTags() throws Exception {
+        _wireMock.givenThat(
+                post(urlEqualTo(KairosDbClientImpl.METRICS_TAGS_PATH.toString()))
+                        .withRequestBody(equalToJson(readResource("testQueryMetricTags"), true, true))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(readResource("testQueryMetricTags.response"))
+                        )
+        );
+
+        MetricsQueryResponse response = _kairosDbClient.queryMetricTags(new MetricsQuery.Builder()
+                .setStartTime(new DateTime(0))
+                .setMetrics(
+                        ImmutableList.of(new Metric.Builder()
+                                .setName("metric.name")
+                                .build()
+                        )
+                )
+                .build()
+        ).toCompletableFuture().get();
+
+        JSONAssert.assertEquals(readResource("testQueryMetricTags.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
+    }
+
+    @Test
     public void testRollupsList() throws Exception {
         _wireMock.givenThat(
-                get(urlEqualTo(KairosDbClient.ROLLUPS_PATH.toString()))
+                get(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString()))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
                                 .withBody(readResource("testRollupsList.response"))
@@ -155,7 +180,7 @@ public class KairosDbClientTest {
     @Test
     public void testCreateRollup() throws Exception {
         _wireMock.givenThat(
-                post(urlEqualTo(KairosDbClient.ROLLUPS_PATH.toString()))
+                post(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString()))
                         .withRequestBody(equalToJson(readResource("testCreateRollup"), true, false))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
@@ -215,7 +240,7 @@ public class KairosDbClientTest {
     public void testUpdateRollup() throws Exception {
         final String id = "rollup_id";
         _wireMock.givenThat(
-                put(urlEqualTo(KairosDbClient.ROLLUPS_PATH.toString() + "/" + id))
+                put(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString() + "/" + id))
                         .withRequestBody(equalToJson(readResource("testUpdateRollup"), true, false))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
@@ -276,7 +301,7 @@ public class KairosDbClientTest {
     public void testDeleteRollup() throws Exception {
         final String id = "rollup_id";
         _wireMock.givenThat(
-                delete(urlEqualTo(KairosDbClient.ROLLUPS_PATH.toString() + "/" + id))
+                delete(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString() + "/" + id))
                         .willReturn(aResponse().withStatus(204))
         );
 
@@ -288,7 +313,7 @@ public class KairosDbClientTest {
     public void testDeleteMissingRollup() throws Throwable {
         final String id = "rollup_id";
         _wireMock.givenThat(
-                delete(urlEqualTo(KairosDbClient.ROLLUPS_PATH.toString() + "/" + id))
+                delete(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString() + "/" + id))
                         .willReturn(aResponse().withStatus(404))
         );
 
