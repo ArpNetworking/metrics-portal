@@ -15,10 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.cluster.pubsub.DistributedPubSub;
@@ -54,7 +52,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
@@ -250,7 +247,7 @@ public final class JobExecutorActorTest {
 
         reloadPubSub.mediator().tell(
                 new DistributedPubSubMediator.Publish(
-                        JobExecutorActor.RELOAD_TOPIC,
+                        JobExecutorActor.BROADCAST_TOPIC,
                         JobExecutorActor.EnsureJobStillExists.INSTANCE),
                 null);
 
