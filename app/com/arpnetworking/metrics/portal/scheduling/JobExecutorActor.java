@@ -114,10 +114,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void scheduleExtraTickIfNecessary(final Instant wakeUpBy) {
         timeUntilExtraTick(wakeUpBy).ifPresent(timeRemaining -> {
-            _periodicMetrics.recordTimer(
-                    "job_executor_actor_time_remaining",
-                    timeRemaining.toNanos(),
-                    Optional.of(NANOS));
             timers().startSingleTimer("TICK", Tick.INSTANCE, timeRemaining);
         });
     }
@@ -224,10 +220,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     /* package private */ static final String BROADCAST_TOPIC = "JobExecutorActor.broadcast";
     /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
-    private static final Unit NANOS = new TsdUnit.Builder()
-            .setScale(BaseScale.NANO)
-            .setBaseUnit(BaseUnit.SECOND)
-            .build();
 
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
