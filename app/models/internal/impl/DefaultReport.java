@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -30,6 +31,7 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -55,6 +57,11 @@ public final class DefaultReport implements Report {
     @Override
     public UUID getId() {
         return _id;
+    }
+
+    @Override
+    public String getETag() {
+        return DigestUtils.sha1Hex(toString());
     }
 
     @Override
@@ -91,6 +98,17 @@ public final class DefaultReport implements Report {
     )
     public CompletionStage<Result> execute(final ActorRef scheduler, final Instant scheduled) {
         return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("id", _id)
+                .add("name", _name)
+                .add("schedule", _schedule)
+                .add("source", _source)
+                .add("recipients", _recipients)
+                .toString();
     }
 
     private final UUID _id;

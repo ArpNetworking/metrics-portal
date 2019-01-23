@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
@@ -97,6 +98,16 @@ public final class PeriodicSchedule extends BaseSchedule {
         return Objects.hash(super.hashCode(), getPeriod(), getZone(), getOffset());
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("period", _period)
+                .add("offset", _offset)
+                .add("zone", _zone)
+                .add("start", getRunAtAndAfter())
+                .add("end", getRunUntil())
+                .toString();
+    }
 
     /**
      * Implementation of builder pattern for {@link OneOffSchedule}.
