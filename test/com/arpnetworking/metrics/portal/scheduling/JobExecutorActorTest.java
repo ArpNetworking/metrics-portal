@@ -15,15 +15,24 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.actor.Terminated;
+import akka.cluster.pubsub.DistributedPubSub;
+import akka.cluster.pubsub.DistributedPubSubMediator;
 import akka.testkit.TestActorRef;
+import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
-import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -33,18 +42,19 @@ import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.NoSuchElementException;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
@@ -56,27 +66,18 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JobExecutorActorTest {
 
-    private static class MockableJobRepository implements JobRepository<UUID> {
-         @Override public void open() {}
-         @Override public void close() {}
-         @Override public void addOrUpdateJob(final Job<UUID> job, final Organization organization) {}
-         @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
-         @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
-         @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
-         @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
-         @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
-    }
-
-
     private static final Instant t0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration tickSize = java.time.Duration.ofSeconds(1);
     private static final Organization organization = Organization.DEFAULT;
 
+    private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
+
     private Injector injector;
-    @Mock
-    private MockableJobRepository repo;
+    private MockableIntJobRepository repo;
     private ManualClock clock;
+    private PeriodicMetrics periodicMetrics;
     private ActorSystem system;
+    private DistributedPubSub reloadPubSub;
 
     private static final AtomicLong systemNameNonce = new AtomicLong(0);
 
@@ -84,19 +85,28 @@ public final class JobExecutorActorTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
+        repo = Mockito.spy(new MockableIntJobRepository());
+        repo.open();
+
+        clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
+
         injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(MockableJobRepository.class).toInstance(repo);
-                bind(MetricsFactory.class).toInstance(TsdMetricsFactory.newInstance("test", "test"));
+                bind(MockableIntJobRepository.class).toInstance(repo);
+                bind(Clock.class).toInstance(clock);
             }
         });
 
-        clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
+        periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(TsdMetricsFactory.newInstance("test", "test"))
+                .build();
 
         system = ActorSystem.create(
                 "test-"+systemNameNonce.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+
+        reloadPubSub = DistributedPubSub.get(system);
     }
 
     @After
@@ -104,141 +114,149 @@ public final class JobExecutorActorTest {
         system.terminate();
     }
 
-    private <T> void addJobToRepo(final Job<T> job) {
+    private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {
         Mockito.doReturn(Optional.of(job)).when(repo).getJob(job.getId(), organization);
         Mockito.doReturn(Optional.empty()).when(repo).getLastRun(job.getId(), organization);
+        return job;
     }
 
-    private SuccessfulJob makeSuccessfulJob() {
-        return makeSuccessfulJob(t0);
-    }
-    private SuccessfulJob makeSuccessfulJob(final Instant runAt) {
-        SuccessfulJob result = new SuccessfulJob(runAt);
-        addJobToRepo(result);
-        return result;
+    private Props makeExecutorActorProps() {
+        return JobExecutorActor.props(injector, clock, reloadPubSub, periodicMetrics);
     }
 
-    private FailingJob makeFailingJob() {
-        FailingJob result = new FailingJob(new Throwable("huh, something went wrong"));
-        addJobToRepo(result);
-        return result;
+    private ActorRef makeExecutorActor() {
+        return system.actorOf(makeExecutorActorProps());
     }
 
-    private Props makeExecutorActorProps(final Job<UUID> job) {
-        final JobRef<UUID> ref = new JobRef.Builder<UUID>()
-                .setRepositoryType(MockableJobRepository.class)
+    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
+        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
+                .setRepositoryType(MockableIntJobRepository.class)
                 .setId(job.getId())
                 .setOrganization(organization)
                 .build();
-        return JobExecutorActor.props(injector, ref, clock);
-    }
-
-    private ActorRef makeExecutorActor(final Job<UUID> job) {
-        return system.actorOf(makeExecutorActorProps(job));
+        final ActorRef result = makeExecutorActor();
+        result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
+        result.tell(JobExecutorActor.Tick.INSTANCE, null);
+        return result;
     }
 
     @Test
     public void testJobSuccess() {
-        final Job<UUID> j = makeSuccessfulJob();
-        final ActorRef scheduler = makeExecutorActor(j);
-
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
+        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(t0).setResult(123).build());
+        makeAndInitializeExecutorActor(j);
 
         Mockito.verify(repo, Mockito.timeout(1000)).jobSucceeded(
                 j.getId(),
                 organization,
                 j.getSchedule().nextRun(Optional.empty()).get(),
-                j.getId());
+                123);
     }
 
     @Test
     public void testJobFailure() {
-        final FailingJob j = makeFailingJob();
+        final Throwable error = new Throwable("huh");
+        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(t0).setError(error).build());
+        makeAndInitializeExecutorActor(j);
 
-        final ActorRef scheduler = makeExecutorActor(j);
-
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
         Mockito.verify(repo, Mockito.timeout(1000)).jobFailed(
-                j.getId(),
-                organization,
-                j.getSchedule().nextRun(Optional.empty()).get(),
-                j._error);
+                Mockito.eq(j.getId()),
+                Mockito.eq(organization),
+                Mockito.eq(j.getSchedule().nextRun(Optional.empty()).get()),
+                Mockito.any(CompletionException.class));
     }
 
     @Test
     public void testJobInFutureNotRun() {
-        final Job<UUID> j = makeSuccessfulJob(t0.plus(Duration.ofMinutes(1)));
+        final Job<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(t0.plus(Duration.ofMinutes(1))).setResult(123).build());
+        makeAndInitializeExecutorActor(j);
 
-        final ActorRef scheduler = makeExecutorActor(j);
-
-        scheduler.tell(JobExecutorActor.Tick.INSTANCE, null);
         Mockito.verify(repo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(repo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
+    public void testOnlyExecutesOneAtATime() {
+        final Instant startAt = t0.minus(ChronoUnit.HOURS.getDuration());
+        final CompletableFuture<Void> blocker = new CompletableFuture<>();
+        final DummyJob<Integer> job = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setSchedule(new PeriodicSchedule.Builder()
+                        .setRunAtAndAfter(startAt)
+                        .setZone(ZoneId.of("UTC"))
+                        .setPeriod(ChronoUnit.MINUTES)
+                        .build())
+                .setResult(123)
+                .setBlocker(blocker)
+                .build());
+
+        final ActorRef executor = makeAndInitializeExecutorActor(job);
+
+        Mockito.verify(repo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), organization, startAt);
+
+        // Now that execution has started once, execution shouldn't start until the job completes, even if the executor ticks several times
+        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        // (ensure that the job didn't weirdly complete for some reason)
+        Mockito.verify(repo, Mockito.after(1000).never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        // Ensure that, despite the ticks, still only a single execution for the job has ever started
+        Mockito.verify(repo, Mockito.timeout(1000).times(1)).jobStarted(Mockito.eq(job.getId()), Mockito.eq(organization), Mockito.any());
+
+        blocker.complete(null);
+
+        // NOW we should be able to run again
+        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        Mockito.verify(repo, Mockito.timeout(1000)).jobStarted(job.getId(), organization, job.getSchedule().nextRun(Optional.of(startAt)).get());
+        // ...but still, only two executions should ever have started (one for t0, one for the moment after t0)
+        Mockito.verify(repo, Mockito.timeout(1000).times(2)).jobStarted(Mockito.eq(job.getId()), Mockito.eq(organization), Mockito.any());
+    }
+
+    @Test
     public void testExtraTicks() {
-        final TestActorRef<JobExecutorActor<UUID>> testActor = TestActorRef.create(system, makeExecutorActorProps(makeSuccessfulJob()));
-        final JobExecutorActor<UUID> scheduler = testActor.underlyingActor();
+        final TestActorRef<JobExecutorActor<Integer>> testActor = TestActorRef.create(system, makeExecutorActorProps());
+        final JobExecutorActor<Integer> scheduler = testActor.underlyingActor();
         Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
         assertEquals(
-                scala.concurrent.duration.Duration.Zero(),
-                scheduler.timeUntilNextTick(t0.minus(Duration.ofDays(1))));
+                Optional.of(scala.concurrent.duration.Duration.Zero()),
+                scheduler.timeUntilExtraTick(t0.minus(Duration.ofDays(1))));
         assertEquals(
-                JobExecutorActor.TICK_INTERVAL.div(2),
-                scheduler.timeUntilNextTick(t0.plus(jTickInterval.dividedBy(2))));
+                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2)),
+                scheduler.timeUntilExtraTick(t0.plus(jTickInterval.dividedBy(2))));
         assertEquals(
-                JobExecutorActor.TICK_INTERVAL,
-                scheduler.timeUntilNextTick(t0.plus(Duration.ofDays(1))));
+                Optional.empty(),
+                scheduler.timeUntilExtraTick(t0.plus(Duration.ofDays(1))));
     }
 
-    private static abstract class DummyJob implements Job<UUID> {
-        private final UUID _uuid = UUID.randomUUID();
-        private final Instant _runAt;
+    @Test
+    public void testEnsureJobStillExists() throws Exception {
+        final Job<Integer> fineJob = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"))
+                .setOneOffSchedule(t0)
+                .setResult(123)
+                .build());
+        final ActorRef fineScheduler = makeAndInitializeExecutorActor(fineJob);
 
-        DummyJob() {
-            this(t0);
-        }
-        DummyJob(final Instant runAt) {
-            _runAt = runAt;
-        }
+        final Job<Integer> danglingJob = new DummyJob.Builder<Integer>()
+                .setId(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+                .setOneOffSchedule(t0)
+                .setResult(123)
+                .build();
+        final ActorRef danglingScheduler = makeAndInitializeExecutorActor(danglingJob);
 
-        @Override
-        public UUID getId() {
-            return _uuid;
-        }
+        final TestKit tk = new TestKit(system);
+        tk.watch(fineScheduler);
+        tk.watch(danglingScheduler);
 
-        @Override
-        public Schedule getSchedule() {
-            return new OneOffSchedule.Builder()
-                    .setRunAtAndAfter(_runAt)
-                    .build();
-        }
-    }
+        reloadPubSub.mediator().tell(
+                new DistributedPubSubMediator.Publish(
+                        JobExecutorActor.RELOAD_TOPIC,
+                        JobExecutorActor.EnsureJobStillExists.INSTANCE),
+                null);
 
-    private static final class SuccessfulJob extends DummyJob {
-        SuccessfulJob(final Instant runAt) {super(runAt);}
-        @Override
-        public CompletionStage<UUID> execute(ActorRef scheduler, Instant scheduled) {
-            return CompletableFuture.completedFuture(getId());
-        }
-    }
-
-    private static final class FailingJob extends DummyJob {
-        private final Throwable _error;
-
-        FailingJob(final Throwable error) {
-            super();
-            _error = error;
-        }
-
-        @Override
-        public CompletionStage<UUID> execute(ActorRef scheduler, Instant scheduled) {
-            CompletableFuture<UUID> result = new CompletableFuture<>();
-            result.completeExceptionally(_error);
-            return result;
-        }
+        Thread.sleep(1000);
+        tk.expectMsg(new Terminated(danglingScheduler, true, true));
+        tk.expectNoMsg();
     }
 
 }
