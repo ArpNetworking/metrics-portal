@@ -22,7 +22,6 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 /**
  * A storage medium for {@link Job}s.
@@ -69,15 +68,6 @@ public interface JobRepository<T> {
      * @throws NoSuchElementException if no job has the given UUID.
      */
     Optional<Instant> getLastRun(UUID id, Organization organization) throws NoSuchElementException;
-
-    /**
-     * Returns every job the repository contains (for a given {@link Organization}).
-     *
-     * @param organization The organization whose jobs to iterate over.
-     * @return A stream of every job in the repository. No order guaranteed.
-     *         No guarantees about presence of jobs added by other threads/processes while the stream is running.
-     */
-    Stream<Job<T>> getAllJobs(Organization organization);
 
     /**
      * Notify the repository that a job has started executing.

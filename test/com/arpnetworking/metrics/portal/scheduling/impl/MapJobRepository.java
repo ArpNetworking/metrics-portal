@@ -82,11 +82,6 @@ public class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public Stream<Job<T>> getAllJobs(final Organization organization) {
-        return _jobs.get(organization).values().stream();
-    }
-
-    @Override
     public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
