@@ -27,6 +27,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import models.internal.scheduling.Job;
+import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -278,7 +279,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      */
     public static final class Reload<T> implements Serializable {
         private final JobRef<T> _jobRef;
-        private final Optional<String> _eTag;
+        private final String _eTag;
 
         private Reload(final Builder<T> builder) {
             _jobRef = builder._jobRef;
@@ -290,7 +291,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
 
         public Optional<String> getETag() {
-            return _eTag;
+            return Optional.ofNullable(_eTag);
         }
 
         @Override
@@ -329,8 +330,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
          * @author Spencer Pearson (spencerpearson at dropbox dot com)
          */
         public static final class Builder<T> extends OvalBuilder<Reload<T>> {
+            @NotNull
             private JobRef<T> _jobRef;
-            private Optional<String> _eTag = Optional.empty();
+            private String _eTag;
 
             /**
              * Public constructor.
@@ -357,7 +359,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
              * @return This instance of Builder.
              */
             public Builder<T> setETag(@Nullable final String eTag) {
-                _eTag = Optional.ofNullable(eTag);
+                _eTag = eTag;
                 return this;
             }
         }
