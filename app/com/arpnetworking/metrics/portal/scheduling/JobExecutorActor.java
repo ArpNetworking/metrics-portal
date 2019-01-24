@@ -27,7 +27,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import models.internal.scheduling.Job;
-import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
