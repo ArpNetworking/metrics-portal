@@ -65,13 +65,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @return A new props to create this actor.
      */
-    public static Props props(final Injector injector,
-                              final Clock clock) {
+    public static Props props(
+            final Injector injector,
+            final Clock clock) {
         return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock));
     }
 
-    private JobExecutorActor(final Injector injector,
-                             final Clock clock) {
+    private JobExecutorActor(
+            final Injector injector,
+            final Clock clock) {
         _injector = injector;
         _clock = clock;
         _periodicMetrics = new TsdPeriodicMetrics.Builder()
