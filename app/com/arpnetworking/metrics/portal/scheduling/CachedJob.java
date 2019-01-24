@@ -36,15 +36,13 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class CachedJob<T> implements Job<T> {
-    private final Injector _injector;
     private final JobRef<T> _ref;
     private Job<T> _cached;
     private Optional<Instant> _lastRun;
 
     CachedJob(final Injector injector, final JobRef<T> ref) {
-        _injector = injector;
         _ref = ref;
-        reload();
+        reload(injector);
     }
 
     @Override
@@ -53,7 +51,6 @@ public final class CachedJob<T> implements Job<T> {
                 .add("ref", _ref)
                 .add("cached", _cached)
                 .add("lastRun", _lastRun)
-                .add("injector", _injector)
                 .toString();
     }
 
@@ -61,33 +58,36 @@ public final class CachedJob<T> implements Job<T> {
         return _ref;
     }
 
+    public Job<T> getJob() {
+        return _cached;
+    }
+
     public Optional<Instant> getLastRun() {
         return _lastRun;
     }
 
-    public Optional<Instant> getNextRun() {
-        return _cached.getSchedule().nextRun(_lastRun);
-    }
-
     /**
      * Unconditionally reloads the cached information from the repository.
+     *
+     * @param injector The Guice injector to load the repository from.
      */
-    public void reload() {
-        final Optional<Job<T>> loaded = _ref.get(_injector);
+    public void reload(final Injector injector) {
+        final Optional<Job<T>> loaded = _ref.get(injector);
         if (!loaded.isPresent()) {
             throw new NoSuchElementException(_ref.toString());
         }
         _cached = loaded.get();
-        _lastRun = _ref.getRepository(_injector).getLastRun(_ref.getJobId(), _ref.getOrganization());
+        _lastRun = _ref.getRepository(injector).getLastRun(_ref.getJobId(), _ref.getOrganization());
     }
 
     /**
      * Reloads the cached information from the repository, iff it's out of date.
      *
+     * @param injector The Guice injector to load the repository from.
      * @param upToDateETag Checked for equality to the cached job's ETag;
      *   if equal, the cached version is assumed to be up to date and no reload is performed.
      */
-    public void reloadIfOutdated(final String upToDateETag) {
+    public void reloadIfOutdated(final Injector injector, final String upToDateETag) {
         if (_cached.getETag().equals(upToDateETag)) {
             return;
         }
@@ -97,7 +97,7 @@ public final class CachedJob<T> implements Job<T> {
                 .addData("oldETag", _cached.getETag())
                 .addData("newETag", upToDateETag)
                 .log();
-        reload();
+        reload(injector);
     }
 
     @Override
@@ -117,18 +117,7 @@ public final class CachedJob<T> implements Job<T> {
 
     @Override
     public CompletionStage<T> execute(final ActorRef scheduler, final Instant scheduled) {
-        final JobRepository<T> repo = _ref.getRepository(_injector);
-        repo.jobStarted(_cached.getId(), _ref.getOrganization(), scheduled);
-        return _cached.execute(scheduler, scheduled)
-                .handle((result, error) -> {
-                    _lastRun = Optional.of(scheduled);
-                    if (error == null) {
-                        repo.jobSucceeded(_cached.getId(), _ref.getOrganization(), scheduled, result);
-                    } else {
-                        repo.jobFailed(_cached.getId(), _ref.getOrganization(), scheduled, error);
-                    }
-                    return null;
-                });
+        return _cached.execute(scheduler, scheduled);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedJob.class);

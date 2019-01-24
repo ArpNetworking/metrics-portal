@@ -50,7 +50,6 @@ import javax.annotation.Nullable;
  */
 public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
-
     private final Injector _injector;
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
@@ -161,6 +160,49 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         return typedRef;
     }
 
+    private void attemptExecuteAndUpdateRepository(final Instant scheduled) {
+        if (!_cachedJob.isPresent()) {
+            LOGGER.error()
+                    .setMessage("unable to execute: executor is not initialized")
+                    .log();
+            return;
+        }
+
+        final CachedJob<T> cachedJob = _cachedJob.get();
+
+        final JobRef<T> ref = cachedJob.getRef();
+        final Job<T> job = cachedJob.getJob();
+        final JobRepository<T> repo = ref.getRepository(_injector);
+
+        if (_currentlyExecuting.getAndSet(true)) {
+            return;
+        }
+
+        try {
+            repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
+        } catch (final NoSuchElementException error) {
+            _currentlyExecuting.set(false);
+            stopForever();
+            return;
+        }
+
+        job.execute(getSelf(), scheduled)
+                .handle((result, error) -> {
+                    try {
+                        if (error == null) {
+                            repo.jobSucceeded(ref.getJobId(), ref.getOrganization(), scheduled, result);
+                        } else {
+                            repo.jobFailed(ref.getJobId(), ref.getOrganization(), scheduled, error);
+                        }
+                        cachedJob.reload(_injector);
+                    } catch (final NoSuchElementException error2) {
+                        stopForever();
+                    }
+                    return result;
+                })
+                .whenComplete((result, error) -> _currentlyExecuting.set(false));
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -188,10 +230,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     if (_clock.instant().isBefore(nextRun.get())) {
                         scheduleExtraTickIfNecessary(nextRun.get());
                     } else {
-                        if (_currentlyExecuting.getAndSet(true)) {
-                            cachedJob.execute(getSelf(), nextRun.get())
-                                    .whenComplete((result, error) -> _currentlyExecuting.set(false));
-                        }
+                        attemptExecuteAndUpdateRepository(nextRun.get());
                     }
                 })
                 .match(Reload.class, message -> {
@@ -200,9 +239,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     try {
                         cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
                         if (eTag.isPresent()) {
-                            cachedJob.reloadIfOutdated(eTag.get());
+                            cachedJob.reloadIfOutdated(_injector, eTag.get());
                         } else {
-                            cachedJob.reload();
+                            cachedJob.reload(_injector);
                         }
                     } catch (final NoSuchElementException error) {
                         LOGGER.warn()

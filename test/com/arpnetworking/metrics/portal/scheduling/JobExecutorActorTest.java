@@ -109,8 +109,7 @@ public final class JobExecutorActorTest {
     }
 
     private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {
-        Mockito.doReturn(Optional.of(job)).when(repo).getJob(job.getId(), organization);
-        Mockito.doReturn(Optional.empty()).when(repo).getLastRun(job.getId(), organization);
+        repo.addOrUpdateJob(job, organization);
         return job;
     }
 
@@ -130,7 +129,6 @@ public final class JobExecutorActorTest {
                 .build();
         final ActorRef result = makeExecutorActor();
         result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
-        result.tell(JobExecutorActor.Tick.INSTANCE, null);
         return result;
     }
 
