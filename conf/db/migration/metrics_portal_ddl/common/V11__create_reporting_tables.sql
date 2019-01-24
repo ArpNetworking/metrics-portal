@@ -71,37 +71,32 @@ CREATE TABLE portal.report_executions (
 
 CREATE INDEX report_executions_state_completed_at_idx ON portal.report_executions (report_id, completed_at desc, state);
 
-CREATE TABLE portal.recipient_groups (
-    id BIGSERIAL PRIMARY KEY,
-    uuid UUID NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    name VARCHAR(255) DEFAULT '',
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    deleted bit DEFAULT 0,
-);
-
 CREATE TABLE portal.recipients (
     id BIGSERIAL PRIMARY KEY,
-    recipient_group_id BIGINT NOT NULL references portal.recipient_groups,
-    recipient VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    uuid UUID NOT NULL,
+    address VARCHAR NOT NULL,
     type VARCHAR(255) NOT NULL,
 );
 
-CREATE TABLE portal.reports_to_recipient_groups (
-  report_id BIGINT NOT NULL references portal.reports(id),
-  recipient_group_id BIGINT NOT NULL references portal.recipient_groups(id),
-  created_at TIMESTAMP NOT NULL DEFAULT now(),
-);
-
-CREATE UNIQUE INDEX recipient_groups_uuid_idx ON portal.recipient_groups (uuid);
-CREATE UNIQUE INDEX recipient_groups_name_idx ON portal.recipient_groups (name);
+CREATE UNIQUE INDEX recipients_uuid_idx ON portal.recipients (uuid);
 
 CREATE TABLE portal.report_formats (
     id BIGSERIAL PRIMARY KEY,
-    recipient_group_id BIGINT NOT NULL references portal.recipient_groups(id),
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+
     type VARCHAR(255) NOT NULL,
     -- PDF
     width_inches FLOAT,
     height_inches FLOAT,
+);
+
+CREATE TABLE portal.reports_to_recipients (
+  report_id BIGINT NOT NULL references portal.reports(id),
+  recipient_id BIGINT NOT NULL references portal.recipients(id),
+  format_id BIGINT NOT NULL references portal.report_formats(id),
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  PRIMARY KEY (report_id, recipient_id),
 );

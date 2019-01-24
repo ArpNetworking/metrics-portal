@@ -21,34 +21,32 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.DuplicateKeyException;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.PeriodicReportSchedule;
+import models.ebean.Recipient;
 import models.ebean.ReportExecution;
-import models.ebean.ReportRecipient;
-import models.ebean.ReportRecipientGroup;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
-import models.internal.impl.EmailRecipientGroup;
+import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
-import models.internal.reports.RecipientGroup;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
@@ -152,10 +150,6 @@ public final class DatabaseReportRepository implements ReportRepository {
 
             addOrUpdateReportSource(ebeanReport.getReportSource());
 
-            for (ReportRecipientGroup group : ebeanReport.getRecipientGroups()) {
-                addOrUpdateRecipientGroup(group);
-            }
-
             final Optional<models.ebean.Report> existingReport = getBeanReport(report.getId(), organization);
             final boolean created = !existingReport.isPresent();
 
@@ -192,21 +186,21 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-    private void addOrUpdateRecipientGroup(final models.ebean.ReportRecipientGroup group) {
-        final Optional<Long> groupId =
-                Ebean.find(models.ebean.ReportRecipientGroup.class)
-                        .select("id")
-                        .where()
-                        .eq("uuid", group.getUuid())
-                        .findOneOrEmpty()
-                        .map(models.ebean.ReportRecipientGroup::getId);
-        if (groupId.isPresent()) {
-            group.setId(groupId.get());
-            Ebean.update(group);
-        } else {
-            Ebean.save(group);
-        }
-    }
+//    private void addOrUpdateRecipient(final models.ebean.Recipient recipient) {
+//        final Optional<Long> recipientId =
+//                Ebean.find(models.ebean.Recipient.class)
+//                        .select("id")
+//                        .where()
+//                        .eq("uuid", recipient.getUuid())
+//                        .findOneOrEmpty()
+//                        .map(models.ebean.Recipient::getId);
+//        if (recipientId.isPresent()) {
+//            recipient.setId(recipientId.get());
+//            Ebean.update(recipient);
+//        } else {
+//            Ebean.save(recipient);
+//        }
+//    }
 
     private void addOrUpdateReportSource(final models.ebean.ReportSource source) {
         final Optional<Long> sourceId =
@@ -349,18 +343,12 @@ public final class DatabaseReportRepository implements ReportRepository {
         final ReportSchedule schedule = internalModelToBean(internalReport.getSchedule());
         final models.ebean.ReportSource source = internalModelToBean(internalReport.getSource());
 
-        final Set<ReportRecipientGroup> ebeanGroups =
-                internalReport.getRecipientGroups()
-                        .stream()
-                        .map(this::internalModelToBean)
-                        .collect(Collectors.toSet());
-
         final models.ebean.Report beanReport = new models.ebean.Report();
         beanReport.setUuid(internalReport.getId());
         beanReport.setName(internalReport.getName());
         beanReport.setSchedule(schedule);
         beanReport.setReportSource(source);
-        beanReport.setRecipientGroups(ebeanGroups);
+        beanReport.setRecipients(internalModelToBean(internalReport.getRecipientsByFormat()));
         return beanReport;
     }
 
@@ -400,29 +388,27 @@ public final class DatabaseReportRepository implements ReportRepository {
         throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());
     }
 
-    private ReportRecipientGroup internalModelToBean(final RecipientGroup group) {
-        if (!(group instanceof EmailRecipientGroup)) {
-            throw new IllegalArgumentException("Unsupported internal model: " + group.getClass());
+    private ImmutableSetMultimap<models.ebean.ReportFormat, Recipient> internalModelToBean(final Map<ReportFormat, Collection<models.internal.reports.Recipient>> recipients) {
+        final ImmutableSetMultimap.Builder<models.ebean.ReportFormat, Recipient> multimapBuilder =
+                ImmutableSetMultimap.builder();
+
+        for (final Map.Entry<ReportFormat, Collection<models.internal.reports.Recipient>> entry : recipients.entrySet()) {
+            final models.ebean.ReportFormat beanFormat = INTERNAL_TO_BEAN_FORMAT_VISITOR.visit(entry.getKey());
+            for (final models.internal.reports.Recipient recipient : entry.getValue()) {
+                multimapBuilder.put(beanFormat, internalModelToBean(recipient));
+            }
         }
+        return multimapBuilder.build();
+    }
 
-        final Set<models.ebean.ReportFormat> ebeanFormats =
-                group.getFormats()
-                        .stream()
-                        .map(INTERNAL_TO_BEAN_FORMAT_VISITOR::visit)
-                        .collect(Collectors.toSet());
-
-        final List<ReportRecipient> recipients =
-                group.getMembers()
-                        .stream()
-                        .map(ReportRecipient::newEmailRecipient)
-                        .collect(Collectors.toList());
-
-        final ReportRecipientGroup ebeanGroup = new ReportRecipientGroup();
-        ebeanGroup.setUuid(group.getId());
-        ebeanGroup.setName(group.getName());
-        ebeanGroup.setFormats(ebeanFormats);
-        ebeanGroup.setRecipients(recipients);
-        return ebeanGroup;
+    private Recipient internalModelToBean(final models.internal.reports.Recipient recipient) {
+        if (!(recipient instanceof DefaultEmailRecipient)) {
+            throw new IllegalArgumentException("Unsupported internal model: " + recipient.getClass());
+        }
+        final Recipient ebeanRecipient =
+                models.ebean.Recipient.findByRecipient(recipient).orElseGet(() -> Recipient.newEmailRecipient(recipient.getAddress()));
+        ebeanRecipient.setUuid(recipient.getId());
+        return ebeanRecipient;
     }
 
     private void assertIsOpen() {

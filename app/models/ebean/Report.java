@@ -16,15 +16,18 @@
 package models.ebean;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultReport;
-import models.internal.reports.RecipientGroup;
 
 import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -32,9 +35,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -63,14 +65,12 @@ public class Report {
     @ManyToOne(optional = false)
     private ReportSource reportSource;
 
-    @ManyToMany
-    @JoinTable(
-            name = "reports_to_recipient_groups",
-            schema = "portal",
-            joinColumns = @JoinColumn(name = "recipient_group_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "report_id", referencedColumnName = "id")
+    @OneToMany(
+            mappedBy = "_report",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
-    private Set<ReportRecipientGroup> recipientGroups;
+    private List<ReportRecipientAssoc> recipientAssocs = Collections.emptyList();
 
     @CreatedTimestamp
     @Column(name = "created_at")
@@ -124,12 +124,12 @@ public class Report {
         name = value;
     }
 
-    public void setId(final Long value) {
-        id = value;
-    }
-
     public Long getId() {
         return id;
+    }
+
+    public void setId(final Long value) {
+        id = value;
     }
 
     public ReportSchedule getSchedule() {
@@ -140,12 +140,27 @@ public class Report {
         schedule = value;
     }
 
-    public Set<ReportRecipientGroup> getRecipientGroups() {
-        return recipientGroups;
+    public Set<Recipient> getRecipients() {
+        return recipientAssocs
+                .stream()
+                .map(ReportRecipientAssoc::getRecipient)
+                .collect(ImmutableSet.toImmutableSet());
     }
 
-    public void setRecipientGroups(final Set<ReportRecipientGroup> value) {
-        recipientGroups = value;
+    public void setRecipients(final ImmutableSetMultimap<ReportFormat, Recipient> values) {
+        recipientAssocs = values
+                .entries()
+                .stream()
+                .map(entry -> {
+                    final ReportFormat format = entry.getKey();
+                    final Recipient recipient = entry.getValue();
+                    final ReportRecipientAssoc assoc = new ReportRecipientAssoc();
+                    assoc.setFormat(format);
+                    assoc.setRecipient(recipient);
+                    assoc.setReport(this);
+                    return assoc;
+                })
+                .collect(Collectors.toList());
     }
 
     public boolean getDeleted() {
@@ -167,19 +182,26 @@ public class Report {
      * @return The internal representation of this {@code Report}.
      */
     public models.internal.reports.Report toInternal() {
-        final ImmutableSet<RecipientGroup> groups =
-                recipientGroups
-                        .stream()
-                        .map(ReportRecipientGroup::toInternal)
-                        .collect(ImmutableSet.toImmutableSet());
+        final ImmutableSetMultimap<models.internal.reports.ReportFormat, models.internal.reports.Recipient> internalRecipients =
+            recipientAssocs
+                    .stream()
+                    .collect(ImmutableSetMultimap.toImmutableSetMultimap(this::assocToFormat, this::assocToRecipient));
 
         return new DefaultReport.Builder()
                 .setId(uuid)
                 .setName(name)
-                .setRecipientGroups(groups)
+                .setRecipients(internalRecipients)
                 .setSchedule(schedule.toInternal())
                 .setReportSource(reportSource.toInternal())
                 .build();
+    }
+
+    private models.internal.reports.ReportFormat assocToFormat(final ReportRecipientAssoc assoc) {
+        return assoc.getFormat().toInternal();
+    }
+
+    private models.internal.reports.Recipient assocToRecipient(final ReportRecipientAssoc assoc) {
+        return assoc.getRecipient().toInternal();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

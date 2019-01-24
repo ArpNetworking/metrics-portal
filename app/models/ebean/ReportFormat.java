@@ -18,11 +18,13 @@ package models.ebean;
 
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 // CHECKSTYLE.OFF: MemberNameCheck
@@ -45,6 +47,9 @@ public class ReportFormat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected Integer id;
+
+    @OneToOne(mappedBy = "_format", fetch = FetchType.LAZY)
+    private ReportRecipientAssoc _reportRecipientAssoc;
 
     /**
      * Default constructor to prevent instantiation outside of subclasses.

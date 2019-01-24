@@ -18,9 +18,11 @@ package models.internal.reports;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMap;
 import models.internal.impl.DefaultReportResult;
 import models.internal.scheduling.Job;
+
+import java.util.Collection;
 
 /**
  * Internal model for a Report.
@@ -43,11 +45,12 @@ public interface Report extends Job<Report.Result> {
     ReportSource getSource();
 
     /**
+     * FIXME(cbriones): This docstring is wrong
      * Get the recipient groups that will receive this report.
      *
      * @return The recipient groups that will receive this report.
      */
-    ImmutableCollection<RecipientGroup> getRecipientGroups();
+    ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat();
 
     /**
      * Internal model for a result created from a report.

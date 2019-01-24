@@ -18,15 +18,13 @@ package com.arpnetworking.metrics.portal;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
 import models.ebean.NagiosExtension;
-import models.ebean.PdfReportFormat;
-import models.ebean.ReportRecipient;
-import models.ebean.ReportRecipientGroup;
+import models.ebean.Recipient;
 import models.ebean.ReportSchedule;
 import models.internal.Alert;
 import models.internal.Context;
@@ -45,7 +43,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -59,7 +56,6 @@ import java.util.UUID;
 public final class TestBeanFactory {
 
     private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
-    private static final String TEST_GROUP = "test-group";
     private static final String TEST_HOST = "test-host";
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
@@ -81,6 +77,9 @@ public final class TestBeanFactory {
     private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
     private static final Random RANDOM = new Random();
 
+    private TestBeanFactory() {
+    }
+
     public static DefaultReport.Builder createReportBuilder() {
         final ReportSource source = createEbeanReportSource().toInternal();
 
@@ -89,10 +88,18 @@ public final class TestBeanFactory {
                 .setRunUntil(null)
                 .build();
 
+        final models.internal.impl.PdfReportFormat format =
+                new models.internal.impl.PdfReportFormat.Builder()
+                        .setWidthInches(8.5f)
+                        .setHeightInches(11.0f)
+                        .build();
+
+        final models.internal.reports.Recipient recipient = createRecipient();
+
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
                 .setName(TEST_NAME)
-                .setRecipientGroups(ImmutableSet.of())
+                .setRecipients(ImmutableSetMultimap.of(format, recipient))
                 .setReportSource(source)
                 .setSchedule(schedule);
     }
@@ -102,13 +109,14 @@ public final class TestBeanFactory {
         schedule.setRunAt(Instant.now());
         schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
 
-        final ReportRecipientGroup group = TestBeanFactory.createEbeanReportRecipientGroup();
+        // FIXME(cbriones): this isn't used
+        final Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
         final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
 
         final models.ebean.Report report = new models.ebean.Report();
         report.setName(TEST_NAME);
         report.setOrganization(TestBeanFactory.createEbeanOrganization());
-        report.setRecipientGroups(Collections.singleton(group));
+        report.setRecipients(ImmutableSetMultimap.of());
         report.setReportSource(source);
         report.setSchedule(schedule);
         report.setUuid(UUID.randomUUID());
@@ -128,20 +136,21 @@ public final class TestBeanFactory {
         return source;
     }
 
-    public static models.ebean.ReportRecipientGroup createEbeanReportRecipientGroup() {
-        final UUID groupUuid = UUID.randomUUID();
+    public static models.internal.reports.Recipient createRecipient() {
+        final UUID recipientId = UUID.randomUUID();
+        return new models.internal.impl.DefaultEmailRecipient.Builder()
+                .setAddress(TEST_EMAIL)
+                .setId(recipientId)
+                .build();
 
-        final PdfReportFormat format = new PdfReportFormat();
-        format.setHeightInches(1.0f);
-        format.setWidthInches(1.0f);
+    }
 
-        final models.ebean.ReportRecipientGroup group = new ReportRecipientGroup();
-        group.setUuid(groupUuid);
-        group.setRecipients(Collections.singletonList(ReportRecipient.newEmailRecipient(TEST_EMAIL)));
-        group.setName(TEST_GROUP);
-        group.setFormats(Collections.singleton(format));
+    public static Recipient createEbeanReportRecipient() {
+        final UUID recipientId = UUID.randomUUID();
 
-        return group;
+        final Recipient recipient = Recipient.newEmailRecipient(TEST_EMAIL);
+        recipient.setUuid(recipientId);
+        return recipient;
     }
 
     public static Organization organizationFrom(final models.ebean.Organization organization) {
@@ -282,8 +291,5 @@ public final class TestBeanFactory {
         host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
         host.setOrganization(Organization.DEFAULT.getId());
         return host;
-    }
-
-    private TestBeanFactory() {
     }
 }
