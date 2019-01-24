@@ -84,13 +84,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
+        timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
     }
 
     @Override
     public void postRestart(final Throwable reason) throws Exception {
         super.postRestart(reason);
-        timers().startPeriodicTimer("TICK", Tick.INSTANCE, TICK_INTERVAL);
+        timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
     }
 
     /**
@@ -111,7 +111,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void scheduleExtraTickIfNecessary(final Instant wakeUpBy) {
         timeUntilExtraTick(wakeUpBy).ifPresent(timeRemaining -> {
-            timers().startSingleTimer("TICK", Tick.INSTANCE, timeRemaining);
+            timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, timeRemaining);
         });
     }
 
@@ -214,6 +214,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .build();
     }
 
+    private static final String REGULAR_TICK_TIMER_NAME = "TICK";
+    private static final String EXTRA_TICK_TIMER_NAME = "EXTRA_TICK";
     /* package private */ static final String BROADCAST_TOPIC = "JobExecutorActor.broadcast";
     /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
