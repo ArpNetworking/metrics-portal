@@ -196,14 +196,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     }
                 })
                 .match(Reload.class, message -> {
-                    final String eTag = message.getETag();
+                    final Optional<String> eTag = ((Reload<?>) message).getETag();
                     final CachedJob<T> cachedJob;
                     try {
                         cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
-                        if (eTag == null) {
-                            cachedJob.reload();
+                        if (eTag.isPresent()) {
+                            cachedJob.reloadIfOutdated(eTag.get());
                         } else {
-                            cachedJob.reloadIfOutdated(eTag);
+                            cachedJob.reload();
                         }
                     } catch (final NoSuchElementException error) {
                         LOGGER.warn()
@@ -240,7 +240,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      */
     public static final class Reload<T> implements Serializable {
         private final JobRef<T> _jobRef;
-        private final String _eTag;
+        private final Optional<String> _eTag;
 
         private Reload(final Builder<T> builder) {
             _jobRef = builder._jobRef;
@@ -251,8 +251,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             return _jobRef;
         }
 
-        @Nullable
-        public String getETag() {
+        public Optional<String> getETag() {
             return _eTag;
         }
 
@@ -292,9 +291,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
          * @author Spencer Pearson (spencerpearson at dropbox dot com)
          */
         public static final class Builder<T> extends OvalBuilder<Reload<T>> {
-            @NotNull
             private JobRef<T> _jobRef;
-            private String _eTag;
+            private Optional<String> _eTag = Optional.empty();
 
             /**
              * Public constructor.
@@ -321,7 +319,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
              * @return This instance of Builder.
              */
             public Builder<T> setETag(@Nullable final String eTag) {
-                _eTag = eTag;
+                _eTag = Optional.ofNullable(eTag);
                 return this;
             }
         }
