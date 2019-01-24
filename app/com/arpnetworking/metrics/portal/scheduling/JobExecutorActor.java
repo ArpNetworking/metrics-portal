@@ -276,9 +276,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *
      * @param <T> The type of the result computed by the referenced {@link Job}.
      */
-    public static final class Reload<T> {
+    public static final class Reload<T> implements Serializable {
         private final JobRef<T> _jobRef;
-        @Nullable
         private final Optional<String> _eTag;
 
         private Reload(final Builder<T> builder) {
@@ -319,6 +318,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .add("eTag", _eTag)
                     .toString();
         }
+
+        private static final long serialVersionUID = 1L;
 
         /**
          * Implementation of builder pattern for {@link Reload}.
