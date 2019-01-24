@@ -115,7 +115,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         });
     }
 
-    private void stopForever() {
+    private void killSelf() {
         // TODO(spencerpearson): Per https://doc.akka.io/docs/akka/2.5.4/java/cluster-sharding.html#remembering-entities ,
         //   might we need to send a Passivate message to our parent?
         getSelf().tell(PoisonPill.getInstance(), getSelf());
@@ -145,7 +145,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .addData("cached", oldRef)
                     .addData("new", ref)
                     .log();
-            stopForever();
+            killSelf();
             throw new IllegalStateException(String.format("got JobRef %s, but already initialized with %s", ref, oldRef));
         }
 
@@ -182,7 +182,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
         } catch (final NoSuchElementException error) {
             _currentlyExecuting.set(false);
-            stopForever();
+            killSelf();
             return;
         }
 
@@ -196,7 +196,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         }
                         cachedJob.reload(_injector);
                     } catch (final NoSuchElementException error2) {
-                        stopForever();
+                        killSelf();
                     }
                     return result;
                 })
@@ -223,7 +223,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                 .setMessage("job has no more scheduled runs")
                                 .addData("cachedJob", cachedJob)
                                 .log();
-                        stopForever();
+                        killSelf();
                         return;
                     }
 
@@ -248,7 +248,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                 .setMessage("job no longer exists in repository; stopping actor")
                                 .addData("jobRef", message.getJobRef())
                                 .log();
-                        stopForever();
+                        killSelf();
                         return;
                     }
                     timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
