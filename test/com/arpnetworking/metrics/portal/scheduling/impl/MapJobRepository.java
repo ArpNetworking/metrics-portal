@@ -29,7 +29,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 /**
  * A simple in-memory {@link JobRepository}. Not in any way persistent, probably not good for production usage.
