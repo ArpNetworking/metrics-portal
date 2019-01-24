@@ -26,6 +26,7 @@ import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -147,7 +148,7 @@ public class MainModule extends AbstractModule {
             final ActorSystem actorSystem,
             final ObjectMapper mapper,
             final Config configuration) {
-        return new KairosDbClient.Builder()
+        return new KairosDbClientImpl.Builder()
                 .setActorSystem(actorSystem)
                 .setMapper(mapper)
                 .setUri(URI.create(configuration.getString("kairosdb.uri")))

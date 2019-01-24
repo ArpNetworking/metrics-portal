@@ -1,0 +1,48 @@
+{
+  "queries": [
+    {
+      "results": [
+        {
+          "name": "cmf/web_perf/time_to_interactive_1d",
+          "tags": {
+            "browser_name": [
+              "Chrome",
+              "ChromeiOS",
+              "Edge",
+              "Firefox",
+              "Internet Explorer",
+              "NetFront",
+              "Opera",
+              "Safari",
+              "unknown"
+            ],
+            "navigation_type": [
+              "navigate"
+            ],
+            "office_ip": [
+              "False",
+              "True"
+            ],
+            "os_name": [
+              "BlackBerry",
+              "ChromeOS",
+              "Linux",
+              "Mac",
+              "Mac OS X",
+              "Windows",
+              "iOS",
+              "unknown"
+            ],
+            "product": [
+              "Home"
+            ],
+            "saved_from": [
+              "cmf/web_perf/time_to_interactive"
+            ]
+          },
+          "values": []
+        }
+      ]
+    }
+  ]
+}
