@@ -84,13 +84,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
+        timers().cancel(REGULAR_TICK_TIMER_NAME);
+        timers().cancel(EXTRA_TICK_TIMER_NAME);
     }
 
     @Override
     public void postRestart(final Throwable reason) throws Exception {
         super.postRestart(reason);
-        timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
+        timers().cancel(REGULAR_TICK_TIMER_NAME);
+        timers().cancel(EXTRA_TICK_TIMER_NAME);
     }
 
     /**
@@ -167,8 +169,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
 
                     if (!_cachedJob.isPresent()) {
-                        LOGGER.info()
-                                .setMessage("uninitialized JobExecutorActor is trying to tick")
+                        LOGGER.error()
+                                .setMessage("somehow, uninitialized JobExecutorActor is trying to tick")
                                 .log();
                         return;
                     }
@@ -209,7 +211,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                 .addData("jobRef", message.getJobRef())
                                 .log();
                         stopForever();
+                        return;
                     }
+                    timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
+                    getSelf().tell(Tick.INSTANCE, getSelf());
                 })
                 .build();
     }
