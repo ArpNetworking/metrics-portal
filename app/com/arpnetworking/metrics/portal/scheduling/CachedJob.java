@@ -52,6 +52,8 @@ public final class CachedJob<T> implements Job<T> {
         return MoreObjects.toStringHelper(this)
                 .add("ref", _ref)
                 .add("cached", _cached)
+                .add("lastRun", _lastRun)
+                .add("injector", _injector)
                 .toString();
     }
 
