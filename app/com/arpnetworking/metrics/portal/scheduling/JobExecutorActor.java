@@ -221,7 +221,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private static final String REGULAR_TICK_TIMER_NAME = "TICK";
     private static final String EXTRA_TICK_TIMER_NAME = "EXTRA_TICK";
-    /* package private */ static final String BROADCAST_TOPIC = "JobExecutorActor.broadcast";
     /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
