@@ -146,7 +146,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .addData("new", ref)
                     .log();
             stopForever();
-            throw new IllegalStateException("got JobRef id=" + ref.getJobId() + " but already initialized with id=" + oldRef.getJobId());
+            throw new IllegalStateException(String.format("got JobRef %s, but already initialized with %s", ref, oldRef));
         }
 
         return _cachedJob.get();
