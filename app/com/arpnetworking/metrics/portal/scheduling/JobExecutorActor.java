@@ -38,8 +38,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 
 /**
@@ -55,7 +55,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
-    private final Semaphore _executionMutex = new Semaphore(1);
+    private final AtomicBoolean _currentlyExecuting = new AtomicBoolean(false);
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
 
     /**
@@ -185,9 +185,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     if (_clock.instant().isBefore(nextRun.get())) {
                         scheduleExtraTickIfNecessary(nextRun.get());
                     } else {
-                        if (_executionMutex.tryAcquire()) {
+                        if (_currentlyExecuting.getAndSet(true)) {
                             cachedJob.execute(getSelf(), nextRun.get())
-                                    .whenComplete((result, error) -> _executionMutex.release());
+                                    .whenComplete((result, error) -> _currentlyExecuting.set(false));
                         }
                     }
                 })
