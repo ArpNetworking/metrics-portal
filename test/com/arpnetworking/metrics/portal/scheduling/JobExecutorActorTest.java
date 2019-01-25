@@ -204,20 +204,4 @@ public final class JobExecutorActorTest {
         Mockito.verify(repo, Mockito.timeout(1000).times(2)).jobStarted(Mockito.eq(job.getId()), Mockito.eq(organization), Mockito.any());
     }
 
-    @Test
-    public void testExtraTicks() {
-        final TestActorRef<JobExecutorActor<Integer>> testActor = TestActorRef.create(system, makeExecutorActorProps());
-        final JobExecutorActor<Integer> scheduler = testActor.underlyingActor();
-        Duration jTickInterval = Duration.ofNanos(JobExecutorActor.TICK_INTERVAL.toNanos());
-        assertEquals(
-                Optional.of(scala.concurrent.duration.Duration.Zero()),
-                scheduler.timeUntilExtraTick(t0.minus(Duration.ofDays(1))));
-        assertEquals(
-                Optional.of(JobExecutorActor.TICK_INTERVAL.div(2)),
-                scheduler.timeUntilExtraTick(t0.plus(jTickInterval.dividedBy(2))));
-        assertEquals(
-                Optional.empty(),
-                scheduler.timeUntilExtraTick(t0.plus(Duration.ofDays(1))));
-    }
-
 }

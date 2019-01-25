@@ -83,30 +83,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        timers().cancel(REGULAR_TICK_TIMER_NAME);
-        timers().cancel(EXTRA_TICK_TIMER_NAME);
+        // Ensure that no timers linger from a previous life:
+        timers().cancel(TICK_TIMER_NAME);
     }
 
-    /**
-     * Returns the time until the actor should next wake up.
-     *
-     * @param wakeUpBy The time we want to be sure we wake up by.
-     * @return The time until we should wake up. Always between 0 and (approximately) {@code wakeUpBy}.
-     */
-    /* package private */ Optional<FiniteDuration> timeUntilExtraTick(final Instant wakeUpBy) {
-        final FiniteDuration delta = Duration.fromNanos(ChronoUnit.NANOS.between(_clock.instant(), wakeUpBy));
-        if (delta.lt(Duration.Zero())) {
-            return Optional.of(Duration.Zero());
-        } else if (delta.lt(TICK_INTERVAL)) {
-            return Optional.of(delta);
-        }
-        return Optional.empty();
-    }
-
-    private void scheduleExtraTickIfNecessary(final Instant wakeUpBy) {
-        timeUntilExtraTick(wakeUpBy).ifPresent(timeRemaining -> {
-            timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, timeRemaining);
-        });
+    /* package private */ void scheduleTickFor(final Instant wakeUpAt) {
+        final FiniteDuration delta = Duration.fromNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
+        timers().startSingleTimer(TICK_TIMER_NAME, Tick.INSTANCE, delta);
     }
 
     private void killSelf() {
@@ -221,8 +204,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         return;
                     }
 
-                    if (_clock.instant().isBefore(nextRun.get())) {
-                        scheduleExtraTickIfNecessary(nextRun.get());
+                    if (_clock.instant().isBefore(nextRun.get().minus(EXECUTION_SLOP))) {
+                        scheduleTickFor(nextRun.get());
                     } else {
                         attemptExecuteAndUpdateRepository(nextRun.get());
                     }
@@ -245,15 +228,17 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         killSelf();
                         return;
                     }
-                    timers().startPeriodicTimer(REGULAR_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
                     getSelf().tell(Tick.INSTANCE, getSelf());
                 })
                 .build();
     }
 
-    private static final String REGULAR_TICK_TIMER_NAME = "TICK";
-    private static final String EXTRA_TICK_TIMER_NAME = "EXTRA_TICK";
-    /* package private */ static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
+    private static final String TICK_TIMER_NAME = "TICK";
+    /**
+     * If we wake up very slightly before we're supposed to execute, we should just execute,
+     * rather than scheduling another wakeup in the very near future.
+     */
+    /* package private */ static final java.time.Duration EXECUTION_SLOP = java.time.Duration.ofMillis(500);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
     /**
