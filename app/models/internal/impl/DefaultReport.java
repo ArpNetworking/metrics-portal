@@ -21,7 +21,6 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
@@ -75,13 +74,6 @@ public final class DefaultReport implements Report {
     @Override
     public ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat() {
         return _recipients.asMap();
-    }
-
-    @Override
-    public ImmutableSet<Recipient> getRecipients() {
-        return _recipients.values()
-                .stream()
-                .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override
