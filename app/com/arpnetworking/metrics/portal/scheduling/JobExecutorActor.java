@@ -87,11 +87,22 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        // Ensure that no timers linger from a previous life:
+        // Ensure that no timers linger from a previous life.
+        // (Even if/though the timer itself died with the old actor instance, its messages may still linger.
+        //  `cancel()` ensures we'll ignore those messages.)
         timers().cancel(TICK_TIMER_NAME);
     }
 
-    /* package private */ void scheduleTickFor(final Instant wakeUpAt) {
+    @Override
+    public void postRestart(final Throwable reason) throws Exception {
+        super.postRestart(reason);
+        LOGGER.info()
+                .setMessage("restarting after error")
+                .setThrowable(reason)
+                .log();
+    }
+
+    private void scheduleTickFor(final Instant wakeUpAt) {
         final FiniteDuration delta = Duration.fromNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
         timers().startSingleTimer(TICK_TIMER_NAME, Tick.INSTANCE, delta);
     }
@@ -121,11 +132,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         final JobRef<T> oldRef = _cachedJob.get().getRef();
         if (!oldRef.equals(ref)) {
-            LOGGER.error()
-                    .setMessage("JobRef in received message does not match cached JobRef")
-                    .addData("cached", oldRef)
-                    .addData("new", ref)
-                    .log();
             killSelf();
             throw new IllegalStateException(String.format("got JobRef %s, but already initialized with %s", ref, oldRef));
         }
@@ -143,10 +149,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void attemptExecuteAndUpdateRepository(final Instant scheduled) {
         if (!_cachedJob.isPresent()) {
-            LOGGER.error()
-                    .setMessage("unable to execute: executor is not initialized")
-                    .log();
-            return;
+            killSelf();
+            throw new IllegalStateException("unable to execute: executor is not initialized");
         }
 
         final CachedJob<T> cachedJob = _cachedJob.get();
@@ -184,10 +188,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
 
                     if (!_cachedJob.isPresent()) {
-                        LOGGER.error()
-                                .setMessage("somehow, uninitialized JobExecutorActor is trying to tick")
-                                .log();
-                        return;
+                        killSelf();
+                        throw new IllegalStateException("somehow, uninitialized JobExecutorActor is trying to tick");
                     }
                     final CachedJob<T> cachedJob = _cachedJob.get();
 
@@ -258,7 +260,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                     typedMessage.getOutcome().right().get());
                         }
                         cachedJob.reload(_injector);
-                    } catch (final NoSuchElementException error2) {
+                    } catch (final NoSuchElementException error) {
                         killSelf();
                     }
                 })
