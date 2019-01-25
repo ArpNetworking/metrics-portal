@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -30,6 +31,9 @@ import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
+import scala.util.Either;
+import scala.util.Left;
+import scala.util.Right;
 
 import java.io.Serializable;
 import java.time.Clock;
@@ -163,21 +167,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             return;
         }
 
-        job.execute(getSelf(), scheduled)
-                .handle((result, error) -> {
-                    try {
-                        if (error == null) {
-                            repo.jobSucceeded(ref.getJobId(), ref.getOrganization(), scheduled, result);
-                        } else {
-                            repo.jobFailed(ref.getJobId(), ref.getOrganization(), scheduled, error);
-                        }
-                        cachedJob.reload(_injector);
-                    } catch (final NoSuchElementException error2) {
-                        killSelf();
-                    }
-                    return result;
-                })
-                .whenComplete((result, error) -> _currentlyExecuting.set(false));
+        PatternsCS.pipe(
+                job.execute(getSelf(), scheduled)
+                        .handle((result, error) -> new JobCompleted.Builder<T>()
+                                    .setScheduled(scheduled)
+                                    .setOutcome(error, result)
+                                    .build()),
+                getContext().system().dispatcher()
+        ).to(getSelf());
     }
 
     @Override
@@ -230,6 +227,41 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     }
                     getSelf().tell(Tick.INSTANCE, getSelf());
                 })
+                .match(JobCompleted.class, message -> {
+                    _currentlyExecuting.set(false);
+                    if (!_cachedJob.isPresent()) {
+                        LOGGER.error()
+                                .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
+                                .addData("scheduled", message.getScheduled())
+                                .addData("outcome", message.getOutcome())
+                                .log();
+                        return;
+                    }
+                    final CachedJob<T> cachedJob = _cachedJob.get();
+                    final JobRef<T> ref = cachedJob.getRef();
+
+                    @SuppressWarnings("unchecked")
+                    final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
+                    final JobRepository<T> repo = ref.getRepository(_injector);
+                    try {
+                        if (message.getOutcome().isLeft()) {
+                            repo.jobFailed(
+                                    ref.getJobId(),
+                                    ref.getOrganization(),
+                                    message.getScheduled(),
+                                    typedMessage.getOutcome().left().get());
+                        } else {
+                            repo.jobSucceeded(
+                                    ref.getJobId(),
+                                    ref.getOrganization(),
+                                    message.getScheduled(),
+                                    typedMessage.getOutcome().right().get());
+                        }
+                        cachedJob.reload(_injector);
+                    } catch (final NoSuchElementException error2) {
+                        killSelf();
+                    }
+                })
                 .build();
     }
 
@@ -238,7 +270,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * If we wake up very slightly before we're supposed to execute, we should just execute,
      * rather than scheduling another wakeup in the very near future.
      */
-    /* package private */ static final java.time.Duration EXECUTION_SLOP = java.time.Duration.ofMillis(500);
+    private static final java.time.Duration EXECUTION_SLOP = java.time.Duration.ofMillis(500);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
 
     /**
@@ -338,6 +370,102 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
              */
             public Builder<T> setETag(@Nullable final String eTag) {
                 _eTag = eTag;
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Indicates that a job completed (either successfully or unsuccessfully).
+     *
+     * @param <T> The type of the result computed by the referenced {@link Job}.
+     */
+    public static final class JobCompleted<T> {
+        private final Instant _scheduled;
+        private final Either<Throwable, T> _outcome;
+
+        private JobCompleted(final Builder<T> builder) {
+            _scheduled = builder._scheduled;
+            _outcome = builder._outcome;
+        }
+
+        public Instant getScheduled() {
+            return _scheduled;
+        }
+
+        public Either<Throwable, T> getOutcome() {
+            return _outcome;
+        }
+
+        /**
+         * Implementation of builder pattern for {@link JobCompleted}.
+         *
+         * @param <T> The type of the result computed by the referenced {@link Job}.
+         *
+         * @author Spencer Pearson (spencerpearson at dropbox dot com)
+         */
+        public static final class Builder<T> extends OvalBuilder<JobCompleted<T>> {
+            @NotNull
+            private Instant _scheduled;
+            @NotNull
+            private Either<Throwable, T> _outcome;
+
+            /**
+             * Public constructor.
+             */
+            Builder() {
+                super(JobCompleted<T>::new);
+            }
+
+            /**
+             * The instant the job-run was scheduled for. Required. Must not be null.
+             *
+             * @param scheduled The instant.
+             * @return This instance of Builder.
+             */
+            public Builder<T> setScheduled(final Instant scheduled) {
+                _scheduled = scheduled;
+                return this;
+            }
+
+            /**
+             * Convenience function to delegate to either {@code setResult} or {@code setError} as appropriate.
+             *
+             * @param result The result (or null).
+             *
+             * @return This instance of Builder.
+             */
+            public Builder<T> setOutcome(@Nullable final Throwable error, @Nullable final T result) {
+                if (error == null) {
+                    if (result == null) {
+                        throw new IllegalArgumentException("result and error can't both be null");
+                    }
+                    setResult(result);
+                } else {
+                    setError(error);
+                }
+                return this;
+            }
+
+            /**
+             * The result of the job. Either this or {@code setError} must be given. Must not be null.
+             *
+             * @param result The result.
+             * @return This instance of Builder.
+             */
+            public Builder<T> setResult(final T result) {
+                _outcome = new Right<>(result);
+                return this;
+            }
+
+            /**
+             * The error (if any) which caused the job to fail. Either this or {@code setResult} must be given. Must not be null.
+             *
+             * @param error The error.
+             * @return This instance of Builder.
+             */
+            public Builder<T> setError(@Nullable final Throwable error) {
+                _outcome = new Left<>(error);
                 return this;
             }
         }
