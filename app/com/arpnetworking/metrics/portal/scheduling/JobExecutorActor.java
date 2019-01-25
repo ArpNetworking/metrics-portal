@@ -42,7 +42,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 
@@ -197,88 +196,102 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         ).to(getSelf());
     }
 
+    private void tick(final Tick message) {
+        _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
+
+        if (!_cachedJob.isPresent()) {
+            killSelf();
+            throw new IllegalStateException("somehow, uninitialized JobExecutorActor is trying to tick");
+        }
+        final CachedJob<T> cachedJob = _cachedJob.get();
+
+        final Optional<Instant> nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
+        if (!nextRun.isPresent()) {
+            LOGGER.info()
+                    .setMessage("job has no more scheduled runs")
+                    .addData("cachedJob", cachedJob)
+                    .log();
+            killSelf();
+            return;
+        }
+
+        if (_clock.instant().isBefore(nextRun.get().minus(EXECUTION_SLOP))) {
+            scheduleTickFor(nextRun.get());
+        } else {
+            attemptExecuteAndUpdateRepository(nextRun.get());
+        }
+    }
+
+    private void reload(final Reload<T> message) {
+        final Optional<String> eTag = message.getETag();
+        final CachedJob<T> cachedJob;
+        try {
+            cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
+            if (eTag.isPresent()) {
+                cachedJob.reloadIfOutdated(_injector, eTag.get());
+            } else {
+                cachedJob.reload(_injector);
+            }
+        } catch (final NoSuchElementException error) {
+            LOGGER.warn()
+                    .setMessage("job no longer exists in repository; stopping actor")
+                    .addData("jobRef", message.getJobRef())
+                    .log();
+            killSelf();
+            return;
+        }
+        getSelf().tell(Tick.INSTANCE, getSelf());
+    }
+
+    private void jobCompleted(final JobCompleted<?> message) {
+        _currentlyExecuting.set(false);
+        if (!_cachedJob.isPresent()) {
+            LOGGER.error()
+                    .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
+                    .addData("scheduled", message.getScheduled())
+                    .addData("outcome", message.getOutcome())
+                    .log();
+            return;
+        }
+        final CachedJob<T> cachedJob = _cachedJob.get();
+        final JobRef<T> ref = cachedJob.getRef();
+
+        @SuppressWarnings("unchecked")
+        final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
+        final JobRepository<T> repo = ref.getRepository(_injector);
+        try {
+            if (message.getOutcome().isLeft()) {
+                repo.jobFailed(
+                        ref.getJobId(),
+                        ref.getOrganization(),
+                        message.getScheduled(),
+                        typedMessage.getOutcome().left().get());
+            } else {
+                repo.jobSucceeded(
+                        ref.getJobId(),
+                        ref.getOrganization(),
+                        message.getScheduled(),
+                        typedMessage.getOutcome().right().get());
+            }
+            cachedJob.reload(_injector);
+        } catch (final NoSuchElementException error) {
+            killSelf();
+        }
+    }
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(Tick.class, message -> {
-                    _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
-
-                    if (!_cachedJob.isPresent()) {
-                        killSelf();
-                        throw new IllegalStateException("somehow, uninitialized JobExecutorActor is trying to tick");
-                    }
-                    final CachedJob<T> cachedJob = _cachedJob.get();
-
-                    final Optional<Instant> nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
-                    if (!nextRun.isPresent()) {
-                        LOGGER.info()
-                                .setMessage("job has no more scheduled runs")
-                                .addData("cachedJob", cachedJob)
-                                .log();
-                        killSelf();
-                        return;
-                    }
-
-                    if (_clock.instant().isBefore(nextRun.get().minus(EXECUTION_SLOP))) {
-                        scheduleTickFor(nextRun.get());
-                    } else {
-                        attemptExecuteAndUpdateRepository(nextRun.get());
-                    }
-                })
+                .match(Tick.class, this::tick)
                 .match(Reload.class, message -> {
-                    final Optional<String> eTag = ((Reload<?>) message).getETag();
-                    final CachedJob<T> cachedJob;
-                    try {
-                        cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
-                        if (eTag.isPresent()) {
-                            cachedJob.reloadIfOutdated(_injector, eTag.get());
-                        } else {
-                            cachedJob.reload(_injector);
-                        }
-                    } catch (final NoSuchElementException error) {
-                        LOGGER.warn()
-                                .setMessage("job no longer exists in repository; stopping actor")
-                                .addData("jobRef", message.getJobRef())
-                                .log();
-                        killSelf();
-                        return;
-                    }
-                    getSelf().tell(Tick.INSTANCE, getSelf());
+                    @SuppressWarnings("unchecked")
+                    final Reload<T> typedMessage = (Reload<T>) message;
+                    this.reload(typedMessage);
                 })
                 .match(JobCompleted.class, message -> {
-                    _currentlyExecuting.set(false);
-                    if (!_cachedJob.isPresent()) {
-                        LOGGER.error()
-                                .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
-                                .addData("scheduled", message.getScheduled())
-                                .addData("outcome", message.getOutcome())
-                                .log();
-                        return;
-                    }
-                    final CachedJob<T> cachedJob = _cachedJob.get();
-                    final JobRef<T> ref = cachedJob.getRef();
-
                     @SuppressWarnings("unchecked")
                     final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
-                    final JobRepository<T> repo = ref.getRepository(_injector);
-                    try {
-                        if (message.getOutcome().isLeft()) {
-                            repo.jobFailed(
-                                    ref.getJobId(),
-                                    ref.getOrganization(),
-                                    message.getScheduled(),
-                                    typedMessage.getOutcome().left().get());
-                        } else {
-                            repo.jobSucceeded(
-                                    ref.getJobId(),
-                                    ref.getOrganization(),
-                                    message.getScheduled(),
-                                    typedMessage.getOutcome().right().get());
-                        }
-                        cachedJob.reload(_injector);
-                    } catch (final NoSuchElementException error) {
-                        killSelf();
-                    }
+                    this.jobCompleted(typedMessage);
                 })
                 .build();
     }
@@ -449,7 +462,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             /**
              * Convenience function to delegate to either {@code setResult} or {@code setError} as appropriate.
              *
+             * Either {@code result} or {@code error} must be non-null.
+             *
              * @param result The result (or null).
+             * @param error The error which caused the job to fail (or null).
              *
              * @return This instance of Builder.
              */
@@ -458,32 +474,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     if (result == null) {
                         throw new IllegalArgumentException("result and error can't both be null");
                     }
-                    setResult(result);
+                    _outcome = new Right<>(result);
                 } else {
-                    setError(error);
+                    _outcome = new Left<>(error);
                 }
-                return this;
-            }
-
-            /**
-             * The result of the job. Either this or {@code setError} must be given. Must not be null.
-             *
-             * @param result The result.
-             * @return This instance of Builder.
-             */
-            public Builder<T> setResult(final T result) {
-                _outcome = new Right<>(result);
-                return this;
-            }
-
-            /**
-             * The error (if any) which caused the job to fail. Either this or {@code setResult} must be given. Must not be null.
-             *
-             * @param error The error.
-             * @return This instance of Builder.
-             */
-            public Builder<T> setError(@Nullable final Throwable error) {
-                _outcome = new Left<>(error);
                 return this;
             }
         }
