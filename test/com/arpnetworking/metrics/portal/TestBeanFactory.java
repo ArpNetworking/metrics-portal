@@ -15,11 +15,19 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
+import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
+import models.ebean.HtmlReportFormat;
 import models.ebean.NagiosExtension;
+import models.ebean.Recipient;
+import models.ebean.ReportFormat;
+import models.ebean.ReportSchedule;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -29,8 +37,13 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
+import models.internal.impl.DefaultReport;
+import models.internal.reports.ReportSource;
 import org.joda.time.Period;
 
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +56,104 @@ import java.util.UUID;
  * @author Deepika Misra (deepika at groupon dot com)
  */
 public final class TestBeanFactory {
+
+    private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
+    private static final String TEST_HOST = "test-host";
+    private static final String TEST_CLUSTER = "test-cluster";
+    private static final String TEST_METRIC = "test-metric";
+    private static final String TEST_SERVICE = "test-service";
+    private static final String TEST_SCRIPT = "test-script";
+    private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
+    private static final String TEST_NAME = "test-name";
+    private static final List<Operator> OPERATORS = Arrays.asList(
+            Operator.EQUAL_TO,
+            Operator.GREATER_THAN,
+            Operator.GREATER_THAN_OR_EQUAL_TO,
+            Operator.LESS_THAN_OR_EQUAL_TO,
+            Operator.LESS_THAN,
+            Operator.NOT_EQUAL_TO);
+    private static final int TEST_PERIOD_IN_SECONDS = 600;
+    private static final String TEST_STATISTIC = "metrics_seen_sum";
+    private static final String TEST_QUANTITY_UNIT = "test-unit";
+    private static final List<String> NAGIOS_SEVERITY = Arrays.asList("CRITICAL", "WARNING", "OK");
+    private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
+    private static final Random RANDOM = new Random();
+
+    private TestBeanFactory() {
+    }
+
+    public static DefaultReport.Builder createReportBuilder() {
+        final ReportSource source = createEbeanReportSource().toInternal();
+
+        final Schedule schedule = new OneOffSchedule.Builder()
+                .setRunAtAndAfter(Instant.now().plus(Duration.ofHours(1)))
+                .setRunUntil(null)
+                .build();
+
+        final models.internal.impl.PdfReportFormat format =
+                new models.internal.impl.PdfReportFormat.Builder()
+                        .setWidthInches(8.5f)
+                        .setHeightInches(11.0f)
+                        .build();
+
+        final models.internal.reports.Recipient recipient = createRecipient();
+
+        return new DefaultReport.Builder()
+                .setId(UUID.randomUUID())
+                .setName(TEST_NAME)
+                .setRecipients(ImmutableSetMultimap.of(format, recipient))
+                .setReportSource(source)
+                .setSchedule(schedule);
+    }
+
+    public static models.ebean.Report createEbeanReport() {
+        final ReportSchedule schedule = new ReportSchedule();
+        schedule.setRunAt(Instant.now());
+        schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
+
+        final ReportFormat format = new HtmlReportFormat();
+        final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
+        final Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
+
+        final models.ebean.Report report = new models.ebean.Report();
+        report.setName(TEST_NAME);
+        report.setOrganization(TestBeanFactory.createEbeanOrganization());
+        report.setRecipients(ImmutableSetMultimap.of(format, recipient));
+        report.setReportSource(source);
+        report.setSchedule(schedule);
+        report.setUuid(UUID.randomUUID());
+
+        Ebean.save(report.getOrganization());
+        return report;
+    }
+
+    public static models.ebean.ReportSource createEbeanReportSource() {
+        final UUID sourceUuid = UUID.randomUUID();
+        final URI testUri = URI.create("http://test-url.com");
+        final models.ebean.ChromeScreenshotReportSource source = new ChromeScreenshotReportSource();
+        source.setUri(testUri);
+        source.setUuid(sourceUuid);
+        source.setTitle("Test title");
+        source.setTriggeringEventName("onload");
+        return source;
+    }
+
+    public static models.internal.reports.Recipient createRecipient() {
+        final UUID recipientId = UUID.randomUUID();
+        return new models.internal.impl.DefaultEmailRecipient.Builder()
+                .setAddress(TEST_EMAIL)
+                .setId(recipientId)
+                .build();
+
+    }
+
+    public static Recipient createEbeanReportRecipient() {
+        final UUID recipientId = UUID.randomUUID();
+
+        final Recipient recipient = Recipient.newEmailRecipient(TEST_EMAIL);
+        recipient.setUuid(recipientId);
+        return recipient;
+    }
 
     public static Organization organizationFrom(final models.ebean.Organization organization) {
         return new DefaultOrganization.Builder()
@@ -183,25 +294,4 @@ public final class TestBeanFactory {
         host.setOrganization(Organization.DEFAULT.getId());
         return host;
     }
-
-    private static final String TEST_HOST = "test-host";
-    private static final String TEST_CLUSTER = "test-cluster";
-    private static final String TEST_METRIC = "test-metric";
-    private static final String TEST_SERVICE = "test-service";
-    private static final String TEST_SCRIPT = "test-script";
-    private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
-    private static final String TEST_NAME = "test-name";
-    private static final List<Operator> OPERATORS = Arrays.asList(
-            Operator.EQUAL_TO,
-            Operator.GREATER_THAN,
-            Operator.GREATER_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN,
-            Operator.NOT_EQUAL_TO);
-    private static final int TEST_PERIOD_IN_SECONDS = 600;
-    private static final String TEST_STATISTIC = "metrics_seen_sum";
-    private static final String TEST_QUANTITY_UNIT = "test-unit";
-    private static final List<String> NAGIOS_SEVERITY = Arrays.asList("CRITICAL", "WARNING", "OK");
-    private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
-    private static final Random RANDOM = new Random();
 }

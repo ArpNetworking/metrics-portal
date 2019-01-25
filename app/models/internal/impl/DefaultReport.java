@@ -20,15 +20,19 @@ import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import models.internal.reports.RecipientGroup;
+import models.internal.reports.Recipient;
 import models.internal.reports.Report;
+import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -45,7 +49,7 @@ public final class DefaultReport implements Report {
         _name = builder._name;
         _schedule = builder._schedule;
         _source = builder._source;
-        _groups = builder._groups;
+        _recipients = builder._recipients;
     }
 
     @Override
@@ -69,8 +73,15 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public ImmutableSet<RecipientGroup> getRecipientGroups() {
-        return _groups;
+    public ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat() {
+        return _recipients.asMap();
+    }
+
+    @Override
+    public ImmutableSet<Recipient> getRecipients() {
+        return _recipients.values()
+                .stream()
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     @Override
@@ -86,7 +97,8 @@ public final class DefaultReport implements Report {
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
-    private final ImmutableSet<RecipientGroup> _groups;
+
+    private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
 
     /**
      * Builder implementation that constructs {@code DefaultReport}.
@@ -146,11 +158,11 @@ public final class DefaultReport implements Report {
         /**
          * Set the report recipients. Required. Cannot be null.
          *
-         * @param groups The report recipient groups.
+         * @param recipients The mapping of formats to recipients.
          * @return This instance of {@code Builder}.
          */
-        public Builder setRecipientGroups(final ImmutableSet<RecipientGroup> groups) {
-            _groups = groups;
+        public Builder setRecipients(final ImmutableSetMultimap<ReportFormat, Recipient> recipients) {
+            _recipients = recipients;
             return this;
         }
 
@@ -162,7 +174,7 @@ public final class DefaultReport implements Report {
         @NotNull
         private ReportSource _source;
         @NotNull
-        private ImmutableSet<RecipientGroup> _groups;
+        private ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
         @NotNull
         private Schedule _schedule;
     }

@@ -63,12 +63,6 @@ public final class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public void addOrUpdateJob(final Job<T> job, final Organization organization) {
-        assertIsOpen();
-        _jobs.computeIfAbsent(organization, o -> Maps.newHashMap()).put(job.getId(), job);
-    }
-
-    @Override
     public Optional<Job<T>> getJob(final UUID id, final Organization organization) {
         assertIsOpen();
         return Optional.ofNullable(_jobs.getOrDefault(organization, Maps.newHashMap()).get(id));

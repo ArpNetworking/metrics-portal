@@ -37,6 +37,7 @@
   <logger name="models" level="DEBUG" />
   <logger name="org.reflections.Reflections" level="ERROR" />
   <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
+  <logger name="io.ebean" level="TRACE" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalLogger" />

@@ -59,7 +59,6 @@ public final class JobExecutorActorTest {
     private static class MockableJobRepository implements JobRepository<UUID> {
          @Override public void open() {}
          @Override public void close() {}
-         @Override public void addOrUpdateJob(final Job<UUID> job, final Organization organization) {}
          @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
          @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
          @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}

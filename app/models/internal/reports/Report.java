@@ -16,8 +16,14 @@
 
 package models.internal.reports;
 
-import com.google.common.collect.ImmutableCollection;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import models.internal.impl.DefaultReportResult;
 import models.internal.scheduling.Job;
+
+import java.util.Collection;
 
 /**
  * Internal model for a Report.
@@ -40,14 +46,29 @@ public interface Report extends Job<Report.Result> {
     ReportSource getSource();
 
     /**
-     * Get the recipient groups that will receive this report.
+     * Get the recipients that will receive this report, grouped by format.
      *
-     * @return The recipient groups that will receive this report.
+     * @return A mapping of each {@link ReportFormat} to its recipients
      */
-    ImmutableCollection<RecipientGroup> getRecipientGroups();
+    ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat();
+
+    /**
+     * Get a set of all recipients that will receive this report.
+     *
+     * @return A set of this report's recipients.
+     */
+    ImmutableSet<Recipient> getRecipients();
 
     /**
      * Internal model for a result created from a report.
      */
+    @JsonTypeInfo(
+            include = JsonTypeInfo.As.PROPERTY,
+            use = JsonTypeInfo.Id.NAME,
+            property = "type"
+    )
+    @JsonSubTypes(
+            @JsonSubTypes.Type(value = DefaultReportResult.class, name = "DefaultReportResult")
+    )
     interface Result {}
 }

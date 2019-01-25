@@ -43,14 +43,6 @@ public interface JobRepository<T> {
     void close();
 
     /**
-     * Create or update a {@link Job}.
-     *
-     * @param job The {@link Job} to create or update.
-     * @param organization The organization owning the job.
-     */
-    void addOrUpdateJob(Job<T> job, Organization organization);
-
-    /**
      * Retrieve a previously-stored Job.
      *
      * @param id The id assigned to the Job by a previous call to {@code add}.

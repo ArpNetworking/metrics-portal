@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -60,6 +61,40 @@ public final class PeriodicSchedule extends BaseSchedule {
             }
         }
         return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
+    }
+
+    public ChronoUnit getPeriod() {
+        return _period;
+    }
+
+    public ZoneId getZone() {
+        return _zone;
+    }
+
+    public Duration getOffset() {
+        return _offset;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        final PeriodicSchedule that = (PeriodicSchedule) o;
+        return getPeriod() == that.getPeriod()
+                && Objects.equals(getZone(), that.getZone())
+                && Objects.equals(getOffset(), that.getOffset());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getPeriod(), getZone(), getOffset());
     }
 
 

@@ -22,6 +22,7 @@ import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -46,11 +47,11 @@ public abstract class BaseSchedule implements Schedule {
         _runUntil = Optional.ofNullable(builder._runUntil);
     }
 
-    protected Instant getRunAtAndAfter() {
+    public Instant getRunAtAndAfter() {
         return _runAtAndAfter;
     }
 
-    protected Optional<Instant> getRunUntil() {
+    public Optional<Instant> getRunUntil() {
         return _runUntil;
     }
 
@@ -74,6 +75,24 @@ public abstract class BaseSchedule implements Schedule {
      * @return The next time to run the job.
      */
     protected abstract Optional<Instant> unboundedNextRun(Optional<Instant> lastRun);
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final BaseSchedule that = (BaseSchedule) o;
+        return Objects.equals(getRunAtAndAfter(), that.getRunAtAndAfter())
+                && Objects.equals(getRunUntil(), that.getRunUntil());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getRunAtAndAfter(), getRunUntil());
+    }
 
     /**
      * Builder implementation for {@link BaseSchedule} subclasses.
