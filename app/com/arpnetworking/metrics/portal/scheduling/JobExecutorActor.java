@@ -87,13 +87,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         timers().cancel(EXTRA_TICK_TIMER_NAME);
     }
 
-    @Override
-    public void postRestart(final Throwable reason) throws Exception {
-        super.postRestart(reason);
-        timers().cancel(REGULAR_TICK_TIMER_NAME);
-        timers().cancel(EXTRA_TICK_TIMER_NAME);
-    }
-
     /**
      * Returns the time until the actor should next wake up.
      *
