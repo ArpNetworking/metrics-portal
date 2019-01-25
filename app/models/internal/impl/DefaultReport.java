@@ -20,9 +20,8 @@ import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
@@ -92,12 +91,16 @@ public final class DefaultReport implements Report {
 
     @Override
     public String toString() {
-        final List<UUID> groupIds = _groups.stream().map(RecipientGroup::getId).collect(Collectors.toList());
+        final List<UUID> recipientIds =
+                _recipients.values()
+                        .stream()
+                        .map(Recipient::getId)
+                        .collect(Collectors.toList());
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
                 .add("name", _name)
                 .add("schedule", _schedule)
-                .add("groups.id", groupIds)
+                .add("recipients", recipientIds)
                 .add("source.id", _source.getId())
                 .toString();
     }
@@ -122,12 +125,12 @@ public final class DefaultReport implements Report {
                 && Objects.equals(_name, that._name)
                 && Objects.equals(_schedule, that._schedule)
                 && Objects.equals(_source, that._source)
-                && Objects.equals(_groups, that._groups);
+                && Objects.equals(_recipients, that._recipients);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _name, _schedule, _source, _groups);
+        return Objects.hash(_id, _name, _schedule, _source, _recipients);
     }
 
     /**

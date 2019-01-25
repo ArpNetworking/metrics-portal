@@ -49,7 +49,7 @@ public interface JobQuery<T> {
      *
      * @return The results of the query as a {@code QueryResult<Job<T>>} instance.
      */
-    QueryResult<? extends Job<T>> execute();
+    QueryResult<Job<T>> execute();
 
     /**
      * Accessor for the organization.

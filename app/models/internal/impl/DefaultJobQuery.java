@@ -29,6 +29,8 @@ import javax.annotation.Nullable;
 /**
  * Default internal model implementation for a job query.
  *
+ * @param <T> The type of result the Job computes.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
@@ -64,7 +66,7 @@ public final class DefaultJobQuery<T> implements JobQuery<T> {
     }
 
     @Override
-    public QueryResult<? extends Job<T>> execute() {
+    public QueryResult<Job<T>> execute() {
         return _repository.query(this);
     }
 

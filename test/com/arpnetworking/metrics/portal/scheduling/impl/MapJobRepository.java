@@ -19,13 +19,17 @@ import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.impl.DefaultQueryResult;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -103,8 +107,19 @@ public final class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public QueryResult<? extends Job<T>> query(final JobQuery<T> query) {
-        throw new UnsupportedOperationException();
+    public QueryResult<Job<T>> query(final JobQuery<T> query) {
+        final int limit = query.getLimit();
+        final int offset = query.getOffset().orElse(0);
+
+        final List<Job<T>> queryResult =
+                _jobs
+                    .getOrDefault(query.getOrganization(), ImmutableMap.of())
+                    .values()
+                    .stream()
+                    .skip(offset)
+                    .limit(limit)
+                    .collect(ImmutableList.toImmutableList());
+        return new DefaultQueryResult<>(queryResult, queryResult.size());
     }
 
     private void assertIsOpen() {

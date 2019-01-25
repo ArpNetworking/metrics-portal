@@ -141,7 +141,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
 
                     final JobRepository<T> repo = _jobRef.getRepository(_injector);
-                    final Optional<? extends Job<T>> job = _jobRef.get(_injector);
+                    final Optional<Job<T>> job = _jobRef.get(_injector);
                     if (!job.isPresent()) {
                         LOGGER.warn()
                                 .setMessage("no such job")

@@ -52,7 +52,7 @@ public final class JobRef<T> implements Serializable {
      * @param injector The Guice injector to load the repository through.
      * @return The referenced job, or {@code empty} if the repository contains no such job.
      */
-    public Optional<? extends Job<T>> get(final Injector injector) {
+    public Optional<Job<T>> get(final Injector injector) {
         return getRepository(injector).getJob(_jobId, getOrganization());
     }
 

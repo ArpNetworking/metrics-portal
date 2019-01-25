@@ -24,12 +24,15 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.impl.DefaultJobQuery;
+import models.internal.impl.DefaultQueryResult;
 import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
@@ -68,12 +71,12 @@ public final class JobExecutorActorTest {
 
         @Override
         public JobQuery<UUID> createQuery(final Organization organization) {
-            throw new UnsupportedOperationException();
+            return new DefaultJobQuery<>(this, organization);
         }
 
         @Override
-        public QueryResult<? extends Job<UUID>> query(final JobQuery<UUID> query) {
-            throw new UnsupportedOperationException();
+        public QueryResult<Job<UUID>> query(final JobQuery<UUID> query) {
+            return new DefaultQueryResult<>(ImmutableList.of(), 0);
         }
     }
 

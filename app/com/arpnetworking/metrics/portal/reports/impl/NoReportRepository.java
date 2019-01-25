@@ -33,13 +33,21 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 /**
  * An empty {@code ReportRepository}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com).
  */
 public final class NoReportRepository implements ReportRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(NoReportRepository.class);
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
+
+    /**
+     * Default constructor.
+     */
+    public NoReportRepository() {}
 
     @Override
     public Optional<Report> getReport(final UUID identifier, final Organization organization) {
@@ -77,8 +85,8 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<? extends Job<Report.Result>> getJob(final UUID id, final Organization organization) {
-        return getReport(id, organization);
+    public Optional<Job<Report.Result>> getJob(final UUID id, final Organization organization) {
+        return getReport(id, organization).map(Function.identity());
     }
 
     @Override
@@ -133,10 +141,10 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<? extends Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
         assertIsOpen();
         LOGGER.debug()
-                .setMessage("Querying query")
+                .setMessage("Executing query")
                 .addData("query", query)
                 .log();
         return new DefaultQueryResult<>(ImmutableList.of(), 0);

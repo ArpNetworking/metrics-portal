@@ -36,6 +36,8 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
@@ -99,6 +101,12 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
+        bind(ReportRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(DatabaseReportRepository.ReportQueryGenerator.class)
+                .toProvider(ConfigTypedProvider.provider("reportRepository.reportQueryGenerator.type"))
+                .in(Scopes.NO_SCOPE);
     }
 
     @Singleton
@@ -265,6 +273,38 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return alertRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class ReportRepositoryProvider implements Provider<ReportRepository> {
+        @Inject
+        ReportRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public ReportRepository get() {
+            final ReportRepository reportRepository = _injector.getInstance(
+                    ConfigurationHelper.<ReportRepository>getType(_environment, _configuration, "reportRepository.type"));
+            reportRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        reportRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return reportRepository;
         }
 
         private final Injector _injector;

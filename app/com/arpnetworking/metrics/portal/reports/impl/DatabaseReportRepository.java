@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.DuplicateKeyException;
 import io.ebean.Ebean;
@@ -37,7 +38,6 @@ import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
-import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
@@ -55,6 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
@@ -84,8 +85,14 @@ public final class DatabaseReportRepository implements ReportRepository {
     private AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final ReportQueryGenerator _reportQueryGenerator;
 
-    public DatabaseReportRepository() {
-        _reportQueryGenerator = new GenericQueryGenerator();
+    /**
+     * Public constructor.
+     *
+     * @param queryGenerator An instance of {@code ReportQueryGenerator} to use with this repository.
+     */
+    @Inject
+    public DatabaseReportRepository(final ReportQueryGenerator queryGenerator) {
+        _reportQueryGenerator = queryGenerator;
     }
 
     private static final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
@@ -249,23 +256,23 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Report> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
         assertIsOpen();
+
         LOGGER.debug()
-                .setMessage("Querying")
+                .setMessage("Executing query")
                 .addData("query", query)
                 .log();
 
-        final PagedList<models.ebean.Report> pagedReports = _reportQueryGenerator.createReportQuery(query);
-
-        final List<Report> reports =
-                pagedReports
+        final ImmutableList<Report> reports =
+                _reportQueryGenerator
+                        .createReportQuery(query)
                         .getList()
                         .stream()
                         .map(models.ebean.Report::toInternal)
-                        .collect(Collectors.toList());
+                        .collect(ImmutableList.toImmutableList());
 
-        return new DefaultQueryResult<>(reports, pagedReports.getTotalCount());
+        return new DefaultQueryResult<>(reports, reports.size());
     }
 
     @Override
@@ -451,7 +458,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     /**
-     * Inteface for database query generation.
+     * A generator for a database query given a {@link JobQuery}.
      */
     public interface ReportQueryGenerator {
         /**
@@ -467,16 +474,23 @@ public final class DatabaseReportRepository implements ReportRepository {
      * RDBMS agnostic query for reports.
      */
     public static final class GenericQueryGenerator implements ReportQueryGenerator {
+
+        /**
+         * Default constructor.
+         */
+        public GenericQueryGenerator() {
+        }
+
         @Override
         public PagedList<models.ebean.Report> createReportQuery(final JobQuery<Report.Result> query) {
             final int offset = query.getOffset().orElse(0);
+            final int limit = query.getLimit();
 
             return Ebean.find(models.ebean.Report.class)
                     .where()
                     .eq("organization.uuid", query.getOrganization().getId())
-                    .query()
                     .setFirstRow(offset)
-                    .setMaxRows(query.getLimit())
+                    .setMaxRows(limit)
                     .findPagedList();
         }
     }

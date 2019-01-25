@@ -50,7 +50,7 @@ public interface JobRepository<T> {
      * @param organization The organization owning the job.
      * @return The Job stored with that key.
      */
-    Optional<? extends Job<T>> getJob(UUID id, Organization organization);
+    Optional<Job<T>> getJob(UUID id, Organization organization);
 
     /**
      * Get the last time that a job with a given UUID was run.
@@ -105,5 +105,5 @@ public interface JobRepository<T> {
      * @param query The {@code JobQuery} instance to execute.
      * @return The jobs resulting from executing the query.
      */
-    QueryResult<? extends Job<T>> query(JobQuery<T> query);
+    QueryResult<Job<T>> query(JobQuery<T> query);
 }
