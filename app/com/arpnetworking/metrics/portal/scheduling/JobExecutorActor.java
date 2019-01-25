@@ -49,6 +49,22 @@ import javax.annotation.Nullable;
 /**
  * An actor that executes {@link Job}s.
  *
+ * <p>Lifecycle:</p>
+ * <ul>
+ *     <li>
+ *          <p><b>Unininitialized.</b> The actor is completely passive.</p>
+ *          <p>It starts out in this state (after instantiation, or after dying and being restarted).</p>
+ *          <p>It leaves this state when it receives a {@link Reload} message.</p>
+ *     </li>
+ *     <li>
+ *         <p><b>Initialized.</b> The actor will intermittently wake up to execute / reload its {@link CachedJob}.</p>
+ *         <p>It enters this state when it receives a {@link Reload} message.</p>
+ *         <p>It never leaves this state (except when it dies and is resurrected).</p>
+ *         <p>Once the actor is initialized, all subsequent {@link Reload} messages <i>must</i> reference the same {@link JobRef}.
+ *            Failure to respect this is considered a severe enough programming error that the actor will kill itself.</p>
+ *     </li>
+ * </ul>
+ *
  * @param <T> The type of result produced by the {@link Job}s.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
