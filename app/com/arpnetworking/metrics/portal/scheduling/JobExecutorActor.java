@@ -125,6 +125,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private void killSelf() {
         // TODO(spencerpearson): Per https://doc.akka.io/docs/akka/2.5.4/java/cluster-sharding.html#remembering-entities ,
         //   might we need to send a Passivate message to our parent?
+        //   Relevant: https://github.com/ArpNetworking/metrics-portal/pull/150#discussion_r251037350
         getSelf().tell(PoisonPill.getInstance(), getSelf());
     }
 
