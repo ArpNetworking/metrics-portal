@@ -239,8 +239,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             }
         } catch (final NoSuchElementException error) {
             LOGGER.warn()
-                    .setMessage("job no longer exists in repository; stopping actor")
-                    .addData("jobRef", message.getJobRef())
+                    .setMessage("tried to reload job, but job no longer exists in repository")
+                    .addData("ref", message.getJobRef())
                     .log();
             killSelf();
             return;
@@ -266,12 +266,23 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final JobRepository<T> repo = ref.getRepository(_injector);
         try {
             if (message.getOutcome().isLeft()) {
+                LOGGER.debug()
+                        .setMessage("marking job as failed")
+                        .addData("ref", ref)
+                        .addData("scheduled", message.getScheduled())
+                        .addData("error", message.getOutcome().left().get())
+                        .log();
                 repo.jobFailed(
                         ref.getJobId(),
                         ref.getOrganization(),
                         message.getScheduled(),
                         typedMessage.getOutcome().left().get());
             } else {
+                LOGGER.debug()
+                        .setMessage("marking job as successful")
+                        .addData("ref", ref)
+                        .addData("scheduled", message.getScheduled())
+                        .log();
                 repo.jobSucceeded(
                         ref.getJobId(),
                         ref.getOrganization(),
@@ -280,6 +291,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             }
             cachedJob.reload(_injector);
         } catch (final NoSuchElementException error) {
+            LOGGER.warn()
+                    .setMessage("tried to job as complete, but job no longer exists in repository")
+                    .addData("ref", ref)
+                    .addData("scheduled", message.getScheduled())
+                    .log();
             killSelf();
         }
     }
