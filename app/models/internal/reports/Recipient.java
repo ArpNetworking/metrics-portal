@@ -18,8 +18,23 @@ package models.internal.reports;
 
 import java.util.UUID;
 
+/**
+ * Internal model for a recipient, i.e. a destination.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 public interface Recipient {
+    /**
+     * Get the unique identifier of this recipient.
+     *
+     * @return the id of this recipient
+     */
     UUID getId();
 
+    /**
+     * Get the address of this recipient.
+     *
+     * @return the address of this recipient
+     */
     String getAddress();
 }

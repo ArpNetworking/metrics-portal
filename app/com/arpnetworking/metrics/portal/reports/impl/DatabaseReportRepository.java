@@ -372,7 +372,9 @@ public final class DatabaseReportRepository implements ReportRepository {
         throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());
     }
 
-    private ImmutableSetMultimap<models.ebean.ReportFormat, Recipient> internalModelToBean(final Map<ReportFormat, Collection<models.internal.reports.Recipient>> recipients) {
+    private ImmutableSetMultimap<models.ebean.ReportFormat, Recipient> internalModelToBean(
+            final Map<ReportFormat, Collection<models.internal.reports.Recipient>> recipients
+    ) {
         final ImmutableSetMultimap.Builder<models.ebean.ReportFormat, Recipient> multimapBuilder =
                 ImmutableSetMultimap.builder();
 

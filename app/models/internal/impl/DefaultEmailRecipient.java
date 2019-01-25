@@ -24,8 +24,12 @@ import net.sf.oval.constraint.NotNull;
 import java.util.Objects;
 import java.util.UUID;
 
-public class DefaultEmailRecipient implements Recipient {
-
+/**
+ * Default internal model for a recipient specified by an email address.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+public final class DefaultEmailRecipient implements Recipient {
     private final UUID _id;
     private final String _address;
 
@@ -62,6 +66,9 @@ public class DefaultEmailRecipient implements Recipient {
         return Objects.hash(_id, _address);
     }
 
+    /**
+     * Builder implementation that constructs {@code DefaultEmailRecipient}.
+     */
     public static final class Builder extends OvalBuilder<DefaultEmailRecipient> {
         @NotNull
         private UUID _id;
@@ -69,15 +76,30 @@ public class DefaultEmailRecipient implements Recipient {
         @NotNull
         private String _address;
 
+        /**
+         * Default constructor.
+         */
         public Builder() {
             super(DefaultEmailRecipient::new);
         }
 
+        /**
+         * Set the id. Required. Cannot be null.
+         *
+         * @param id the recipient id
+         * @return this instance of {@code Builder}
+         */
         public Builder setId(final UUID id) {
             _id = id;
             return this;
         }
 
+        /**
+         * Set the email address. Required. Cannot be null.
+         *
+         * @param address the email address
+         * @return this instance of {@code Builder}
+         */
         public Builder setAddress(final String address) {
             _address = address;
             return this;

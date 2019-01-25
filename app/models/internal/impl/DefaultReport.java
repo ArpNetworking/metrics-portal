@@ -155,10 +155,9 @@ public final class DefaultReport implements Report {
         }
 
         /**
-         * FIXME(cbriones): docstring
          * Set the report recipients. Required. Cannot be null.
          *
-         * @param recipients The report recipient groups.
+         * @param recipients The mapping of formats to recipients.
          * @return This instance of {@code Builder}.
          */
         public Builder setRecipients(final ImmutableSetMultimap<ReportFormat, Recipient> recipients) {

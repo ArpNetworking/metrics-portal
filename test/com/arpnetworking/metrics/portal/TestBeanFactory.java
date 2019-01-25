@@ -23,8 +23,10 @@ import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.Expression;
+import models.ebean.HtmlReportFormat;
 import models.ebean.NagiosExtension;
 import models.ebean.Recipient;
+import models.ebean.ReportFormat;
 import models.ebean.ReportSchedule;
 import models.internal.Alert;
 import models.internal.Context;
@@ -109,14 +111,14 @@ public final class TestBeanFactory {
         schedule.setRunAt(Instant.now());
         schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
 
-        // FIXME(cbriones): this isn't used
-        final Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
+        final ReportFormat format = new HtmlReportFormat();
         final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
+        final Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
 
         final models.ebean.Report report = new models.ebean.Report();
         report.setName(TEST_NAME);
         report.setOrganization(TestBeanFactory.createEbeanOrganization());
-        report.setRecipients(ImmutableSetMultimap.of());
+        report.setRecipients(ImmutableSetMultimap.of(format, recipient));
         report.setReportSource(source);
         report.setSchedule(schedule);
         report.setUuid(UUID.randomUUID());

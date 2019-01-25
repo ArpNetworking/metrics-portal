@@ -174,6 +174,12 @@ public final class Recipient {
         throw new PersistenceException("recipient type does not have an internal representation: " + type);
     }
 
+    /**
+     * Find a {@code models.ebean.Recipient} by {@code models.internal.reports.Recipient}.
+     *
+     * @param recipient The internal recipient to find
+     * @return The corresponding ebean recipient
+     */
     public static Optional<Recipient> findByRecipient(final models.internal.reports.Recipient recipient) {
         return FINDER.query()
                 .where()

@@ -45,10 +45,9 @@ public interface Report extends Job<Report.Result> {
     ReportSource getSource();
 
     /**
-     * FIXME(cbriones): This docstring is wrong
-     * Get the recipient groups that will receive this report.
+     * Get the recipients that will receive this report, grouped by format.
      *
-     * @return The recipient groups that will receive this report.
+     * @return A mapping of each {@link ReportFormat} to its recipients
      */
     ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat();
 

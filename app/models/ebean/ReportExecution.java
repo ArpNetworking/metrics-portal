@@ -26,10 +26,11 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -42,19 +43,19 @@ import javax.persistence.Table;
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
 @Table(name = "report_executions", schema = "portal")
+@IdClass(ReportExecution.Key.class)
 public final class ReportExecution {
 
     private static final String EXCEPTION_KEY = "exception";
 
-    @EmbeddedId
-    private ReportExecutionKey key;
-    @Column
+    @Id
     @ManyToOne(optional = false)
     @JoinColumn(name = "report_id")
     private Report report;
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private State state;
+    @Id
     @Column(name = "scheduled", insertable = false, updatable = false)
     private Instant scheduled;
     @Nullable
@@ -165,21 +166,24 @@ public final class ReportExecution {
     }
 
     /**
-     * Composite Key used by Ebean.
+     * Primary Key for a {@link ReportExecution}.
      */
     @Embeddable
-    protected static final class ReportExecutionKey {
+    protected static final class Key {
         @Nullable
         @Column(name = "report_id")
-        private Long _reportId;
+        private Long reportId;
 
         @Nullable
         @Column(name = "scheduled")
-        private Instant _scheduled;
+        private Instant scheduled;
 
-        ReportExecutionKey(@Nullable final Long reportId, @Nullable final Instant scheduled) {
-            _reportId = reportId;
-            _scheduled = scheduled;
+        /**
+         * Default constructor, required by Ebean.
+         */
+        public Key() {
+            reportId = null;
+            scheduled = null;
         }
 
         @Override
@@ -190,13 +194,13 @@ public final class ReportExecution {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final ReportExecutionKey key = (ReportExecutionKey) o;
-            return Objects.equals(_reportId, key._reportId) && Objects.equals(_scheduled, key._scheduled);
+            final Key key = (Key) o;
+            return Objects.equals(reportId, key.reportId) && Objects.equals(scheduled, key.scheduled);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(_reportId, _scheduled);
+            return Objects.hash(reportId, scheduled);
         }
     }
 }

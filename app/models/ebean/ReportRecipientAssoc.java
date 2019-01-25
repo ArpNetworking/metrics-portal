@@ -20,6 +20,7 @@ import io.ebean.annotation.CreatedTimestamp;
 
 import java.sql.Timestamp;
 import java.util.Objects;
+import javax.annotation.Nullable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -32,9 +33,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+/**
+ * Data model for a mapping between a report and a recipient.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 @Entity
 @Table(name = "reports_to_recipients", schema = "portal")
-@IdClass(ReportRecipientAssoc.PK.class)
+@IdClass(ReportRecipientAssoc.Key.class)
 // CHECKSTYLE.OFF: MemberNameCheck
 public class ReportRecipientAssoc {
     @CreatedTimestamp
@@ -59,6 +65,10 @@ public class ReportRecipientAssoc {
         return recipient;
     }
 
+    public void setRecipient(final Recipient value) {
+        recipient = value;
+    }
+
     public Report getReport() {
         return report;
     }
@@ -67,30 +77,31 @@ public class ReportRecipientAssoc {
         report = value;
     }
 
-    public void setRecipient(final Recipient value) {
-        recipient = value;
+    public ReportFormat getFormat() {
+        return format;
     }
 
     public void setFormat(final ReportFormat value) {
         format = value;
     }
 
-    public ReportFormat getFormat() {
-        return format;
-    }
-
+    /**
+     * Primary key for a {@link ReportRecipientAssoc}.
+     */
     @Embeddable
-    public static class PK {
+    protected static final class Key {
+        @Nullable
         @Column(name = "report_id")
-        public Long report;
+        private Long report;
 
+        @Nullable
         @Column(name = "recipient_id")
-        public Long recipient;
+        private Long recipient;
 
         /**
          * Default constructor, needed by Ebean.
          */
-        public PK() {
+        public Key() {
             report = null;
             recipient = null;
         }
@@ -103,8 +114,8 @@ public class ReportRecipientAssoc {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final PK pk = (PK) o;
-            return Objects.equals(report, pk.report) && Objects.equals(recipient, pk.recipient);
+            final Key key = (Key) o;
+            return Objects.equals(report, key.report) && Objects.equals(recipient, key.recipient);
         }
 
         @Override
