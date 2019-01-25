@@ -56,7 +56,7 @@ public final class ReportExecution {
     @Enumerated(value = EnumType.STRING)
     private State state;
     @Id
-    @Column(name = "scheduled", insertable = false, updatable = false)
+    @Column(name = "scheduled")
     private Instant scheduled;
     @Nullable
     @Column(name = "started_at")

@@ -22,20 +22,16 @@ import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultEmailRecipient;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.PersistenceException;
 import javax.persistence.Table;
 
@@ -64,14 +60,6 @@ public final class Recipient {
     @UpdatedTimestamp
     @Column(name = "updated_at")
     private Timestamp updatedAt;
-
-    @OneToMany(
-            mappedBy = "recipient",
-            cascade = CascadeType.PERSIST,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
-    private List<ReportRecipientAssoc> reportAssocs;
 
     @Column(name = "address")
     private String address;
