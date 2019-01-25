@@ -183,6 +183,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         } catch (final NoSuchElementException error) {
             _currentlyExecuting.set(false);
             killSelf();
+            LOGGER.warn()
+                    .setMessage("attempted to start executing job, but job no longer exists in repository")
+                    .addData("ref", cachedJob.getRef())
+                    .addData("scheduled", scheduled)
+                    .log();
             return;
         }
 
