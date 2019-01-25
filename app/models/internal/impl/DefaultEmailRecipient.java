@@ -49,6 +49,11 @@ public final class DefaultEmailRecipient implements Recipient {
     }
 
     @Override
+    public <T> T accept(final Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (this == o) {
             return true;

@@ -26,7 +26,6 @@ import io.ebean.DuplicateKeyException;
 import io.ebean.Ebean;
 import io.ebean.Transaction;
 import models.ebean.PeriodicReportSchedule;
-import models.ebean.Recipient;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
@@ -34,6 +33,7 @@ import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
+import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
@@ -75,6 +75,19 @@ public final class DatabaseReportRepository implements ReportRepository {
                 @Override
                 public models.ebean.ReportFormat visit(final HtmlReportFormat htmlFormat) {
                     return new models.ebean.HtmlReportFormat();
+                }
+            };
+
+    private static final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
+            new Recipient.Visitor<models.ebean.Recipient>() {
+                @Override
+                public models.ebean.Recipient visit(final DefaultEmailRecipient recipient) {
+                    final models.ebean.Recipient ebeanRecipient =
+                            models.ebean.Recipient
+                                    .findByRecipient(recipient)
+                                    .orElseGet(() -> models.ebean.Recipient.newEmailRecipient(recipient.getAddress()));
+                    ebeanRecipient.setUuid(recipient.getId());
+                    return ebeanRecipient;
                 }
             };
 
@@ -372,29 +385,19 @@ public final class DatabaseReportRepository implements ReportRepository {
         throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());
     }
 
-    private ImmutableSetMultimap<models.ebean.ReportFormat, Recipient> internalModelToBean(
-            final Map<ReportFormat, Collection<models.internal.reports.Recipient>> recipients
+    private ImmutableSetMultimap<models.ebean.ReportFormat, models.ebean.Recipient> internalModelToBean(
+            final Map<ReportFormat, Collection<Recipient>> recipients
     ) {
-        final ImmutableSetMultimap.Builder<models.ebean.ReportFormat, Recipient> multimapBuilder =
+        final ImmutableSetMultimap.Builder<models.ebean.ReportFormat, models.ebean.Recipient> multimapBuilder =
                 ImmutableSetMultimap.builder();
 
-        for (final Map.Entry<ReportFormat, Collection<models.internal.reports.Recipient>> entry : recipients.entrySet()) {
+        for (final Map.Entry<ReportFormat, Collection<Recipient>> entry : recipients.entrySet()) {
             final models.ebean.ReportFormat beanFormat = INTERNAL_TO_BEAN_FORMAT_VISITOR.visit(entry.getKey());
-            for (final models.internal.reports.Recipient recipient : entry.getValue()) {
-                multimapBuilder.put(beanFormat, internalModelToBean(recipient));
+            for (final Recipient recipient : entry.getValue()) {
+                multimapBuilder.put(beanFormat, INTERNAL_TO_BEAN_RECIPIENT_VISITOR.visit(recipient));
             }
         }
         return multimapBuilder.build();
-    }
-
-    private Recipient internalModelToBean(final models.internal.reports.Recipient recipient) {
-        if (!(recipient instanceof DefaultEmailRecipient)) {
-            throw new IllegalArgumentException("Unsupported internal model: " + recipient.getClass());
-        }
-        final Recipient ebeanRecipient =
-                models.ebean.Recipient.findByRecipient(recipient).orElseGet(() -> Recipient.newEmailRecipient(recipient.getAddress()));
-        ebeanRecipient.setUuid(recipient.getId());
-        return ebeanRecipient;
     }
 
     private void assertIsOpen() {
