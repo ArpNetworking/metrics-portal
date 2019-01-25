@@ -99,6 +99,10 @@ public final class Recipient {
         return id;
     }
 
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
     /**
      * Get the address of this recipient.
      *
