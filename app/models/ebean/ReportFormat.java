@@ -38,7 +38,7 @@ import javax.persistence.Table;
  */
 // TODO(cbriones): Make this class abstract, when (if?) possible.
 // If the abstract keyword is added, ebean does not generate cascading INSERT operations when a parent entity is added.
-// This might be a bug in ebean. This is reproducible using the DatabaseReportRepository tests with ReportRecipientGroup.
+// This might be a bug in ebean. This is reproducible using the DatabaseReportRepository tests.
 @Entity
 @Table(name = "report_formats", schema = "portal")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -48,8 +48,8 @@ public class ReportFormat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected Integer id;
 
-    @OneToOne(mappedBy = "_format", fetch = FetchType.LAZY)
-    private ReportRecipientAssoc _reportRecipientAssoc;
+    @OneToOne(mappedBy = "format", fetch = FetchType.LAZY)
+    private ReportRecipientAssoc reportRecipientAssoc;
 
     /**
      * Default constructor to prevent instantiation outside of subclasses.
@@ -64,6 +64,10 @@ public class ReportFormat {
         id = value;
     }
 
+    /**
+     * Convert this format to its internal representation.
+     * @return The internal representation of this format.
+     */
     /* package */ models.internal.reports.ReportFormat toInternal() {
         throw new UnsupportedOperationException("A bare report format should not be converted to an internal model.");
     }

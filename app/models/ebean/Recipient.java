@@ -66,8 +66,8 @@ public final class Recipient {
     private Timestamp updatedAt;
 
     @OneToMany(
-            mappedBy = "_recipient",
-            cascade = CascadeType.ALL,
+            mappedBy = "recipient",
+            cascade = CascadeType.PERSIST,
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )

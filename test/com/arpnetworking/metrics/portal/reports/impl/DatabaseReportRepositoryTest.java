@@ -29,6 +29,7 @@ import com.typesafe.config.ConfigFactory;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.DefaultReportResult;
 import models.internal.impl.EmailRecipientGroup;
@@ -52,7 +53,9 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
@@ -118,17 +121,6 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testIdempotentSave() {
-        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
-        final Report report = reportBuilder.build();
-        final Report noRecipients = reportBuilder.setRecipients(ImmutableSetMultimap.of()).build();
-
-        _repository.addOrUpdateReport(noRecipients, Organization.DEFAULT);
-        _repository.addOrUpdateReport(report, Organization.DEFAULT);
-        _repository.addOrUpdateReport(report, Organization.DEFAULT);
-    }
-
-    @Test
     public void testUpdateExistingReport() {
         final Schedule schedule = new OneOffSchedule.Builder()
                 .setRunAtAndAfter(Instant.now())
@@ -148,25 +140,31 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
     @Test
     public void testUpdateRecipients() {
-//        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
-//
-//        // Initial report
-//        final Report report = reportBuilder.build();
-//        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
-//
-//        // Update the recipients
-//        final RecipientGroup newGroup = new EmailRecipientGroup.Builder()
-//                .setId(UUID.randomUUID())
-//                .setEmails(ImmutableSet.of("somenewemail@test.com"))
-//                .setFormats(ImmutableList.of(new HtmlReportFormat.Builder().build()))
-//                .setName("New recipient group")
-//                .build();
-//        final Report updatedReport = reportBuilder.setRecipientGroups(ImmutableSet.of(newGroup)).build();
-//        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
-//
-//        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
-//        assertThat(retrievedReport.getRecipientGroups(), hasSize(1));
-//        assertThat(retrievedReport.getRecipientGroups(), contains(newGroup));
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+
+        // Initial report
+        final Report report = reportBuilder.build();
+        _repository.addOrUpdateReport(reportBuilder.build(), Organization.DEFAULT);
+
+        // Update the recipients
+        final ReportFormat format = new HtmlReportFormat.Builder().build();
+        final Recipient recipient = TestBeanFactory.createRecipient();
+        final Report updatedReport = reportBuilder
+                .setRecipients(ImmutableSetMultimap.of(format, recipient))
+                .build();
+        _repository.addOrUpdateReport(updatedReport, Organization.DEFAULT);
+
+        final Report retrievedReport = _repository.getReport(report.getId(), Organization.DEFAULT).get();
+        final Set<Recipient> allRecipients =
+                retrievedReport.getRecipientsByFormat()
+                        .values()
+                        .stream()
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toSet());
+
+        assertThat(allRecipients, hasSize(1));
+        assertThat(allRecipients, contains(recipient));
+        assertThat(retrievedReport.getRecipientsByFormat().get(format), contains(recipient));
     }
 
     @Test

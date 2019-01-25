@@ -66,7 +66,7 @@ public class Report {
     private ReportSource reportSource;
 
     @OneToMany(
-            mappedBy = "_report",
+            mappedBy = "report",
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )

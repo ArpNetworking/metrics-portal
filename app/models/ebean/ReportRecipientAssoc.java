@@ -19,10 +19,14 @@ package models.ebean;
 import io.ebean.annotation.CreatedTimestamp;
 
 import java.sql.Timestamp;
+import java.util.Objects;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
@@ -30,44 +34,83 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "reports_to_recipients", schema = "portal")
+@IdClass(ReportRecipientAssoc.PK.class)
+// CHECKSTYLE.OFF: MemberNameCheck
 public class ReportRecipientAssoc {
     @CreatedTimestamp
     @Column(name = "created_at")
-    private Timestamp _createdAt;
+    private Timestamp createdAt;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "report_id", referencedColumnName = "id")
-    private Report _report;
+    private Report report;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Id
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinColumn(name = "recipient_id", referencedColumnName = "id")
-    private Recipient _recipient;
+    private Recipient recipient;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(cascade = CascadeType.PERSIST, orphanRemoval = true)
     @JoinColumn(name = "format_id")
-    private ReportFormat _format;
+    private ReportFormat format;
 
     public Recipient getRecipient() {
-        return _recipient;
+        return recipient;
     }
 
     public Report getReport() {
-        return _report;
+        return report;
     }
 
-    public void setReport(final Report report) {
-        _report = report;
+    public void setReport(final Report value) {
+        report = value;
     }
 
-    public void setRecipient(final Recipient recipient) {
-        _recipient = recipient;
+    public void setRecipient(final Recipient value) {
+        recipient = value;
     }
 
     public void setFormat(final ReportFormat value) {
-        _format = value;
+        format = value;
     }
 
     public ReportFormat getFormat() {
-        return _format;
+        return format;
+    }
+
+    @Embeddable
+    public static class PK {
+        @Column(name = "report_id")
+        public Long report;
+
+        @Column(name = "recipient_id")
+        public Long recipient;
+
+        /**
+         * Default constructor, needed by Ebean.
+         */
+        public PK() {
+            report = null;
+            recipient = null;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final PK pk = (PK) o;
+            return Objects.equals(report, pk.report) && Objects.equals(recipient, pk.recipient);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(report, recipient);
+        }
     }
 }
+// CHECKSTYLE.ON: MemberNameCheck

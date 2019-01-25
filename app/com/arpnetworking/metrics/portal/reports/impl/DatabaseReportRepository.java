@@ -186,22 +186,6 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
-//    private void addOrUpdateRecipient(final models.ebean.Recipient recipient) {
-//        final Optional<Long> recipientId =
-//                Ebean.find(models.ebean.Recipient.class)
-//                        .select("id")
-//                        .where()
-//                        .eq("uuid", recipient.getUuid())
-//                        .findOneOrEmpty()
-//                        .map(models.ebean.Recipient::getId);
-//        if (recipientId.isPresent()) {
-//            recipient.setId(recipientId.get());
-//            Ebean.update(recipient);
-//        } else {
-//            Ebean.save(recipient);
-//        }
-//    }
-
     private void addOrUpdateReportSource(final models.ebean.ReportSource source) {
         final Optional<Long> sourceId =
                 Ebean.find(models.ebean.ReportSource.class)
