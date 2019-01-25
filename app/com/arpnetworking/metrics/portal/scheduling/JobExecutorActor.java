@@ -100,15 +100,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     @Override
-    public void preStart() throws Exception {
-        super.preStart();
-        // Ensure that no timers linger from a previous life.
-        // (Even if/though the timer itself died with the old actor instance, its messages may still linger.
-        //  `cancel()` ensures we'll ignore those messages.)
-        timers().cancel(TICK_TIMER_NAME);
-    }
-
-    @Override
     public void postRestart(final Throwable reason) throws Exception {
         super.postRestart(reason);
         LOGGER.info()
