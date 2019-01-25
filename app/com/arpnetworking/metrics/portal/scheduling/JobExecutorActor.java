@@ -142,7 +142,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("initializing")
                     .addData("ref", ref)
                     .log();
-            _cachedJob = Optional.of(new CachedJob<>(_injector, ref));
+            _cachedJob = Optional.of(new CachedJob<>(_injector, ref, _periodicMetrics));
         }
 
         final JobRef<T> oldRef = _cachedJob.get().getRef();
@@ -202,7 +202,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     private void tick(final Tick message) {
-        _periodicMetrics.recordCounter("job-executor-actor-ticks", 1);
+        _periodicMetrics.recordCounter("job_executor_actor_ticks", 1);
 
         if (!_cachedJob.isPresent()) {
             killSelf();
@@ -230,6 +230,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private void reload(final Reload<T> message) {
         final Optional<String> eTag = message.getETag();
         final CachedJob<T> cachedJob;
+        _periodicMetrics.recordCounter("job_executor_actor_reloads", 1);
         try {
             cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
             if (eTag.isPresent()) {
@@ -265,6 +266,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
         final JobRepository<T> repo = ref.getRepository(_injector);
         try {
+            _periodicMetrics.recordCounter(
+                    "job_executor_actor_execution_successes",
+                    message.getOutcome().isRight() ? 1 : 0);
             if (message.getOutcome().isLeft()) {
                 LOGGER.debug()
                         .setMessage("marking job as failed")

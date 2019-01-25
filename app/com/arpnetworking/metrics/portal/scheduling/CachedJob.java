@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
@@ -37,11 +38,13 @@ import java.util.concurrent.CompletionStage;
  */
 public final class CachedJob<T> implements Job<T> {
     private final JobRef<T> _ref;
+    private final PeriodicMetrics _periodicMetrics;
     private Job<T> _cached;
     private Optional<Instant> _lastRun;
 
-    CachedJob(final Injector injector, final JobRef<T> ref) {
+    CachedJob(final Injector injector, final JobRef<T> ref, final PeriodicMetrics periodicMetrics) {
         _ref = ref;
+        _periodicMetrics = periodicMetrics;
         reload(injector);
     }
 
@@ -72,6 +75,7 @@ public final class CachedJob<T> implements Job<T> {
      * @param injector The Guice injector to load the repository from.
      */
     public void reload(final Injector injector) {
+        _periodicMetrics.recordCounter("cached_job_reload", 1);
         final Optional<Job<T>> loaded = _ref.get(injector);
         if (!loaded.isPresent()) {
             throw new NoSuchElementException(_ref.toString());
@@ -88,7 +92,9 @@ public final class CachedJob<T> implements Job<T> {
      *   if equal, the cached version is assumed to be up to date and no reload is performed.
      */
     public void reloadIfOutdated(final Injector injector, final String upToDateETag) {
-        if (_cached.getETag().equals(upToDateETag)) {
+        final boolean upToDate = _cached.getETag().equals(upToDateETag);
+        _periodicMetrics.recordCounter("cached_job_conditional_reload", upToDate ? 1 : 0);
+        if (upToDate) {
             return;
         }
         LOGGER.debug()
