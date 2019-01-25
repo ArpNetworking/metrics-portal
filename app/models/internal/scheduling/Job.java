@@ -59,6 +59,6 @@ public interface Job<T> {
      * @param scheduled The instant that the job is running for. (Should probably have come from {@code getSchedule().nextRun(...)}.)
      * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
      */
-    CompletionStage<? extends T> execute(ActorRef scheduler, Instant scheduled);
+    CompletionStage<T> execute(ActorRef scheduler, Instant scheduled);
 }
 

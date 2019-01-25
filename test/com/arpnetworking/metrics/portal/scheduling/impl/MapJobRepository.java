@@ -62,6 +62,11 @@ public class MapJobRepository<T> implements JobRepository<T> {
         LOGGER.debug().setMessage("closing JobRepository").log();
     }
 
+    public void addOrUpdateJob(final Job<T> job, final Organization organization) {
+        assertIsOpen();
+        _jobs.computeIfAbsent(organization, o -> Maps.newHashMap()).put(job.getId(), job);
+    }
+
     @Override
     public Optional<Job<T>> getJob(final UUID id, final Organization organization) {
         assertIsOpen();
