@@ -39,6 +39,7 @@ import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -107,6 +108,10 @@ public class MainModule extends AbstractModule {
         bind(DatabaseReportRepository.ReportQueryGenerator.class)
                 .toProvider(ConfigTypedProvider.provider("reportRepository.reportQueryGenerator.type"))
                 .in(Scopes.NO_SCOPE);
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                .toProvider(RollupMetricsDiscoveryProvider.class)
+                .asEagerSingleton();
     }
 
     @Singleton
@@ -341,6 +346,33 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class RollupMetricsDiscoveryProvider implements Provider<ActorRef> {
+        @Inject
+        RollupMetricsDiscoveryProvider(final Injector injector, final ActorSystem system) {
+            _injector = injector;
+            _system = system;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            if (cluster.selfRoles().contains(METRICS_DISCOVERY_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        GuiceActorCreator.props(_injector, MetricsDiscovery.class),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(METRICS_DISCOVERY_ROLE)),
+                        "rollup-metrics-discovery"
+                );
+            }
+            return null;
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+
+        private static final String METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
