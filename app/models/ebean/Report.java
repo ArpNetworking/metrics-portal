@@ -189,6 +189,12 @@ public class Report {
                     .stream()
                     .collect(ImmutableSetMultimap.toImmutableSetMultimap(this::assocToFormat, this::assocToRecipient));
 
+        // The ETag should change if:
+        // - the Report changes (in which case, its timestamp will change); or
+        // - the Source changes (in which case, its timestamp will change); or
+        // - any of the (mutable) recipients is updated (in which case, its timestamp will change); or
+        // - the set of recipients changes (in which case, the set of UUIDs will change).
+        // So the ETag should be something like a hash of all those quantities.
         final StringBuilder eTagBuilder = new StringBuilder()
                 .append(getUpdatedAt())
                 .append(reportSource.getUpdatedAt());
