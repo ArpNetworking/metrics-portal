@@ -23,13 +23,13 @@ import models.internal.scheduling.Job;
 import java.util.Optional;
 
 /**
- * A query against a {@link JobRepository<T>}.
+ * A query against a {@link JobRepository}.
  * @param <T> The result type of the Jobs returned by this query.
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public interface JobQuery<T> {
     /**
-     * The maximum number of jobs to return.  Optional. Default is 1000.
+     * The maximum number of jobs to return.  Optional. Default is 100.
      *
      * @param limit The maximum number of jobs to return.
      * @return This instance of {@code JobQuery}

@@ -95,7 +95,7 @@ public interface JobRepository<T> {
      * Create a query against this job repository.
      *
      * @param organization Organization to search in.
-     * @return An instance of {@code AlertQuery}.
+     * @return An instance of {@code JobQuery}.
      */
     JobQuery<T> createQuery(Organization organization);
 
