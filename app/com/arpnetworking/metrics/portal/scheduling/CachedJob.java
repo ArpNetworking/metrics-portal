@@ -75,11 +75,12 @@ public final class CachedJob<T> implements Job<T> {
      * @param injector The Guice injector to load the repository from.
      */
     public void reload(final Injector injector) {
-        _periodicMetrics.recordCounter("cached_job_reload", 1);
         final Optional<Job<T>> loaded = _ref.get(injector);
         if (!loaded.isPresent()) {
+            _periodicMetrics.recordCounter("cached_job_reload_success", 0);
             throw new NoSuchElementException(_ref.toString());
         }
+        _periodicMetrics.recordCounter("cached_job_reload_success", 1);
         _cached = loaded.get();
         _lastRun = _ref.getRepository(injector).getLastRun(_ref.getJobId(), _ref.getOrganization());
     }
@@ -93,7 +94,7 @@ public final class CachedJob<T> implements Job<T> {
      */
     public void reloadIfOutdated(final Injector injector, final String upToDateETag) {
         final boolean upToDate = _cached.getETag().equals(upToDateETag);
-        _periodicMetrics.recordCounter("cached_job_conditional_reload", upToDate ? 1 : 0);
+        _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", upToDate ? 1 : 0);
         if (upToDate) {
             return;
         }
