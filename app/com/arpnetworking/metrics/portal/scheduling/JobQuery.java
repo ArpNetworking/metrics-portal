@@ -24,6 +24,7 @@ import java.util.Optional;
 
 /**
  * A query against a {@link JobRepository}.
+ *
  * @param <T> The result type of the Jobs returned by this query.
  * @author Christian Briones (cbriones at dropbox dot com)
  */

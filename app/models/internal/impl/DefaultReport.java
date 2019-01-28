@@ -91,17 +91,12 @@ public final class DefaultReport implements Report {
 
     @Override
     public String toString() {
-        final List<UUID> recipientIds =
-                _recipients.values()
-                        .stream()
-                        .map(Recipient::getId)
-                        .collect(Collectors.toList());
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
                 .add("name", _name)
                 .add("schedule", _schedule)
-                .add("recipients", recipientIds)
-                .add("source.id", _source.getId())
+                .add("recipients", _recipients)
+                .add("source", _source)
                 .toString();
     }
 
