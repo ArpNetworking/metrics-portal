@@ -358,11 +358,11 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(METRICS_DISCOVERY_ROLE)) {
+            if (cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, MetricsDiscovery.class),
                         PoisonPill.getInstance(),
-                        ClusterSingletonManagerSettings.create(_system).withRole(METRICS_DISCOVERY_ROLE)),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_METRICS_DISCOVERY_ROLE)),
                         "rollup-metrics-discovery"
                 );
             }
@@ -372,7 +372,7 @@ public class MainModule extends AbstractModule {
         private final Injector _injector;
         private final ActorSystem _system;
 
-        private static final String METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
+        private static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {

@@ -27,6 +27,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.typesafe.config.Config;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -43,25 +44,26 @@ import javax.inject.Inject;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class MetricsDiscovery extends AbstractActorWithTimers {
+public final class MetricsDiscovery extends AbstractActorWithTimers {
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .matchEquals(FETCH_MSG,
-                        work -> fetchMetricsForRollup())
-                .match(KairosMetricNamesQueryResponse.class,
-                        this::updateMetricsSet)
-                .match(Status.Failure.class,
-                        failure -> LOGGER.warn("Failed to get metrics from Kairo", failure.cause()))
-                .match(MetricFetch.class, work -> {
-                    final Optional<String> metricName = getNextMetric();
-                    if (metricName.isPresent()) {
-                        getSender().tell(metricName.get(), getSelf());
-                    } else {
-                        getSender().tell(NoMoreMetrics.getInstance(), getSelf());
-                    }
-                })
+                .matchEquals(FETCH_MSG, work -> fetchMetricsForRollup())
+                .match(KairosMetricNamesQueryResponse.class, this::updateMetricsSet)
+                .match(
+                        Status.Failure.class,
+                        failure -> LOGGER.warn("Failed to get metrics from Kairos", failure.cause()))
+                .match(
+                        MetricFetch.class,
+                        work -> {
+                            final Optional<String> metricName = getNextMetric();
+                            if (metricName.isPresent()) {
+                                getSender().tell(metricName.get(), getSelf());
+                            } else {
+                                getSender().tell(NoMoreMetrics.getInstance(), getSelf());
+                            }
+                        })
                 .build();
     }
 
@@ -76,8 +78,9 @@ public class MetricsDiscovery extends AbstractActorWithTimers {
         final FiniteDuration fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
         _kairosDbClient = kairosDbClient;
         _metricsSet = new LinkedHashSet<>();
+        _setIterator = _metricsSet.iterator();
         getSelf().tell(FETCH_MSG, ActorRef.noSender());
-        getTimers().startPeriodicTimer(HOURLY_TIMER, FETCH_MSG, fetchInterval);
+        getTimers().startPeriodicTimer(REFRESH_TIMER, FETCH_MSG, fetchInterval);
     }
 
     private void fetchMetricsForRollup() {
@@ -89,14 +92,11 @@ public class MetricsDiscovery extends AbstractActorWithTimers {
         response.getResults().stream()
                 .filter(ROLLUP_METRIC_RE.asPredicate().negate())
                 .forEach(_metricsSet::add);
-        _setIterator = null;
+        _setIterator = _metricsSet.iterator();
     }
 
     private Optional<String> getNextMetric() {
         final String next;
-        if (_setIterator == null) {
-            _setIterator = _metricsSet.iterator();
-        }
         if (_setIterator.hasNext()) {
             next = _setIterator.next();
             _setIterator.remove();
@@ -109,8 +109,8 @@ public class MetricsDiscovery extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final Set<String> _metricsSet;
-    private Iterator<String> _setIterator = null;
-    private static final String HOURLY_TIMER = "hourly_timer";
+    private Iterator<String> _setIterator;
+    private static final String REFRESH_TIMER = "refresh_timer";
     private static final Object FETCH_MSG = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsDiscovery.class);
     private static final Pattern ROLLUP_METRIC_RE = Pattern.compile(".*_1[hd]");
