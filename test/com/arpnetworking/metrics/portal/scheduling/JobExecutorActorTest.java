@@ -24,11 +24,15 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
+import models.internal.QueryResult;
+import models.internal.impl.DefaultJobQuery;
+import models.internal.impl.DefaultQueryResult;
 import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
@@ -57,13 +61,23 @@ import static org.junit.Assert.assertEquals;
 public final class JobExecutorActorTest {
 
     private static class MockableJobRepository implements JobRepository<UUID> {
-         @Override public void open() {}
-         @Override public void close() {}
-         @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
-         @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
-         @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
-         @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
-         @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
+        @Override public void open() {}
+        @Override public void close() {}
+        @Override public Optional<Job<UUID>> getJob(final UUID id, final Organization organization) { return Optional.empty(); }
+        @Override public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException { return Optional.empty(); }
+        @Override public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {}
+        @Override public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final UUID result) {}
+        @Override public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {}
+
+        @Override
+        public JobQuery<UUID> createQuery(final Organization organization) {
+            return new DefaultJobQuery<>(this, organization);
+        }
+
+        @Override
+        public QueryResult<Job<UUID>> query(final JobQuery<UUID> query) {
+            return new DefaultQueryResult<>(ImmutableList.of(), 0);
+        }
     }
 
 
