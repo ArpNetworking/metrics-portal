@@ -33,12 +33,10 @@ import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link Report}.
