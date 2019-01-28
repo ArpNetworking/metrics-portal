@@ -27,7 +27,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.typesafe.config.Config;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Optional;
