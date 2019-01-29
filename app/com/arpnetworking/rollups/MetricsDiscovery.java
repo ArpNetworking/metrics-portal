@@ -121,7 +121,6 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     private Predicate<String> toPredicate(final List<String> regexList, final boolean defaultResult) {
         return regexList
                 .stream()
-                .map(r -> "^" + r + "$")
                 .map(Pattern::compile)
                 .map(Pattern::asPredicate)
                 .reduce(Predicate::or).orElse(t -> defaultResult);
