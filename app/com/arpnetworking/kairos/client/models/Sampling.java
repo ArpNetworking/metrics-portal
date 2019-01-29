@@ -30,7 +30,7 @@ public final class Sampling {
         return _unit;
     }
 
-    public int getValue() {
+    public long getValue() {
         return _value;
     }
 

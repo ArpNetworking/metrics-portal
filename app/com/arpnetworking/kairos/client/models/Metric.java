@@ -18,11 +18,14 @@ package com.arpnetworking.kairos.client.models;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+
+import javax.annotation.Nullable;
 
 /**
  * Holds the data for a Metric element of the query.
@@ -50,17 +53,31 @@ public final class Metric {
         return _groupBy;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getLimit() {
+        return _limit;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Order getOrder() {
+        return _order;
+    }
+
     private Metric(final Builder builder) {
         _name = builder._name;
         _tags = builder._tags;
         _aggregators = builder._aggregators;
         _groupBy = builder._groupBy;
+        _limit = builder._limit;
+        _order = builder._order;
     }
 
     private final String _name;
     private final ImmutableMultimap<String, String> _tags;
     private final ImmutableList<Aggregator> _aggregators;
     private final ImmutableList<MetricsQuery.GroupBy> _groupBy;
+    private final Integer _limit;
+    private final Order _order;
 
     /**
      * Implementation of the builder pattern for {@link Metric}.
@@ -121,6 +138,28 @@ public final class Metric {
             return this;
         }
 
+        /**
+         * Sets the datapoint limit. Optional. Can be null.
+         *
+         * @param value the limit
+         * @return this {@link Builder}
+         */
+        public Builder setLimit(@Nullable final Integer value) {
+            _limit = value;
+            return this;
+        }
+
+        /**
+         * Sets the time order for returned datapoints. Optional. Can be null.
+         *
+         * @param value the time order to return datapoints by
+         * @return this {@link Builder}
+         */
+        public Builder setOrder(@Nullable final Order value) {
+            _order = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _name;
@@ -133,5 +172,35 @@ public final class Metric {
 
         @NotNull
         private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
+
+        private Integer _limit;
+
+        private Order _order;
+    }
+
+    /**
+     * Enum for representing possible kairosdb order values.
+     */
+    public enum Order {
+        /**
+         * Ascending sort order.
+         */
+        ASC("asc"),
+        /**
+         * Descending sort order.
+         */
+        DESC("desc");
+
+        Order(final String strValue) {
+            _strValue = strValue;
+        }
+
+        @JsonValue
+        @Override
+        public String toString() {
+            return _strValue;
+        }
+
+        private final String _strValue;
     }
 }

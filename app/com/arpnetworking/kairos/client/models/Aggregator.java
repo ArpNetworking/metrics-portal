@@ -41,6 +41,8 @@ public final class Aggregator {
             _alignSampling = builder._alignSampling;
         }
         _otherArgs = builder._otherArgs;
+        _alignEndTime = builder._alignEndTime;
+        _alignStartTime = builder._alignStartTime;
     }
 
     public String getName() {
@@ -48,23 +50,37 @@ public final class Aggregator {
     }
 
     @JsonProperty("align_sampling")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public Optional<Boolean> getAlignSampling() {
         return _alignSampling;
     }
 
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonProperty("align_start_time")
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Boolean> getAlignStartTime() {
+        return _alignStartTime;
+    }
+
+    @JsonProperty("align_end_time")
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Boolean> getAlignEndTime() {
+        return _alignEndTime;
+    }
+
+    @JsonInclude(value = JsonInclude.Include.NON_ABSENT)
     public Optional<Sampling> getSampling() {
         return _sampling;
     }
 
     @JsonAnyGetter
-    protected ImmutableMap<String, Object> getOtherArgs() {
+    public ImmutableMap<String, Object> getOtherArgs() {
         return _otherArgs;
     }
 
     private final String _name;
     private final Optional<Boolean> _alignSampling;
+    private final Optional<Boolean> _alignStartTime;
+    private final Optional<Boolean> _alignEndTime;
     private final Optional<Sampling> _sampling;
     private final ImmutableMap<String, Object> _otherArgs;
 
@@ -116,6 +132,30 @@ public final class Aggregator {
         }
 
         /**
+         * Sets the align_start_time of the aggregator. Optional. Defaults to false.
+         *
+         * @param value the align_start_time for the aggregator
+         * @return this {@link Builder}
+         */
+        @JsonProperty("align_start_time")
+        public Builder setAlignStartTime(final Optional<Boolean> value) {
+            _alignStartTime = value;
+            return this;
+        }
+
+        /**
+         * Sets the align_end_time of the aggregator. Optional. Defaults to false.
+         *
+         * @param value the align_end_time for the aggregator
+         * @return this {@link Builder}
+         */
+        @JsonProperty("align_end_time")
+        public Builder setAlignEndTime(final Optional<Boolean> value) {
+            _alignEndTime = value;
+            return this;
+        }
+
+        /**
          * Adds an "unknown" arg. Optional.
          *
          * @param key key for the entry
@@ -145,7 +185,11 @@ public final class Aggregator {
         @NotNull
         private Optional<Boolean> _alignSampling = Optional.of(true);
         @NotNull
-        private Optional<Sampling> _sampling = Optional.of(new Sampling.Builder().build());
+        private Optional<Sampling> _sampling = Optional.empty();
+        @NotNull
+        private Optional<Boolean> _alignEndTime = Optional.of(false);
+        @NotNull
+        private Optional<Boolean> _alignStartTime = Optional.empty();
         @NotNull
         private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
     }

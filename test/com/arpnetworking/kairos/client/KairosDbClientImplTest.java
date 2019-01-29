@@ -136,6 +136,8 @@ public class KairosDbClientImplTest {
                                         .setSampling(Optional.of(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build()))
                                         .build()
                                 ))
+                                .setLimit(1)
+                                .setOrder(Metric.Order.DESC)
                                 .build()
                         )
                 )
