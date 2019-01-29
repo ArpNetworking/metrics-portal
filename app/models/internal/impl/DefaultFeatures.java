@@ -59,6 +59,11 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
+    public boolean isRollupsEnabled() {
+        return _rollupsEnabled;
+    }
+
+    @Override
     public ImmutableList<Integer> getMetricsAggregatorDaemonPorts() {
         return _metricsAggregatorDaemonPorts;
     }
@@ -72,6 +77,7 @@ public final class DefaultFeatures implements Features {
                 .append(", hostRegistryEnabled=").append(_hostRegistryEnabled)
                 .append(", expressionsEnabled=").append(_expressionsEnabled)
                 .append(", alertsEnabled=").append(_alertsEnabled)
+                .append(", rollupsEnabled=").append(_rollupsEnabled)
                 .append(", metricsAggregatorDaemonPorts=").append(_metricsAggregatorDaemonPorts)
                 .append("}")
                 .toString();
@@ -89,6 +95,7 @@ public final class DefaultFeatures implements Features {
         _hostRegistryEnabled = configuration.getBoolean("portal.features.hostRegistry.enabled");
         _expressionsEnabled = configuration.getBoolean("portal.features.expressions.enabled");
         _alertsEnabled = configuration.getBoolean("portal.features.alerts.enabled");
+        _rollupsEnabled = configuration.getBoolean("portal.features.rollups.enabled");
         _metricsAggregatorDaemonPorts = ImmutableList.copyOf(
                 configuration.getIntList("portal.features.metricsAggregatorDaemonPorts"));
     }
@@ -99,5 +106,6 @@ public final class DefaultFeatures implements Features {
     private final boolean _hostRegistryEnabled;
     private final boolean _expressionsEnabled;
     private final boolean _alertsEnabled;
+    private final boolean _rollupsEnabled;
     private final ImmutableList<Integer> _metricsAggregatorDaemonPorts;
 }

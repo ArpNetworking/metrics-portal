@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import scala.concurrent.duration.Duration;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -62,6 +63,8 @@ public class MetricsDiscoveryTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("1h");
+        when(_config.getStringList(eq("rollup.metric.whitelist"))).thenReturn(Collections.emptyList());
+        when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(Collections.emptyList());
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -103,6 +106,46 @@ public class MetricsDiscoveryTest {
 
     @Test
     public void testNoMoreMetrics() {
+        when(_config.getStringList(eq("rollup.metric.whitelist")))
+                .thenReturn(ImmutableList.of(
+                        "^cmf/web_perf/.*$",
+                        "^cmf/test/.*$"));
+        when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(ImmutableList.of("^cmf/.*$"));
+        when(_kairosDbClient.queryMetricNames())
+                .thenReturn(CompletableFuture
+                        .completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                                .setResults(ImmutableList.of(
+                                        "metric1",
+                                        "cmf/web_perf/time_to_interactive",
+                                        "cmf/foo/bar",
+                                        "cmf/test/foobar"
+                                ))
+                                .build()));
+        new TestKit(_system) {{
+            final ActorRef actor = createActor();
+            final ActorRef testActor = getTestActor();
+            awaitAssert(() -> {
+                actor.tell(MetricFetch.getInstance(), testActor);
+                return expectMsg("metric1");
+            });
+
+            awaitAssert(() -> {
+                actor.tell(MetricFetch.getInstance(), testActor);
+                return expectMsg("cmf/web_perf/time_to_interactive");
+            });
+
+            awaitAssert(() -> {
+                actor.tell(MetricFetch.getInstance(), testActor);
+                return expectMsg("cmf/test/foobar");
+            });
+
+            actor.tell(MetricFetch.getInstance(), testActor);
+            expectMsgClass(NoMoreMetrics.class);
+        }};
+    }
+
+    @Test
+    public void testMetricsFiltering() {
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
                         .completedFuture(new KairosMetricNamesQueryResponse.Builder()

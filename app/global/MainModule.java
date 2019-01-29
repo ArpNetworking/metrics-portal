@@ -350,15 +350,19 @@ public class MainModule extends AbstractModule {
 
     private static final class RollupMetricsDiscoveryProvider implements Provider<ActorRef> {
         @Inject
-        RollupMetricsDiscoveryProvider(final Injector injector, final ActorSystem system) {
+        RollupMetricsDiscoveryProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Features features) {
             _injector = injector;
             _system = system;
+            _enabled = features.isRollupsEnabled();
         }
 
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, MetricsDiscovery.class),
                         PoisonPill.getInstance(),
@@ -371,6 +375,7 @@ public class MainModule extends AbstractModule {
 
         private final Injector _injector;
         private final ActorSystem _system;
+        private final boolean _enabled;
 
         private static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
