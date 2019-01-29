@@ -67,6 +67,13 @@ public interface Features {
     boolean isAlertsEnabled();
 
     /**
+     * Rollups feature.
+     *
+     * @return true if and only if rollups is enabled.
+     */
+    boolean isRollupsEnabled();
+
+    /**
      * Metrics aggregator daemon ports.
      *
      * @return list of ports for metrics aggregator daemon (or its proxies).

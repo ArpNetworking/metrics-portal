@@ -30,8 +30,10 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 
@@ -82,6 +84,8 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     @Inject
     public MetricsDiscovery(final Config configuration, final KairosDbClient kairosDbClient) {
         _fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
+        _whiteList = toPredicate(configuration.getStringList("rollup.metric.whitelist"), true);
+        _blackList = toPredicate(configuration.getStringList("rollup.metric.blacklist"), false);
         _kairosDbClient = kairosDbClient;
         _metricsSet = new LinkedHashSet<>();
         _setIterator = _metricsSet.iterator();
@@ -96,7 +100,8 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
 
     private void updateMetricsSet(final KairosMetricNamesQueryResponse response) {
         response.getResults().stream()
-                .filter(ROLLUP_METRIC_RE.asPredicate().negate())
+                .filter(ROLLUP_METRIC_PREDICATE.negate())
+                .filter(_whiteList.or(_blackList.negate())) // If on the whitelist or not on the blacklist
                 .forEach(_metricsSet::add);
         _setIterator = _metricsSet.iterator();
     }
@@ -113,13 +118,24 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         return Optional.ofNullable(next);
     }
 
+    private Predicate<String> toPredicate(final List<String> regexList, final boolean defaultResult) {
+        return regexList
+                .stream()
+                .map(r -> "^" + r + "$")
+                .map(Pattern::compile)
+                .map(Pattern::asPredicate)
+                .reduce(Predicate::or).orElse(t -> defaultResult);
+    }
+
     private final FiniteDuration _fetchInterval;
     private final KairosDbClient _kairosDbClient;
     private final Set<String> _metricsSet;
     private Iterator<String> _setIterator;
     private Deadline _refreshDeadline;
+    private final Predicate<String> _whiteList;
+    private final Predicate<String> _blackList;
     private static final String REFRESH_TIMER = "refresh_timer";
     private static final Object FETCH_MSG = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsDiscovery.class);
-    private static final Pattern ROLLUP_METRIC_RE = Pattern.compile("^.*_1[hd]$");
+    private static final Predicate<String> ROLLUP_METRIC_PREDICATE = Pattern.compile("^.*_1[hd]$").asPredicate();
 }
