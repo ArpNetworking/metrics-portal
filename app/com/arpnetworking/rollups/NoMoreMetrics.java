@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.rollups;
 
+import scala.concurrent.duration.Deadline;
+
 import java.io.Serializable;
 
 /**
@@ -24,13 +26,20 @@ import java.io.Serializable;
  */
 public final class NoMoreMetrics implements Serializable {
 
-    public static NoMoreMetrics getInstance() {
-        return THE_INSTANCE;
+    /**
+     * Creates a NoMoreMetrics instance with a specified deadline when more data is expected.
+     *
+     * @param nextRefresh point in time when the next refresh is schedule to occur.
+     */
+    public NoMoreMetrics(final Deadline nextRefresh) {
+        // Protected against negative times.
+        _nextRefreshMillis = Math.max(nextRefresh.timeLeft().toMillis(), 0);
     }
 
-    private NoMoreMetrics() {
+    public long getNextRefreshMillis() {
+        return _nextRefreshMillis;
     }
 
-    private static final NoMoreMetrics THE_INSTANCE = new NoMoreMetrics();
+    private final long _nextRefreshMillis;
     private static final long serialVersionUID = -3503619526731721351L;
 }

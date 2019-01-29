@@ -38,6 +38,8 @@ import scala.concurrent.duration.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -96,7 +98,7 @@ public class MetricsDiscoveryTest {
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
         actor.tell(MetricFetch.getInstance(), testActor);
-        testKit.expectMsg(NoMoreMetrics.getInstance());
+        testKit.expectMsgClass(NoMoreMetrics.class);
     }
 
     @Test
@@ -115,7 +117,7 @@ public class MetricsDiscoveryTest {
             });
 
             actor.tell(MetricFetch.getInstance(), testActor);
-            expectMsg(NoMoreMetrics.getInstance());
+            expectMsgClass(NoMoreMetrics.class);
         }};
     }
 
@@ -125,7 +127,7 @@ public class MetricsDiscoveryTest {
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
                         .completedFuture(new KairosMetricNamesQueryResponse.Builder()
-                                .setResults(ImmutableList.of("metric1"))
+                                .setResults(ImmutableList.of("metric1", "metric1_1h", "metric1_1d"))
                                 .build()))
                 .thenReturn(CompletableFuture
                         .completedFuture(new KairosMetricNamesQueryResponse.Builder()
@@ -141,7 +143,10 @@ public class MetricsDiscoveryTest {
             });
 
             actor.tell(MetricFetch.getInstance(), testActor);
-            expectMsg(NoMoreMetrics.getInstance());
+            final NoMoreMetrics msg1 = expectMsgClass(NoMoreMetrics.class);
+            assertNotNull(msg1);
+            assertTrue(msg1.getNextRefreshMillis() < 3000);
+
 
             awaitAssert(Duration.create("4s"), () -> {
                 actor.tell(MetricFetch.getInstance(), testActor);
@@ -149,7 +154,9 @@ public class MetricsDiscoveryTest {
             });
 
             actor.tell(MetricFetch.getInstance(), testActor);
-            expectMsg(NoMoreMetrics.getInstance());
+            final NoMoreMetrics msg2 = expectMsgClass(NoMoreMetrics.class);
+            assertNotNull(msg2);
+            assertTrue(msg2.getNextRefreshMillis() < 3000);
         }};
     }
 }

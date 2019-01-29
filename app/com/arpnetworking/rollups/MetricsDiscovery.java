@@ -25,6 +25,8 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.typesafe.config.Config;
+import org.joda.time.DateTime;
+import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Iterator;
@@ -48,7 +50,13 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .matchEquals(FETCH_MSG, work -> fetchMetricsForRollup())
+                .matchEquals(
+                        FETCH_MSG,
+                        work -> {
+                            getTimers().startSingleTimer(REFRESH_TIMER, FETCH_MSG, _fetchInterval);
+                            _refreshDeadline = _fetchInterval.fromNow();
+                            fetchMetricsForRollup();
+                        })
                 .match(KairosMetricNamesQueryResponse.class, this::updateMetricsSet)
                 .match(
                         Status.Failure.class,
@@ -60,7 +68,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                             if (metricName.isPresent()) {
                                 getSender().tell(metricName.get(), getSelf());
                             } else {
-                                getSender().tell(NoMoreMetrics.getInstance(), getSelf());
+                                getSender().tell(new NoMoreMetrics(_refreshDeadline), getSelf());
                             }
                         })
                 .build();
@@ -74,12 +82,12 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
      */
     @Inject
     public MetricsDiscovery(final Config configuration, final KairosDbClient kairosDbClient) {
-        final FiniteDuration fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
+        _fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
         _kairosDbClient = kairosDbClient;
         _metricsSet = new LinkedHashSet<>();
         _setIterator = _metricsSet.iterator();
+        _refreshDeadline = Deadline.now();
         getSelf().tell(FETCH_MSG, ActorRef.noSender());
-        getTimers().startPeriodicTimer(REFRESH_TIMER, FETCH_MSG, fetchInterval);
     }
 
     private void fetchMetricsForRollup() {
@@ -106,11 +114,13 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         return Optional.ofNullable(next);
     }
 
+    private final FiniteDuration _fetchInterval;
     private final KairosDbClient _kairosDbClient;
     private final Set<String> _metricsSet;
     private Iterator<String> _setIterator;
+    private Deadline _refreshDeadline;
     private static final String REFRESH_TIMER = "refresh_timer";
     private static final Object FETCH_MSG = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsDiscovery.class);
-    private static final Pattern ROLLUP_METRIC_RE = Pattern.compile(".*_1[hd]");
+    private static final Pattern ROLLUP_METRIC_RE = Pattern.compile("^.*_1[hd]$");
 }
