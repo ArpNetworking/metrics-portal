@@ -26,4 +26,6 @@ package com.arpnetworking.metrics.portal.scheduling;
     /* package private */ NoSuchJobException(final Throwable cause) {
         super(cause);
     }
+
+    private static final long serialVersionUID = 1L;
 }

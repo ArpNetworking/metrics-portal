@@ -516,6 +516,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         private ActorNotInitializedException(final String message) {
             super(message);
         }
+        private static final long serialVersionUID = 1L;
     }
 
 }
