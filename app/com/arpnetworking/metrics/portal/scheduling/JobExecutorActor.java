@@ -41,6 +41,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 /**
@@ -108,7 +109,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void scheduleTickFor(final Instant wakeUpAt) {
         final FiniteDuration delta = Duration.fromNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
-        timers().startSingleTimer(TICK_TIMER_NAME, Tick.INSTANCE, delta);
+        timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, delta);
     }
 
     private void killSelf() {
@@ -256,6 +257,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             killSelf();
             return;
         }
+        timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
         getSelf().tell(Tick.INSTANCE, getSelf());
     }
 
@@ -336,7 +338,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .build();
     }
 
-    private static final String TICK_TIMER_NAME = "TICK";
+    private static final String EXTRA_TICK_TIMER_NAME = "EXTRA_TICK";
+    private static final String PERIODIC_TICK_TIMER_NAME = "PERIODIC_TICK";
+    private static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
     /**
      * If we wake up very slightly before we're supposed to execute, we should just execute,
      * rather than scheduling another wakeup in the very near future.
