@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
@@ -90,4 +91,19 @@ public interface JobRepository<T> {
      */
     void jobFailed(UUID id, Organization organization, Instant scheduled, Throwable error);
 
+    /**
+     * Create a query against this job repository.
+     *
+     * @param organization Organization to search in.
+     * @return An instance of {@code JobQuery}.
+     */
+    JobQuery<T> createQuery(Organization organization);
+
+    /**
+     * Query jobs.
+     *
+     * @param query The {@code JobQuery} instance to execute.
+     * @return The jobs resulting from executing the query.
+     */
+    QueryResult<Job<T>> query(JobQuery<T> query);
 }

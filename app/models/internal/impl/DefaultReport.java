@@ -22,7 +22,6 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
@@ -34,6 +33,7 @@ import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -85,13 +85,6 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public ImmutableSet<Recipient> getRecipients() {
-        return _recipients.values()
-                .stream()
-                .collect(ImmutableSet.toImmutableSet());
-    }
-
-    @Override
     @SuppressFBWarnings(
             value = "NP_NONNULL_PARAM_VIOLATION",
             justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
@@ -119,6 +112,27 @@ public final class DefaultReport implements Report {
     private final ReportSource _source;
 
     private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final DefaultReport that = (DefaultReport) o;
+        return Objects.equals(_id, that._id)
+                && Objects.equals(_name, that._name)
+                && Objects.equals(_schedule, that._schedule)
+                && Objects.equals(_source, that._source)
+                && Objects.equals(_recipients, that._recipients);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_id, _name, _schedule, _source, _recipients);
+    }
 
     /**
      * Builder implementation that constructs {@code DefaultReport}.

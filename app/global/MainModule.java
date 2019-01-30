@@ -36,7 +36,10 @@ import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -98,6 +101,16 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
+                .asEagerSingleton();
+        bind(ReportRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(DatabaseReportRepository.ReportQueryGenerator.class)
+                .toProvider(ConfigTypedProvider.provider("reportRepository.reportQueryGenerator.type"))
+                .in(Scopes.NO_SCOPE);
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                .toProvider(RollupMetricsDiscoveryProvider.class)
                 .asEagerSingleton();
     }
 
@@ -273,6 +286,38 @@ public class MainModule extends AbstractModule {
         private final ApplicationLifecycle _lifecycle;
     }
 
+    private static final class ReportRepositoryProvider implements Provider<ReportRepository> {
+        @Inject
+        ReportRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public ReportRepository get() {
+            final ReportRepository reportRepository = _injector.getInstance(
+                    ConfigurationHelper.<ReportRepository>getType(_environment, _configuration, "reportRepository.type"));
+            reportRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        reportRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return reportRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
     private static final class HostProviderProvider implements Provider<ActorRef> {
         @Inject
         HostProviderProvider(
@@ -301,6 +346,38 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class RollupMetricsDiscoveryProvider implements Provider<ActorRef> {
+        @Inject
+        RollupMetricsDiscoveryProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Features features) {
+            _injector = injector;
+            _system = system;
+            _enabled = features.isRollupsEnabled();
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        GuiceActorCreator.props(_injector, MetricsDiscovery.class),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_METRICS_DISCOVERY_ROLE)),
+                        "rollup-metrics-discovery"
+                );
+            }
+            return null;
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+        private final boolean _enabled;
+
+        private static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {
