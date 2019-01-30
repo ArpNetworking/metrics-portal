@@ -41,10 +41,28 @@ public final class CachedJob<T> implements Job<T> {
     private Job<T> _cached;
     private Optional<Instant> _lastRun;
 
-    CachedJob(final Injector injector, final JobRef<T> ref, final PeriodicMetrics periodicMetrics) throws NoSuchJobException {
+    private CachedJob(final JobRef<T> ref, final PeriodicMetrics periodicMetrics) {
         _ref = ref;
         _periodicMetrics = periodicMetrics;
-        reload(injector);
+    }
+
+    /**
+     * Factory for creating {@link CachedJob}s.
+     *
+     * @param injector The injector to load the referenced {@link JobRepository} through.
+     * @param ref The {@link JobRef} to load.
+     * @param periodicMetrics The {@link PeriodicMetrics} instance to log metrics through.
+     * @param <T> The type of the result of the referenced {@link Job}.
+     * @return A {@link CachedJob}.
+     * @throws NoSuchJobException If the job can't be loaded from the repository.
+     */
+    public static <T> CachedJob<T> createAndLoad(
+            final Injector injector,
+            final JobRef<T> ref,
+            final PeriodicMetrics periodicMetrics) throws NoSuchJobException {
+        final CachedJob<T> result = new CachedJob<>(ref, periodicMetrics);
+        result.reload(injector);
+        return result;
     }
 
     @Override

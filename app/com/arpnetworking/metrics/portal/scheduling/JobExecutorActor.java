@@ -132,7 +132,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("initializing")
                     .addData("ref", ref)
                     .log();
-            _cachedJob = Optional.of(new CachedJob<>(_injector, ref, _periodicMetrics));
+            _cachedJob = Optional.of(CachedJob.createAndLoad(_injector, ref, _periodicMetrics));
         }
 
         final JobRef<T> oldRef = _cachedJob.get().getRef();
