@@ -42,7 +42,7 @@ public final class CachedJob<T> implements Job<T> {
     private Job<T> _cached;
     private Optional<Instant> _lastRun;
 
-    CachedJob(final Injector injector, final JobRef<T> ref, final PeriodicMetrics periodicMetrics) {
+    CachedJob(final Injector injector, final JobRef<T> ref, final PeriodicMetrics periodicMetrics) throws NoSuchJobException {
         _ref = ref;
         _periodicMetrics = periodicMetrics;
         reload(injector);
@@ -73,12 +73,13 @@ public final class CachedJob<T> implements Job<T> {
      * Unconditionally reloads the cached information from the repository.
      *
      * @param injector The Guice injector to load the repository from.
+     * @throws NoSuchJobException If the job can't be loaded from the repository.
      */
-    public void reload(final Injector injector) {
+    public void reload(final Injector injector) throws NoSuchJobException {
         final Optional<Job<T>> loaded = _ref.get(injector);
         if (!loaded.isPresent()) {
             _periodicMetrics.recordCounter("cached_job_reload_success", 0);
-            throw new NoSuchElementException(_ref.toString());
+            throw new NoSuchJobException(_ref.toString());
         }
         _periodicMetrics.recordCounter("cached_job_reload_success", 1);
         _cached = loaded.get();
@@ -91,8 +92,9 @@ public final class CachedJob<T> implements Job<T> {
      * @param injector The Guice injector to load the repository from.
      * @param upToDateETag Checked for equality to the cached job's ETag;
      *   if equal, the cached version is assumed to be up to date and no reload is performed.
+     * @throws NoSuchJobException If a reload is necessary but the job can't be loaded from the repository.
      */
-    public void reloadIfOutdated(final Injector injector, final String upToDateETag) {
+    public void reloadIfOutdated(final Injector injector, final String upToDateETag) throws NoSuchJobException {
         final boolean upToDate = _cached.getETag().equals(upToDateETag);
         _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", upToDate ? 1 : 0);
         if (upToDate) {

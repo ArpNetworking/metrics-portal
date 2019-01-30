@@ -127,7 +127,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *   (Guaranteed to equal {@code _cachedJob.get()}; this return value is purely for the typechecker's sake.)
      * @throws IllegalStateException If the actor was already initialized with a different JobRef.
      */
-    private CachedJob<T> initializeOrEnsureRefMatch(final JobRef<T> ref) throws IllegalStateException {
+    private CachedJob<T> initializeOrEnsureRefMatch(final JobRef<T> ref) throws IllegalStateException, NoSuchJobException {
         if (!_cachedJob.isPresent()) {
             LOGGER.info()
                     .setMessage("initializing")
@@ -138,7 +138,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         final JobRef<T> oldRef = _cachedJob.get().getRef();
         if (!oldRef.equals(ref)) {
-            killSelf();
             throw new IllegalStateException(String.format("got JobRef %s, but already initialized with %s", ref, oldRef));
         }
 
@@ -153,10 +152,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         return typedRef;
     }
 
-    private void attemptExecuteAndUpdateRepository(final Instant scheduled) {
+    private void attemptExecuteAndUpdateRepository(final Instant scheduled) throws ActorNotInitializedException, NoSuchJobException {
         if (!_cachedJob.isPresent()) {
-            killSelf();
-            throw new IllegalStateException("unable to execute: executor is not initialized");
+            throw new ActorNotInitializedException("unable to execute: executor is not initialized");
         }
 
         final CachedJob<T> cachedJob = _cachedJob.get();
@@ -174,13 +172,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
         } catch (final NoSuchElementException error) {
             _currentlyExecuting = false;
-            killSelf();
-            LOGGER.warn()
-                    .setMessage("attempted to start executing job, but job no longer exists in repository")
-                    .addData("ref", cachedJob.getRef())
-                    .addData("scheduled", scheduled)
-                    .log();
-            return;
+            throw new NoSuchJobException(error);
         }
 
         PatternsCS.pipe(
@@ -193,12 +185,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         ).to(getSelf());
     }
 
-    private void tick(final Tick message) {
+    private void tick(final Tick message) throws ActorNotInitializedException {
         _periodicMetrics.recordCounter("job_executor_actor_ticks", 1);
 
         if (!_cachedJob.isPresent()) {
-            killSelf();
-            throw new IllegalStateException("somehow, uninitialized JobExecutorActor is trying to tick");
+            throw new ActorNotInitializedException("somehow, uninitialized JobExecutorActor is trying to tick");
         }
         final CachedJob<T> cachedJob = _cachedJob.get();
 
@@ -215,7 +206,16 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         if (_clock.instant().isBefore(nextRun.get().minus(EXECUTION_SLOP))) {
             scheduleTickFor(nextRun.get());
         } else {
-            attemptExecuteAndUpdateRepository(nextRun.get());
+            try {
+                attemptExecuteAndUpdateRepository(nextRun.get());
+            } catch (final NoSuchJobException error) {
+                LOGGER.warn()
+                        .setMessage("attempted to start executing job, but job no longer exists in repository")
+                        .addData("ref", cachedJob.getRef())
+                        .addData("scheduled", nextRun.get())
+                        .log();
+                killSelf();
+            }
         }
     }
 
@@ -230,7 +230,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             } else {
                 cachedJob.reload(_injector);
             }
-        } catch (final NoSuchElementException error) {
+        } catch (final NoSuchJobException error) {
             LOGGER.warn()
                     .setMessage("tried to reload job, but job no longer exists in repository")
                     .addData("ref", message.getJobRef())
@@ -286,7 +286,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         typedMessage.getOutcome().right().get());
             }
             cachedJob.reload(_injector);
-        } catch (final NoSuchElementException error) {
+        } catch (final NoSuchJobException error) {
             LOGGER.warn()
                     .setMessage("tried to job as complete, but job no longer exists in repository")
                     .addData("ref", ref)
@@ -497,6 +497,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 }
                 return this;
             }
+        }
+    }
+
+    private static final class ActorNotInitializedException extends Exception {
+        private ActorNotInitializedException(final String message) {
+            super(message);
         }
     }
 
