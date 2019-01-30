@@ -27,8 +27,10 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -169,7 +171,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
         } catch (final NoSuchElementException error) {
             _currentlyExecuting = false;
-            throw new NoSuchJobException(error);
+            throw new NoSuchJobException("job no longer exists in repository", error);
         }
 
         PatternsCS.pipe(
@@ -467,6 +469,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             @NotNull
             private Instant _scheduled;
             private Throwable _error;
+            @ValidateWithMethod(methodName = "validateErrorAndResult", parameterType = Object.class)
             private T _result;
 
             /**
@@ -494,7 +497,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
              * @param error The error.
              * @return This instance of Builder.
              */
-            public Builder<T> setError(final Throwable error) {
+            public Builder<T> setError(@Nullable final Throwable error) {
                 _error = error;
                 return this;
             }
@@ -505,9 +508,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
              * @param result The result.
              * @return This instance of Builder.
              */
-            public Builder<T> setResult(final T result) {
+            public Builder<T> setResult(@Nullable final T result) {
                 _result = result;
                 return this;
+            }
+
+            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
+            private boolean validateErrorAndResult(@Nullable final Object result) {
+                return (result == null) ^ (_error == null);
             }
         }
     }
