@@ -125,6 +125,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @return The {@link CachedJob} the actor is initialized to.
      *   (Guaranteed to equal {@code _cachedJob.get()}; this return value is purely for the typechecker's sake.)
      * @throws IllegalStateException If the actor was already initialized with a different JobRef.
+     * @throws NoSuchJobException If the actor attempts to initialize itself but can't load the referenced job.
      */
     private CachedJob<T> initializeOrEnsureRefMatch(final JobRef<T> ref) throws IllegalStateException, NoSuchJobException {
         if (!_cachedJob.isPresent()) {
@@ -151,6 +152,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         return typedRef;
     }
 
+    /**
+     * Executes the job, notifying the repository upon start and completion. (Unless an execution is already in progress; then, noop.)
+     * (Well, technically, sends the actor a message upon completion, and <i>that</i> notifies the repository about success/failure.)
+     *
+     * @param scheduled The time that the job was scheduled for.
+     * @throws ActorNotInitializedException If the actor has never been given a {@link JobRef}, and therefore has nothing to execute.
+     * @throws NoSuchJobException If the repository doesn't recognize the job.
+     */
     private void attemptExecuteAndUpdateRepository(final Instant scheduled) throws ActorNotInitializedException, NoSuchJobException {
         if (!_cachedJob.isPresent()) {
             throw new ActorNotInitializedException("unable to execute: executor is not initialized");
@@ -185,6 +194,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         ).to(getSelf());
     }
 
+    /**
+     * Wakes up the actor and causes it run the job or schedule another tick, as appropriate.
+     *
+     * If the job's next scheduled execution is before ~now, execute it.
+     * Otherwise, schedule a tick for the next execution time.
+     *
+     * @param message A {@link Tick} message.
+     * @throws ActorNotInitializedException If the actor (somehow) receives this message before getting a handle to a {@link JobRef}.
+     */
     private void tick(final Tick message) throws ActorNotInitializedException {
         _periodicMetrics.recordCounter("job_executor_actor_ticks", 1);
 
