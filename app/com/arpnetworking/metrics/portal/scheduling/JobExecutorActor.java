@@ -42,7 +42,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
 
 /**
@@ -73,7 +72,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
-    private final AtomicBoolean _currentlyExecuting = new AtomicBoolean(false);
+    private boolean _currentlyExecuting = false;
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
 
     /**
@@ -166,14 +165,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final Job<T> job = cachedJob.getJob();
         final JobRepository<T> repo = ref.getRepository(_injector);
 
-        if (_currentlyExecuting.getAndSet(true)) {
+        if (_currentlyExecuting) {
             return;
         }
+        _currentlyExecuting = true;
 
         try {
             repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
         } catch (final NoSuchElementException error) {
-            _currentlyExecuting.set(false);
+            _currentlyExecuting = false;
             killSelf();
             LOGGER.warn()
                     .setMessage("attempted to start executing job, but job no longer exists in repository")
@@ -242,7 +242,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     private void jobCompleted(final JobCompleted<?> message) {
-        _currentlyExecuting.set(false);
+        _currentlyExecuting = false;
         if (!_cachedJob.isPresent()) {
             LOGGER.error()
                     .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
