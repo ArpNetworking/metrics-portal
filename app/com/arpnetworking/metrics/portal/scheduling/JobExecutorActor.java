@@ -306,15 +306,17 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         message.getScheduled(),
                         typedMessage.getError());
             }
-            cachedJob.reload(_injector);
-        } catch (final NoSuchJobException error) {
+        } catch (final NoSuchElementException error) {
             LOGGER.warn()
                     .setMessage("tried to job as complete, but job no longer exists in repository")
                     .addData("ref", ref)
                     .addData("scheduled", message.getScheduled())
                     .log();
             killSelf();
+            return;
         }
+
+        getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
     }
 
     @Override
