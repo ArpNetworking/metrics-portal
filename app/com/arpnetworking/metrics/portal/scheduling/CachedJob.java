@@ -24,7 +24,6 @@ import com.google.inject.Injector;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
