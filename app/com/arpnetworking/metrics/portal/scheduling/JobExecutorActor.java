@@ -31,9 +31,6 @@ import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
-import scala.util.Either;
-import scala.util.Left;
-import scala.util.Right;
 
 import java.io.Serializable;
 import java.time.Clock;
@@ -179,7 +176,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 job.execute(getSelf(), scheduled)
                         .handle((result, error) -> new JobCompleted.Builder<T>()
                                     .setScheduled(scheduled)
-                                    .setOutcome(error, result)
+                                    .setError(error)
+                                    .setResult(result)
                                     .build()),
                 getContext().system().dispatcher()
         ).to(getSelf());
@@ -244,10 +242,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private void jobCompleted(final JobCompleted<?> message) {
         _currentlyExecuting = false;
         if (!_cachedJob.isPresent()) {
-            LOGGER.error()
+            LOGGER.warn()
                     .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
                     .addData("scheduled", message.getScheduled())
-                    .addData("outcome", message.getOutcome())
+                    .addData("error", message.getError())
                     .log();
             return;
         }
@@ -260,20 +258,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         try {
             _periodicMetrics.recordCounter(
                     "job_executor_actor_execution_successes",
-                    message.getOutcome().isRight() ? 1 : 0);
-            if (message.getOutcome().isLeft()) {
-                LOGGER.debug()
-                        .setMessage("marking job as failed")
-                        .addData("ref", ref)
-                        .addData("scheduled", message.getScheduled())
-                        .addData("error", message.getOutcome().left().get())
-                        .log();
-                repo.jobFailed(
-                        ref.getJobId(),
-                        ref.getOrganization(),
-                        message.getScheduled(),
-                        typedMessage.getOutcome().left().get());
-            } else {
+                    (message.getError() == null) ? 1 : 0);
+            if (message.getError() == null) {
+                if (typedMessage.getResult() == null) {
+                    throw new IllegalArgumentException(String.format("JobCompleted message for %s has null error *and* result", ref));
+                }
                 LOGGER.debug()
                         .setMessage("marking job as successful")
                         .addData("ref", ref)
@@ -283,7 +272,19 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         ref.getJobId(),
                         ref.getOrganization(),
                         message.getScheduled(),
-                        typedMessage.getOutcome().right().get());
+                        typedMessage.getResult());
+            } else {
+                LOGGER.debug()
+                        .setMessage("marking job as failed")
+                        .addData("ref", ref)
+                        .addData("scheduled", message.getScheduled())
+                        .addData("error", message.getError())
+                        .log();
+                repo.jobFailed(
+                        ref.getJobId(),
+                        ref.getOrganization(),
+                        message.getScheduled(),
+                        typedMessage.getError());
             }
             cachedJob.reload(_injector);
         } catch (final NoSuchJobException error) {
@@ -424,25 +425,35 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     /**
-     * Indicates that a job completed (either successfully or unsuccessfully).
+     * Indicates that a job completed (either successfully, if {@code getError()==null}, or unsuccessfully, otherwise).
      *
      * @param <T> The type of the result computed by the referenced {@link Job}.
      */
-    public static final class JobCompleted<T> {
+    private static final class JobCompleted<T> {
         private final Instant _scheduled;
-        private final Either<Throwable, T> _outcome;
+        @Nullable
+        private final Throwable _error;
+        @Nullable
+        private final T _result;
 
         private JobCompleted(final Builder<T> builder) {
             _scheduled = builder._scheduled;
-            _outcome = builder._outcome;
+            _error = builder._error;
+            _result = builder._result;
         }
 
         public Instant getScheduled() {
             return _scheduled;
         }
 
-        public Either<Throwable, T> getOutcome() {
-            return _outcome;
+        @Nullable
+        public Throwable getError() {
+            return _error;
+        }
+
+        @Nullable
+        public T getResult() {
+            return _result;
         }
 
         /**
@@ -455,8 +466,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         public static final class Builder<T> extends OvalBuilder<JobCompleted<T>> {
             @NotNull
             private Instant _scheduled;
-            @NotNull
-            private Either<Throwable, T> _outcome;
+            private Throwable _error;
+            private T _result;
 
             /**
              * Public constructor.
@@ -477,24 +488,25 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             }
 
             /**
-             * Convenience function to delegate to either {@code setResult} or {@code setError} as appropriate.
+             * The error (if any) that caused the job to fail. Optional. Defaults to null.
+             * The job is considered to have succeeded if (and only if) this field is null.
              *
-             * Either {@code result} or {@code error} must be non-null.
-             *
-             * @param result The result (or null).
-             * @param error The error which caused the job to fail (or null).
-             *
+             * @param error The error.
              * @return This instance of Builder.
              */
-            public Builder<T> setOutcome(@Nullable final Throwable error, @Nullable final T result) {
-                if (error == null) {
-                    if (result == null) {
-                        throw new IllegalArgumentException("result and error can't both be null");
-                    }
-                    _outcome = new Right<>(result);
-                } else {
-                    _outcome = new Left<>(error);
-                }
+            public Builder<T> setError(final Throwable error) {
+                _error = error;
+                return this;
+            }
+
+            /**
+             * The result that the job computed. Optional. Defaults to null.
+             *
+             * @param result The result.
+             * @return This instance of Builder.
+             */
+            public Builder<T> setResult(final T result) {
+                _result = result;
                 return this;
             }
         }
