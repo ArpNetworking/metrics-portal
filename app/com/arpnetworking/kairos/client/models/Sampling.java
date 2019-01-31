@@ -18,7 +18,6 @@ package com.arpnetworking.kairos.client.models;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.sf.oval.constraint.Min;
-import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 /**
