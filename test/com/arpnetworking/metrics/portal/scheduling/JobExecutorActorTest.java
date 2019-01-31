@@ -174,13 +174,14 @@ public final class JobExecutorActorTest {
 
     @Test
     public void testOnlyExecutesOneAtATime() {
-        final Instant startAt = t0.minus(ChronoUnit.HOURS.getDuration());
+        final ChronoUnit period = ChronoUnit.MINUTES;
+        final Instant startAt = t0.minus(period.getDuration());
         final CompletableFuture<Void> blocker = new CompletableFuture<>();
         final DummyJob<Integer> job = addJobToRepo(new DummyJob.Builder<Integer>()
                 .setSchedule(new PeriodicSchedule.Builder()
                         .setRunAtAndAfter(startAt)
                         .setZone(ZoneId.of("UTC"))
-                        .setPeriod(ChronoUnit.MINUTES)
+                        .setPeriod(period)
                         .build())
                 .setResult(123)
                 .setBlocker(blocker)
@@ -202,10 +203,9 @@ public final class JobExecutorActorTest {
 
         blocker.complete(null);
 
-        // NOW we should be able to run again
-        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+        // NOW we should be able to run again; the necessary tick should have been triggered by job completion
         Mockito.verify(repo, Mockito.timeout(1000)).jobStarted(job.getId(), organization, job.getSchedule().nextRun(Optional.of(startAt)).get());
-        // ...but still, only two executions should ever have started (one for t0, one for the moment after t0)
+        // ...but still, only two executions should ever have started (one for t0, one for t0+period i.e. now)
         Mockito.verify(repo, Mockito.timeout(1000).times(2)).jobStarted(Mockito.eq(job.getId()), Mockito.eq(organization), Mockito.any());
     }
 
