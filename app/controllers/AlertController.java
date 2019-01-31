@@ -39,13 +39,13 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultQuantity;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import org.joda.time.Period;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -303,7 +303,7 @@ public class AlertController extends Controller {
                 alertBuilder.setOperator(Operator.valueOf(viewAlert.getOperator()));
             }
             if (viewAlert.getPeriod() != null) {
-                alertBuilder.setPeriod(Period.parse(viewAlert.getPeriod()));
+                alertBuilder.setPeriod(Duration.parse(viewAlert.getPeriod()));
             }
             if (viewAlert.getExtensions() != null) {
                 alertBuilder.setNagiosExtension(convertToInternalNagiosExtension(viewAlert.getExtensions()).orElse(null));
@@ -322,7 +322,7 @@ public class AlertController extends Controller {
             nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());
             nagiosMapBuilder.put(NAGIOS_EXTENSION_NOTIFY_KEY, nagiosExtension.getNotify());
             nagiosMapBuilder.put(NAGIOS_EXTENSION_MAX_CHECK_ATTEMPTS_KEY, nagiosExtension.getMaxCheckAttempts());
-            nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getStandardSeconds());
+            nagiosMapBuilder.put(NAGIOS_EXTENSION_FRESHNESS_THRESHOLD_KEY, nagiosExtension.getFreshnessThreshold().getSeconds());
         }
         return nagiosMapBuilder.build();
     }

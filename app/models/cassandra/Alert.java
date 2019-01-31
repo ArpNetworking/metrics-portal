@@ -25,8 +25,8 @@ import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
 import models.internal.Context;
 import models.internal.Operator;
-import org.joda.time.Instant;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import javax.persistence.EnumType;

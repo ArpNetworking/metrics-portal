@@ -26,8 +26,8 @@ import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,7 +47,7 @@ public final class MetricsQuery {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("start_absolute")
     private long startMillis() {
-        return _startTime.getMillis();
+        return _startTime.toEpochMilli();
     }
 
     /**
@@ -59,17 +59,17 @@ public final class MetricsQuery {
     @JsonProperty("end_absolute")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     private long endMillis() {
-        return _endTime.map(DateTime::getMillis).orElse(0L);
+        return _endTime.map(Instant::toEpochMilli).orElse(0L);
     }
 
     @JsonIgnore
-    public DateTime getStartTime() {
+    public Instant getStartTime() {
         return _startTime;
     }
 
     @JsonIgnore
     @Nullable
-    public DateTime getEndTime() {
+    public Instant getEndTime() {
         return _endTime.orElse(null);
     }
 
@@ -84,8 +84,8 @@ public final class MetricsQuery {
         _metrics = builder._metrics;
     }
 
-    private final DateTime _startTime;
-    private final Optional<DateTime> _endTime;
+    private final Instant _startTime;
+    private final Optional<Instant> _endTime;
     private final ImmutableList<Metric> _metrics;
 
     /**
@@ -105,7 +105,7 @@ public final class MetricsQuery {
          * @param value the start time
          * @return this {@link Builder}
          */
-        public Builder setStartTime(final DateTime value) {
+        public Builder setStartTime(final Instant value) {
             _startTime = value;
             return this;
         }
@@ -116,7 +116,7 @@ public final class MetricsQuery {
          * @param value the end time
          * @return this {@link Builder}
          */
-        public Builder setEndTime(final DateTime value) {
+        public Builder setEndTime(final Instant value) {
             _endTime = value;
             return this;
         }
@@ -137,8 +137,8 @@ public final class MetricsQuery {
         }
 
         @NotNull
-        private DateTime _startTime;
-        private DateTime _endTime;
+        private Instant _startTime;
+        private Instant _endTime;
         @NotNull
         @NotEmpty
         private ImmutableList<Metric> _metrics = ImmutableList.of();
