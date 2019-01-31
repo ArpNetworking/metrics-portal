@@ -21,6 +21,8 @@ interface KnockoutBindingHandlers {
     stackdrag: KnockoutBindingHandler;
     typeahead: KnockoutBindingHandler;
     tooltip: KnockoutBindingHandler;
+    popover: KnockoutBindingHandler;
+    datetimepicker: KnockoutBindingHandler;
 }
 
 export = KnockoutBindingHandlers;

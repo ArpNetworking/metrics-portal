@@ -1,0 +1,61 @@
+<!--
+  ~ Copyright 2019 Dropbox, Inc.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<div class="form-group">
+    <label for="sourceType">Type</label>
+    <span class="glyphicon glyphicon-question-sign"
+          data-html="true"
+          data-bind="popover: helpMessages['type']"
+          data-trigger="hover"></span>
+    <select class="form-control"
+            id="sourceType"
+            data-bind="options: availableSourceTypes,
+                       optionsValue: 'value',
+                       optionsText: 'text',
+                       value: type"
+            disabled>
+    </select>
+</div>
+<div class="form-group">
+    <label for="sourceTitleInput">Title</label>
+    <input class="form-control"
+           type="text" id="sourceTitleInput"
+           placeholder="Source Title"
+           data-bind="value: title">
+</div>
+<div class="form-group">
+    <label for="sourceUrlInput">URL</label>
+    <input class="form-control"
+           type="text" id="sourceUrlInput"
+           placeholder="Source URL"
+           data-bind="value: url">
+</div>
+<div class="form-group">
+    <label for="sourceEventName">Browser event name</label>
+    <span class="glyphicon glyphicon-question-sign"
+          data-bind="popover: helpMessages['eventName']"
+          data-trigger="hover"></span>
+    <input class="form-control"
+           type="text" id="sourceEventName" placeholder="Event name"
+           data-bind="value: eventName">
+</div>
+<div class="checkbox">
+    <label for="sourceIgnoreCertificateErrors">
+        <input id="sourceIgnoreCertificateErrors"
+               type="checkbox"
+               data-bind="checked: ignoreCertificateErrors">
+        <strong>Ignore certificate errors</strong>
+    </label>
+</div>

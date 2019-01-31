@@ -107,6 +107,11 @@ body {
     margin: 0;
 }
 
+/* Bootstrap 3 defaults don't work well with typeahead within a form */
+.form-group > .twitter-typeahead {
+    display: inline !important;
+}
+
 .connect-up-to-date {
     color: yellow;
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1.414px 0 #000, 0 1.414px 0 #000, -1.414px 0 0 #000, 1.414px 0 0 #000;

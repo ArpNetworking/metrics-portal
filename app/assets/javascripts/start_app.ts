@@ -50,11 +50,16 @@ requirejs.config({
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
-        'underscore' : '../lib/underscorejs/underscore-min' //Required by flotr2
+        'underscore' : '../lib/underscorejs/underscore-min', //Required by flotr2
+        'moment' : '../lib/moment/moment',
+        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
+        'datetimepicker' : '../lib/Eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
     },
     map : {
         '*': {
-            'jwt-decode': 'jwt_decode'
+            'jwt-decode': 'jwt_decode',
+            'moment/moment': 'moment',
+            'moment-timezone/moment-timezone' : 'moment-timezone',
         }
     },
     shim : {

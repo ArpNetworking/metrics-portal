@@ -2,10 +2,13 @@
 ///<amd-dependency path="jquery.ui"/>
 ///<amd-dependency path="jqrangeslider"/>
 ///<amd-dependency path="typeahead" />
+///<amd-dependency path="datetimepicker" />
 
 import ko = require('knockout');
 import $ = require('jquery');
 import _ = require('underscore');
+
+import * as moment from 'moment-timezone/moment-timezone';
 
 module kobindings {
     ko.bindingHandlers['slider'] = {
@@ -44,6 +47,53 @@ module kobindings {
             var value = valueAccessor();
             var valueUnwrapped = ko.utils.unwrapObservable(value);
             //TODO: tooltip this
+        }
+    };
+
+    ko.bindingHandlers['popover'] = {
+        init: function(element, valueAccessor) {
+            const value = valueAccessor();
+            const valueUnwrapped = ko.utils.unwrapObservable(value);
+            $(element).popover({content: valueUnwrapped});
+        }
+    };
+
+    // Adapted from the installation page of datetimepicker:
+    // https://eonasdan.github.io/bootstrap-datetimepicker/Installing/#knockout
+    ko.bindingHandlers['datetimepicker'] = {
+        init: function (element, valueAccessor, allBindingsAccessor) {
+            //initialize datepicker with some optional options
+            const options = allBindingsAccessor().dateTimePickerOptions || {};
+
+            const $element: any = $(element);
+            $element.datetimepicker(options);
+
+            //when a user changes the date, update the view model
+            ko.utils.registerEventHandler(element, "dp.change", function (event) {
+                const value = valueAccessor();
+                if (ko.isObservable(value)) {
+                    if (event.date && !(event.date instanceof moment)) {
+                        value(moment.utc(event.date));
+                    } else {
+                        value(event.date);
+                    }
+                }
+            });
+
+            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+                const picker = $(element).data("DateTimePicker");
+                if (picker) {
+                    picker.destroy();
+                }
+            });
+        },
+        update: function (element, valueAccessor) {
+            const picker = $(element).data("DateTimePicker");
+            //when the view model is updated, update the widget
+            let koMoment: moment.Moment = ko.utils.unwrapObservable(valueAccessor());
+            if (picker && koMoment) {
+                picker.date(koMoment.toDate());
+            }
         }
     };
 
