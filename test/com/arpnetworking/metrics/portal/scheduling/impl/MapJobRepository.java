@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class MapJobRepository<T> implements JobRepository<T> {
+public class MapJobRepository<T> implements JobRepository<T> {
 
     /**
      * Guice constructor.
@@ -66,6 +66,11 @@ public final class MapJobRepository<T> implements JobRepository<T> {
     public void close() {
         assertIsOpen();
         LOGGER.debug().setMessage("closing JobRepository").log();
+    }
+
+    public void addOrUpdateJob(final Job<T> job, final Organization organization) {
+        assertIsOpen();
+        _jobs.computeIfAbsent(organization, o -> Maps.newHashMap()).put(job.getId(), job);
     }
 
     @Override

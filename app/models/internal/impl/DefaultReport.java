@@ -47,6 +47,7 @@ import java.util.concurrent.CompletionStage;
 public final class DefaultReport implements Report {
     private DefaultReport(final Builder builder) {
         _id = builder._id;
+        _eTag = builder._eTag;
         _name = builder._name;
         _schedule = builder._schedule;
         _source = builder._source;
@@ -56,6 +57,11 @@ public final class DefaultReport implements Report {
     @Override
     public UUID getId() {
         return _id;
+    }
+
+    @Override
+    public String getETag() {
+        return _eTag;
     }
 
     @Override
@@ -91,14 +97,16 @@ public final class DefaultReport implements Report {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("id", _id)
+                .add("eTag", _eTag)
                 .add("name", _name)
                 .add("schedule", _schedule)
-                .add("recipients", _recipients)
                 .add("source", _source)
+                .add("recipients", _recipients)
                 .toString();
     }
 
     private final UUID _id;
+    private final String _eTag;
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
@@ -149,6 +157,19 @@ public final class DefaultReport implements Report {
         }
 
         /**
+         * Set the report ETag. Required. Cannot be null or empty.
+         *
+         * The ETag should function like a strong hash of the report and all its transitive dependencies.
+         *
+         * @param eTag The ETag.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setETag(final String eTag) {
+            _eTag = eTag;
+            return this;
+        }
+
+        /**
          * Set the report name. Required. Cannot be null or empty.
          *
          * @param name The report name.
@@ -194,6 +215,9 @@ public final class DefaultReport implements Report {
 
         @NotNull
         private UUID _id;
+        @NotNull
+        @NotEmpty
+        private String _eTag;
         @NotNull
         @NotEmpty
         private String _name;

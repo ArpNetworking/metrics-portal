@@ -39,6 +39,13 @@ public interface Job<T> {
     UUID getId();
 
     /**
+     * Gets an <a href="https://en.wikipedia.org/wiki/HTTP_ETag">ETag</a> that changes each time the job changes.
+     *
+     * @return The ETag.
+     */
+    String getETag();
+
+    /**
      * Returns the schedule on which the Job should be repeated.
      *
      * @return The schedule.
@@ -52,6 +59,6 @@ public interface Job<T> {
      * @param scheduled The instant that the job is running for. (Should probably have come from {@code getSchedule().nextRun(...)}.)
      * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
      */
-    CompletionStage<? extends T> execute(ActorRef scheduler, Instant scheduled);
+    CompletionStage<T> execute(ActorRef scheduler, Instant scheduled);
 }
 

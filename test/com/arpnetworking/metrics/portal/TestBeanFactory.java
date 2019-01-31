@@ -65,6 +65,7 @@ public final class TestBeanFactory {
     private static final String TEST_SCRIPT = "test-script";
     private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
     private static final String TEST_NAME = "test-name";
+    private static final String TEST_ETAG = "test-etag";
     private static final List<Operator> OPERATORS = Arrays.asList(
             Operator.EQUAL_TO,
             Operator.GREATER_THAN,
@@ -100,6 +101,7 @@ public final class TestBeanFactory {
 
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
+                .setETag(TEST_ETAG)
                 .setName(TEST_NAME)
                 .setRecipients(ImmutableSetMultimap.of(format, recipient))
                 .setReportSource(source)

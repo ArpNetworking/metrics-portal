@@ -39,6 +39,11 @@ public final class NeverSchedule extends BaseSchedule {
     }
 
     @Override
+    public String toString() {
+        return "NeverSchedule{}";
+    }
+
+    @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         return Optional.empty();
     }

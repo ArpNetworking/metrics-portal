@@ -21,9 +21,11 @@ import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultReport;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.sql.Timestamp;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -187,8 +189,28 @@ public class Report {
                     .stream()
                     .collect(ImmutableSetMultimap.toImmutableSetMultimap(this::assocToFormat, this::assocToRecipient));
 
+        // The ETag should change if:
+        // - the Report changes (in which case, its timestamp will change); or
+        // - the Source changes (in which case, its timestamp will change); or
+        // - any of the (mutable) recipients is updated (in which case, its timestamp will change); or
+        // - the set of recipients changes (in which case, the set of UUIDs will change).
+        // So the ETag should be something like a hash of all those quantities.
+        final StringBuilder eTagBuilder = new StringBuilder()
+                .append(getUpdatedAt())
+                .append(reportSource.getUpdatedAt());
+        recipientAssocs
+                .stream()
+                .map(ReportRecipientAssoc::getRecipient)
+                .sorted(Comparator.comparing(Recipient::getId))
+                .forEach(recipient -> {
+                    eTagBuilder.append(recipient.getId());
+                    eTagBuilder.append(recipient.getUpdatedAt());
+                });
+        final String eTag = DigestUtils.sha1Hex(eTagBuilder.toString());
+
         return new DefaultReport.Builder()
                 .setId(uuid)
+                .setETag(eTag)
                 .setName(name)
                 .setRecipients(internalRecipients)
                 .setSchedule(schedule.toInternal())

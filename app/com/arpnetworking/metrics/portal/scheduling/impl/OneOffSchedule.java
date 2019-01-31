@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.google.common.base.MoreObjects;
+
 import java.time.Instant;
 import java.util.Optional;
 
@@ -31,6 +33,13 @@ public final class OneOffSchedule extends BaseSchedule {
 
     public Instant getWhenRun() {
         return getRunAtAndAfter();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("instant", getRunAtAndAfter())
+                .toString();
     }
 
     @Override
