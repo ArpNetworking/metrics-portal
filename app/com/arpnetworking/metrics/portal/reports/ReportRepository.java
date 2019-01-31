@@ -16,9 +16,13 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import models.internal.Organization;
+import models.internal.QueryResult;
+import models.internal.impl.DefaultQueryResult;
 import models.internal.reports.Report;
+import models.internal.scheduling.Job;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -45,5 +49,23 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * @param organization The {@code Organization} which owns the report.
      */
     void addOrUpdateReport(Report report, Organization organization);
+
+    /**
+     * Query reports.
+     *
+     * This is a specialization of {@link JobRepository#query} for cases where you want to
+     * handle the reports themselves, outside of a Job context.
+     *
+     * @param query The {@code JobQuery} instance to execute.
+     * @return The reports resulting from executing the query.
+     */
+    QueryResult<Report> queryReports(JobQuery<Report.Result> query);
+
+    @Override
+    default QueryResult<Job<Report.Result>> query(JobQuery<Report.Result> query) {
+        final QueryResult<Report> reports = queryReports(query);
+        // This re-wrap step is necessary to satisfy the compiler typecheck.
+        return new DefaultQueryResult<>(reports.values(), reports.values().size());
+    }
 }
 

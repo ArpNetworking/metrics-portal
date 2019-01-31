@@ -256,7 +256,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Report> queryReports(final JobQuery<Report.Result> query) {
         assertIsOpen();
 
         LOGGER.debug()
@@ -271,7 +271,6 @@ public final class DatabaseReportRepository implements ReportRepository {
                         .stream()
                         .map(models.ebean.Report::toInternal)
                         .collect(ImmutableList.toImmutableList());
-
         return new DefaultQueryResult<>(reports, reports.size());
     }
 

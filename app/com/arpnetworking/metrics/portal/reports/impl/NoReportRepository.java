@@ -141,7 +141,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Report> queryReports(final JobQuery<Report.Result> query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Executing query")
