@@ -235,7 +235,7 @@ public class MainModule extends AbstractModule {
                 .setMetricsFactory(metricsFactory)
                 .setPollingExecutor(actorSystem.dispatcher())
                 .build();
-        final FiniteDuration delay = FiniteDuration.apply(500, TimeUnit.MILLISECONDS);
+        final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
         actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
     }

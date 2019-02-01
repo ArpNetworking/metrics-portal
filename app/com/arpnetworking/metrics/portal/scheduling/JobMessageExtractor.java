@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2019 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
+public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
     /**
      * Public constructor.
      */
