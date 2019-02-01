@@ -17,6 +17,8 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import models.internal.Organization;
+import models.internal.impl.DefaultOrganization;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -32,7 +34,9 @@ public final class JobMessageExtractorTest {
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
 
-    private static final Organization organization = Organization.DEFAULT;
+    private static final Organization organization = new DefaultOrganization.Builder()
+            .setId(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+            .build();
 
     @Test
     public void testEntityId() {
@@ -43,11 +47,11 @@ public final class JobMessageExtractorTest {
                 .setRepositoryType(MockableIntJobRepository.class)
                 .build();
         assertEquals(
-                String.format(
-                        "repoType-%s--orgId-%s--jobId-%s",
+                DigestUtils.sha1Hex(String.join(
+                        " ",
                         "com.arpnetworking.metrics.portal.scheduling.JobMessageExtractorTest.MockableIntJobRepository",
-                        organization.getId(),
-                        "11111111-1111-1111-1111-111111111111"),
+                        "00000000-0000-0000-0000-000000000000",
+                        "11111111-1111-1111-1111-111111111111")),
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
 

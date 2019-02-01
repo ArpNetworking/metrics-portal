@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.cluster.sharding.ShardRegion;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import javax.annotation.Nullable;
 
@@ -48,11 +49,11 @@ public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtrac
     }
 
     private static String jobRefToUId(final JobRef<?> ref) {
-        return String.format(
-                "repoType-%s--orgId-%s--jobId-%s",
+        return DigestUtils.sha1Hex(String.join(
+                " ",
                 ref.getRepositoryType().getCanonicalName(),
-                ref.getOrganization().getId(),
-                ref.getJobId());
+                ref.getOrganization().getId().toString(),
+                ref.getJobId().toString()));
     }
 
     private static final int NUM_SHARDS = 100;
