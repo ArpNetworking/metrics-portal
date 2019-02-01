@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 
 /**
  * Model class to represent a metrics query.
@@ -116,6 +117,7 @@ public final class MetricsQuery {
          * @param value the end time
          * @return this {@link Builder}
          */
+        @Nullable
         public Builder setEndTime(final Instant value) {
             _endTime = value;
             return this;
