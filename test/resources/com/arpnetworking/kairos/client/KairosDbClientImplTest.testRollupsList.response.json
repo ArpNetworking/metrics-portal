@@ -37,14 +37,14 @@
           ],
           "start_relative": {
             "value": 1,
-            "unit": "hours"
+            "unit": "HOURS"
           }
         }
       }
     ],
     "execution_interval": {
       "value": 1,
-      "unit": "hours"
+      "unit": "HOURS"
     }
   },
   {
@@ -85,14 +85,14 @@
           ],
           "start_relative": {
             "value": 1,
-            "unit": "hours"
+            "unit": "HOURS"
           }
         }
       }
     ],
     "execution_interval": {
       "value": 1,
-      "unit": "days"
+      "unit": "DAYS"
     }
   }
 ]

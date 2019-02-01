@@ -35,17 +35,16 @@ import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.thrift.transport.TTransportException;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.hamcrest.Matchers;
-import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
-import play.inject.Injector;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.test.WithApplication;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -391,7 +390,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         assertEquals(alert.getService(), cassandraAlert.getService());
         assertEquals(alert.getName(), cassandraAlert.getName());
         assertEquals(alert.getOperator(), cassandraAlert.getOperator());
-        assertEquals(alert.getPeriod(), Period.seconds(cassandraAlert.getPeriodInSeconds()).normalizedStandard());
+        assertEquals(alert.getPeriod(), Duration.ofSeconds(cassandraAlert.getPeriodInSeconds()));
         assertEquals(alert.getStatistic(), cassandraAlert.getStatistic());
         assertEquals(alert.getValue().getUnit(), Optional.of(cassandraAlert.getQuantityUnit()));
         assertEquals(alert.getValue().getValue(), cassandraAlert.getQuantityValue(), 0.001);
@@ -404,7 +403,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         assertEquals(extension.getSeverity(), cassExtension.get("severity"));
         assertEquals(extension.getNotify(), cassExtension.get("notify"));
         assertEquals(extension.getMaxCheckAttempts(), Integer.parseInt(cassExtension.get("attempts")));
-        assertEquals(extension.getFreshnessThreshold().getStandardSeconds(), Long.parseLong(cassExtension.get("freshness")));
+        assertEquals(extension.getFreshnessThreshold().getSeconds(), Long.parseLong(cassExtension.get("freshness")));
     }
 
     private CassandraAlertRepository _alertRepo;
