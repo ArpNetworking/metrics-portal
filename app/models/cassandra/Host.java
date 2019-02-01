@@ -24,8 +24,8 @@ import com.datastax.driver.mapping.annotations.Query;
 import com.datastax.driver.mapping.annotations.Table;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
-import org.joda.time.Instant;
 
+import java.time.Instant;
 import java.util.UUID;
 import javax.persistence.Version;
 

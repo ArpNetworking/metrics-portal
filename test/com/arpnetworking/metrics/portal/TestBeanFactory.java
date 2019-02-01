@@ -39,7 +39,6 @@ import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
 import models.internal.reports.ReportSource;
-import org.joda.time.Period;
 
 import java.net.URI;
 import java.time.Duration;
@@ -185,7 +184,7 @@ public final class TestBeanFactory {
                 .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
                 .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard())
+                .setPeriod(Duration.ofSeconds(RANDOM.nextInt(100)))
                 .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
                 .setValue(new DefaultQuantity.Builder()
                         .setValue(100 + RANDOM.nextDouble())

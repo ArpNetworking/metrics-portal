@@ -8,8 +8,8 @@
     "aggregators": [ {
       "name": "avg",
       "sampling": {
-        "value": 86400,
-        "unit": "seconds"
+        "value": 1,
+        "unit": "DAYS"
       },
       "align_sampling": true
     }],

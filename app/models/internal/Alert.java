@@ -15,8 +15,7 @@
  */
 package models.internal;
 
-import org.joda.time.Period;
-
+import java.time.Duration;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
@@ -81,7 +80,7 @@ public interface Alert {
      *
      * @return The period to evaluate the condition in.
      */
-    Period getPeriod();
+    Duration getPeriod();
 
     /**
      * The condition operator.

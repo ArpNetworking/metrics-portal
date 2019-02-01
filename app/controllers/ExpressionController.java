@@ -103,21 +103,19 @@ public class ExpressionController extends Controller {
     /**
      * Query for expressions.
      *
-     * * @param contains The text to search for. Optional.
+     * @param contains The text to search for. Optional.
      * @param cluster The cluster of the statistic to evaluate as part of the exression. Optional.
      * @param service The service of the statistic to evaluate as part of the expression. Optional.
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @return <code>Result</code> paginated matching expressions.
      */
-    // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
             final String contains,
             final String cluster,
             final String service,
             final Integer limit,
             final Integer offset) {
-        // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
         final Optional<String> argContains = Optional.ofNullable(contains);

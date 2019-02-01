@@ -32,8 +32,8 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultQueryResult;
-import org.joda.time.Period;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -192,7 +192,7 @@ public final class CassandraAlertRepository implements AlertRepository {
         cassAlert.setNagiosExtensions(convertToCassandraNagiosExtension(alert.getNagiosExtension()));
         cassAlert.setName(alert.getName());
         cassAlert.setOperator(alert.getOperator());
-        cassAlert.setPeriodInSeconds(alert.getPeriod().toStandardSeconds().getSeconds());
+        cassAlert.setPeriodInSeconds((int) alert.getPeriod().getSeconds());
         cassAlert.setQuantityValue(alert.getValue().getValue());
         cassAlert.setQuantityUnit(alert.getValue().getUnit().orElse(null));
         cassAlert.setStatistic(alert.getStatistic());
@@ -220,7 +220,7 @@ public final class CassandraAlertRepository implements AlertRepository {
                 .setMetric(cassandraAlert.getMetric())
                 .setName(cassandraAlert.getName())
                 .setOperator(cassandraAlert.getOperator())
-                .setPeriod(Period.seconds(cassandraAlert.getPeriodInSeconds()).normalizedStandard())
+                .setPeriod(Duration.ofSeconds(cassandraAlert.getPeriodInSeconds()))
                 .setService(cassandraAlert.getService())
                 .setStatistic(cassandraAlert.getStatistic())
                 .setValue(new DefaultQuantity.Builder()
@@ -253,7 +253,7 @@ public final class CassandraAlertRepository implements AlertRepository {
             nagiosMapBuilder.put("severity", nagiosExtension.getSeverity());
             nagiosMapBuilder.put("notify", nagiosExtension.getNotify());
             nagiosMapBuilder.put("attempts", Integer.toString(nagiosExtension.getMaxCheckAttempts()));
-            nagiosMapBuilder.put("freshness", Long.toString(nagiosExtension.getFreshnessThreshold().getStandardSeconds()));
+            nagiosMapBuilder.put("freshness", Long.toString(nagiosExtension.getFreshnessThreshold().getSeconds()));
         }
         return nagiosMapBuilder.build();
     }
