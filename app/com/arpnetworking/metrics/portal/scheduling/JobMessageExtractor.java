@@ -50,7 +50,7 @@ public class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
     private static String jobRefToUId(final JobRef<?> ref) {
         return String.format(
                 "repoType-%s--orgId-%s--jobId-%s",
-                ref.getRepositoryType(),
+                ref.getRepositoryType().getCanonicalName(),
                 ref.getOrganization().getId(),
                 ref.getJobId());
     }
