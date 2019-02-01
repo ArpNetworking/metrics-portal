@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-
 /**
  * Enumeration representing the possible values for a Kairos sampling unit.
  *
@@ -26,46 +24,33 @@ public enum SamplingUnit {
     /**
      * Sampling is count represents milliseconds.
      */
-    MILLISECONDS("milliseconds"),
+    MILLISECONDS,
     /**
      * Sampling is count represents seconds.
      */
-    SECONDS("seconds"),
+    SECONDS,
     /**
      * Sampling is count represents minutes.
      */
-    MINUTES("minutes"),
+    MINUTES,
     /**
      * Sampling is count represents hours.
      */
-    HOURS("hours"),
+    HOURS,
     /**
      * Sampling is count represents days.
      */
-    DAYS("days"),
+    DAYS,
     /**
      * Sampling is count represents weeks.
      */
-    WEEKS("weeks"),
+    WEEKS,
     /**
      * Sampling is count represents months.
      */
-    MONTHS("months"),
+    MONTHS,
     /**
      * Sampling is count represents years.
      */
-    YEARS("years");
-
-    SamplingUnit(final String value) {
-        _value = value;
-    }
-
-
-    @JsonValue
-    public String getValue() {
-        return _value;
-    }
-
-
-    private final String _value;
+    YEARS;
 }

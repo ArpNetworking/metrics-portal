@@ -24,7 +24,7 @@
                 "align_start_time": true,
                 "sampling": {
                   "value": 1,
-                  "unit": "days"
+                  "unit": "DAYS"
                 }
               }
             ]
@@ -32,13 +32,13 @@
         ],
         "start_relative": {
           "value": 1,
-          "unit": "days"
+          "unit": "DAYS"
         }
       }
     }
   ],
   "execution_interval": {
     "value": 1,
-    "unit": "days"
+    "unit": "DAYS"
   }
 }
