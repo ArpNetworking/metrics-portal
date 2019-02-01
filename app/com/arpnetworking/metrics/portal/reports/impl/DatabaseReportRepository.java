@@ -272,6 +272,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                         .stream()
                         .map(models.ebean.Report::toInternal)
                         .collect(ImmutableList.toImmutableList());
+
         return new DefaultQueryResult<>(reports, reports.size());
     }
 

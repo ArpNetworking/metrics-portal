@@ -30,7 +30,7 @@ import java.util.Optional;
  * @author Christian Briones (cbriones at dropbox dot com)
  * @implSpec This should be kept in sync with {@link JobQuery}.
  */
-// CHECKSTYLE.ON: JavadocTypeCheck - Checkstyle does not recognize implSpec.
+// CHECKSTYLE.ON: JavadocTypeCheck
 public interface ReportQuery {
     /**
      * Execute the query and return the results.

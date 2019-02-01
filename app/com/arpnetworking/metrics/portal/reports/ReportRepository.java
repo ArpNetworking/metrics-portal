@@ -54,10 +54,10 @@ public interface ReportRepository extends JobRepository<Report.Result> {
     /**
      * Query reports.
      *
-     * This is a specialization of {@link JobRepository#query} for cases where you want to
+     * This can be considered a specialization of {@link JobRepository#query} for cases where you want to
      * handle the reports themselves, outside of a Job context.
      *
-     * @param query The {@code JobQuery} instance to execute.
+     * @param query The {@code ReportQuery} instance to execute.
      * @return The reports resulting from executing the query.
      */
     QueryResult<Report> query(ReportQuery query);
