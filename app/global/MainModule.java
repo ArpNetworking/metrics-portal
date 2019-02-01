@@ -199,6 +199,13 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Clock provideClock() {
+        return Clock.systemUTC();
+    }
+
+    @Provides
+    @Singleton
     @Named("job-execution-shard-region")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideJobExecutorShardRegion(
