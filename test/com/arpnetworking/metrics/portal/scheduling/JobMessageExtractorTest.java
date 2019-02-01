@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.scheduling;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -47,11 +46,12 @@ public final class JobMessageExtractorTest {
                 .setRepositoryType(MockableIntJobRepository.class)
                 .build();
         assertEquals(
-                DigestUtils.sha1Hex(String.join(
-                        " ",
+                String.join(
+                        "_",
+
                         "com.arpnetworking.metrics.portal.scheduling.JobMessageExtractorTest.MockableIntJobRepository",
                         "00000000-0000-0000-0000-000000000000",
-                        "11111111-1111-1111-1111-111111111111")),
+                        "11111111-1111-1111-1111-111111111111"),
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
 
