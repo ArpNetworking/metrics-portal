@@ -25,8 +25,8 @@ import models.internal.Operator;
 import models.internal.Quantity;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.Period;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -75,7 +75,7 @@ public final class DefaultAlert implements Alert {
     }
 
     @Override
-    public Period getPeriod() {
+    public Duration getPeriod() {
         return _period;
     }
 
@@ -131,7 +131,7 @@ public final class DefaultAlert implements Alert {
                 && Objects.equals(_service, otherAlert._service)
                 && Objects.equals(_metric, otherAlert._metric)
                 && Objects.equals(_statistic, otherAlert._statistic)
-                && Objects.equals(_period.normalizedStandard(), otherAlert._period.normalizedStandard())
+                && Objects.equals(_period, otherAlert._period)
                 && Objects.equals(_operator, otherAlert._operator)
                 && Objects.equals(_value, otherAlert._value)
                 && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);
@@ -174,7 +174,7 @@ public final class DefaultAlert implements Alert {
     private final String _service;
     private final String _metric;
     private final String _statistic;
-    private final Period _period;
+    private final Duration _period;
     private final Operator _operator;
     private final Quantity _value;
     private final NagiosExtension _nagiosExtension;
@@ -274,7 +274,7 @@ public final class DefaultAlert implements Alert {
          * @param value The period.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setPeriod(final Period value) {
+        public Builder setPeriod(final Duration value) {
             _period = value;
             return this;
         }
@@ -332,7 +332,7 @@ public final class DefaultAlert implements Alert {
         @NotEmpty
         private String _statistic;
         @NotNull
-        private Period _period;
+        private Duration _period;
         @NotNull
         private Operator _operator;
         @NotNull

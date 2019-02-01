@@ -29,7 +29,6 @@ import models.internal.NagiosExtension;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
-import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +38,7 @@ import play.test.WithApplication;
 
 import javax.persistence.PersistenceException;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -381,7 +381,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         assertEquals(alert.getService(), ebeanAlert.getService());
         assertEquals(alert.getName(), ebeanAlert.getName());
         assertEquals(alert.getOperator(), ebeanAlert.getOperator());
-        assertEquals(alert.getPeriod(), Period.seconds(ebeanAlert.getPeriod()).normalizedStandard());
+        assertEquals(alert.getPeriod(), Duration.ofSeconds(ebeanAlert.getPeriod()));
         assertEquals(alert.getStatistic(), ebeanAlert.getStatistic());
         assertEquals(alert.getValue().getUnit(), Optional.of(ebeanAlert.getQuantityUnit()));
         assertEquals(alert.getValue().getValue(), ebeanAlert.getQuantityValue(), 0.001);
@@ -394,7 +394,7 @@ public class DatabaseAlertRepositoryTest extends WithApplication {
         assertEquals(extension.getSeverity(), ebeanExtension.getSeverity());
         assertEquals(extension.getNotify(), ebeanExtension.getNotify());
         assertEquals(extension.getMaxCheckAttempts(), ebeanExtension.getMaxCheckAttempts());
-        assertEquals(extension.getFreshnessThreshold().getStandardSeconds(), ebeanExtension.getFreshnessThreshold());
+        assertEquals(extension.getFreshnessThreshold().getSeconds(), ebeanExtension.getFreshnessThreshold());
     }
 
     private final DatabaseAlertRepository.AlertQueryGenerator queryGenerator = new DatabaseAlertRepository.GenericQueryGenerator();
