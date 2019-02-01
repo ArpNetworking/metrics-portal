@@ -119,7 +119,7 @@ public final class JobExecutorActorTest {
     }
 
     private Props makeExecutorActorProps() {
-        return JobExecutorActor.props(injector, clock);
+        return JobExecutorActor.props(injector, clock, periodicMetrics);
     }
 
     private ActorRef makeExecutorActor() {

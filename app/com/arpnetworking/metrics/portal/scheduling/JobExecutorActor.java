@@ -80,22 +80,17 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
+     * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
-    public static Props props(
-            final Injector injector,
-            final Clock clock) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock));
+    public static Props props(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
+        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, periodicMetrics));
     }
 
-    private JobExecutorActor(
-            final Injector injector,
-            final Clock clock) {
+    private JobExecutorActor(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
-        _periodicMetrics = new TsdPeriodicMetrics.Builder()
-                .setMetricsFactory(injector.getInstance(MetricsFactory.class))
-                .build();
+        _periodicMetrics = periodicMetrics;
     }
 
     @Override
