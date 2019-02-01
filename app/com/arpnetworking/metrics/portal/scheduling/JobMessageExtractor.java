@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Dropbox, Inc.
+ * Copyright 2019 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import akka.cluster.sharding.ShardRegion;
 import javax.annotation.Nullable;
 
 /**
- * Extracts data from messages to setup alert executors.
+ * Extracts data from messages to setup job executors.
  *
- * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
     /**
