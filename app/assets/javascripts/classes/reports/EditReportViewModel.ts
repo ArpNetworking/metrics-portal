@@ -104,21 +104,20 @@ enum ReportFormat {
 }
 
 class Recipient {
+    id: KnockoutObservable<string>;
     type: RecipientType;
     address: KnockoutObservable<string>;
     format: KnockoutObservable<ReportFormat>;
 
     constructor(type: RecipientType) {
+        this.id = ko.observable(uuid.v4());
         this.type = type;
         this.address = ko.observable("");
         this.format = ko.observable(ReportFormat.Pdf);
     }
 
     label(): string {
-        switch (this.type) {
-            case RecipientType.Email:
-                return 'Email'
-        }
+        return RecipientType[this.type]
     }
 
     placeholder(): string {
@@ -130,9 +129,14 @@ class Recipient {
 
     toRequest(): any {
         return {
-            type: RecipientType[this.type],
+            type: RecipientType[this.type].toUpperCase(),
+            id: this.id(),
             address: this.address(),
-            format: ReportFormat[this.format()],
+            formats: [
+                {
+                    type: ReportFormat[this.format()].toUpperCase(),
+                }
+            ],
         }
     }
 
@@ -152,6 +156,7 @@ enum SourceType {
 }
 
 class EditSourceViewModel {
+    id = ko.observable(uuid.v4());
     type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
@@ -159,12 +164,17 @@ class EditSourceViewModel {
     ignoreCertificateErrors = ko.observable<boolean>(false);
 
     toRequest() {
+        let requestType;
+        if (this.type() == SourceType.ChromeScreenshot) {
+            requestType = "CHROME_SCREENSHOT"
+        }
         return {
-            type: SourceType[this.type()],
+            type: requestType,
+            id: this.id(),
+            uri: this.url(),
             title: this.title(),
-            url: this.url(),
-            eventName: this.eventName(),
-            ignoreCertificateErrors: this.ignoreCertificateErrors()
+            ignoreCertificateErrors: this.ignoreCertificateErrors(),
+            triggeringEventName: this.eventName(),
         }
     }
 
@@ -183,7 +193,7 @@ class EditSourceViewModel {
     };
 }
 
-enum ScheduleType {
+enum ScheduleRepetition {
     OneOff,
     Hourly,
     Daily,
@@ -202,14 +212,14 @@ class ZoneInfo {
 }
 
 class EditScheduleViewModel {
-    type = ko.observable<ScheduleType>(ScheduleType.OneOff);
+    repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.OneOff);
     start = ko.observable<moment.Moment>();
     end = ko.observable<moment.Moment | undefined>(undefined);
     offsetString = ko.observable<string>("");
     offset = ko.pureComputed<moment.Duration>(() => moment.duration(this.offsetString()));
     zone = ko.observable<ZoneInfo>(new ZoneInfo(moment.tz.guess()));
     engine: Bloodhound<ZoneInfo>;
-    isPeriodic = ko.pureComputed<boolean>(() => this.type() != ScheduleType.OneOff);
+    isPeriodic = ko.pureComputed<boolean>(() => this.repeat() != ScheduleRepetition.OneOff);
 
     constructor() {
         const tokenizer = (s: string) => s.toLowerCase().split(/[ \/_()]/);
@@ -238,28 +248,41 @@ class EditScheduleViewModel {
     toRequest(): any {
         // Since we don't actually want to use the local browser timezone
         // we discard it in favor of the explicit 'zone' field on serialization
-        const start = this.start().toISOString(false);
-        let end = this.end();
-        if (end) {
-            end = this.end().toISOString(false);
+        const runAtAndAfter = this.start().toISOString(false);
+        let runUntil = this.end();
+        if (runUntil) {
+            runUntil = this.end().toISOString(false);
         }
-        let offset = this.offset().toISOString();
+        const zone = this.zone().value;
 
-        return {
-            type: ScheduleType[this.type()],
-            start: start,
-            end: end,
-            offset: offset,
-            zone: this.zone().value,
+        const baseRequest = {
+            runAtAndAfter,
+            runUntil,
+            zone,
+        };
+        const repeat = this.repeat();
+        if (repeat == ScheduleRepetition.OneOff) {
+            return Object.assign(baseRequest, {
+                type: "ONE_OFF",
+            });
+        } else {
+            let offset = this.offset().toISOString();
+            let period = ScheduleRepetition[repeat].toUpperCase();
+            return Object.assign(baseRequest, {
+                type: "PERIODIC",
+                period,
+                offset,
+            });
         }
+
     }
 
-    readonly availableScheduleTypes = [
-        {value: ScheduleType.OneOff,  text: "Does not repeat"},
-        {value: ScheduleType.Hourly,  text: "Hourly"},
-        {value: ScheduleType.Daily,   text: "Daily"},
-        {value: ScheduleType.Weekly,  text: "Weekly"},
-        {value: ScheduleType.Monthly, text: "Monthly"},
+    readonly availableRepeatTypes = [
+        {value: ScheduleRepetition.OneOff,  text: "Does not repeat"},
+        {value: ScheduleRepetition.Hourly,  text: "Hourly"},
+        {value: ScheduleRepetition.Daily,   text: "Daily"},
+        {value: ScheduleRepetition.Weekly,  text: "Weekly"},
+        {value: ScheduleRepetition.Monthly, text: "Monthly"},
     ];
 
     readonly helpMessages = {

@@ -39,10 +39,10 @@
     <label for="scheduleType">Repeat</label>
     <select id="scheduleType"
             class="form-control"
-            data-bind="options: availableScheduleTypes,
+            data-bind="options: availableRepeatTypes,
                        optionsText: 'text',
                        optionsValue: 'value',
-                       value: type"></select>
+                       value: repeat"></select>
 </div>
 <div class="form-group" data-bind="if: isPeriodic">
     <label for="scheduleOffset">Repeat offset</label>
