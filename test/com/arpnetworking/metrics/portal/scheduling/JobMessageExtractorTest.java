@@ -46,8 +46,8 @@ public final class JobMessageExtractorTest {
                 String.format(
                         "repoType-%s--orgId-%s--jobId-%s",
                         "com.arpnetworking.metrics.portal.scheduling.JobMessageExtractorTest.MockableIntJobRepository",
-                        ref.getOrganization().getId(),
-                        ref.getJobId()),
+                        organization.getId(),
+                        "11111111-1111-1111-1111-111111111111"),
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
 
