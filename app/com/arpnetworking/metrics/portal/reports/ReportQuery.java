@@ -14,47 +14,46 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.scheduling;
+package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.scheduling.Job;
+import models.internal.reports.Report;
 
 import java.util.Optional;
 
 // CHECKSTYLE.OFF: JavadocTypeCheck - Checkstyle does not recognize implSpec.
 /**
- * A query against a {@link JobRepository}.
+ * A query against a {@link ReportRepository}.
  *
- * @implSpec This should be kept in sync with {@link JobQuery}.
- *
- * @param <T> The result type of the Jobs returned by this query.
  * @author Christian Briones (cbriones at dropbox dot com)
+ * @implSpec This should be kept in sync with {@link JobQuery}.
  */
-// CHECKSTYLE.ON: JavadocTypeCheck
-public interface JobQuery<T> {
+// CHECKSTYLE.ON: JavadocTypeCheck - Checkstyle does not recognize implSpec.
+public interface ReportQuery {
     /**
      * Execute the query and return the results.
      *
-     * @return The results of the query as a {@code QueryResult<Job<T>>} instance.
+     * @return The results of the query as a {@code QueryResult<Report>} instance.
      */
-    QueryResult<Job<T>> execute();
+    QueryResult<Report> execute();
 
     /**
-     * The maximum number of jobs to return.  Optional. Default is 1000.
+     * The maximum number of reports to return.  Optional. Default is 1000.
      *
-     * @param limit The maximum number of jobs to return.
-     * @return This instance of {@code JobQuery}
+     * @param limit The maximum number of reports to return.
+     * @return This instance of {@code ReportQuery}
      */
-    JobQuery<T> limit(int limit);
+    ReportQuery limit(int limit);
 
     /**
      * The offset into the result set. Optional. Default is not set.
      *
      * @param offset The offset into the result set.
-     * @return This instance of {@code JobQuery}
+     * @return This instance of {@code ReportQuery}
      */
-    JobQuery<T> offset(int offset);
+    ReportQuery offset(int offset);
 
     /**
      * Accessor for the organization.

@@ -34,8 +34,8 @@ public final class DefaultQueryResult<T> implements QueryResult<T> {
     /**
      * Public constructor.
      *
-     * @param values The <code>List</code> of <code>Host</code> instances.
-     * @param total The total number of matching <code>Host</code> instances.
+     * @param values The {@code List} of {@code T} instances.
+     * @param total The total number of matching results.
      */
     public DefaultQueryResult(final List<? extends T> values, final long total) {
         _values = values;
@@ -46,8 +46,8 @@ public final class DefaultQueryResult<T> implements QueryResult<T> {
     /**
      * Public constructor.
      *
-     * @param values The <code>List</code> of <code>Host</code> instances.
-     * @param total The total number of matching <code>Host</code> instances.
+     * @param values The {@code List} of {@code T} instances.
+     * @param total The total number of matching results.
      * @param etag The etag.
      */
     public DefaultQueryResult(final List<? extends T> values, final long total, final String etag) {

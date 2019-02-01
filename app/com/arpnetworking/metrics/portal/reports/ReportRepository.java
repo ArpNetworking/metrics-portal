@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultQueryResult;
+import models.internal.impl.DefaultReportQuery;
 import models.internal.reports.Report;
 import models.internal.scheduling.Job;
 
@@ -59,13 +60,25 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * @param query The {@code JobQuery} instance to execute.
      * @return The reports resulting from executing the query.
      */
-    QueryResult<Report> queryReports(JobQuery<Report.Result> query);
+    QueryResult<Report> query(ReportQuery query);
 
-    @Override
-    default QueryResult<Job<Report.Result>> query(JobQuery<Report.Result> query) {
-        final QueryResult<Report> reports = queryReports(query);
-        // This re-wrap step is necessary to satisfy the compiler typecheck.
-        return new DefaultQueryResult<>(reports.values(), reports.values().size());
+    // CHECKSTYLE.OFF: JavadocMethodCheck - doc should be inherited from JobRepository
+    default QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+        final ReportQuery reportQuery = new DefaultReportQuery(this, query);
+        final QueryResult<Report> reports = query(reportQuery);
+        return new DefaultQueryResult<>(reports.values(), reports.total());
+    }
+    // CHECKSTYLE.ON: JavadocMethodCheck
+
+    /**
+     * Create a report query against this repository.
+     *
+     * @param organization Organization to search in.
+     * @return An instance of {@code ReportQuery}.
+     */
+    default ReportQuery createReportQuery(final Organization organization) {
+        final JobQuery<Report.Result> jobQuery = createQuery(organization);
+        return new DefaultReportQuery(this, jobQuery);
     }
 }
 
