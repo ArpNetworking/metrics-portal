@@ -55,5 +55,5 @@ public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtrac
                 ref.getJobId().toString());
     }
 
-    private static final int NUM_SHARDS = 100;
+    private static final int NUM_SHARDS = 3000;
 }

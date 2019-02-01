@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.cluster.sharding.ShardRegion;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
