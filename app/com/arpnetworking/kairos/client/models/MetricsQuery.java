@@ -117,8 +117,7 @@ public final class MetricsQuery {
          * @param value the end time
          * @return this {@link Builder}
          */
-        @Nullable
-        public Builder setEndTime(final Instant value) {
+        public Builder setEndTime(@Nullable final Instant value) {
             _endTime = value;
             return this;
         }
