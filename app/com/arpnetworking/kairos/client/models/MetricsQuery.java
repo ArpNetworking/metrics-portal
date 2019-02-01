@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 
 /**
  * Model class to represent a metrics query.
