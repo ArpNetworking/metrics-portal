@@ -119,19 +119,5 @@ public class JobCoordinatorTest {
                         .build());
 
         messageExtractor.expectNoMsg();
-
-        coordinator.tell(JobCoordinator.AntiEntropyTick.INSTANCE, null);
-
-        messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
-                .setJobRef(makeRef(job1))
-                .setETag(job1.getETag())
-                .build());
-
-        messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
-                .setJobRef(makeRef(job2))
-                .setETag(job2.getETag())
-                .build());
-
-        messageExtractor.expectNoMsg();
     }
 }
