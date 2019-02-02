@@ -40,6 +40,17 @@ import java.util.Optional;
 @Loggable
 public final class DefaultReportQuery implements ReportQuery {
     private final ReportRepository _repository;
+
+    // This reference, while mutable, is safe to store since either:
+    //
+    //  A. The client code using the JobQuery, so this ReportQuery is only ever used as a wrapper
+    //     by the ReportRepository implementation and never mutated.
+    //
+    //  B. The client code is using this ReportQuery, in which case it never sees the embedded
+    //     JobQuery.
+    //
+    // In either case a client never has independent references to both. See ReportRepository for
+    // this query wrapping/unwrapping.
     private final JobQuery<Report.Result> _jobQuery;
 
     /**

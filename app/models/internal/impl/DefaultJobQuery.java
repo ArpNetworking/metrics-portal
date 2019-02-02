@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 @Loggable
 public final class DefaultJobQuery<T> implements JobQuery<T> {
     private static final int DEFAULT_LIMIT = 1000;
+
     private final JobRepository<T> _repository;
     private final Organization _organization;
     private int _limit = DEFAULT_LIMIT;
