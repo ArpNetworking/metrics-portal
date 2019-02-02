@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 /**
@@ -53,8 +52,9 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private final Class<? extends JobRepository<T>> _repositoryType;
     private final Organization _organization;
     private final ActorRef _jobExecutorRegion;
-    private final Semaphore _executionMutex = new Semaphore(1);
     private final PeriodicMetrics _periodicMetrics;
+
+    private boolean _currentlyExecuting = false;
 
     /**
      * Props factory.
@@ -115,16 +115,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     public void preStart() throws Exception {
         super.preStart();
         timers().startPeriodicTimer(
-                "TICK",
-                AntiEntropyTick.INSTANCE,
-                scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
-    }
-
-    @Override
-    public void postRestart(final Throwable reason) throws Exception {
-        super.postRestart(reason);
-        timers().startPeriodicTimer(
-                "TICK",
+                ANTI_ENTROPY_PERIODIC_TIMER_NAME,
                 AntiEntropyTick.INSTANCE,
                 scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
     }
@@ -174,46 +165,39 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         });
     }
 
-    private Runnable buildAntiEntropyRunnable() {
-        return () -> {
-            if (_executionMutex.tryAcquire()) {
-                try {
-                    final Instant startTime = _clock.instant();
-                    getAllJobs().forEachRemaining(job -> {
-                        final JobRef<T> ref = new JobRef.Builder<T>()
-                                .setRepositoryType(_repositoryType)
-                                .setOrganization(_organization)
-                                .setId(job.getId())
-                                .build();
-                        _jobExecutorRegion.tell(
-                                new JobExecutorActor.Reload.Builder<T>()
-                                        .setJobRef(ref)
-                                        .setETag(job.getETag())
-                                        .build(),
-                                getSelf());
-                    });
+    private void runAntiEntropy() {
+        final Instant startTime = _clock.instant();
+        getAllJobs().forEachRemaining(job -> {
+            final JobRef<T> ref = new JobRef.Builder<T>()
+                    .setRepositoryType(_repositoryType)
+                    .setOrganization(_organization)
+                    .setId(job.getId())
+                    .build();
+            _jobExecutorRegion.tell(
+                    new JobExecutorActor.Reload.Builder<T>()
+                            .setJobRef(ref)
+                            .setETag(job.getETag())
+                            .build(),
+                    getSelf());
+        });
 
-                    // We now know that all jobs in the repo have current actors.
-                    // There might still be actors which don't correspond to jobs, but that's fine:
-                    //   they should self-terminate next time they execute.
+        // We now know that all jobs in the repo have current actors.
+        // There might still be actors which don't correspond to jobs, but that's fine:
+        //   they should self-terminate next time they execute.
 
-                    _periodicMetrics.recordTimer(
-                            "job_coordinator_tick_time",
-                            ChronoUnit.NANOS.between(startTime, _clock.instant()),
-                            Optional.of(NANOS));
-
-                } finally {
-                    _executionMutex.release();
-                }
-            }
-        };
-
+        _periodicMetrics.recordTimer(
+                "job_coordinator_tick_time",
+                ChronoUnit.NANOS.between(startTime, _clock.instant()),
+                Optional.of(NANOS));
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
                 .match(AntiEntropyTick.class, message -> {
+                    if (_currentlyExecuting) {
+                        return;
+                    }
 
                     LOGGER.info()
                             .setMessage("starting anti-entropy")
@@ -223,9 +207,17 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
                     getContext().getSystem().scheduler().scheduleOnce(
                             scala.concurrent.duration.Duration.Zero(),
-                            buildAntiEntropyRunnable(),
+                            () -> {
+                                try {
+                                    runAntiEntropy();
+                                } finally {
+                                    getSelf().tell(AntiEntropyFinished.INSTANCE, getSelf());
+                                }
+                            },
                             getContext().getSystem().dispatcher()); // TODO(spencerpearson): probably not the right dispatcher
-
+                })
+                .match(AntiEntropyFinished.class, message -> {
+                    _currentlyExecuting = false;
                 })
                 .build();
     }
@@ -242,6 +234,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 + "repositoryType=" + _repositoryType + "; "
                 + "organizationId=" + _organization.getId();
     }
+
+    private static final String ANTI_ENTROPY_PERIODIC_TIMER_NAME = "TICK";
     private static final Duration ANTI_ENTROPY_TICK_INTERVAL = Duration.ofHours(1);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobCoordinator.class);
     private static final Unit NANOS = new TsdUnit.Builder()
@@ -253,7 +247,14 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
      */
-    protected static final class AntiEntropyTick {
+    /* package private */ static final class AntiEntropyTick {
+        /* package private */ static final AntiEntropyTick INSTANCE = new AntiEntropyTick();
+    }
+
+    /**
+     * Internal message, telling the scheduler that its anti-entropy routine has finished asynchronously running.
+     */
+    /* package private */ static final class AntiEntropyFinished {
         /* package private */ static final AntiEntropyTick INSTANCE = new AntiEntropyTick();
     }
 
