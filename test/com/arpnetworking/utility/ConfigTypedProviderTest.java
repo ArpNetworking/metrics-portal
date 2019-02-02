@@ -29,28 +29,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
-interface TestInterface {}
-class TestClass implements TestInterface { }
-
-class InjectedClass {}
-class TestClassInjected implements TestInterface {
-    @Inject
-    public TestClassInjected(InjectedClass injected) {
-        _injected = injected;
-    }
-
-    InjectedClass getInjected() {
-        return _injected;
-    }
-
-    private InjectedClass _injected;
-}
+/**
+ * ConfigTypedProvider test cases.
+ *
+ * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+ */
 public class ConfigTypedProviderTest {
 
     @Test
     public void createBasic() {
         final Config config = ConfigFactory.empty()
-                .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClass.class.getCanonicalName()));
+                .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClass.class.getName()));
 
         final AbstractModule module = new AbstractModule() {
             @Override
@@ -70,7 +59,7 @@ public class ConfigTypedProviderTest {
     @Test
     public void createWithInjected() {
         final Config config = ConfigFactory.empty()
-                .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClassInjected.class.getCanonicalName()));
+                .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClassInjected.class.getName()));
 
         final InjectedClass injectedClass = new InjectedClass();
         final AbstractModule module = new AbstractModule() {
@@ -90,5 +79,36 @@ public class ConfigTypedProviderTest {
         final TestClassInjected testClassInjected = (TestClassInjected) instance;
         assertSame(injectedClass, testClassInjected.getInjected());
 
+    }
+
+    /**
+     * @author Gilligan Markham (gmarkham at dropbox dot com)
+     */
+    public interface TestInterface {}
+
+    /**
+     * @author Gilligan Markham (gmarkham at dropbox dot com)
+     */
+    public static class InjectedClass {}
+
+    /**
+     * @author Gilligan Markham (gmarkham at dropbox dot com)
+     */
+    public static class TestClass implements TestInterface { }
+
+    /**
+     * @author Gilligan Markham (gmarkham at dropbox dot com)
+     */
+    public static class TestClassInjected implements TestInterface {
+        @Inject
+        public TestClassInjected(final InjectedClass injected) {
+            _injected = injected;
+        }
+
+        InjectedClass getInjected() {
+            return _injected;
+        }
+
+        private InjectedClass _injected;
     }
 }

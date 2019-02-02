@@ -150,7 +150,9 @@ public class ElasticSearchHostRegistryTest {
         // Indexing is asynchronous at an interval of 1 second (see @Before)
         Thread.sleep(2000);
 
-        final HostQuery hostQuery = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of("testFindHostsWithName-host1"));
+        final HostQuery hostQuery = _repository
+                .createQuery(Organization.DEFAULT)
+                .partialHostname(Optional.of("testFindHostsWithName-host1"));
         final QueryResult<Host> result = _repository.query(hostQuery);
         final List<? extends Host> hosts = result.values();
         assertEquals(1, hosts.size());
@@ -182,7 +184,9 @@ public class ElasticSearchHostRegistryTest {
         // Indexing is asynchronous at an interval of 1 second (see @Before)
         Thread.sleep(2000);
 
-        final HostQuery hostQuery1 = _repository.createQuery(Organization.DEFAULT).partialHostname(Optional.of("testFindHostsWithNamePrefix"));
+        final HostQuery hostQuery1 = _repository
+                .createQuery(Organization.DEFAULT)
+                .partialHostname(Optional.of("testFindHostsWithNamePrefix"));
         final QueryResult<Host> result1 = _repository.query(hostQuery1);
         final List<? extends Host> hosts1 = result1.values();
         assertEquals(2, hosts1.size());

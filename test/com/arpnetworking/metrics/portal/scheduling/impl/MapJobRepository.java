@@ -68,6 +68,12 @@ public class MapJobRepository<T> implements JobRepository<T> {
         LOGGER.debug().setMessage("closing JobRepository").log();
     }
 
+    /**
+     * Adds or updates a job for an organization.
+     *
+     * @param job job to add or update
+     * @param organization organization to add/update to
+     */
     public void addOrUpdateJob(final Job<T> job, final Organization organization) {
         assertIsOpen();
         _jobs.computeIfAbsent(organization, o -> Maps.newHashMap()).put(job.getId(), job);
@@ -89,21 +95,21 @@ public class MapJobRepository<T> implements JobRepository<T> {
     public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
-                .compute(id, (id_, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
+                .compute(id, (id0, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
     }
 
     @Override
     public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final Object result) {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
-                .compute(id, (id_, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
+                .compute(id, (id0, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
     }
 
     @Override
     public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
-                .compute(id, (id_, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
+                .compute(id, (id0, t1) -> (t1 == null) ? scheduled : t1.isAfter(scheduled) ? t1 : scheduled);
     }
 
     @Override

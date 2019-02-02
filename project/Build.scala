@@ -63,7 +63,7 @@ object ApplicationBuild extends Build {
       filters,
       guice,
       "cglib" % "cglib" % "3.2.1",
-      "com.arpnetworking.build" % "build-resources" % "1.2.7",
+      "com.arpnetworking.build" % "build-resources" % "1.2.9",
       "com.arpnetworking.commons" % "commons" % "1.18.0",
       "com.arpnetworking.commons" % "javassist-maven-core" % "0.2.1",
       "com.arpnetworking.logback" % "logback-steno" % "1.18.0",

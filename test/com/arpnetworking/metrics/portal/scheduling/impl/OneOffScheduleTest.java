@@ -19,7 +19,6 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;

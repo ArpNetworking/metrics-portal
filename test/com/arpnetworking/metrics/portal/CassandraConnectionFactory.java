@@ -26,6 +26,16 @@ import java.util.Map;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class CassandraConnectionFactory {
+
+    /**
+     * Generates a test cassandra configuration.
+     *
+     * @param clusterName test cluster name
+     * @param keyspace test keyspace
+     * @param host test host
+     * @param port test port
+     * @return map of cassandra config values
+     */
     public static Map<String, Object> generateConfiguration(
             final String clusterName,
             final String keyspace,
@@ -40,4 +50,9 @@ public final class CassandraConnectionFactory {
                 .put("cassandra.db.default.replication.replication_factor", 1)
                 .build();
     }
+
+    /**
+     * Utility class, should not have callable constructor.
+     */
+    private CassandraConnectionFactory(){}
 }
