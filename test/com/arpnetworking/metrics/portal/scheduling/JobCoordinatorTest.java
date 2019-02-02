@@ -26,6 +26,7 @@ import org.mockito.MockitoAnnotations;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class JobCoordinatorTest {
@@ -93,9 +94,16 @@ public class JobCoordinatorTest {
 
     @Test
     public void testRunsAntiEntropy() {
-        final Job<Integer> job1 = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(t0).setResult(123).build());
-        final Job<Integer> job2 = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(t0).setResult(456).build());
-        Mockito.when(repo.getAllJobs(organization)).then(call -> Lists.newArrayList(job1, job2).stream());
+        final Job<Integer> job1 = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .setOneOffSchedule(t0)
+                .setResult(123)
+                .build());
+        final Job<Integer> job2 = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                .setOneOffSchedule(t0)
+                .setResult(456)
+                .build());
 
         final ActorRef coordinator = makeCoordinatorActor();
         coordinator.tell(JobCoordinator.AntiEntropyTick.INSTANCE, null);

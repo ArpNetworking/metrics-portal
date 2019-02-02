@@ -122,20 +122,20 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private static <T> Iterator<? extends T> flatten(final Supplier<Iterator<? extends T>> getPage) {
         return new Iterator<T>() {
-            private Iterator<? extends T> _buffer;
+            private Iterator<? extends T> _buffer = null;
             private boolean _exhaustedSource = false;
 
-            private void fetch() {
-                _buffer = getPage.get();
-                _exhaustedSource = !_buffer.hasNext();
+            private void repopulateBufferIfNeeded() {
+                if (!_exhaustedSource && (_buffer == null || !_buffer.hasNext())) {
+                    _buffer = getPage.get();
+                    _exhaustedSource = !_buffer.hasNext();
+                }
             }
 
             @Override
             public boolean hasNext() {
-                if (_buffer == null) {
-                    fetch();
-                }
-                return !_buffer.hasNext() && _exhaustedSource;
+                repopulateBufferIfNeeded();
+                return _buffer.hasNext();
             }
 
             @Override
@@ -167,7 +167,10 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private void runAntiEntropy() {
         final Instant startTime = _clock.instant();
-        getAllJobs().forEachRemaining(job -> {
+        System.out.println("in runAntiEntropy");
+        final Iterator<? extends Job<T>> js = getAllJobs();
+        js.forEachRemaining(job -> {
+            System.out.println("considering " + job);
             final JobRef<T> ref = new JobRef.Builder<T>()
                     .setRepositoryType(_repositoryType)
                     .setOrganization(_organization)
@@ -189,12 +192,19 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 "job_coordinator_tick_time",
                 ChronoUnit.NANOS.between(startTime, _clock.instant()),
                 Optional.of(NANOS));
+        System.out.println("done with runAntiEntropy");
     }
 
     @Override
     public Receive createReceive() {
         return receiveBuilder()
                 .match(AntiEntropyTick.class, message -> {
+
+                    LOGGER.info()
+                            .setMessage("ticking")
+                            .addData("organization", _organization)
+                            .addData("repositoryType", _repositoryType)
+                            .log();
                     if (_currentlyExecuting) {
                         return;
                     }
@@ -255,7 +265,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * Internal message, telling the scheduler that its anti-entropy routine has finished asynchronously running.
      */
     /* package private */ static final class AntiEntropyFinished {
-        /* package private */ static final AntiEntropyTick INSTANCE = new AntiEntropyTick();
+        /* package private */ static final AntiEntropyFinished INSTANCE = new AntiEntropyFinished();
     }
 
 }
