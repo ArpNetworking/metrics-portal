@@ -23,6 +23,7 @@ import com.arpnetworking.metrics.impl.BaseScale;
 import com.arpnetworking.metrics.impl.BaseUnit;
 import com.arpnetworking.metrics.impl.TsdUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.util.PagingIterator;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Injector;
@@ -34,10 +35,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Coordinates a {@link JobRepository}'s {@link JobExecutorActor}s to ensure that exactly one actor exists for each job.
@@ -122,49 +120,15 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
     }
 
-    private static <T> Iterator<? extends T> flatten(final Supplier<Iterator<? extends T>> getPage) {
-        return new Iterator<T>() {
-            private Iterator<? extends T> _buffer = null;
-            private boolean _exhaustedSource = false;
-
-            private void repopulateBufferIfNeeded() {
-                if (!_exhaustedSource && (_buffer == null || !_buffer.hasNext())) {
-                    _buffer = getPage.get();
-                    _exhaustedSource = !_buffer.hasNext();
-                }
-            }
-
-            @Override
-            public boolean hasNext() {
-                repopulateBufferIfNeeded();
-                return _buffer.hasNext();
-            }
-
-            @Override
-            public T next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return _buffer.next();
-            }
-        };
-    }
-
     private Iterator<? extends Job<T>> getAllJobs() {
         final JobRepository<T> repo = _injector.getInstance(_repositoryType);
-        return flatten(new Supplier<Iterator<? extends Job<T>>>() {
-            private int _offset = 0;
-            @Override
-            public Iterator<? extends Job<T>> get() {
-                final List<? extends Job<T>> result = repo.createQuery(_organization)
-                        .offset(_offset)
+        return new PagingIterator.Builder<Job<T>>()
+                .setGetPage(offset -> repo.createQuery(_organization)
+                        .offset(offset)
                         .limit(JOB_QUERY_PAGE_SIZE)
                         .execute()
-                        .values();
-                _offset += result.size();
-                return result.iterator();
-            }
-        });
+                        .values())
+                .build();
     }
 
     private void runAntiEntropy() {
