@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;

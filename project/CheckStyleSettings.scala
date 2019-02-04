@@ -49,17 +49,18 @@ object SbtCheckstyle extends AutoPlugin {
           import com.puppycrawl.tools.checkstyle.Main.{main => CsMain}
           val outputDir = (target.value / "checkstyle").mkdirs
           val outputFile = (target.value / "checkstyle" / "checkstyle-report.xml").getAbsolutePath
-          val inputDir = sourceDirectory.in(Compile).value.getAbsolutePath
+          val inputDir = List(sourceDirectory.in(Compile).value.getAbsolutePath,
+            sourceDirectory.in(Test).value.getAbsolutePath)
           val buildDir = (target.value / "build-resources").getAbsoluteFile
           val args = List(
             "-c", (buildDir / "checkstyle.xml").getAbsolutePath,
             "-f", "xml",
-            "-o", outputFile,
-            inputDir
-          )
+            "-o", outputFile
+          ) ++ inputDir
 
           System.setProperty("header_file", (buildDir / "al2").toString)
           System.setProperty("suppressions_file", (buildDir / "checkstyle-suppressions.xml").toString)
+          System.setProperty("extra_suppressions_file", (baseDirectory.value / "project" / "checkstyle-extra-suppressions.xml").toString)
 
           trappingExits {
             CsMain(args:_*)

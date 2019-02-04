@@ -33,9 +33,10 @@ import java.util.concurrent.CompletionStage;
 /**
  * Simple {@link Job} implementation for use in tests.
  *
+ * @param <T> type of job
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class DummyJob<T> implements Job<T> {
+public final class DummyJob<T> implements Job<T> {
     private final UUID _uuid;
     private final Schedule _schedule;
     private final Optional<T> _result;
@@ -111,33 +112,69 @@ public class DummyJob<T> implements Job<T> {
             super(DummyJob<T>::new);
         }
 
+        /**
+         * Sets Id.
+         *
+         * @param uuid id to set
+         * @return this builder
+         */
         public Builder<T> setId(final UUID uuid) {
             _uuid = uuid;
             return this;
         }
 
+        /**
+         * Sets schedule.
+         *
+         * @param schedule schedule to set
+         * @return this builder
+         */
         public Builder<T> setSchedule(final Schedule schedule) {
             _schedule = schedule;
             return this;
         }
 
+        /**
+         * Sets a one off schedule.
+         *
+         * @param runAt time to run
+         * @return this builder
+         */
         public Builder<T> setOneOffSchedule(final Instant runAt) {
             _schedule = new OneOffSchedule.Builder().setRunAtAndAfter(runAt).build();
             return this;
         }
 
+        /**
+         * Sets the result.
+         *
+         * @param result the result
+         * @return this builder
+         */
         public Builder<T> setResult(final T result) {
             _result = Optional.of(result);
             _error = Optional.empty();
             return this;
         }
 
+        /**
+         * Sets the error.
+         *
+         * @param error the error
+         * @return this builder
+         */
         public Builder<T> setError(final Throwable error) {
             _result = Optional.empty();
             _error = Optional.of(error);
             return this;
         }
 
+        /**
+         * Sets the blocking completionstage.
+         *
+         * @param blocker the blocker
+         * @return this builder
+         */
         public Builder<T> setBlocker(final CompletionStage<?> blocker) {
             _blocker = blocker;
             return this;

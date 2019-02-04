@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
  */
 public final class PeriodicScheduleTest {
 
-    private static final Instant t0 = Instant.parse("2019-01-01T00:00:00Z");
+    private static final Instant T_0 = Instant.parse("2019-01-01T00:00:00Z");
 
     @Test
     public void testNextRunWithAlignedBounds() {
@@ -166,8 +166,10 @@ public final class PeriodicScheduleTest {
         final Duration offset = Duration.ZERO;
         final ZoneId zone = ZoneId.of("America/Los_Angeles");
         final Instant expectedFirstRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(offset);
-        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(Duration.ofHours(1)).plus(offset);
-        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).toInstant().plus(Duration.ofHours(2)).plus(offset);
+        final Instant expectedSecondRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone)
+                .toInstant().plus(Duration.ofHours(1)).plus(offset);
+        final Instant expectedThirdRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone)
+                .toInstant().plus(Duration.ofHours(2)).plus(offset);
         final Instant expectedFourthRun = ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 3, 0, 0), zone).toInstant().plus(offset);
 
         // Make sure that the DST switchover happens when I think it does; otherwise this test is worthless
@@ -232,7 +234,7 @@ public final class PeriodicScheduleTest {
                 .setZone(ZoneId.of("+00:00"))
                 .setPeriod(ChronoUnit.HOURS)
                 .setOffset(Duration.ofHours(1))
-                .setRunAtAndAfter(t0)
+                .setRunAtAndAfter(T_0)
                 .build();
     }
 
@@ -242,18 +244,18 @@ public final class PeriodicScheduleTest {
                 .setZone(ZoneId.of("+00:00"))
                 .setPeriod(ChronoUnit.HOURS)
                 .setOffset(Duration.ofSeconds(-1))
-                .setRunAtAndAfter(t0)
+                .setRunAtAndAfter(T_0)
                 .build();
     }
 
     @Test
     public void testBuilderOffsetDefaultsToZero() {
-        PeriodicSchedule schedule = new PeriodicSchedule.Builder()
+        final PeriodicSchedule schedule = new PeriodicSchedule.Builder()
                 .setZone(ZoneId.of("+00:00"))
                 .setPeriod(ChronoUnit.HOURS)
-                .setRunAtAndAfter(t0)
+                .setRunAtAndAfter(T_0)
                 .build();
-        assertEquals(Optional.of(t0), schedule.nextRun(Optional.empty()));
+        assertEquals(Optional.of(T_0), schedule.nextRun(Optional.empty()));
     }
 
     @Test

@@ -31,18 +31,12 @@ import static org.junit.Assert.assertEquals;
  */
 public final class JobMessageExtractorTest {
 
-    private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
-
-    private static final Organization organization = new DefaultOrganization.Builder()
-            .setId(UUID.fromString("00000000-0000-0000-0000-000000000000"))
-            .build();
-
     @Test
     public void testEntityId() {
         final JobMessageExtractor extractor = new JobMessageExtractor();
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
-                .setOrganization(organization)
+                .setOrganization(ORGANIZATION)
                 .setRepositoryType(MockableIntJobRepository.class)
                 .build();
         assertEquals(
@@ -54,5 +48,11 @@ public final class JobMessageExtractorTest {
                         "11111111-1111-1111-1111-111111111111"),
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
+
+    private static final Organization ORGANIZATION = new DefaultOrganization.Builder()
+            .setId(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+            .build();
+
+    private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
 
 }
