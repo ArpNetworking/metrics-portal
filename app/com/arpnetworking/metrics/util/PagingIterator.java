@@ -59,11 +59,9 @@ public final class PagingIterator<E> implements Iterator<E> {
         if (_buffer.hasNext()) {
             return;
         }
-        synchronized (this) {
-            final List<? extends E> results = _getPage.apply(_offset);
-            _buffer = results.iterator();
-            _offset += results.size();
-        }
+        final List<? extends E> results = _getPage.apply(_offset);
+        _buffer = results.iterator();
+        _offset += results.size();
         _exhaustedSource = !_buffer.hasNext();
     }
 
