@@ -141,8 +141,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 .log();
 
         final Instant startTime = _clock.instant();
-        final Iterator<? extends Job<T>> js = getAllJobs();
-        js.forEachRemaining(job -> {
+        final Iterator<? extends Job<T>> allJobs = getAllJobs();
+        allJobs.forEachRemaining(job -> {
             final JobRef<T> ref = new JobRef.Builder<T>()
                     .setRepositoryType(_repositoryType)
                     .setOrganization(_organization)
