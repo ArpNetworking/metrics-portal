@@ -133,6 +133,13 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     }
 
     private void runAntiEntropy() {
+
+        LOGGER.info()
+                .setMessage("starting anti-entropy")
+                .addData("organization", _organization)
+                .addData("repositoryType", _repositoryType)
+                .log();
+
         final Instant startTime = _clock.instant();
         final Iterator<? extends Job<T>> js = getAllJobs();
         js.forEachRemaining(job -> {
@@ -157,6 +164,14 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 "job_coordinator_tick_time",
                 ChronoUnit.NANOS.between(startTime, _clock.instant()),
                 Optional.of(NANOS));
+
+        LOGGER.info()
+                .setMessage("finished anti-entropy")
+                .addData("organization", _organization)
+                .addData("repositoryType", _repositoryType)
+                .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, _clock.instant()))
+                .log();
+
     }
 
     @Override
@@ -172,12 +187,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                     if (_currentlyExecuting) {
                         return;
                     }
-
-                    LOGGER.info()
-                            .setMessage("starting anti-entropy")
-                            .addData("organization", _organization)
-                            .addData("repositoryType", _repositoryType)
-                            .log();
 
                     getContext().getSystem().scheduler().scheduleOnce(
                             scala.concurrent.duration.Duration.Zero(),
