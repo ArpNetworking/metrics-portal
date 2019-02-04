@@ -265,15 +265,16 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("query", query)
                 .log();
 
+        final PagedList<models.ebean.Report> pagedReports = _reportQueryGenerator.createReportQuery(query);
+
         final ImmutableList<Report> reports =
-                _reportQueryGenerator
-                        .createReportQuery(query)
+                pagedReports
                         .getList()
                         .stream()
                         .map(models.ebean.Report::toInternal)
                         .collect(ImmutableList.toImmutableList());
 
-        return new DefaultQueryResult<>(reports, reports.size());
+        return new DefaultQueryResult<>(reports, pagedReports.getTotalCount());
     }
 
     @Override
