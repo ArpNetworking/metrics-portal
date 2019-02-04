@@ -67,11 +67,12 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
-    public static <T> Props props(final Injector injector,
-                                  final Class<? extends JobRepository<T>> repositoryType,
-                                  final Organization organization,
-                                  final ActorRef jobExecutorRegion,
-                                  final PeriodicMetrics periodicMetrics) {
+    public static <T> Props props(
+            final Injector injector,
+            final Class<? extends JobRepository<T>> repositoryType,
+            final Organization organization,
+            final ActorRef jobExecutorRegion,
+            final PeriodicMetrics periodicMetrics) {
         return props(injector, Clock.systemUTC(), repositoryType, organization, jobExecutorRegion, periodicMetrics);
     }
 
@@ -86,12 +87,13 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
-    /* package-private */ static <T> Props props(final Injector injector,
-                                                 final Clock clock,
-                                                 final Class<? extends JobRepository<T>> repositoryType,
-                                                 final Organization organization,
-                                                 final ActorRef jobExecutorRegion,
-                                                 final PeriodicMetrics periodicMetrics) {
+    /* package-private */ static <T> Props props(
+            final Injector injector,
+            final Clock clock,
+            final Class<? extends JobRepository<T>> repositoryType,
+            final Organization organization,
+            final ActorRef jobExecutorRegion,
+            final PeriodicMetrics periodicMetrics) {
         return Props.create(
                 JobCoordinator.class,
                 () -> new JobCoordinator<>(injector, clock, repositoryType, organization, jobExecutorRegion, periodicMetrics));
