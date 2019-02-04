@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.steno.Logger;
@@ -134,14 +135,14 @@ public final class NoReportRepository implements ReportRepository {
     public JobQuery<Report.Result> createQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
-                .setMessage("Preparing query")
+                .setMessage("Preparing job query")
                 .addData("organization", organization)
                 .log();
         return new DefaultJobQuery<>(this, organization);
     }
 
     @Override
-    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Report> query(final ReportQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Executing query")

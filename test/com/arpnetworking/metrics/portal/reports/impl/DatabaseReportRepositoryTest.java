@@ -15,17 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
@@ -39,6 +28,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.typesafe.config.ConfigFactory;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.DefaultReportResult;
@@ -68,6 +58,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.persistence.PersistenceException;
+
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 
 /**
  * Unit test suite for {@link DatabaseReportRepository}.
@@ -320,7 +322,34 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryAllReports() {
+    public void testReportQuery() {
+        final int reportCount = 5;
+        final int testOffset = 2;
+        final List<Report> reports = new ArrayList<>();
+        for (int i = 1; i <= reportCount; i++) {
+            final Report report =
+                    TestBeanFactory.createReportBuilder()
+                            .setName("test report #" + i)
+                            .build();
+            _repository.addOrUpdateReport(report, Organization.DEFAULT);
+            reports.add(report);
+        }
+        final List<Report> expectedReports = reports.subList(testOffset, reportCount);
+        final Report[] expectedValues = new Report[expectedReports.size()];
+        expectedReports.toArray(expectedValues);
+
+        final QueryResult<Report> results =
+                _repository.createReportQuery(Organization.DEFAULT)
+                        .limit(100)
+                        .offset(testOffset)
+                        .execute();
+
+        assertThat(results.values(), hasSize(expectedValues.length));
+        assertThat(results.values(), containsInAnyOrder(expectedValues));
+    }
+
+    @Test
+    public void testQueryAllJobs() {
         final List<Report> reports = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             final Report report =
@@ -341,7 +370,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryClauseWithOffset() {
+    public void testJobQueryClauseWithOffset() {
         final int reportCount = 5;
         final int testOffset = 2;
         for (int i = 0; i < reportCount; i++) {
@@ -359,7 +388,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryClauseWithLimit() {
+    public void testJobQueryClauseWithLimit() {
         final int reportCount = 5;
         for (int i = 0; i < reportCount; i++) {
             final Report report = TestBeanFactory.createReportBuilder().build();
@@ -376,7 +405,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryClauseWithOffsetAndLimit() {
+    public void testJobQueryClauseWithOffsetAndLimit() {
         final int reportCount = 10;
         final int testOffset = 3;
         final int testLimit = 2;
@@ -398,7 +427,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @Test
-    public void testQueryAllReportsReturnsNothing() {
+    public void testJobQueryReturnsNothing() {
         final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
         final List<? extends Job<Report.Result>> results = query.execute().values();
         assertThat(results, empty());

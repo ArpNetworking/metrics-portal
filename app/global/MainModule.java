@@ -21,15 +21,20 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
+import akka.cluster.sharding.ClusterSharding;
+import akka.cluster.sharding.ClusterShardingSettings;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
@@ -38,12 +43,14 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
+import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
+import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
-import com.datastax.driver.extras.codecs.joda.InstantCodec;
+import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -61,10 +68,14 @@ import play.Environment;
 import play.api.libs.json.jackson.PlayJsonModule$;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
+import java.time.Clock;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -184,6 +195,49 @@ public class MainModule extends AbstractModule {
         });
 
         return objectMapper;
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Clock provideClock() {
+        return Clock.systemUTC();
+    }
+
+    @Provides
+    @Singleton
+    @Named("job-execution-shard-region")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ActorRef provideJobExecutorShardRegion(
+            final ActorSystem system,
+            final Injector injector,
+            final JobMessageExtractor extractor,
+            final Clock clock,
+            final PeriodicMetrics periodicMetrics) {
+        final ClusterSharding clusterSharding = ClusterSharding.get(system);
+        return clusterSharding.start(
+                "JobExecutor",
+                JobExecutorActor.props(injector, clock, periodicMetrics),
+                ClusterShardingSettings.create(system).withRememberEntities(true),
+                extractor,
+                new ParallelLeastShardAllocationStrategy(
+                        100,
+                        3,
+                        Optional.empty()),
+                PoisonPill.getInstance());
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private PeriodicMetrics providePeriodicMetrics(final MetricsFactory metricsFactory, final ActorSystem actorSystem) {
+        final TsdPeriodicMetrics periodicMetrics = new TsdPeriodicMetrics.Builder()
+                .setMetricsFactory(metricsFactory)
+                .setPollingExecutor(actorSystem.dispatcher())
+                .build();
+        final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
+        actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
+        return periodicMetrics;
     }
 
 

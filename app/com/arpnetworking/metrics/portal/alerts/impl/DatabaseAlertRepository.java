@@ -37,10 +37,10 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultQueryResult;
-import org.joda.time.Period;
 import play.Environment;
 import play.db.ebean.EbeanDynamicEvolutions;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -202,7 +202,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setNagiosExtension(convertToEbeanNagiosExtension(alert.getNagiosExtension()));
             ebeanAlert.setName(alert.getName());
             ebeanAlert.setOperator(alert.getOperator());
-            ebeanAlert.setPeriod(alert.getPeriod().toStandardSeconds().getSeconds());
+            ebeanAlert.setPeriod((int) alert.getPeriod().getSeconds());
             ebeanAlert.setQuantityValue(alert.getValue().getValue());
             ebeanAlert.setQuantityUnit(alert.getValue().getUnit().orElse(null));
             ebeanAlert.setStatistic(alert.getStatistic());
@@ -246,7 +246,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .setMetric(ebeanAlert.getMetric())
                 .setName(ebeanAlert.getName())
                 .setOperator(ebeanAlert.getOperator())
-                .setPeriod(Period.seconds(ebeanAlert.getPeriod()).normalizedStandard())
+                .setPeriod(Duration.ofSeconds(ebeanAlert.getPeriod()))
                 .setService(ebeanAlert.getService())
                 .setStatistic(ebeanAlert.getStatistic())
                 .setValue(new DefaultQuantity.Builder()
@@ -280,7 +280,7 @@ public class DatabaseAlertRepository implements AlertRepository {
         extension.setSeverity(internalExtension.getSeverity());
         extension.setNotify(internalExtension.getNotify());
         extension.setMaxCheckAttempts(internalExtension.getMaxCheckAttempts());
-        extension.setFreshnessThreshold(internalExtension.getFreshnessThreshold().getStandardSeconds());
+        extension.setFreshnessThreshold(internalExtension.getFreshnessThreshold().getSeconds());
         return extension;
     }
 

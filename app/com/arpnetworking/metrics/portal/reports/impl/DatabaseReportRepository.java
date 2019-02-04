@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
@@ -256,7 +257,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    public QueryResult<Report> query(final ReportQuery query) {
         assertIsOpen();
 
         LOGGER.debug()
@@ -464,10 +465,10 @@ public final class DatabaseReportRepository implements ReportRepository {
         /**
          * Translate the {@code JobQuery} to an ebean {@link Query}.
          *
-         * @param query The repository agnostic {@code JobQuery}.
+         * @param query The repository agnostic {@code ReportQuery}.
          * @return The database specific {@code PagedList} query result.
          */
-        PagedList<models.ebean.Report> createReportQuery(JobQuery<Report.Result> query);
+        PagedList<models.ebean.Report> createReportQuery(ReportQuery query);
     }
 
     /**
@@ -478,11 +479,10 @@ public final class DatabaseReportRepository implements ReportRepository {
         /**
          * Default constructor.
          */
-        public GenericQueryGenerator() {
-        }
+        public GenericQueryGenerator() {}
 
         @Override
-        public PagedList<models.ebean.Report> createReportQuery(final JobQuery<Report.Result> query) {
+        public PagedList<models.ebean.Report> createReportQuery(final ReportQuery query) {
             final int offset = query.getOffset().orElse(0);
             final int limit = query.getLimit();
 

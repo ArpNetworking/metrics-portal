@@ -28,6 +28,7 @@ import com.arpnetworking.kairos.client.models.RollupQuery;
 import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
@@ -35,8 +36,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import io.ebeaninternal.util.IOUtils;
 import org.hamcrest.Matchers;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,8 +47,10 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -61,8 +62,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Test cases for KairosDbClientImpl.
+ *
+ * @author Gilligan Markham (gmarkham at dropbox dot com)
+ */
 public class KairosDbClientImplTest {
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
@@ -100,13 +107,13 @@ public class KairosDbClientImplTest {
                                 .withBody("{\"results\":[\"foo\"]}")
                         )
         );
-        KairosMetricNamesQueryResponse response = _kairosDbClient.queryMetricNames().toCompletableFuture().get();
+        final KairosMetricNamesQueryResponse response = _kairosDbClient.queryMetricNames().toCompletableFuture().get();
         Assert.assertThat(response.getResults(), Matchers.contains("foo"));
     }
 
     @Test
     public void testQueryMetric() throws Exception {
-        DateTime now = DateTime.now();
+        final Instant now = Instant.now();
 
         _wireMock.givenThat(
                 post(urlEqualTo(KairosDbClientImpl.METRICS_QUERY_PATH.toString()))
@@ -117,7 +124,7 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        MetricsQueryResponse response = _kairosDbClient.queryMetrics(new MetricsQuery.Builder()
+        final MetricsQueryResponse response = _kairosDbClient.queryMetrics(new MetricsQuery.Builder()
                 .setStartTime(now)
                 .setMetrics(
                         ImmutableList.of(new Metric.Builder()
@@ -126,7 +133,7 @@ public class KairosDbClientImplTest {
                                 .setAggregators(ImmutableList.of(new Aggregator.Builder()
                                         .setName("avg")
                                         .setAlignSampling(Optional.of(Boolean.TRUE))
-                                        .setSampling(Optional.of(new Sampling.Builder().setPeriod(Period.days(1)).build()))
+                                        .setSampling(Optional.of(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build()))
                                         .build()
                                 ))
                                 .build()
@@ -135,7 +142,8 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testQueryMetric.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        JSONAssert.assertEquals(readResource("testQueryMetric.response"),
+                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
     }
 
     @Test
@@ -149,8 +157,8 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        MetricsQueryResponse response = _kairosDbClient.queryMetricTags(new MetricsQuery.Builder()
-                .setStartTime(new DateTime(0))
+        final MetricsQueryResponse response = _kairosDbClient.queryMetricTags(new MetricsQuery.Builder()
+                .setStartTime(Instant.ofEpochSecond(0))
                 .setMetrics(
                         ImmutableList.of(new Metric.Builder()
                                 .setName("metric.name")
@@ -160,7 +168,8 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testQueryMetricTags.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
+        JSONAssert.assertEquals(readResource("testQueryMetricTags.response"),
+                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
     }
 
     @Test
@@ -173,8 +182,9 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        List<RollupTask> response = _kairosDbClient.queryRollups().toCompletableFuture().get();
-        JSONAssert.assertEquals(readResource("testRollupsList.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
+        final List<RollupTask> response = _kairosDbClient.queryRollups().toCompletableFuture().get();
+        JSONAssert.assertEquals(readResource("testRollupsList.response"),
+                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
     }
 
     @Test
@@ -188,14 +198,14 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        RollupResponse response = _kairosDbClient.createRollup(new RollupTask.Builder()
-                .setExecutionInterval(new Sampling.Builder().setValue(1).setUnit("days").build())
+        final RollupResponse response = _kairosDbClient.createRollup(new RollupTask.Builder()
+                .setExecutionInterval(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
                 .setName("testRollup")
                 .setRollups(
                         ImmutableList.of(new Rollup.Builder()
                                 .setSaveAs("testMetric_1d")
                                 .setQuery(new RollupQuery.Builder()
-                                        .setStartRelative(new Sampling.Builder().setValue(1).setUnit("days").build())
+                                        .setStartRelative(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
                                         .setMetrics(
                                                 ImmutableList.of(new Metric.Builder()
                                                         .setName("testMetric")
@@ -209,7 +219,7 @@ public class KairosDbClientImplTest {
                                                                                 Optional.of(
                                                                                         new Sampling.Builder()
                                                                                                 .setValue(1)
-                                                                                                .setUnit("days")
+                                                                                                .setUnit(SamplingUnit.DAYS)
                                                                                                 .build()
                                                                                 )
                                                                         )
@@ -233,7 +243,8 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testCreateRollup.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        JSONAssert.assertEquals(readResource("testCreateRollup.response"),
+                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
     }
 
     @Test
@@ -248,15 +259,15 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        RollupResponse response = _kairosDbClient.updateRollup(id, new RollupTask.Builder()
-                .setExecutionInterval(new Sampling.Builder().setValue(1).setUnit("days").build())
+        final RollupResponse response = _kairosDbClient.updateRollup(id, new RollupTask.Builder()
+                .setExecutionInterval(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
                 .setName("testRollup")
                 .setId(id)
                 .setRollups(
                         ImmutableList.of(new Rollup.Builder()
                                 .setSaveAs("testMetric_1d")
                                 .setQuery(new RollupQuery.Builder()
-                                        .setStartRelative(new Sampling.Builder().setValue(1).setUnit("days").build())
+                                        .setStartRelative(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
                                         .setMetrics(
                                                 ImmutableList.of(new Metric.Builder()
                                                         .setName("testMetric")
@@ -270,7 +281,7 @@ public class KairosDbClientImplTest {
                                                                                 Optional.of(
                                                                                         new Sampling.Builder()
                                                                                                 .setValue(1)
-                                                                                                .setUnit("days")
+                                                                                                .setUnit(SamplingUnit.DAYS)
                                                                                                 .build()
                                                                                 )
                                                                         )
@@ -294,7 +305,8 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testUpdateRollup.response"), OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        JSONAssert.assertEquals(readResource("testUpdateRollup.response"),
+                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
     }
 
     @Test
@@ -305,30 +317,33 @@ public class KairosDbClientImplTest {
                         .willReturn(aResponse().withStatus(204))
         );
 
-        Void response = _kairosDbClient.deleteRollup(id).toCompletableFuture().get();
+        final Void response = _kairosDbClient.deleteRollup(id).toCompletableFuture().get();
         assertNull(response);
     }
 
-    @Test(expected = KairosDbRequestException.class)
-    public void testDeleteMissingRollup() throws Throwable {
+    @Test
+    public void testDeleteMissingRollup() {
         final String id = "rollup_id";
         _wireMock.givenThat(
                 delete(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString() + "/" + id))
                         .willReturn(aResponse().withStatus(404))
         );
 
-        final Void response;
+        Void response = null;
         try {
             response = _kairosDbClient.deleteRollup(id).toCompletableFuture().get();
-        } catch (Exception e) {
-            throw e.getCause();
+            fail("Expected KairosDbRequestException to be thrown");
+        } catch (final InterruptedException | ExecutionException e) {
+            assertTrue(e.getCause() instanceof KairosDbRequestException);
         }
         assertNull(response);
     }
 
     private String readResource(final String resourceSuffix) {
         try {
-            return IOUtils.readUtf8(getClass().getClassLoader().getResourceAsStream("com/arpnetworking/kairos/client/" + CLASS_NAME + "." + resourceSuffix + ".json"));
+            return IOUtils.readUtf8(getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("com/arpnetworking/kairos/client/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;

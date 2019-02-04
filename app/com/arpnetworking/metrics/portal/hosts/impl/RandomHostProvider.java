@@ -29,7 +29,8 @@ import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
-import org.joda.time.Duration;
+
+import java.time.Duration;
 
 /**
  * This is an actor that finds "random" hosts. The primary purpose of this
@@ -67,7 +68,7 @@ public final class RandomHostProvider extends AbstractActor {
                             .addData("actor", self())
                             .log();
 
-                    if (System.currentTimeMillis() - _lastTime > INTERVAL.getMillis()) {
+                    if (System.currentTimeMillis() - _lastTime > INTERVAL.toMillis()) {
                         final Host newHost = new DefaultHost.Builder()
                                 .setHostname("test-app" + _hostAdd + ".example.com")
                                 .setMetricsSoftwareState(MetricsSoftwareState.NOT_INSTALLED)
@@ -154,6 +155,6 @@ public final class RandomHostProvider extends AbstractActor {
     private long _hostRemove = -15;
 
     private static final String TICK = "tick";
-    private static final Duration INTERVAL = Duration.standardSeconds(10);
+    private static final Duration INTERVAL = Duration.ofSeconds(10);
     private static final Logger LOGGER = LoggerFactory.getLogger(RandomHostProvider.class);
 }

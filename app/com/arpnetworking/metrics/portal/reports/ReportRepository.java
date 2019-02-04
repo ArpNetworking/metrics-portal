@@ -16,9 +16,14 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import models.internal.Organization;
+import models.internal.QueryResult;
+import models.internal.impl.DefaultQueryResult;
+import models.internal.impl.DefaultReportQuery;
 import models.internal.reports.Report;
+import models.internal.scheduling.Job;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -45,5 +50,35 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * @param organization The {@code Organization} which owns the report.
      */
     void addOrUpdateReport(Report report, Organization organization);
+
+    /**
+     * Query reports.
+     *
+     * This can be considered a specialization of {@link JobRepository#query} for cases where you want to
+     * handle the reports themselves, outside of a Job context.
+     *
+     * @param query The {@code ReportQuery} instance to execute.
+     * @return The reports resulting from executing the query.
+     */
+    QueryResult<Report> query(ReportQuery query);
+
+    // CHECKSTYLE.OFF: JavadocMethodCheck - doc should be inherited from JobRepository
+    default QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+        final ReportQuery reportQuery = new DefaultReportQuery(this, query);
+        final QueryResult<Report> reports = query(reportQuery);
+        return new DefaultQueryResult<>(reports.values(), reports.total());
+    }
+    // CHECKSTYLE.ON: JavadocMethodCheck
+
+    /**
+     * Create a report query against this repository.
+     *
+     * @param organization Organization to search in.
+     * @return An instance of {@code ReportQuery}.
+     */
+    default ReportQuery createReportQuery(final Organization organization) {
+        final JobQuery<Report.Result> jobQuery = createQuery(organization);
+        return new DefaultReportQuery(this, jobQuery);
+    }
 }
 

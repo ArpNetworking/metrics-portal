@@ -47,13 +47,18 @@ public final class H2ConnectionStringFactory {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-        return "jdbc:h2:" +
-                path +
-                ";AUTO_SERVER=TRUE;AUTO_SERVER_PORT=" +
-                port +
-                ";MODE=PostgreSQL;INIT=create schema if not exists portal;DB_CLOSE_DELAY=-1";
+        return "jdbc:h2:"
+                + path
+                + ";AUTO_SERVER=TRUE;AUTO_SERVER_PORT="
+                + port
+                + ";MODE=PostgreSQL;INIT=create schema if not exists portal;DB_CLOSE_DELAY=-1";
     }
 
+    /**
+     * Generates a map containing h2 config parameters.
+     *
+     * @return h2 config map
+     */
     public static Map<String, Object> generateConfiguration() {
         final String url = generateJdbcUrl();
         return ImmutableMap.of(
@@ -63,6 +68,8 @@ public final class H2ConnectionStringFactory {
                 "db.metrics_portal_ddl.url", url,
                 "db.metrics_portal_ddl.migration.locations", Lists.newArrayList("common", "h2"));
     }
+
+    private H2ConnectionStringFactory() {}
 
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);
     private static final int BASE_PORT = 50000;

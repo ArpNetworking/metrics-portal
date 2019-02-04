@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
@@ -24,6 +25,7 @@ import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +48,34 @@ public final class JobRef<T> implements Serializable {
         _orgId = builder._orgId;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final JobRef<?> jobRef = (JobRef<?>) o;
+        return _repositoryType.equals(jobRef._repositoryType)
+                && _jobId.equals(jobRef._jobId)
+                && _orgId.equals(jobRef._orgId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_repositoryType, _jobId, _orgId);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("jobId", _jobId)
+                .add("repositoryType", _repositoryType)
+                .add("orgId", _orgId)
+                .toString();
+    }
+
     /**
      * Loads the {@link Job} that this ref refers to.
      *
@@ -64,6 +94,10 @@ public final class JobRef<T> implements Serializable {
      */
     public JobRepository<T> getRepository(final Injector injector) {
         return injector.getInstance(_repositoryType);
+    }
+
+    public Class<? extends JobRepository<T>> getRepositoryType() {
+        return _repositoryType;
     }
 
     public UUID getJobId() {

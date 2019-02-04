@@ -92,7 +92,7 @@ public interface JobRepository<T> {
     void jobFailed(UUID id, Organization organization, Instant scheduled, Throwable error);
 
     /**
-     * Create a query against this job repository.
+     * Create a job query against this repository.
      *
      * @param organization Organization to search in.
      * @return An instance of {@code JobQuery}.

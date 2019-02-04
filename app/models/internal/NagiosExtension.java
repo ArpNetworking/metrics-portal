@@ -21,8 +21,8 @@ import com.google.common.base.MoreObjects;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.Duration;
 
+import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -91,7 +91,7 @@ public final class NagiosExtension {
         _severity = builder._severity;
         _notify = builder._notify;
         _maxCheckAttempts = builder._maxCheckAttempts;
-        _freshnessThreshold = Duration.standardSeconds(builder._freshnessThresholdInSeconds);
+        _freshnessThreshold = Duration.ofSeconds(builder._freshnessThresholdInSeconds);
     }
 
     private final String _severity;

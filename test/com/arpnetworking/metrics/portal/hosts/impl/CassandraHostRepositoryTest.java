@@ -92,7 +92,9 @@ public class CassandraHostRepositoryTest extends WithApplication {
             try {
                 EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
                 break;
-            } catch (final Throwable e) {
+                // CHECKSTYLE.OFF: IllegalCatch - Retry any runtime exceptions
+            } catch (final RuntimeException e) {
+                // CHECKSTYLE.ON
                 if (x == maxTries) {
                     throw e;
                 }

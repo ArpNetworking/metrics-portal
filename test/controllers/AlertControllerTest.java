@@ -33,7 +33,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import play.Application;
-import play.inject.Bindings;
 import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -56,12 +55,12 @@ public class AlertControllerTest extends WithApplication {
 
     @BeforeClass
     public static void instantiate() {
-        alertRepo.open();
+        ALERT_REPO.open();
     }
 
     @AfterClass
     public static void shutdown() {
-        alertRepo.close();
+        ALERT_REPO.close();
     }
 
     @Override
@@ -78,12 +77,12 @@ public class AlertControllerTest extends WithApplication {
 
     @Test
     public void testCreateValidCase() throws IOException {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateValidCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
         final models.ebean.Alert alert = Ebean.find(models.ebean.Alert.class)
                 .where()
@@ -111,204 +110,205 @@ public class AlertControllerTest extends WithApplication {
 
     @Test
     public void testCreateMissingBodyCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingIdCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingIdCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingContextCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingContextCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateInvalidContextCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateInvalidContextCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingNameCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingNameCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingClusterCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingClusterCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingMetricCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingMetricCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingStatisticCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingStatisticCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingServiceCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingServiceCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingPeriodCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingPeriodCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateInvalidPeriodCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateInvalidPeriodCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingOperatorCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingOperatorCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateInvalidOperatorCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateInvalidOperatorCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingValueCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingValueCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.BAD_REQUEST, result.status());
     }
 
     @Test
     public void testCreateMissingExtensionsCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateMissingExtensionsCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
     public void testCreateEmptyExtensionsCase() {
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateEmptyExtensionsCase"))
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     @Test
     public void testUpdateValidCase() throws IOException {
         final UUID uuid = UUID.fromString("e62368dc-1421-11e3-91c1-00259069c2f0");
-        Alert originalAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-        alertRepo.addOrUpdateAlert(originalAlert, Organization.DEFAULT);
+        final Alert originalAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
+        ALERT_REPO.addOrUpdateAlert(originalAlert, Organization.DEFAULT);
         final JsonNode body = readTree("testUpdateValidCase");
-        Http.RequestBuilder request = new Http.RequestBuilder()
+        final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(body)
                 .header("Content-Type", "application/json")
                 .uri("/v1/alerts");
-        Result result = Helpers.route(app, request);
+        final Result result = Helpers.route(app, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
     }
 
     private JsonNode readTree(final String resourceSuffix) {
         try {
-            return OBJECT_MAPPER.readTree(getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
+            return OBJECT_MAPPER.readTree(
+                    getClass().getClassLoader().getResource("controllers/" + CLASS_NAME + "." + resourceSuffix + ".json"));
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;
         }
     }
 
-    private static final AlertRepository alertRepo = new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
+    private static final AlertRepository ALERT_REPO = new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = AlertControllerTest.class.getSimpleName();
 }

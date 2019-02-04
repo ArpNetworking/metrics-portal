@@ -28,7 +28,6 @@ import models.ebean.NagiosExtension;
 import models.ebean.Recipient;
 import models.ebean.ReportFormat;
 import models.ebean.ReportSchedule;
-import models.internal.Alert;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
@@ -39,7 +38,6 @@ import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
 import models.internal.reports.ReportSource;
-import org.joda.time.Period;
 
 import java.net.URI;
 import java.time.Duration;
@@ -83,6 +81,11 @@ public final class TestBeanFactory {
     private TestBeanFactory() {
     }
 
+    /**
+     * Factory method for creating a test report builder.
+     *
+     * @return a report builder
+     */
     public static DefaultReport.Builder createReportBuilder() {
         final ReportSource source = createEbeanReportSource().toInternal();
 
@@ -108,6 +111,11 @@ public final class TestBeanFactory {
                 .setSchedule(schedule);
     }
 
+    /**
+     * Factory method for creating an ebean report.
+     *
+     * @return an ebean report
+     */
     public static models.ebean.Report createEbeanReport() {
         final ReportSchedule schedule = new ReportSchedule();
         schedule.setRunAt(Instant.now());
@@ -129,6 +137,11 @@ public final class TestBeanFactory {
         return report;
     }
 
+    /**
+     * Factory method for creating an ebean report source.
+     *
+     * @return an ebean report source
+     */
     public static models.ebean.ReportSource createEbeanReportSource() {
         final UUID sourceUuid = UUID.randomUUID();
         final URI testUri = URI.create("http://test-url.com");
@@ -140,6 +153,11 @@ public final class TestBeanFactory {
         return source;
     }
 
+    /**
+     * Factory method for creating a report recipient.
+     *
+     * @return a report recipient
+     */
     public static models.internal.reports.Recipient createRecipient() {
         final UUID recipientId = UUID.randomUUID();
         return new models.internal.impl.DefaultEmailRecipient.Builder()
@@ -149,6 +167,11 @@ public final class TestBeanFactory {
 
     }
 
+    /**
+     * Factory method for creating an ebean report recipient.
+     *
+     * @return an ebean report recipient
+     */
     public static Recipient createEbeanReportRecipient() {
         final UUID recipientId = UUID.randomUUID();
 
@@ -157,24 +180,46 @@ public final class TestBeanFactory {
         return recipient;
     }
 
+    /**
+     * Mapping method to create a organization from an ebean organization.
+     *
+     * @param organization ebean organization
+     * @return organization
+     */
     public static Organization organizationFrom(final models.ebean.Organization organization) {
         return new DefaultOrganization.Builder()
                 .setId(organization.getUuid())
                 .build();
     }
 
+    /**
+     * Factory method to create an organization from a uuid.
+     *
+     * @param id uuid for organization
+     * @return an organization
+     */
     public static Organization organizationFrom(final UUID id) {
         return new DefaultOrganization.Builder()
                 .setId(id)
                 .build();
     }
 
+    /**
+     * Factory method to create an ebean organization.
+     *
+     * @return an ebean organization
+     */
     public static models.ebean.Organization createEbeanOrganization() {
         final models.ebean.Organization organization = new models.ebean.Organization();
         organization.setUuid(UUID.randomUUID());
         return organization;
     }
 
+    /**
+     * Factory method to create an alert builder.
+     *
+     * @return an alert builder
+     */
     public static DefaultAlert.Builder createAlertBuilder() {
         return new DefaultAlert.Builder()
                 .setId(UUID.randomUUID())
@@ -185,7 +230,7 @@ public final class TestBeanFactory {
                 .setNagiosExtension(createNagiosExtension())
                 .setName(TEST_NAME + RANDOM.nextInt(100))
                 .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Period.seconds(RANDOM.nextInt(100)).normalizedStandard())
+                .setPeriod(Duration.ofSeconds(RANDOM.nextInt(100)))
                 .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
                 .setValue(new DefaultQuantity.Builder()
                         .setValue(100 + RANDOM.nextDouble())
@@ -193,10 +238,11 @@ public final class TestBeanFactory {
                         .build());
     }
 
-    public static Alert createAlert() {
-        return createAlertBuilder().build();
-    }
-
+    /**
+     * Factory method to create an ebean alert.
+     *
+     * @return an ebean alert
+     */
     public static models.ebean.Alert createEbeanAlert() {
         final models.ebean.Organization organization = createEbeanOrganization();
         Ebean.save(organization);
@@ -217,6 +263,11 @@ public final class TestBeanFactory {
         return ebeanAlert;
     }
 
+    /**
+     * Factory method to crean a cassandra alert.
+     *
+     * @return a cassandra alert
+     */
     public static models.cassandra.Alert createCassandraAlert() {
         final models.cassandra.Alert cassandraAlert = new models.cassandra.Alert();
         cassandraAlert.setOrganization(UUID.randomUUID());
@@ -235,6 +286,11 @@ public final class TestBeanFactory {
         return cassandraAlert;
     }
 
+    /**
+     * Factory method create create a cassandra nagios extension map.
+     *
+     * @return map of nagios extension key/value pairs
+     */
     public static Map<String, String> createCassandraNagiosExtension() {
         return new ImmutableMap.Builder<String, String>()
                 .put("severity", NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
@@ -244,6 +300,11 @@ public final class TestBeanFactory {
                 .build();
     }
 
+    /**
+     * Factory method to create a nagios extension.
+     *
+     * @return a nagios extension
+     */
     public static models.internal.NagiosExtension createNagiosExtension() {
         return new models.internal.NagiosExtension.Builder()
                 .setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
@@ -253,6 +314,11 @@ public final class TestBeanFactory {
                 .build();
     }
 
+    /**
+     * Factory method to create an ebean nagios extension.
+     *
+     * @return an ebean nagios extension
+     */
     public static NagiosExtension createEbeanNagiosExtension() {
         final NagiosExtension nagiosExtension = new NagiosExtension();
         nagiosExtension.setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())));
@@ -262,6 +328,11 @@ public final class TestBeanFactory {
         return nagiosExtension;
     }
 
+    /**
+     * Factory method to create an ebean expression.
+     *
+     * @return an ebean expression
+     */
     public static Expression createEbeanExpression() {
         final models.ebean.Organization organization = createEbeanOrganization();
         Ebean.save(organization);
@@ -275,6 +346,11 @@ public final class TestBeanFactory {
         return ebeanExpression;
     }
 
+    /**
+     * Factory method for creating an expression builder.
+     *
+     * @return an expression builder
+     */
     public static DefaultExpression.Builder createExpressionBuilder() {
         return new DefaultExpression.Builder()
                 .setId(UUID.randomUUID())
@@ -284,10 +360,20 @@ public final class TestBeanFactory {
                 .setService(TEST_SERVICE + RANDOM.nextInt(100));
     }
 
+    /**
+     * Factory method for an expression.
+     *
+     * @return an expression
+     */
     public static models.internal.Expression createExpression() {
         return createExpressionBuilder().build();
     }
 
+    /**
+     * Factory method for creating a cassandra host.
+     *
+     * @return a cassandra host
+     */
     public static Host createCassandraHost() {
         final Host host = new Host();
         host.setName(TEST_HOST + RANDOM.nextInt(100) + ".example.com");

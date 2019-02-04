@@ -39,8 +39,8 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -50,14 +50,6 @@ import static org.mockito.Mockito.when;
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public class MetricsDiscoveryTest {
-    private Injector _injector;
-    @Mock
-    private KairosDbClient _kairosDbClient;
-    @Mock
-    private Config _config;
-    private ActorSystem _system;
-
-    private static final AtomicLong systemNameNonce = new AtomicLong(0);
 
     @Before
     public void setUp() {
@@ -77,7 +69,7 @@ public class MetricsDiscoveryTest {
         //clock = new ManualClock(t0, tickSize, ZoneId.systemDefault());
 
         _system = ActorSystem.create(
-                "test-"+systemNameNonce.getAndIncrement(),
+                "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
 
     }
@@ -202,4 +194,13 @@ public class MetricsDiscoveryTest {
             assertTrue(msg2.getNextRefreshMillis() < 3000);
         }};
     }
+
+    private Injector _injector;
+    @Mock
+    private KairosDbClient _kairosDbClient;
+    @Mock
+    private Config _config;
+    private ActorSystem _system;
+
+    private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 }
