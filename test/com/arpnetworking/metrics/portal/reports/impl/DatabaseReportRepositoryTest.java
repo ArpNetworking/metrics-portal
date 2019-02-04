@@ -346,12 +346,14 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         assertThat(results.values(), hasSize(expectedValues.length));
         assertThat(results.values(), containsInAnyOrder(expectedValues));
+        assertThat(results.total(), equalTo((long) reportCount));
     }
 
     @Test
     public void testQueryAllJobs() {
+        final int reportCount = 5;
         final List<Report> reports = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= reportCount; i++) {
             final Report report =
                     TestBeanFactory.createReportBuilder()
                             .setName("test report #" + i)
@@ -364,9 +366,10 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
 
-        final List<? extends Job<Report.Result>> results = query.execute().values();
-        assertThat(results, hasSize(5));
-        assertThat(results, containsInAnyOrder(reportsArray));
+        final QueryResult<Job<Report.Result>> results = query.execute();
+        assertThat(results.values(), hasSize(reportCount));
+        assertThat(results.values(), containsInAnyOrder(reportsArray));
+        assertThat(results.total(), equalTo((long) reportCount));
     }
 
     @Test
@@ -380,11 +383,13 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         final JobQuery<Report.Result> baseQuery = _repository.createQuery(Organization.DEFAULT);
 
-        final List<? extends Job<Report.Result>> results = baseQuery.offset(testOffset).execute().values();
-        assertThat(results, hasSize(reportCount - testOffset));
+        final QueryResult<Job<Report.Result>> results = baseQuery.offset(testOffset).execute();
+        assertThat(results.values(), hasSize(reportCount - testOffset));
+        assertThat(results.total(), equalTo((long) reportCount));
 
-        final List<? extends Job<Report.Result>> emptyResults = baseQuery.offset(reportCount).execute().values();
-        assertThat(emptyResults, empty());
+        final QueryResult<Job<Report.Result>> emptyResults = baseQuery.offset(reportCount).execute();
+        assertThat(emptyResults.values(), empty());
+        assertThat(results.total(), equalTo((long) reportCount));
     }
 
     @Test
@@ -397,11 +402,13 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
 
-        final List<? extends Job<Report.Result>> results = query.limit(1).execute().values();
-        assertThat(results, hasSize(1));
+        final QueryResult<Job<Report.Result>> results = query.limit(1).execute();
+        assertThat(results.values(), hasSize(1));
+        assertThat(results.total(), equalTo((long) reportCount));
 
-        final List<? extends Job<Report.Result>> allResults = query.limit(reportCount * 2).execute().values();
-        assertThat(allResults, hasSize(reportCount));
+        final QueryResult<Job<Report.Result>> allResults = query.limit(reportCount * 2).execute();
+        assertThat(allResults.values(), hasSize(reportCount));
+        assertThat(results.total(), equalTo((long) reportCount));
     }
 
     @Test
@@ -416,14 +423,16 @@ public class DatabaseReportRepositoryTest extends WithApplication {
 
         final JobQuery<Report.Result> query = _repository.createQuery(Organization.DEFAULT);
 
-        final List<? extends Job<Report.Result>> results = query.offset(testOffset).limit(testLimit).execute().values();
-        assertThat(results, hasSize(testLimit));
+        final QueryResult<Job<Report.Result>> results = query.offset(testOffset).limit(testLimit).execute();
+        assertThat(results.total(), equalTo((long) reportCount));
 
-        final List<? extends Job<Report.Result>> singleResult = query.offset(reportCount - 1).limit(testLimit).execute().values();
-        assertThat(singleResult, hasSize(1));
+        final QueryResult<Job<Report.Result>> singleResult = query.offset(reportCount - 1).limit(testLimit).execute();
+        assertThat(singleResult.values(), hasSize(1));
+        assertThat(results.total(), equalTo((long) reportCount));
 
-        final List<? extends Job<Report.Result>> emptyResults = query.offset(reportCount).limit(reportCount).execute().values();
-        assertThat(emptyResults, empty());
+        final QueryResult<Job<Report.Result>> emptyResults = query.offset(reportCount).limit(reportCount).execute();
+        assertThat(emptyResults.values(), empty());
+        assertThat(results.total(), equalTo((long) reportCount));
     }
 
     @Test
