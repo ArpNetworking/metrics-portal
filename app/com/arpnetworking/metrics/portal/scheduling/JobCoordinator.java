@@ -97,12 +97,13 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 () -> new JobCoordinator<>(injector, clock, repositoryType, organization, jobExecutorRegion, periodicMetrics));
     }
 
-    private JobCoordinator(final Injector injector,
-                           final Clock clock,
-                           final Class<? extends JobRepository<T>> repositoryType,
-                           final Organization organization,
-                           final ActorRef jobExecutorRegion,
-                           final PeriodicMetrics periodicMetrics) {
+    private JobCoordinator(
+            final Injector injector,
+            final Clock clock,
+            final Class<? extends JobRepository<T>> repositoryType,
+            final Organization organization,
+            final ActorRef jobExecutorRegion,
+            final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
         _repositoryType = repositoryType;
