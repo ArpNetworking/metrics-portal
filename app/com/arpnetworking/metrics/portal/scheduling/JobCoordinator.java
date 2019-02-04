@@ -134,10 +134,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private void runAntiEntropy() {
         final Instant startTime = _clock.instant();
-        System.out.println("in runAntiEntropy");
         final Iterator<? extends Job<T>> js = getAllJobs();
         js.forEachRemaining(job -> {
-            System.out.println("considering " + job);
             final JobRef<T> ref = new JobRef.Builder<T>()
                     .setRepositoryType(_repositoryType)
                     .setOrganization(_organization)
@@ -159,7 +157,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 "job_coordinator_tick_time",
                 ChronoUnit.NANOS.between(startTime, _clock.instant()),
                 Optional.of(NANOS));
-        System.out.println("done with runAntiEntropy");
     }
 
     @Override
