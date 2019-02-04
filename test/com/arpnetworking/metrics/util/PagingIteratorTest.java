@@ -32,20 +32,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class PagingIteratorTest {
 
-    private static class MockableFunction<T, R> implements Function<T, R> {
-        private final Function<T, R> _wrapped;
-
-        public MockableFunction(final Function<T, R> wrapped) {
-            _wrapped = wrapped;
-        }
-
-        @Override
-        public R apply(T t) {
-            return _wrapped.apply(t);
-        }
-    }
-
-    private static Function<Integer, List<? extends Integer>> rangePager(int pageSize, int limit) {
+    private static Function<Integer, List<? extends Integer>> rangePager(final int pageSize, final int limit) {
         return offset -> {
             final List<Integer> result = new ArrayList<>(pageSize);
             for (int i = offset; i < offset + pageSize && i < limit; i++) {
@@ -96,4 +83,18 @@ public class PagingIteratorTest {
         Mockito.verify(getPage).apply(0);
         Mockito.verify(getPage, Mockito.never()).apply(1);
     }
+
+    private static class MockableFunction<T, R> implements Function<T, R> {
+        private final Function<T, R> _wrapped;
+
+        MockableFunction(final Function<T, R> wrapped) {
+            _wrapped = wrapped;
+        }
+
+        @Override
+        public R apply(final T t) {
+            return _wrapped.apply(t);
+        }
+    }
+
 }
