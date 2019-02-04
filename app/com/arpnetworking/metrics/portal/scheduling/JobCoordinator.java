@@ -134,7 +134,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private void runAntiEntropy() {
 
-        LOGGER.info()
+        LOGGER.debug()
                 .setMessage("starting anti-entropy")
                 .addData("organization", _organization)
                 .addData("repositoryType", _repositoryType)
@@ -165,7 +165,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 ChronoUnit.NANOS.between(startTime, _clock.instant()),
                 Optional.of(NANOS));
 
-        LOGGER.info()
+        LOGGER.debug()
                 .setMessage("finished anti-entropy")
                 .addData("organization", _organization)
                 .addData("repositoryType", _repositoryType)
