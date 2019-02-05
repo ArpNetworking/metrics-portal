@@ -300,7 +300,6 @@ public final class MetricsQueryResponse {
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
             @NotNull
-            @NotEmpty
             private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
         }
     }

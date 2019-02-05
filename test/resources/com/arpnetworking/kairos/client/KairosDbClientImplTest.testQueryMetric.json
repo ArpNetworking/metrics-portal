@@ -16,5 +16,7 @@
     "group_by" : [],
     "limit": 1,
     "order": "desc"
-  }]
+  }],
+  "start_absolute": 1548979200000,
+  "end_absolute": 1549065600000
 }

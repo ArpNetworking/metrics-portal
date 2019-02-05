@@ -39,7 +39,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -254,13 +253,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
         metricBuilder.setAggregators(ImmutableList.of(
                 new Aggregator.Builder()
                         .setName("merge")
-                        .setSampling(Optional.of(
-                                new Sampling.Builder()
+                        .setSampling(new Sampling.Builder()
                                         .setValue(1)
                                         .setUnit(message.getPeriod().getSamplingUnit())
-                                        .build()))
-                        .setAlignSampling(Optional.of(true))
-                        .setAlignEndTime(Optional.of(true))
+                                        .build())
+                        .setAlignSampling(true)
+                        .setAlignEndTime(true)
                         .build(),
                 new Aggregator.Builder()
                         .setName("saveAs")

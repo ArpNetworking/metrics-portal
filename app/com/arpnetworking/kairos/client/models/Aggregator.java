@@ -25,6 +25,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Model class to represent the aggregator in a metrics query.
@@ -34,15 +35,15 @@ import java.util.Optional;
 public final class Aggregator {
     private Aggregator(final Builder builder) {
         _name = builder._name;
-        _sampling = builder._sampling;
+        _sampling = Optional.ofNullable(builder._sampling);
         if (!_sampling.isPresent()) {
             _alignSampling = Optional.empty();
         } else {
-            _alignSampling = builder._alignSampling;
+            _alignSampling = Optional.ofNullable(builder._alignSampling);
         }
         _otherArgs = builder._otherArgs;
-        _alignEndTime = builder._alignEndTime;
-        _alignStartTime = builder._alignStartTime;
+        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
+        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
     }
 
     public String getName() {
@@ -114,7 +115,7 @@ public final class Aggregator {
          * @param value the sampling for the aggregator
          * @return this {@link Builder}
          */
-        public Builder setSampling(final Optional<Sampling> value) {
+        public Builder setSampling(@Nullable final Sampling value) {
             _sampling = value;
             return this;
         }
@@ -126,7 +127,7 @@ public final class Aggregator {
          * @return this {@link Builder}
          */
         @JsonProperty("align_sampling")
-        public Builder setAlignSampling(final Optional<Boolean> value) {
+        public Builder setAlignSampling(@Nullable final Boolean value) {
             _alignSampling = value;
             return this;
         }
@@ -138,7 +139,7 @@ public final class Aggregator {
          * @return this {@link Builder}
          */
         @JsonProperty("align_start_time")
-        public Builder setAlignStartTime(final Optional<Boolean> value) {
+        public Builder setAlignStartTime(@Nullable final Boolean value) {
             _alignStartTime = value;
             return this;
         }
@@ -150,7 +151,7 @@ public final class Aggregator {
          * @return this {@link Builder}
          */
         @JsonProperty("align_end_time")
-        public Builder setAlignEndTime(final Optional<Boolean> value) {
+        public Builder setAlignEndTime(@Nullable final Boolean value) {
             _alignEndTime = value;
             return this;
         }
@@ -182,14 +183,10 @@ public final class Aggregator {
         @NotNull
         @NotEmpty
         private String _name;
-        @NotNull
-        private Optional<Boolean> _alignSampling = Optional.of(true);
-        @NotNull
-        private Optional<Sampling> _sampling = Optional.empty();
-        @NotNull
-        private Optional<Boolean> _alignEndTime = Optional.of(false);
-        @NotNull
-        private Optional<Boolean> _alignStartTime = Optional.empty();
+        private Boolean _alignSampling;
+        private Sampling _sampling;
+        private Boolean _alignEndTime;
+        private Boolean _alignStartTime;
         @NotNull
         private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
     }

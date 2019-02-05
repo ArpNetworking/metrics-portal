@@ -36,18 +36,15 @@ public final class RollupTask {
         return _id;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getName() {
         return _name;
     }
 
     @JsonProperty("execution_interval")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Sampling getExecutionInterval() {
         return _executionInterval;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public ImmutableList<Rollup> getRollups() {
         return _rollups;
     }

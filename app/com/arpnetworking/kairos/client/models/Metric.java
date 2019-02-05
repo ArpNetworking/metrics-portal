@@ -25,6 +25,7 @@ import com.google.common.collect.Multimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
@@ -42,24 +43,24 @@ public final class Metric {
         return _tags;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ImmutableList<Aggregator> getAggregators() {
         return _aggregators;
     }
 
     @JsonProperty("group_by")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ImmutableList<MetricsQuery.GroupBy> getGroupBy() {
         return _groupBy;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getLimit() {
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Integer> getLimit() {
         return _limit;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Order getOrder() {
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Order> getOrder() {
         return _order;
     }
 
@@ -68,16 +69,16 @@ public final class Metric {
         _tags = builder._tags;
         _aggregators = builder._aggregators;
         _groupBy = builder._groupBy;
-        _limit = builder._limit;
-        _order = builder._order;
+        _limit = Optional.ofNullable(builder._limit);
+        _order = Optional.ofNullable(builder._order);
     }
 
     private final String _name;
     private final ImmutableMultimap<String, String> _tags;
     private final ImmutableList<Aggregator> _aggregators;
     private final ImmutableList<MetricsQuery.GroupBy> _groupBy;
-    private final Integer _limit;
-    private final Order _order;
+    private final Optional<Integer> _limit;
+    private final Optional<Order> _order;
 
     /**
      * Implementation of the builder pattern for {@link Metric}.
