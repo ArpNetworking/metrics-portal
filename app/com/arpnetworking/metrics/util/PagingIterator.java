@@ -18,10 +18,11 @@ package com.arpnetworking.metrics.util;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 
 /**
@@ -44,7 +45,7 @@ import java.util.function.Function;
 public final class PagingIterator<E> implements Iterator<E> {
 
     private final Function<Integer, List<? extends E>> _getPage;
-    private Iterator<? extends E> _buffer = new ArrayList<E>().iterator();
+    private final Queue<E> _buffer = new LinkedBlockingQueue<>();
     private int _offset = 0;
     private boolean _exhaustedSource = false;
 
@@ -56,19 +57,19 @@ public final class PagingIterator<E> implements Iterator<E> {
         if (_exhaustedSource) {
             return;
         }
-        if (_buffer.hasNext()) {
+        if (!_buffer.isEmpty()) {
             return;
         }
         final List<? extends E> results = _getPage.apply(_offset);
-        _buffer = results.iterator();
+        _buffer.addAll(results);
         _offset += results.size();
-        _exhaustedSource = !_buffer.hasNext();
+        _exhaustedSource = _buffer.isEmpty();
     }
 
     @Override
     public boolean hasNext() {
         repopulateBufferIfNeeded();
-        return _buffer.hasNext();
+        return !_buffer.isEmpty();
     }
 
     @Override
@@ -76,7 +77,7 @@ public final class PagingIterator<E> implements Iterator<E> {
         if (!hasNext()) {
             throw new NoSuchElementException();
         }
-        return _buffer.next();
+        return _buffer.remove();
     }
 
     /**
