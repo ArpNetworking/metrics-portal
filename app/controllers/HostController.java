@@ -15,9 +15,8 @@
  */
 package controllers;
 
-
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
-import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
@@ -53,14 +52,14 @@ public class HostController extends Controller {
      *
      * @param configuration Instance of Play's {@link Config}
      * @param hostRepository Instance of {@link HostRepository}
-     * @param organizationProvider Instance of {@link OrganizationProvider}.
+     * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
     public HostController(
             final Config configuration,
             final HostRepository hostRepository,
-            final OrganizationProvider organizationProvider) {
-        this(configuration.getInt("hosts.limit"), hostRepository, organizationProvider);
+            final OrganizationRepository organizationRepository) {
+        this(configuration.getInt("hosts.limit"), hostRepository, organizationRepository);
     }
 
     /**
@@ -126,7 +125,7 @@ public class HostController extends Controller {
         }
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createQuery(_organizationProvider.getOrganization(request()))
+        final HostQuery query = _hostRepository.createQuery(_organizationRepository.get(request()))
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)
@@ -183,15 +182,15 @@ public class HostController extends Controller {
         return viewHost;
     }
 
-    private HostController(final int maxLimit, final HostRepository hostRepository, final OrganizationProvider organizationProvider) {
+    private HostController(final int maxLimit, final HostRepository hostRepository, final OrganizationRepository organizationRepository) {
         _maxLimit = maxLimit;
         _hostRepository = hostRepository;
-        _organizationProvider = organizationProvider;
+        _organizationRepository = organizationRepository;
     }
 
     private final int _maxLimit;
     private final HostRepository _hostRepository;
-    private final OrganizationProvider _organizationProvider;
+    private final OrganizationRepository _organizationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HostController.class);
 }

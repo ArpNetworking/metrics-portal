@@ -40,7 +40,7 @@ import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
-import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
@@ -93,12 +93,12 @@ public class MainModule extends AbstractModule {
         bind(HealthProvider.class)
                 .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
                 .in(Scopes.SINGLETON);
-        bind(OrganizationProvider.class)
-                .toProvider(ConfigTypedProvider.provider("organizationProvider.type"))
-                .in(Scopes.SINGLETON);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
                 .toProvider(JvmMetricsCollectorProvider.class)
+                .asEagerSingleton();
+        bind(OrganizationRepository.class)
+                .toProvider(OrganizationRepositoryProvider.class)
                 .asEagerSingleton();
         bind(HostRepository.class)
                 .toProvider(HostRepositoryProvider.class)
@@ -240,6 +240,37 @@ public class MainModule extends AbstractModule {
         return periodicMetrics;
     }
 
+    private static final class OrganizationRepositoryProvider implements Provider<OrganizationRepository> {
+        @Inject
+        OrganizationRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public OrganizationRepository get() {
+            final OrganizationRepository organizationRepository = _injector.getInstance(
+                    ConfigurationHelper.<OrganizationRepository>getType(_environment, _configuration, "organizationRepository.type"));
+            organizationRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        organizationRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return organizationRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
 
     private static final class HostRepositoryProvider implements Provider<HostRepository> {
 

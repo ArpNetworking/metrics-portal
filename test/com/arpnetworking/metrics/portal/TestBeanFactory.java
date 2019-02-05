@@ -77,6 +77,9 @@ public final class TestBeanFactory {
     private static final List<String> NAGIOS_SEVERITY = Arrays.asList("CRITICAL", "WARNING", "OK");
     private static final String TEST_NAGIOS_NOTIFY = "abc@example.com";
     private static final Random RANDOM = new Random();
+    private static final Organization DEFAULT_ORGANIZATION = new DefaultOrganization.Builder()
+            .setId(UUID.fromString("0eb03110-2a36-4cb1-861f-7375afc98b9b"))
+            .build();
 
     private TestBeanFactory() {
     }
@@ -202,6 +205,15 @@ public final class TestBeanFactory {
         return new DefaultOrganization.Builder()
                 .setId(id)
                 .build();
+    }
+
+    /**
+     * Retrieve the default organization.
+     *
+     * @return default organization
+     */
+    public static Organization getDefautOrganization() {
+        return DEFAULT_ORGANIZATION;
     }
 
     /**
@@ -379,7 +391,7 @@ public final class TestBeanFactory {
         host.setName(TEST_HOST + RANDOM.nextInt(100) + ".example.com");
         host.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
         host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
-        host.setOrganization(Organization.DEFAULT.getId());
+        host.setOrganization(getDefautOrganization().getId());
         return host;
     }
 }
