@@ -13,14 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class Report {
+import ko = require('knockout');
+
+interface OneOffSchedule {
+    type: 'OneOff';
+    runAtAndAfter: string;
+    runUntil: string;
+    zone: string;
+}
+
+interface PeriodicSchedule {
+    type: 'Periodic';
+    period: string;
+    runAtAndAfter: string;
+    runUntil: string;
+    zone: string;
+    offset?: string;
+}
+
+type Schedule = OneOffSchedule | PeriodicSchedule;
+
+export default class Report {
     id: string;
     name: string;
+    editUri: string;
+    schedule: any;
 
-    constructor(id: string, name: string) {
+    // schedule: Schedule;
+    // source: ChromeScreenshotSource;
+    // recipients: [Recipient];
+
+    // recipients
+    constructor(id: string, name: string, schedule: any) {
         this.id = id;
         this.name = name;
+        this.editUri = `#report/edit/${this.id}`;
+        this.schedule = schedule;
+        // this.source = source;
     }
 }
 
-export = Report
+export = Report;

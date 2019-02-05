@@ -20,8 +20,7 @@ import Report = require("./Report");
 class ReportsList extends PaginatedSearchableList<Report> {
     fetchData(query: any, callback) {
         $.getJSON("v1/reports/query", query, (reportData) => {
-            var hostList: Report[] = reportData.data.map((v: Report)=> { return null;});
-            callback(hostList, reportData.pagination);
+            callback(reportData.data, reportData.pagination);
         })
     }
 
