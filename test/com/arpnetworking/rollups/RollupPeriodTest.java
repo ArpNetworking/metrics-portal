@@ -29,22 +29,22 @@ public class RollupPeriodTest {
     @Test
     public void testRecentEndTimeMillis() {
         assertEquals(
-                Instant.from(LocalDateTime.of(2019, 1, 30, 4, 0)),
-                RollupPeriod.HOURLY.recentEndTime(Instant.from(LocalDateTime.of(2019, 1, 30, 4, 20))));
+                Instant.parse("2019-01-30T05:00:00Z"),
+                RollupPeriod.HOURLY.nextPeriodStart(Instant.parse("2019-01-30T04:20:00Z")));
 
         assertEquals(
-                Instant.from(LocalDateTime.of(2019, 1, 30, 0, 0)),
-                RollupPeriod.DAILY.recentEndTime(Instant.from(LocalDateTime.of(2019, 1, 30, 4, 20))));
+                Instant.parse("2019-01-31T00:00:00Z"),
+                RollupPeriod.DAILY.nextPeriodStart(Instant.parse("2019-01-30T04:20:00Z")));
     }
 
     @Test
     public void testNextTimeMillis() {
         assertEquals(
-                Instant.from(LocalDateTime.of(2019, 1, 30, 4, 0)),
-                RollupPeriod.HOURLY.nextPeriodStart(Instant.from(LocalDateTime.of(2019, 1, 30, 3, 24))));
+                Instant.parse("2019-01-30T04:00:00Z"),
+                RollupPeriod.HOURLY.nextPeriodStart(Instant.parse("2019-01-30T03:24:00Z")));
 
         assertEquals(
-                Instant.from(LocalDateTime.of(2019, 2, 1, 0, 0)),
-                RollupPeriod.DAILY.nextPeriodStart(Instant.from(LocalDateTime.of(2019, 1, 31, 3, 24))));
+                Instant.parse("2019-02-01T00:00:00Z"),
+                RollupPeriod.DAILY.nextPeriodStart(Instant.parse("2019-01-31T03:24:00Z")));
     }
 }
