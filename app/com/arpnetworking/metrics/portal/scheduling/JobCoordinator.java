@@ -26,6 +26,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.util.PagingIterator;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
@@ -36,6 +37,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Coordinates a {@link JobRepository}'s {@link JobExecutorActor}s to ensure that exactly one actor exists for each job.
@@ -48,7 +50,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final Class<? extends JobRepository<T>> _repositoryType;
-    private final Organization _organization;
+    private final Supplier<ImmutableSet<Organization>> _organizationsProvider;
     private final ActorRef _jobExecutorRegion;
     private final PeriodicMetrics _periodicMetrics;
 
@@ -60,7 +62,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param <T> The type of result produced by the {@link JobRepository}'s jobs.
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param repositoryType The type of the repository to load.
-     * @param organization The {@link Organization} whose jobs to coordinate.
+     * @param organizationsProvider Provides the set of all {@link Organization}s to monitor in the repository.
      * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
@@ -68,10 +70,10 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     public static <T> Props props(
             final Injector injector,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Organization organization,
+            final Supplier<ImmutableSet<Organization>> organizationsProvider,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
-        return props(injector, Clock.systemUTC(), repositoryType, organization, jobExecutorRegion, periodicMetrics);
+        return props(injector, Clock.systemUTC(), repositoryType, organizationsProvider, jobExecutorRegion, periodicMetrics);
     }
 
     /**
@@ -81,7 +83,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param clock The clock the actor will use to determine when the anti-entropy process should run.
      * @param repositoryType The type of the repository to load.
-     * @param organization The {@link Organization} whose jobs to coordinate.
+     * @param organizationsProvider Provides the set of all {@link Organization}s to monitor in the repository.
+     * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
@@ -89,25 +92,25 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Organization organization,
+            final Supplier<ImmutableSet<Organization>> organizationsProvider,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         return Props.create(
                 JobCoordinator.class,
-                () -> new JobCoordinator<>(injector, clock, repositoryType, organization, jobExecutorRegion, periodicMetrics));
+                () -> new JobCoordinator<>(injector, clock, repositoryType, organizationsProvider, jobExecutorRegion, periodicMetrics));
     }
 
     private JobCoordinator(
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Organization organization,
+            final Supplier<ImmutableSet<Organization>> organizationsProvider,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
         _repositoryType = repositoryType;
-        _organization = organization;
+        _organizationsProvider = organizationsProvider;
         _jobExecutorRegion = jobExecutorRegion;
         _periodicMetrics = periodicMetrics;
     }
@@ -121,10 +124,9 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
     }
 
-    private Iterator<? extends Job<T>> getAllJobs() {
-        final JobRepository<T> repo = _injector.getInstance(_repositoryType);
+    private Iterator<? extends Job<T>> getAllJobs(final JobRepository<T> repo, final Organization organization) {
         return new PagingIterator.Builder<Job<T>>()
-                .setGetPage(offset -> repo.createQuery(_organization)
+                .setGetPage(offset -> repo.createQuery(organization)
                         .offset(offset)
                         .limit(JOB_QUERY_PAGE_SIZE)
                         .execute()
@@ -136,25 +138,27 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
         LOGGER.debug()
                 .setMessage("starting anti-entropy")
-                .addData("organization", _organization)
                 .addData("repositoryType", _repositoryType)
                 .log();
 
         final Instant startTime = _clock.instant();
-        final Iterator<? extends Job<T>> allJobs = getAllJobs();
-        allJobs.forEachRemaining(job -> {
-            final JobRef<T> ref = new JobRef.Builder<T>()
-                    .setRepositoryType(_repositoryType)
-                    .setOrganization(_organization)
-                    .setId(job.getId())
-                    .build();
-            _jobExecutorRegion.tell(
-                    new JobExecutorActor.Reload.Builder<T>()
-                            .setJobRef(ref)
-                            .setETag(job.getETag())
-                            .build(),
-                    getSelf());
-        });
+        final JobRepository<T> repo = _injector.getInstance(_repositoryType);
+        for (final Organization organization : _organizationsProvider.get()) {
+            final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
+            allJobs.forEachRemaining(job -> {
+                final JobRef<T> ref = new JobRef.Builder<T>()
+                        .setRepositoryType(_repositoryType)
+                        .setOrganization(organization)
+                        .setId(job.getId())
+                        .build();
+                _jobExecutorRegion.tell(
+                        new JobExecutorActor.Reload.Builder<T>()
+                                .setJobRef(ref)
+                                .setETag(job.getETag())
+                                .build(),
+                        getSelf());
+            });
+        }
 
         // We now know that all jobs in the repo have current actors.
         // There might still be actors which don't correspond to jobs, but that's fine:
@@ -167,7 +171,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
         LOGGER.debug()
                 .setMessage("finished anti-entropy")
-                .addData("organization", _organization)
                 .addData("repositoryType", _repositoryType)
                 .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, _clock.instant()))
                 .log();
@@ -181,7 +184,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
                     LOGGER.debug()
                             .setMessage("ticking")
-                            .addData("organization", _organization)
                             .addData("repositoryType", _repositoryType)
                             .log();
                     if (_currentlyExecuting) {
@@ -213,9 +215,9 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     @Override
     public String persistenceId() {
-        return "com.arpnetworking.metrics.portal.scheduling.JobCoordinator:"
-                + "repositoryType=" + _repositoryType + "; "
-                + "organizationId=" + _organization.getId();
+        return String.format(
+                "job-coordinator-%s",
+                _repositoryType.getCanonicalName());
     }
 
     private static final String ANTI_ENTROPY_PERIODIC_TIMER_NAME = "TICK";

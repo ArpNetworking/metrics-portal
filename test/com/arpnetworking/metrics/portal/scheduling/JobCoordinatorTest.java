@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -110,7 +111,7 @@ public class JobCoordinatorTest {
                 _injector,
                 _clock,
                 MockableIntJobRepository.class,
-                ORGANIZATION,
+                () -> ImmutableSet.of(ORGANIZATION),
                 _messageExtractor.getRef(),
                 _periodicMetrics);
     }
