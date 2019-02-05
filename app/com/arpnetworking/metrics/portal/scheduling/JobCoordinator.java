@@ -179,7 +179,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         return receiveBuilder()
                 .match(AntiEntropyTick.class, message -> {
 
-                    LOGGER.info()
+                    LOGGER.debug()
                             .setMessage("ticking")
                             .addData("organization", _organization)
                             .addData("repositoryType", _repositoryType)
