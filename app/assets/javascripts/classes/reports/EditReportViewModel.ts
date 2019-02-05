@@ -129,12 +129,12 @@ class Recipient {
 
     toRequest(): any {
         return {
-            type: RecipientType[this.type].toUpperCase(),
+            type: RecipientType[this.type],
             id: this.id(),
             address: this.address(),
             formats: [
                 {
-                    type: ReportFormat[this.format()].toUpperCase(),
+                    type: ReportFormat[this.format()],
                 }
             ],
         }
@@ -263,13 +263,13 @@ class EditScheduleViewModel {
         const repeat = this.repeat();
         if (repeat == ScheduleRepetition.OneOff) {
             return Object.assign(baseRequest, {
-                type: "ONE_OFF",
+                type: "OneOff",
             });
         } else {
             let offset = this.offset().toISOString();
-            let period = ScheduleRepetition[repeat].toUpperCase();
+            let period = ScheduleRepetition[repeat];
             return Object.assign(baseRequest, {
-                type: "PERIODIC",
+                type: "Periodic",
                 period,
                 offset,
             });
