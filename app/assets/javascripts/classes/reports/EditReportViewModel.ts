@@ -35,6 +35,12 @@ class EditReportViewModel {
     recipients = ko.observableArray<Recipient>();
     existingReport = ko.observable<boolean>(false);
 
+    // Alert for showing save error messages
+    alertMessage = ko.observable<string>('');
+    alertHidden = ko.pureComputed<boolean>(() => this.alertMessage().length == 0);
+
+    static readonly ERROR_MESSAGE = 'There was an error when saving this report."
+
     activate(id: String) {
         if (id != null) {
             this.loadReport(id);
@@ -70,9 +76,11 @@ class EditReportViewModel {
             contentType: "application/json",
             dataType: "json",
             data: JSON.stringify(this.toRequest())
-        }).done(() => {
-            window.location.href = "/#reports";
-        });
+        })
+        .fail(() => {
+            this.alertMessage(ERROR_MESSAGE);
+        })
+        .done(() => window.location.href = "/#reports");
     }
 
     cancel(): void {
