@@ -41,7 +41,7 @@ public final class LastDataPointMessage extends FailableMessage {
     }
 
     public Optional<Instant> getLastDataPointTime() {
-        return _lastDataPointTime;
+        return Optional.ofNullable(_lastDataPointTime);
     }
 
     public RollupPeriod getPeriod() {
@@ -52,14 +52,14 @@ public final class LastDataPointMessage extends FailableMessage {
         super(builder);
         _metricName = builder._metricName;
         _tags = builder._tags;
-        _lastDataPointTime = Optional.ofNullable(builder._lastDataPointTime);
+        _lastDataPointTime = builder._lastDataPointTime;
         _period = builder._period;
     }
 
     private final String _metricName;
     private final RollupPeriod _period;
     private final ImmutableSet<String> _tags;
-    private final Optional<Instant> _lastDataPointTime;
+    private final Instant _lastDataPointTime;
     private static final long serialVersionUID = 5745882770658263619L;
 
 
