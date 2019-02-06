@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Expression;
-import models.internal.Organization;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -152,7 +151,7 @@ public class ExpressionControllerTest {
         final Expression originalExpr = TestBeanFactory.createExpressionBuilder()
                 .setId(uuid)
                 .build();
-        EXPR_REPO.addOrUpdateExpression(originalExpr, Organization.DEFAULT);
+        EXPR_REPO.addOrUpdateExpression(originalExpr, TestBeanFactory.getDefautOrganization());
         final JsonNode body = OBJECT_MAPPER.valueToTree(TestBeanFactory.createExpressionBuilder().setId(uuid).build());
         final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
@@ -161,7 +160,7 @@ public class ExpressionControllerTest {
                 .uri("/v1/expressions");
         final Result result = Helpers.route(gApp, request);
         assertEquals(Http.Status.NO_CONTENT, result.status());
-        final Expression expectedExpr = EXPR_REPO.get(originalExpr.getId(), Organization.DEFAULT).get();
+        final Expression expectedExpr = EXPR_REPO.get(originalExpr.getId(), TestBeanFactory.getDefautOrganization()).get();
         assertEquals(OBJECT_MAPPER.valueToTree(expectedExpr), body);
     }
 

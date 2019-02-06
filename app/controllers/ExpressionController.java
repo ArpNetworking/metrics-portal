@@ -17,7 +17,7 @@ package controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
-import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,14 +58,14 @@ public class ExpressionController extends Controller {
      *
      * @param configuration Instance of Play's {@link Config}.
      * @param expressionRepository Instance of {@link ExpressionRepository}.
-     * @param organizationProvider Instance of {@link OrganizationProvider}.
+     * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
     public ExpressionController(
             final Config configuration,
             final ExpressionRepository expressionRepository,
-            final OrganizationProvider organizationProvider) {
-        this(configuration.getInt("expression.limit"), expressionRepository, organizationProvider);
+            final OrganizationRepository organizationRepository) {
+        this(configuration.getInt("expression.limit"), expressionRepository, organizationRepository);
     }
 
     /**
@@ -87,7 +87,7 @@ public class ExpressionController extends Controller {
         }
 
         try {
-            _expressionRepository.addOrUpdateExpression(expression, _organizationProvider.getOrganization(request()));
+            _expressionRepository.addOrUpdateExpression(expression, _organizationRepository.get(request()));
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -143,7 +143,7 @@ public class ExpressionController extends Controller {
         }
 
         // Build a host repository query
-        final ExpressionQuery query = _expressionRepository.createQuery(_organizationProvider.getOrganization(request()))
+        final ExpressionQuery query = _expressionRepository.createQuery(_organizationRepository.get(request()))
                 .contains(argContains)
                 .service(argService)
                 .cluster(argCluster)
@@ -229,7 +229,7 @@ public class ExpressionController extends Controller {
         } catch (final IllegalArgumentException e) {
             return badRequest();
         }
-        final Optional<Expression> result = _expressionRepository.get(identifier, _organizationProvider.getOrganization(request()));
+        final Optional<Expression> result = _expressionRepository.get(identifier, _organizationRepository.get(request()));
         if (!result.isPresent()) {
             return notFound();
         }
@@ -240,15 +240,15 @@ public class ExpressionController extends Controller {
     private ExpressionController(
             final int maxLimit,
             final ExpressionRepository expressionRepository,
-            final OrganizationProvider organizationProvider) {
+            final OrganizationRepository organizationRepository) {
         _maxLimit = maxLimit;
         _expressionRepository = expressionRepository;
-        _organizationProvider = organizationProvider;
+        _organizationRepository = organizationRepository;
     }
 
     private final int _maxLimit;
     private final ExpressionRepository _expressionRepository;
-    private final OrganizationProvider _organizationProvider;
+    private final OrganizationRepository _organizationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExpressionController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

@@ -105,7 +105,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
 
     @Test
     public void testQueryForInvalidHost() {
-        final HostQuery query = _hostRepo.createQuery(Organization.DEFAULT);
+        final HostQuery query = _hostRepo.createQuery(TestBeanFactory.getDefautOrganization());
         query.partialHostname(Optional.of(UUID.randomUUID().toString()));
         assertEquals(0L, _hostRepo.query(query).total());
     }
@@ -117,7 +117,7 @@ public class CassandraHostRepositoryTest extends WithApplication {
         cassandraHost.setName(name);
         final Organization org = TestBeanFactory.organizationFrom(cassandraHost.getOrganization());
 
-        final HostQuery query = _hostRepo.createQuery(Organization.DEFAULT);
+        final HostQuery query = _hostRepo.createQuery(TestBeanFactory.getDefautOrganization());
         query.partialHostname(Optional.of(cassandraHost.getName()));
         assertEquals(0L, _hostRepo.query(query).total());
 
@@ -154,10 +154,10 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //    @Test
 //    public void testAddOrUpdateAlertAddCase() {
 //        final UUID uuid = UUID.randomUUID();
-//        Assert.assertFalse(_alertRepo.get(uuid, Organization.DEFAULT).isPresent());
+//        Assert.assertFalse(_alertRepo.get(uuid, TestBeanFactory.getDefautOrganization()).isPresent());
 //        final Alert actualAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-//        _alertRepo.addOrUpdateAlert(actualAlert, Organization.DEFAULT);
-//        final Optional<Alert> expected = _alertRepo.get(uuid, Organization.DEFAULT);
+//        _alertRepo.addOrUpdateAlert(actualAlert, TestBeanFactory.getDefautOrganization());
+//        final Optional<Alert> expected = _alertRepo.get(uuid, TestBeanFactory.getDefautOrganization());
 //        Assert.assertTrue(expected.isPresent());
 //        Assert.assertEquals(expected.get(), actualAlert);
 //    }
@@ -170,13 +170,13 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //        final Alert alert2 = TestBeanFactory.createAlertBuilder()
 //                .setId(UUID.randomUUID())
 //                .build();
-//        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-//        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-//        final AlertQuery query1 = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
+//        _alertRepo.addOrUpdateAlert(alert1, TestBeanFactory.getDefautOrganization());
+//        _alertRepo.addOrUpdateAlert(alert2, TestBeanFactory.getDefautOrganization());
+//        final AlertQuery query1 = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
 //        query1.limit(1);
 //        final QueryResult<Alert> result1 = _alertRepo.query(query1);
 //        Assert.assertEquals(1, result1.values().size());
-//        final AlertQuery query2 = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
+//        final AlertQuery query2 = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
 //        query2.limit(2);
 //        final QueryResult<Alert> result2 = _alertRepo.query(query2);
 //        Assert.assertEquals(2, result2.values().size());
@@ -193,10 +193,10 @@ public class CassandraHostRepositoryTest extends WithApplication {
 //        final Alert alert3 = TestBeanFactory.createAlertBuilder()
 //                .setId(UUID.randomUUID())
 //                .build();
-//        _alertRepo.addOrUpdateAlert(alert1, Organization.DEFAULT);
-//        _alertRepo.addOrUpdateAlert(alert2, Organization.DEFAULT);
-//        _alertRepo.addOrUpdateAlert(alert3, Organization.DEFAULT);
-//        final AlertQuery query = new DefaultAlertQuery(_alertRepo, Organization.DEFAULT);
+//        _alertRepo.addOrUpdateAlert(alert1, TestBeanFactory.getDefautOrganization());
+//        _alertRepo.addOrUpdateAlert(alert2, TestBeanFactory.getDefautOrganization());
+//        _alertRepo.addOrUpdateAlert(alert3, TestBeanFactory.getDefautOrganization());
+//        final AlertQuery query = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
 //        query.offset(Optional.of(2));
 //        query.limit(2);
 //        final QueryResult<Alert> result = _alertRepo.query(query);

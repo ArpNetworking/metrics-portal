@@ -19,6 +19,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Status;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -27,12 +28,12 @@ import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.Host;
 import models.internal.MetricsSoftwareState;
-import models.internal.Organization;
 import models.internal.impl.DefaultHost;
 import play.libs.ws.WSClient;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Host provider that uses the Foreman API to get host data.
@@ -45,15 +46,19 @@ public final class ForemanHostProvider extends AbstractActor {
      * Public constructor.
      *
      * @param hostRepository Repository to store hosts.
+     * @param organizationRepository Repository to store organizations.
      * @param wsClient Webservice client used to make HTTP service calls.
      * @param configuration Play configuration.
      */
     @Inject
     public ForemanHostProvider(
             final HostRepository hostRepository,
+            final OrganizationRepository organizationRepository,
             final WSClient wsClient,
             @Assisted final Config configuration) {
         _hostRepository = hostRepository;
+        _organizationRepository = organizationRepository;
+        _targetOrganizationId = UUID.fromString(configuration.getString("targetOrganizationId"));
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
@@ -87,7 +92,7 @@ public final class ForemanHostProvider extends AbstractActor {
                                 .setHostname(host.getName())
                                 .setMetricsSoftwareState(MetricsSoftwareState.UNKNOWN)
                                 .build();
-                        _hostRepository.addOrUpdateHost(dh, Organization.DEFAULT);
+                        _hostRepository.addOrUpdateHost(dh, _organizationRepository.get(_targetOrganizationId));
                     }
 
                     if (response.getTotal() > response.getPage() * response.getPerPage()) {
@@ -111,6 +116,8 @@ public final class ForemanHostProvider extends AbstractActor {
     }
 
     private final HostRepository _hostRepository;
+    private final OrganizationRepository _organizationRepository;
+    private final UUID _targetOrganizationId;
     private final ForemanClient _client;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ForemanHostProvider.class);

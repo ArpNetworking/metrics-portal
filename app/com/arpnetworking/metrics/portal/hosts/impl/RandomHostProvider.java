@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 import akka.actor.AbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
@@ -31,6 +32,7 @@ import models.internal.Organization;
 import models.internal.impl.DefaultHost;
 
 import java.time.Duration;
+import java.util.UUID;
 
 /**
  * This is an actor that finds "random" hosts. The primary purpose of this
@@ -45,11 +47,17 @@ public final class RandomHostProvider extends AbstractActor {
      * Public constructor.
      *
      * @param hostRepository The <code>HostRepository</code> instance.
+     * @param organizationRepository Repository to store organizations.
      * @param configuration Play configuration.
      */
     @Inject
-    public RandomHostProvider(final HostRepository hostRepository, @Assisted final Config configuration) {
+    public RandomHostProvider(
+            final HostRepository hostRepository,
+            final OrganizationRepository organizationRepository,
+            @Assisted final Config configuration) {
         _hostRepository = hostRepository;
+        _organizationRepository = organizationRepository;
+        _targetOrganizationId = UUID.fromString(configuration.getString("targetOrganizationId"));
         getContext().system().scheduler().schedule(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
@@ -68,6 +76,8 @@ public final class RandomHostProvider extends AbstractActor {
                             .addData("actor", self())
                             .log();
 
+                    final Organization organization = _organizationRepository.get(_targetOrganizationId);
+
                     if (System.currentTimeMillis() - _lastTime > INTERVAL.toMillis()) {
                         final Host newHost = new DefaultHost.Builder()
                                 .setHostname("test-app" + _hostAdd + ".example.com")
@@ -79,7 +89,7 @@ public final class RandomHostProvider extends AbstractActor {
                                 .addData("actor", self())
                                 .addData("hostname", newHost.getHostname())
                                 .log();
-                        _hostRepository.addOrUpdateHost(newHost, Organization.DEFAULT);
+                        _hostRepository.addOrUpdateHost(newHost, organization);
                         if (_hostUpdateOne > 0) {
                             final Host updatedHost = new DefaultHost.Builder()
                                     .setHostname("test-app" + _hostUpdateOne + ".example.com")
@@ -91,7 +101,7 @@ public final class RandomHostProvider extends AbstractActor {
                                     .addData("actor", self())
                                     .addData("hostname", updatedHost.getHostname())
                                     .log();
-                            _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
+                            _hostRepository.addOrUpdateHost(updatedHost, organization);
                         }
                         if (_hostUpdateTwo > 0) {
                             final Host updatedHost = new DefaultHost.Builder()
@@ -104,7 +114,7 @@ public final class RandomHostProvider extends AbstractActor {
                                     .addData("actor", self())
                                     .addData("hostname", updatedHost.getHostname())
                                     .log();
-                            _hostRepository.addOrUpdateHost(updatedHost, Organization.DEFAULT);
+                            _hostRepository.addOrUpdateHost(updatedHost, organization);
                         }
                         if (_hostRemove > 0) {
                             final String deletedHostName = "test-app" + _hostRemove + ".example..com";
@@ -113,7 +123,7 @@ public final class RandomHostProvider extends AbstractActor {
                                     .addData("actor", self())
                                     .addData("hostname", deletedHostName)
                                     .log();
-                            _hostRepository.deleteHost(deletedHostName, Organization.DEFAULT);
+                            _hostRepository.deleteHost(deletedHostName, organization);
                         }
                         ++_hostAdd;
                         ++_hostUpdateOne;
@@ -134,6 +144,8 @@ public final class RandomHostProvider extends AbstractActor {
     public Object toLogValue() {
         return LogValueMapFactory.builder(this)
                 .put("hostRepository", _hostRepository)
+                .put("organizationRepository", _organizationRepository)
+                .put("targetOrganizationId", _targetOrganizationId)
                 .put("lastTime", _lastTime)
                 .put("hostAdd", _hostAdd)
                 .put("hostUpdateOne", _hostUpdateOne)
@@ -148,6 +160,8 @@ public final class RandomHostProvider extends AbstractActor {
     }
 
     private final HostRepository _hostRepository;
+    private final OrganizationRepository _organizationRepository;
+    private final UUID _targetOrganizationId;
     private long _lastTime = 0;
     private long _hostAdd = 1;
     private long _hostUpdateOne = -5;

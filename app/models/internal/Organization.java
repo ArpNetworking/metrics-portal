@@ -15,8 +15,6 @@
  */
 package models.internal;
 
-import models.internal.impl.DefaultOrganization;
-
 import java.util.UUID;
 
 /**
@@ -32,11 +30,4 @@ public interface Organization {
      * @return The uuid.
      */
     UUID getId();
-
-    /**
-     * Default organization created by evolutions.
-     */
-    Organization DEFAULT = new DefaultOrganization.Builder()
-            .setId(UUID.fromString("0eb03110-2a36-4cb1-861f-7375afc98b9b"))
-            .build();
 }

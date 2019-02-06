@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
@@ -197,7 +198,7 @@ public final class JobExecutorActorTest {
 
     private static final Instant T_0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
-    private static final Organization ORGANIZATION = Organization.DEFAULT;
+    private static final Organization ORGANIZATION = TestBeanFactory.getDefautOrganization();
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
