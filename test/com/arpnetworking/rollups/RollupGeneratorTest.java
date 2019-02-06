@@ -62,6 +62,8 @@ import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
+ * Test cases for the RollupGenerator actor.
+ *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public class RollupGeneratorTest {
@@ -163,8 +165,8 @@ public class RollupGeneratorTest {
         actor.tell("metric", ActorRef.noSender());
         final TagNamesMessage tagNamesMessage = _probe.expectMsgClass(TagNamesMessage.class);
         assertTrue(tagNamesMessage.isFailure());
-        assertNotNull(tagNamesMessage.getThrowable());
-        assertEquals("Failure", tagNamesMessage.getThrowable().getMessage());
+        assertNotNull(tagNamesMessage.getFailure());
+        assertEquals("Failure", tagNamesMessage.getFailure().orElse(null).getMessage());
     }
 
     @Test
@@ -290,7 +292,7 @@ public class RollupGeneratorTest {
         assertTrue(lastDataPointMessage1.isFailure());
         assertEquals("metric", lastDataPointMessage1.getMetricName());
         assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
-        assertEquals("Failure", lastDataPointMessage1.getThrowable().getMessage());
+        assertEquals("Failure", lastDataPointMessage1.getFailure().orElse(null).getMessage());
 
         final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertFalse(lastDataPointMessage2.isFailure());

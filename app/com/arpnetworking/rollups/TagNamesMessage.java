@@ -20,6 +20,8 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 /**
+ * Message containing a list of tag names for a metric.
+ *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class TagNamesMessage extends FailableMessage {

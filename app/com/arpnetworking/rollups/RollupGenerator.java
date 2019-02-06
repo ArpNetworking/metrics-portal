@@ -99,20 +99,25 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                         .build()
                         ))
                         .build()).handle((response, failure) -> {
-                    if (failure != null) {
-                        return new TagNamesMessage.Builder()
-                                .setFailure(true)
-                                .setMetricName(metricName)
-                                .setThrowable(failure)
-                                .build();
-                    } else {
-                        return new TagNamesMessage.Builder()
-                                .setFailure(false)
-                                .setMetricName(metricName)
-                                .setTagNames(response.getQueries().get(0).getResults().get(0).getTags().keySet())
-                                .build();
-                    }
-                }),
+                            if (failure != null) {
+                                return new TagNamesMessage.Builder()
+                                        .setMetricName(metricName)
+                                        .setFailure(failure)
+                                        .build();
+                            } else {
+                                if (response.getQueries().isEmpty() || response.getQueries().get(0).getResults().isEmpty()) {
+                                    return new TagNamesMessage.Builder()
+                                            .setMetricName(metricName)
+                                            .setFailure(new Exception("Unexpected query result."))
+                                            .build();
+                                } else {
+                                    return new TagNamesMessage.Builder()
+                                            .setMetricName(metricName)
+                                            .setTagNames(response.getQueries().get(0).getResults().get(0).getTags().keySet())
+                                            .build();
+                                }
+                            }
+                        }),
                 getContext().dispatcher())
                 .to(getSelf());
 
@@ -121,9 +126,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void handleTagNamesMessage(final TagNamesMessage message) {
         if (message.isFailure()) {
             // TODO(gmarkham): Metrics
-            LOGGER.warn(
-                    "Failed to get tag names for metric " + message.getMetricName(),
-                    message.getThrowable());
+            LOGGER.warn()
+                    .setMessage("Failed to get tag names for metric.")
+                    .addData("metricName", message.getMetricName())
+                    .setThrowable(message.getFailure().get())
+                    .log();
 
             // Get the next metric
             getSelf().tell(FETCH_METRIC, ActorRef.noSender());
@@ -145,9 +152,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
         if (message.isFailure()) {
             // TODO(gmarkham): Metrics
-            LOGGER.warn(
-                    "Failed to get last data point for metric " + message.getMetricName(),
-                    message.getThrowable());
+            LOGGER.warn()
+                    .setMessage("Failed to get last data point for metric.")
+                    .addData("metricName", message.getMetricName())
+                    .setThrowable(message.getFailure().get())
+                    .log();
+
             getSelf().tell(
                     new FinishRollupMessage.Builder()
                             .setMetricName(message.getMetricName())
@@ -167,8 +177,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                 .handle((response, failure) -> new FinishRollupMessage.Builder()
                                         .setMetricName(message.getMetricName())
                                         .setPeriod(message.getPeriod())
-                                        .setFailure(failure != null)
-                                        .setThrowable(failure)
+                                        .setFailure(failure)
                                         .build()), getContext().dispatcher())
                         .to(getSelf());
             } else {
@@ -176,7 +185,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         new FinishRollupMessage.Builder()
                                 .setMetricName(message.getMetricName())
                                 .setPeriod(message.getPeriod())
-                                .setFailure(false)
                                 .build(),
                         ActorRef.noSender()
                 );
@@ -192,18 +200,26 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private LastDataPointMessage buildLastDataPointResponse(
-            final String metricName, final RollupPeriod period, final ImmutableSet<String> tags,
-            final MetricsQueryResponse response, @Nullable final Throwable failure) {
+            final String metricName,
+            final RollupPeriod period,
+            final ImmutableSet<String> tags,
+            final MetricsQueryResponse response,
+            @Nullable final Throwable failure) {
         final LastDataPointMessage.Builder builder = new LastDataPointMessage.Builder()
                 .setMetricName(metricName)
-                .setPeriod(period);
+                .setPeriod(period)
+                .setTags(tags);
         if (failure != null) {
-            builder.setFailure(true);
-            builder.setThrowable(failure);
+            builder.setFailure(failure);
         } else {
-            builder.setFailure(false);
-            builder.setTags(tags);
-            builder.setLastDataPointTime(response.getQueries().get(0).getResults().get(0).getValues().get(0).getTime());
+            if (response.getQueries().isEmpty()
+                    || response.getQueries().get(0).getResults().isEmpty()) {
+                builder.setFailure(new Exception("Unexpected query results."));
+            } else if (response.getQueries().get(0).getResults().get(0).getValues().isEmpty()) {
+                builder.setLastDataPointTime(null);
+            } else {
+                builder.setLastDataPointTime(response.getQueries().get(0).getResults().get(0).getValues().get(0).getTime());
+            }
         }
         return builder.build();
     }
@@ -277,6 +293,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private final FiniteDuration _fetchBackoff;
     private final Clock _clock;
     private List<RollupPeriod> _periodsInFlight = Collections.emptyList();
+
     static final Object FETCH_METRIC = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupGenerator.class);
 }

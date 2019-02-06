@@ -18,6 +18,7 @@ package com.arpnetworking.rollups;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 
@@ -34,21 +35,18 @@ public abstract class FailableMessage implements Serializable {
      * @param builder subclass builder
      */
     protected FailableMessage(final Builder<?, ?> builder) {
-        _failure = builder._failure;
-        _throwable = builder._throwable;
+        _failure = Optional.ofNullable(builder._failure);
     }
 
     public boolean isFailure() {
+        return _failure.isPresent();
+    }
+
+    public Optional<Throwable> getFailure() {
         return _failure;
     }
 
-    @Nullable
-    public Throwable getThrowable() {
-        return _throwable;
-    }
-
-    private final boolean _failure;
-    private final Throwable _throwable;
+    private final Optional<Throwable> _failure;
     private static final long serialVersionUID = -255159605861224426L;
 
 
@@ -77,34 +75,21 @@ public abstract class FailableMessage implements Serializable {
         protected abstract B self();
 
         /**
-         * Sets the {@code _failure} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param value the {@code _failure} to set
-         * @return a reference to this Builder
-         */
-        public B setFailure(final boolean value) {
-            _failure = value;
-            return self();
-        }
-
-        /**
          * Sets the {@code _throwable} and returns a reference to this Builder so that the methods can be chained together.
          *
          * @param value the {@code _throwable} to set
          * @return a reference to this Builder
          */
-        public B setThrowable(@Nullable final Throwable value) {
-            _throwable = value;
+        public B setFailure(@Nullable final Throwable value) {
+            _failure = value;
             return self();
         }
 
         @Override
         protected void reset() {
-            _failure = false;
-            _throwable = null;
+            _failure = null;
         }
 
-        private boolean _failure = false;
-        private Throwable _throwable;
+        private Throwable _failure;
     }
 }

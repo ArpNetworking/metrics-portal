@@ -24,6 +24,10 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
+ * Message containing the last datapoint timestamp for a metric series.
+ * If no datapoints exist in the queried timerange then the lastDataPointTime will be
+ * empty.
+ *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class LastDataPointMessage extends FailableMessage {
@@ -37,7 +41,7 @@ public final class LastDataPointMessage extends FailableMessage {
     }
 
     public Optional<Instant> getLastDataPointTime() {
-        return Optional.ofNullable(_lastDataPointTime);
+        return _lastDataPointTime;
     }
 
     public RollupPeriod getPeriod() {
@@ -48,15 +52,14 @@ public final class LastDataPointMessage extends FailableMessage {
         super(builder);
         _metricName = builder._metricName;
         _tags = builder._tags;
-        _lastDataPointTime = builder._lastDataPointTime;
+        _lastDataPointTime = Optional.ofNullable(builder._lastDataPointTime);
         _period = builder._period;
     }
 
     private final String _metricName;
     private final RollupPeriod _period;
     private final ImmutableSet<String> _tags;
-    @Nullable
-    private final Instant _lastDataPointTime;
+    private final Optional<Instant> _lastDataPointTime;
     private static final long serialVersionUID = 5745882770658263619L;
 
 
