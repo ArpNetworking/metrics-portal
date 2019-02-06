@@ -28,7 +28,6 @@ import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.Operator;
-import models.internal.Organization;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -287,7 +286,7 @@ public class AlertControllerTest extends WithApplication {
     public void testUpdateValidCase() throws IOException {
         final UUID uuid = UUID.fromString("e62368dc-1421-11e3-91c1-00259069c2f0");
         final Alert originalAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
-        ALERT_REPO.addOrUpdateAlert(originalAlert, Organization.DEFAULT);
+        ALERT_REPO.addOrUpdateAlert(originalAlert, TestBeanFactory.getDefautOrganization());
         final JsonNode body = readTree("testUpdateValidCase");
         final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
