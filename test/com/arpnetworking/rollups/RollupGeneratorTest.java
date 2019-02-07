@@ -24,6 +24,7 @@ import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -72,6 +73,8 @@ public class RollupGeneratorTest {
     private KairosDbClient _kairosDbClient;
     @Mock
     private Config _config;
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
     private TestKit _probe;
 
     private Clock _clock;
@@ -103,6 +106,7 @@ public class RollupGeneratorTest {
                         .annotatedWith(Names.named("RollupsMetricsDiscovery"))
                         .toInstance(_probe.getRef());
                 bind(Clock.class).toInstance(_clock);
+                bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
 
@@ -575,8 +579,9 @@ public class RollupGeneratorTest {
                 final Config configuration,
                 @Named("RollupsMetricsDiscovery") final ActorRef testActor,
                 final KairosDbClient kairosDbClient,
-                final Clock clock) {
-            super(configuration, testActor, kairosDbClient, clock);
+                final Clock clock,
+                final PeriodicMetrics metrics) {
+            super(configuration, testActor, kairosDbClient, clock, metrics);
             _self = testActor;
         }
 
