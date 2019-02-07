@@ -21,6 +21,7 @@ import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -63,6 +64,7 @@ public class MetricsDiscoveryTest {
             protected void configure() {
                 bind(KairosDbClient.class).toInstance(_kairosDbClient);
                 bind(Config.class).toInstance(_config);
+                bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
 
@@ -200,6 +202,8 @@ public class MetricsDiscoveryTest {
     private KairosDbClient _kairosDbClient;
     @Mock
     private Config _config;
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
