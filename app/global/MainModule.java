@@ -47,6 +47,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
@@ -122,6 +123,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupsMetricsDiscovery"))
                 .toProvider(RollupMetricsDiscoveryProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupGenerator"))
+                .toProvider(RollupGeneratorProvider.class)
                 .asEagerSingleton();
     }
 
@@ -407,8 +412,7 @@ public class MainModule extends AbstractModule {
         @Inject
         HostProviderProvider(
                 final ActorSystem system,
-                @Named("HostProviderProps")
-                final Props hostProviderProps) {
+                @Named("HostProviderProps") final Props hostProviderProps) {
             _system = system;
             _hostProviderProps = hostProviderProps;
         }
@@ -419,9 +423,9 @@ public class MainModule extends AbstractModule {
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(INDEXER_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
-                                _hostProviderProps,
-                                PoisonPill.getInstance(),
-                                ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
+                        _hostProviderProps,
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
                         "host-provider-scheduler");
             }
             return null;
@@ -431,6 +435,37 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class RollupGeneratorProvider implements Provider<ActorRef> {
+        @Inject
+        RollupGeneratorProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Config configuration,
+                final Features features) {
+            _injector = injector;
+            _system = system;
+            _configuration = configuration;
+            _enabled = features.isRollupsEnabled();
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            final int actorCount = _configuration.getInt("rollups.worker.count");
+            if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
+                for (int i = 0; i < actorCount; i++) {
+                    _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
+                }
+            }
+            return null;
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+        private final Config _configuration;
+        private final boolean _enabled;
     }
 
     private static final class RollupMetricsDiscoveryProvider implements Provider<ActorRef> {
@@ -462,7 +497,7 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
         private final boolean _enabled;
 
-        private static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
+        static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
 
     private static final class JvmMetricsCollectorProvider implements Provider<ActorRef> {

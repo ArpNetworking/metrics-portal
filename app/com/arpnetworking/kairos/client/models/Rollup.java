@@ -16,7 +16,6 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -27,13 +26,11 @@ import net.sf.oval.constraint.NotNull;
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class Rollup {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("save_as")
     public String getSaveAs() {
         return _saveAs;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public RollupQuery getQuery() {
         return _query;
     }
