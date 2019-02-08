@@ -1,9 +1,11 @@
 
-input[type="checkbox"] {
+#graph-page-container input[type="checkbox"] {
     display: none;
 }
 
-.modal-header, h4, .close {
+#graph-page-container .modal-header,
+#graph-page-container h4,
+#graph-page-container .close {
     background-color: #666666;
     color:white !important;
     text-align: center;

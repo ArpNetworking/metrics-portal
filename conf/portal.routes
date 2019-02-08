@@ -38,6 +38,11 @@ GET        /v1/alerts/:id                       controllers.AlertController.get(
 DELETE     /v1/alerts/:id                       controllers.AlertController.delete(id: String)
 PUT        /v1/alerts                           controllers.AlertController.addOrUpdate
 
+# Reports
+GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
+GET        /v1/reports/:id                      controllers.ReportController.get(id: String)
+PUT        /v1/reports                          controllers.ReportController.addOrUpdate
+
 # Expressions
 GET        /v1/expressions/query                controllers.ExpressionController.query(contains: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
 GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)

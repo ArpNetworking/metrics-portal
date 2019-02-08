@@ -35,6 +35,11 @@
                     <a href="#alerts">Alerts</a>
                 </li>
                 }
+                @if(features.isReportsEnabled()) {
+                <li>
+                    <a href="#reports">Reports</a>
+                </li>
+                }
                 <li>
                     <a data-bind="attr: {href: fragment()}">Workspace Link</a>
                 </li>

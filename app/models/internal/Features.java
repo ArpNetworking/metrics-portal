@@ -74,6 +74,13 @@ public interface Features {
     boolean isRollupsEnabled();
 
     /**
+     * Reports feature.
+     *
+     * @return true if and only if reports is enabled.
+     */
+    boolean isReportsEnabled();
+
+    /**
      * Metrics aggregator daemon ports.
      *
      * @return list of ports for metrics aggregator daemon (or its proxies).

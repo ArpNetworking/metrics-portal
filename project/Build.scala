@@ -120,6 +120,11 @@ object ApplicationBuild extends Build {
       "org.webjars" % "underscorejs" % "1.8.3",
       "org.webjars.npm" % "github-com-auth0-jwt-decode" % "2.1.0",
 
+      "org.webjars" % "Eonasdan-bootstrap-datetimepicker" % "4.17.47",
+      // Needed for datetimepicker.
+      "org.webjars.npm" % "moment" % "2.24.0",
+      "org.webjars.npm" % "moment-timezone" % "0.5.23",
+
       "org.cassandraunit" % "cassandra-unit" % "3.1.3.2" % "test",
       "junit" % "junit" % "4.12" % "test",
       "org.mockito" % "mockito-core" % "1.10.19" % "test",

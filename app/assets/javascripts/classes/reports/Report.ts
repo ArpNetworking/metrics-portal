@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Groupon.com
+ * Copyright 2018 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+class Report {
+    id: string;
+    name: string;
 
-interface KnockoutBindingHandlers {
-    slider: KnockoutBindingHandler;
-    legendBlock: KnockoutBindingHandler;
-    slide: KnockoutBindingHandler;
-    stackdrag: KnockoutBindingHandler;
-    typeahead: KnockoutBindingHandler;
-    tooltip: KnockoutBindingHandler;
-    popover: KnockoutBindingHandler;
-    datetimepicker: KnockoutBindingHandler;
+    constructor(id: string, name: string) {
+        this.id = id;
+        this.name = name;
+    }
 }
 
-export = KnockoutBindingHandlers;
+export = Report
