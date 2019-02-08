@@ -22,9 +22,10 @@ import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -53,13 +54,14 @@ public class JobCoordinatorTest {
 
     private static final Instant T0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofMinutes(1);
-    private static final Organization ORGANIZATION = Organization.DEFAULT;
 
     private Injector _injector;
     private MockableIntJobRepository _repo;
     private ManualClock _clock;
     private TestKit _messageExtractor;
     private ActorSystem _system;
+    private OrganizationRepository _organizationRepo;
+    private Organization _organization;
     @Mock
     private PeriodicMetrics _periodicMetrics;
 
@@ -70,6 +72,11 @@ public class JobCoordinatorTest {
         MockitoAnnotations.initMocks(this);
         _repo = Mockito.spy(new MockableIntJobRepository());
         _repo.open();
+
+        _organizationRepo = new DefaultOrganizationRepository();
+        _organizationRepo.open();
+
+        _organization = _organizationRepo.query(_organizationRepo.createQuery()).values().get(0);
 
         _clock = new ManualClock(T0, TICK_SIZE, ZoneId.systemDefault());
 
@@ -94,14 +101,14 @@ public class JobCoordinatorTest {
     }
 
     private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {
-        _repo.addOrUpdateJob(job, ORGANIZATION);
+        _repo.addOrUpdateJob(job, _organization);
         return job;
     }
 
-    private static JobRef<Integer> makeRef(final Job<Integer> job) {
+    private JobRef<Integer> makeRef(final Job<Integer> job) {
         return new JobRef.Builder<Integer>()
                 .setId(job.getId())
-                .setOrganization(ORGANIZATION)
+                .setOrganization(_organization)
                 .setRepositoryType(MockableIntJobRepository.class)
                 .build();
     }
@@ -111,7 +118,7 @@ public class JobCoordinatorTest {
                 _injector,
                 _clock,
                 MockableIntJobRepository.class,
-                () -> ImmutableSet.of(ORGANIZATION),
+                _organizationRepo,
                 _messageExtractor.getRef(),
                 _periodicMetrics);
     }

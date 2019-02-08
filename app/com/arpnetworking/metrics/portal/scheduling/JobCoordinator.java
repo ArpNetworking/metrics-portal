@@ -23,10 +23,10 @@ import com.arpnetworking.metrics.impl.BaseScale;
 import com.arpnetworking.metrics.impl.BaseUnit;
 import com.arpnetworking.metrics.impl.TsdUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.util.PagingIterator;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
@@ -37,7 +37,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Coordinates a {@link JobRepository}'s {@link JobExecutorActor}s to ensure that exactly one actor exists for each job.
@@ -50,7 +49,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final Class<? extends JobRepository<T>> _repositoryType;
-    private final Supplier<ImmutableSet<Organization>> _organizationsProvider;
+    private final OrganizationRepository _organizationRepository;
     private final ActorRef _jobExecutorRegion;
     private final PeriodicMetrics _periodicMetrics;
 
@@ -62,7 +61,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param <T> The type of result produced by the {@link JobRepository}'s jobs.
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param repositoryType The type of the repository to load.
-     * @param organizationsProvider Provides the set of all {@link Organization}s to monitor in the repository.
+     * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
      * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
@@ -70,10 +69,10 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     public static <T> Props props(
             final Injector injector,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Supplier<ImmutableSet<Organization>> organizationsProvider,
+            final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
-        return props(injector, Clock.systemUTC(), repositoryType, organizationsProvider, jobExecutorRegion, periodicMetrics);
+        return props(injector, Clock.systemUTC(), repositoryType, organizationRepository, jobExecutorRegion, periodicMetrics);
     }
 
     /**
@@ -83,7 +82,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param clock The clock the actor will use to determine when the anti-entropy process should run.
      * @param repositoryType The type of the repository to load.
-     * @param organizationsProvider Provides the set of all {@link Organization}s to monitor in the repository.
+     * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
      * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
@@ -92,25 +91,25 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Supplier<ImmutableSet<Organization>> organizationsProvider,
+            final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         return Props.create(
                 JobCoordinator.class,
-                () -> new JobCoordinator<>(injector, clock, repositoryType, organizationsProvider, jobExecutorRegion, periodicMetrics));
+                () -> new JobCoordinator<>(injector, clock, repositoryType, organizationRepository, jobExecutorRegion, periodicMetrics));
     }
 
     private JobCoordinator(
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
-            final Supplier<ImmutableSet<Organization>> organizationsProvider,
+            final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
         _repositoryType = repositoryType;
-        _organizationsProvider = organizationsProvider;
+        _organizationRepository = organizationRepository;
         _jobExecutorRegion = jobExecutorRegion;
         _periodicMetrics = periodicMetrics;
     }
@@ -143,7 +142,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
         final Instant startTime = _clock.instant();
         final JobRepository<T> repo = _injector.getInstance(_repositoryType);
-        for (final Organization organization : _organizationsProvider.get()) {
+        final Iterable<? extends Organization> allOrgs = _organizationRepository.query(_organizationRepository.createQuery()).values();
+        for (final Organization organization : allOrgs) {
             final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
             allJobs.forEachRemaining(job -> {
                 final JobRef<T> ref = new JobRef.Builder<T>()
