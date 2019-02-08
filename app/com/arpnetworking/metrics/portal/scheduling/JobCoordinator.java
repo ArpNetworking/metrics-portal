@@ -140,7 +140,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics,
-            final ActorRef self) {
+            final ActorRef coordinator) {
 
         try {
             LOGGER.debug()
@@ -164,7 +164,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                                     .setJobRef(ref)
                                     .setETag(job.getETag())
                                     .build(),
-                            self);
+                            coordinator);
                 });
             }
 
@@ -183,7 +183,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                     .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, clock.instant()))
                     .log();
         } finally {
-            self.tell(AntiEntropyFinished.INSTANCE, self);
+            coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
         }
 
     }
