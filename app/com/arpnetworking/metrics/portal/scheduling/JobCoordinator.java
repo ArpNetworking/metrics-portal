@@ -123,7 +123,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
     }
 
-    private Iterator<? extends Job<T>> getAllJobs(final JobRepository<T> repo, final Organization organization) {
+    private static <T> Iterator<? extends Job<T>> getAllJobs(final JobRepository<T> repo, final Organization organization) {
         return new PagingIterator.Builder<Job<T>>()
                 .setGetPage(offset -> repo.createQuery(organization)
                         .offset(offset)
@@ -133,48 +133,78 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 .build();
     }
 
-    private void runAntiEntropy() {
+    private static <T> void runAntiEntropy(
+            final Injector injector,
+            final Clock clock,
+            final Class<? extends JobRepository<T>> repositoryType,
+            final OrganizationRepository organizationRepository,
+            final ActorRef jobExecutorRegion,
+            final PeriodicMetrics periodicMetrics,
+            final ActorRef self) {
 
-        LOGGER.debug()
-                .setMessage("starting anti-entropy")
-                .addData("repositoryType", _repositoryType)
-                .log();
+        try {
+            LOGGER.debug()
+                    .setMessage("starting anti-entropy")
+                    .addData("repositoryType", repositoryType)
+                    .log();
 
-        final Instant startTime = _clock.instant();
-        final JobRepository<T> repo = _injector.getInstance(_repositoryType);
-        final Iterable<? extends Organization> allOrgs = _organizationRepository.query(_organizationRepository.createQuery()).values();
-        for (final Organization organization : allOrgs) {
-            final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
-            allJobs.forEachRemaining(job -> {
-                final JobRef<T> ref = new JobRef.Builder<T>()
-                        .setRepositoryType(_repositoryType)
-                        .setOrganization(organization)
-                        .setId(job.getId())
-                        .build();
-                _jobExecutorRegion.tell(
-                        new JobExecutorActor.Reload.Builder<T>()
-                                .setJobRef(ref)
-                                .setETag(job.getETag())
-                                .build(),
-                        getSelf());
-            });
+            final Instant startTime = clock.instant();
+            final JobRepository<T> repo = injector.getInstance(repositoryType);
+            final Iterable<? extends Organization> allOrgs = organizationRepository.query(organizationRepository.createQuery()).values();
+            for (final Organization organization : allOrgs) {
+                final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
+                allJobs.forEachRemaining(job -> {
+                    final JobRef<T> ref = new JobRef.Builder<T>()
+                            .setRepositoryType(repositoryType)
+                            .setOrganization(organization)
+                            .setId(job.getId())
+                            .build();
+                    jobExecutorRegion.tell(
+                            new JobExecutorActor.Reload.Builder<T>()
+                                    .setJobRef(ref)
+                                    .setETag(job.getETag())
+                                    .build(),
+                            self);
+                });
+            }
+
+            // We now know that all jobs in the repo have current actors.
+            // There might still be actors which don't correspond to jobs, but that's fine:
+            //   they should self-terminate next time they execute.
+
+            periodicMetrics.recordTimer(
+                    "job_coordinator_tick_time",
+                    ChronoUnit.NANOS.between(startTime, clock.instant()),
+                    Optional.of(NANOS));
+
+            LOGGER.debug()
+                    .setMessage("finished anti-entropy")
+                    .addData("repositoryType", repositoryType)
+                    .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, clock.instant()))
+                    .log();
+        } finally {
+            self.tell(AntiEntropyFinished.INSTANCE, self);
         }
 
-        // We now know that all jobs in the repo have current actors.
-        // There might still be actors which don't correspond to jobs, but that's fine:
-        //   they should self-terminate next time they execute.
+    }
 
-        _periodicMetrics.recordTimer(
-                "job_coordinator_tick_time",
-                ChronoUnit.NANOS.between(startTime, _clock.instant()),
-                Optional.of(NANOS));
-
-        LOGGER.debug()
-                .setMessage("finished anti-entropy")
-                .addData("repositoryType", _repositoryType)
-                .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, _clock.instant()))
-                .log();
-
+    private Runnable createAntiEntropyRunnable() {
+        // Explicitly capture all instance variables for good practice, even though they're final
+        final Injector injector = _injector;
+        final Clock clock = _clock;
+        final Class<? extends JobRepository<T>> repositoryType = _repositoryType;
+        final OrganizationRepository organizationRepository = _organizationRepository;
+        final ActorRef jobExecutorRegion = _jobExecutorRegion;
+        final PeriodicMetrics periodicMetrics = _periodicMetrics;
+        final ActorRef self = getSelf();
+        return () -> runAntiEntropy(
+                injector,
+                clock,
+                repositoryType,
+                organizationRepository,
+                jobExecutorRegion,
+                periodicMetrics,
+                self);
     }
 
     @Override
@@ -192,13 +222,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
                     getContext().getSystem().scheduler().scheduleOnce(
                             scala.concurrent.duration.Duration.Zero(),
-                            () -> {
-                                try {
-                                    runAntiEntropy();
-                                } finally {
-                                    getSelf().tell(AntiEntropyFinished.INSTANCE, getSelf());
-                                }
-                            },
+                            createAntiEntropyRunnable(),
                             getContext().dispatcher());
                 })
                 .match(AntiEntropyFinished.class, message -> {
