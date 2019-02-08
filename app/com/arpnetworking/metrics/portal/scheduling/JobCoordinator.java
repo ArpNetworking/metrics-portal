@@ -199,7 +199,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                                     getSelf().tell(AntiEntropyFinished.INSTANCE, getSelf());
                                 }
                             },
-                            getContext().getSystem().dispatcher()); // TODO(spencerpearson): probably not the right dispatcher
+                            getContext().dispatcher());
                 })
                 .match(AntiEntropyFinished.class, message -> {
                     _currentlyExecuting = false;
