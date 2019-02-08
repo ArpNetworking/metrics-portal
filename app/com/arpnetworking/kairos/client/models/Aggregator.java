@@ -25,6 +25,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Model class to represent the aggregator in a metrics query.
@@ -34,13 +35,15 @@ import java.util.Optional;
 public final class Aggregator {
     private Aggregator(final Builder builder) {
         _name = builder._name;
-        _sampling = builder._sampling;
+        _sampling = Optional.ofNullable(builder._sampling);
         if (!_sampling.isPresent()) {
             _alignSampling = Optional.empty();
         } else {
-            _alignSampling = builder._alignSampling;
+            _alignSampling = Optional.ofNullable(builder._alignSampling);
         }
         _otherArgs = builder._otherArgs;
+        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
+        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
     }
 
     public String getName() {
@@ -48,23 +51,37 @@ public final class Aggregator {
     }
 
     @JsonProperty("align_sampling")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     public Optional<Boolean> getAlignSampling() {
         return _alignSampling;
     }
 
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonProperty("align_start_time")
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Boolean> getAlignStartTime() {
+        return _alignStartTime;
+    }
+
+    @JsonProperty("align_end_time")
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    public Optional<Boolean> getAlignEndTime() {
+        return _alignEndTime;
+    }
+
+    @JsonInclude(value = JsonInclude.Include.NON_ABSENT)
     public Optional<Sampling> getSampling() {
         return _sampling;
     }
 
     @JsonAnyGetter
-    protected ImmutableMap<String, Object> getOtherArgs() {
+    public ImmutableMap<String, Object> getOtherArgs() {
         return _otherArgs;
     }
 
     private final String _name;
     private final Optional<Boolean> _alignSampling;
+    private final Optional<Boolean> _alignStartTime;
+    private final Optional<Boolean> _alignEndTime;
     private final Optional<Sampling> _sampling;
     private final ImmutableMap<String, Object> _otherArgs;
 
@@ -98,7 +115,7 @@ public final class Aggregator {
          * @param value the sampling for the aggregator
          * @return this {@link Builder}
          */
-        public Builder setSampling(final Optional<Sampling> value) {
+        public Builder setSampling(@Nullable final Sampling value) {
             _sampling = value;
             return this;
         }
@@ -110,8 +127,32 @@ public final class Aggregator {
          * @return this {@link Builder}
          */
         @JsonProperty("align_sampling")
-        public Builder setAlignSampling(final Optional<Boolean> value) {
+        public Builder setAlignSampling(@Nullable final Boolean value) {
             _alignSampling = value;
+            return this;
+        }
+
+        /**
+         * Sets the align_start_time of the aggregator. Optional. Defaults to false.
+         *
+         * @param value the align_start_time for the aggregator
+         * @return this {@link Builder}
+         */
+        @JsonProperty("align_start_time")
+        public Builder setAlignStartTime(@Nullable final Boolean value) {
+            _alignStartTime = value;
+            return this;
+        }
+
+        /**
+         * Sets the align_end_time of the aggregator. Optional. Defaults to false.
+         *
+         * @param value the align_end_time for the aggregator
+         * @return this {@link Builder}
+         */
+        @JsonProperty("align_end_time")
+        public Builder setAlignEndTime(@Nullable final Boolean value) {
+            _alignEndTime = value;
             return this;
         }
 
@@ -142,10 +183,10 @@ public final class Aggregator {
         @NotNull
         @NotEmpty
         private String _name;
-        @NotNull
-        private Optional<Boolean> _alignSampling = Optional.of(true);
-        @NotNull
-        private Optional<Sampling> _sampling = Optional.of(new Sampling.Builder().build());
+        private Boolean _alignSampling;
+        private Sampling _sampling;
+        private Boolean _alignEndTime;
+        private Boolean _alignStartTime;
         @NotNull
         private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
     }

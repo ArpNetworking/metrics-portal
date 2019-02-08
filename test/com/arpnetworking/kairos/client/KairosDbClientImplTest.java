@@ -49,7 +49,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -113,8 +112,6 @@ public class KairosDbClientImplTest {
 
     @Test
     public void testQueryMetric() throws Exception {
-        final Instant now = Instant.now();
-
         _wireMock.givenThat(
                 post(urlEqualTo(KairosDbClientImpl.METRICS_QUERY_PATH.toString()))
                         .withRequestBody(equalToJson(readResource("testQueryMetric"), true, true))
@@ -125,17 +122,20 @@ public class KairosDbClientImplTest {
         );
 
         final MetricsQueryResponse response = _kairosDbClient.queryMetrics(new MetricsQuery.Builder()
-                .setStartTime(now)
+                .setStartTime(Instant.parse("2019-02-01T00:00:00Z"))
+                .setEndTime(Instant.parse("2019-02-02T00:00:00Z"))
                 .setMetrics(
                         ImmutableList.of(new Metric.Builder()
                                 .setName("metric.name")
                                 .setTags(ImmutableMultimap.of("tag1", "tag1", "tag2", "tag2"))
                                 .setAggregators(ImmutableList.of(new Aggregator.Builder()
                                         .setName("avg")
-                                        .setAlignSampling(Optional.of(Boolean.TRUE))
-                                        .setSampling(Optional.of(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build()))
+                                        .setAlignSampling(true)
+                                        .setSampling(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
                                         .build()
                                 ))
+                                .setLimit(1)
+                                .setOrder(Metric.Order.DESC)
                                 .build()
                         )
                 )
@@ -211,17 +211,15 @@ public class KairosDbClientImplTest {
                                                         .setName("testMetric")
                                                         .setAggregators(ImmutableList.of(new Aggregator.Builder()
                                                                         .setName("merge")
-                                                                        .setAlignSampling(Optional.of(Boolean.TRUE))
+                                                                        .setAlignSampling(true)
                                                                         .setOtherArgs(ImmutableMap.of(
                                                                                 "align_start_time", Boolean.TRUE,
                                                                                 "align_end_time", Boolean.FALSE))
                                                                         .setSampling(
-                                                                                Optional.of(
-                                                                                        new Sampling.Builder()
-                                                                                                .setValue(1)
-                                                                                                .setUnit(SamplingUnit.DAYS)
-                                                                                                .build()
-                                                                                )
+                                                                                new Sampling.Builder()
+                                                                                        .setValue(1)
+                                                                                        .setUnit(SamplingUnit.DAYS)
+                                                                                        .build()
                                                                         )
                                                                         .build()
                                                                 )
@@ -273,17 +271,15 @@ public class KairosDbClientImplTest {
                                                         .setName("testMetric")
                                                         .setAggregators(ImmutableList.of(new Aggregator.Builder()
                                                                         .setName("merge")
-                                                                        .setAlignSampling(Optional.of(Boolean.TRUE))
+                                                                        .setAlignSampling(true)
                                                                         .setOtherArgs(ImmutableMap.of(
                                                                                 "align_start_time", Boolean.TRUE,
                                                                                 "align_end_time", Boolean.FALSE))
                                                                         .setSampling(
-                                                                                Optional.of(
-                                                                                        new Sampling.Builder()
-                                                                                                .setValue(1)
-                                                                                                .setUnit(SamplingUnit.DAYS)
-                                                                                                .build()
-                                                                                )
+                                                                                new Sampling.Builder()
+                                                                                        .setValue(1)
+                                                                                        .setUnit(SamplingUnit.DAYS)
+                                                                                        .build()
                                                                         )
                                                                         .build()
                                                                 )

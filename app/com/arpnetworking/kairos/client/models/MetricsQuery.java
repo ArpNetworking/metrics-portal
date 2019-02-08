@@ -68,9 +68,8 @@ public final class MetricsQuery {
     }
 
     @JsonIgnore
-    @Nullable
-    public Instant getEndTime() {
-        return _endTime.orElse(null);
+    public Optional<Instant> getEndTime() {
+        return _endTime;
     }
 
     @JsonProperty(value = "metrics")

@@ -20,9 +20,11 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.CaseFormat;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -177,13 +179,23 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             throw new NoSuchJobException("job no longer exists in repository", error);
         }
 
+        final long startTime = System.nanoTime();
         PatternsCS.pipe(
                 job.execute(getSelf(), scheduled)
-                        .handle((result, error) -> new JobCompleted.Builder<T>()
+                        .handle((result, error) -> {
+                            _periodicMetrics.recordTimer(
+                                    "job_executor_job/"
+                                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
+                                            + "execution_time",
+                                    System.nanoTime() - startTime,
+                                    Optional.of(Units.NANOSECOND));
+
+                            return new JobCompleted.Builder<T>()
                                     .setScheduled(scheduled)
                                     .setError(error)
                                     .setResult(result)
-                                    .build()),
+                                    .build();
+                        }),
                 getContext().system().dispatcher()
         ).to(getSelf());
     }
@@ -271,9 +283,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
         final JobRepository<T> repo = ref.getRepository(_injector);
         try {
+            final int successMetricValue = message.getError() == null ? 1 : 0;
             _periodicMetrics.recordCounter(
                     "job_executor_actor_execution_successes",
-                    (message.getError() == null) ? 1 : 0);
+                    successMetricValue);
+            _periodicMetrics.recordCounter(
+                    "job_executor_job/"
+                    + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                    + "/success",
+                    successMetricValue);
             if (message.getError() == null) {
                 if (typedMessage.getResult() == null) {
                     throw new IllegalArgumentException(String.format("JobCompleted message for %s has null error *and* result", ref));
