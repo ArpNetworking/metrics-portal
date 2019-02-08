@@ -196,7 +196,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                     .setResult(result)
                                     .build();
                         }),
-                getContext().system().dispatcher()
+                getContext().dispatcher()
         ).to(getSelf());
     }
 
