@@ -17,59 +17,10 @@ class Report {
     id: string;
     name: string;
 
-    schedule: Schedule;
-    source: ChromeScreenshotSource;
-
-    // recipients
-
-    constructor(id: string, name: string, schedule: Schedule, source: ChromeScreenshotSource) {
+    constructor(id: string, name: string) {
         this.id = id;
         this.name = name;
-        this.schedule = schedule;
-        this.source = source;
     }
-}
-
-class Schedule {
-    period: Period;
-    offset: number;
-    runAt: Date;
-    runUntil?: Date;
-
-    constructor(period: Period, offset: number, runAt: Date, runUntil?: Date) {
-        this.period = period;
-        this.offset = offset;
-        this.runAt = runAt;
-        this.runUntil = runUntil;
-    }
-}
-
-class ChromeScreenshotSource {
-    id: string;
-    url: string;
-    title: string;
-    triggeringEventName: string;
-    ignoreCertificateErrors: boolean;
-
-    constructor(id: string, url: string, title: string, triggeringEventName: string, ignoreCertificateErrors: boolean) {
-        this.id = id;
-        this.url = url;
-        this.title = title;
-        this.triggeringEventName = triggeringEventName;
-        this.ignoreCertificateErrors = ignoreCertificateErrors;
-    }
-}
-
-class PdfFormat {
-    widthInches: number;
-    heightInches: number;
-}
-
-enum Period {
-    HOURLY,
-    DAILY,
-    WEEKLY,
-    MONTHLY,
 }
 
 export = Report
