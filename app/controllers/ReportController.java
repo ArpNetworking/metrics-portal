@@ -16,7 +16,7 @@
 package controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.arpnetworking.metrics.portal.organizations.OrganizationProvider;
+import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -49,14 +49,14 @@ public class ReportController extends Controller {
      *
      * @param configuration        Instance of Play's {@link Config}.
      * @param reportRepository     Instance of {@link ReportRepository}.
-     * @param organizationProvider Instance of {@link OrganizationProvider}.
+     * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
     public ReportController(
             final Config configuration,
             final ReportRepository reportRepository,
-            final OrganizationProvider organizationProvider) {
-        this(configuration.getInt("reports.limit"), reportRepository, organizationProvider);
+            final OrganizationRepository organizationRepository) {
+        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository);
     }
 
     /**
@@ -114,15 +114,19 @@ public class ReportController extends Controller {
         return notFound();
     }
 
-    private ReportController(final int maxLimit, final ReportRepository reportRepository, final OrganizationProvider organizationProvider) {
+    private ReportController(
+            final int maxLimit,
+            final ReportRepository reportRepository,
+            final OrganizationRepository organizationRepository
+    ) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
-        _organizationProvider = organizationProvider;
+        _organizationRepository = organizationRepository;
     }
 
     private final int _maxLimit;
     private final ReportRepository _reportRepository;
-    private final OrganizationProvider _organizationProvider;
+    private final OrganizationRepository _organizationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
