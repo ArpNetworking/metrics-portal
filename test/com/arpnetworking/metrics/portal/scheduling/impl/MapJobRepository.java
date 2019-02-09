@@ -25,6 +25,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
 import models.internal.scheduling.Job;
 
@@ -114,7 +115,7 @@ public class MapJobRepository<T> implements JobRepository<T> {
 
     @Override
     public JobQuery<T> createQuery(final Organization organization) {
-        throw new UnsupportedOperationException();
+        return new DefaultJobQuery<>(this, organization);
     }
 
     @Override

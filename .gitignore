@@ -26,3 +26,6 @@ eclipse-bin/
 
 # Mac
 .DS_Store
+
+# Akka test persistence data
+test-snapshots/

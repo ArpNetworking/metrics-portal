@@ -43,6 +43,7 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
+import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -113,6 +114,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("report-repository-job-coordinator"))
+                .toProvider(ReportRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
         bind(ReportRepository.class)
                 .toProvider(ReportRepositoryProvider.class)
@@ -435,6 +440,45 @@ public class MainModule extends AbstractModule {
         private final Props _hostProviderProps;
 
         private static final String INDEXER_ROLE = "host_indexer";
+    }
+
+    private static final class ReportRepositoryJobCoordinatorProvider implements Provider<ActorRef> {
+        @Inject
+        ReportRepositoryJobCoordinatorProvider(
+                final ActorSystem system,
+                final Injector injector,
+                final OrganizationRepository organizationRepository,
+                @Named("job-execution-shard-region")
+                final ActorRef executorRegion,
+                final PeriodicMetrics periodicMetrics) {
+            _system = system;
+            _injector = injector;
+            _organizationRepository = organizationRepository;
+            _executorRegion = executorRegion;
+            _periodicMetrics = periodicMetrics;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
+            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        JobCoordinator.props(_injector, ReportRepository.class, _organizationRepository, _executorRegion, _periodicMetrics),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
+                        "report-repository-job-coordinator");
+            }
+            return null;
+        }
+
+        private final ActorSystem _system;
+        private final Injector _injector;
+        private final OrganizationRepository _organizationRepository;
+        private final ActorRef _executorRegion;
+        private final PeriodicMetrics _periodicMetrics;
+
+        private static final String ANTI_ENTROPY_ROLE = "report_repository_anti_entropy";
     }
 
     private static final class RollupGeneratorProvider implements Provider<ActorRef> {
