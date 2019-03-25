@@ -95,7 +95,7 @@ To run the application in Play's production execute:
 
     metrics-portal> ./activator "start -Dconfig.file=conf/portal.application.conf"
 
-The former is configured (see [Build.scala](projectt/Build.scala)) to automatically use the custom default configuration while the latter must be instructed explicitly.
+The former is configured (see [Build.scala](project/Build.scala)) to automatically use the custom default configuration while the latter must be instructed explicitly.
 
 To publish your development version of Metrics Portal locally for extension execute:
 
