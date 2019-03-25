@@ -24,17 +24,69 @@ Setup
 
 ### Installing
 
-#### Manual
+#### Source
 
-The artifacts from the build are in *metrics-portal/target/universal/stage* and should be copied to an appropriate
-directory on the Metrics Portal host(s).
+First, build the project. The artifacts from the build are in `target/dist/metrics-portal-${VERSION}` where `${VERSION}`
+is the current build version. To install, copy the artifact directories recursively into an appropriate target directory
+on your Metrics Portal host(s). For example:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw package -Pno-docker
+    metrics-portal> scp -r target/dist/metrics-portal-0.9.0-SNAPSHOT/* my-host.example.com:/opt/metrics-portal/
+
+#### Tar.gz
+
+Metrics portal releases a `tar.gz` package of its build artifacts which may be obtained from Github releases. To install,
+download the archive and explode it. For example, if your Metrics Portal host(s) have Internet access you can install
+directly:
+
+    > ssh -c 'curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> | tar -xz -C /opt/metrics-portal/' my-host.example.com
+
+>>> TODO: What's the release path for the tar.gz?
+
+Otherwise, you will need to download locally and distribute it before installing. For example:
+
+    > curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> -o /var/tmp/metrics-portal.tgz
+    > scp /var/tmp/metrics-portal.tgz my-host.example.com:/var/tmp/
+    > ssh -c 'tar -xzf /var/tmp/metrics-portal.tgz -C /opt/metrics-portal/' my-host.example.com
+
+>>> TODO: What's the release path for the tar.gz?
+
+#### RPM
+
+Alternatively, each release of Metrics Portal also creates an RPM which is available on Github releases. To install,
+download the RPM and install it. For example, if your Metrics Portal host(s) have Internet access you can install
+directly:
+
+    > ssh -c 'curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<>' my-host.example.com
+
+>>> TODO: What's the release path for the rpm?
+
+Otherwise, you will need to download the RPM locally and distribute it before installing. For example:
+
+    > curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> -o /var/tmp/metrics-portal.rpm
+    > scp /var/tmp/metrics-portal.rpm my-host.example.com:/var/tmp/
+    > ssh -c 'rpm -i /var/tmp/metrics-portal.rpm' my-host.example.com
+
+>>> TODO: What's the release path for the rpm?
+>>> TODO: Confirm the RPM installation command.
+
+Finally, if your organization has its own authorized package repository you will need to work with your system
+administrators to install our RPM into your package repository for installation on your Metrics Portal host(s).
 
 #### Docker
 
-If you use Docker, we publish a [base docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/) that makes
-it easy for you to layer configuration on top of.  Create a Docker image based on the image arpnetworking/metrics-portal.
-Configuration files are currently embedded in the jar as resources.  You can override the configuration by importing
-portal.application.conf in your configuration file and then setting the CONFIG_FILE environment variable to
+Alternatively, if you use Docker each release of Metrics Portal also publishes a [Docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/)
+that you can either install directly or extend.
+
+If you install the image directly you will likely need to mount either a local directory or data volume with your
+configuration.
+
+If you extend the image you can embed your configuration directly in your Docker image.
+
+Regardless, you can override the provided configuration by first importing
+`portal.application.conf` in your configuration file.
+
+Next set the CONFIG_FILE environment variable to
 -Dconfig.file="your_file_path".  In addition, you can specify CONFIG_FILE (defaults to
 -Dconfig.resource=portal.application.conf) and PARAMS (defaults to $CONFIG_FILE) environment variables to control
 startup.
@@ -87,13 +139,6 @@ Finally, your extending project's routes specification should include the custom
 
     -> / portal.Routes
 
-
-### IntelliJ
-
-The project can be imported normally using "File / New / Project From Existing Sources..." with the Maven aspect.
-However, you will need to mark the `target/twirl` directory as a generated source directory. Further, to reflect
-changes to the templates within IntelliJ you will need to generate them from the command line using `mvn compile`.
-
 ### Building
 
 Prerequisites:
@@ -104,21 +149,55 @@ Building:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw verify
 
-To debug the server during run on port 8080:
+To control which verification targets (e.g. Checkstyle, Findbugs, Coverage, etc.) are run please refer to the
+[parent-pom](https://github.com/ArpNetworking/arpnetworking-parent-pom) for parameters (e.g. `-DskipAllVerification=true`).
+
+
+To run the server on port 8080 and its dependencies launched via Docker:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start
+
+To stop the server and its dependencies run:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:stop
+
+To run the server on port 8080  _without_ dependencies via Play; you need to configure/provide/launch dependencies manually (see below):
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=portal.application.conf
+
+To debug on port 9002 with the server on port 8080 and its dependencies launched via Docker:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw -Ddebug=true docker:start
 
-To debug the server during integration tests on port 8080:
+To debug on port 9002 with the server on port 8080 via Play; you need to configure/provide/launch dependencies manually (see below):
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw -Ddebug=true verify
+    metrics-portal> MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9002 ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=portal.application.conf
+
+To launch dependencies only via Docker:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -DdockerDependenciesOnly=true
 
 To execute performance tests:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw -PperformanceTest test
 
-To use the local version in your project you must first install it locally:
+To use the local version as a dependency in your project you must first install it locally:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw install
+
+### Testing
+
+* Unit tests (`test/java/**/*Test.java`) may be run or debugged directly from your IDE.
+* Integration tests may be run or debugged directly from your IDE provided an instance of Metrics Portal and its
+dependencies are running locally on the default ports.
+* To debug Metrics Portal while executing an integration test against it simply launch Metrics Portal for debug,
+then attach your IDE and finally run the integration test from your IDE.
+
+### IntelliJ
+
+The project can be imported normally using "File / New / Project From Existing Sources..." with the Maven aspect.
+However, you will need to mark the `target/twirl` directory as a generated source directory. Further, to reflect
+changes to the templates within IntelliJ you will need to generate them from the command line using `./jdk-wrapper.sh ./mvnw compile`.
 
 License
 -------

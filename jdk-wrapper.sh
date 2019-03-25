@@ -156,12 +156,23 @@ if [ -z "${JDKW_VERBOSE}" ]; then
 fi
 
 # Resolve latest version
+latest_version_json="${TMPDIR:-/tmp}/jdkw-latest-version-$$.$(rand)"
+curl ${curl_options} -f -k -L -o \"${latest_version_json}\" -H 'Accept: application/json' \"${JDKW_BASE_URI}/releases/latest\"
+curl_result=$?
 if [ "${JDKW_RELEASE}" = "latest" ]; then
-  latest_version_json="${TMPDIR:-/tmp}/jdkw-latest-version-$$.$(rand)"
-  safe_command "curl ${curl_options} -f -k -L -o \"${latest_version_json}\" -H 'Accept: application/json' \"${JDKW_BASE_URI}/releases/latest\""
+  if [ "${curl_result}" -ne "0" ]; then
+    log_err "ERROR: Unable to determine latest version; verify your Internet connection or specify a cached version to use."
+    exit 1
+  fi
   JDKW_RELEASE=$(cat "${latest_version_json}" | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
   rm -f "${latest_version_json}"
   log_out "Resolved latest version to ${JDKW_RELEASE}"
+elif [ "${curl_result}" -ne "0" ]; then
+  latest_version=$(cat "${latest_version_json}" | sed -e 's/.*"tag_name":"\([^"]*\)".*/\1/')
+  rm -f "${latest_version_json}"
+  if [ "${JDKW_RELEASE}" != "${latest_version}" ]; then
+    log_out "WARNING: There is a newer version '${latest_version}' available; please upgrade your project."
+  fi
 fi
 
 # Ensure target directory exists

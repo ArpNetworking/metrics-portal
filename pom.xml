@@ -136,6 +136,7 @@
     <!-- Additional Plugins -->
     <aspectjtools.maven.plugin>1.9.1</aspectjtools.maven.plugin>
     <aspectj.maven.plugin.version>1.8</aspectj.maven.plugin.version>
+    <build.helper.maven.plugin.version>1.10</build.helper.maven.plugin.version>
     <docker.maven.plugin.version>0.26.0</docker.maven.plugin.version>
     <javassist.maven.plugin.version>0.1.2</javassist.maven.plugin.version>
     <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
@@ -146,6 +147,12 @@
 
     <!-- Scala -->
     <scala.package.version>2.11</scala.package.version>
+
+    <!-- Project Overrides -->
+    <buildDirectory>${project.basedir}/target</buildDirectory>
+
+    <!-- Assembly Overrides -->
+    <tgz.finalName>${project.build.finalName}</tgz.finalName>
 
     <!-- Checkstyle -->
     <checkstyleExtraSuppressions>${project.basedir}/extra-checkstyle-suppressions.xml</checkstyleExtraSuppressions>
@@ -163,6 +170,9 @@
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
+
+    <!-- DO NOT COMMIT -->
+    <jdk.version>1.8.0-162</jdk.version>
   </properties>
 
   <build>
@@ -282,9 +292,6 @@
           <mainLang>java</mainLang>
           <routesGenerator>injected</routesGenerator>
           <httpPort>8080</httpPort>
-          <!--<serverJvmArgs>-Dplay.evolutions.db.default.autoApply=true</serverJvmArgs>
-          <templateAdditionalImports>play.data._ play.core.j.PlayFormsMagicForJava._</templateAdditionalImports>
-          -->
         </configuration>
         <executions>
           <execution>
@@ -292,7 +299,6 @@
             <phase>package</phase>
             <goals>
               <goal>dist</goal>
-              <goal>dist-exploded</goal>
             </goals>
           </execution>
           <execution>
@@ -304,7 +310,7 @@
           </execution>
         </executions>
       </plugin>
-      <!--<plugin>
+      <plugin>
         <groupId>com.google.code.sbtrun-maven-plugin</groupId>
         <artifactId>sbtrun-maven-plugin</artifactId>
         <version>${sbtrun.maven.plugin.version}</version>
@@ -317,14 +323,243 @@
             </goals>
             <configuration>
               <args>web-stage</args>
+              <jvmArgs>-Dscala.version=${scala.version}</jvmArgs>
             </configuration>
           </execution>
         </executions>
-      </plugin>-->
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build.helper.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>add-web-assets-to-reosurces</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                  <resource>
+                    <directory>${project.build.directory}/sbt/web/stage</directory>
+                    <targetPath>public</targetPath>
+                  </resource>
+              </resources>
+            </configuration>
+          </execution>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>target/generated-sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>com.google.code.sbt-compiler-maven-plugin</groupId>
         <artifactId>sbt-compiler-maven-plugin</artifactId>
         <version>${sbt.compiler.plugin.version}</version>
+      </plugin>
+      <!-- TODO(ville): Fix aspectj Play/Scala compatibility issues and re-enable.
+      <plugin>
+        <groupId>com.arpnetworking.commons</groupId>
+        <artifactId>javassist-maven-plugin</artifactId>
+        <version>${javassist.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>javassist-process</id>
+            <goals>
+              <goal>process</goal>
+            </goals>
+            <configuration>
+              <processor>com.arpnetworking.commons.builder.ValidationProcessor</processor>
+            </configuration>
+          </execution>
+          <execution>
+            <id>javassist-test-process</id>
+            <goals>
+              <goal>test-process</goal>
+            </goals>
+            <configuration>
+              <processor>com.arpnetworking.commons.builder.ValidationProcessor</processor>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      -->
+      <!-- TODO(ville): Fix aspectj Play/Scala compatibility issues and re-enable.
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>aspectj-maven-plugin</artifactId>
+        <version>${aspectj.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>test-compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <complianceLevel>1.8</complianceLevel>
+          <aspectLibraries>
+            <aspectLibrary>
+              <groupId>com.arpnetworking.logback</groupId>
+              <artifactId>logback-steno</artifactId>
+            </aspectLibrary>
+          </aspectLibraries>
+          <showWeaveInfo>true</showWeaveInfo>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjtools</artifactId>
+            <version>${aspectjtools.maven.plugin}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>appassembler-maven-plugin</artifactId>
+        <configuration>
+          <programs>
+            <program>
+              <id>metrics-portal</id>
+              <mainClass>play.core.server.ProdServerStart</mainClass>
+            </program>
+          </programs>
+          <unixScriptTemplate>${project.build.directory}/appAssemblerUnixBinTemplate</unixScriptTemplate>
+          <endorsedDir>lib/ext</endorsedDir>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>docker-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <appendAssemblyId>false</appendAssemblyId>
+              <finalName>docker-assembly</finalName>
+              <attach>false</attach>
+              <tarLongFileMode>posix</tarLongFileMode>
+              <descriptors>
+                <descripto>main/assembly/docker.xml</descripto>
+              </descriptors>
+            </configuration>
+          </execution>
+          <execution>
+            <id>app-tgz</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <finalName>${tgz.finalName}</finalName>
+              <appendAssemblyId>true</appendAssemblyId>
+              <attach>false</attach>
+              <tarLongFileMode>posix</tarLongFileMode>
+              <descriptors>
+                <descriptor>main/assembly/bin.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${docker.maven.plugin.version}</version>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <id>default-build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>start</goal>
+            </goals>
+            <configuration>
+              <skip>${skipIntegrationTests}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+            <configuration>
+              <skip>${skipIntegrationTests}</skip>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-push</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>push</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <showLogs>true</showLogs>
+          <images>
+            <image>
+              <name>arpnetworking/metrics-portal:${project.version}</name>
+              <build>
+                <dockerFile>${project.build.directory}/docker-assembly/Dockerfile</dockerFile>
+                <tags>
+                  <tag>${buildNumber}</tag>
+                </tags>
+              </build>
+              <run>
+                <env>
+                  <JAVA_OPTS>${debugJavaOptions}</JAVA_OPTS>
+                </env>
+                <ports>
+                  <port>${debugJavaPort}:${debugJavaPort}</port>
+                  <port>8080:8080</port>
+                </ports>
+                <volumes>
+                  <bind>
+                    <volume>${project.basedir}/logs/docker:/opt/metrics-portal/logs</volume>
+                  </bind>
+                </volumes>
+                <wait>
+                  <http>
+                    <url>http://${docker.host.address}:8080/ping</url>
+                    <method>GET</method>
+                    <status>200</status>
+                  </http>
+                  <!-- NOTE: The service is _really_ slow to start-up under native docker -->
+                  <time>150000</time>
+                  <kill>1000</kill>
+                </wait>
+              </run>
+            </image>
+          </images>
+          <skip>${skipDockerBuild}</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -612,11 +847,12 @@
       <artifactId>bootstrap</artifactId>
       <version>${webjar.bootstrap.version}</version>
     </dependency>
-    <dependency>
+    <!-- DO NOT COMMIT -->
+    <!--<dependency>
       <groupId>org.webjars.npm</groupId>
       <artifactId>d3</artifactId>
       <version>${webjar.d3.version}</version>
-    </dependency>
+    </dependency>-->
     <dependency>
       <groupId>org.webjars</groupId>
       <artifactId>durandal</artifactId>
@@ -774,7 +1010,7 @@
                   <directory>/opt/metrics-portal/config</directory>
                   <sources>
                     <source>
-                      <location>config</location>
+                      <location>main/config</location>
                     </source>
                   </sources>
                 </mapping>

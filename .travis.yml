@@ -24,8 +24,8 @@ deploy:
   api_key:
     secure: ito0EyboA21JDfWTeuLZhehnryafj1AYLjNFv/jsFBcTRnyDpQF7hkuTqY34bokYUXS8USYOlSymomN6EYEwFPygBb3cdouK+dz067fCnoBZDO2YNu+xXTAfc9nY3imyQqXz5aJsGXmu09k9vWfDtukWSO3+/uwatmXuo5NalOGwhGzD/IQSylpAg5hifCBOzvcKC0PBnaNE0DfaF/lTMDSx5bjMtC92SntvK8RPWowCriv0wN8fSUSjjM3BZ/x8vYcgn5WnmqI1tyxsnN+x5+V7nFZil++J09UKIctr+wOg8QtOFNn+QZlo+8mMe6ML6Wvja9rlTIhuEmtZ2/zoNkhx9p0OCyUcvkram3GakwSy70zS7r4pbvyq8QyQA1yekkQ49lAmrbZZRNovtNsAP3NlF9pFYRzU1mb1Jc5XwnT4czCkj4t+BSS6zHgGDBcfJqUzfYoeJt3Vl4SwBROP1GghQi7gOUf2e5NkH9CVZs8XpVmwGm8rKnLtcdpYwKQxh+0EgCQVchknyFgOO3i7B/mdb8IfszieK9cs0EkRig5Irr+N1rFJTuiTfs2iU/0h2CSUZMEG3boWvPI6an+LTkGOzImognnjNYL2ODttan88LPre0sMR1cfQcTug2n9OEgAqmN4wzIWVjivIA/BJSPKTjFm0HRfUYp5P+tzFteo=
   file:
-    - target/rpm/RPMS/noarch/metrics-portal*.rpm
-    - target/universal/metrics-portal*.tgz
+    - target/rpm/metrics-portal/RPMS/noarch/metrics-portal*.rpm
+    - target/metrics-portal-*-bin.tgz
   file_glob: true
   skip_cleanup: true
   on:
