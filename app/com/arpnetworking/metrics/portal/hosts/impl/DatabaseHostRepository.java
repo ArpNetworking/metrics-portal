@@ -102,6 +102,23 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     @Override
+    public Optional<Host> getHost(final String hostname, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Getting host")
+                .addData("hostname", hostname)
+                .addData("organization", organization)
+                .log();
+
+        final ExpressionList<models.ebean.Host> ebeanExpressionList =
+                Ebean.find(models.ebean.Host.class).where().eq("name", hostname)
+                        .eq("organization.uuid", organization.getId());
+
+        return Optional.ofNullable(ebeanExpressionList.query().findOne())
+                .map(models.ebean.Host::toInternal);
+    }
+
+    @Override
     public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()

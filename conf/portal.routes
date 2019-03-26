@@ -31,6 +31,8 @@ GET        /v1/proxy/stream                     controllers.ProxyController.stre
 
 # Hosts
 GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
+GET        /v1/hosts/:id                        controllers.HostController.get(id: String)
+PUT        /v1/hosts                            controllers.HostController.addOrUpdate
 
 # Alerts
 GET        /v1/alerts/query                     controllers.AlertController.query(contains: String ?= null, context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)

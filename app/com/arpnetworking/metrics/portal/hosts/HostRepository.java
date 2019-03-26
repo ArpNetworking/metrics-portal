@@ -21,6 +21,8 @@ import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
 
+import java.util.Optional;
+
 /**
  * Interface for repository of hosts available for metrics. The repository is
  * designed around the host name as the primary key.
@@ -39,6 +41,15 @@ public interface HostRepository extends AutoCloseable {
      * Close the <code>HostRepository</code>.
      */
     void close();
+
+    /**
+     * Retrieve from the repository.
+     *
+     * @param hostname The hostname of the host to remove.
+     * @param organization The organization owning the host.
+     * @return The matching <code>Host</code> if found or <code>Optional.empty()</code>.
+     */
+    Optional<Host> getHost(String hostname, Organization organization);
 
     /**
      * Add a new host or update an existing host in the repository.

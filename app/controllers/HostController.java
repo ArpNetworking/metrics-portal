@@ -15,10 +15,13 @@
  */
 package controllers;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
@@ -28,12 +31,15 @@ import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
 import models.internal.QueryResult;
+import models.internal.impl.DefaultHost;
 import models.view.PagedContainer;
 import models.view.Pagination;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,6 +66,53 @@ public class HostController extends Controller {
             final HostRepository hostRepository,
             final OrganizationRepository organizationRepository) {
         this(configuration.getInt("hosts.limit"), hostRepository, organizationRepository);
+    }
+
+    /**
+     * Get specific host by hostname.
+     *
+     * @param id The hostname to retrieve.
+     * @return Matching host.
+     */
+    public Result get(final String id) {
+        final Optional<Host> result = _hostRepository.getHost(id, _organizationRepository.get(request()));
+        if (!result.isPresent()) {
+            return notFound();
+        }
+        // Return as JSON
+        return ok(Json.toJson(result.map(this::internalModelToViewModel)));
+    }
+
+    /**
+     * Adds or updates a host in the host repository.
+     *
+     * @return Ok if the host was created or updated successfully, a failure HTTP status code otherwise.
+     */
+    public Result addOrUpdate() {
+        final Host host;
+        try {
+            final models.view.Host viewHost = buildViewHost(request().body());
+            host = convertToInternalHost(viewHost);
+        } catch (final IOException e) {
+            LOGGER.error()
+                    .setMessage("Failed to build a host.")
+                    .setThrowable(e)
+                    .log();
+            return badRequest("Invalid request body.");
+        }
+
+        try {
+            _hostRepository.addOrUpdateHost(host, _organizationRepository.get(request()));
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Failed to add a host.")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
+        return noContent();
     }
 
     /**
@@ -182,6 +235,30 @@ public class HostController extends Controller {
         return viewHost;
     }
 
+    private Host convertToInternalHost(final models.view.Host viewHost) throws IOException {
+        try {
+            final DefaultHost.Builder hostBuilder = new DefaultHost.Builder()
+                    .setCluster(viewHost.getCluster())
+                    .setHostname(viewHost.getHostname());
+            if (viewHost.getMetricsSoftwareState() != null) {
+                hostBuilder.setMetricsSoftwareState(MetricsSoftwareState.valueOf(viewHost.getMetricsSoftwareState()));
+            }
+            return hostBuilder.build();
+            // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            throw new IOException(e);
+        }
+    }
+
+    private models.view.Host buildViewHost(final Http.RequestBody body) throws IOException {
+        final JsonNode jsonBody = body.asJson();
+        if (jsonBody == null) {
+            throw new IOException();
+        }
+        return OBJECT_MAPPER.readValue(jsonBody.toString(), models.view.Host.class);
+    }
+
     private HostController(final int maxLimit, final HostRepository hostRepository, final OrganizationRepository organizationRepository) {
         _maxLimit = maxLimit;
         _hostRepository = hostRepository;
@@ -193,4 +270,5 @@ public class HostController extends Controller {
     private final OrganizationRepository _organizationRepository;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HostController.class);
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }
