@@ -24,7 +24,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -60,6 +59,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import play.Environment;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -184,9 +184,13 @@ public final class ElasticSearchHostRepository implements HostRepository {
                 .setQuery(esQuery)
                 .setSize(1);
 
-        return Optional.ofNullable(Iterators.getOnlyElement(
-                deserializeHits(request.execute().actionGet(), organization).values().iterator(),
-                null));
+        final Iterator<? extends Host> iterator =
+                deserializeHits(request.execute().actionGet(), organization).values().iterator();
+        if (iterator.hasNext()) {
+            return Optional.of(iterator.next());
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override
