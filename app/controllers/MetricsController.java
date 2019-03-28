@@ -34,6 +34,7 @@ import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -70,7 +71,8 @@ public class MetricsController extends Controller {
     public CompletionStage<Result> query() {
         final JsonNode body = request().body().asJson();
         if (body == null) {
-            return CompletableFuture.completedFuture(Results.badRequest(createErrorJson("null body for query")));
+            return CompletableFuture.completedFuture(
+                    Results.badRequest(createErrorJson("request.UNEXPECTED_EMPTY_BODY", Collections.emptyList())));
         }
 
         try {
@@ -84,41 +86,42 @@ public class MetricsController extends Controller {
             // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
         } catch (final RuntimeException ex) {
             // CHECKSTYLE.ON: IllegalCatch
-            return CompletableFuture.completedFuture(Results.internalServerError(createErrorJson(ex)));
+            return CompletableFuture.completedFuture(Results.internalServerError(createErrorJson(ex, "request.UNKNOWN_ERROR")));
         } catch (final QueryExecutionException ex) {
             return CompletableFuture.completedFuture(Results.badRequest(createErrorJson(ex.getProblems())));
-        } catch (final JsonProcessingException e) {
-            return CompletableFuture.completedFuture(Results.badRequest(createErrorJson(e)));
+        } catch (final JsonProcessingException ex) {
+            return CompletableFuture.completedFuture(Results.badRequest(createErrorJson(ex, "request.BAD_REQUEST")));
         }
     }
 
-    private ObjectNode createErrorJson(final Exception ex) {
+    private ObjectNode createErrorJson(final Exception ex, final String errorCode) {
+        final ObjectNode errorNode = createErrorJson(errorCode, Collections.emptyList());
         if (_environment.isDev()) {
             if (ex.getMessage() != null) {
-                return createErrorJson(ex.getMessage());
+                errorNode.put("details", ex.getMessage());
             } else {
-                return createErrorJson(ex.toString());
+                errorNode.put("details", ex.toString());
             }
         }
-        return createErrorJson("An error occurred in the processing of your query");
+        return errorNode;
     }
 
-    private ObjectNode createErrorJson(final String message) {
+    private ObjectNode createErrorJson(final String errorCode, final List<Object> args) {
         final ObjectNode errorJson = Json.newObject();
         final ArrayNode errors = errorJson.putArray("errors");
-        errors.add(message);
+        errors.add(translateProblem(errorCode, args));
         return errorJson;
     }
 
     private ObjectNode createErrorJson(final List<QueryProblem> problems) {
         final ObjectNode errorJson = Json.newObject();
         final ArrayNode errors = errorJson.putArray("errors");
-        problems.forEach(problem -> errors.add(translateProblem(problem)));
+        problems.forEach(problem -> errors.add(translateProblem(String.format("query_problem.%s", problem), problem.getArgs())));
         return errorJson;
     }
 
-    private String translateProblem(final QueryProblem problem) {
-        return Http.Context.current().messages().at("query_problem." + problem.getProblemCode(), problem.getArgs().toArray());
+    private String translateProblem(final String problemCode, final List<Object> args) {
+        return Http.Context.current().messages().at("query_problem." + problemCode, args.toArray());
     }
 
     private final ObjectMapper _mapper;

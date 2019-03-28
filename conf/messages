@@ -1,1 +1,4 @@
 query_problem.NOT_ENABLED=Queries are disabled.
+request.UNKNOWN_ERROR=An error has occurred.
+request.BAD_REQUEST=Bad request.
+request.UNEXPECTED_EMPTY_BODY=Expected request body but found none.
