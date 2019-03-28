@@ -38,6 +38,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -67,6 +68,17 @@ public final class LocalHostRepository implements HostRepository {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
+    }
+
+    @Override
+    public Optional<Host> getHost(final String hostname, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Getting host")
+                .addData("hostname", hostname)
+                .addData("organization", organization)
+                .log();
+        return Optional.ofNullable(getOrganizationMap(organization).get(hostname));
     }
 
     @Override

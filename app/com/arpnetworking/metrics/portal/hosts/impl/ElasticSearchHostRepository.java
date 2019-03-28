@@ -59,7 +59,9 @@ import org.elasticsearch.search.sort.SortOrder;
 import play.Environment;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -164,6 +166,31 @@ public final class ElasticSearchHostRepository implements HostRepository {
         // Shutdown Elastic Search
         _client.close();
         _node.close();
+    }
+
+    @Override
+    public Optional<Host> getHost(final String hostname, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Getting host")
+                .addData("hostname", hostname)
+                .addData("organization", organization)
+                .log();
+
+        final QueryBuilder esQuery = QueryBuilders.matchQuery("hostname", hostname);
+        final SearchRequestBuilder request = _client.prepareSearch(INDEX)
+                .setTypes(TYPE)
+                .setSearchType(SearchType.QUERY_AND_FETCH)
+                .setQuery(esQuery)
+                .setSize(1);
+
+        final Iterator<? extends Host> iterator =
+                deserializeHits(request.execute().actionGet(), organization).values().iterator();
+        if (iterator.hasNext()) {
+            return Optional.of(iterator.next());
+        } else {
+            return Optional.empty();
+        }
     }
 
     @Override

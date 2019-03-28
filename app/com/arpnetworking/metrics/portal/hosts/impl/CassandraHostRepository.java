@@ -78,6 +78,25 @@ public class CassandraHostRepository implements HostRepository {
     }
 
     @Override
+    public Optional<Host> getHost(final String hostname, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Getting host")
+                .addData("hostname", hostname)
+                .addData("organization", organization)
+                .log();
+
+        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
+        final models.cassandra.Host cassandraHost = mapper.get(organization, hostname);
+
+        if (cassandraHost == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(cassandraHost.toInternal());
+    }
+
+    @Override
     public void addOrUpdateHost(final Host host, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
@@ -104,28 +123,11 @@ public class CassandraHostRepository implements HostRepository {
                 .addData("hostname", hostname)
                 .addData("organization", organization)
                 .log();
-        final Optional<Host> alert = get(hostname, organization);
+        final Optional<Host> alert = getHost(hostname, organization);
         if (alert.isPresent()) {
             final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
             mapper.delete(organization, hostname);
         }
-    }
-
-    private Optional<Host> get(final String hostname, final Organization organization) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Getting host")
-                .addData("hostname", hostname)
-                .addData("organization", organization)
-                .log();
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        final models.cassandra.Host cassandraHost = mapper.get(organization, hostname);
-
-        if (cassandraHost == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(cassandraHost.toInternal());
     }
 
     @Override

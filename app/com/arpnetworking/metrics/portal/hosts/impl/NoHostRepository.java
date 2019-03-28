@@ -30,6 +30,7 @@ import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -59,6 +60,17 @@ public final class NoHostRepository implements HostRepository {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
+    }
+
+    @Override
+    public Optional<Host> getHost(final String hostname, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Getting host")
+                .addData("hostname", hostname)
+                .addData("organization", organization)
+                .log();
+        return Optional.empty();
     }
 
     @Override
