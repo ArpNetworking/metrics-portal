@@ -77,7 +77,7 @@ public class MetricsController extends Controller {
 
         try {
             final MetricsQuery query = _mapper.treeToValue(body, MetricsQuery.class);
-            final CompletionStage<MetricsQueryResult> response = _queryExecutor.executeQuery(query.getQuery());
+            final CompletionStage<MetricsQueryResult> response = _queryExecutor.executeQuery(query.toInternal());
             return response
                     .thenApply(models.view.MetricsQueryResult::fromInternal)
                     .<JsonNode>thenApply(_mapper::valueToTree)

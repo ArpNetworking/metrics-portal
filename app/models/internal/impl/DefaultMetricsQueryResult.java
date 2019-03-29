@@ -23,7 +23,7 @@ import models.internal.TimeSeriesResult;
 import net.sf.oval.constraint.NotNull;
 
 /**
- * Result of a query stage.
+ * Result of a metrics query.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */

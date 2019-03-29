@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.TimeSeriesResult;
+import models.internal.impl.DefaultTimeSeriesResult;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -48,6 +50,13 @@ public final class MetricsQueryResponse {
 
     public ImmutableList<Query> getQueries() {
         return _queries;
+    }
+
+    public TimeSeriesResult toTimeSeriesResult() {
+        return new DefaultTimeSeriesResult.Builder()
+                .setQueries(_queries.stream().map(Query::toInternal).collect(ImmutableList.toImmutableList()))
+                .setOtherArgs(_otherArgs)
+                .build();
     }
 
     private MetricsQueryResponse(final Builder builder) {
@@ -81,6 +90,17 @@ public final class MetricsQueryResponse {
         @JsonAnySetter
         public Builder addOtherArg(final String key, final Object value) {
             _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+            return this;
+        }
+
+        /**
+         * Set other args. Optional.
+         *
+         * @param value value for the other args
+         * @return this {@link Builder}
+         */
+        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+            _otherArgs = value;
             return this;
         }
 
@@ -127,6 +147,13 @@ public final class MetricsQueryResponse {
             return _results;
         }
 
+        public TimeSeriesResult.Query toInternal() {
+            return new DefaultTimeSeriesResult.Query.Builder()
+                    .setSampleSize(_sampleSize)
+                    .setOtherArgs(_otherArgs)
+                    .setResults(_results.stream().map(QueryResult::toInternal).collect(ImmutableList.toImmutableList()))
+                    .build();
+        }
         private final ImmutableMap<String, Object> _otherArgs;
         private final long _sampleSize;
         private final ImmutableList<QueryResult> _results;
@@ -216,6 +243,17 @@ public final class MetricsQueryResponse {
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
             return _otherArgs;
+        }
+
+        public TimeSeriesResult.Result toInternal() {
+            return new DefaultTimeSeriesResult.Result.Builder()
+                    .setAlerts(ImmutableList.of())
+                    .setGroupBy(_groupBy.stream().map(QueryGroupBy::toInternal).collect(ImmutableList.toImmutableList()))
+                    .setName(_name)
+                    .setValues(_values.stream().map(DataPoint::toInternal).collect(ImmutableList.toImmutableList()))
+                    .setTags(_tags)
+                    .setOtherArgs(_otherArgs)
+                    .build();
         }
 
         private QueryResult(final Builder builder) {
@@ -339,6 +377,8 @@ public final class MetricsQueryResponse {
             @JsonSubTypes.Type(name = "tag", value = QueryTagGroupBy.class),
             @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class)})
     public abstract static class QueryGroupBy {
+        public abstract TimeSeriesResult.QueryGroupBy toInternal();
+
         private QueryGroupBy(final Builder<?, ?> builder) {
         }
 
@@ -384,6 +424,18 @@ public final class MetricsQueryResponse {
             return _group;
         }
 
+        public TimeSeriesResult.QueryTagGroupBy toInternal() {
+            return new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
+                    .setGroup(_group)
+                    .setTags(_tags)
+                    .build();
+        }
+
+        /**
+         * Converts this to an internal model.
+         *
+         * @return a new internal model
+         */
         private QueryTagGroupBy(final Builder builder) {
             super(builder);
             _tags = builder._tags;
@@ -456,6 +508,17 @@ public final class MetricsQueryResponse {
             return _type;
         }
 
+        /**
+         * Converts this to an internal model.
+         *
+         * @return a new internal model
+         */
+        public TimeSeriesResult.QueryTypeGroupBy toInternal() {
+            return new DefaultTimeSeriesResult.QueryTypeGroupBy.Builder()
+                    .setType(_type)
+                    .build();
+        }
+
         private QueryTypeGroupBy(final Builder builder) {
             super(builder);
             _type = builder._type;
@@ -514,6 +577,18 @@ public final class MetricsQueryResponse {
 
         public Object getValue() {
             return _value;
+        }
+
+        /**
+         * Converts this to an internal model.
+         *
+         * @return a new internal model
+         */
+        public TimeSeriesResult.DataPoint toInternal() {
+            return new DefaultTimeSeriesResult.DataPoint.Builder()
+                    .setTime(_time)
+                    .setValue(_value)
+                    .build();
         }
 
         @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Jackson

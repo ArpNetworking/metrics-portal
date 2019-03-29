@@ -19,7 +19,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
 
 /**
  * Represents the successful result of executing a metrics query.
@@ -99,7 +100,7 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface DataPoint {
-        DateTime getTime();
+        Instant getTime();
 
         Object getValue();
     }

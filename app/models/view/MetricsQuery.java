@@ -17,6 +17,7 @@ package models.view;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import models.internal.impl.DefaultMetricsQuery;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import org.joda.time.DateTime;
@@ -38,6 +39,14 @@ public final class MetricsQuery {
 
     public DateTime getEnd() {
         return _end;
+    }
+
+    public models.internal.MetricsQuery toInternal() {
+        return new DefaultMetricsQuery.Builder()
+                .setEnd(_end)
+                .setQuery(_query)
+                .setStart(_start)
+                .build();
     }
 
     private MetricsQuery(final Builder builder) {
