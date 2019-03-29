@@ -46,9 +46,6 @@ GET        /v1/reports/:id                      controllers.ReportController.get
 DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID)
 PUT        /v1/reports                          controllers.ReportController.addOrUpdate
 
-# Metrics Queries
-POST       /v1/metrics/query                    controllers.MetricsController.query()
-
 # Templates
 GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel

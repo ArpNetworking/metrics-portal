@@ -41,6 +41,10 @@ public final class MetricsQuery {
         return _end;
     }
 
+    public String getExecutor() {
+        return _executor;
+    }
+
     public models.internal.MetricsQuery toInternal() {
         return new DefaultMetricsQuery.Builder()
                 .setEnd(_end)
@@ -53,11 +57,13 @@ public final class MetricsQuery {
         _query = builder._query;
         _start = builder._start;
         _end = builder._end;
+        _executor = builder._executor;
     }
 
     private final String _query;
     private final DateTime _start;
     private final DateTime _end;
+    private final String _executor;
 
     /**
      * Implementation of the builder pattern for {@link MetricsQuery}.
@@ -102,6 +108,18 @@ public final class MetricsQuery {
             _start = value;
             return this;
         }
+
+        /**
+         * Sets the executor. Optional. Cannot be null or empty. Defaults to "default".
+         *
+         * @param value the executor to use to run the query
+         * @return this {@link Builder}
+         */
+        public Builder setExecutor(final String value) {
+            _executor = value;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _query;
@@ -109,5 +127,8 @@ public final class MetricsQuery {
         private DateTime _start;
         @NotNull
         private DateTime _end;
+        @NotEmpty
+        @NotNull
+        private String _executor = "default";
     }
 }

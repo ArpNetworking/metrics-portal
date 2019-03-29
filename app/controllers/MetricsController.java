@@ -17,6 +17,7 @@ package controllers;
 
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.query.QueryProblem;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
 import models.internal.MetricsQueryResult;
 import models.view.MetricsQuery;
 import play.Environment;
@@ -53,13 +55,13 @@ public class MetricsController extends Controller {
      * Public constructor.
      *
      * @param mapper {@link ObjectMapper} for the app
-     * @param queryExecutor executor to use to execute the query
+     * @param queryExecutorRegistry registry of query executors
      * @param environment environment we're executing in
      */
     @Inject
-    public MetricsController(final ObjectMapper mapper, final QueryExecutor queryExecutor, final Environment environment) {
+    public MetricsController(final ObjectMapper mapper, final QueryExecutorRegistry queryExecutorRegistry, final Environment environment) {
         _mapper = mapper;
-        _queryExecutor = queryExecutor;
+        _queryExecutorRegistry = queryExecutorRegistry;
         _environment = environment;
     }
 
@@ -77,7 +79,16 @@ public class MetricsController extends Controller {
 
         try {
             final MetricsQuery query = _mapper.treeToValue(body, MetricsQuery.class);
-            final CompletionStage<MetricsQueryResult> response = _queryExecutor.executeQuery(query.toInternal());
+            final QueryExecutor queryExecutor = _queryExecutorRegistry.getExecutor(query.getExecutor());
+            if (queryExecutor == null) {
+                throw new QueryExecutionException(
+                        "Unknown query executor",
+                        ImmutableList.of(
+                                new QueryProblem.Builder()
+                                        .setProblemCode("query_problem.UNKNOWN_EXECUTOR")
+                                        .build()));
+            }
+            final CompletionStage<MetricsQueryResult> response = queryExecutor.executeQuery(query.toInternal());
             return response
                     .thenApply(models.view.MetricsQueryResult::fromInternal)
                     .<JsonNode>thenApply(_mapper::valueToTree)
@@ -125,7 +136,7 @@ public class MetricsController extends Controller {
     }
 
     private final ObjectMapper _mapper;
-    private final QueryExecutor _queryExecutor;
+    private final QueryExecutorRegistry _queryExecutorRegistry;
     private final Environment _environment;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsController.class);
