@@ -23,6 +23,11 @@ import org.junit.Test;
 
 import java.util.Optional;
 
+/**
+ * Tests for the {@link DefaultAlertTrigger} class.
+ *
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ */
 public class DefaultAlertTriggerTest {
 
     @Test

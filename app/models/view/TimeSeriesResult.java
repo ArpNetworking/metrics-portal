@@ -29,8 +29,8 @@ import models.internal.impl.DefaultTimeSeriesResult;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Function;
 
@@ -445,7 +445,7 @@ public final class TimeSeriesResult {
                     .build();
         }
 
-        public DateTime getTime() {
+        public Instant getTime() {
             return _time;
         }
 
@@ -468,7 +468,7 @@ public final class TimeSeriesResult {
         @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Jackson
         @JsonValue
         private ImmutableList<Object> serialize() {
-            return ImmutableList.of(_time.getMillis(), _value);
+            return ImmutableList.of(_time.toEpochMilli(), _value);
         }
 
         private DataPoint(final Builder builder) {
@@ -476,7 +476,7 @@ public final class TimeSeriesResult {
             _value = builder._value;
         }
 
-        private final DateTime _time;
+        private final Instant _time;
         private final Object _value;
 
         /**
@@ -501,7 +501,7 @@ public final class TimeSeriesResult {
             public Builder(final List<Object> arr) {
                 super(DataPoint::new);
                 final long timestamp = (long) arr.get(0);
-                _time = new DateTime(timestamp);
+                _time = Instant.ofEpochMilli(timestamp);
                 _value = arr.get(1);
             }
 
@@ -511,7 +511,7 @@ public final class TimeSeriesResult {
              * @param value the time
              * @return this {@link Builder}
              */
-            public Builder setTime(final DateTime value) {
+            public Builder setTime(final Instant value) {
                 _time = value;
                 return this;
             }
@@ -528,7 +528,7 @@ public final class TimeSeriesResult {
             }
 
             @NotNull
-            private DateTime _time;
+            private Instant _time;
             @NotNull
             private Object _value;
         }

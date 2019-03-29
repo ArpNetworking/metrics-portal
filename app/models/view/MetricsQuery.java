@@ -45,6 +45,11 @@ public final class MetricsQuery {
         return _executor;
     }
 
+    /**
+     * Converts this view model into an internal model.
+     *
+     * @return a new internal model derived from this view model
+     */
     public models.internal.MetricsQuery toInternal() {
         return new DefaultMetricsQuery.Builder()
                 .setEnd(_end)

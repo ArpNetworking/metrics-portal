@@ -52,6 +52,11 @@ public final class MetricsQueryResponse {
         return _queries;
     }
 
+    /**
+     * Converts this KairosDB model to an internal TimeSeriesResult model.
+     *
+     * @return a new {@link TimeSeriesResult} model
+     */
     public TimeSeriesResult toTimeSeriesResult() {
         return new DefaultTimeSeriesResult.Builder()
                 .setQueries(_queries.stream().map(Query::toInternal).collect(ImmutableList.toImmutableList()))
@@ -147,6 +152,11 @@ public final class MetricsQueryResponse {
             return _results;
         }
 
+        /**
+         * Converts this model to an internal model.
+         *
+         * @return a new internal model
+         */
         public TimeSeriesResult.Query toInternal() {
             return new DefaultTimeSeriesResult.Query.Builder()
                     .setSampleSize(_sampleSize)
@@ -245,6 +255,11 @@ public final class MetricsQueryResponse {
             return _otherArgs;
         }
 
+        /**
+         * Converts this model to an internal model.
+         *
+         * @return a new internal model
+         */
         public TimeSeriesResult.Result toInternal() {
             return new DefaultTimeSeriesResult.Result.Builder()
                     .setAlerts(ImmutableList.of())
@@ -377,6 +392,11 @@ public final class MetricsQueryResponse {
             @JsonSubTypes.Type(name = "tag", value = QueryTagGroupBy.class),
             @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class)})
     public abstract static class QueryGroupBy {
+        /**
+         * Converts this model to an internal model.
+         *
+         * @return a new internal model
+         */
         public abstract TimeSeriesResult.QueryGroupBy toInternal();
 
         private QueryGroupBy(final Builder<?, ?> builder) {
@@ -424,6 +444,11 @@ public final class MetricsQueryResponse {
             return _group;
         }
 
+        /**
+         * Converts this model to an internal model.
+         *
+         * @return a new internal model
+         */
         public TimeSeriesResult.QueryTagGroupBy toInternal() {
             return new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
                     .setGroup(_group)

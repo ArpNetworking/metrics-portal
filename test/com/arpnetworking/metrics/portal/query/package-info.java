@@ -13,34 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal;
 
-import org.joda.time.DateTime;
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package com.arpnetworking.metrics.portal.query;
 
-/**
- * Interface to describe classes that represent a time series query.
- *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
- */
-public interface MetricsQuery {
-    /**
-     * Gets the raw string query.
-     *
-     * @return the query
-     */
-    String getQuery();
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 
-    /**
-     * Gets the start time for the query.
-     *
-     * @return the start time
-     */
-    DateTime getStart();
-
-    /**
-     * Gets the end time for the query.
-     *
-     * @return the start time
-     */
-    DateTime getEnd();
-}
+import javax.annotation.ParametersAreNonnullByDefault;
