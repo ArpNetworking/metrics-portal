@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.query;
 
+import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 
 import java.util.concurrent.CompletionStage;
@@ -32,5 +33,5 @@ public interface QueryExecutor {
      * @return {@link CompletionStage} of the result
      * @throws QueryExecutionException on errors during query execution
      */
-    CompletionStage<MetricsQueryResult> executeQuery(String query) throws QueryExecutionException;
+    CompletionStage<MetricsQueryResult> executeQuery(MetricsQuery query) throws QueryExecutionException;
 }
