@@ -34,8 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import scala.concurrent.duration.Duration;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -185,7 +185,7 @@ public class MetricsDiscoveryTest {
             assertTrue(msg1.getNextRefreshMillis() < 3000);
 
 
-            awaitAssert(Duration.create("4s"), () -> {
+            awaitAssert(Duration.ofSeconds(4), () -> {
                 actor.tell(MetricFetch.getInstance(), testActor);
                 return expectMsg("metric2");
             });

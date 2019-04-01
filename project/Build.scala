@@ -51,7 +51,7 @@ import xerial.sbt.Sonatype.SonatypeKeys._
 object ApplicationBuild extends Build {
 
     val appName = "metrics-portal"
-    val akkaVersion = "2.5.6"
+    val akkaVersion = "2.5.20"
     val akkaHttpVersion = "10.0.11"
     val jacksonVersion = "2.9.2"
     val cassandraDriverVersion = "3.2.0"
@@ -78,6 +78,7 @@ object ApplicationBuild extends Build {
       "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonVersion,
       "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonVersion,
+      "com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.0",
       "com.google.code.findbugs" % "annotations" % "3.0.1",
       "com.google.guava" % "guava" % "19.0",
       "com.google.inject" % "guice" % "4.0",

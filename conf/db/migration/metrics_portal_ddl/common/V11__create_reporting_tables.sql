@@ -18,13 +18,13 @@ CREATE TABLE portal.report_sources (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     type VARCHAR(255) NOT NULL,
-    deleted bit DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- CHROME_SCREENSHOT
     url VARCHAR(255),
     title VARCHAR(255) DEFAULT '',
-    ignore_certificate_errors BIT DEFAULT 0,
-    triggering_event_name VARCHAR(255),
+    ignore_certificate_errors BOOLEAN NOT NULL DEFAULT FALSE,
+    triggering_event_name VARCHAR(255)
 );
 
 CREATE UNIQUE INDEX report_sources_uuid_idx ON portal.report_sources (uuid);
@@ -38,7 +38,7 @@ CREATE TABLE portal.report_schedules (
 --  Recurring Events
     offset_duration BIGINT DEFAULT 0,
     period VARCHAR(255),
-    zone VARCHAR(255),
+    zone VARCHAR(255)
 );
 
 CREATE TABLE portal.reports (
@@ -49,10 +49,10 @@ CREATE TABLE portal.reports (
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     name VARCHAR(255) NOT NULL,
-    deleted bit DEFAULT 0,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
     report_source_id BIGINT NOT NULL references portal.report_sources(id),
-    report_schedule_id BIGINT NOT NULL references portal.report_schedules(id),
+    report_schedule_id BIGINT NOT NULL references portal.report_schedules(id)
 );
 
 CREATE UNIQUE INDEX reports_uuid_idx ON portal.reports (uuid);
@@ -63,10 +63,10 @@ CREATE TABLE portal.report_executions (
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     state VARCHAR(255),
-    result CLOB,
-    error CLOB,
+    result TEXT,
+    error TEXT,
 
-    PRIMARY KEY (report_id, scheduled),
+    PRIMARY KEY (report_id, scheduled)
 );
 
 CREATE INDEX report_executions_state_completed_at_idx ON portal.report_executions (report_id, completed_at desc, state);
@@ -77,7 +77,7 @@ CREATE TABLE portal.recipients (
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     uuid UUID NOT NULL,
     address VARCHAR NOT NULL,
-    type VARCHAR(255) NOT NULL,
+    type VARCHAR(255) NOT NULL
 );
 
 CREATE UNIQUE INDEX recipients_uuid_idx ON portal.recipients (uuid);
@@ -90,7 +90,7 @@ CREATE TABLE portal.report_formats (
     type VARCHAR(255) NOT NULL,
     -- PDF
     width_inches FLOAT,
-    height_inches FLOAT,
+    height_inches FLOAT
 );
 
 CREATE TABLE portal.reports_to_recipients (
@@ -98,5 +98,5 @@ CREATE TABLE portal.reports_to_recipients (
   recipient_id BIGINT NOT NULL references portal.recipients(id),
   format_id BIGINT NOT NULL references portal.report_formats(id),
   created_at TIMESTAMP NOT NULL DEFAULT now(),
-  PRIMARY KEY (report_id, recipient_id),
+  PRIMARY KEY (report_id, recipient_id)
 );
