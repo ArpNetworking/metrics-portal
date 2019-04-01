@@ -233,10 +233,10 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
                 lastDataPointMessage2.getLastDataPointTime().get());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
 
         actor.tell(new FinishRollupMessage.Builder().setMetricName("metric").setPeriod(RollupPeriod.HOURLY).build(), ActorRef.noSender());
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
 
         actor.tell(new FinishRollupMessage.Builder().setMetricName("metric").setPeriod(RollupPeriod.DAILY).build(), ActorRef.noSender());
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
@@ -306,7 +306,7 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
                 lastDataPointMessage2.getLastDataPointTime().get());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -380,7 +380,7 @@ public class RollupGeneratorTest {
         assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("save_as"));
         assertFalse(metric.getAggregators().get(1).getSampling().isPresent());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -436,7 +436,7 @@ public class RollupGeneratorTest {
         assertTrue(rollupQuery.getEndTime().isPresent());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -495,7 +495,7 @@ public class RollupGeneratorTest {
         assertTrue(rollupQuery.getEndTime().isPresent());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -521,7 +521,7 @@ public class RollupGeneratorTest {
 
         verifyNoMoreInteractions(_kairosDbClient);
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -566,7 +566,7 @@ public class RollupGeneratorTest {
         assertTrue(rollupQuery.getEndTime().isPresent());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
 
-        _probe.expectNoMsg();
+        _probe.expectNoMessage();
     }
 
     /**

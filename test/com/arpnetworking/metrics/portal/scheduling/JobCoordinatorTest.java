@@ -153,7 +153,7 @@ public class JobCoordinatorTest {
                         .setETag(job2.getETag())
                         .build());
 
-        _messageExtractor.expectNoMsg();
+        _messageExtractor.expectNoMessage();
     }
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
