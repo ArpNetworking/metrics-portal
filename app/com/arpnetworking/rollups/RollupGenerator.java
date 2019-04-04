@@ -318,8 +318,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setAlignEndTime(true)
                         .build(),
                 new Aggregator.Builder()
-                        .setName("saveAs")
-                        .setOtherArgs(ImmutableMap.of("save_as", rollupMetricName))
+                        .setName("save_as")
+                        .setOtherArgs(ImmutableMap.of("metric_name", rollupMetricName))
                         .build()
         ));
 
