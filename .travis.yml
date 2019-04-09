@@ -1,6 +1,7 @@
 cache:
   directories:
   - "$HOME/.ivy2"
+  - "$HOME/.m2"
   - "$HOME/.jdk"
 sudo: false
 services:
