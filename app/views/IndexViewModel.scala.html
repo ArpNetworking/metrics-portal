@@ -1,0 +1,20 @@
+@this(webJarsUtil: org.webjars.play.WebJarsUtil)
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <link rel='shortcut icon' type='image/png' href='assets/images/favicon.png'>
+    @webJarsUtil.locate("bootstrap.min.css").css()
+    @webJarsUtil.locate("bootstrap-theme.min.css").css()
+    @webJarsUtil.locate("jquery-ui.min.css").css()
+    @webJarsUtil.locate("font-awesome.min.css").css()
+    @webJarsUtil.locate("durandal.css").css()
+    <link rel='stylesheet' href='assets/stylesheets/main.css'>
+    <link rel='stylesheet' href='assets/stylesheets/dashboard.css'>
+    <link rel='stylesheet' href='assets/stylesheets/graph-config.css'>
+    @webJarsUtil.locate("classic.css").css()
+    @webJarsUtil.locate("bootstrap-datetimepicker.min.css").css()
+</head>
+<body>
+<div id='applicationHost'></div>
+@webJarUtil.requireJs(routes.Assets.versioned("assets/javascripts/start_app"))
+</body>

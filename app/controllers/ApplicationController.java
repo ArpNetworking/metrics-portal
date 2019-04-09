@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import models.internal.Features;
+import org.webjars.play.WebJarsUtil;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -43,8 +44,9 @@ public final class ApplicationController extends Controller {
      * @param features The <code>Features</code> instance.
      */
     @Inject
-    public ApplicationController(final Features features) {
+    public ApplicationController(final Features features, final WebJarsUtil webJarsUtil) {
         _features = features;
+        _webJarsUtil = webJarsUtil;
         _featuresJson = Suppliers.memoize(() -> {
             try {
                 return OBJECT_MAPPER.writeValueAsString(_features);
@@ -74,7 +76,17 @@ public final class ApplicationController extends Controller {
         return CompletableFuture.completedFuture(ok(views.html.HeaderViewModel.render(_features)));
     }
 
+    /**
+     * Render the index view.
+     *
+     * @return Rendered index view.
+     */
+    public CompletionStage<Result> getIndexViewModel() {
+        return CompletableFuture.completedFuture(ok(views.html.IndexViewModel.render(_webJarsUtil)));
+    }
+
     private final Features _features;
+    private final WebJarsUtil _webJarsUtil;
     private final Supplier<String> _featuresJson;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

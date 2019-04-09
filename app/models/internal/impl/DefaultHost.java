@@ -25,6 +25,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Default internal model implementation for a host.
@@ -122,7 +123,7 @@ public final class DefaultHost implements Host {
          * @param value The cluster.
          * @return This instance of <code>Builder</code>.
          */
-        public Builder setCluster(final String value) {
+        public Builder setCluster(@Nullable final String value) {
             _cluster = value;
             return this;
         }

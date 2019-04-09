@@ -15,9 +15,6 @@
  */
 package controllers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
@@ -39,6 +36,9 @@ import play.test.Helpers;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests <code>ExpressionController</code>.

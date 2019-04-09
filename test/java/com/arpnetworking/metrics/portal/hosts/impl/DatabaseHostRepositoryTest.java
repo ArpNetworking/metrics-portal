@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import static org.junit.Assert.assertArrayEquals;
-
 import org.junit.Test;
 
 import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Tests for <code>DatabaseHostRepository</code>.

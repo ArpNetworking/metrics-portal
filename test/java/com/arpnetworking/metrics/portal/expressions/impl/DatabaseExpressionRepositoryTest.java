@@ -56,7 +56,7 @@ public class DatabaseExpressionRepositoryTest extends WithApplication {
     }
 
     @After
-    public void teardown() {
+    public void tearDown() {
         _exprRepo.close();
     }
 

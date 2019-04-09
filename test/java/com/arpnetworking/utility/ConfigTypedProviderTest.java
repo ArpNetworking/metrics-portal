@@ -22,6 +22,7 @@ import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Test;
 import play.Environment;
 
@@ -37,6 +38,7 @@ import static org.junit.Assert.assertSame;
 public final class ConfigTypedProviderTest {
 
     @Test
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     public void createBasic() {
         final Config config = ConfigFactory.empty()
                 .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClass.class.getName()));
@@ -57,11 +59,13 @@ public final class ConfigTypedProviderTest {
     }
 
     @Test
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     public void createWithInjected() {
         final Config config = ConfigFactory.empty()
                 .withValue("testinterface.impl.class", ConfigValueFactory.fromAnyRef(TestClassInjected.class.getName()));
 
         final InjectedClass injectedClass = new InjectedClass();
+
         final AbstractModule module = new AbstractModule() {
             @Override
             protected void configure() {

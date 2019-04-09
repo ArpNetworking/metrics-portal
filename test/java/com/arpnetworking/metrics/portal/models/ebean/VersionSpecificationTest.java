@@ -15,12 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.models.ebean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.typesafe.config.ConfigFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import models.ebean.PackageVersion;
 import models.ebean.VersionSet;
@@ -39,6 +37,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * Test for <code>VersionSpecification</code>.
@@ -108,6 +109,7 @@ public final class VersionSpecificationTest extends WithApplication {
                 .build();
     }
 
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private Matcher<? super VersionSpecificationAttribute> hasKV(final String k, final String v) {
         final FeatureMatcher<VersionSpecificationAttribute, String> keyMatcher =
                 new FeatureMatcher<VersionSpecificationAttribute, String>(Matchers.equalTo(k), "key", "key") {

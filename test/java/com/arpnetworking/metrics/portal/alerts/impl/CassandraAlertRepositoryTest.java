@@ -15,12 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
@@ -28,6 +22,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Alert;
 import models.internal.AlertQuery;
@@ -44,6 +39,7 @@ import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import play.Application;
 import play.inject.guice.GuiceApplicationBuilder;
@@ -55,11 +51,18 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests class <code>CassandraAlertRepository</code>.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Ignore
 public class CassandraAlertRepositoryTest extends WithApplication {
 
     @Override
@@ -67,8 +70,9 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
         final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
         final String host = EmbeddedCassandraServerHelper.getHost();
+        final Config configuration = ConfigFactory.load("portal.application.conf");
         return new GuiceApplicationBuilder()
-                .loadConfig(ConfigFactory.load("portal.application.conf"))
+                .loadConfig(configuration)
                 .configure("alertRepository.type", CassandraAlertRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
@@ -90,7 +94,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
     }
 
     @After
-    public void teardown() {
+    public void tearDown() {
         if (_alertRepo != null) {
             _alertRepo.close();
         }

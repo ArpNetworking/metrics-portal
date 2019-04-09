@@ -30,6 +30,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -336,7 +337,7 @@ public final class ElasticSearchHostRegistryTest {
         assertEquals(0, _repository.getHostCount(MetricsSoftwareState.NOT_INSTALLED, TestBeanFactory.getDefautOrganization()));
     }
 
-    private Host addOrUpdateHost(final String name, final MetricsSoftwareState state, final String cluster) {
+    private Host addOrUpdateHost(final String name, final MetricsSoftwareState state, @Nullable final String cluster) {
         final Host host = new DefaultHost.Builder()
                 .setHostname(name)
                 .setMetricsSoftwareState(state)

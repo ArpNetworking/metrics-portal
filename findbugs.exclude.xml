@@ -1,0 +1,62 @@
+<!--
+  ~ [2015] - [2016] Inscope Metrics Incorporated
+  ~ All Rights Reserved.
+  ~
+  ~ NOTICE:  All information contained herein is, and remains
+  ~ the property of Inscope Metrics Incorporated and its suppliers,
+  ~ if any.  The intellectual and technical concepts contained
+  ~ herein are proprietary to Inscope Metrics Incorporated
+  ~ and its suppliers and may be covered by U.S. and Foreign Patents,
+  ~ patents in process, and are protected by trade secret or copyright law.
+  ~ Dissemination of this information or reproduction of this material
+  ~ is strictly forbidden unless prior written permission is obtained
+  ~ from Inscope Metrics Incorporated.
+  -->
+<FindBugsFilter>
+
+    <!-- Match all DLS_DEAD_LOCAL_STORE violations. As per FindBugs
+        documentation these generate numerous false positives under Sun/Oracle
+        compilers.
+        http://findbugs.sourceforge.net/bugDescriptions.html#DLS_DEAD_LOCAL_STORE
+    -->
+    <Match>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE" />
+    </Match>
+
+    <!-- Match all RV_RETURN_VALUE_IGNORED_BAD_PRACTICE violations on all unit
+       test files since Mockito usage can cause this violation when stating
+       expectations.
+    -->
+    <Match>
+        <Or>
+            <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
+            <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT" />
+            <Bug pattern="RR_NOT_CHECKED" />
+            <Bug pattern="SR_NOT_CHECKED" />
+        </Or>
+        <Or>
+            <Class name="~.*\.[^\.]+Test" />
+            <Class name="~.*\.[^\.]+Test\$.*" />
+            <Class name="~.*\.[^\.]+TestPerf" />
+            <Class name="~.*\.[^\.]+TestPerf\$.*" />
+            <Class name="~.*\.[^\.]+IT" />
+            <Class name="~.*\.[^\.]+IT\$.*" />
+            <Class name="~.*\.[^\.]+ITPerf" />
+            <Class name="~.*\.[^\.]+ITPerf\$.*" />
+        </Or>
+    </Match>
+
+    <!-- Ignore all violations on generated/enhanced source files.
+    -->
+    <Match>
+        <Or>
+            <Class name="~controllers\.Reverse.*" />
+            <Class name="~controllers\.routes.*" />
+            <Class name="~models\.ebean\..*" />
+            <Class name="~portal\.Routes.*" />
+            <Class name="~kairosdb\.Routes.*" />
+            <Class name="~views\.html\..*" />
+        </Or>
+    </Match>
+
+</FindBugsFilter>
