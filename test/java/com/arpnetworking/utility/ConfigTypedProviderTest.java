@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.utility;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -29,6 +25,10 @@ import com.typesafe.config.ConfigValueFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.junit.Test;
 import play.Environment;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 /**
  * Tests for {@link ConfigTypedProvider}.

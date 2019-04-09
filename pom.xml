@@ -112,7 +112,6 @@
     <play2-json.version>2.6.13</play2-json.version>
     <play2-ebean.version>4.1.3</play2-ebean.version>
     <play2-enhancer.version>1.2.2</play2-enhancer.version>
-    <play2-webjars.version>2.6.3</play2-webjars.version>
     <postgresql.version>9.4-1206-jdbc42</postgresql.version>
     <scala.version>2.11.12</scala.version>
     <scala.java8.version>0.8.0</scala.java8.version>
@@ -158,8 +157,8 @@
     <findbugs.exclude>${project.basedir}/findbugs.exclude.xml</findbugs.exclude>
 
     <!-- Code Coverage -->
-    <jacoco.check.line.coverage>1.0</jacoco.check.line.coverage>
-    <jacoco.check.branch.coverage>1.0</jacoco.check.branch.coverage>
+    <jacoco.check.line.coverage>0.3</jacoco.check.line.coverage>
+    <jacoco.check.branch.coverage>0.1</jacoco.check.branch.coverage>
 
     <!-- JVM -->
     <dockerJavaOptions />
@@ -196,30 +195,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <excludePackageNames>
-            controllers.javascript
-          </excludePackageNames>
+          <excludePackageNames>controllers.javascript</excludePackageNames>
           <sourceFileExcludes>
             <sourceFileExclude>routes.java</sourceFileExclude>
           </sourceFileExcludes>
-          <!-- TODO(ville): Remove this block when you upgrade the parent pom to 1.1.12 or later-->
-          <tags>
-            <tag>
-              <name>apiNote</name>
-              <placement>a</placement>
-              <head>API Note:</head>
-            </tag>
-            <tag>
-              <name>implSpec</name>
-              <placement>a</placement>
-              <head>Implementation Requirements:</head>
-            </tag>
-            <tag>
-              <name>implNote</name>
-              <placement>a</placement>
-              <head>Implementation Note:</head>
-            </tag>
-          </tags>
         </configuration>
       </plugin>
       <plugin>
@@ -554,7 +533,7 @@
               </build>
               <run>
                 <env>
-                  <JAVA_OPTS>${debugJavaOptions}</JAVA_OPTS>
+                  <JAVA_OPTS>${dockerJavaOptions}</JAVA_OPTS>
                 </env>
                 <ports>
                   <port>${debugJavaPort}:${debugJavaPort}</port>
@@ -670,25 +649,6 @@
       <groupId>com.typesafe.play</groupId>
       <artifactId>twirl-api_${scala.package.version}</artifactId>
       <version>${twirl.api.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>webjars-play_${scala.package.version}</artifactId>
-      <version>${play2-webjars.version}</version>
-      <!-- TODO(ville): Remove this exclusion and the following dependency once we naturally get 0.36 of webjars-locator to address:
-        https://github.com/webjars/webjars-locator/commit/441993000a90d224943ec8fc1bb759fe26e35c56
-      -->
-      <exclusions>
-        <exclusion>
-          <groupId>org.webjars</groupId>
-          <artifactId>webjars-locator</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.webjars</groupId>
-      <artifactId>webjars-locator</artifactId>
-      <version>0.36</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>

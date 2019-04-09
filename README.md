@@ -26,30 +26,26 @@ Setup
 
 #### Source
 
-First, build the project. The artifacts from the build are in `target/dist/metrics-portal-${VERSION}` where `${VERSION}`
-is the current build version. To install, copy the artifact directories recursively into an appropriate target directory
-on your Metrics Portal host(s). For example:
+Clone the repository and build the source. The artifacts from the build are in `target/metrics-portal-${VERSION}-bin.tgz`
+where `${VERSION}` is the current build version. To install, copy the artifact directories recursively into an
+appropriate target directory on your Metrics Portal host(s). For example:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw package -Pno-docker
-    metrics-portal> scp -r target/dist/metrics-portal-0.9.0-SNAPSHOT/* my-host.example.com:/opt/metrics-portal/
+    metrics-portal> scp -r target/metrics-portal-${VERSION}-bin.tgz my-host.example.com:/opt/metrics-portal/
 
 #### Tar.gz
 
-Metrics portal releases a `tar.gz` package of its build artifacts which may be obtained from Github releases. To install,
-download the archive and explode it. For example, if your Metrics Portal host(s) have Internet access you can install
-directly:
+Additionally, Metrics Portal releases a `tar.gz` package of its build artifacts which may be obtained from Github releases. To install,
+download the archive and explode it. Replace `${VERSION}` with the release version of Metrics Portal you are installing.
+For example, if your Metrics Portal host(s) have Internet access you can install directly:
 
-    > ssh -c 'curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> | tar -xz -C /opt/metrics-portal/' my-host.example.com
-
->>> TODO: What's the release path for the tar.gz?
+    > ssh -c 'curl -L https://github.com/ArpNetworking/metrics-portal/releases/download/v${VERSION}/metrics-portal-${VERSION}-bin.tgz | tar -xz -C /var/tmp/metrics-portal/' my-host.example.com
 
 Otherwise, you will need to download locally and distribute it before installing. For example:
 
-    > curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> -o /var/tmp/metrics-portal.tgz
+    > curl -L https://github.com/ArpNetworking/metrics-portal/releases/download/v${VERSION}/metrics-portal-${VERSION}-bin.tgz -o /var/tmp/metrics-portal.tgz
     > scp /var/tmp/metrics-portal.tgz my-host.example.com:/var/tmp/
     > ssh -c 'tar -xzf /var/tmp/metrics-portal.tgz -C /opt/metrics-portal/' my-host.example.com
-
->>> TODO: What's the release path for the tar.gz?
 
 #### RPM
 
@@ -57,75 +53,122 @@ Alternatively, each release of Metrics Portal also creates an RPM which is avail
 download the RPM and install it. For example, if your Metrics Portal host(s) have Internet access you can install
 directly:
 
-    > ssh -c 'curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<>' my-host.example.com
-
->>> TODO: What's the release path for the rpm?
+    > ssh -c 'sudo rpm -i https://github.com/ArpNetworking/metrics-portal/releases/download/v${VERSION}/metrics-portal-${VERSION}-1.noarch.rpm' my-host.example.com
 
 Otherwise, you will need to download the RPM locally and distribute it before installing. For example:
 
-    > curl -f -k -L https://github.com/ArpNetworking/metrics-portal/releases/latest/<> -o /var/tmp/metrics-portal.rpm
+    > curl -L https://github.com/ArpNetworking/metrics-portal/releases/download/v${VERSION}/metrics-portal-${VERSION}-1.noarch.rpm -o /var/tmp/metrics-portal.rpm
     > scp /var/tmp/metrics-portal.rpm my-host.example.com:/var/tmp/
     > ssh -c 'rpm -i /var/tmp/metrics-portal.rpm' my-host.example.com
 
->>> TODO: What's the release path for the rpm?
->>> TODO: Confirm the RPM installation command.
-
-Finally, if your organization has its own authorized package repository you will need to work with your system
-administrators to install our RPM into your package repository for installation on your Metrics Portal host(s).
+Please note that if your organization has its own authorized package repository you will need to work with your system
+administrators to install the Metrics Portal RPM into your package repository for installation on your Metrics Portal
+host(s).
 
 #### Docker
 
-Alternatively, if you use Docker each release of Metrics Portal also publishes a [Docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/)
+Furthermore, if you use Docker each release of Metrics Portal also publishes a [Docker image](https://hub.docker.com/r/arpnetworking/metrics-portal/)
 that you can either install directly or extend.
 
 If you install the image directly you will likely need to mount either a local directory or data volume with your
-configuration.
+organization specific configuration.
 
-If you extend the image you can embed your configuration directly in your Docker image.
+If you extend the image you can embed your configuration file directly in your Docker image.
 
 Regardless, you can override the provided configuration by first importing
-`portal.application.conf` in your configuration file.
+`portal.application.conf` in your configuration file like this:
 
-Next set the CONFIG_FILE environment variable to
--Dconfig.file="your_file_path".  In addition, you can specify CONFIG_FILE (defaults to
--Dconfig.resource=portal.application.conf) and PARAMS (defaults to $CONFIG_FILE) environment variables to control
-startup.
+    include required("portal.application.conf")
+
+Next set the `METRICS_PORTAL_CONFIG` environment variable to `-Dconfig.file="your_file_path"` like this:
+
+    docker run ... -e 'METRICS_PORTAL_CONFIG=-Dconfig.file="/opt/metrics-portal/config/custom.conf"' ...
+
+In addition, you can specify:
+
+* `LOGBACK_CONFIG` - Location of Logback configuration XML; default is `-Dlogback.configurationFile=/opt/metrics-portal/config/logback.xml`
+* `JVM_XMS` - Java initial memory allocation; default is `64m`
+* `JVM_XMX` - Java maximum memory allocation; default is `1024m`
+* `JAVA_OPTS` - Additional Java arguments; many arguments are passed by [https://github.com/ArpNetworking/metrics-portal/blob/master/main/docker/Dockerfile](default).
 
 ### Execution
 
-In the installation's *bin* directory there are scripts to start the Metrics Portal: *metrics-portal* (Linux/Mac) and
-*metrics-portal.bat* (Windows).  One of these should be executed on system start with appropriate parameters. For example:
+#### Non-Docker
 
-    /usr/local/lib/metrics_portal/bin/metrics_portal -J-Xmn150m -J-XX:+UseG1GC -Dpidfile.path=/usr/local/var/METRICS_PORTAL_PID
+Regardless of your installation method, in the installation's `bin` sub-directory there is a script to start the Metrics
+Portal: `metrics-portal`.  This script should be executed on system start with appropriate parameters. In general:
+
+    /opt/metrics_portal/bin/metrics-portal <JVM ARGS> -- <APP ARGS>
+
+For example:
+
+    /opt/metrics_portal/bin/metrics-portal -Xms512m -- /opt/metrics-portal
+
+Arguments before the `--` are interpreted by the JVM while arguments after `--` are passed to Metrics Portal.
+
+#### Docker
+
+If you installed Metrics Portal using a Docker image then execution is very simple. In general:
+
+    docker run -p 8080:8080 <DOCKER ARGS> arpnetworking/metrics-portal
+
+For example:
+
+    docker run -p 8080:8080 -e 'JAVA_OPTS=-Xms512m' arpnetworking/metrics-portal
+
+The section above on Docker installation covers how to pass arguments in more detail.
 
 ### Configuration
 
-Aside from the JVM command line arguments, you may provide two additional configuration files. The first is the
-[LogBack](http://logback.qos.ch/) configuration file.  To use a custom logging configuration simply add the following
-argument to the command line above:
+Aside from the JVM command line arguments, you may provide two additional configuration files.
 
-    -Dlogger.file=/usr/local/lib/metrics_portal/logger.xml
+#### Logback
 
-Where */usr/local/lib/metrics_portal/logger.xml* is the path to your logging configuration file. The included [default logging configuration file](conf/logger.xml) is automatically applied if one is not specified. Please refer to [LogBack](http://logback.qos.ch/) documentation for more information on how to author a configuration file.
+The first is the [LogBack](http://logback.qos.ch/) configuration file.  To use a custom logging configuration simply
+pass the following argument to the JVM:
 
-The second configuration is for the application. To use a custom configuration simply add the following argument to the command line above:
+    -Dlogger.file=/opt/metrics-portal/custom-logger.xml
 
-    -Dconfig.file=/usr/local/lib/metrics_portal/application.custom.conf
+Where `/opt/metrics_portal/custom-logger.xml` is the path to your logging configuration file. Please refer to
+[LogBack](http://logback.qos.ch/) documentation for more information on how to author a configuration file.
 
-Where */usr/local/lib/metrics_portal/application.custom.conf* is the path to your application configuration file.  The included [default application configuration file](conf/portal.application.conf) in the project documents and demonstrates many of the configuration options available. To use the default application configuration file it needs to be specified on start-up:
+Installation via RPM or Docker will use the [production file logging configuration file](main/config/logback.xml) by
+default. However, other installation methods will use the [debugging logging configuration file](conf/logback.xml) by
+default and users are *strongly* recommended to override this behavior.
 
-    -Dconfig.resource=conf/portal.application.conf
+Metrics Portal also ships with a second [production console logging configuration file](main/config/logback-console.xml)
+which outputs to standard out instead of to a rotated and gzipped file.
 
-To author a custom application configuration it is recommended you inherit from the default application configuration file and provide any desired configuration as overrides. Please refer to [Play Framework](https://www.playframework.com/documentation/2.4.x/ProductionConfiguration) documentation for more information on how to author a configuration file.
+#### Application
+
+The second configuration file is for the application. To use a custom configuration simply pass the following argument to
+the JVM:
+
+    -Dconfig.file=/opt/metrics_portal/custom.conf
+
+Where `/opt/metrics_portal/custom.conf` is the path to your application configuration file.
+
+Installation via RPM or Docker will use the included [default application configuration file](conf/portal.application.conf).
+This configuration documents and demonstrates many of the configuration options available.
+
+To use the default application configuration file for non-RPM and non-Docker installations use a command like this:
+
+    /opt/metrics_portal/bin/metrics-portal -Dconfig.resource=conf/portal.application.conf -- /opt/metrics-portal
+
+It is *strongly* recommended that user author a custom application configuration and that you inherit from the default
+application configuration file and provide any desired configuration as overrides. Please refer to [Play Framework](https://www.playframework.com/documentation/2.6.x/ProductionConfiguration)
+documentation for more information on how to author a configuration file.
 
 ### Extension
 
-The Metrics Portal project intentionally uses a custom default application configuration and custom default routes specification. This allows projects extending the Metrics Portal to supplement functionality more easily with the standard default application configuration and routes. To use these files as extensions rather than replacements you should make the following changes.
+The Metrics Portal project intentionally uses a custom default application configuration and custom default routes
+specification. This allows projects extending the Metrics Portal to supplement functionality more easily with the
+standard default application configuration and routes. To use these files as extensions rather than replacements you
+should make the following changes.
 
 First, add dependencies on the Metrics Portal code and assets in __conf/Build.scala__:
 
-    "com.arpnetworking.metrics" %% "metrics-portal" % "VERSION",
-    "com.arpnetworking.metrics" %% "metrics-portal" % "VERSION" classifier "assets",
+    "com.arpnetworking.metrics" %% "metrics-portal" % "VERSION"
 
 Second, your extending project's application configuration should include the custom default configuration in __conf/application.conf__:
 
@@ -152,6 +195,8 @@ Building:
 To control which verification targets (e.g. Checkstyle, Findbugs, Coverage, etc.) are run please refer to the
 [parent-pom](https://github.com/ArpNetworking/arpnetworking-parent-pom) for parameters (e.g. `-DskipAllVerification=true`).
 
+When launching Metrics Portal via Play (e.g. `play2:run`) there is limited support for automatic recompiling and
+reloading of assets (e.g. HTML, Typescript, etc.).
 
 To run the server on port 8080 and its dependencies launched via Docker:
 
@@ -161,7 +206,7 @@ To stop the server and its dependencies run:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:stop
 
-To run the server on port 8080  _without_ dependencies via Play; you need to configure/provide/launch dependencies manually (see below):
+To run the server on port 8080 _without_ dependencies via Play; you need to configure/provide/launch dependencies manually (see below):
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=portal.application.conf
 
@@ -171,15 +216,22 @@ To debug on port 9002 with the server on port 8080 and its dependencies launched
 
 To debug on port 9002 with the server on port 8080 via Play; you need to configure/provide/launch dependencies manually (see below):
 
-    metrics-portal> MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9002 ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=portal.application.conf
+    metrics-portal> MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9002" ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=portal.application.conf
 
 To launch dependencies only via Docker:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -DdockerDependenciesOnly=true
+    ^ TODO(ville): This is not yet implemented.
 
-To execute performance tests:
+To execute unit performance tests:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw -PperformanceTest test
+    ^ TODO(ville): This is not yet implemented.
+
+To execute integration performance tests:
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -PperformanceTest verify
+    ^ TODO(ville): This is not yet implemented.
 
 To use the local version as a dependency in your project you must first install it locally:
 
@@ -191,11 +243,11 @@ To use the local version as a dependency in your project you must first install 
 * Integration tests may be run or debugged directly from your IDE provided an instance of Metrics Portal and its
 dependencies are running locally on the default ports.
 * To debug Metrics Portal while executing an integration test against it simply launch Metrics Portal for debug,
-then attach your IDE and finally run the integration test from your IDE.
+then attach your IDE and finally run/debug the integration test from your IDE.
 
 ### IntelliJ
 
-The project can be imported normally using "File / New / Project From Existing Sources..." with the Maven aspect.
+The project can be imported normally using "File / New / Project From Existing Sources..." using the Maven aspect.
 However, you will need to mark the `target/twirl` directory as a generated source directory. Further, to reflect
 changes to the templates within IntelliJ you will need to generate them from the command line using `./jdk-wrapper.sh ./mvnw compile`.
 

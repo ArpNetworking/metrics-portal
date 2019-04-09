@@ -3,6 +3,8 @@ cache:
   - "$HOME/.ivy2"
   - "$HOME/.jdk"
 sudo: false
+services:
+  - docker
 addons:
   apt:
     packages:
