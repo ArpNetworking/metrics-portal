@@ -376,8 +376,8 @@ public class RollupGeneratorTest {
         assertTrue(metric.getAggregators().get(0).getSampling().isPresent());
         assertEquals(1L, metric.getAggregators().get(0).getSampling().get().getValue());
         assertEquals(SamplingUnit.HOURS, metric.getAggregators().get(0).getSampling().get().getUnit());
-        assertEquals("saveAs", metric.getAggregators().get(1).getName());
-        assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("save_as"));
+        assertEquals("save_as", metric.getAggregators().get(1).getName());
+        assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("metric_name"));
         assertFalse(metric.getAggregators().get(1).getSampling().isPresent());
 
         _probe.expectNoMessage();
