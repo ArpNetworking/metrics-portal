@@ -53,7 +53,6 @@ import java.util.UUID;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-// CHECKSTYLE.OFF: JavadocMethod - The documentation needs to be completed
 public final class TestBeanFactory {
 
     private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
@@ -396,4 +395,3 @@ public final class TestBeanFactory {
         return host;
     }
 }
-// CHECKSTYLE.ON: JavadocMethod

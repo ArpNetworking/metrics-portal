@@ -84,7 +84,7 @@ Next set the `METRICS_PORTAL_CONFIG` environment variable to `-Dconfig.file="you
 
     docker run ... -e 'METRICS_PORTAL_CONFIG=-Dconfig.file="/opt/metrics-portal/config/custom.conf"' ...
 
-In addition, you can specify:
+In addition to `METRICS_PORTAL_CONFIG`, you can specify:
 
 * `LOGBACK_CONFIG` - Location of Logback configuration XML; default is `-Dlogback.configurationFile=/opt/metrics-portal/config/logback.xml`
 * `JVM_XMS` - Java initial memory allocation; default is `64m`
