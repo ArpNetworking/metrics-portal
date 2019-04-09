@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
@@ -29,6 +30,7 @@ import io.ebean.Query;
 import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
 import io.ebean.Transaction;
+import io.ebeaninternal.server.rawsql.DRawSql;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
@@ -335,7 +337,8 @@ public class DatabaseHostRepository implements HostRepository {
         public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
             final StringBuilder selectBuilder = new StringBuilder(
                     "select t0.id, t0.version, t0.created_at, t0.updated_at, "
-                            + "t0.name, t0.cluster, t0.metrics_software_state "
+                            + "t0.name, t0.cluster, t0.metrics_software_state, "
+                            + "ts_rank(t0.name_idx_col, prefixQuery) * ts_rank(t0.name_idx_col, termQuery) / char_length(t0.name) as score "
                             + "from portal.hosts t0");
             final StringBuilder whereBuilder = new StringBuilder();
             final StringBuilder orderBuilder = new StringBuilder();
@@ -358,8 +361,7 @@ public class DatabaseHostRepository implements HostRepository {
                     parameters.put("termQuery", termExpression);
                     selectBuilder.append(", to_tsquery('simple',:prefixQuery) prefixQuery, to_tsquery('simple',:termQuery) termQuery");
                     whereBuilder.append("where (t0.name_idx_col @@ prefixQuery or t0.name_idx_col @@ termQuery)");
-                    orderBuilder.append("order by ts_rank(t0.name_idx_col, prefixQuery) * ts_rank(t0.name_idx_col, termQuery) "
-                            + "/ char_length(t0.name) DESC, name ASC");
+                    orderBuilder.append("order by score DESC, name ASC");
                 } else {
                     // The user enters only removable tokens (e.g. space, period, etc.)
                     LOGGER.debug()
@@ -437,7 +439,8 @@ public class DatabaseHostRepository implements HostRepository {
         }
 
         // NOTE: Package private for testing
-        /* package private */ static List<String> tokenize(final String word) {
+        /* package private */
+        static List<String> tokenize(final String word) {
             final List<String> tokens = new ArrayList<>();
             for (final String token : word.split("([^\\p{Alnum}])|((?<=\\p{Alpha})(?=\\p{Digit})|(?<=\\p{Digit})(?=\\p{Alpha}))")) {
                 if (!token.isEmpty()) {
@@ -458,7 +461,17 @@ public class DatabaseHostRepository implements HostRepository {
                     .columnMapping("t0.name", "name")
                     .columnMapping("t0.cluster", "cluster")
                     .columnMapping("t0.metrics_software_state", "metricsSoftwareState")
+                    .columnMappingIgnore("score")
                     .create();
+
+            final LogBuilder logSql = LOGGER.trace()
+                    .setMessage("Raw postgresql generated sql")
+                    .addData("sql", sql);
+            if (rawSql instanceof DRawSql) {
+                logSql.addData("mapped-sql", ((DRawSql) rawSql).getSql().toString());
+            }
+            logSql.log();
+
             final Query<models.ebean.Host> ebeanQuery = Ebean.find(models.ebean.Host.class).setRawSql(rawSql);
             for (final Map.Entry<String, Object> parameter : parameters.entrySet()) {
                 ebeanQuery.setParameter(parameter.getKey(), parameter.getValue());
