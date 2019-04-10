@@ -28,6 +28,6 @@
   <logger name="org.reflections.Reflections" level="ERROR" />
 
   <root level="INFO">
-    <appender-ref ref="metrics-portal"/>
+    <appender-ref ref="metrics-portal-logger"/>
   </root>
 </configuration>

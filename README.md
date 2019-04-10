@@ -86,7 +86,7 @@ Next set the `METRICS_PORTAL_CONFIG` environment variable to `-Dconfig.file="you
 
 In addition to `METRICS_PORTAL_CONFIG`, you can specify:
 
-* `LOGBACK_CONFIG` - Location of Logback configuration XML; default is `-Dlogback.configurationFile=/opt/metrics-portal/config/logback.xml`
+* `LOGBACK_CONFIG` - Location of Logback configuration XML; default is `-Dlogger.file=/opt/metrics-portal/config/logback.xml`
 * `JVM_XMS` - Java initial memory allocation; default is `64m`
 * `JVM_XMX` - Java maximum memory allocation; default is `1024m`
 * `JAVA_OPTS` - Additional Java arguments; many arguments are passed by [https://github.com/ArpNetworking/metrics-portal/blob/master/main/docker/Dockerfile](default).
