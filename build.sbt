@@ -27,6 +27,7 @@ lazy val main = (project in file("."))
       "org.webjars.npm" % "moment" % "2.24.0",
       "org.webjars.npm" % "moment-timezone" % "0.5.23"
     ),
+    ivyLoggingLevel := UpdateLogging.Quiet,
     sourceDirectory in Assets := baseDirectory.value / "app/assets",
     resourceDirectory in Assets := baseDirectory.value / "public",
     target := baseDirectory.value / "target/sbt",

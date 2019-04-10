@@ -14,7 +14,7 @@
 
 FROM openjdk:8u201-jre-alpine
 
-MAINTAINER arpnetworking
+MAINTAINER inscopemetrics.io
 
 EXPOSE 8080
 WORKDIR /opt/metrics-portal
