@@ -7,6 +7,7 @@ conf/dev.conf
 # Output
 target/
 logs/
+conf/evolutions
 pom.xml.versionsBackup
 dependency-reduced-pom.xml
 

@@ -88,7 +88,7 @@ public class DatabaseReportRepositoryTest extends WithApplication {
     }
 
     @After
-    public void teardown() {
+    public void tearDown() {
         _repository.close();
     }
 

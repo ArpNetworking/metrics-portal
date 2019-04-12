@@ -34,9 +34,9 @@ import java.util.function.Function;
  *
  * <p>For example, if you have a database full of {@code Employee}s, and you want to iterate over all of them,
  * fetching batches of 100 at a time from the database, your paging function might look like</p>
- * <pre>
+ * {@code
  *     offset -> db.query("SELECT * FROM Employees ORDER BY created_date LIMIT 100 OFFSET ?", offset).getValues()
- * </pre>
+ * }
  *
  * <p>Warning: if the wrapped paging function blocks (e.g. for a database query), the {@code PagingIterator} will also sometimes block
  * during calls to {@code hasNext} or {@code next}.</p>
