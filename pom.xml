@@ -86,7 +86,6 @@
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
-    <elasticsearch.version>1.7.2</elasticsearch.version>
     <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
     <flyway.version>4.0.0</flyway.version>
     <guava.version>21.0</guava.version>
@@ -157,7 +156,7 @@
     <findbugs.exclude>${project.basedir}/findbugs.exclude.xml</findbugs.exclude>
 
     <!-- Code Coverage -->
-    <jacoco.check.line.coverage>0.3</jacoco.check.line.coverage>
+    <jacoco.check.line.coverage>0.2</jacoco.check.line.coverage>
     <jacoco.check.branch.coverage>0.1</jacoco.check.branch.coverage>
 
     <!-- JVM -->
@@ -234,7 +233,6 @@
               <!--
               Notes:
                 * The following unit tests fail without the following configuration:
-                  * ElasticSearchHostRegistryTest
                   * DatabaseExpressionRepositoryTest
                   * DatabaseAlertRepositoryTest
                   * AlertControllerTest
@@ -908,11 +906,6 @@
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-extras</artifactId>
       <version>${cassandra.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>${elasticsearch.version}</version>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>

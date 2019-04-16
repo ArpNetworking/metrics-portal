@@ -29,7 +29,6 @@
 
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
-  <logger name="org.elasticsearch" level="INFO" />
   <logger name="com.arpnetworking" level="DEBUG" />
   <logger name="com.arpnetworking.metrics" level="INFO" />
   <logger name="controllers" level="DEBUG" />
