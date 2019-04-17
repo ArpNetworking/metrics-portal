@@ -15,11 +15,8 @@
  */
 package com.arpnetworking.metrics.portal;
 
-import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
 import models.ebean.HtmlReportFormat;
@@ -31,11 +28,11 @@ import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
+import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
-import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.time.Duration;
@@ -58,7 +55,6 @@ public final class TestBeanFactory {
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
     private static final String TEST_SERVICE = "test-service";
-    private static final String TEST_SCRIPT = "test-script";
     private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
     private static final String TEST_NAME = "test-name";
     private static final String TEST_ETAG = "test-etag";
@@ -88,53 +84,40 @@ public final class TestBeanFactory {
      * @return a report builder
      */
     public static DefaultReport.Builder createReportBuilder() {
-        final ReportSource source = createEbeanReportSource().toInternal();
-
-        final Schedule schedule = new OneOffSchedule.Builder()
-                .setRunAtAndAfter(Instant.now().plus(Duration.ofHours(1)))
-                .setRunUntil(null)
-                .build();
-
-        final models.internal.impl.PdfReportFormat format =
-                new models.internal.impl.PdfReportFormat.Builder()
-                        .setWidthInches(8.5f)
-                        .setHeightInches(11.0f)
-                        .build();
-
-        final models.internal.reports.Recipient recipient = createRecipient();
-
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
                 .setETag(TEST_ETAG)
                 .setName(TEST_NAME)
                 .setRecipients(ImmutableSetMultimap.of(format, recipient))
-                .setReportSource(source)
+                .setReportSource(
+                        new ChromeScreenshotReportSource.Builder()
+                            .build())
                 .setSchedule(schedule);
     }
 
     /**
-     * Factory method for creating an ebean report.
+     * Factory method for creating an ebean report to the specified organization.
      *
+     * @param organization the {@code models.ebean.Organization} to associate the report with
      * @return an ebean report
      */
-    public static models.ebean.Report createEbeanReport() {
-        final ReportSchedule schedule = new ReportSchedule();
+    public static models.ebean.Report createEbeanReport(final models.ebean.Organization organization) {
+        final models.ebean.ReportSchedule schedule = new models.ebean.ReportSchedule();
         schedule.setRunAt(Instant.now());
         schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
 
-        final ReportFormat format = new HtmlReportFormat();
+        final models.ebean.ReportFormat format = new models.ebean.HtmlReportFormat();
         final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
-        final Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
+        final models.ebean.Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
 
         final models.ebean.Report report = new models.ebean.Report();
         report.setName(TEST_NAME);
-        report.setOrganization(TestBeanFactory.createEbeanOrganization());
+        report.setOrganization(organization);
         report.setRecipients(ImmutableSetMultimap.of(format, recipient));
         report.setReportSource(source);
         report.setSchedule(schedule);
         report.setUuid(UUID.randomUUID());
 
-        Ebean.save(report.getOrganization());
         return report;
     }
 
@@ -146,7 +129,7 @@ public final class TestBeanFactory {
     public static models.ebean.ReportSource createEbeanReportSource() {
         final UUID sourceUuid = UUID.randomUUID();
         final URI testUri = URI.create("http://test-url.com");
-        final models.ebean.ChromeScreenshotReportSource source = new ChromeScreenshotReportSource();
+        final models.ebean.ChromeScreenshotReportSource source = new models.ebean.ChromeScreenshotReportSource();
         source.setUri(testUri);
         source.setUuid(sourceUuid);
         source.setTitle("Test title");
@@ -173,10 +156,10 @@ public final class TestBeanFactory {
      *
      * @return an ebean report recipient
      */
-    public static Recipient createEbeanReportRecipient() {
+    public static models.ebean.Recipient createEbeanReportRecipient() {
         final UUID recipientId = UUID.randomUUID();
 
-        final Recipient recipient = Recipient.newEmailRecipient(TEST_EMAIL);
+        final models.ebean.Recipient recipient = models.ebean.Recipient.newEmailRecipient(TEST_EMAIL);
         recipient.setUuid(recipientId);
         return recipient;
     }
@@ -215,7 +198,7 @@ public final class TestBeanFactory {
     }
 
     /**
-     * Factory method to create an ebean organization.
+     * Factory method to create a new ebean organization.
      *
      * @return an ebean organization
      */
@@ -249,13 +232,11 @@ public final class TestBeanFactory {
     }
 
     /**
-     * Factory method to create an ebean alert.
+     * Factory method to create an ebean alert to a specified organization.
      *
-     * @return an ebean alert
+     * @param organization the {@code models.ebean.Organization} to associate the alert with
      */
-    public static models.ebean.Alert createEbeanAlert() {
-        final models.ebean.Organization organization = createEbeanOrganization();
-        Ebean.save(organization);
+    public static models.ebean.Alert createEbeanAlert(final models.ebean.Organization organization) {
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
         ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
@@ -274,7 +255,7 @@ public final class TestBeanFactory {
     }
 
     /**
-     * Factory method to crean a cassandra alert.
+     * Factory method to create a cassandra alert.
      *
      * @return a cassandra alert
      */
@@ -329,8 +310,8 @@ public final class TestBeanFactory {
      *
      * @return an ebean nagios extension
      */
-    public static NagiosExtension createEbeanNagiosExtension() {
-        final NagiosExtension nagiosExtension = new NagiosExtension();
+    public static models.ebean.NagiosExtension createEbeanNagiosExtension() {
+        final models.ebean.NagiosExtension nagiosExtension = new models.ebean.NagiosExtension();
         nagiosExtension.setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())));
         nagiosExtension.setNotify(TEST_NAGIOS_NOTIFY);
         nagiosExtension.setMaxCheckAttempts(1 + RANDOM.nextInt(10));

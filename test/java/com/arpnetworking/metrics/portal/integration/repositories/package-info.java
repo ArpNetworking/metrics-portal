@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Dropbox Inc.
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 @ParametersAreNonnullByDefault
 @ReturnValuesAreNonnullByDefault
-package com.arpnetworking.metrics.portal.expressions.impl;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 

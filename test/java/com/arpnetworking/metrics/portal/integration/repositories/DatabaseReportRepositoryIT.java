@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
-
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.typesafe.config.ConfigFactory;
+import io.ebean.EbeanServer;
 import models.ebean.ReportExecution;
 import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
@@ -40,9 +38,8 @@ import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import play.Application;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.test.WithApplication;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.net.URI;
 import java.time.Duration;
@@ -50,6 +47,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -71,16 +69,34 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 /**
- * Unit test suite for {@link DatabaseReportRepository}.
+ * Integration tests for {@link DatabaseReportRepository}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
+ * @author Ville Koskela (vkoskela at dropbox dot com)
  */
-public class DatabaseReportRepositoryTest extends WithApplication {
+@RunWith(Parameterized.class)
+public class DatabaseReportRepositoryIT {
 
     private static final String ORIGINAL_REPORT_NAME = "Original Report Name";
     private static final String ALTERED_REPORT_NAME = "Altered Report Name";
 
-    private DatabaseReportRepository _repository = new DatabaseReportRepository(new DatabaseReportRepository.GenericQueryGenerator());
+    private final EbeanServer _server;
+    private final DatabaseReportRepository _repository;
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][]{
+                {new DatabaseReportRepository.GenericQueryGenerator()}
+                // TODO(ville): Add Postgresql query generator (w/ full text support) here.
+        });
+    }
+
+    public DatabaseReportRepositoryIT(final DatabaseReportRepository.ReportQueryGenerator queryGenerator) {
+        _server = EbeanServerHelper.getMetricsDatabase();
+        _repository = new DatabaseReportRepository(
+                _server,
+                queryGenerator);
+    }
 
     @Before
     public void setup() {
@@ -92,21 +108,28 @@ public class DatabaseReportRepositoryTest extends WithApplication {
         _repository.close();
     }
 
-    @Override
-    public Application provideApplication() {
-        return new GuiceApplicationBuilder()
-                .loadConfig(ConfigFactory.load("portal.application.conf"))
-                .configure("reportRepository.type", DatabaseReportRepository.class.getName())
-                .configure("reportRepository.reportQueryGenerator.type", DatabaseReportRepository.GenericQueryGenerator.class.getName())
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(H2ConnectionStringFactory.generateConfiguration())
-                .build();
+    @Test
+    public void testGetForNonexistentAlertAndOrganizationId() {
+        final UUID uuid = UUID.randomUUID();
+        assertFalse(_repository.getReport(uuid, TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
     }
 
     @Test
-    public void testGetReportWithInvalidId() {
-        final UUID uuid = UUID.randomUUID();
-        assertFalse(_repository.getReport(uuid, TestBeanFactory.getDefautOrganization()).isPresent());
+    public void testGetForNonexistentOrganizationId() {
+        final models.ebean.Organization organization = TestBeanFactory.createEbeanOrganization();
+        _server.save(organization);
+        final models.ebean.Report report = TestBeanFactory.createEbeanReport(organization);
+        _server.save(report);
+
+        assertFalse(_repository.getReport(report.getUuid(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
+    }
+
+    @Test
+    public void testGetForNonexistentReportId() {
+        final models.ebean.Organization organization = TestBeanFactory.createEbeanOrganization();
+        _server.save(organization);
+
+        assertFalse(_repository.getReport(UUID.randomUUID(), TestBeanFactory.organizationFrom(organization)).isPresent());
     }
 
     @Test

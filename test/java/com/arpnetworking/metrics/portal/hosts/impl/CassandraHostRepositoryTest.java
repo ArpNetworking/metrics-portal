@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
-import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -63,7 +62,6 @@ public final class CassandraHostRepositoryTest extends WithApplication {
                 .configure("hostRepository.type", CassandraHostRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
-                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         return _app;
     }

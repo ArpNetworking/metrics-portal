@@ -23,7 +23,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import io.ebean.Ebean;
+import io.ebean.EbeanServer;
 import io.ebean.ExpressionList;
 import io.ebean.PagedList;
 import io.ebean.Query;
@@ -39,8 +39,8 @@ import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
-import play.db.ebean.EbeanDynamicEvolutions;
 
+import javax.inject.Named;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,15 +63,16 @@ public class DatabaseHostRepository implements HostRepository {
      *
      * @param environment Play's <code>Environment</code> instance.
      * @param config Play's <code>Configuration</code> instance.
-     * @param ignored ignored, used as dependency injection ordering
+     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
      * @throws Exception If the configuration is invalid.
      */
     @Inject
     public DatabaseHostRepository(
             final Environment environment,
             final Config config,
-            final EbeanDynamicEvolutions ignored) throws Exception {
+            @Named("default") final EbeanServer ebeanServer) throws Exception {
         this(
+                ebeanServer,
                 ConfigurationHelper.<HostQueryGenerator>getType(
                         environment,
                         config,
@@ -83,9 +84,13 @@ public class DatabaseHostRepository implements HostRepository {
     /**
      * Public constructor.
      *
+     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
      * @param hostQueryGenerator Instance of <code>HostQueryGenerator</code>.
      */
-    public DatabaseHostRepository(final HostQueryGenerator hostQueryGenerator) {
+    public DatabaseHostRepository(
+            final EbeanServer ebeanServer,
+            final HostQueryGenerator hostQueryGenerator) {
+        _ebeanServer = ebeanServer;
         _hostQueryGenerator = hostQueryGenerator;
     }
 
@@ -113,7 +118,7 @@ public class DatabaseHostRepository implements HostRepository {
                 .log();
 
         final ExpressionList<models.ebean.Host> ebeanExpressionList =
-                Ebean.find(models.ebean.Host.class).where().eq("name", hostname)
+                _ebeanServer.find(models.ebean.Host.class).where().eq("name", hostname)
                         .eq("organization.uuid", organization.getId());
 
         return Optional.ofNullable(ebeanExpressionList.query().findOne())
@@ -129,9 +134,9 @@ public class DatabaseHostRepository implements HostRepository {
                 .addData("organization", organization)
                 .log();
 
-        final Transaction transaction = Ebean.beginTransaction();
+        final Transaction transaction = _ebeanServer.beginTransaction();
         try {
-            final models.ebean.Host ebeanHost = Ebean.find(models.ebean.Host.class)
+            final models.ebean.Host ebeanHost = _ebeanServer.find(models.ebean.Host.class)
                     .where()
                     .eq("organization.uuid", organization.getId())
                     .eq("name", host.getHostname())
@@ -142,7 +147,7 @@ public class DatabaseHostRepository implements HostRepository {
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
             ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(organization));
-            _hostQueryGenerator.saveHost(ebeanHost);
+            _hostQueryGenerator.saveHost(this, ebeanHost);
             transaction.commit();
 
             LOGGER.info()
@@ -163,13 +168,13 @@ public class DatabaseHostRepository implements HostRepository {
                 .addData("hostname", hostname)
                 .addData("organization", organization)
                 .log();
-        final Optional<models.ebean.Host> ebeanHost = Ebean.find(models.ebean.Host.class)
+        final Optional<models.ebean.Host> ebeanHost = _ebeanServer.find(models.ebean.Host.class)
                 .where()
                 .eq("name", hostname)
                 .eq("organization.uuid", organization.getId())
                 .findOneOrEmpty();
         if (ebeanHost.isPresent()) {
-            Ebean.delete(ebeanHost);
+            _ebeanServer.delete(ebeanHost);
             LOGGER.info()
                     .setMessage("Deleted host")
                     .addData("hostname", hostname)
@@ -204,7 +209,7 @@ public class DatabaseHostRepository implements HostRepository {
         final Organization organization = query.getOrganization();
 
         // Create the base query
-        final PagedList<models.ebean.Host> pagedHosts = _hostQueryGenerator.createHostQuery(query, organization);
+        final PagedList<models.ebean.Host> pagedHosts = _hostQueryGenerator.createHostQuery(this, query, organization);
 
         // Compute the etag
         // NOTE: Another way to do this would be to use the version field and hash those together.
@@ -227,7 +232,7 @@ public class DatabaseHostRepository implements HostRepository {
     @Override
     public long getHostCount(final Organization organization) {
         assertIsOpen();
-        return Ebean.find(models.ebean.Host.class)
+        return _ebeanServer.find(models.ebean.Host.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
                 .findCount();
@@ -236,7 +241,7 @@ public class DatabaseHostRepository implements HostRepository {
     @Override
     public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
         assertIsOpen();
-        return Ebean.find(models.ebean.Host.class)
+        return _ebeanServer.find(models.ebean.Host.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
                 .eq("metrics_software_state", metricsSoftwareState.toString())
@@ -265,6 +270,7 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
+    private final EbeanServer _ebeanServer;
     private final HostQueryGenerator _hostQueryGenerator;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseHostRepository.class);
@@ -277,18 +283,20 @@ public class DatabaseHostRepository implements HostRepository {
         /**
          * Translate the <code>HostQuery</code> to an Ebean <code>Query</code>.
          *
+         * @param repository The database host repository.
          * @param query The repository agnostic <code>HostQuery</code>.
          * @param organization The organization to query in.
          * @return The database specific <code>PagedList</code> query result.
          */
-        PagedList<models.ebean.Host> createHostQuery(HostQuery query, Organization organization);
+        PagedList<models.ebean.Host> createHostQuery(DatabaseHostRepository repository, HostQuery query, Organization organization);
 
         /**
          * Save the <code>Host</code> to the database. This needs to be executed in a transaction.
          *
+         * @param repository The database host repository.
          * @param host The <code>Host</code> model instance to save.
          */
-        void saveHost(models.ebean.Host host);
+        void saveHost(DatabaseHostRepository repository, models.ebean.Host host);
     }
 
     /**
@@ -297,8 +305,11 @@ public class DatabaseHostRepository implements HostRepository {
     public static final class GenericQueryGenerator implements HostQueryGenerator {
 
         @Override
-        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
-            ExpressionList<models.ebean.Host> ebeanExpressionList = Ebean.find(models.ebean.Host.class).where();
+        public PagedList<models.ebean.Host> createHostQuery(
+                final DatabaseHostRepository repository,
+                final HostQuery query,
+                final Organization organization) {
+            ExpressionList<models.ebean.Host> ebeanExpressionList = repository._ebeanServer.find(models.ebean.Host.class).where();
             ebeanExpressionList = ebeanExpressionList.eq("organization.uuid", organization.getId());
             if (query.getCluster().isPresent()) {
                 ebeanExpressionList = ebeanExpressionList.eq("cluster", query.getCluster().get());
@@ -323,8 +334,10 @@ public class DatabaseHostRepository implements HostRepository {
         }
 
         @Override
-        public void saveHost(final models.ebean.Host host) {
-            Ebean.save(host);
+        public void saveHost(
+                final DatabaseHostRepository repository,
+                final models.ebean.Host host) {
+            repository._ebeanServer.save(host);
         }
     }
 
@@ -334,7 +347,10 @@ public class DatabaseHostRepository implements HostRepository {
     public static final class PostgresqlHostQueryGenerator implements HostQueryGenerator {
 
         @Override
-        public PagedList<models.ebean.Host> createHostQuery(final HostQuery query, final Organization organization) {
+        public PagedList<models.ebean.Host> createHostQuery(
+                final DatabaseHostRepository repository,
+                final HostQuery query,
+                final Organization organization) {
             final StringBuilder selectBuilder = new StringBuilder(
                     "select t0.id, t0.version, t0.created_at, t0.updated_at, "
                             + "t0.name, t0.cluster, t0.metrics_software_state, "
@@ -405,6 +421,7 @@ public class DatabaseHostRepository implements HostRepository {
 
             // Create and execute the raw parameterized query
             return createParameterizedHostQueryFromRawSql(
+                    repository._ebeanServer,
                     selectBuilder.toString() + " " + whereBuilder.toString() + " " + orderBuilder.toString(),
                     parameters)
                     .setFirstRow(offset)
@@ -413,7 +430,7 @@ public class DatabaseHostRepository implements HostRepository {
         }
 
         @Override
-        public void saveHost(final models.ebean.Host host) {
+        public void saveHost(final DatabaseHostRepository repository, final models.ebean.Host host) {
             final String hostname = host.getName();
             final String labels = hostname.replace('.', ' ');
             final String words = labels.replace('-', ' ');
@@ -422,8 +439,8 @@ public class DatabaseHostRepository implements HostRepository {
                     .reduce((s1, s2) -> s1 + " " + s2)
                     .orElse("");
 
-            Ebean.save(host);
-            Ebean.createSqlUpdate(
+            repository._ebeanServer.save(host);
+            repository._ebeanServer.createSqlUpdate(
                     "UPDATE portal.hosts SET name_idx_col = "
                             + "setweight(to_tsvector('simple', coalesce(:hostname,'')), 'A')"
                             + "|| setweight(to_tsvector('simple', coalesce(:labels,'')), 'B')"
@@ -451,6 +468,7 @@ public class DatabaseHostRepository implements HostRepository {
         }
 
         private static Query<models.ebean.Host> createParameterizedHostQueryFromRawSql(
+                final EbeanServer server,
                 final String sql,
                 final Map<String, Object> parameters) {
             final RawSql rawSql = RawSqlBuilder.parse(sql)
@@ -472,7 +490,7 @@ public class DatabaseHostRepository implements HostRepository {
             }
             logSql.log();
 
-            final Query<models.ebean.Host> ebeanQuery = Ebean.find(models.ebean.Host.class).setRawSql(rawSql);
+            final Query<models.ebean.Host> ebeanQuery = server.find(models.ebean.Host.class).setRawSql(rawSql);
             for (final Map.Entry<String, Object> parameter : parameters.entrySet()) {
                 ebeanQuery.setParameter(parameter.getKey(), parameter.getValue());
             }

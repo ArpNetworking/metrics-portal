@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 Dropbox, Inc.
+/**
+ * Copyright 2014 Groupon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-@ParametersAreNonnullByDefault
-@ReturnValuesAreNonnullByDefault
-package com.arpnetworking.metrics.util;
+/*
+ * NOTE: This file must be run as the database administrator against the metrics database.
+ * NOTE: This file cannot end in .sql or else it will be executed by the entry point.
+ */
 
-import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+CREATE EXTENSION btree_gin;

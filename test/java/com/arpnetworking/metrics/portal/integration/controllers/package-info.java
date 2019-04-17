@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Smartsheet
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 @ParametersAreNonnullByDefault
 @ReturnValuesAreNonnullByDefault
-package com.arpnetworking.database.h2.triggers;
+package com.arpnetworking.metrics.portal.integration.controllers;
 
 import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 

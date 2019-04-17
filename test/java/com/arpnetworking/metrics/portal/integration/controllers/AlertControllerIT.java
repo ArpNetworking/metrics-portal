@@ -13,33 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controllers;
+package com.arpnetworking.metrics.portal.integration.controllers;
 
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.typesafe.config.ConfigFactory;
 import io.ebean.Ebean;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
 import models.internal.Context;
 import models.internal.Operator;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import play.Application;
-import play.inject.guice.GuiceApplicationBuilder;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
-import play.test.WithApplication;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -47,37 +36,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
- * Tests class <code>AlertController</code>.
+ * Integration tests for {@code AlertController}.
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-public class AlertControllerTest extends WithApplication {
-
-    @BeforeClass
-    public static void instantiate() {
-        ALERT_REPOSITORY.open();
-    }
-
-    @AfterClass
-    public static void shutdown() {
-        ALERT_REPOSITORY.close();
-    }
-
-    @Override
-    protected Application provideApplication() {
-        return new GuiceApplicationBuilder()
-                .loadConfig(ConfigFactory.load("portal.application.conf"))
-                .configure("alertRepository.type", DatabaseAlertRepository.class.getName())
-                .configure("alertRepository.expressionQueryGenerator.type", DatabaseAlertRepository.GenericQueryGenerator.class.getName())
-                .configure("play.modules.disabled", Arrays.asList("play.core.ObjectMapperModule", "global.PillarModule"))
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(H2ConnectionStringFactory.generateConfiguration())
-                .build();
-    }
-
+public class AlertControllerIT {
 
     @Test
-    public void testCreateValidCase() throws IOException {
+    public void testCreateValidCase() {
         final Http.RequestBuilder request = new Http.RequestBuilder()
                 .method("PUT")
                 .bodyJson(readTree("testCreateValidCase"))
@@ -309,8 +275,6 @@ public class AlertControllerTest extends WithApplication {
         }
     }
 
-    private static final AlertRepository ALERT_REPOSITORY =
-            new DatabaseAlertRepository(new DatabaseAlertRepository.GenericQueryGenerator());
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final String CLASS_NAME = AlertControllerTest.class.getSimpleName();
+    private static final String CLASS_NAME = AlertControllerIT.class.getSimpleName();
 }

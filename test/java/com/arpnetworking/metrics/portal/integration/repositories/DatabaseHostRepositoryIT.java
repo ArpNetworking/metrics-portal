@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Groupon.com
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.database.h2.triggers;
-
-import models.ebean.AlertEtags;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
 /**
- * Trigger to update Etag after every insert, delete or update statement.
+ * Integration tests for {@code DatabaseHostRepository}.
  *
- * @author Deepika Misra (deepika at groupon dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public class AlertsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
+public final class DatabaseHostRepositoryIT {
 
-    /**
-     * Public no args constructor.
-     */
-    public AlertsUpdateEtagTrigger() {
-        super(AlertEtags::incrementEtag, 15);
-    }
+    // TODO(ville): Add integration tests for database host repository.
 }

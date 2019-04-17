@@ -43,7 +43,6 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
-import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -96,10 +95,8 @@ public class MainModule extends AbstractModule {
         bind(HealthProvider.class)
                 .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
                 .in(Scopes.SINGLETON);
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("JvmMetricsCollector"))
-                .toProvider(JvmMetricsCollectorProvider.class)
-                .asEagerSingleton();
+
+        // Repositories
         bind(OrganizationRepository.class)
                 .toProvider(OrganizationRepositoryProvider.class)
                 .asEagerSingleton();
@@ -109,20 +106,23 @@ public class MainModule extends AbstractModule {
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(ReportRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
+
+        // Background tasks
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("JvmMetricsCollector"))
+                .toProvider(JvmMetricsCollectorProvider.class)
+                .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
-                .annotatedWith(Names.named("report-repository-job-coordinator"))
+                .annotatedWith(Names.named("ReportJobCoordinator"))
                 .toProvider(ReportRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
-        bind(ReportRepository.class)
-                .toProvider(ReportRepositoryProvider.class)
-                .asEagerSingleton();
-        bind(DatabaseReportRepository.ReportQueryGenerator.class)
-                .toProvider(ConfigTypedProvider.provider("reportRepository.reportQueryGenerator.type"))
-                .in(Scopes.NO_SCOPE);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupsMetricsDiscovery"))
                 .toProvider(RollupMetricsDiscoveryProvider.class)
@@ -432,7 +432,7 @@ public class MainModule extends AbstractModule {
                         JobCoordinator.props(_injector, ReportRepository.class, _organizationRepository, _executorRegion, _periodicMetrics),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
-                        "report-repository-job-coordinator");
+                        "ReportJobCoordinator");
             }
             return null;
         }
