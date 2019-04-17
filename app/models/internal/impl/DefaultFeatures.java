@@ -49,11 +49,6 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
-    public boolean isExpressionsEnabled() {
-        return _expressionsEnabled;
-    }
-
-    @Override
     public boolean isAlertsEnabled() {
         return _alertsEnabled;
     }
@@ -79,7 +74,6 @@ public final class DefaultFeatures implements Features {
                 .append(", proxyEnabled=").append(_proxyEnabled)
                 .append(", proxyPreferred=").append(_proxyPreferred)
                 .append(", hostRegistryEnabled=").append(_hostRegistryEnabled)
-                .append(", expressionsEnabled=").append(_expressionsEnabled)
                 .append(", alertsEnabled=").append(_alertsEnabled)
                 .append(", rollupsEnabled=").append(_rollupsEnabled)
                 .append(", reportsEnabled=").append(_reportsEnabled)
@@ -98,7 +92,6 @@ public final class DefaultFeatures implements Features {
         _proxyEnabled = configuration.getBoolean("portal.features.proxy.enabled");
         _proxyPreferred = configuration.getBoolean("portal.features.proxy.preferred");
         _hostRegistryEnabled = configuration.getBoolean("portal.features.hostRegistry.enabled");
-        _expressionsEnabled = configuration.getBoolean("portal.features.expressions.enabled");
         _alertsEnabled = configuration.getBoolean("portal.features.alerts.enabled");
         _rollupsEnabled = configuration.getBoolean("portal.features.rollups.enabled");
         _reportsEnabled = configuration.getBoolean("portal.features.reports.enabled");
@@ -110,7 +103,6 @@ public final class DefaultFeatures implements Features {
     private final boolean _proxyEnabled;
     private final boolean _proxyPreferred;
     private final boolean _hostRegistryEnabled;
-    private final boolean _expressionsEnabled;
     private final boolean _alertsEnabled;
     private final boolean _rollupsEnabled;
     private final boolean _reportsEnabled;

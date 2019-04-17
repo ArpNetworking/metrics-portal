@@ -45,11 +45,6 @@ GET        /v1/reports/query                    controllers.ReportController.que
 GET        /v1/reports/:id                      controllers.ReportController.get(id: String)
 PUT        /v1/reports                          controllers.ReportController.addOrUpdate
 
-# Expressions
-GET        /v1/expressions/query                controllers.ExpressionController.query(contains: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/expressions/:id                  controllers.ExpressionController.get(id: String)
-PUT        /v1/expressions                      controllers.ExpressionController.addOrUpdate
-
 # Templates
 GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel

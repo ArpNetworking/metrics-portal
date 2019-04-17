@@ -15,19 +15,51 @@
  */
 package com.arpnetworking.database.h2.triggers;
 
-import models.ebean.ExpressionEtags;
+import org.h2.api.Trigger;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Trigger to update Etag after every insert, delete or update statement.
  *
+ * TODO(ville): Delete this class when we deprecate H2.
+ *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-public class ExpressionsUpdateEtagTrigger extends BaseUpdateEtagTrigger {
+public class ExpressionsUpdateEtagTrigger implements Trigger {
 
     /**
      * Public no args constructor.
      */
-    public ExpressionsUpdateEtagTrigger() {
-        super(ExpressionEtags::incrementEtag, 9);
+    public ExpressionsUpdateEtagTrigger() { }
+
+    @Override
+    public void init(
+            final Connection conn,
+            final String schemaName,
+            final String triggerName,
+            final String tableName,
+            final boolean before,
+            final int type) throws SQLException {
+        // Don't do anything; expressions have been deleted
+    }
+
+    @Override
+    public void fire(
+            final Connection conn,
+            final Object[] oldRow,
+            final Object[] newRow) throws SQLException {
+        // Don't do anything; expressions have been deleted
+    }
+
+    @Override
+    public void close() throws SQLException {
+        // Don't do anything; expressions have been deleted
+    }
+
+    @Override
+    public void remove() throws SQLException {
+        // Don't do anything; expressions have been deleted
     }
 }

@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 Smartsheet
+/**
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,4 @@
  * limitations under the License.
  */
 
-@ParametersAreNonnullByDefault
-@ReturnValuesAreNonnullByDefault
-package com.arpnetworking.metrics.portal.expressions;
-
-import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+DROP FUNCTION portal.update_expressions_etag();

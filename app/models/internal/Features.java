@@ -53,13 +53,6 @@ public interface Features {
     boolean isHostRegistryEnabled();
 
     /**
-     * Expressions feature.
-     *
-     * @return true if and only expressions is enabled.
-     */
-    boolean isExpressionsEnabled();
-
-    /**
      * Alerts feature.
      *
      * @return true if and only if alerts is enabled.

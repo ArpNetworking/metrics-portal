@@ -1,5 +1,5 @@
-/*
- * Copyright 2015 Groupon.com
+/**
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,4 @@
  * limitations under the License.
  */
 
-class ExpressionData {
-    id: string;
-    metric: string;
-    service: string;
-    cluster: string;
-    script: string;
-
-    constructor(id: string, metric: string, service: string, cluster: string, script: string) {
-        this.id = id;
-        this.metric = metric;
-        this.service = service;
-        this.cluster = cluster;
-        this.script = script;
-        var self = this;
-    }
-}
-
-export = ExpressionData;
+DROP TRIGGER portal.update_expressions_etag;
