@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.Ebean;
 import models.cassandra.Host;
 import models.ebean.ChromeScreenshotReportSource;
-import models.ebean.Expression;
 import models.ebean.HtmlReportFormat;
 import models.ebean.NagiosExtension;
 import models.ebean.Recipient;
@@ -33,7 +32,6 @@ import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.DefaultAlert;
-import models.internal.impl.DefaultExpression;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
@@ -338,47 +336,6 @@ public final class TestBeanFactory {
         nagiosExtension.setMaxCheckAttempts(1 + RANDOM.nextInt(10));
         nagiosExtension.setFreshnessThreshold((long) RANDOM.nextInt(1000));
         return nagiosExtension;
-    }
-
-    /**
-     * Factory method to create an ebean expression.
-     *
-     * @return an ebean expression
-     */
-    public static Expression createEbeanExpression() {
-        final models.ebean.Organization organization = createEbeanOrganization();
-        Ebean.save(organization);
-        final models.ebean.Expression ebeanExpression = new models.ebean.Expression();
-        ebeanExpression.setOrganization(organization);
-        ebeanExpression.setUuid(UUID.randomUUID());
-        ebeanExpression.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        ebeanExpression.setMetric(TEST_METRIC + RANDOM.nextInt(100));
-        ebeanExpression.setScript(TEST_SCRIPT + RANDOM.nextInt(100));
-        ebeanExpression.setService(TEST_SERVICE + RANDOM.nextInt(100));
-        return ebeanExpression;
-    }
-
-    /**
-     * Factory method for creating an expression builder.
-     *
-     * @return an expression builder
-     */
-    public static DefaultExpression.Builder createExpressionBuilder() {
-        return new DefaultExpression.Builder()
-                .setId(UUID.randomUUID())
-                .setCluster(TEST_CLUSTER + RANDOM.nextInt(100))
-                .setMetric(TEST_METRIC + RANDOM.nextInt(100))
-                .setScript(TEST_SCRIPT + RANDOM.nextInt(100))
-                .setService(TEST_SERVICE + RANDOM.nextInt(100));
-    }
-
-    /**
-     * Factory method for an expression.
-     *
-     * @return an expression
-     */
-    public static models.internal.Expression createExpression() {
-        return createExpressionBuilder().build();
     }
 
     /**

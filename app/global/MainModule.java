@@ -36,7 +36,6 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.expressions.ExpressionRepository;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
@@ -107,9 +106,6 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
-                .asEagerSingleton();
-        bind(ExpressionRepository.class)
-                .toProvider(ExpressionRepositoryProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
@@ -307,39 +303,6 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return hostRepository;
-        }
-
-        private final Injector _injector;
-        private final Environment _environment;
-        private final Config _configuration;
-        private final ApplicationLifecycle _lifecycle;
-    }
-
-    private static final class ExpressionRepositoryProvider implements Provider<ExpressionRepository> {
-
-        @Inject
-        ExpressionRepositoryProvider(
-                final Injector injector,
-                final Environment environment,
-                final Config configuration,
-                final ApplicationLifecycle lifecycle) {
-            _injector = injector;
-            _environment = environment;
-            _configuration = configuration;
-            _lifecycle = lifecycle;
-        }
-
-        @Override
-        public ExpressionRepository get() {
-            final ExpressionRepository expressionRepository = _injector.getInstance(
-                    ConfigurationHelper.<ExpressionRepository>getType(_environment, _configuration, "expressionRepository.type"));
-            expressionRepository.open();
-            _lifecycle.addStopHook(
-                    () -> {
-                        expressionRepository.close();
-                        return CompletableFuture.completedFuture(null);
-                    });
-            return expressionRepository;
         }
 
         private final Injector _injector;
