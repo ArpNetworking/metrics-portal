@@ -32,19 +32,19 @@ public class DatabaseHostRepositoryTest {
     public void testPostgresqlHostQueryGeneratorTokenize() {
         List<String> tokens;
 
-        tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("test-app1.snc1");
+        tokens = DatabaseHostRepository.tokenize("test-app1.snc1");
         assertArrayEquals("Actual = " + tokens, new String[] {"test", "app", "1", "snc", "1"}, tokens.toArray());
 
-        tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("a1--b2  c3- d4..host1234app");
+        tokens = DatabaseHostRepository.tokenize("a1--b2  c3- d4..host1234app");
         assertArrayEquals(
                 "Actual = " + tokens,
                 new String[]{"a", "1", "b", "2", "c", "3", "d", "4", "host", "1234", "app"},
                 tokens.toArray());
 
-        tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("");
+        tokens = DatabaseHostRepository.tokenize("");
         assertArrayEquals("Actual = " + tokens, new String[]{}, tokens.toArray());
 
-        tokens = DatabaseHostRepository.PostgresqlHostQueryGenerator.tokenize("  ");
+        tokens = DatabaseHostRepository.tokenize("  ");
         assertArrayEquals("Actual = " + tokens, new String[]{}, tokens.toArray());
     }
 }
