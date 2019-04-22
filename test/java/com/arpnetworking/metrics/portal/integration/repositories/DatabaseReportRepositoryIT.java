@@ -24,7 +24,9 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.EbeanServer;
+import io.ebean.Transaction;
 import models.ebean.ReportExecution;
+import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReport;
@@ -67,6 +69,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for {@link DatabaseReportRepository}.
@@ -82,6 +85,9 @@ public class DatabaseReportRepositoryIT {
 
     private final EbeanServer _server;
     private final DatabaseReportRepository _repository;
+
+    private Organization _organization;
+    private models.ebean.Organization _ebeanOrganization;
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -99,8 +105,12 @@ public class DatabaseReportRepositoryIT {
     }
 
     @Before
-    public void setup() {
+    public void setUp() {
         _repository.open();
+
+        _ebeanOrganization = TestBeanFactory.createEbeanOrganization();
+        _server.save(_ebeanOrganization);
+        _organization = TestBeanFactory.organizationFrom(_ebeanOrganization);
     }
 
     @After
@@ -116,28 +126,26 @@ public class DatabaseReportRepositoryIT {
 
     @Test
     public void testGetForNonexistentOrganizationId() {
-        final models.ebean.Organization organization = TestBeanFactory.createEbeanOrganization();
-        _server.save(organization);
-        final models.ebean.Report report = TestBeanFactory.createEbeanReport(organization);
-        _server.save(report);
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
 
-        assertFalse(_repository.getReport(report.getUuid(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
+        assertFalse(_repository.getReport(report.getId(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
     }
 
     @Test
     public void testGetForNonexistentReportId() {
-        final models.ebean.Organization organization = TestBeanFactory.createEbeanOrganization();
-        _server.save(organization);
-
-        assertFalse(_repository.getReport(UUID.randomUUID(), TestBeanFactory.organizationFrom(organization)).isPresent());
+        assertFalse(_repository.getReport(UUID.randomUUID(), _organization).isPresent());
     }
 
     @Test
     public void testCreateNewReport() {
         final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
-        final Report retrievedReport = _repository.getReport(report.getId(), TestBeanFactory.getDefautOrganization()).get();
+        _repository.addOrUpdateReport(report, _organization);
 
+        final Optional<Report> result = _repository.getReport(report.getId(), _organization);
+        assertTrue(result.isPresent());
+
+        final Report retrievedReport = result.get();
         assertThat("ids should match", retrievedReport.getId(), equalTo(report.getId()));
         assertThat("names should match", retrievedReport.getName(), equalTo(report.getName()));
         assertThat("sources should match", retrievedReport.getSource(), equalTo(report.getSource()));
@@ -148,22 +156,15 @@ public class DatabaseReportRepositoryIT {
     }
 
     @Test
-    public void testUpdateExistingReport() {
-        final Schedule schedule = new OneOffSchedule.Builder()
-                .setRunAtAndAfter(Instant.now())
-                .setRunUntil(Instant.now().plus(Duration.ofHours(1)))
-                .build();
-
-        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder().setSchedule(schedule);
-        final Report report = reportBuilder.setName(ORIGINAL_REPORT_NAME).build();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
-        assertThat(report.getName(), equalTo(ORIGINAL_REPORT_NAME));
+    public void testUpdateName() {
+        final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
+        final Report initialReport = reportBuilder.setName(ORIGINAL_REPORT_NAME).build();
+        _repository.addOrUpdateReport(initialReport, _organization);
 
         final Report updatedReport = reportBuilder.setName(ALTERED_REPORT_NAME).build();
-        _repository.addOrUpdateReport(updatedReport, TestBeanFactory.getDefautOrganization());
-        final Optional<String> updatedName = _repository.getReport(
-                report.getId(),
-                TestBeanFactory.getDefautOrganization()).map(Report::getName);
+        _repository.addOrUpdateReport(updatedReport, _organization);
+
+        final Optional<String> updatedName = _repository.getReport(initialReport.getId(), _organization).map(Report::getName);
         assertThat(updatedName, equalTo(Optional.of(ALTERED_REPORT_NAME)));
     }
 
@@ -173,7 +174,7 @@ public class DatabaseReportRepositoryIT {
 
         // Initial report
         final Report report = reportBuilder.build();
-        _repository.addOrUpdateReport(reportBuilder.build(), TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(reportBuilder.build(), _organization);
 
         // Update the recipients
         final ReportFormat format = new HtmlReportFormat.Builder().build();
@@ -181,9 +182,12 @@ public class DatabaseReportRepositoryIT {
         final Report updatedReport = reportBuilder
                 .setRecipients(ImmutableSetMultimap.of(format, recipient))
                 .build();
-        _repository.addOrUpdateReport(updatedReport, TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(updatedReport, _organization);
 
-        final Report retrievedReport = _repository.getReport(report.getId(), TestBeanFactory.getDefautOrganization()).get();
+        final Optional<Report> result = _repository.getReport(report.getId(), _organization);
+        assertTrue(result.isPresent());
+
+        final Report retrievedReport = result.get();
         final Set<Recipient> allRecipients =
                 retrievedReport.getRecipientsByFormat()
                         .values()
@@ -209,14 +213,17 @@ public class DatabaseReportRepositoryIT {
 
         // Initial report
         final Report report = reportBuilder.build();
-        _repository.addOrUpdateReport(reportBuilder.build(), TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(reportBuilder.build(), _organization);
 
         // Update the schedule
         final Schedule updatedSchedule = scheduleBuilder.setPeriod(ChronoUnit.HOURS).build();
         reportBuilder.setSchedule(updatedSchedule);
-        _repository.addOrUpdateReport(reportBuilder.build(), TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(reportBuilder.build(), _organization);
 
-        final Report retrievedReport = _repository.getReport(report.getId(), TestBeanFactory.getDefautOrganization()).get();
+        final Optional<Report> result = _repository.getReport(report.getId(), _organization);
+        assertTrue(result.isPresent());
+
+        final Report retrievedReport = result.get();
         assertThat(retrievedReport.getSchedule(), equalTo(updatedSchedule));
     }
 
@@ -233,36 +240,43 @@ public class DatabaseReportRepositoryIT {
 
         // Initial report
         final Report report = reportBuilder.setReportSource(sourceBuilder.build()).build();
-        _repository.addOrUpdateReport(reportBuilder.build(), TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(reportBuilder.build(), _organization);
 
         // Update the source
         final ReportSource updatedSource = sourceBuilder.setTitle("updated title").build();
         final Report updatedReport = reportBuilder.setReportSource(updatedSource).build();
-        _repository.addOrUpdateReport(updatedReport, TestBeanFactory.getDefautOrganization());
+        _repository.addOrUpdateReport(updatedReport, _organization);
 
-        final Report retrievedReport = _repository.getReport(report.getId(), TestBeanFactory.getDefautOrganization()).get();
+        final Optional<Report> result = _repository.getReport(report.getId(), _organization);
+        assertTrue(result.isPresent());
+
+        final Report retrievedReport = result.get();
         assertThat(retrievedReport.getSource(), equalTo(updatedSource));
     }
 
     @Test(expected = PersistenceException.class)
-    public void testUnknownJobCompleted() {
+    public void testUnknownJobCompletionFails() {
         final Instant scheduled = Instant.now();
         final Report.Result result = new DefaultReportResult();
-        _repository.jobSucceeded(UUID.randomUUID(), TestBeanFactory.getDefautOrganization(), scheduled, result);
+        _repository.jobSucceeded(UUID.randomUUID(), _organization, scheduled, result);
     }
 
     @Test
     public void testJobSucceeded() {
-        final Report report = TestBeanFactory.createEbeanReport().toInternal();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
         final Instant scheduled = Instant.now();
 
         final Report.Result result = new DefaultReportResult();
-        _repository.jobSucceeded(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled, result);
+        _repository.jobSucceeded(report.getId(), _organization, scheduled, result);
 
-        final ReportExecution execution = _repository.getExecution(
+        final Optional<ReportExecution> getExecutionResult = getExecution(
                 report.getId(),
-                TestBeanFactory.getDefautOrganization(), scheduled).get();
+                _organization,
+                scheduled);
+        assertTrue(getExecutionResult.isPresent());
+
+        final ReportExecution execution = getExecutionResult.get();
         assertThat(execution.getState(), equalTo(ReportExecution.State.SUCCESS));
         assertThat(execution.getCompletedAt(), not(nullValue()));
         assertThat(execution.getReport(), not(nullValue()));
@@ -271,22 +285,26 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getError(), nullValue());
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), TestBeanFactory.getDefautOrganization());
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
     @Test
     public void testJobFailed() {
-        final Report report = TestBeanFactory.createEbeanReport().toInternal();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
         final Instant scheduled = Instant.now();
 
         final Throwable throwable = new IllegalStateException("Whoops!", new RuntimeException("the cause"));
-        _repository.jobFailed(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled, throwable);
+        _repository.jobFailed(report.getId(), _organization, scheduled, throwable);
 
-        final ReportExecution execution = _repository.getExecution(
+        final Optional<ReportExecution> getExecutionResult = getExecution(
                 report.getId(),
-                TestBeanFactory.getDefautOrganization(), scheduled).get();
+                _organization,
+                scheduled);
+        assertTrue(getExecutionResult.isPresent());
+
+        final ReportExecution execution = getExecutionResult.get();
         assertThat(execution.getState(), equalTo(ReportExecution.State.FAILURE));
         assertThat(execution.getCompletedAt(), not(nullValue()));
         assertThat(execution.getReport(), not(nullValue()));
@@ -298,21 +316,25 @@ public class DatabaseReportRepositoryIT {
         assertThat(retrievedError, notNullValue());
         assertThat(retrievedError, containsString(throwable.getMessage()));
         assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), TestBeanFactory.getDefautOrganization());
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
     @Test
     public void testJobStarted() {
-        final Report report = TestBeanFactory.createEbeanReport().toInternal();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
         final Instant scheduled = Instant.now();
 
-        _repository.jobStarted(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled);
+        _repository.jobStarted(report.getId(), _organization, scheduled);
 
-        final ReportExecution execution = _repository.getExecution(
+        final Optional<ReportExecution> getExecutionResult = getExecution(
                 report.getId(),
-                TestBeanFactory.getDefautOrganization(), scheduled).get();
+                _organization,
+                scheduled);
+        assertTrue(getExecutionResult.isPresent());
+
+        final ReportExecution execution = getExecutionResult.get();
         assertThat(execution.getState(), equalTo(ReportExecution.State.STARTED));
         assertThat(execution.getCompletedAt(), nullValue());
         assertThat(execution.getStartedAt(), not(nullValue()));
@@ -322,33 +344,45 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), TestBeanFactory.getDefautOrganization());
+        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.empty()));
     }
 
     @Test
     public void testStateChangeClearsFields() {
-        final Report report = TestBeanFactory.createEbeanReport().toInternal();
-        _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
         final Instant scheduled = Instant.now();
 
-        _repository.jobStarted(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled);
-        _repository.jobSucceeded(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled, new DefaultReportResult());
+        _repository.jobStarted(report.getId(), _organization, scheduled);
+        _repository.jobSucceeded(report.getId(), _organization, scheduled, new DefaultReportResult());
 
         // A succeeded updated should *not* clear the start time
-        ReportExecution execution = _repository.getExecution(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled).get();
+        final Optional<ReportExecution> getExecutionResult = getExecution(
+                report.getId(),
+                _organization,
+                scheduled);
+        assertTrue(getExecutionResult.isPresent());
+
+        final ReportExecution execution = getExecutionResult.get();
         assertThat(execution.getStartedAt(), notNullValue());
         assertThat(execution.getResult(), notNullValue());
         assertThat(execution.getCompletedAt(), notNullValue());
         assertThat(execution.getError(), nullValue());
 
         // A failed updated should *not* clear the start time but it should clear the result
-        _repository.jobFailed(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled, new IllegalStateException("whoops!"));
-        execution = _repository.getExecution(report.getId(), TestBeanFactory.getDefautOrganization(), scheduled).get();
-        assertThat(execution.getStartedAt(), notNullValue());
-        assertThat(execution.getResult(), nullValue());
-        assertThat(execution.getCompletedAt(), notNullValue());
-        assertThat(execution.getError(), notNullValue());
+        _repository.jobFailed(report.getId(), _organization, scheduled, new IllegalStateException("whoops!"));
+        final Optional<ReportExecution> getUpdatedExecutionResult = getExecution(
+                report.getId(),
+                _organization,
+                scheduled);
+        assertTrue(getUpdatedExecutionResult.isPresent());
+
+        final ReportExecution updatedExecution = getUpdatedExecutionResult.get();
+        assertThat(updatedExecution.getStartedAt(), notNullValue());
+        assertThat(updatedExecution.getResult(), nullValue());
+        assertThat(updatedExecution.getCompletedAt(), notNullValue());
+        assertThat(updatedExecution.getError(), notNullValue());
     }
 
     @Test
@@ -361,7 +395,7 @@ public class DatabaseReportRepositoryIT {
                     TestBeanFactory.createReportBuilder()
                             .setName("test report #" + i)
                             .build();
-            _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+            _repository.addOrUpdateReport(report, _organization);
             reports.add(report);
         }
         final List<Report> expectedReports = reports.subList(testOffset, reportCount);
@@ -369,7 +403,7 @@ public class DatabaseReportRepositoryIT {
         expectedReports.toArray(expectedValues);
 
         final QueryResult<Report> results =
-                _repository.createReportQuery(TestBeanFactory.getDefautOrganization())
+                _repository.createReportQuery(_organization)
                         .limit(100)
                         .offset(testOffset)
                         .execute();
@@ -388,13 +422,13 @@ public class DatabaseReportRepositoryIT {
                     TestBeanFactory.createReportBuilder()
                             .setName("test report #" + i)
                             .build();
-            _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+            _repository.addOrUpdateReport(report, _organization);
             reports.add(report);
         }
         final Report[] reportsArray = new Report[reports.size()];
         reports.toArray(reportsArray);
 
-        final JobQuery<Report.Result> query = _repository.createQuery(TestBeanFactory.getDefautOrganization());
+        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.execute();
         assertThat(results.values(), hasSize(reportCount));
@@ -408,10 +442,10 @@ public class DatabaseReportRepositoryIT {
         final int testOffset = 2;
         for (int i = 0; i < reportCount; i++) {
             final Report report = TestBeanFactory.createReportBuilder().build();
-            _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+            _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> baseQuery = _repository.createQuery(TestBeanFactory.getDefautOrganization());
+        final JobQuery<Report.Result> baseQuery = _repository.createQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = baseQuery.offset(testOffset).execute();
         assertThat(results.values(), hasSize(reportCount - testOffset));
@@ -427,10 +461,10 @@ public class DatabaseReportRepositoryIT {
         final int reportCount = 5;
         for (int i = 0; i < reportCount; i++) {
             final Report report = TestBeanFactory.createReportBuilder().build();
-            _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+            _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> query = _repository.createQuery(TestBeanFactory.getDefautOrganization());
+        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.limit(1).execute();
         assertThat(results.values(), hasSize(1));
@@ -448,10 +482,10 @@ public class DatabaseReportRepositoryIT {
         final int testLimit = 2;
         for (int i = 0; i < reportCount; i++) {
             final Report report = TestBeanFactory.createReportBuilder().build();
-            _repository.addOrUpdateReport(report, TestBeanFactory.getDefautOrganization());
+            _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> query = _repository.createQuery(TestBeanFactory.getDefautOrganization());
+        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.offset(testOffset).limit(testLimit).execute();
         assertThat(results.total(), equalTo((long) reportCount));
@@ -467,8 +501,17 @@ public class DatabaseReportRepositoryIT {
 
     @Test
     public void testJobQueryReturnsNothing() {
-        final JobQuery<Report.Result> query = _repository.createQuery(TestBeanFactory.getDefautOrganization());
+        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
         final List<? extends Job<Report.Result>> results = query.execute().values();
         assertThat(results, empty());
+    }
+
+    private Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
+        return _server.find(ReportExecution.class)
+                .where()
+                .eq("report.uuid", reportId)
+                .eq("report.organization.uuid", organization.getId())
+                .eq("scheduled", scheduled)
+                .findOneOrEmpty();
     }
 }

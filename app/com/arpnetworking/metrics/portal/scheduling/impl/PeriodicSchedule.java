@@ -88,7 +88,7 @@ public final class PeriodicSchedule extends BaseSchedule {
             return false;
         }
         final PeriodicSchedule that = (PeriodicSchedule) o;
-        return getPeriod() == that.getPeriod()
+        return Objects.equals(getPeriod(), that.getPeriod())
                 && Objects.equals(getZone(), that.getZone())
                 && Objects.equals(getOffset(), that.getOffset());
     }

@@ -90,15 +90,6 @@ public class PeriodicReportSchedule extends ReportSchedule {
     }
 
     @Override
-    public String toString() {
-        return toStringHelper()
-                .add("period", period)
-                .add("offset", offset)
-                .add("zone", zone)
-                .toString();
-    }
-
-    @Override
     public Schedule toInternal() {
         return new PeriodicSchedule.Builder()
                 .setRunAtAndAfter(getRunAt())

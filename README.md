@@ -192,6 +192,10 @@ Building:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw verify
 
+Building without Docker (will disable integration tests):
+
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -PnoDocker verify
+
 To control which verification targets (e.g. Checkstyle, Findbugs, Coverage, etc.) are run please refer to the
 [parent-pom](https://github.com/ArpNetworking/arpnetworking-parent-pom) for parameters (e.g. `-DskipAllVerification=true`).
 
@@ -202,7 +206,7 @@ To run the server on port 8080 and its dependencies launched via Docker:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start
 
-To stop the server and its dependencies run:
+To stop the server and its dependencies run; this is recommended in place of `docker kill` as it will also remove the container and avoids name conflicts:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:stop
 
@@ -220,8 +224,7 @@ To debug on port 9002 with the server on port 8080 via Play; you need to configu
 
 To launch dependencies only via Docker:
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -DdockerDependenciesOnly=true
-    ^ TODO(ville): This is not yet implemented.
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -PdependenciesOnly
 
 To execute unit performance tests:
 
@@ -244,6 +247,8 @@ To use the local version as a dependency in your project you must first install 
 dependencies are running locally on the default ports.
 * To debug Metrics Portal while executing an integration test against it simply launch Metrics Portal for debug,
 then attach your IDE and finally run/debug the integration test from your IDE.
+* To run tests in your IDE which rely on EBean classes, you must first run `./jdk-wrapper.sh ./mvnw process-classes` on
+the command line to enhance the Ebean classes.
 
 ### IntelliJ
 

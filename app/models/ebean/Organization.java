@@ -15,13 +15,12 @@
  */
 package models.ebean;
 
-import io.ebean.Finder;
+import io.ebean.EbeanServer;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
 import java.util.UUID;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -68,22 +67,13 @@ public class Organization {
      * @return The organization from the database.
      */
     @Nullable
-    public static Organization findByOrganization(@Nonnull final models.internal.Organization organization) {
-        return FINDER.query()
+    public static Organization findByOrganization(
+            final EbeanServer ebeanServer,
+            final models.internal.Organization organization) {
+        return ebeanServer.createQuery(Organization.class)
                 .where()
                 .eq("uuid", organization.getId())
                 .findOne();
-    }
-
-    /**
-     * Returns an {@link Organization} by reference. This defers all database operations until a field besides id is
-     * requested.
-     *
-     * @param id The id (primary key) of the organization.
-     * @return The {@link Organization} with the given primary key.
-     */
-    public static Organization refById(final long id) {
-        return FINDER.ref(id);
     }
 
     public Long getId() {
@@ -125,7 +115,5 @@ public class Organization {
     public void setUuid(final UUID value) {
         this.uuid = value;
     }
-
-    private static final Finder<Long, Organization> FINDER = new Finder<>(Organization.class);
 }
 // CHECKSTYLE.ON: MemberNameCheck

@@ -41,12 +41,16 @@ final class EbeanServerHelper {
     public static synchronized EbeanServer getMetricsDatabase() {
         @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_DATABASE_NAME);
         if (ebeanServer == null) {
+            // TODO(ville): It should not be necessary to register this as the default database.
+            // e.g.
+            // Report.java:188 - The association is bound to the default server.
             ebeanServer = createEbeanServer(
                     getEnvOrDefault("PG_HOST", "localhost"),
                     DEFAULT_POSTGRES_PORT,
                     METRICS_DATABASE_NAME,
                     METRICS_DATABASE_USERNAME,
-                    METRICS_DATABASE_PASSWORD);
+                    METRICS_DATABASE_PASSWORD,
+                    true);
             EBEAN_SERVER_MAP.put(METRICS_DATABASE_NAME, ebeanServer);
         }
         return ebeanServer;
@@ -57,7 +61,8 @@ final class EbeanServerHelper {
             final int port,
             final String database,
             final String username,
-            final String password) {
+            final String password,
+            final boolean setAsDefault) {
         final String name = database + "-" + UUID.randomUUID().toString();
 
         final HikariConfig hikariConfig = new HikariConfig();
@@ -74,8 +79,7 @@ final class EbeanServerHelper {
 
         final ServerConfig serverConfig = new ServerConfig();
         serverConfig.setName(name);
-        serverConfig.setRegister(false);
-        serverConfig.setDefaultServer(false);
+        serverConfig.setDefaultServer(setAsDefault);
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
         return EbeanServerFactory.create(serverConfig);
     }
@@ -92,5 +96,5 @@ final class EbeanServerHelper {
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";
     private static final String METRICS_DATABASE_PASSWORD = "metrics_app_password";
     private static final int DEFAULT_POSTGRES_PORT = 5432;
-    private static final int DEFAULT_POOL_SIZE = 20;
+    private static final int DEFAULT_POOL_SIZE = 200;
 }

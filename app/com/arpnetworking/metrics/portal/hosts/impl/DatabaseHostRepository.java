@@ -70,7 +70,7 @@ public class DatabaseHostRepository implements HostRepository {
     public DatabaseHostRepository(
             final Environment environment,
             final Config config,
-            @Named("default") final EbeanServer ebeanServer) throws Exception {
+            @Named("metrics_portal") final EbeanServer ebeanServer) throws Exception {
         this(
                 ebeanServer,
                 ConfigurationHelper.<HostQueryGenerator>getType(
@@ -146,7 +146,7 @@ public class DatabaseHostRepository implements HostRepository {
             ebeanHost.setCluster(host.getCluster().orElse(null));
             ebeanHost.setMetricsSoftwareState(host.getMetricsSoftwareState().toString());
             ebeanHost.setName(host.getHostname());
-            ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(organization));
+            ebeanHost.setOrganization(models.ebean.Organization.findByOrganization(_ebeanServer, organization));
             _hostQueryGenerator.saveHost(this, ebeanHost);
             transaction.commit();
 

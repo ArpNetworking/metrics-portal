@@ -68,7 +68,7 @@ public class DatabaseAlertRepository implements AlertRepository {
     public DatabaseAlertRepository(
             final Environment environment,
             final Config config,
-            @Named("default") final EbeanServer ebeanServer) throws Exception {
+            @Named("metrics_portal") final EbeanServer ebeanServer) throws Exception {
         this(
                 ebeanServer,
                 ConfigurationHelper.<AlertQueryGenerator>getType(
@@ -146,7 +146,7 @@ public class DatabaseAlertRepository implements AlertRepository {
 
         // Compute the etag
         // TODO(deepika): Obfuscate the etag [ISSUE-7]
-        final Long etag = _alertQueryGenerator.getEtag(query.getOrganization());
+        final Long etag = _alertQueryGenerator.getEtag(this, query.getOrganization());
 
         final List<Alert> values = new ArrayList<>();
         pagedAlerts.getList().forEach(ebeanAlert -> values.add(convertFromEbeanAlert(ebeanAlert)));
@@ -199,7 +199,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                     .findOneOrEmpty()
                     .orElse(new models.ebean.Alert());
 
-            ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(organization));
+            ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(_ebeanServer, organization));
             ebeanAlert.setCluster(alert.getCluster());
             ebeanAlert.setUuid(alert.getId());
             ebeanAlert.setMetric(alert.getMetric());
@@ -320,10 +320,11 @@ public class DatabaseAlertRepository implements AlertRepository {
         /**
          * Gets the etag for the alerts table.
          *
+         * @param repository The alert repository instance.
          * @param organization The organization owning the alert.
          * @return The etag for the table.
          */
-        long getEtag(Organization organization);
+        long getEtag(DatabaseAlertRepository repository, Organization organization);
     }
 
     /**
@@ -376,8 +377,13 @@ public class DatabaseAlertRepository implements AlertRepository {
         }
 
         @Override
-        public long getEtag(final Organization organization) {
-            return AlertEtags.getEtagByOrganization(organization);
+        public long getEtag(final DatabaseAlertRepository repository, final Organization organization) {
+            return repository._ebeanServer.createQuery(AlertEtags.class)
+                    .where()
+                    .eq("organization.uuid", organization.getId())
+                    .findOneOrEmpty()
+                    .map(AlertEtags::getEtag)
+                    .orElse(0L);
         }
     }
 }

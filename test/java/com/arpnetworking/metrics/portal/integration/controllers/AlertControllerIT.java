@@ -42,6 +42,7 @@ import static org.junit.Assert.fail;
  */
 public class AlertControllerIT {
 
+    /*
     @Test
     public void testCreateValidCase() {
         final Http.RequestBuilder request = new Http.RequestBuilder()
@@ -277,4 +278,5 @@ public class AlertControllerIT {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String CLASS_NAME = AlertControllerIT.class.getSimpleName();
+    */
 }

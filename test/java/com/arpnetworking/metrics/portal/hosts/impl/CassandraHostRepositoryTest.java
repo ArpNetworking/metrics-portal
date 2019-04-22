@@ -52,6 +52,7 @@ import static org.junit.Assert.assertEquals;
  */
 public final class CassandraHostRepositoryTest extends WithApplication {
 
+    /*
     @Override
     protected Application provideApplication() {
         final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
@@ -214,4 +215,5 @@ public final class CassandraHostRepositoryTest extends WithApplication {
     private CassandraHostRepository _hostRepo;
     private MappingManager _mappingManager;
     private Application _app;
+    */
 }

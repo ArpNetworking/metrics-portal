@@ -15,28 +15,34 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
-import models.ebean.ChromeScreenshotReportSource;
-import models.ebean.HtmlReportFormat;
-import models.ebean.NagiosExtension;
-import models.ebean.Recipient;
-import models.ebean.ReportFormat;
-import models.ebean.ReportSchedule;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultAlert;
+import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
+import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.PdfReportFormat;
+import models.internal.reports.Recipient;
+import models.internal.reports.ReportFormat;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +56,6 @@ import java.util.UUID;
  */
 public final class TestBeanFactory {
 
-    private static final String TEST_EMAIL = "noreply+email-recipient@test.com";
     private static final String TEST_HOST = "test-host";
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
@@ -58,6 +63,8 @@ public final class TestBeanFactory {
     private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
     private static final String TEST_NAME = "test-name";
     private static final String TEST_ETAG = "test-etag";
+    private static final String TEST_TITLE = "test-title";
+    private static final String TEST_EVENT = "onload-";
     private static final List<Operator> OPERATORS = Arrays.asList(
             Operator.EQUAL_TO,
             Operator.GREATER_THAN,
@@ -84,14 +91,59 @@ public final class TestBeanFactory {
      * @return a report builder
      */
     public static DefaultReport.Builder createReportBuilder() {
+        final ReportFormat format;
+        if (RANDOM.nextInt(2) == 0) {
+            format = new HtmlReportFormat.Builder().build();
+        } else {
+            format = new PdfReportFormat.Builder()
+                    .setHeightInches((RANDOM.nextInt(100) + 1) * 11f / 100f)
+                    .setWidthInches((RANDOM.nextInt(100) + 1) * 8.5f / 100f)
+                    .build();
+        }
+        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime runAtAndAfter = now.plusDays(RANDOM.nextInt(100) - 50);
+        final LocalDateTime runUntil = runAtAndAfter.plusDays(RANDOM.nextInt(100) + 1);
+        final Schedule schedule;
+        switch (RANDOM.nextInt(3)) {
+            case 2:
+                final ChronoUnit chronoUnit = models.ebean.PeriodicReportSchedule.Period.values()[
+                        RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)].toChronoUnit();
+
+                schedule = new PeriodicSchedule.Builder()
+                        .setRunAtAndAfter(runAtAndAfter.toInstant(ZoneOffset.UTC))
+                        .setRunUntil(runUntil.toInstant(ZoneOffset.UTC))
+                        .setPeriod(chronoUnit)
+                        .setOffset(chronoUnit.getDuration().dividedBy(RANDOM.nextInt(9) + 2))
+                        .setZone(ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]))
+                        .build();
+                break;
+            case 1:
+                schedule = new OneOffSchedule.Builder()
+                        .setRunAtAndAfter(runAtAndAfter.toInstant(ZoneOffset.UTC))
+                        .build();
+                break;
+            case 0:
+            default:
+                schedule = NeverSchedule.getInstance();
+        }
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
-                .setETag(TEST_ETAG)
-                .setName(TEST_NAME)
-                .setRecipients(ImmutableSetMultimap.of(format, recipient))
+                .setETag(TEST_ETAG + UUID.randomUUID().toString())
+                .setName(TEST_NAME + UUID.randomUUID().toString())
+                .setRecipients(ImmutableSetMultimap.of(
+                        format,
+                        new DefaultEmailRecipient.Builder()
+                                .setId(UUID.randomUUID())
+                                .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
+                                .build()))
                 .setReportSource(
                         new ChromeScreenshotReportSource.Builder()
-                            .build())
+                                .setTitle(TEST_TITLE + UUID.randomUUID().toString())
+                                .setId(UUID.randomUUID())
+                                .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
+                                .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
+                                .setIgnoreCertificateErrors(true)
+                                .build())
                 .setSchedule(schedule);
     }
 
@@ -102,16 +154,46 @@ public final class TestBeanFactory {
      * @return an ebean report
      */
     public static models.ebean.Report createEbeanReport(final models.ebean.Organization organization) {
-        final models.ebean.ReportSchedule schedule = new models.ebean.ReportSchedule();
-        schedule.setRunAt(Instant.now());
-        schedule.setRunUntil(Instant.now().plus(Duration.ofDays(1)));
+        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime runAtAndAfter = now.plusDays(RANDOM.nextInt(100) - 50);
+        final LocalDateTime runUntil = runAtAndAfter.plusDays(RANDOM.nextInt(100) + 1);
+        final models.ebean.ReportSchedule schedule;
+        switch (RANDOM.nextInt(3)) {
+            case 2:
+                final models.ebean.PeriodicReportSchedule periodicSchedule = new models.ebean.PeriodicReportSchedule();
+                final models.ebean.PeriodicReportSchedule.Period period = models.ebean.PeriodicReportSchedule.Period.values()[
+                        RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)];
+                periodicSchedule.setPeriod(period);
+                periodicSchedule.setOffset(period.toChronoUnit().getDuration().dividedBy(RANDOM.nextInt(9) + 2));
+                periodicSchedule.setZone(ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]));
+                periodicSchedule.setRunAt(runAtAndAfter.toInstant(ZoneOffset.UTC));
+                periodicSchedule.setRunUntil(runUntil.toInstant(ZoneOffset.UTC));
+                schedule = periodicSchedule;
+                break;
+            case 1:
+                schedule = new models.ebean.OneOffReportSchedule();
+                schedule.setRunAt(runAtAndAfter.toInstant(ZoneOffset.UTC));
+                break;
+            case 0:
+            default:
+                schedule = new models.ebean.NeverReportSchedule();
+        }
 
-        final models.ebean.ReportFormat format = new models.ebean.HtmlReportFormat();
+        final models.ebean.ReportFormat format;
+        if (RANDOM.nextInt(2) == 0) {
+            format = new models.ebean.HtmlReportFormat();
+        } else {
+            final models.ebean.PdfReportFormat pdfFormat = new models.ebean.PdfReportFormat();
+            pdfFormat.setHeightInches((RANDOM.nextInt(100) + 1) * 11f / 100f);
+            pdfFormat.setWidthInches((RANDOM.nextInt(100) + 1) * 8.5f / 100f);
+            format = pdfFormat;
+        }
+
         final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
         final models.ebean.Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
 
         final models.ebean.Report report = new models.ebean.Report();
-        report.setName(TEST_NAME);
+        report.setName(TEST_NAME + UUID.randomUUID().toString());
         report.setOrganization(organization);
         report.setRecipients(ImmutableSetMultimap.of(format, recipient));
         report.setReportSource(source);
@@ -127,13 +209,13 @@ public final class TestBeanFactory {
      * @return an ebean report source
      */
     public static models.ebean.ReportSource createEbeanReportSource() {
-        final UUID sourceUuid = UUID.randomUUID();
-        final URI testUri = URI.create("http://test-url.com");
+        final URI testUri = URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com");
         final models.ebean.ChromeScreenshotReportSource source = new models.ebean.ChromeScreenshotReportSource();
         source.setUri(testUri);
-        source.setUuid(sourceUuid);
-        source.setTitle("Test title");
-        source.setTriggeringEventName("onload");
+        source.setUuid(UUID.randomUUID());
+        source.setTitle(TEST_TITLE + UUID.randomUUID().toString());
+        source.setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString());
+        source.setIgnoreCertificateErrors(true);
         return source;
     }
 
@@ -142,13 +224,11 @@ public final class TestBeanFactory {
      *
      * @return a report recipient
      */
-    public static models.internal.reports.Recipient createRecipient() {
-        final UUID recipientId = UUID.randomUUID();
-        return new models.internal.impl.DefaultEmailRecipient.Builder()
-                .setAddress(TEST_EMAIL)
-                .setId(recipientId)
+    public static Recipient createRecipient() {
+        return new DefaultEmailRecipient.Builder()
+                .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
+                .setId(UUID.randomUUID())
                 .build();
-
     }
 
     /**
@@ -157,22 +237,21 @@ public final class TestBeanFactory {
      * @return an ebean report recipient
      */
     public static models.ebean.Recipient createEbeanReportRecipient() {
-        final UUID recipientId = UUID.randomUUID();
-
-        final models.ebean.Recipient recipient = models.ebean.Recipient.newEmailRecipient(TEST_EMAIL);
-        recipient.setUuid(recipientId);
+        final models.ebean.Recipient recipient = models.ebean.Recipient.newEmailRecipient(
+                UUID.randomUUID().toString().replace("-", "") + "@example.com");
+        recipient.setUuid(UUID.randomUUID());
         return recipient;
     }
 
     /**
      * Mapping method to create a organization from an ebean organization.
      *
-     * @param organization ebean organization
+     * @param ebeanOrganization ebean organization
      * @return organization
      */
-    public static Organization organizationFrom(final models.ebean.Organization organization) {
+    public static Organization organizationFrom(final models.ebean.Organization ebeanOrganization) {
         return new DefaultOrganization.Builder()
-                .setId(organization.getUuid())
+                .setId(ebeanOrganization.getUuid())
                 .build();
     }
 
@@ -192,7 +271,9 @@ public final class TestBeanFactory {
      * Retrieve the default organization.
      *
      * @return default organization
+     * @deprecated tests should not use the same organization id to ensure test isolation
      */
+    @Deprecated
     public static Organization getDefautOrganization() {
         return DEFAULT_ORGANIZATION;
     }
@@ -216,15 +297,15 @@ public final class TestBeanFactory {
     public static DefaultAlert.Builder createAlertBuilder() {
         return new DefaultAlert.Builder()
                 .setId(UUID.randomUUID())
-                .setCluster(TEST_CLUSTER + RANDOM.nextInt(100))
-                .setMetric(TEST_METRIC + RANDOM.nextInt(100))
+                .setCluster(TEST_CLUSTER + UUID.randomUUID().toString())
+                .setMetric(TEST_METRIC + UUID.randomUUID().toString())
                 .setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())))
-                .setService(TEST_SERVICE + RANDOM.nextInt(100))
+                .setService(TEST_SERVICE + UUID.randomUUID().toString())
                 .setNagiosExtension(createNagiosExtension())
-                .setName(TEST_NAME + RANDOM.nextInt(100))
+                .setName(TEST_NAME + UUID.randomUUID().toString())
                 .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
                 .setPeriod(Duration.ofSeconds(RANDOM.nextInt(100)))
-                .setStatistic(TEST_STATISTIC + RANDOM.nextInt(100))
+                .setStatistic(TEST_STATISTIC + UUID.randomUUID().toString())
                 .setValue(new DefaultQuantity.Builder()
                         .setValue(100 + RANDOM.nextDouble())
                         .setUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100))
@@ -241,16 +322,16 @@ public final class TestBeanFactory {
         ebeanAlert.setOrganization(organization);
         ebeanAlert.setUuid(UUID.randomUUID());
         ebeanAlert.setNagiosExtension(createEbeanNagiosExtension());
-        ebeanAlert.setName(TEST_NAME + RANDOM.nextInt(100));
+        ebeanAlert.setName(TEST_NAME + UUID.randomUUID().toString());
         ebeanAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         ebeanAlert.setPeriod(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        ebeanAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
+        ebeanAlert.setStatistic(TEST_STATISTIC + UUID.randomUUID().toString());
         ebeanAlert.setQuantityValue(100 + RANDOM.nextDouble());
         ebeanAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        ebeanAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        ebeanAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
+        ebeanAlert.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
+        ebeanAlert.setMetric(TEST_METRIC + UUID.randomUUID().toString());
         ebeanAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        ebeanAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
+        ebeanAlert.setService(TEST_SERVICE + UUID.randomUUID().toString());
         return ebeanAlert;
     }
 
@@ -264,16 +345,16 @@ public final class TestBeanFactory {
         cassandraAlert.setOrganization(UUID.randomUUID());
         cassandraAlert.setUuid(UUID.randomUUID());
         cassandraAlert.setNagiosExtensions(createCassandraNagiosExtension());
-        cassandraAlert.setName(TEST_NAME + RANDOM.nextInt(100));
+        cassandraAlert.setName(TEST_NAME + UUID.randomUUID().toString());
         cassandraAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
         cassandraAlert.setPeriodInSeconds(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        cassandraAlert.setStatistic(TEST_STATISTIC + RANDOM.nextInt(100));
+        cassandraAlert.setStatistic(TEST_STATISTIC + UUID.randomUUID().toString());
         cassandraAlert.setQuantityValue(100 + RANDOM.nextDouble());
         cassandraAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        cassandraAlert.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
-        cassandraAlert.setMetric(TEST_METRIC + RANDOM.nextInt(100));
+        cassandraAlert.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
+        cassandraAlert.setMetric(TEST_METRIC + UUID.randomUUID().toString());
         cassandraAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        cassandraAlert.setService(TEST_SERVICE + RANDOM.nextInt(100));
+        cassandraAlert.setService(TEST_SERVICE + UUID.randomUUID().toString());
         return cassandraAlert;
     }
 
@@ -326,9 +407,10 @@ public final class TestBeanFactory {
      */
     public static Host createCassandraHost() {
         final Host host = new Host();
-        host.setName(TEST_HOST + RANDOM.nextInt(100) + ".example.com");
-        host.setCluster(TEST_CLUSTER + RANDOM.nextInt(100));
+        host.setName(TEST_HOST + UUID.randomUUID().toString() + ".example.com");
+        host.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
         host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
+        // TODO(ville): This should use a random organization
         host.setOrganization(getDefautOrganization().getId());
         return host;
     }

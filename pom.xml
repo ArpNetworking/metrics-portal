@@ -164,6 +164,8 @@
 
     <!-- Docker Overrides -->
     <skipDockerBuild>false</skipDockerBuild>
+    <docker.skip.postgres>false</docker.skip.postgres>
+    <docker.skip.metrics-portal>false</docker.skip.metrics-portal>
     <docker.postgres.version>10.7</docker.postgres.version>
 
     <!-- Assembly Overrides -->
@@ -527,6 +529,7 @@
               <name>postgres:${docker.postgres.version}</name>
               <alias>postgres</alias>
               <run>
+                <skip>${docker.skip.postgres}</skip>
                 <env>
                   <POSTGRES_USER>root</POSTGRES_USER>
                   <POSTGRES_PASSWORD>password</POSTGRES_PASSWORD>
@@ -572,6 +575,7 @@
                 </tags>
               </build>
               <run>
+                <skip>${docker.skip.metrics-portal}</skip>
                 <env>
                   <JAVA_OPTS>${dockerJavaOptions}</JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
@@ -1144,13 +1148,22 @@
       </properties>
     </profile>
     <profile>
-      <id>no-docker</id>
+      <id>noDocker</id>
       <activation>
         <activeByDefault>false</activeByDefault>
       </activation>
       <properties>
         <skipIntegrationTests>true</skipIntegrationTests>
         <skipDockerBuild>true</skipDockerBuild>
+      </properties>
+    </profile>
+    <profile>
+      <id>dependenciesOnly</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <properties>
+        <docker.skip.metrics-portal>true</docker.skip.metrics-portal>
       </properties>
     </profile>
   </profiles>

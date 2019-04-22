@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-DROP TRIGGER update_expressions_etag ON portal.expressions;
+ALTER TABLE portal.alerts ALTER COLUMN quantity_value SET DATA TYPE DOUBLE PRECISION;

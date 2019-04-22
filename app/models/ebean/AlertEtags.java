@@ -15,10 +15,8 @@
  */
 package models.ebean;
 
-import io.ebean.Ebean;
 import io.ebean.Finder;
 
-import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -48,42 +46,6 @@ public class AlertEtags {
 
     @Column(nullable = false)
     private long etag;
-
-    /**
-     * Increments an etag record or creates one if it does not exist.
-     *
-     * @param organization the organization
-     */
-    public static void incrementEtag(final Organization organization) {
-        @Nullable AlertEtags etag = FINDER.query()
-                .forUpdate()
-                .where()
-                .eq("organization", organization)
-                .findOne();
-        if (etag != null) {
-            etag.setEtag(etag.getEtag() + 1);
-        } else {
-            etag = new AlertEtags();
-            etag.setOrganization(organization);
-            etag.setEtag(1);
-        }
-        Ebean.save(etag);
-    }
-
-    /**
-     * Looks up an etag value for an organization.
-     *
-     * @param organization the organization
-     * @return the etag value, or 0 if a value does not exist in the table
-     */
-    public static long getEtagByOrganization(final models.internal.Organization organization) {
-        return FINDER.query()
-                .where()
-                .eq("organization.uuid", organization.getId())
-                .findOneOrEmpty()
-                .map(AlertEtags::getEtag)
-                .orElse(0L);
-    }
 
     public Long getId() {
         return id;

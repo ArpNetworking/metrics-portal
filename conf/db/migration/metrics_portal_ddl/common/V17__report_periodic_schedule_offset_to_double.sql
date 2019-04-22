@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-DROP TRIGGER update_expressions_etag ON portal.expressions;
+ALTER TABLE portal.report_schedules ALTER COLUMN offset_duration SET DATA TYPE DOUBLE PRECISION;

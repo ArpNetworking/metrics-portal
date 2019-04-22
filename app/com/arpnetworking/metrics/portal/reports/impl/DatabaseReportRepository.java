@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -32,6 +33,8 @@ import io.ebean.EbeanServer;
 import io.ebean.PagedList;
 import io.ebean.Query;
 import io.ebean.Transaction;
+import models.ebean.NeverReportSchedule;
+import models.ebean.OneOffReportSchedule;
 import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
@@ -104,7 +107,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     public DatabaseReportRepository(
             final Environment environment,
             final Config config,
-            @Named("default") final EbeanServer ebeanServer) throws Exception {
+            @Named("metrics_portal") final EbeanServer ebeanServer) throws Exception {
         this(
                 ebeanServer,
                 ConfigurationHelper.<ReportQueryGenerator>getType(
@@ -128,14 +131,15 @@ public final class DatabaseReportRepository implements ReportRepository {
         _reportQueryGenerator = reportQueryGenerator;
     }
 
-    private static final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
+    private final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
             new Recipient.Visitor<models.ebean.Recipient>() {
                 @Override
                 public models.ebean.Recipient visit(final DefaultEmailRecipient recipient) {
-                    final models.ebean.Recipient ebeanRecipient =
-                            models.ebean.Recipient
-                                    .findByRecipient(recipient)
-                                    .orElseGet(() -> models.ebean.Recipient.newEmailRecipient(recipient.getAddress()));
+                    final models.ebean.Recipient ebeanRecipient = _ebeanServer.createQuery(models.ebean.Recipient.class)
+                            .where()
+                            .eq("uuid", recipient.getId())
+                            .findOneOrEmpty()
+                            .orElseGet(() -> models.ebean.Recipient.newEmailRecipient(recipient.getAddress()));
                     ebeanRecipient.setUuid(recipient.getId());
                     return ebeanRecipient;
                 }
@@ -199,7 +203,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     public void addOrUpdateReport(final Report report, final Organization organization) {
         assertIsOpen();
         final models.ebean.Report ebeanReport = internalModelToBean(report);
-        final models.ebean.Organization ebeanOrg = models.ebean.Organization.findByOrganization(organization);
+        final models.ebean.Organization ebeanOrg = models.ebean.Organization.findByOrganization(_ebeanServer, organization);
         if (ebeanOrg == null) {
             throw new EntityNotFoundException("Organization not found: " + organization.getId());
         }
@@ -360,30 +364,36 @@ public final class DatabaseReportRepository implements ReportRepository {
                 throw new EntityNotFoundException(message);
             }
 
-            final ReportExecution execution = new ReportExecution();
-            execution.setError(error);
-            execution.setReport(report.get());
-            execution.setResult(result);
-            execution.setScheduled(scheduled);
-            execution.setState(state);
+            final Optional<ReportExecution> existingExecution =
+                    _ebeanServer.createQuery(ReportExecution.class)
+                            .where()
+                            .eq("report", report.get())
+                            .eq("scheduled", scheduled)
+                            .findOneOrEmpty();
+            final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
+            newOrUpdatedExecution.setError(error);
+            newOrUpdatedExecution.setReport(report.get());
+            newOrUpdatedExecution.setResult(result);
+            newOrUpdatedExecution.setScheduled(scheduled);
+            newOrUpdatedExecution.setState(state);
 
             switch (state) {
                 case STARTED:
-                    execution.setStartedAt(Instant.now());
-                    execution.setCompletedAt(null);
+                    newOrUpdatedExecution.setStartedAt(Instant.now());
+                    newOrUpdatedExecution.setCompletedAt(null);
                     break;
                 case FAILURE:
                 case SUCCESS:
-                    execution.setCompletedAt(Instant.now());
+                    newOrUpdatedExecution.setCompletedAt(Instant.now());
                     break;
                 default:
                     throw new AssertionError("unreachable branch");
             }
 
-            try {
-                _ebeanServer.save(execution);
-            } catch (final DuplicateKeyException ignore) {
-                _ebeanServer.update(execution);
+            if (existingExecution.isPresent()) {
+                _ebeanServer.update(newOrUpdatedExecution);
+            } else {
+                _ebeanServer.save(newOrUpdatedExecution);
             }
 
             LOGGER.debug()
@@ -405,16 +415,6 @@ public final class DatabaseReportRepository implements ReportRepository {
                     .log();
             throw new PersistenceException("Failed to update report executions", e);
         }
-    }
-
-    /* package */ Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
-        assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
-                .where()
-                .eq("report.uuid", reportId)
-                .eq("report.organization.uuid", organization.getId())
-                .eq("scheduled", scheduled)
-                .findOneOrEmpty();
     }
 
     private models.ebean.Report internalModelToBean(final Report internalReport) {
@@ -443,10 +443,16 @@ public final class DatabaseReportRepository implements ReportRepository {
             return beanPeriodic;
         } else if (internalSchedule instanceof OneOffSchedule) {
             final OneOffSchedule internalOneOff = (OneOffSchedule) internalSchedule;
-            final ReportSchedule beanOneOff = new ReportSchedule();
+            final ReportSchedule beanOneOff = new OneOffReportSchedule();
             beanOneOff.setRunAt(internalOneOff.getRunAtAndAfter());
             beanOneOff.setRunUntil(internalOneOff.getRunUntil().orElse(null));
             return beanOneOff;
+        } else if (internalSchedule instanceof NeverSchedule) {
+            final NeverSchedule internalNever = (NeverSchedule) internalSchedule;
+            final ReportSchedule beanNever = new NeverReportSchedule();
+            beanNever.setRunAt(Instant.ofEpochSecond(0));
+            beanNever.setRunUntil(internalNever.getRunUntil().orElse(null));
+            return beanNever;
         }
         throw new IllegalArgumentException("Unsupported internal model: " + internalSchedule.getClass());
     }
