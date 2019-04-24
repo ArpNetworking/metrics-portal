@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -186,7 +187,7 @@ public class KairosDbProxy extends Controller {
                 .thenApply(Results::ok);
     }
 
-    private static ImmutableList<String> filterMetricNames(final List<String> metricNames, final String containing) {
+    private static ImmutableList<String> filterMetricNames(final List<String> metricNames, @Nullable final String containing) {
         if (containing == null || containing.isEmpty()) {
             return ImmutableList.copyOf(metricNames);
         }
