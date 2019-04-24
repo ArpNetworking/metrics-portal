@@ -25,6 +25,8 @@ import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ClusterShardingSettings;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
+import akka.cluster.singleton.ClusterSingletonProxy;
+import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
@@ -460,7 +462,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            final int actorCount = _configuration.getInt("rollups.worker.count");
+            final int actorCount = _configuration.getInt("rollup.worker.count");
             if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
@@ -490,12 +492,15 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (_enabled && cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.props(
+                final ActorRef manager = _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, MetricsDiscovery.class),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_METRICS_DISCOVERY_ROLE)),
                         "rollup-metrics-discovery"
                 );
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        manager.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_system)));
             }
             return null;
         }

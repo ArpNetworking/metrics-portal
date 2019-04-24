@@ -51,7 +51,7 @@ public final class H2ConnectionStringFactory {
                 + path
                 + ";AUTO_SERVER=TRUE;AUTO_SERVER_PORT="
                 + port
-                + ";MODE=PostgreSQL;INIT=create schema if not exists portal;DB_CLOSE_DELAY=-1";
+                + ";MODE=PostgreSQL;INIT=create schema if not exists portal\\;create schema if not exists akka;DB_CLOSE_DELAY=-1";
     }
 
     /**
@@ -61,12 +61,18 @@ public final class H2ConnectionStringFactory {
      */
     public static Map<String, Object> generateConfiguration() {
         final String url = generateJdbcUrl();
-        return ImmutableMap.of(
-                "db.default.driver", "org.h2.Driver",
-                "db.default.url", url,
-                "db.metrics_portal_ddl.driver", "org.h2.Driver",
-                "db.metrics_portal_ddl.url", url,
-                "db.metrics_portal_ddl.migration.locations", Lists.newArrayList("common", "h2"));
+        return ImmutableMap.<String, Object>builder()
+                .put("db.default.driver", "org.h2.Driver")
+                .put("db.default.url", url)
+                .put("db.metrics_portal_ddl.driver", "org.h2.Driver")
+                .put("db.metrics_portal_ddl.url", url)
+                .put("db.metrics_portal_ddl.migration.locations", Lists.newArrayList("common", "h2"))
+                .put("db.akka.driver", "org.h2.Driver")
+                .put("db.akka.migration.locations", Lists.newArrayList("common", "h2"))
+                .put("db.akka.url", url)
+                .put("db.akka.username", "sa")
+                .put("db.akka.password", "secret")
+                .build();
     }
 
     private H2ConnectionStringFactory() {}
