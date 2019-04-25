@@ -51,9 +51,15 @@ class EditReportViewModel {
     }
 
     loadReport(id: String): void {
-        $.getJSON("/v1/reports/" + id, {}, (data) => {
-            // TODO(cbriones): Bind these to the view model.
+        $.getJSON("/v1/reports/" + id, null, (reportData) => {
+            // FIXME(cbriones): Bind these to the view model.
+            this.id(reportData.id);
+            this.name(reportData.name);
             this.existingReport(true);
+            this.source.load(reportData.source);
+            this.schedule.load(reportData.schedule);
+            const recipients = reportData.recipients.map(Recipient.fromObject);
+            this.recipients(recipients);
         });
     }
 
@@ -124,6 +130,26 @@ class Recipient {
         this.format = ko.observable(ReportFormat.Pdf);
     }
 
+    public static fromObject(raw): Recipient {
+        const type = RecipientType.Email;
+
+        const recipient = new Recipient(type);
+        recipient.id(raw.id);
+        recipient.address(raw.address)
+
+        let format;
+        if (raw.format.type == "Html") {
+            format = ReportFormat.Html;
+        } else if (raw.format.type == "Pdf") {
+            format = ReportFormat.Pdf;
+        } else {
+            throw new Error(`Unknown format "${raw.format.type}"`);
+        }
+
+        recipient.format(format);
+        return recipient;
+    }
+
     label(): string {
         return RecipientType[this.type]
     }
@@ -143,7 +169,7 @@ class Recipient {
             formats: [
                 {
                     type: ReportFormat[this.format()],
-                }
+                },
             ],
         }
     }
@@ -170,6 +196,16 @@ class EditSourceViewModel {
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");
     ignoreCertificateErrors = ko.observable<boolean>(false);
+
+    public load(raw) {
+        this.id(raw.id);
+        this.url(raw.uri);
+        this.title(raw.title);
+        this.eventName(raw.triggeringEventName);
+        this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
+        // FIXME(cbriones)
+        // type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
+    }
 
     toRequest() {
         let requestType;
@@ -251,6 +287,28 @@ class EditScheduleViewModel {
                 strict: true,
             }
         };
+    }
+
+    public load(raw) {
+        let repeat = ScheduleRepetition.OneOff;
+        if (raw.type == "Periodic") {
+            switch (raw.period) {
+                case "Hourly":
+                    repeat = ScheduleRepetition.Hourly;
+                    break;
+                case "Daily":
+                    repeat = ScheduleRepetition.Daily;
+                    break;
+                case "Monthly":
+                    repeat = ScheduleRepetition.Monthly;
+                    break;
+            }
+        }
+        this.repeat(repeat);
+        this.offsetString(raw.offset);
+        this.zone(new ZoneInfo(raw.zone));
+        this.start(moment(raw.runAtAndAfter));
+        this.end(moment(raw.runUntil));
     }
 
     toRequest(): any {

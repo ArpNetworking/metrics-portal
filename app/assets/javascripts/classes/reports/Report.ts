@@ -52,5 +52,3 @@ export default class Report {
         // this.source = source;
     }
 }
-
-export = Report;

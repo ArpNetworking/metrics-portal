@@ -15,12 +15,19 @@
  */
 
 import PaginatedSearchableList = require("../PaginatedSearchableList");
-import Report = require("./Report");
+import Report from "./Report";
 
 class ReportsList extends PaginatedSearchableList<Report> {
     fetchData(query: any, callback) {
-        $.getJSON("v1/reports/query", query, (reportData) => {
-            callback(reportData.data, reportData.pagination);
+        $.getJSON("v1/reports/query", query, (page) => {
+            const reportList: Report[] = page.data.map((rawReport)=> {
+                return new Report(
+                    rawReport.id,
+                    rawReport.name,
+                    rawReport.schedule,
+                )
+            });
+            callback(reportList, page.pagination);
         })
     }
 
@@ -35,4 +42,5 @@ class ReportsViewModel {
         this.reports.query();
     };
 }
+
 export = ReportsViewModel;
