@@ -166,7 +166,6 @@ module kobindings {
                     });
                 } else {
                     ta.on('blur', (event) => {
-                        console.log("blur time", event, ta.val(), valueUnwrapped.value());
                         if (ta.typeahead('val') != displayFn(valueUnwrapped.value())) {
                             valueUnwrapped.value(null);
                         }

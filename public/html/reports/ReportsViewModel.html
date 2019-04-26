@@ -18,16 +18,17 @@
     <div class="row">
         <div class="container col-md-offset-1 col-md-10">
             <h2>Reports</h2>
-            <!--Header for search-->
-            <!--<div class="col-md-12 col-sm-12 col-lg-12 search-header">-->
-                <!--<form role="form" class="form-inline">-->
-                    <!--<div class="form-group has-feedback">-->
-                        <!--<input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">-->
-                        <!--<span class="glyphicon glyphicon-search form-control-feedback"></span>-->
-                    <!--</div>-->
-                <!--</form>-->
-            <!--</div>-->
-            <div><a href="#report/edit" class="btn btn-default" style="margin-bottom: .5em">New Report</a></div>
+            <div class ="row">
+                <div class="col-md-1"><a href="#report/edit" class="btn btn-default" style="margin-bottom: .5em">New Report</a></div>
+                <div class="col-md-offset-7 col-md-4">
+                    <form role="form" class="form-inline">
+                        <div class="form-group has-feedback pull-right">
+                            <input class="form-control" data-bind="value: reports.searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
+                            <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
             <table class="table table-hover">
                 <tr class="row">
                     <th class="col-md-3">ID</th>
@@ -37,7 +38,7 @@
                     <th class="col-md-2">From</td>
                     <th class="col-md-2">Until</td>
                     <th class="col-md-2">Recipients</td>
-                    <th class="hidden"></th>
+                    <th></th>
                 </tr>
                 <!-- ko foreach: reports.filteredEntities -->
                 <tr class="row">
@@ -78,6 +79,13 @@
                 </tr>
                 <!-- /ko -->
             </table>
+            <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
+                <div class="text-center">
+                    <ul class="pagination" data-bind="foreach: reports.pagerElements">
+                        <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
+                    </ul>
+                </div>
+            </nav>
         </div>
     </div>
 </div>

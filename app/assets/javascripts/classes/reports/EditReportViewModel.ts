@@ -26,6 +26,8 @@ import * as _ from 'underscore';
 import moment = require('moment-timezone/moment-timezone');
 
 class EditReportViewModel {
+    enabled = true;
+
     id = ko.observable<string>("");
     name = ko.observable<string>("");
     source = new EditSourceViewModel();
@@ -60,7 +62,16 @@ class EditReportViewModel {
             this.schedule.load(reportData.schedule);
             const recipients = reportData.recipients.map(Recipient.fromObject);
             this.recipients(recipients);
+        }).fail(() => {
+            this.alertMessage("Report not found");
+            this.enabled = false;
         });
+    }
+
+    compositionComplete() {
+        if (!this.enabled) {
+            $("#editReportForm :input").attr("disabled", "true");
+        }
     }
 
     addRecipient(recipientType: RecipientType): void {
