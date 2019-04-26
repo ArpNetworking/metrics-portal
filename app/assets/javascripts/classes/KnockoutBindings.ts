@@ -57,8 +57,25 @@ module kobindings {
     ko.bindingHandlers['popover'] = {
         init: function(element, valueAccessor) {
             const value = valueAccessor();
-            const valueUnwrapped = ko.utils.unwrapObservable(value);
-            $(element).popover({content: valueUnwrapped});
+            const valueUnwrapped = ko.unwrap(value);
+
+            let options;
+            if (valueUnwrapped === Object(valueUnwrapped)) {
+                // It's an options map
+                if (valueUnwrapped.hasOwnProperty('content')) {
+                    options = {content: valueUnwrapped.content};
+                } else if (valueUnwrapped.hasOwnProperty('id')) {
+                    const id = ko.unwrap(valueUnwrapped.id);
+                    const selector = `.popover-content[data-id="${id}"]`;
+                    options = {
+                        content: $(selector).html(),
+                    }
+                }
+            } else {
+                // Bind the top level value as the content
+                options = {content: valueUnwrapped};
+            }
+            $(element).popover(options);
         }
     };
 

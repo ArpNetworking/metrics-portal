@@ -244,3 +244,8 @@ body {
 .right {
   float:right
 }
+
+.popover {
+  max-width: 100%;
+  width: auto;
+}

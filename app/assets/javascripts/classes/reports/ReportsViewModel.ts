@@ -24,7 +24,9 @@ class ReportsList extends PaginatedSearchableList<Report> {
                 return new Report(
                     rawReport.id,
                     rawReport.name,
+                    rawReport.source,
                     rawReport.schedule,
+                    rawReport.recipients,
                 )
             });
             callback(reportList, page.pagination);
