@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-import ReportData = require('./Report');
 import ko = require('knockout');
 import $ = require('jquery');
 import uuid = require('../Uuid');
 import csrf from '../Csrf';
 import DateTimeFormat = Intl.DateTimeFormat;
 
-import * as _ from 'underscore';
+import {
+    RecipientType,
+    ReportFormat,
+    ScheduleRepetition,
+    Source,
+    SourceType,
+    ZoneInfo,
+    Schedule,
+} from "./Models";
 
+// @ts-ignore: import is valid
 import moment = require('moment-timezone/moment-timezone');
 
 class EditReportViewModel {
@@ -119,15 +127,6 @@ class EditReportViewModel {
     ];
 }
 
-enum RecipientType {
-    Email,
-}
-
-enum ReportFormat {
-    Pdf,
-    Html,
-}
-
 class Recipient {
     id: KnockoutObservable<string>;
     type: RecipientType;
@@ -196,40 +195,29 @@ class Recipient {
     };
 }
 
-enum SourceType {
-    ChromeScreenshot,
-}
-
 class EditSourceViewModel {
-    id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
-    title = ko.observable<string>("");
-    url = ko.observable<string>("");
-    eventName = ko.observable<string>("");
-    ignoreCertificateErrors = ko.observable<boolean>(false);
+    model: Source;
 
-    public load(raw) {
-        this.id(raw.id);
-        this.url(raw.uri);
-        this.title(raw.title);
-        this.eventName(raw.triggeringEventName);
-        this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
-        // FIXME(cbriones)
-        // type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
+    constructor() {
+        this.model = new Source();
+    }
+
+    load(raw) {
+        this.model = Source.fromObject(raw);
     }
 
     toRequest() {
         let requestType;
-        if (this.type() == SourceType.ChromeScreenshot) {
+        if (this.model.type() == SourceType.ChromeScreenshot) {
             requestType = "CHROME_SCREENSHOT"
         }
         return {
             type: requestType,
-            id: this.id(),
-            uri: this.url(),
-            title: this.title(),
-            ignoreCertificateErrors: this.ignoreCertificateErrors(),
-            triggeringEventName: this.eventName(),
+            id: this.model.id(),
+            uri: this.model.url(),
+            title: this.model.title(),
+            ignoreCertificateErrors: this.model.ignoreCertificateErrors(),
+            triggeringEventName: this.model.eventName(),
         }
     }
 
@@ -248,35 +236,12 @@ class EditSourceViewModel {
     };
 }
 
-enum ScheduleRepetition {
-    OneOff,
-    Hourly,
-    Daily,
-    Weekly,
-    Monthly
-}
-
-class ZoneInfo {
-    value: string;
-    display: string;
-
-    constructor(value: string) {
-        this.value = value;
-        this.display = `${this.value} (${moment.tz(this.value).zoneAbbr()})`;
-    }
-}
-
 class EditScheduleViewModel {
-    repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.OneOff);
-    start = ko.observable<moment.Moment>();
-    end = ko.observable<moment.Moment | undefined>(undefined);
-    offsetString = ko.observable<string>("");
-    offset = ko.pureComputed<moment.Duration>(() => moment.duration(this.offsetString()));
-    zone = ko.observable<ZoneInfo>(new ZoneInfo(moment.tz.guess()));
+    model: Schedule;
     engine: Bloodhound<ZoneInfo>;
-    isPeriodic = ko.pureComputed<boolean>(() => this.repeat() != ScheduleRepetition.OneOff);
 
     constructor() {
+        this.model = new Schedule();
         const tokenizer = (s: string) => s.toLowerCase().split(/[ \/_()]/);
         const names: [ZoneInfo] = moment.tz.names().map((name) => new ZoneInfo(name));
         this.engine = new Bloodhound({
@@ -285,6 +250,10 @@ class EditScheduleViewModel {
             queryTokenizer: tokenizer,
         });
         this.engine.initialize();
+    }
+
+    load(raw) {
+        this.model = Schedule.fromObject(raw);
     }
 
     getAutocompleteOpts(): any {
@@ -300,50 +269,28 @@ class EditScheduleViewModel {
         };
     }
 
-    public load(raw) {
-        let repeat = ScheduleRepetition.OneOff;
-        if (raw.type == "Periodic") {
-            switch (raw.period) {
-                case "Hourly":
-                    repeat = ScheduleRepetition.Hourly;
-                    break;
-                case "Daily":
-                    repeat = ScheduleRepetition.Daily;
-                    break;
-                case "Monthly":
-                    repeat = ScheduleRepetition.Monthly;
-                    break;
-            }
-        }
-        this.repeat(repeat);
-        this.offsetString(raw.offset);
-        this.zone(new ZoneInfo(raw.zone));
-        this.start(moment(raw.runAtAndAfter));
-        this.end(moment(raw.runUntil));
-    }
-
     toRequest(): any {
         // Since we don't actually want to use the local browser timezone
         // we discard it in favor of the explicit 'zone' field on serialization
-        const runAtAndAfter = this.start().toISOString(false);
-        let runUntil = this.end();
+        const runAtAndAfter = this.model.start().toISOString(false);
+        let runUntil = this.model.end();
         if (runUntil) {
-            runUntil = this.end().toISOString(false);
+            runUntil = this.model.end().toISOString(false);
         }
-        const zone = this.zone().value;
+        const zone = this.model.zone().value;
 
         const baseRequest = {
             runAtAndAfter,
             runUntil,
             zone,
         };
-        const repeat = this.repeat();
+        const repeat = this.model.repeat();
         if (repeat == ScheduleRepetition.OneOff) {
             return Object.assign(baseRequest, {
                 type: "OneOff",
             });
         } else {
-            let offset = this.offset().toISOString();
+            let offset = this.model.offset().toISOString();
             let period = ScheduleRepetition[repeat];
             return Object.assign(baseRequest, {
                 type: "Periodic",
@@ -351,7 +298,6 @@ class EditScheduleViewModel {
                 offset,
             });
         }
-
     }
 
     readonly availableRepeatTypes = [
