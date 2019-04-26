@@ -20,6 +20,8 @@ env:
   - secure: Xp/K9POpuuIi+3nCtmkXH9H4tmV+RT0SRiCS7QoZ/Ob0TneGhVXMj6c6NPecfJshvzZ5Y5LAPxLTGwAJt8xpP/wjzGupUL+6zFyRjeVzU12Ky3BPokJrwUn1K6/fEt1fxCC7TYCyyFxoROvivN8L8K0ML9elQcLBqEfxiQaBVxolf0KH8wVZUEQtzva6pRcjxFoKu19Jytcjjn8qDmD0pmuzBT10w+EgvzGMa65mwMxYW1H7nPh1HpAkYbt5oNo8mkF+kkH2sRq4Z2L2utSBwGAJUxCUILhSZE7IWG8KqYcm7V/szFymMWzJDN0O5SC2yxkdjiUGDXbW5ux5+pXtcOPEK5868bVAfEytZJjjOuwEjqCpcBGMd8H+PDZ5vdcyO9aZeP1u+oFBoDkV0zboiZaJA+PPYXtBmlvFC7uf8ww78ZJRLwHTn8aYcIwHpdHbfDIMu9KbJO4/SqnB2+enyTSQriBNcILXS9QvuvsioFxlJbrWeHZYkm5beQimUU+BDM/ouwkrmrGe5AU8YsVnbM4ltCR1DtFVCkpWlYB6egC16F0fojh/H6Kvj3K/Pqlt5IbrFd6pIV2ZiPBxJIxIcE819stlilunRz0WR7oixzLjaEZG7zhWmgbsXo5RZSPme706zaebw5wKPSGznOx6AV0w34doE/juG3OBeilBHQY=
 install: true
 before_script:
+- sudo /etc/init.d/mysql stop
+- sudo /etc/init.d/postgresql stop
 - gpg --import arpnetworking.key
 - if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export
   TARGET="deploy -P release --settings settings.xml"; fi;
