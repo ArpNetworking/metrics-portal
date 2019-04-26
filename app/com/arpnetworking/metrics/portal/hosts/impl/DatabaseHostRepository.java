@@ -40,7 +40,6 @@ import models.internal.impl.DefaultHostQuery;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
 
-import javax.inject.Named;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import javax.inject.Named;
 
 /**
  * Implementation of <code>HostRepository</code> using SQL database.

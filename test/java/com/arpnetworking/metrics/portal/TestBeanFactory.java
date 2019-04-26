@@ -108,13 +108,14 @@ public final class TestBeanFactory {
             case 2:
                 final ChronoUnit chronoUnit = models.ebean.PeriodicReportSchedule.Period.values()[
                         RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)].toChronoUnit();
-
+                final ZoneId zoneId = ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[
+                        RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]);
                 schedule = new PeriodicSchedule.Builder()
                         .setRunAtAndAfter(runAtAndAfter.toInstant(ZoneOffset.UTC))
                         .setRunUntil(runUntil.toInstant(ZoneOffset.UTC))
                         .setPeriod(chronoUnit)
                         .setOffset(chronoUnit.getDuration().dividedBy(RANDOM.nextInt(9) + 2))
-                        .setZone(ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]))
+                        .setZone(zoneId)
                         .build();
                 break;
             case 1:
@@ -148,78 +149,6 @@ public final class TestBeanFactory {
     }
 
     /**
-     * Factory method for creating an ebean report to the specified organization.
-     *
-     * @param organization the {@code models.ebean.Organization} to associate the report with
-     * @return an ebean report
-     */
-    public static models.ebean.Report createEbeanReport(final models.ebean.Organization organization) {
-        final LocalDateTime now = LocalDateTime.now();
-        final LocalDateTime runAtAndAfter = now.plusDays(RANDOM.nextInt(100) - 50);
-        final LocalDateTime runUntil = runAtAndAfter.plusDays(RANDOM.nextInt(100) + 1);
-        final models.ebean.ReportSchedule schedule;
-        switch (RANDOM.nextInt(3)) {
-            case 2:
-                final models.ebean.PeriodicReportSchedule periodicSchedule = new models.ebean.PeriodicReportSchedule();
-                final models.ebean.PeriodicReportSchedule.Period period = models.ebean.PeriodicReportSchedule.Period.values()[
-                        RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)];
-                periodicSchedule.setPeriod(period);
-                periodicSchedule.setOffset(period.toChronoUnit().getDuration().dividedBy(RANDOM.nextInt(9) + 2));
-                periodicSchedule.setZone(ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]));
-                periodicSchedule.setRunAt(runAtAndAfter.toInstant(ZoneOffset.UTC));
-                periodicSchedule.setRunUntil(runUntil.toInstant(ZoneOffset.UTC));
-                schedule = periodicSchedule;
-                break;
-            case 1:
-                schedule = new models.ebean.OneOffReportSchedule();
-                schedule.setRunAt(runAtAndAfter.toInstant(ZoneOffset.UTC));
-                break;
-            case 0:
-            default:
-                schedule = new models.ebean.NeverReportSchedule();
-        }
-
-        final models.ebean.ReportFormat format;
-        if (RANDOM.nextInt(2) == 0) {
-            format = new models.ebean.HtmlReportFormat();
-        } else {
-            final models.ebean.PdfReportFormat pdfFormat = new models.ebean.PdfReportFormat();
-            pdfFormat.setHeightInches((RANDOM.nextInt(100) + 1) * 11f / 100f);
-            pdfFormat.setWidthInches((RANDOM.nextInt(100) + 1) * 8.5f / 100f);
-            format = pdfFormat;
-        }
-
-        final models.ebean.ReportSource source = TestBeanFactory.createEbeanReportSource();
-        final models.ebean.Recipient recipient = TestBeanFactory.createEbeanReportRecipient();
-
-        final models.ebean.Report report = new models.ebean.Report();
-        report.setName(TEST_NAME + UUID.randomUUID().toString());
-        report.setOrganization(organization);
-        report.setRecipients(ImmutableSetMultimap.of(format, recipient));
-        report.setReportSource(source);
-        report.setSchedule(schedule);
-        report.setUuid(UUID.randomUUID());
-
-        return report;
-    }
-
-    /**
-     * Factory method for creating an ebean report source.
-     *
-     * @return an ebean report source
-     */
-    public static models.ebean.ReportSource createEbeanReportSource() {
-        final URI testUri = URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com");
-        final models.ebean.ChromeScreenshotReportSource source = new models.ebean.ChromeScreenshotReportSource();
-        source.setUri(testUri);
-        source.setUuid(UUID.randomUUID());
-        source.setTitle(TEST_TITLE + UUID.randomUUID().toString());
-        source.setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString());
-        source.setIgnoreCertificateErrors(true);
-        return source;
-    }
-
-    /**
      * Factory method for creating a report recipient.
      *
      * @return a report recipient
@@ -229,18 +158,6 @@ public final class TestBeanFactory {
                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                 .setId(UUID.randomUUID())
                 .build();
-    }
-
-    /**
-     * Factory method for creating an ebean report recipient.
-     *
-     * @return an ebean report recipient
-     */
-    public static models.ebean.Recipient createEbeanReportRecipient() {
-        final models.ebean.Recipient recipient = models.ebean.Recipient.newEmailRecipient(
-                UUID.randomUUID().toString().replace("-", "") + "@example.com");
-        recipient.setUuid(UUID.randomUUID());
-        return recipient;
     }
 
     /**
@@ -316,6 +233,7 @@ public final class TestBeanFactory {
      * Factory method to create an ebean alert to a specified organization.
      *
      * @param organization the {@code models.ebean.Organization} to associate the alert with
+     * @return random Ebean alert instance
      */
     public static models.ebean.Alert createEbeanAlert(final models.ebean.Organization organization) {
         final models.ebean.Alert ebeanAlert = new models.ebean.Alert();

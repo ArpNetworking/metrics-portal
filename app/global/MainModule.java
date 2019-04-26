@@ -104,8 +104,7 @@ public class MainModule extends AbstractModule {
         // Databases
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal"))
-                .toProvider(MetricsPortalEbeanServerProvider.class)
-                .asEagerSingleton();
+                .toProvider(MetricsPortalEbeanServerProvider.class);
 
         // Repositories
         bind(OrganizationRepository.class)
@@ -270,7 +269,8 @@ public class MainModule extends AbstractModule {
 
         @Override
         public EbeanServer get() {
-            return Ebean.getServer("metrics_portal");
+            // TODO(ville): Rename the default database instance to 'metrics_portal'
+            return Ebean.getServer("default");
         }
     }
 

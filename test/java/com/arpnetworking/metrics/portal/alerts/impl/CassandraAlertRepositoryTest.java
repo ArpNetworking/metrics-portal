@@ -59,6 +59,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests class <code>CassandraAlertRepository</code>.
  *
+ * TODO(ville): Convert this to an integration test.
+ *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 @Ignore

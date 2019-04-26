@@ -95,6 +95,7 @@ public final class DummyJob<T> implements Job<T> {
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
+    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public static final class Builder<T> extends OvalBuilder<DummyJob<T>> {
         @NotNull
         private UUID _uuid = UUID.randomUUID();

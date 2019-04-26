@@ -16,15 +16,14 @@
 package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.EbeanServer;
-import io.ebean.Transaction;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.QueryResult;

@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
+import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import io.ebean.EbeanServer;
 import io.ebean.Transaction;
 import models.internal.Alert;
@@ -32,12 +33,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

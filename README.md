@@ -136,7 +136,7 @@ Installation via RPM or Docker will use the [production file logging configurati
 default. However, other installation methods will use the [debugging logging configuration file](conf/logback.xml) by
 default and users are *strongly* recommended to override this behavior.
 
-Metrics Portal also ships with a second [production console logging configuration file](main/config/logback-console.xml)
+Metrics Portal ships with a second [production console logging configuration file](main/config/logback-console.xml)
 which outputs to standard out instead of to a rotated and gzipped file.
 
 #### Application
@@ -155,8 +155,24 @@ To use the default application configuration file for non-RPM and non-Docker ins
 
     /opt/metrics_portal/bin/metrics-portal -Dconfig.resource=conf/portal.application.conf -- /opt/metrics-portal
 
-It is *strongly* recommended that user author a custom application configuration and that you inherit from the default
-application configuration file and provide any desired configuration as overrides. Please refer to [Play Framework](https://www.playframework.com/documentation/2.6.x/ProductionConfiguration)
+Metrics Portal ships with two additional application configuration files, `[postgresql.application.conf](conf/postgresql.application.conf)`
+for using [Postgresql](https://www.postgresql.org) as the data store and another `[cassandra.application.conf](conf/cassandra.application.conf)`
+for using [Cassandra](http://cassandra.apache.org/) as the data store. You can specify one of these by adding the following
+to argument to the JVM:
+
+For Postgresql:
+    -Dconfig.resource=conf/postgresql.application.conf
+
+For Cassandra:
+    -Dconfig.resource=conf/cassandra.application.conf
+
+Both of these configuration files derive from the base configuration file, and it is recommended that you use one of these
+as your base configuration. Additionally, both support overrides for locating the specific data store instance. Please
+refer to these files when configuring your Metrics Portal instance.
+
+Finally, while it is possible to leverage the provided configuration files, it is *strongly* recommended that users author
+a custom application configuration and that you inherit from the default application configuration file and provide any
+desired configuration as overrides. Please refer to [Play Framework](https://www.playframework.com/documentation/2.6.x/ProductionConfiguration)
 documentation for more information on how to author a configuration file.
 
 ### Extension
@@ -170,9 +186,14 @@ First, add dependencies on the Metrics Portal code and assets in __conf/Build.sc
 
     "com.arpnetworking.metrics" %% "metrics-portal" % "VERSION"
 
-Second, your extending project's application configuration should include the custom default configuration in __conf/application.conf__:
+Second, your extending project's application configuration should include one of the custom default configuration in __conf/application.conf__:
 
+Base:
     include "portal.application.conf"
+Postgresql:
+    include "postgresql.application.conf"
+Cassandra:
+    include "cassandra.application.conf"
 
 Third, your extending project's application configuration should restore the default router in __conf/application.conf__:
 
@@ -194,7 +215,7 @@ Building:
 
 Building without Docker (will disable integration tests):
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw -PnoDocker verify
+    metrics-portal> ./jdk-wrapper.sh ./mvnw -Pno-docker verify
 
 To control which verification targets (e.g. Checkstyle, Findbugs, Coverage, etc.) are run please refer to the
 [parent-pom](https://github.com/ArpNetworking/arpnetworking-parent-pom) for parameters (e.g. `-DskipAllVerification=true`).
@@ -206,7 +227,8 @@ To run the server on port 8080 and its dependencies launched via Docker:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start
 
-To stop the server and its dependencies run; this is recommended in place of `docker kill` as it will also remove the container and avoids name conflicts:
+To stop the server and its dependencies run; this is recommended in place of `docker kill` as it will also remove the
+container and avoids name conflicts on restart:
 
     metrics-portal> ./jdk-wrapper.sh ./mvnw docker:stop
 

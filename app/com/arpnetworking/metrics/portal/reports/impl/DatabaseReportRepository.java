@@ -28,7 +28,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.typesafe.config.Config;
-import io.ebean.DuplicateKeyException;
 import io.ebean.EbeanServer;
 import io.ebean.PagedList;
 import io.ebean.Query;
@@ -131,7 +130,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         _reportQueryGenerator = reportQueryGenerator;
     }
 
-    private final Recipient.Visitor<models.ebean.Recipient> INTERNAL_TO_BEAN_RECIPIENT_VISITOR =
+    private final Recipient.Visitor<models.ebean.Recipient> _internalToEbeanVisitor =
             new Recipient.Visitor<models.ebean.Recipient>() {
                 @Override
                 public models.ebean.Recipient visit(final DefaultEmailRecipient recipient) {
@@ -437,7 +436,7 @@ public final class DatabaseReportRepository implements ReportRepository {
             final PeriodicReportSchedule.Period beanPeriod = PeriodicReportSchedule.Period.fromChronoUnit(internalPeriodic.getPeriod());
             beanPeriodic.setRunAt(internalPeriodic.getRunAtAndAfter());
             beanPeriodic.setRunUntil(internalPeriodic.getRunUntil().orElse(null));
-            beanPeriodic.setOffset(internalPeriodic.getOffset());
+            beanPeriodic.setOffsetNanos(internalPeriodic.getOffset().toNanos());
             beanPeriodic.setPeriod(beanPeriod);
             beanPeriodic.setZone(internalPeriodic.getZone());
             return beanPeriodic;
@@ -481,7 +480,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         for (final Map.Entry<ReportFormat, Collection<Recipient>> entry : recipients.entrySet()) {
             final models.ebean.ReportFormat beanFormat = INTERNAL_TO_BEAN_FORMAT_VISITOR.visit(entry.getKey());
             for (final Recipient recipient : entry.getValue()) {
-                multimapBuilder.put(beanFormat, INTERNAL_TO_BEAN_RECIPIENT_VISITOR.visit(recipient));
+                multimapBuilder.put(beanFormat, _internalToEbeanVisitor.visit(recipient));
             }
         }
         return multimapBuilder.build();

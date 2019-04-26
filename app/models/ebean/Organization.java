@@ -63,6 +63,7 @@ public class Organization {
     /**
      * Finds an {@link Organization} when given an {@link models.internal.Organization}.
      *
+     * @param ebeanServer The {@code EbeanServer} instance to use.
      * @param organization The organization to lookup.
      * @return The organization from the database.
      */

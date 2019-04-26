@@ -123,10 +123,10 @@ public final class PdfReportFormat implements ReportFormat {
         }
 
         @NotNull
-        @Min(value=0, inclusive=false)
+        @Min(value = 0, inclusive = false)
         private Float _widthInches;
         @NotNull
-        @Min(value=0, inclusive=false)
+        @Min(value = 0, inclusive = false)
         private Float _heightInches;
     }
 

@@ -33,6 +33,7 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import play.Application;
 import play.inject.Injector;
@@ -48,11 +49,13 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests class <code>CassandraAlertRepository</code>.
  *
+ * TODO(ville): Convert this to an integration test.
+ *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Ignore
 public final class CassandraHostRepositoryTest extends WithApplication {
 
-    /*
     @Override
     protected Application provideApplication() {
         final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
@@ -215,5 +218,4 @@ public final class CassandraHostRepositoryTest extends WithApplication {
     private CassandraHostRepository _hostRepo;
     private MappingManager _mappingManager;
     private Application _app;
-    */
 }

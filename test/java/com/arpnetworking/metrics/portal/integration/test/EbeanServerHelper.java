@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.integration.repositories;
+package com.arpnetworking.metrics.portal.integration.test;
 
 import com.google.common.collect.Maps;
 import com.zaxxer.hikari.HikariConfig;
@@ -22,16 +22,16 @@ import io.ebean.EbeanServer;
 import io.ebean.EbeanServerFactory;
 import io.ebean.config.ServerConfig;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Helper to manage shared {@code EbeanServer} references for integration testing.
  *
  * @author ville dot koskela at inscopemetrics dot io
  */
-final class EbeanServerHelper {
+public final class EbeanServerHelper {
 
     /**
      * Obtain a reference to the shared Metrics database {@code EbeanServer}.
@@ -81,6 +81,7 @@ final class EbeanServerHelper {
         serverConfig.setName(name);
         serverConfig.setDefaultServer(setAsDefault);
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
+        serverConfig.addPackage("models.ebean");
         return EbeanServerFactory.create(serverConfig);
     }
 
@@ -96,5 +97,5 @@ final class EbeanServerHelper {
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";
     private static final String METRICS_DATABASE_PASSWORD = "metrics_app_password";
     private static final int DEFAULT_POSTGRES_PORT = 5432;
-    private static final int DEFAULT_POOL_SIZE = 200;
+    private static final int DEFAULT_POOL_SIZE = 50;
 }
