@@ -16,16 +16,17 @@
 import ko = require('knockout');
 
 import {
-    Recipient,
+    BaseRecipientViewModel,
+    BaseScheduleViewModel,
+    BaseSourceViewModel,
     ReportFormat,
-    Source,
-    Schedule,
     ScheduleRepetition,
 } from "./Models";
 
 export default class Report {
     id: string;
     name: string;
+
     schedule: ScheduleViewModel;
     source: SourceViewModel;
     recipients: RecipientViewModel[];
@@ -35,48 +36,48 @@ export default class Report {
     constructor(id: string, name: string, source: any, schedule: any, recipients: object[]) {
         this.id = id;
         this.name = name;
-        this.recipients = recipients.map((raw) => new RecipientViewModel(Recipient.fromObject(raw)));
-        this.schedule = new ScheduleViewModel(Schedule.fromObject(schedule));
-        this.source = new SourceViewModel(Source.fromObject(source));
+
+        this.recipients = recipients.map((raw) =>
+            new RecipientViewModel().load(raw)
+        );
+        this.schedule = new ScheduleViewModel().load(schedule);
+        this.source = new SourceViewModel().load(source);
 
         this.editUri = `#report/edit/${this.id}`;
     }
 }
 
-class RecipientViewModel {
-    model: Recipient;
+class RecipientViewModel extends BaseRecipientViewModel {
     badgeText: KnockoutComputed<string>;
 
-    constructor(model: Recipient) {
-        this.model = model;
+    constructor() {
+        super();
         this.badgeText = ko.computed(() =>
-            `${this.model.address()} (${ReportFormat[this.model.format()].toUpperCase()})`
+            `${this.address()} (${ReportFormat[this.format()].toUpperCase()})`
         );
     }
 }
 
-class SourceViewModel {
-    model: Source;
+class SourceViewModel extends BaseSourceViewModel {
     displayText: KnockoutComputed<string>;
 
-    constructor(model: Source) {
-        this.model = model;
+    constructor() {
+        super();
         this.displayText = ko.computed<string>(() => {
             const type = "Browser rendered";
-            return `${this.model.title()} (${type})`
+            return `${this.title()} (${type})`
         });
     }
 
 }
 
-class ScheduleViewModel {
-    model: Schedule;
+class ScheduleViewModel extends BaseScheduleViewModel {
     displayType: KnockoutComputed<string>;
 
-    constructor(model: Schedule) {
-        this.model = model;
+    constructor() {
+        super();
         this.displayType = ko.computed(() => {
-            switch (this.model.repeat()) {
+            switch (this.repeat()) {
                 case ScheduleRepetition.OneOff:
                     return "One-off";
                 case ScheduleRepetition.Daily:

@@ -1,3 +1,4 @@
+import uuid = require('../Uuid');
 import ko = require('knockout');
 // @ts-ignore: import is valid
 import moment = require('moment-timezone/moment-timezone');
@@ -37,7 +38,7 @@ export class ZoneInfo {
     }
 }
 
-export class Source {
+export class BaseSourceViewModel {
     id = ko.observable("");
     type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
     title = ko.observable<string>("");
@@ -45,21 +46,24 @@ export class Source {
     eventName = ko.observable<string>("");
     ignoreCertificateErrors = ko.observable<boolean>(false);
 
-    public static fromObject(raw): Source {
-        const source = new Source();
-
-        source.id(raw.id);
-        source.url(raw.uri);
-        source.title(raw.title);
-        source.eventName(raw.triggeringEventName);
-        source.ignoreCertificateErrors(raw.ignoreCertificateErrors);
-        // FIXME(cbriones)
-        // type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
-        return source
+    public load(raw): this {
+        this.id(raw.id);
+        this.url(raw.uri);
+        this.title(raw.title);
+        this.eventName(raw.triggeringEventName);
+        this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
+        switch (raw.type) {
+            case "ChromeScreenshot":
+                this.type(SourceType.ChromeScreenshot);
+                break;
+            default:
+                throw new Error(`Unknown source type: ${raw.type}`);
+        }
+        return this;
     }
 }
 
-export class Schedule {
+export class BaseScheduleViewModel {
     repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.OneOff);
     start = ko.observable<moment.Moment>();
     end = ko.observable<moment.Moment | undefined>(undefined);
@@ -68,10 +72,9 @@ export class Schedule {
 
     offsetString = ko.observable<string>("");
 
-    public static fromObject(raw: any): Schedule {
-        const schedule = new Schedule();
-
+    public load(raw: any): this {
         let repeat = ScheduleRepetition.OneOff;
+
         if (raw.type == "Periodic") {
             switch (raw.period) {
                 case "Hourly":
@@ -83,46 +86,50 @@ export class Schedule {
                 case "Monthly":
                     repeat = ScheduleRepetition.Monthly;
                     break;
+                default:
+                    throw new Error(`Unknown schedule period: ${raw.period}`);
             }
         }
-        schedule.repeat(repeat);
-        schedule.offsetString(raw.offset);
-        schedule.zone(new ZoneInfo(raw.zone));
-        schedule.start(moment(raw.runAtAndAfter));
-        schedule.end(moment(raw.runUntil));
-        return schedule;
+        this.repeat(repeat);
+        this.offsetString(raw.offset);
+        this.zone(new ZoneInfo(raw.zone));
+        this.start(moment(raw.runAtAndAfter));
+        this.end(moment(raw.runUntil));
+        return this;
     }
 }
 
-export class Recipient {
+export class BaseRecipientViewModel {
     id: KnockoutObservable<string>;
     type: RecipientType;
     address: KnockoutObservable<string>;
     format: KnockoutObservable<ReportFormat>;
 
-    constructor(id: string, type: RecipientType) {
-        this.id = ko.observable(id);
-        this.type = type;
+    constructor(type?: RecipientType) {
+        this.id = ko.observable(uuid.v4());
+        this.type = type || RecipientType.Email;
         this.address = ko.observable("");
         this.format = ko.observable(ReportFormat.Pdf);
     }
 
-    public static fromObject(raw): Recipient {
-        const type = RecipientType.Email;
+    public load(raw): this {
+        this.address(raw.address);
 
-        const recipient = new Recipient(raw.id, type);
-        recipient.address(raw.address)
+        switch (raw.type) {
+            case "Email":
+                this.type = RecipientType.Email;
+                break;
+            default:
+                throw new Error(`Unknown recipient type: ${raw.type}`)
+        }
 
-        let format;
         if (raw.format.type == "Html") {
-            format = ReportFormat.Html;
+            this.format(ReportFormat.Html);
         } else if (raw.format.type == "Pdf") {
-            format = ReportFormat.Pdf;
+            this.format(ReportFormat.Pdf);
         } else {
             throw new Error(`Unknown format "${raw.format.type}"`);
         }
-
-        recipient.format(format);
-        return recipient;
+        return this;
     }
 }

@@ -17,21 +17,20 @@
 import ko = require('knockout');
 import $ = require('jquery');
 import uuid = require('../Uuid');
+// @ts-ignore: import is valid
+import moment = require('moment-timezone/moment-timezone');
 import csrf from '../Csrf';
-import DateTimeFormat = Intl.DateTimeFormat;
 
 import {
+    BaseRecipientViewModel,
+    BaseScheduleViewModel,
+    BaseSourceViewModel,
     RecipientType,
     ReportFormat,
     ScheduleRepetition,
-    Source,
     SourceType,
     ZoneInfo,
-    Schedule,
 } from "./Models";
-
-// @ts-ignore: import is valid
-import moment = require('moment-timezone/moment-timezone');
 
 class EditReportViewModel {
     enabled = true;
@@ -42,7 +41,7 @@ class EditReportViewModel {
     schedule = new EditScheduleViewModel();
 
     // Recipients
-    recipients = ko.observableArray<Recipient>();
+    recipients = ko.observableArray<EditRecipientViewModel>();
     existingReport = ko.observable<boolean>(false);
 
     // Alert for showing error messages on save
@@ -61,15 +60,19 @@ class EditReportViewModel {
     }
 
     loadReport(id: String): void {
-        $.getJSON("/v1/reports/" + id, null, (reportData) => {
+        $.getJSON("/v1/reports/" + id, null, (rawReport) => {
             // FIXME(cbriones): Bind these to the view model.
-            this.id(reportData.id);
-            this.name(reportData.name);
+            this.id(rawReport.id);
+            this.name(rawReport.name);
             this.existingReport(true);
-            this.source.load(reportData.source);
-            this.schedule.load(reportData.schedule);
-            const recipients = reportData.recipients.map(Recipient.fromObject);
-            this.recipients(recipients);
+            this.source.load(rawReport.source);
+            this.schedule.load(rawReport.schedule);
+
+            rawReport.recipients.forEach((raw) => {
+                const model = new EditRecipientViewModel();
+                model.load(raw);
+                this.recipients.push(model);
+            });
         }).fail(() => {
             this.alertMessage("Report not found");
             this.enabled = false;
@@ -83,7 +86,7 @@ class EditReportViewModel {
     }
 
     addRecipient(recipientType: RecipientType): void {
-        let recipient = new Recipient(recipientType);
+        let recipient = new EditRecipientViewModel(recipientType);
         this.recipients.push(recipient);
     }
 
@@ -127,39 +130,7 @@ class EditReportViewModel {
     ];
 }
 
-class Recipient {
-    id: KnockoutObservable<string>;
-    type: RecipientType;
-    address: KnockoutObservable<string>;
-    format: KnockoutObservable<ReportFormat>;
-
-    constructor(type: RecipientType) {
-        this.id = ko.observable(uuid.v4());
-        this.type = type;
-        this.address = ko.observable("");
-        this.format = ko.observable(ReportFormat.Pdf);
-    }
-
-    public static fromObject(raw): Recipient {
-        const type = RecipientType.Email;
-
-        const recipient = new Recipient(type);
-        recipient.id(raw.id);
-        recipient.address(raw.address)
-
-        let format;
-        if (raw.format.type == "Html") {
-            format = ReportFormat.Html;
-        } else if (raw.format.type == "Pdf") {
-            format = ReportFormat.Pdf;
-        } else {
-            throw new Error(`Unknown format "${raw.format.type}"`);
-        }
-
-        recipient.format(format);
-        return recipient;
-    }
-
+class EditRecipientViewModel extends BaseRecipientViewModel {
     label(): string {
         return RecipientType[this.type]
     }
@@ -195,29 +166,19 @@ class Recipient {
     };
 }
 
-class EditSourceViewModel {
-    model: Source;
-
-    constructor() {
-        this.model = new Source();
-    }
-
-    load(raw) {
-        this.model = Source.fromObject(raw);
-    }
-
+class EditSourceViewModel extends BaseSourceViewModel {
     toRequest() {
         let requestType;
-        if (this.model.type() == SourceType.ChromeScreenshot) {
+        if (this.type() == SourceType.ChromeScreenshot) {
             requestType = "CHROME_SCREENSHOT"
         }
         return {
             type: requestType,
-            id: this.model.id(),
-            uri: this.model.url(),
-            title: this.model.title(),
-            ignoreCertificateErrors: this.model.ignoreCertificateErrors(),
-            triggeringEventName: this.model.eventName(),
+            id: this.id(),
+            uri: this.url(),
+            title: this.title(),
+            ignoreCertificateErrors: this.ignoreCertificateErrors(),
+            triggeringEventName: this.eventName(),
         }
     }
 
@@ -236,12 +197,12 @@ class EditSourceViewModel {
     };
 }
 
-class EditScheduleViewModel {
-    model: Schedule;
+class EditScheduleViewModel extends BaseScheduleViewModel {
     engine: Bloodhound<ZoneInfo>;
+    isPeriodic: KnockoutComputed<boolean>;
 
     constructor() {
-        this.model = new Schedule();
+        super();
         const tokenizer = (s: string) => s.toLowerCase().split(/[ \/_()]/);
         const names: [ZoneInfo] = moment.tz.names().map((name) => new ZoneInfo(name));
         this.engine = new Bloodhound({
@@ -250,10 +211,7 @@ class EditScheduleViewModel {
             queryTokenizer: tokenizer,
         });
         this.engine.initialize();
-    }
-
-    load(raw) {
-        this.model = Schedule.fromObject(raw);
+        this.isPeriodic = ko.pureComputed(() => this.repeat() != ScheduleRepetition.OneOff);
     }
 
     getAutocompleteOpts(): any {
@@ -272,25 +230,25 @@ class EditScheduleViewModel {
     toRequest(): any {
         // Since we don't actually want to use the local browser timezone
         // we discard it in favor of the explicit 'zone' field on serialization
-        const runAtAndAfter = this.model.start().toISOString(false);
-        let runUntil = this.model.end();
+        const runAtAndAfter = this.start().toISOString(false);
+        let runUntil = this.end();
         if (runUntil) {
-            runUntil = this.model.end().toISOString(false);
+            runUntil = this.end().toISOString(false);
         }
-        const zone = this.model.zone().value;
+        const zone = this.zone().value;
 
         const baseRequest = {
             runAtAndAfter,
             runUntil,
             zone,
         };
-        const repeat = this.model.repeat();
+        const repeat = this.repeat();
         if (repeat == ScheduleRepetition.OneOff) {
             return Object.assign(baseRequest, {
                 type: "OneOff",
             });
         } else {
-            let offset = this.model.offset().toISOString();
+            let offset = this.offset().toISOString();
             let period = ScheduleRepetition[repeat];
             return Object.assign(baseRequest, {
                 type: "Periodic",
