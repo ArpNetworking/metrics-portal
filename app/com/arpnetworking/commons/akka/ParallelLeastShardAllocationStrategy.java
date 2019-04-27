@@ -74,10 +74,13 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
         }
 
         // Otherwise default to giving it to the shard with the least amount of shards
+        // NOTE: The Java conversion of the Scala sequence is necessary to satisfy the
+        // Javassist byte code processor which finds otherwise an ambiguous method
+        // reference when directly calling either size() or length() on the sequence.
         return Futures.successful(currentShardAllocations
                 .entrySet()
                 .stream()
-                .sorted(Comparator.comparingInt(e -> e.getValue().size()))
+                .sorted(Comparator.comparingInt(e -> JavaConversions.seqAsJavaList(e.getValue()).size()))
                 .findFirst()
                 .get()
                 .getKey());

@@ -193,7 +193,7 @@ public class KairosDbProxy extends Controller {
         }
 
         final String lowerContaining = containing.toLowerCase(Locale.ENGLISH);
-        final Predicate<String> containsPredicate = s -> s.toLowerCase().contains(lowerContaining);
+        final Predicate<String> containsPredicate = s -> s.toLowerCase(Locale.getDefault()).contains(lowerContaining);
 
         return metricNames.stream()
                 .filter(IS_PT1M.negate())
