@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Schedule for a job that repeats periodically.
+ * BaseScheduleViewModel for a job that repeats periodically.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */

@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Schedule that should never fire.
+ * BaseScheduleViewModel that should never fire.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
