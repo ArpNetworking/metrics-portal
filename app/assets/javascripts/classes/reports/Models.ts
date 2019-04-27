@@ -52,13 +52,12 @@ export class BaseSourceViewModel {
         this.title(raw.title);
         this.eventName(raw.triggeringEventName);
         this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
-        switch (raw.type) {
-            case "ChromeScreenshot":
-                this.type(SourceType.ChromeScreenshot);
-                break;
-            default:
-                throw new Error(`Unknown source type: ${raw.type}`);
+
+        const type = SourceType[raw.type as string];
+        if (type === undefined) {
+            throw new Error(`Unknown source type: ${raw.type}`);
         }
+        this.type(type);
         return this;
     }
 }
@@ -73,24 +72,15 @@ export class BaseScheduleViewModel {
     offsetString = ko.observable<string>("");
 
     public load(raw: any): this {
-        let repeat = ScheduleRepetition.OneOff;
-
-        if (raw.type == "Periodic") {
-            switch (raw.period) {
-                case "Hourly":
-                    repeat = ScheduleRepetition.Hourly;
-                    break;
-                case "Daily":
-                    repeat = ScheduleRepetition.Daily;
-                    break;
-                case "Monthly":
-                    repeat = ScheduleRepetition.Monthly;
-                    break;
-                default:
-                    throw new Error(`Unknown schedule period: ${raw.period}`);
+        if (raw.type == "OneOff") {
+            this.repeat(ScheduleRepetition.OneOff)
+        } else if (raw.type == "Periodic") {
+            const repeat = raw.period && ScheduleRepetition[raw.period as string];
+            if (repeat === undefined || repeat == ScheduleRepetition.OneOff) {
+                throw new Error(`Invalid schedule period: ${raw.period}`);
             }
+            this.repeat(repeat);
         }
-        this.repeat(repeat);
         this.offsetString(raw.offset);
         this.zone(new ZoneInfo(raw.zone));
         this.start(moment(raw.runAtAndAfter));
@@ -115,21 +105,16 @@ export class BaseRecipientViewModel {
     public load(raw): this {
         this.address(raw.address);
 
-        switch (raw.type) {
-            case "Email":
-                this.type = RecipientType.Email;
-                break;
-            default:
-                throw new Error(`Unknown recipient type: ${raw.type}`)
+        const type: RecipientType = RecipientType[raw.type as string];
+        if (type === undefined) {
+            throw new Error(`Unknown recipient type: ${raw.type}`)
         }
 
-        if (raw.format.type == "Html") {
-            this.format(ReportFormat.Html);
-        } else if (raw.format.type == "Pdf") {
-            this.format(ReportFormat.Pdf);
-        } else {
-            throw new Error(`Unknown format "${raw.format.type}"`);
+        const format: ReportFormat = ReportFormat[raw.format.type as string];
+        if (format === undefined) {
+            throw new Error(`Unknown format type: ${raw.format.type}`)
         }
+        this.format(format);
         return this;
     }
 }
