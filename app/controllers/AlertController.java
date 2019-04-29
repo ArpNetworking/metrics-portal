@@ -164,7 +164,7 @@ public class AlertController extends Controller {
         }
 
         // Build a host repository query
-        final AlertQuery query = _alertRepository.createQuery(_organizationRepository.get(request()))
+        final AlertQuery query = _alertRepository.createAlertQuery(_organizationRepository.get(request()))
                 .contains(argContains)
                 .context(argContext)
                 .service(argService)

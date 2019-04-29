@@ -64,7 +64,7 @@ public interface AlertRepository {
      * @param organization Organization to search in.
      * @return Instance of <code>AlertQuery</code>.
      */
-    AlertQuery createQuery(Organization organization);
+    AlertQuery createAlertQuery(Organization organization);
 
     /**
      * Query alerts.

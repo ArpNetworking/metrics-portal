@@ -72,7 +72,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public AlertQuery createQuery(final Organization organization) {
+    public AlertQuery createAlertQuery(final Organization organization) {
         LOGGER.debug()
                 .setMessage("Preparing query")
                 .addData("organization", organization)

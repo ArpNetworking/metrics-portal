@@ -111,7 +111,7 @@ public class DatabaseAlertRepository implements AlertRepository {
     }
 
     @Override
-    public AlertQuery createQuery(final Organization organization) {
+    public AlertQuery createAlertQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")
