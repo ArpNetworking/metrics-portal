@@ -9,8 +9,8 @@ Metrics Portal
     <img src="https://travis-ci.org/ArpNetworking/metrics-portal.png?branch=master"
          alt="Travis Build">
 </a>
-<a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.metrics%22%20a%3A%22metrics-portal_2.11%22">
-    <img src="https://img.shields.io/maven-central/v/com.arpnetworking.metrics/metrics-portal_2.11.svg"
+<a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.metrics%22%20a%3A%22metrics-portal%22">
+    <img src="https://img.shields.io/maven-central/v/com.arpnetworking.metrics/metrics-portal.svg"
          alt="Maven Artifact">
 </a>
 <a href="https://hub.docker.com/r/arpnetworking/metrics-portal">
@@ -192,10 +192,15 @@ First, add dependencies on the Metrics Portal code and assets in __conf/Build.sc
 Second, your extending project's application configuration should include one of the custom default configuration in __conf/application.conf__:
 
 Base:
+
     include "portal.application.conf"
+    
 Postgresql:
+
     include "postgresql.application.conf"
+    
 Cassandra:
+
     include "cassandra.application.conf"
 
 Third, your extending project's application configuration should restore the default router in __conf/application.conf__:
