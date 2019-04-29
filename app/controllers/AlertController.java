@@ -217,7 +217,7 @@ public class AlertController extends Controller {
         } catch (final IllegalArgumentException e) {
             return badRequest();
         }
-        final Optional<Alert> result = _alertRepository.get(identifier, _organizationRepository.get(request()));
+        final Optional<Alert> result = _alertRepository.getAlert(identifier, _organizationRepository.get(request()));
         if (!result.isPresent()) {
             return notFound();
         }

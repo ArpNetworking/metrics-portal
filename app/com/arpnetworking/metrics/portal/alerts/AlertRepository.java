@@ -47,7 +47,7 @@ public interface AlertRepository {
      * @param organization The organization owning the alert.
      * @return The matching <code>Alert</code> if found or <code>Optional.empty()</code>.
      */
-    Optional<Alert> get(UUID identifier, Organization organization);
+    Optional<Alert> getAlert(UUID identifier, Organization organization);
 
     /**
      * Delete an <code>Alert</code> by identifier.

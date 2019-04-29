@@ -61,7 +61,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public Optional<Alert> get(final UUID identifier, final Organization organization) {
+    public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")

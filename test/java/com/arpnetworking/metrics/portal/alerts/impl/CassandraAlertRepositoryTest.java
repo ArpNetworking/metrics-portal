@@ -116,7 +116,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
 
     @Test
     public void testGetForInvalidId() {
-        assertFalse(_alertRepo.get(UUID.randomUUID(), TestBeanFactory.getDefautOrganization()).isPresent());
+        assertFalse(_alertRepo.getAlert(UUID.randomUUID(), TestBeanFactory.getDefautOrganization()).isPresent());
     }
 
     @Test
@@ -124,13 +124,13 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final UUID uuid = UUID.randomUUID();
         final models.cassandra.Alert cassandraAlert = TestBeanFactory.createCassandraAlert();
         final Organization org = TestBeanFactory.organizationFrom(cassandraAlert.getOrganization());
-        assertFalse(_alertRepo.get(uuid, org).isPresent());
+        assertFalse(_alertRepo.getAlert(uuid, org).isPresent());
         cassandraAlert.setUuid(uuid);
 
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         mapper.save(cassandraAlert);
 
-        final Optional<Alert> expected = _alertRepo.get(uuid, org);
+        final Optional<Alert> expected = _alertRepo.getAlert(uuid, org);
         assertTrue(expected.isPresent());
         assertAlertCassandraEquivalent(expected.get(), cassandraAlert);
     }
@@ -161,10 +161,10 @@ public class CassandraAlertRepositoryTest extends WithApplication {
     @Test
     public void testAddOrUpdateAlertAddCase() {
         final UUID uuid = UUID.randomUUID();
-        assertFalse(_alertRepo.get(uuid, TestBeanFactory.getDefautOrganization()).isPresent());
+        assertFalse(_alertRepo.getAlert(uuid, TestBeanFactory.getDefautOrganization()).isPresent());
         final Alert actualAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
         _alertRepo.addOrUpdateAlert(actualAlert, TestBeanFactory.getDefautOrganization());
-        final Optional<Alert> expected = _alertRepo.get(uuid, TestBeanFactory.getDefautOrganization());
+        final Optional<Alert> expected = _alertRepo.getAlert(uuid, TestBeanFactory.getDefautOrganization());
         assertTrue(expected.isPresent());
         assertEquals(expected.get(), actualAlert);
     }
@@ -177,7 +177,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
                 .setNagiosExtension(null)
                 .build();
         _alertRepo.addOrUpdateAlert(alert, TestBeanFactory.getDefautOrganization());
-        final Alert expectedAlert = _alertRepo.get(uuid, TestBeanFactory.getDefautOrganization()).get();
+        final Alert expectedAlert = _alertRepo.getAlert(uuid, TestBeanFactory.getDefautOrganization()).get();
         assertNull(expectedAlert.getNagiosExtension());
     }
 

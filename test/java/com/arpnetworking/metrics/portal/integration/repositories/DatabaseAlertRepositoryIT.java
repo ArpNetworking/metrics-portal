@@ -67,7 +67,7 @@ public final class DatabaseAlertRepositoryIT {
 
     @Test
     public void testGetForNonexistentAlertAndOrganizationId() {
-        assertFalse(_alertRepo.get(UUID.randomUUID(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
+        assertFalse(_alertRepo.getAlert(UUID.randomUUID(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
     }
 
     @Test
@@ -75,12 +75,12 @@ public final class DatabaseAlertRepositoryIT {
         final models.ebean.Alert alert = TestBeanFactory.createEbeanAlert(_ebeanOrganization);
         _server.save(alert);
 
-        assertFalse(_alertRepo.get(alert.getUuid(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
+        assertFalse(_alertRepo.getAlert(alert.getUuid(), TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
     }
 
     @Test
     public void testGetForNonexistentAlertId() {
-        assertFalse(_alertRepo.get(UUID.randomUUID(), TestBeanFactory.organizationFrom(_ebeanOrganization)).isPresent());
+        assertFalse(_alertRepo.getAlert(UUID.randomUUID(), TestBeanFactory.organizationFrom(_ebeanOrganization)).isPresent());
     }
 
     @Test
@@ -88,7 +88,7 @@ public final class DatabaseAlertRepositoryIT {
         final models.ebean.Alert alert = TestBeanFactory.createEbeanAlert(_ebeanOrganization);
         _server.save(alert);
 
-        final Optional<Alert> actual = _alertRepo.get(alert.getUuid(), _organization);
+        final Optional<Alert> actual = _alertRepo.getAlert(alert.getUuid(), _organization);
         assertTrue(actual.isPresent());
         assertAlertEbeanEquivalent(actual.get(), alert);
     }
@@ -109,12 +109,12 @@ public final class DatabaseAlertRepositoryIT {
     @Test
     public void testAddOrUpdateAlertAddCase() {
         final UUID uuid = UUID.randomUUID();
-        assertFalse(_alertRepo.get(uuid, _organization).isPresent());
+        assertFalse(_alertRepo.getAlert(uuid, _organization).isPresent());
 
         final Alert actualAlert = TestBeanFactory.createAlertBuilder().setId(uuid).build();
         _alertRepo.addOrUpdateAlert(actualAlert, _organization);
 
-        final Optional<Alert> expected = _alertRepo.get(uuid, _organization);
+        final Optional<Alert> expected = _alertRepo.getAlert(uuid, _organization);
         assertTrue(expected.isPresent());
         assertEquals(expected.get(), actualAlert);
     }
@@ -127,7 +127,7 @@ public final class DatabaseAlertRepositoryIT {
                 .setNagiosExtension(null)
                 .build();
         _alertRepo.addOrUpdateAlert(alert, _organization);
-        final Optional<Alert> expectedAlert = _alertRepo.get(uuid, _organization);
+        final Optional<Alert> expectedAlert = _alertRepo.getAlert(uuid, _organization);
         assertTrue(expectedAlert.isPresent());
         assertNull(expectedAlert.get().getNagiosExtension());
     }

@@ -80,7 +80,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public Optional<Alert> get(final UUID identifier, final Organization organization) {
+    public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")
@@ -105,7 +105,7 @@ public final class CassandraAlertRepository implements AlertRepository {
                 .addData("alertId", identifier)
                 .addData("organization", organization)
                 .log();
-        final Optional<Alert> alert = get(identifier, organization);
+        final Optional<Alert> alert = getAlert(identifier, organization);
         if (alert.isPresent()) {
             final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
             mapper.delete(identifier);
