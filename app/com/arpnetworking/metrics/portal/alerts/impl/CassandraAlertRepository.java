@@ -126,7 +126,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public QueryResult<Alert> query(final AlertQuery query) {
+    public QueryResult<Alert> queryAlerts(final AlertQuery query) {
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         final models.cassandra.Alert.AlertQueries accessor = mapper.getManager().createAccessor(models.cassandra.Alert.AlertQueries.class);
         final Result<models.cassandra.Alert> result = accessor.getAlertsForOrganization(query.getOrganization().getId());

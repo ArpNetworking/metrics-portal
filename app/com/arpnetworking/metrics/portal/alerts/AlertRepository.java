@@ -72,7 +72,7 @@ public interface AlertRepository {
      * @param query Instance of <code>AlertQuery</code>.
      * @return The <code>Collection</code> of all alerts.
      */
-    QueryResult<Alert> query(AlertQuery query);
+    QueryResult<Alert> queryAlerts(AlertQuery query);
 
     /**
      * Retrieve the total number of alerts in the repository.

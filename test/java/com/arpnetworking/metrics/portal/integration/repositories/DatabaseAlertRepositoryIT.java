@@ -146,13 +146,13 @@ public final class DatabaseAlertRepositoryIT {
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, _organization);
         successQuery.cluster(Optional.of("my-test-cluster"));
 
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
 
         final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, _organization);
         failQuery.cluster(Optional.of("some-random-cluster"));
 
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
+        final QueryResult<Alert> failResult = _alertRepo.queryAlerts(failQuery);
         assertEquals(0, failResult.total());
     }
 
@@ -170,7 +170,7 @@ public final class DatabaseAlertRepositoryIT {
 
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, _organization);
         successQuery.context(Optional.of(Context.CLUSTER));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
     }
 
@@ -188,13 +188,13 @@ public final class DatabaseAlertRepositoryIT {
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, _organization);
         successQuery.service(Optional.of("my-test-service"));
 
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
 
         final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, _organization);
         failQuery.service(Optional.of("some-random-service"));
 
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
+        final QueryResult<Alert> failResult = _alertRepo.queryAlerts(failQuery);
         assertEquals(0, failResult.total());
     }
 
@@ -224,7 +224,7 @@ public final class DatabaseAlertRepositoryIT {
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, _organization);
         successQuery.contains(Optional.of("contained"));
 
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(3, successResult.total());
     }
 
@@ -247,7 +247,7 @@ public final class DatabaseAlertRepositoryIT {
         query1.cluster(Optional.of("my-test-cluster"));
         query1.limit(1);
 
-        final QueryResult<Alert> result1 = _alertRepo.query(query1);
+        final QueryResult<Alert> result1 = _alertRepo.queryAlerts(query1);
         assertEquals(1, result1.values().size());
 
         final AlertQuery query2 = new DefaultAlertQuery(_alertRepo, _organization);
@@ -255,7 +255,7 @@ public final class DatabaseAlertRepositoryIT {
         query2.cluster(Optional.of("my-test-cluster"));
         query2.limit(2);
 
-        final QueryResult<Alert> result2 = _alertRepo.query(query2);
+        final QueryResult<Alert> result2 = _alertRepo.queryAlerts(query2);
         assertEquals(2, result2.values().size());
     }
 
@@ -284,7 +284,7 @@ public final class DatabaseAlertRepositoryIT {
         query.offset(Optional.of(2));
         query.limit(2);
 
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(1, result.values().size());
         assertEquals(alert3.getId(), result.values().get(0).getId());
     }
@@ -310,7 +310,7 @@ public final class DatabaseAlertRepositoryIT {
         query.contains(Optional.of("contained"));
         query.cluster(Optional.of("my-cluster"));
 
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(2, result.values().size());
         assertEquals(alert1.getId(), result.values().get(0).getId());
         assertEquals(alert2.getId(), result.values().get(1).getId());
@@ -337,7 +337,7 @@ public final class DatabaseAlertRepositoryIT {
         query.contains(Optional.of("contained"));
         query.service(Optional.of("my-service"));
 
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(2, result.values().size());
         assertEquals(alert1.getId(), result.values().get(0).getId());
         assertEquals(alert2.getId(), result.values().get(1).getId());

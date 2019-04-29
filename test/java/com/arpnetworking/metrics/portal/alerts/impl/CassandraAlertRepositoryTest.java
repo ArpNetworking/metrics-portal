@@ -194,11 +194,11 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         _alertRepo.addOrUpdateAlert(alert2, TestBeanFactory.getDefautOrganization());
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         successQuery.cluster(Optional.of("my-test-cluster"));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
         final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         failQuery.cluster(Optional.of("some-random-cluster"));
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
+        final QueryResult<Alert> failResult = _alertRepo.queryAlerts(failQuery);
         assertEquals(0, failResult.total());
     }
 
@@ -216,7 +216,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         _alertRepo.addOrUpdateAlert(alert2, TestBeanFactory.getDefautOrganization());
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         successQuery.context(Optional.of(Context.CLUSTER));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
     }
 
@@ -233,11 +233,11 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         _alertRepo.addOrUpdateAlert(alert2, TestBeanFactory.getDefautOrganization());
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         successQuery.service(Optional.of("my-test-service"));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(1, successResult.total());
         final AlertQuery failQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         failQuery.service(Optional.of("some-random-service"));
-        final QueryResult<Alert> failResult = _alertRepo.query(failQuery);
+        final QueryResult<Alert> failResult = _alertRepo.queryAlerts(failQuery);
         assertEquals(0, failResult.total());
     }
 
@@ -269,7 +269,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         _alertRepo.addOrUpdateAlert(alert5, TestBeanFactory.getDefautOrganization());
         final AlertQuery successQuery = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         successQuery.contains(Optional.of("contained"));
-        final QueryResult<Alert> successResult = _alertRepo.query(successQuery);
+        final QueryResult<Alert> successResult = _alertRepo.queryAlerts(successQuery);
         assertEquals(3, successResult.total());
     }
 
@@ -291,13 +291,13 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         query1.service(Optional.of("my-test-service"));
         query1.cluster(Optional.of("my-test-cluster"));
         query1.limit(1);
-        final QueryResult<Alert> result1 = _alertRepo.query(query1);
+        final QueryResult<Alert> result1 = _alertRepo.queryAlerts(query1);
         assertEquals(1, result1.values().size());
         final AlertQuery query2 = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         query2.service(Optional.of("my-test-service"));
         query2.cluster(Optional.of("my-test-cluster"));
         query2.limit(2);
-        final QueryResult<Alert> result2 = _alertRepo.query(query2);
+        final QueryResult<Alert> result2 = _alertRepo.queryAlerts(query2);
         assertEquals(2, result2.values().size());
     }
 
@@ -326,7 +326,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         query.cluster(Optional.of("my-test-cluster"));
         query.offset(Optional.of(2));
         query.limit(2);
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(1, result.values().size());
         assertThat(result.values().get(0).getId(), Matchers.anyOf(
                 Matchers.equalTo(alert1.getId()),
@@ -355,7 +355,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final AlertQuery query = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         query.contains(Optional.of("contained"));
         query.cluster(Optional.of("my-cluster"));
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(2, result.values().size());
         assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert1.getId())));
         assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert2.getId())));
@@ -382,7 +382,7 @@ public class CassandraAlertRepositoryTest extends WithApplication {
         final AlertQuery query = new DefaultAlertQuery(_alertRepo, TestBeanFactory.getDefautOrganization());
         query.contains(Optional.of("contained"));
         query.service(Optional.of("my-service"));
-        final QueryResult<Alert> result = _alertRepo.query(query);
+        final QueryResult<Alert> result = _alertRepo.queryAlerts(query);
         assertEquals(2, result.values().size());
         assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert1.getId())));
         assertTrue(result.values().stream().anyMatch(i -> i.getId().equals(alert2.getId())));

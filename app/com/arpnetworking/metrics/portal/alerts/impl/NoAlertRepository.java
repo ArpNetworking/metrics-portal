@@ -81,7 +81,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public QueryResult<Alert> query(final AlertQuery query) {
+    public QueryResult<Alert> queryAlerts(final AlertQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")
