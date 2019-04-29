@@ -147,7 +147,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
                 })
                 .thenApply(body -> {
                     try {
-                        if (body.length() > 0) {
+                        if (body.size() > 0) {
                             return _mapper.readValue(body.utf8String(), responseType);
                         } else {
                             return null;

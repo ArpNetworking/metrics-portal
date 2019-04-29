@@ -137,7 +137,7 @@ public final class MetricsActionWrapper extends Action.Simple {
             final Counter counter3xx = _metrics.createCounter(_routeMetricName + "status/3xx");
             final Counter counter4xx = _metrics.createCounter(_routeMetricName + "status/4xx");
             final Counter counter5xx = _metrics.createCounter(_routeMetricName + "status/5xx");
-            final long requestSize = _context.request().body().asBytes().length();
+            final long requestSize = _context.request().body().asBytes().size();
             final long responseSize;
             if (t != null) {
                 counter5xx.increment();

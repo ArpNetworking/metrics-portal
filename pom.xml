@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.build</groupId>
     <artifactId>arpnetworking-parent-pom</artifactId>
-    <version>1.1.13</version>
+    <version>2.0.0</version>
     <relativePath />
   </parent>
 
@@ -78,6 +78,7 @@
     <akka.persistence.inmemory.version>2.5.1.1</akka.persistence.inmemory.version>
     <anorm.version>2.6.2</anorm.version>
     <arpnetworking.commons.version>1.18.0</arpnetworking.commons.version>
+    <aspectjrt.version>1.9.2</aspectjrt.version>
     <asynchttpclient.version>1.1.9</asynchttpclient.version>
     <cassandra.version>3.2.0</cassandra.version>
     <cdt.java.client.version>1.3.2</cdt.java.client.version>
@@ -87,7 +88,6 @@
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
-    <findbugs.annotations.version>3.0.1</findbugs.annotations.version>
     <flyway.version>4.0.0</flyway.version>
     <guava.version>21.0</guava.version>
     <guice.version>4.0</guice.version>
@@ -116,6 +116,7 @@
     <scala.java8.version>0.8.0</scala.java8.version>
     <scala.xml.version>1.0.6</scala.xml.version>
     <slf4j.version>1.7.25</slf4j.version>
+    <spotbugs.annotations.version>3.1.12</spotbugs.annotations.version>
     <twirl.api.version>1.3.14</twirl.api.version>
     <typesafe.config.version>1.3.3</typesafe.config.version>
 
@@ -157,7 +158,7 @@
     <checkstyleExtraSuppressions>${project.basedir}/extra-checkstyle-suppressions.xml</checkstyleExtraSuppressions>
 
     <!-- Findbugs -->
-    <findbugs.exclude>${project.basedir}/findbugs.exclude.xml</findbugs.exclude>
+    <spotbugs.exclude>${project.basedir}/spotbugs.exclude.xml</spotbugs.exclude>
 
     <!-- Code Coverage -->
     <jacoco.check.line.coverage>0.15</jacoco.check.line.coverage>
@@ -216,43 +217,12 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-test</id>
-            <configuration>
-              <!-- TODO(ville): Decouple unit test execution from Play configuration -->
-              <!-- 
-              Notes:
-                * Unit tests should execute independently from the Play Framework
-                * Integration tests should execute against the entire application (via Docker)
-                * Unit tests should mock dependencies/components behavior as needed
-              Next Steps:
-                * Separate existing "coupled" unit tests into integration tests and independent unit tests   
-              -->
-              <argLine>${argLine} -Xms512m -ea -Duser.timezone="UTC" -Dconfig.file=conf/portal.application.conf</argLine>
-              <!-- TODO(ville): Make unit tests thread safe -->
-              <!--
-              Notes:
-                * The following unit tests fail without the following configuration:
-                  * DatabaseExpressionRepositoryTest
-                  * DatabaseAlertRepositoryTest
-                  * AlertControllerTest
-                  * DatabaseExpressionRepositoryTest
-                  * DatabaseAlertRepositoryTest
-                * This is documented in Github issue #145 and likely caused at least in part by issue #39
-              -->
-              <parallel />
-              <threadCount>1</threadCount>
-              <perCoreThreadCount>false</perCoreThreadCount>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -379,7 +349,6 @@
           </execution>
         </executions>
       </plugin>
-      <!-- TODO(ville): Fix aspectj Play/Scala compatibility issues and re-enable.
       <plugin>
         <groupId>com.arpnetworking.commons</groupId>
         <artifactId>javassist-maven-plugin</artifactId>
@@ -405,8 +374,6 @@
           </execution>
         </executions>
       </plugin>
-      -->
-      <!-- TODO(ville): Fix aspectj Play/Scala compatibility issues and re-enable.
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>aspectj-maven-plugin</artifactId>
@@ -439,7 +406,6 @@
           </dependency>
         </dependencies>
       </plugin>
-      -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>appassembler-maven-plugin</artifactId>
@@ -843,21 +809,49 @@
       <groupId>com.arpnetworking.metrics</groupId>
       <artifactId>metrics-client</artifactId>
       <version>${metrics.client.version}</version>
+      <exclusions>
+        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>findbugs-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.arpnetworking.metrics.extras</groupId>
       <artifactId>apache-http-sink-extra</artifactId>
       <version>${metrics.client.http.version}</version>
+      <exclusions>
+        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>findbugs-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.arpnetworking.metrics.extras</groupId>
       <artifactId>jvm-extra</artifactId>
       <version>${metrics.jvm.extra.version}</version>
+      <exclusions>
+        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>findbugs-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.arpnetworking.metrics.extras</groupId>
       <artifactId>incubator-extra</artifactId>
       <version>${metrics.incubator.extra.verson}</version>
+      <exclusions>
+        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>findbugs-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Jackson -->
@@ -891,6 +885,12 @@
 
     <!-- Framework -->
     <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>${aspectjrt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>cglib</groupId>
       <artifactId>cglib</artifactId>
       <version>${cglib.version}</version>
@@ -900,6 +900,13 @@
       <groupId>com.arpnetworking.commons</groupId>
       <artifactId>commons</artifactId>
       <version>${arpnetworking.commons.version}</version>
+      <exclusions>
+        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>findbugs-annotations</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- TODO(ville): Fix aspectj Play/Scala compatibility issues and re-enable. -->
     <!--
@@ -920,9 +927,9 @@
       <version>${jsr305.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>findbugs-annotations</artifactId>
-      <version>${findbugs.annotations.version}</version>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs.annotations.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
