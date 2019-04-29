@@ -60,12 +60,12 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * @param query The {@code ReportQuery} instance to execute.
      * @return The reports resulting from executing the query.
      */
-    QueryResult<Report> query(ReportQuery query);
+    QueryResult<Report> queryReports(ReportQuery query);
 
     // CHECKSTYLE.OFF: JavadocMethodCheck - doc should be inherited from JobRepository
     default QueryResult<Job<Report.Result>> queryJobs(final JobQuery<Report.Result> query) {
         final ReportQuery reportQuery = new DefaultReportQuery(this, query);
-        final QueryResult<Report> reports = query(reportQuery);
+        final QueryResult<Report> reports = queryReports(reportQuery);
         return new DefaultQueryResult<>(reports.values(), reports.total());
     }
     // CHECKSTYLE.ON: JavadocMethodCheck

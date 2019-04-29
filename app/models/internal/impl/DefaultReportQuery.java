@@ -66,7 +66,7 @@ public final class DefaultReportQuery implements ReportQuery {
 
     @Override
     public QueryResult<Report> execute() {
-        return _repository.query(this);
+        return _repository.queryReports(this);
     }
 
     // Delegate all other methods to JobQuery

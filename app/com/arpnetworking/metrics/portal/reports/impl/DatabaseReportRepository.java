@@ -278,7 +278,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Report> query(final ReportQuery query) {
+    public QueryResult<Report> queryReports(final ReportQuery query) {
         assertIsOpen();
 
         LOGGER.debug()
