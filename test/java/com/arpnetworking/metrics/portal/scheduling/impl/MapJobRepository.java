@@ -114,7 +114,7 @@ public class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public JobQuery<T> createQuery(final Organization organization) {
+    public JobQuery<T> createJobQuery(final Organization organization) {
         return new DefaultJobQuery<>(this, organization);
     }
 

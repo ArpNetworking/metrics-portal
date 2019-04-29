@@ -268,7 +268,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public JobQuery<Report.Result> createQuery(final Organization organization) {
+    public JobQuery<Report.Result> createJobQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")

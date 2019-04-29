@@ -409,7 +409,7 @@ public class DatabaseReportRepositoryIT {
         final Report[] reportsArray = new Report[reports.size()];
         reports.toArray(reportsArray);
 
-        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
+        final JobQuery<Report.Result> query = _repository.createJobQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.execute();
         assertThat(results.values(), hasSize(reportCount));
@@ -426,7 +426,7 @@ public class DatabaseReportRepositoryIT {
             _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> baseQuery = _repository.createQuery(_organization);
+        final JobQuery<Report.Result> baseQuery = _repository.createJobQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = baseQuery.offset(testOffset).execute();
         assertThat(results.values(), hasSize(reportCount - testOffset));
@@ -445,7 +445,7 @@ public class DatabaseReportRepositoryIT {
             _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
+        final JobQuery<Report.Result> query = _repository.createJobQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.limit(1).execute();
         assertThat(results.values(), hasSize(1));
@@ -466,7 +466,7 @@ public class DatabaseReportRepositoryIT {
             _repository.addOrUpdateReport(report, _organization);
         }
 
-        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
+        final JobQuery<Report.Result> query = _repository.createJobQuery(_organization);
 
         final QueryResult<Job<Report.Result>> results = query.offset(testOffset).limit(testLimit).execute();
         assertThat(results.total(), equalTo((long) reportCount));
@@ -482,7 +482,7 @@ public class DatabaseReportRepositoryIT {
 
     @Test
     public void testJobQueryReturnsNothing() {
-        final JobQuery<Report.Result> query = _repository.createQuery(_organization);
+        final JobQuery<Report.Result> query = _repository.createJobQuery(_organization);
         final List<? extends Job<Report.Result>> results = query.execute().values();
         assertThat(results, empty());
     }

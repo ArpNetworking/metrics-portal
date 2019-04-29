@@ -77,7 +77,7 @@ public interface ReportRepository extends JobRepository<Report.Result> {
      * @return An instance of {@code ReportQuery}.
      */
     default ReportQuery createReportQuery(final Organization organization) {
-        final JobQuery<Report.Result> jobQuery = createQuery(organization);
+        final JobQuery<Report.Result> jobQuery = createJobQuery(organization);
         return new DefaultReportQuery(this, jobQuery);
     }
 }

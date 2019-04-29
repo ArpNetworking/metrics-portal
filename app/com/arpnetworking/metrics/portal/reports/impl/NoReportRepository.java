@@ -132,7 +132,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public JobQuery<Report.Result> createQuery(final Organization organization) {
+    public JobQuery<Report.Result> createJobQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing job query")
