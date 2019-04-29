@@ -13,6 +13,9 @@ Metrics Portal
     <img src="https://img.shields.io/maven-central/v/com.arpnetworking.metrics/metrics-portal_2.11.svg"
          alt="Maven Artifact">
 </a>
+<a href="https://hub.docker.com/r/arpnetworking/metrics-portal">
+    <img src="https://img.shields.io/docker/pulls/arpnetworking/metrics-portal.svg" alt="Docker">
+</a>
 
 Provides a web interface for managing the Inscope Metrics stack. This includes viewing telemetry (aka streaming
 statistics) from one or more hosts running [Metrics Aggregator Daemon](https://github.com/ArpNetworking/metrics-aggregator-daemon).
