@@ -178,7 +178,7 @@ public class HostController extends Controller {
         }
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createQuery(_organizationRepository.get(request()))
+        final HostQuery query = _hostRepository.createHostQuery(_organizationRepository.get(request()))
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)
@@ -198,7 +198,7 @@ public class HostController extends Controller {
 
         final QueryResult<Host> result;
         try {
-            result = _hostRepository.query(query);
+            result = _hostRepository.queryHosts(query);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch

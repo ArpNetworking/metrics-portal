@@ -80,7 +80,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public Optional<Alert> get(final UUID identifier, final Organization organization) {
+    public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")
@@ -98,14 +98,14 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public int delete(final UUID identifier, final Organization organization) {
+    public int deleteAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Deleting alert")
                 .addData("alertId", identifier)
                 .addData("organization", organization)
                 .log();
-        final Optional<Alert> alert = get(identifier, organization);
+        final Optional<Alert> alert = getAlert(identifier, organization);
         if (alert.isPresent()) {
             final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
             mapper.delete(identifier);
@@ -116,7 +116,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public AlertQuery createQuery(final Organization organization) {
+    public AlertQuery createAlertQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")
@@ -126,7 +126,7 @@ public final class CassandraAlertRepository implements AlertRepository {
     }
 
     @Override
-    public QueryResult<Alert> query(final AlertQuery query) {
+    public QueryResult<Alert> queryAlerts(final AlertQuery query) {
         final Mapper<models.cassandra.Alert> mapper = _mappingManager.mapper(models.cassandra.Alert.class);
         final models.cassandra.Alert.AlertQueries accessor = mapper.getManager().createAccessor(models.cassandra.Alert.AlertQueries.class);
         final Result<models.cassandra.Alert> result = accessor.getAlertsForOrganization(query.getOrganization().getId());

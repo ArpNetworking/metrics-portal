@@ -60,7 +60,7 @@ public interface JobRepository<T> {
      * @return The last time that that job was executed.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<Instant> getLastRun(UUID id, Organization organization) throws NoSuchElementException;
+    Optional<Instant> getJobLastRun(UUID id, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.
@@ -97,7 +97,7 @@ public interface JobRepository<T> {
      * @param organization Organization to search in.
      * @return An instance of {@code JobQuery}.
      */
-    JobQuery<T> createQuery(Organization organization);
+    JobQuery<T> createJobQuery(Organization organization);
 
     /**
      * Query jobs.
@@ -105,5 +105,5 @@ public interface JobRepository<T> {
      * @param query The {@code JobQuery} instance to execute.
      * @return The jobs resulting from executing the query.
      */
-    QueryResult<Job<T>> query(JobQuery<T> query);
+    QueryResult<Job<T>> queryJobs(JobQuery<T> query);
 }

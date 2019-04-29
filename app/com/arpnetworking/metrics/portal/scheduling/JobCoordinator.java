@@ -125,7 +125,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private static <T> Iterator<? extends Job<T>> getAllJobs(final JobRepository<T> repo, final Organization organization) {
         return new PagingIterator.Builder<Job<T>>()
-                .setGetPage(offset -> repo.createQuery(organization)
+                .setGetPage(offset -> repo.createJobQuery(organization)
                         .offset(offset)
                         .limit(JOB_QUERY_PAGE_SIZE)
                         .execute()

@@ -95,7 +95,7 @@ public final class NoHostRepository implements HostRepository {
 
 
     @Override
-    public HostQuery createQuery(final Organization organization) {
+    public HostQuery createHostQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")
@@ -105,7 +105,7 @@ public final class NoHostRepository implements HostRepository {
     }
 
     @Override
-    public QueryResult<Host> query(final HostQuery query) {
+    public QueryResult<Host> queryHosts(final HostQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")

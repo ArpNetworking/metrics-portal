@@ -47,7 +47,7 @@ public interface AlertRepository {
      * @param organization The organization owning the alert.
      * @return The matching <code>Alert</code> if found or <code>Optional.empty()</code>.
      */
-    Optional<Alert> get(UUID identifier, Organization organization);
+    Optional<Alert> getAlert(UUID identifier, Organization organization);
 
     /**
      * Delete an <code>Alert</code> by identifier.
@@ -56,7 +56,7 @@ public interface AlertRepository {
      * @param organization The organization owning the alert.
      * @return The number of alerts deleted.
      */
-    int delete(UUID identifier, Organization organization);
+    int deleteAlert(UUID identifier, Organization organization);
 
     /**
      * Create a query against the alerts repository.
@@ -64,7 +64,7 @@ public interface AlertRepository {
      * @param organization Organization to search in.
      * @return Instance of <code>AlertQuery</code>.
      */
-    AlertQuery createQuery(Organization organization);
+    AlertQuery createAlertQuery(Organization organization);
 
     /**
      * Query alerts.
@@ -72,7 +72,7 @@ public interface AlertRepository {
      * @param query Instance of <code>AlertQuery</code>.
      * @return The <code>Collection</code> of all alerts.
      */
-    QueryResult<Alert> query(AlertQuery query);
+    QueryResult<Alert> queryAlerts(AlertQuery query);
 
     /**
      * Retrieve the total number of alerts in the repository.

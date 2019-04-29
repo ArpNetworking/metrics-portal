@@ -164,7 +164,7 @@ public class AlertController extends Controller {
         }
 
         // Build a host repository query
-        final AlertQuery query = _alertRepository.createQuery(_organizationRepository.get(request()))
+        final AlertQuery query = _alertRepository.createAlertQuery(_organizationRepository.get(request()))
                 .contains(argContains)
                 .context(argContext)
                 .service(argService)
@@ -217,7 +217,7 @@ public class AlertController extends Controller {
         } catch (final IllegalArgumentException e) {
             return badRequest();
         }
-        final Optional<Alert> result = _alertRepository.get(identifier, _organizationRepository.get(request()));
+        final Optional<Alert> result = _alertRepository.getAlert(identifier, _organizationRepository.get(request()));
         if (!result.isPresent()) {
             return notFound();
         }
@@ -233,7 +233,7 @@ public class AlertController extends Controller {
      */
     public Result delete(final String id) {
         final UUID identifier = UUID.fromString(id);
-        final int deleted = _alertRepository.delete(identifier, _organizationRepository.get(request()));
+        final int deleted = _alertRepository.deleteAlert(identifier, _organizationRepository.get(request()));
         if (deleted > 0) {
             return noContent();
         } else {

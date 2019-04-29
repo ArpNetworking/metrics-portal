@@ -73,7 +73,7 @@ public interface HostRepository extends AutoCloseable {
      * @param organization Organization to search in.
      * @return Instance of <code>HostQuery</code>.
      */
-    HostQuery createQuery(Organization organization);
+    HostQuery createHostQuery(Organization organization);
 
     /**
      * Query the hosts repository.
@@ -81,7 +81,7 @@ public interface HostRepository extends AutoCloseable {
      * @param query Instance of <code>HostQuery</code>.
      * @return Instance of <code>HostQueryResult</code>.
      */
-    QueryResult<Host> query(HostQuery query);
+    QueryResult<Host> queryHosts(HostQuery query);
 
     /**
      * Retrieve the total number of hosts in the repository.

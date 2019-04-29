@@ -149,7 +149,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()
@@ -268,7 +268,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public JobQuery<Report.Result> createQuery(final Organization organization) {
+    public JobQuery<Report.Result> createJobQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")
@@ -278,7 +278,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Report> query(final ReportQuery query) {
+    public QueryResult<Report> queryReports(final ReportQuery query) {
         assertIsOpen();
 
         LOGGER.debug()

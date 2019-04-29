@@ -83,7 +83,7 @@ public final class DefaultAlertQuery implements AlertQuery {
 
     @Override
     public QueryResult<Alert> execute() {
-        return _repository.query(this);
+        return _repository.queryAlerts(this);
     }
 
     @Override

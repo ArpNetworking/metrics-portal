@@ -91,7 +91,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getLastRun(final UUID id, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastRun(final UUID id, final Organization organization) throws NoSuchElementException {
         assertIsOpen();
         return Optional.empty();
     }
@@ -132,7 +132,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public JobQuery<Report.Result> createQuery(final Organization organization) {
+    public JobQuery<Report.Result> createJobQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing job query")
@@ -142,7 +142,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public QueryResult<Report> query(final ReportQuery query) {
+    public QueryResult<Report> queryReports(final ReportQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Executing query")

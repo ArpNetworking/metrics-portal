@@ -61,7 +61,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public Optional<Alert> get(final UUID identifier, final Organization organization) {
+    public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert")
@@ -72,7 +72,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public AlertQuery createQuery(final Organization organization) {
+    public AlertQuery createAlertQuery(final Organization organization) {
         LOGGER.debug()
                 .setMessage("Preparing query")
                 .addData("organization", organization)
@@ -81,7 +81,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public QueryResult<Alert> query(final AlertQuery query) {
+    public QueryResult<Alert> queryAlerts(final AlertQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")
@@ -111,7 +111,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public int delete(final UUID identifier, final Organization organization) {
+    public int deleteAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Delete alert")
