@@ -178,7 +178,7 @@ public class HostController extends Controller {
         }
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createQuery(_organizationRepository.get(request()))
+        final HostQuery query = _hostRepository.createHostQuery(_organizationRepository.get(request()))
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)

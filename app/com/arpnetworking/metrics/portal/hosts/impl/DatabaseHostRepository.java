@@ -205,7 +205,7 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     @Override
-    public HostQuery createQuery(final Organization organization) {
+    public HostQuery createHostQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Preparing query")

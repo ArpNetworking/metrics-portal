@@ -107,7 +107,7 @@ public final class CassandraHostRepositoryTest extends WithApplication {
 
     @Test
     public void testQueryForInvalidHost() {
-        final HostQuery query = _hostRepo.createQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
         query.partialHostname(Optional.of(UUID.randomUUID().toString()));
         assertEquals(0L, _hostRepo.query(query).total());
     }
@@ -119,7 +119,7 @@ public final class CassandraHostRepositoryTest extends WithApplication {
         cassandraHost.setName(name);
         final Organization org = TestBeanFactory.organizationFrom(cassandraHost.getOrganization());
 
-        final HostQuery query = _hostRepo.createQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
         query.partialHostname(Optional.of(cassandraHost.getName()));
         assertEquals(0L, _hostRepo.query(query).total());
 
