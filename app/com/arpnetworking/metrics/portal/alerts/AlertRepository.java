@@ -56,7 +56,7 @@ public interface AlertRepository {
      * @param organization The organization owning the alert.
      * @return The number of alerts deleted.
      */
-    int delete(UUID identifier, Organization organization);
+    int deleteAlert(UUID identifier, Organization organization);
 
     /**
      * Create a query against the alerts repository.

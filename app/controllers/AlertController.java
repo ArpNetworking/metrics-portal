@@ -233,7 +233,7 @@ public class AlertController extends Controller {
      */
     public Result delete(final String id) {
         final UUID identifier = UUID.fromString(id);
-        final int deleted = _alertRepository.delete(identifier, _organizationRepository.get(request()));
+        final int deleted = _alertRepository.deleteAlert(identifier, _organizationRepository.get(request()));
         if (deleted > 0) {
             return noContent();
         } else {

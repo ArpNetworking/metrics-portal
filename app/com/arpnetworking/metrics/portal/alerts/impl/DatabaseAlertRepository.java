@@ -157,7 +157,7 @@ public class DatabaseAlertRepository implements AlertRepository {
     }
 
     @Override
-    public int delete(final UUID identifier, final Organization organization) {
+    public int deleteAlert(final UUID identifier, final Organization organization) {
         LOGGER.debug()
                 .setMessage("Deleting alert")
                 .addData("id", identifier)

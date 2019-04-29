@@ -111,7 +111,7 @@ public final class NoAlertRepository implements AlertRepository {
     }
 
     @Override
-    public int delete(final UUID identifier, final Organization organization) {
+    public int deleteAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Delete alert")
