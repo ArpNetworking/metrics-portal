@@ -58,15 +58,10 @@ import static org.junit.Assert.fail;
  */
 public final class AlertControllerIT {
 
-    public AlertControllerIT() {
-        _ebeanServer = EbeanServerHelper.getMetricsDatabase();
-        _alertRepo = new DatabaseAlertRepository(
-                _ebeanServer,
-                new DatabaseAlertRepository.GenericQueryGenerator());
-    }
-
     @Before
     public void setUp() {
+        _ebeanServer = EbeanServerHelper.getMetricsDatabase();
+        _alertRepo = new DatabaseAlertRepository(_ebeanServer);
         _alertRepo.open();
     }
 
@@ -321,8 +316,8 @@ public final class AlertControllerIT {
         }
     }
 
-    private final EbeanServer _ebeanServer;
-    private final DatabaseAlertRepository _alertRepo;
+    private EbeanServer _ebeanServer;
+    private DatabaseAlertRepository _alertRepo;
 
     private static final String CLASS_NAME = AlertControllerIT.class.getSimpleName();
 }

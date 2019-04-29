@@ -22,6 +22,7 @@ import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 
 import java.sql.Timestamp;
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -112,19 +113,21 @@ public class Host {
         name = value;
     }
 
+    @Nullable
     public String getCluster() {
         return cluster;
     }
 
-    public void setCluster(final String value) {
+    public void setCluster(@Nullable final String value) {
         cluster = value;
     }
 
+    @Nullable
     public String getMetricsSoftwareState() {
         return metricsSoftwareState;
     }
 
-    public void setMetricsSoftwareState(final String value) {
+    public void setMetricsSoftwareState(@Nullable final String value) {
         metricsSoftwareState = value;
     }
 

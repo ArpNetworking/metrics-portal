@@ -30,12 +30,8 @@ import models.internal.impl.DefaultAlertQuery;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 import javax.annotation.Nullable;
@@ -51,26 +47,12 @@ import static org.junit.Assert.fail;
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
-@RunWith(Parameterized.class)
 public final class DatabaseAlertRepositoryIT {
-
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {new DatabaseAlertRepository.GenericQueryGenerator()}
-                // TODO(ville): Add Postgresql query generator (w/ full text support) here.
-        });
-    }
-
-    public DatabaseAlertRepositoryIT(final DatabaseAlertRepository.AlertQueryGenerator queryGenerator) {
-        _server = EbeanServerHelper.getMetricsDatabase();
-        _alertRepo = new DatabaseAlertRepository(
-                _server,
-                queryGenerator);
-    }
 
     @Before
     public void setUp() {
+        _server = EbeanServerHelper.getMetricsDatabase();
+        _alertRepo = new DatabaseAlertRepository(_server);
         _alertRepo.open();
 
         _ebeanOrganization = TestBeanFactory.createEbeanOrganization();
@@ -390,9 +372,8 @@ public final class DatabaseAlertRepositoryIT {
         assertEquals(extension.getFreshnessThreshold().getSeconds(), ebeanExtension.getFreshnessThreshold());
     }
 
+    private EbeanServer _server;
+    private DatabaseAlertRepository _alertRepo;
     private Organization _organization;
     private models.ebean.Organization _ebeanOrganization;
-
-    private final EbeanServer _server;
-    private final DatabaseAlertRepository _alertRepo;
 }

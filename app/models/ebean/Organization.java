@@ -20,8 +20,8 @@ import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 
 import java.sql.Timestamp;
+import java.util.Optional;
 import java.util.UUID;
-import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -67,14 +67,14 @@ public class Organization {
      * @param organization The organization to lookup.
      * @return The organization from the database.
      */
-    @Nullable
-    public static Organization findByOrganization(
+    public static Optional<Organization> findByOrganization(
             final EbeanServer ebeanServer,
             final models.internal.Organization organization) {
-        return ebeanServer.createQuery(Organization.class)
-                .where()
-                .eq("uuid", organization.getId())
-                .findOne();
+        return Optional.ofNullable(
+                ebeanServer.createQuery(Organization.class)
+                        .where()
+                        .eq("uuid", organization.getId())
+                        .findOne());
     }
 
     public Long getId() {

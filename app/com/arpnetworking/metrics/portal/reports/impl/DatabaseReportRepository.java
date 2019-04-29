@@ -22,7 +22,6 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
-import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +29,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.typesafe.config.Config;
 import io.ebean.EbeanServer;
 import io.ebean.PagedList;
-import io.ebean.Query;
 import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
@@ -92,7 +90,6 @@ public final class DatabaseReportRepository implements ReportRepository {
 
     private AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
-    private final ReportQueryGenerator _reportQueryGenerator;
 
     /**
      * Public constructor.
@@ -100,34 +97,22 @@ public final class DatabaseReportRepository implements ReportRepository {
      * @param environment Play's <code>Environment</code> instance.
      * @param config Play's <code>Configuration</code> instance.
      * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
-     * @throws Exception If the configuration is invalid.
      */
     @Inject
     public DatabaseReportRepository(
             final Environment environment,
             final Config config,
-            @Named("metrics_portal") final EbeanServer ebeanServer) throws Exception {
-        this(
-                ebeanServer,
-                ConfigurationHelper.<ReportQueryGenerator>getType(
-                        environment,
-                        config,
-                        "reportRepository.reportQueryGenerator.type")
-                        .getDeclaredConstructor()
-                        .newInstance());
+            @Named("metrics_portal") final EbeanServer ebeanServer) {
+        this(ebeanServer);
     }
 
     /**
-     * Public constructor.
+     * Public constructor for manual configuration. This is intended for testing.
      *
      * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
-     * @param reportQueryGenerator Instance of <code>ReportQueryGenerator</code>.
      */
-    public DatabaseReportRepository(
-            final EbeanServer ebeanServer,
-            final ReportQueryGenerator reportQueryGenerator) {
+    public DatabaseReportRepository(final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;
-        _reportQueryGenerator = reportQueryGenerator;
     }
 
     private final Recipient.Visitor<models.ebean.Recipient> _internalToEbeanVisitor =
@@ -202,11 +187,12 @@ public final class DatabaseReportRepository implements ReportRepository {
     public void addOrUpdateReport(final Report report, final Organization organization) {
         assertIsOpen();
         final models.ebean.Report ebeanReport = internalModelToBean(report);
-        final models.ebean.Organization ebeanOrg = models.ebean.Organization.findByOrganization(_ebeanServer, organization);
-        if (ebeanOrg == null) {
-            throw new EntityNotFoundException("Organization not found: " + organization.getId());
+        final Optional<models.ebean.Organization> ebeanOrganization =
+                models.ebean.Organization.findByOrganization(_ebeanServer, organization);
+        if (!ebeanOrganization.isPresent()) {
+            throw new IllegalArgumentException("Organization not found: " + organization);
         }
-        ebeanReport.setOrganization(ebeanOrg);
+        ebeanReport.setOrganization(ebeanOrganization.get());
         LOGGER.debug()
                 .setMessage("Upserting report")
                 .addData("report", ebeanReport)
@@ -300,7 +286,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("query", query)
                 .log();
 
-        final PagedList<models.ebean.Report> pagedReports = _reportQueryGenerator.createReportQuery(this, query);
+        final PagedList<models.ebean.Report> pagedReports = createReportQuery(_ebeanServer, query);
 
         final ImmutableList<Report> reports =
                 pagedReports
@@ -416,6 +402,20 @@ public final class DatabaseReportRepository implements ReportRepository {
         }
     }
 
+    private static PagedList<models.ebean.Report> createReportQuery(
+            final EbeanServer ebeanServer,
+            final ReportQuery query) {
+        final int offset = query.getOffset().orElse(0);
+        final int limit = query.getLimit();
+
+        return ebeanServer.find(models.ebean.Report.class)
+                .where()
+                .eq("organization.uuid", query.getOrganization().getId())
+                .setFirstRow(offset)
+                .setMaxRows(limit)
+                .findPagedList();
+    }
+
     private models.ebean.Report internalModelToBean(final Report internalReport) {
         final ReportSchedule schedule = internalModelToBean(internalReport.getSchedule());
         final models.ebean.ReportSource source = internalModelToBean(internalReport.getSource());
@@ -493,46 +493,6 @@ public final class DatabaseReportRepository implements ReportRepository {
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("DatabaseReportRepository is not %s", expectedState ? "open" : "closed"));
-        }
-    }
-
-    /**
-     * A generator for a database query given a {@link JobQuery}.
-     */
-    public interface ReportQueryGenerator {
-        /**
-         * Translate the {@code JobQuery} to an ebean {@link Query}.
-         *
-         * @param repository The report repository instance.
-         * @param query The repository agnostic {@code ReportQuery}.
-         * @return The database specific {@code PagedList} query result.
-         */
-        PagedList<models.ebean.Report> createReportQuery(DatabaseReportRepository repository, ReportQuery query);
-    }
-
-    /**
-     * RDBMS agnostic query for reports.
-     */
-    public static final class GenericQueryGenerator implements ReportQueryGenerator {
-
-        /**
-         * Default constructor.
-         */
-        public GenericQueryGenerator() {}
-
-        @Override
-        public PagedList<models.ebean.Report> createReportQuery(
-                final DatabaseReportRepository repository,
-                final ReportQuery query) {
-            final int offset = query.getOffset().orElse(0);
-            final int limit = query.getLimit();
-
-            return repository._ebeanServer.find(models.ebean.Report.class)
-                    .where()
-                    .eq("organization.uuid", query.getOrganization().getId())
-                    .setFirstRow(offset)
-                    .setMaxRows(limit)
-                    .findPagedList();
         }
     }
 }
