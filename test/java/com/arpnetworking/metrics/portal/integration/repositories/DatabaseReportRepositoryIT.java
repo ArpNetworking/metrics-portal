@@ -39,8 +39,6 @@ import models.internal.scheduling.Job;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.net.URI;
 import java.time.Duration;
@@ -48,7 +46,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -76,35 +73,20 @@ import static org.junit.Assert.assertTrue;
  * @author Christian Briones (cbriones at dropbox dot com)
  * @author Ville Koskela (vkoskela at dropbox dot com)
  */
-@RunWith(Parameterized.class)
 public class DatabaseReportRepositoryIT {
 
     private static final String ORIGINAL_REPORT_NAME = "Original Report Name";
     private static final String ALTERED_REPORT_NAME = "Altered Report Name";
 
-    private final EbeanServer _server;
-    private final DatabaseReportRepository _repository;
-
+    private EbeanServer _server;
+    private DatabaseReportRepository _repository;
     private Organization _organization;
     private models.ebean.Organization _ebeanOrganization;
 
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {new DatabaseReportRepository.GenericQueryGenerator()}
-                // TODO(ville): Add Postgresql query generator (w/ full text support) here.
-        });
-    }
-
-    public DatabaseReportRepositoryIT(final DatabaseReportRepository.ReportQueryGenerator queryGenerator) {
-        _server = EbeanServerHelper.getMetricsDatabase();
-        _repository = new DatabaseReportRepository(
-                _server,
-                queryGenerator);
-    }
-
     @Before
     public void setUp() {
+        _server = EbeanServerHelper.getMetricsDatabase();
+        _repository = new DatabaseReportRepository(_server);
         _repository.open();
 
         _ebeanOrganization = TestBeanFactory.createEbeanOrganization();

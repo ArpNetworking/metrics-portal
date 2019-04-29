@@ -271,8 +271,7 @@ public class MainModule extends AbstractModule {
 
         @Override
         public EbeanServer get() {
-            // TODO(ville): Rename the default database instance to 'metrics_portal'
-            return Ebean.getServer("default");
+            return Ebean.getServer("metrics_portal");
         }
     }
 
