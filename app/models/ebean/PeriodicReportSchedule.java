@@ -38,20 +38,20 @@ import javax.persistence.Enumerated;
 @Entity
 @DiscriminatorValue("PERIODIC")
 public class PeriodicReportSchedule extends ReportSchedule {
-    @Column(name = "offset_duration")
-    private Duration offset;
+    @Column(name = "offset_nanos")
+    private long offsetNanos;
     @Column(name = "period")
     @Enumerated(EnumType.STRING)
     private Period period;
     @Column(name = "zone")
     private ZoneId zone;
 
-    public Duration getOffset() {
-        return offset;
+    public long getOffsetNanos() {
+        return offsetNanos;
     }
 
-    public void setOffset(final Duration value) {
-        offset = value;
+    public void setOffsetNanos(final long value) {
+        offsetNanos = value;
     }
 
     public Period getPeriod() {
@@ -79,23 +79,14 @@ public class PeriodicReportSchedule extends ReportSchedule {
             return false;
         }
         final PeriodicReportSchedule that = (PeriodicReportSchedule) o;
-        return Objects.equals(getOffset(), that.getOffset())
+        return Objects.equals(getOffsetNanos(), that.getOffsetNanos())
                 && getPeriod() == that.getPeriod()
                 && Objects.equals(getZone(), that.getZone());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOffset(), getPeriod(), getZone());
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper()
-                .add("period", period)
-                .add("offset", offset)
-                .add("zone", zone)
-                .toString();
+        return Objects.hash(getOffsetNanos(), getPeriod(), getZone());
     }
 
     @Override
@@ -103,7 +94,7 @@ public class PeriodicReportSchedule extends ReportSchedule {
         return new PeriodicSchedule.Builder()
                 .setRunAtAndAfter(getRunAt())
                 .setRunUntil(getRunUntil())
-                .setOffset(getOffset())
+                .setOffset(Duration.ofNanos(getOffsetNanos()))
                 .setZone(zone)
                 .setPeriod(period.toChronoUnit())
                 .build();

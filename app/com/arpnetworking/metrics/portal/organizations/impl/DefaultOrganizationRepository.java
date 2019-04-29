@@ -85,7 +85,7 @@ public final class DefaultOrganizationRepository implements OrganizationReposito
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
-        return new DefaultQueryResult<Organization>(
+        return new DefaultQueryResult<>(
                 ImmutableList.of(DEFAULT),
                 1,
                 String.valueOf(DEFAULT.getId().hashCode()));

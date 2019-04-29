@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.logback.annotations.LogValue;
+import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -37,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
+public final class NoAlertRepository implements AlertRepository {
 
     /**
      * Public constructor.
@@ -94,6 +95,27 @@ public final class NoAlertRepository extends ReadOnlyAbstractAlertRepository {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting alert count")
+                .addData("organization", organization)
+                .log();
+        return 0;
+    }
+
+    @Override
+    public void addOrUpdateAlert(final Alert alert, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Add or update alert")
+                .addData("alert", alert)
+                .addData("organization", organization)
+                .log();
+    }
+
+    @Override
+    public int delete(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Delete alert")
+                .addData("identifier", identifier)
                 .addData("organization", organization)
                 .log();
         return 0;

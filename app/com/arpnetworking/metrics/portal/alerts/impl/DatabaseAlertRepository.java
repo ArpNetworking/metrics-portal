@@ -21,7 +21,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import io.ebean.Ebean;
+import io.ebean.EbeanServer;
 import io.ebean.ExpressionList;
 import io.ebean.Junction;
 import io.ebean.PagedList;
@@ -38,7 +38,6 @@ import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultQueryResult;
 import play.Environment;
-import play.db.ebean.EbeanDynamicEvolutions;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nullable;
+import javax.inject.Named;
 import javax.persistence.PersistenceException;
 
 /**
@@ -61,15 +61,16 @@ public class DatabaseAlertRepository implements AlertRepository {
      *
      * @param environment Play's <code>Environment</code> instance.
      * @param config Play's <code>Configuration</code> instance.
-     * @param ignored ignored, used as dependency injection ordering
+     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
      * @throws Exception If the configuration is invalid.
      */
     @Inject
     public DatabaseAlertRepository(
             final Environment environment,
             final Config config,
-            final EbeanDynamicEvolutions ignored) throws Exception {
+            @Named("metrics_portal") final EbeanServer ebeanServer) throws Exception {
         this(
+                ebeanServer,
                 ConfigurationHelper.<AlertQueryGenerator>getType(
                         environment,
                         config,
@@ -81,9 +82,13 @@ public class DatabaseAlertRepository implements AlertRepository {
     /**
      * Public constructor.
      *
+     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
      * @param alertQueryGenerator Instance of <code>AlertQueryGenerator</code>.
      */
-    public DatabaseAlertRepository(final AlertQueryGenerator alertQueryGenerator) {
+    public DatabaseAlertRepository(
+            final EbeanServer ebeanServer,
+            final AlertQueryGenerator alertQueryGenerator) {
+        _ebeanServer = ebeanServer;
         _alertQueryGenerator = alertQueryGenerator;
     }
 
@@ -110,7 +115,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .addData("organization", organization)
                 .log();
 
-        return Ebean.find(models.ebean.Alert.class)
+        return _ebeanServer.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
@@ -137,11 +142,11 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .log();
 
         // Create the base query
-        final PagedList<models.ebean.Alert> pagedAlerts = _alertQueryGenerator.createAlertQuery(query);
+        final PagedList<models.ebean.Alert> pagedAlerts = _alertQueryGenerator.createAlertQuery(this, query);
 
         // Compute the etag
         // TODO(deepika): Obfuscate the etag [ISSUE-7]
-        final Long etag = _alertQueryGenerator.getEtag(query.getOrganization());
+        final Long etag = _alertQueryGenerator.getEtag(this, query.getOrganization());
 
         final List<Alert> values = new ArrayList<>();
         pagedAlerts.getList().forEach(ebeanAlert -> values.add(convertFromEbeanAlert(ebeanAlert)));
@@ -153,7 +158,7 @@ public class DatabaseAlertRepository implements AlertRepository {
     @Override
     public long getAlertCount(final Organization organization) {
         assertIsOpen();
-        return Ebean.find(models.ebean.Alert.class)
+        return _ebeanServer.find(models.ebean.Alert.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
                 .findCount();
@@ -166,7 +171,7 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .addData("id", identifier)
                 .addData("organization", organization)
                 .log();
-        return Ebean.find(models.ebean.Alert.class)
+        return _ebeanServer.find(models.ebean.Alert.class)
                 .where()
                 .eq("uuid", identifier)
                 .eq("organization.uuid", organization.getId())
@@ -186,15 +191,15 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .log();
 
 
-        try (Transaction transaction = Ebean.beginTransaction()) {
-            final models.ebean.Alert ebeanAlert = Ebean.find(models.ebean.Alert.class)
+        try (Transaction transaction = _ebeanServer.beginTransaction()) {
+            final models.ebean.Alert ebeanAlert = _ebeanServer.find(models.ebean.Alert.class)
                     .where()
                     .eq("uuid", alert.getId())
                     .eq("organization.uuid", organization.getId())
                     .findOneOrEmpty()
                     .orElse(new models.ebean.Alert());
 
-            ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(organization));
+            ebeanAlert.setOrganization(models.ebean.Organization.findByOrganization(_ebeanServer, organization));
             ebeanAlert.setCluster(alert.getCluster());
             ebeanAlert.setUuid(alert.getId());
             ebeanAlert.setMetric(alert.getMetric());
@@ -207,7 +212,7 @@ public class DatabaseAlertRepository implements AlertRepository {
             ebeanAlert.setQuantityUnit(alert.getValue().getUnit().orElse(null));
             ebeanAlert.setStatistic(alert.getStatistic());
             ebeanAlert.setService(alert.getService());
-            _alertQueryGenerator.saveAlert(ebeanAlert);
+            _alertQueryGenerator.saveAlert(this, ebeanAlert);
             transaction.commit();
 
             LOGGER.info()
@@ -286,6 +291,7 @@ public class DatabaseAlertRepository implements AlertRepository {
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final AlertQueryGenerator _alertQueryGenerator;
+    private final EbeanServer _ebeanServer;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAlertRepository.class);
 
@@ -297,25 +303,28 @@ public class DatabaseAlertRepository implements AlertRepository {
         /**
          * Translate the <code>AlertQuery</code> to an Ebean <code>Query</code>.
          *
+         * @param repository The alert repository instance.
          * @param query The repository agnostic <code>AlertQuery</code>.
          * @return The database specific <code>PagedList</code> query result.
          */
-        PagedList<models.ebean.Alert> createAlertQuery(AlertQuery query);
+        PagedList<models.ebean.Alert> createAlertQuery(DatabaseAlertRepository repository, AlertQuery query);
 
         /**
          * Save the <code>Alert</code> to the database. This needs to be executed in a transaction.
          *
+         * @param repository The alert repository instance.
          * @param alert The <code>Alert</code> model instance to save.
          */
-        void saveAlert(models.ebean.Alert alert);
+        void saveAlert(DatabaseAlertRepository repository, models.ebean.Alert alert);
 
         /**
          * Gets the etag for the alerts table.
          *
+         * @param repository The alert repository instance.
          * @param organization The organization owning the alert.
          * @return The etag for the table.
          */
-        long getEtag(Organization organization);
+        long getEtag(DatabaseAlertRepository repository, Organization organization);
     }
 
     /**
@@ -324,8 +333,10 @@ public class DatabaseAlertRepository implements AlertRepository {
     public static final class GenericQueryGenerator implements AlertQueryGenerator {
 
         @Override
-        public PagedList<models.ebean.Alert> createAlertQuery(final AlertQuery query) {
-            ExpressionList<models.ebean.Alert> ebeanExpressionList = Ebean.find(models.ebean.Alert.class).where();
+        public PagedList<models.ebean.Alert> createAlertQuery(
+                final DatabaseAlertRepository repository,
+                final AlertQuery query) {
+            ExpressionList<models.ebean.Alert> ebeanExpressionList = repository._ebeanServer.find(models.ebean.Alert.class).where();
             ebeanExpressionList = ebeanExpressionList.eq("organization.uuid", query.getOrganization().getId());
             if (query.getCluster().isPresent()) {
                 ebeanExpressionList = ebeanExpressionList.eq("cluster", query.getCluster().get());
@@ -361,13 +372,18 @@ public class DatabaseAlertRepository implements AlertRepository {
         }
 
         @Override
-        public void saveAlert(final models.ebean.Alert alert) {
-            Ebean.save(alert);
+        public void saveAlert(final DatabaseAlertRepository repository, final models.ebean.Alert alert) {
+            repository._ebeanServer.save(alert);
         }
 
         @Override
-        public long getEtag(final Organization organization) {
-            return AlertEtags.getEtagByOrganization(organization);
+        public long getEtag(final DatabaseAlertRepository repository, final Organization organization) {
+            return repository._ebeanServer.createQuery(AlertEtags.class)
+                    .where()
+                    .eq("organization.uuid", organization.getId())
+                    .findOneOrEmpty()
+                    .map(AlertEtags::getEtag)
+                    .orElse(0L);
         }
     }
 }

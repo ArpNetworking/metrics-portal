@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Dropbox
+ * Copyright 2014 Groupon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,4 +14,9 @@
  * limitations under the License.
  */
 
-DROP TRIGGER update_expressions_etag ON portal.expressions;
+/*
+ * NOTE: This file must be run as the database administrator against the metrics database.
+ * NOTE: This file cannot end in .sql or else it will be executed by the entry point.
+ */
+
+CREATE EXTENSION btree_gin;

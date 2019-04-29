@@ -22,7 +22,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 
 /**
- * Tests for <code>DatabaseHostRepository</code>.
+ * Tests for {@link DatabaseHostRepository}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */

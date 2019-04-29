@@ -20,10 +20,10 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
-import net.sf.oval.constraint.NotEqual;
+import net.sf.oval.constraint.Min;
+import net.sf.oval.constraint.NotNull;
 
 import java.util.Objects;
-import javax.annotation.Nonnegative;
 
 /**
  * A PDF report format.
@@ -106,7 +106,7 @@ public final class PdfReportFormat implements ReportFormat {
          * @param widthInches The width, in inches.
          * @return This instance of {@code Builder}.
          */
-        public Builder setWidthInches(final float widthInches) {
+        public Builder setWidthInches(final Float widthInches) {
             _widthInches = widthInches;
             return this;
         }
@@ -117,17 +117,17 @@ public final class PdfReportFormat implements ReportFormat {
          * @param heightInches The height, in inches.
          * @return This instance of {@code Builder}.
          */
-        public Builder setHeightInches(final float heightInches) {
+        public Builder setHeightInches(final Float heightInches) {
             _heightInches = heightInches;
             return this;
         }
 
-        @Nonnegative
-        @NotEqual(value = "0.0")
-        private float _widthInches;
-        @Nonnegative
-        @NotEqual(value = "0.0")
-        private float _heightInches;
+        @NotNull
+        @Min(value = 0, inclusive = false)
+        private Float _widthInches;
+        @NotNull
+        @Min(value = 0, inclusive = false)
+        private Float _heightInches;
     }
 
 }

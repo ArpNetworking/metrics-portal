@@ -54,7 +54,7 @@ public interface AlertRepository {
      *
      * @param identifier The <code>Alert</code> identifier.
      * @param organization The organization owning the alert.
-     * @return The matching <code>Alert</code> if found or <code>Optional.empty()</code>.
+     * @return The number of alerts deleted.
      */
     int delete(UUID identifier, Organization organization);
 

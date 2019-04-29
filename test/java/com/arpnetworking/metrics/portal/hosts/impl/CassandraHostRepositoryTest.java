@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
-import com.arpnetworking.metrics.portal.H2ConnectionStringFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -34,6 +33,7 @@ import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import play.Application;
 import play.inject.Injector;
@@ -49,8 +49,11 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests class <code>CassandraAlertRepository</code>.
  *
+ * TODO(ville): Convert this to an integration test.
+ *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Ignore
 public final class CassandraHostRepositoryTest extends WithApplication {
 
     @Override
@@ -63,7 +66,6 @@ public final class CassandraHostRepositoryTest extends WithApplication {
                 .configure("hostRepository.type", CassandraHostRepository.class.getName())
                 .configure(AkkaClusteringConfigFactory.generateConfiguration())
                 .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
-                .configure(H2ConnectionStringFactory.generateConfiguration())
                 .build();
         return _app;
     }

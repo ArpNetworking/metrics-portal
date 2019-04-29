@@ -43,7 +43,6 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
-import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -63,12 +62,17 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.ebean.Ebean;
+import io.ebean.EbeanServer;
 import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
+import play.api.Configuration;
+import play.api.db.evolutions.DynamicEvolutions;
 import play.api.libs.json.jackson.PlayJsonModule$;
+import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
@@ -96,10 +100,15 @@ public class MainModule extends AbstractModule {
         bind(HealthProvider.class)
                 .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
                 .in(Scopes.SINGLETON);
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("JvmMetricsCollector"))
-                .toProvider(JvmMetricsCollectorProvider.class)
-                .asEagerSingleton();
+
+        // Databases
+        // NOTE: These are not singletons because the lifecycle is controlled by
+        // Ebean itself and we are just binding the instances by name through Guice
+        bind(EbeanServer.class)
+                .annotatedWith(Names.named("metrics_portal"))
+                .toProvider(MetricsPortalEbeanServerProvider.class);
+
+        // Repositories
         bind(OrganizationRepository.class)
                 .toProvider(OrganizationRepositoryProvider.class)
                 .asEagerSingleton();
@@ -109,20 +118,23 @@ public class MainModule extends AbstractModule {
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(ReportRepository.class)
+                .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
+
+        // Background tasks
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("JvmMetricsCollector"))
+                .toProvider(JvmMetricsCollectorProvider.class)
+                .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("HostProviderScheduler"))
                 .toProvider(HostProviderProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
-                .annotatedWith(Names.named("report-repository-job-coordinator"))
+                .annotatedWith(Names.named("ReportJobCoordinator"))
                 .toProvider(ReportRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
-        bind(ReportRepository.class)
-                .toProvider(ReportRepositoryProvider.class)
-                .asEagerSingleton();
-        bind(DatabaseReportRepository.ReportQueryGenerator.class)
-                .toProvider(ConfigTypedProvider.provider("reportRepository.reportQueryGenerator.type"))
-                .in(Scopes.NO_SCOPE);
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupsMetricsDiscovery"))
                 .toProvider(RollupMetricsDiscoveryProvider.class)
@@ -246,6 +258,22 @@ public class MainModule extends AbstractModule {
         final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
         actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
+    }
+
+    private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
+        @Inject
+        MetricsPortalEbeanServerProvider(
+                final Configuration configuration,
+                final DynamicEvolutions dynamicEvolutions,
+                final EbeanConfig ebeanConfig) {
+            // Constructor arguments injected for dependency resolution only
+        }
+
+        @Override
+        public EbeanServer get() {
+            // TODO(ville): Rename the default database instance to 'metrics_portal'
+            return Ebean.getServer("default");
+        }
     }
 
     private static final class OrganizationRepositoryProvider implements Provider<OrganizationRepository> {
@@ -432,7 +460,7 @@ public class MainModule extends AbstractModule {
                         JobCoordinator.props(_injector, ReportRepository.class, _organizationRepository, _executorRegion, _periodicMetrics),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
-                        "report-repository-job-coordinator");
+                        "ReportJobCoordinator");
             }
             return null;
         }

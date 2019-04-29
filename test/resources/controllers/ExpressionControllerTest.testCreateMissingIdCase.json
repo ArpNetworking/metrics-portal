@@ -1,6 +1,0 @@
-{
-    "cluster" : "test-cluster",
-    "metric" : "test-metric",
-    "script" : "test-script",
-    "service" : "test-service"
-}

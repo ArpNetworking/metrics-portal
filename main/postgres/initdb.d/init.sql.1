@@ -1,0 +1,50 @@
+/**
+ * Copyright 2014 Groupon
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * NOTE: This file must be run as the database administrator against the postgres database.
+ * NOTE: This file cannot end in .sql or else it will be executed by the entry point.
+ */
+
+BEGIN;
+
+CREATE ROLE metrics_app LOGIN;
+ALTER ROLE metrics_app WITH PASSWORD 'metrics_app_password';
+ALTER ROLE metrics_app WITH NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 100;
+
+CREATE ROLE metrics_dba LOGIN;
+ALTER ROLE metrics_dba WITH PASSWORD 'metrics_dba_password';
+ALTER ROLE metrics_dba WITH NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 6;
+
+CREATE ROLE akka_app LOGIN;
+ALTER ROLE akka_app WITH PASSWORD 'akka_app_password';
+ALTER ROLE akka_app WITH NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 100;
+CREATE ROLE akka_dba LOGIN;
+ALTER ROLE akka_dba WITH PASSWORD 'akka_dba_password';
+ALTER ROLE akka_dba WITH NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION CONNECTION LIMIT 6;
+
+COMMIT;
+
+CREATE DATABASE metrics WITH OWNER = metrics_dba ENCODING = 'UTF8';
+
+BEGIN;
+
+GRANT CONNECT ON DATABASE metrics TO metrics_dba;
+GRANT CONNECT ON DATABASE metrics TO metrics_app;
+GRANT CONNECT ON DATABASE metrics TO akka_dba;
+GRANT CONNECT ON DATABASE metrics TO akka_app;
+
+COMMIT;

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,4 +14,10 @@
  * limitations under the License.
  */
 
-DROP TRIGGER update_expressions_etag ON portal.expressions;
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package com.arpnetworking.metrics.portal.integration.repositories;
+
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

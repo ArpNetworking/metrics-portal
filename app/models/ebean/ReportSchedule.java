@@ -16,14 +16,11 @@
 package models.ebean;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
-import com.google.common.base.MoreObjects;
 
 import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -41,9 +38,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "report_schedules", schema = "portal")
 @DiscriminatorColumn(name = "type")
-@DiscriminatorValue("ONE_OFF")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-public class ReportSchedule {
+public abstract class ReportSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -82,33 +78,10 @@ public class ReportSchedule {
     }
 
     /**
-     * Creates a partially built {@link com.google.common.base.MoreObjects.ToStringHelper} so that
-     * subclasses do not have to specify all inherited fields.
-     *
-     * @return The partially built ToStringHelper.
-     */
-    protected MoreObjects.ToStringHelper toStringHelper() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("runAt", runAt)
-                .add("runUntil", runUntil);
-    }
-
-    @Override
-    public String toString() {
-        return toStringHelper().toString();
-    }
-
-    /**
      * Convert this schedule to its internal representation.
      *
      * @return the internal representation of this schedule.
      */
-    public Schedule toInternal() {
-        return new OneOffSchedule.Builder()
-                .setRunAtAndAfter(runAt)
-                .setRunUntil(runUntil)
-                .build();
-    }
+    public abstract Schedule toInternal();
 }
 // CHECKSTYLE.ON: MemberNameCheck

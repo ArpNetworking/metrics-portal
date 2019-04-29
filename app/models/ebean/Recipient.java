@@ -16,14 +16,12 @@
 package models.ebean;
 
 import com.google.common.base.MoreObjects;
-import io.ebean.Finder;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultEmailRecipient;
 
 import java.sql.Timestamp;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -165,20 +163,5 @@ public final class Recipient {
         }
         throw new PersistenceException("recipient type does not have an internal representation: " + type);
     }
-
-    /**
-     * Find a {@code models.ebean.Recipient} by {@code models.internal.reports.Recipient}.
-     *
-     * @param recipient The internal recipient to find
-     * @return The corresponding ebean recipient
-     */
-    public static Optional<Recipient> findByRecipient(final models.internal.reports.Recipient recipient) {
-        return FINDER.query()
-                .where()
-                .eq("uuid", recipient.getId())
-                .findOneOrEmpty();
-    }
-
-    private static final Finder<Long, Recipient> FINDER = new Finder<>(Recipient.class);
 }
 // CHECKSTYLE.ON: MemberNameCheck
