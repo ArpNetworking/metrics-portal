@@ -41,6 +41,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
@@ -162,7 +163,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 PatternsCS.pipe(
                         fetchLastDataPoint(metricName + period.getSuffix(), period)
                                 .handle((response, failure) -> {
-                                    final String baseMetricName = "rollup/last_data_point_" + period.name().toLowerCase();
+                                    final String baseMetricName = "rollup/last_data_point_"
+                                            + period.name().toLowerCase(Locale.getDefault());
                                     _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
                                     _metrics.recordTimer(
                                             baseMetricName + "/request",
@@ -201,7 +203,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 PatternsCS.pipe(
                         runRollupQuery(message)
                                 .handle((response, failure) -> {
-                                    final String baseMetricName = "rollup/perform_rollup_" + message.getPeriod().name().toLowerCase();
+                                    final String baseMetricName = "rollup/perform_rollup_"
+                                            + message.getPeriod().name().toLowerCase(Locale.getDefault());
                                     _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
                                     _metrics.recordTimer(
                                             baseMetricName + "/request",
