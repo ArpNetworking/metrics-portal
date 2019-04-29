@@ -119,7 +119,7 @@ public class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public QueryResult<Job<T>> query(final JobQuery<T> query) {
+    public QueryResult<Job<T>> queryJobs(final JobQuery<T> query) {
         final int limit = query.getLimit();
         final int offset = query.getOffset().orElse(0);
 

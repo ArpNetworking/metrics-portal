@@ -105,5 +105,5 @@ public interface JobRepository<T> {
      * @param query The {@code JobQuery} instance to execute.
      * @return The jobs resulting from executing the query.
      */
-    QueryResult<Job<T>> query(JobQuery<T> query);
+    QueryResult<Job<T>> queryJobs(JobQuery<T> query);
 }

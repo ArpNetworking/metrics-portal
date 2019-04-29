@@ -54,7 +54,7 @@ public interface ReportRepository extends JobRepository<Report.Result> {
     /**
      * Query reports.
      *
-     * This can be considered a specialization of {@link JobRepository#query} for cases where you want to
+     * This can be considered a specialization of {@link JobRepository#queryJobs} for cases where you want to
      * handle the reports themselves, outside of a Job context.
      *
      * @param query The {@code ReportQuery} instance to execute.
@@ -63,7 +63,7 @@ public interface ReportRepository extends JobRepository<Report.Result> {
     QueryResult<Report> query(ReportQuery query);
 
     // CHECKSTYLE.OFF: JavadocMethodCheck - doc should be inherited from JobRepository
-    default QueryResult<Job<Report.Result>> query(final JobQuery<Report.Result> query) {
+    default QueryResult<Job<Report.Result>> queryJobs(final JobQuery<Report.Result> query) {
         final ReportQuery reportQuery = new DefaultReportQuery(this, query);
         final QueryResult<Report> reports = query(reportQuery);
         return new DefaultQueryResult<>(reports.values(), reports.total());

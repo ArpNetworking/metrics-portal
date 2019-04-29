@@ -68,7 +68,7 @@ public final class DefaultJobQuery<T> implements JobQuery<T> {
 
     @Override
     public QueryResult<Job<T>> execute() {
-        return _repository.query(this);
+        return _repository.queryJobs(this);
     }
 
     @Override
