@@ -116,7 +116,7 @@ public final class LocalHostRepository implements HostRepository {
     }
 
     @Override
-    public QueryResult<Host> query(final HostQuery query) {
+    public QueryResult<Host> queryHosts(final HostQuery query) {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Querying")

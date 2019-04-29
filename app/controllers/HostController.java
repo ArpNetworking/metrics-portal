@@ -198,7 +198,7 @@ public class HostController extends Controller {
 
         final QueryResult<Host> result;
         try {
-            result = _hostRepository.query(query);
+            result = _hostRepository.queryHosts(query);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
