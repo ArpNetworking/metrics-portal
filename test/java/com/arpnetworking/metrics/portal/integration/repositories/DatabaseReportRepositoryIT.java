@@ -266,7 +266,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getError(), nullValue());
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
@@ -297,7 +297,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(retrievedError, notNullValue());
         assertThat(retrievedError, containsString(throwable.getMessage()));
         assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
     }
 
@@ -325,7 +325,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getLastRun(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.empty()));
     }
 

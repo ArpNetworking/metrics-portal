@@ -149,7 +149,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()

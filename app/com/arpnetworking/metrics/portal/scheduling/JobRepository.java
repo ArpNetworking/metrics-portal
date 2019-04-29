@@ -60,7 +60,7 @@ public interface JobRepository<T> {
      * @return The last time that that job was executed.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<Instant> getLastRun(UUID id, Organization organization) throws NoSuchElementException;
+    Optional<Instant> getJobLastRun(UUID id, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.
