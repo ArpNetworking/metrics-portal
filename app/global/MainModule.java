@@ -102,6 +102,8 @@ public class MainModule extends AbstractModule {
                 .in(Scopes.SINGLETON);
 
         // Databases
+        // NOTE: These are not singletons because the lifecycle is controlled by
+        // Ebean itself and we are just binding the instances by name through Guice
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
