@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.alerts.impl;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository;
+import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Context;
@@ -31,18 +29,10 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultOrganization;
-import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
-import play.Application;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.test.WithApplication;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -59,60 +49,21 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests class {@link CassandraAlertRepository}.
  *
- * TODO(ville): Convert this to an integration test.
- *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-@Ignore
-@SuppressWarnings("deprecation")
-public class CassandraAlertRepositoryTest extends WithApplication {
-
-    @Override
-    protected Application provideApplication() {
-        final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
-        final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        final String host = EmbeddedCassandraServerHelper.getHost();
-        final Config configuration = ConfigFactory.load("portal.application.conf");
-        return new GuiceApplicationBuilder()
-                .loadConfig(configuration)
-                .configure("alertRepository.type", CassandraAlertRepository.class.getName())
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
-                .build();
-    }
-
-    @BeforeClass
-    public static void setupFixture() throws ConfigurationException, IOException, TTransportException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 30000);
-    }
-
+public final class CassandraAlertRepositoryIT {
 
     @Before
     public void setUp() {
-        _mappingManager = instanceOf(MappingManager.class);
-        _alertRepo = instanceOf(CassandraAlertRepository.class);
+        final Session cassandraSession = null;
+        final MappingManager mappingManager = null;
+        _alertRepo = new CassandraAlertRepository(cassandraSession, mappingManager);
         _alertRepo.open();
     }
 
     @After
     public void tearDown() {
-        if (_alertRepo != null) {
-            _alertRepo.close();
-        }
-        final int maxTries = 10;
-        for (int x = 1; x <= maxTries; x++) {
-            try {
-                EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
-                break;
-                // CHECKSTYLE.OFF: IllegalCatch - Retry any runtime exceptions
-            } catch (final RuntimeException e) {
-                // CHECKSTYLE.ON
-                if (x == maxTries) {
-                    throw e;
-                }
-            }
-
-        }
+        _alertRepo.close();
     }
 
     @Test

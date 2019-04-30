@@ -13,32 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.hosts.impl;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.hosts.impl.CassandraHostRepository;
+import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.typesafe.config.ConfigFactory;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultOrganization;
-import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import play.Application;
-import play.inject.Injector;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.test.WithApplication;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -49,61 +40,21 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests class {@link com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository}.
  *
- * TODO(ville): Convert this to an integration test.
- *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-@Ignore
-@SuppressWarnings("deprecation")
-public final class CassandraHostRepositoryTest extends WithApplication {
-
-    @Override
-    protected Application provideApplication() {
-        final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
-        final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        final String host = EmbeddedCassandraServerHelper.getHost();
-        _app = new GuiceApplicationBuilder()
-                .loadConfig(ConfigFactory.load("portal.application.conf"))
-                .configure("hostRepository.type", CassandraHostRepository.class.getName())
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
-                .build();
-        return _app;
-    }
-
-    @BeforeClass
-    public static void setupFixture() throws ConfigurationException, IOException, TTransportException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 30000);
-    }
-
+public final class CassandraHostRepositoryIT {
 
     @Before
     public void setUp() {
-        final Injector injector = _app.injector();
-        _mappingManager = injector.instanceOf(MappingManager.class);
-        _hostRepo = injector.instanceOf(CassandraHostRepository.class);
+        final Session cassandraSession = null;
+        final MappingManager mappingManager = null;
+        _hostRepo = new CassandraHostRepository(cassandraSession, mappingManager);
         _hostRepo.open();
     }
 
     @After
     public void tearDown() {
-        if (_hostRepo != null) {
-            _hostRepo.close();
-        }
-        final int maxTries = 10;
-        for (int x = 1; x <= maxTries; x++) {
-            try {
-                EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
-                break;
-                // CHECKSTYLE.OFF: IllegalCatch - Retry any runtime exceptions
-            } catch (final RuntimeException e) {
-                // CHECKSTYLE.ON
-                if (x == maxTries) {
-                    throw e;
-                }
-            }
-
-        }
+        _hostRepo.close();
     }
 
     @Test

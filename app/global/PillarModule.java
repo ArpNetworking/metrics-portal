@@ -162,8 +162,6 @@ public class PillarModule extends AbstractModule {
 
         private final Provider<Cluster> _clusterProvider;
         private final Provider<ApplicationLifecycle> _lifecycleProvider;
-
-        private static final int DEFAULT_CASSANDRA_PORT = 9042;
     }
 
     private static final class CassandraMappingProvider implements Provider<MappingManager> {
