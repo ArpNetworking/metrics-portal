@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Default internal model implementation for a host query.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultHostQuery implements HostQuery {

@@ -30,7 +30,7 @@ import java.util.Optional;
  *
  * TODO(vkoskela): This should probably be unified with the tsd-core type Quantity.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultQuantity implements Quantity {
@@ -86,7 +86,7 @@ public final class DefaultQuantity implements Quantity {
     /**
      * Implementation of builder pattern for <code>DefaultQuantity</code>.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Builder extends OvalBuilder<Quantity> {
 

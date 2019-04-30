@@ -20,7 +20,7 @@ package com.arpnetworking.metrics.portal.health;
  * returns healthy. Therefore, the service is healthy whenever the endpoint
  * is reachable.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class DefaultHealthProvider implements HealthProvider {
 
