@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 /**
  * Play action wrapper that wraps each call in a metrics timer.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class MetricsActionWrapper extends Action.Simple {
 

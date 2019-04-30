@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * Interface for repository of alerts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface AlertRepository {
 

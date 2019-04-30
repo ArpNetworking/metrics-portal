@@ -31,7 +31,7 @@ import java.util.concurrent.TimeoutException;
  * that submit work units or query work units.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public abstract class InstrumentingPoolAdapter extends java.util.concurrent.ForkJoinPool {
     @Override

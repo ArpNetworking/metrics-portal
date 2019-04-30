@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Implementation of {@link HostRepository} using a {@code Map}. This
  * is <b>not</b> intended for production usage.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class LocalHostRepository implements HostRepository {
 

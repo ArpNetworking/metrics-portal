@@ -38,7 +38,7 @@ import java.util.UUID;
 /**
  * Host provider that uses the Consul API to get host data.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConsulHostProvider extends AbstractActor {
 

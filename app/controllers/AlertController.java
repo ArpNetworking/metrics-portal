@@ -56,7 +56,7 @@ import javax.inject.Singleton;
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Singleton
 public class AlertController extends Controller {

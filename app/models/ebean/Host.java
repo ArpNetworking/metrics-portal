@@ -36,7 +36,7 @@ import javax.persistence.Version;
 /**
  * Data model for hosts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity

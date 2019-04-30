@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @param <T> The result value type.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface QueryResult<T> {
 

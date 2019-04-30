@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 /**
  * Default internal model implementation for a host.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultHost implements Host {
@@ -95,7 +95,7 @@ public final class DefaultHost implements Host {
     /**
      * Implementation of builder pattern for {@link DefaultHost}.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Builder extends OvalBuilder<Host> {
 

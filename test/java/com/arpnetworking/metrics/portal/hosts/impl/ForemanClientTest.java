@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Tests for {@link ForemanClient}.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ForemanClientTest {
 

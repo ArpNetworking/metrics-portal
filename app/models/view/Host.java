@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
 /**
  * View model of {@link models.internal.Host}. Play view models are mutable.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class Host {

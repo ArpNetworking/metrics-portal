@@ -39,7 +39,7 @@ import java.util.UUID;
  * class is to for development and testing. This is <b>not</b> intended for
  * production usage.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class RandomHostProvider extends AbstractActor {
 

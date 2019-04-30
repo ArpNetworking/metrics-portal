@@ -28,7 +28,7 @@ import java.util.Optional;
 /**
  * Default internal model implementation for a quantity.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultQuantity implements Quantity {
@@ -84,7 +84,7 @@ public final class DefaultQuantity implements Quantity {
     /**
      * Implementation of builder pattern for {@link DefaultQuantity}.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Builder extends OvalBuilder<Quantity> {
 

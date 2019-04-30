@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * Internal model interface for metrics portal feature state.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface Features {
 

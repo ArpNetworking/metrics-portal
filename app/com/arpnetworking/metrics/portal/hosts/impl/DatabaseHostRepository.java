@@ -52,7 +52,7 @@ import javax.inject.Named;
 /**
  * Implementation of {@link HostRepository} using Postgresql database.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public class DatabaseHostRepository implements HostRepository {
 

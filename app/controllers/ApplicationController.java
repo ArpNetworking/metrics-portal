@@ -32,7 +32,7 @@ import javax.inject.Singleton;
 /**
  * Metrics portal application Play controller.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Singleton
 public final class ApplicationController extends Controller {

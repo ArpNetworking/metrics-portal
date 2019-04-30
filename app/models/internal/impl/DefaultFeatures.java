@@ -23,7 +23,7 @@ import models.internal.Features;
 /**
  * Default internal model implementation of features.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultFeatures implements Features {

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * This is a dummy implementation of {@link HostRepository}.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class NoHostRepository implements HostRepository {
 

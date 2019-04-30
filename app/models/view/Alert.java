@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
  *
  * TODO(ville): Update view model with appropriate nullability of fields.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class Alert {
