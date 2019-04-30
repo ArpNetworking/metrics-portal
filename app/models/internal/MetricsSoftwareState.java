@@ -18,7 +18,7 @@ package models.internal;
 /**
  * Describes the state of the metrics software on a host.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public enum MetricsSoftwareState {
 

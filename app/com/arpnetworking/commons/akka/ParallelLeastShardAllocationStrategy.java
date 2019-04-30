@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 /**
  * Implementation of the least shard allocation strategy that seeks to parallelize shard rebalancing.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator.AbstractShardAllocationStrategy {
 
@@ -181,7 +181,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
     /**
      * Notification message that contains rebalance status.
      *
-     * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+     * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
      */
     public static final class RebalanceNotification implements Serializable {
         /**

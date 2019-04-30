@@ -29,7 +29,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Setup the global application components.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class Global {
     /**

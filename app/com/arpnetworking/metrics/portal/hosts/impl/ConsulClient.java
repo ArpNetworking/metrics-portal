@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Client for HTTP Consul API.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConsulClient {
 
@@ -84,7 +84,7 @@ public final class ConsulClient {
     /**
      * Implementation of the Builder pattern for ConsulClient.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Builder extends OvalBuilder<ConsulClient> {
         /**
@@ -141,7 +141,7 @@ public final class ConsulClient {
     /**
      * Represents a host from the Consul API.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Host {
         public String getNode() {
@@ -163,7 +163,7 @@ public final class ConsulClient {
         /**
          * Implementation of the builder pattern for {@link Host}.
          *
-         * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+         * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
          */
         public static final class Builder extends OvalBuilder<Host> {
             /**

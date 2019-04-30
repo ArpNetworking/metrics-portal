@@ -39,7 +39,7 @@ import java.util.regex.Pattern;
  *
  * TODO(vkoskela): Add to shared library with Play dependency (tsd-core?) [MAI-?]
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class MetricsActionWrapper extends Action.Simple {
 

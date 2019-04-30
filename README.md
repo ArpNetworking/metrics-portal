@@ -283,8 +283,11 @@ the command line to enhance the Ebean classes.
 ### IntelliJ
 
 The project can be imported normally using "File / New / Project From Existing Sources..." using the Maven aspect.
-However, you will need to mark the `target/twirl` directory as a generated source directory. Further, to reflect
-changes to the templates within IntelliJ you will need to generate them from the command line using `./jdk-wrapper.sh ./mvnw compile`.
+However, you will first need to mark the `target/twirl/main` directory as a generated source directory. Next, to reflect
+changes to the templates within IntelliJ you will need to generate them from the command line using `./jdk-wrapper.sh ./mvnw compile`
+(do so now). Finally, under "Module Settings", then under "Platform Settings" / "Global Libraries", you need to click "+", choose
+"Scala SDK" and choose "Maven 2.11.12" and click "OK" and "OK" again. This should enable discovery of the generated code and
+its compilation using `scalac` for use in the IDE (e.g. for running tests).
 
 License
 -------

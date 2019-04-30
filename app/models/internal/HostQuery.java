@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * Internal model interface for a host query.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface HostQuery {
 
