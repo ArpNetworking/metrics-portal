@@ -95,6 +95,9 @@ class EditReportViewModel {
     }
 
     save(): void {
+        const request = this.toRequest();
+
+        console.log(request);
         $.ajax({
             type: "PUT",
             url: "/v1/reports",
@@ -103,7 +106,7 @@ class EditReportViewModel {
             },
             contentType: "application/json",
             dataType: "json",
-            data: JSON.stringify(this.toRequest())
+            data: JSON.stringify(request),
         })
         .fail(() => {
             this.alertMessage(EditReportViewModel.ERROR_MESSAGE);
@@ -147,11 +150,9 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
             type: RecipientType[this.type],
             id: this.id(),
             address: this.address(),
-            formats: [
-                {
-                    type: ReportFormat[this.format()],
-                },
-            ],
+            format: {
+                type: ReportFormat[this.format()],
+            },
         }
     }
 
@@ -170,7 +171,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
     toRequest() {
         let requestType;
         if (this.type() == SourceType.ChromeScreenshot) {
-            requestType = "CHROME_SCREENSHOT"
+            requestType = "ChromeScreenshot"
         }
         return {
             type: requestType,

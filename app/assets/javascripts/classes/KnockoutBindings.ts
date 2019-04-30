@@ -9,6 +9,7 @@ import $ = require('jquery');
 import _ = require('underscore');
 import bootstrap = require('bootstrap');
 
+// @ts-ignore: import is valid
 import * as moment from 'moment-timezone/moment-timezone';
 
 // This const is necessary for typescript to see bootstrap as a 'used' import and not remove it as dead code

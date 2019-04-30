@@ -39,7 +39,7 @@ export class ZoneInfo {
 }
 
 export class BaseSourceViewModel {
-    id = ko.observable("");
+    id = ko.observable(uuid.v4());
     type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
