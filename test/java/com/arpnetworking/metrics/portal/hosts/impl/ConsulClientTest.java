@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests for <code>ConsulClient</code>.
+ * Tests for {@link ConsulClient}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */

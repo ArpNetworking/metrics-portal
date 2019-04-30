@@ -85,7 +85,7 @@ public final class DefaultFeatures implements Features {
     /**
      * Public constructor.
      *
-     * @param configuration the <code>Configuration</code> instance.
+     * @param configuration the {@code Config} instance.
      */
     public DefaultFeatures(final Config configuration) {
         _telemetryEnabled = configuration.getBoolean("portal.features.telemetry.enabled");

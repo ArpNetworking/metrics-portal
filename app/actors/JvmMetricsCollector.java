@@ -51,7 +51,7 @@ public final class JvmMetricsCollector extends AbstractActor {
      * Public constructor.
      *
      * @param configuration Play app configuration.
-     * @param metricsFactory An instance of <code>MetricsFactory</code>.
+     * @param metricsFactory An instance of {@code MetricsFactory}.
      */
     @Inject
     public JvmMetricsCollector(

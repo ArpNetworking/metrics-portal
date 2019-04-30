@@ -94,9 +94,9 @@ public final class DatabaseReportRepository implements ReportRepository {
     /**
      * Public constructor.
      *
-     * @param environment Play's <code>Environment</code> instance.
-     * @param config Play's <code>Configuration</code> instance.
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param environment Play's {@code Environment} instance.
+     * @param config Play's {@code Configuration} instance.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     @Inject
     public DatabaseReportRepository(
@@ -109,7 +109,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     /**
      * Public constructor for manual configuration. This is intended for testing.
      *
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     public DatabaseReportRepository(final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;

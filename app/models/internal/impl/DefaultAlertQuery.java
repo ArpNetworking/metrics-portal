@@ -37,8 +37,8 @@ public final class DefaultAlertQuery implements AlertQuery {
     /**
      * Public constructor.
      *
-     * @param repository The <code>AlertRepository</code>
-     * @param organization The <code>Organization</code> to search in
+     * @param repository the {@link AlertRepository} to query
+     * @param organization the {@link Organization} to search in
      */
     public DefaultAlertQuery(final AlertRepository repository, final Organization organization) {
         _repository = repository;

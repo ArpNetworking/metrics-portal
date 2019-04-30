@@ -46,7 +46,7 @@ public final class RandomHostProvider extends AbstractActor {
     /**
      * Public constructor.
      *
-     * @param hostRepository The <code>HostRepository</code> instance.
+     * @param hostRepository The {@link HostRepository} instance.
      * @param organizationRepository Repository to store organizations.
      * @param configuration Play configuration.
      */

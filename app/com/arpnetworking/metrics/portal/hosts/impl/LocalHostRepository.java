@@ -43,7 +43,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Implementation of <code>HostRepository</code> using a <code>Map</code>. This
+ * Implementation of {@link HostRepository} using a {@code Map}. This
  * is <b>not</b> intended for production usage.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
@@ -177,23 +177,6 @@ public final class LocalHostRepository implements HostRepository {
                 .addData("organization", organization)
                 .log();
         return getOrganizationMap(organization).size();
-    }
-
-    @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Getting host count in state")
-                .addData("organization", organization)
-                .addData("state", metricsSoftwareState)
-                .log();
-        long count = 0;
-        for (final Host host : getOrganizationMap(organization).values()) {
-            if (!metricsSoftwareState.equals(host.getMetricsSoftwareState())) {
-                ++count;
-            }
-        }
-        return count;
     }
 
     /**

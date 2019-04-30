@@ -49,7 +49,7 @@ import javax.inject.Named;
 import javax.persistence.PersistenceException;
 
 /**
- * Implementation of <code>AlertRepository</code> using SQL database.
+ * Implementation of {@link AlertRepository} using SQL database.
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
@@ -58,9 +58,9 @@ public class DatabaseAlertRepository implements AlertRepository {
     /**
      * Public constructor.
      *
-     * @param environment Play's <code>Environment</code> instance.
-     * @param config Play's <code>Configuration</code> instance.
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param environment Play's {@code Environment} instance.
+     * @param config Play's {@code Configuration} instance.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     @Inject
     public DatabaseAlertRepository(
@@ -73,7 +73,7 @@ public class DatabaseAlertRepository implements AlertRepository {
     /**
      * Public constructor for manual configuration. This is intended for testing.
      *
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     public DatabaseAlertRepository(final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;
@@ -170,9 +170,6 @@ public class DatabaseAlertRepository implements AlertRepository {
                 .delete();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();

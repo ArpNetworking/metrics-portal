@@ -17,7 +17,7 @@ package com.arpnetworking.metrics.util;
 
 /**
  * This is a partial adapter to enable instrumentation of Akka's
- * <code>ForkJoinPool</code> as if it were a Java <code>ForkJoinPool</code>.
+ * {@code ForkJoinPool} as if it were a Java {@code ForkJoinPool}.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */

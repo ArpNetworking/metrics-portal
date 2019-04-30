@@ -24,7 +24,6 @@ import akka.http.javadsl.model.ws.WebSocketRequest;
 import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
-import com.arpnetworking.metrics.MetricsFactory;
 import com.google.inject.Inject;
 import models.internal.Features;
 import play.mvc.Controller;
@@ -43,16 +42,13 @@ public class ProxyController extends Controller {
     /**
      * Public constructor.
      *
-     * @param metricsFactory The <code>MetricsFactory</code> instance.
-     * @param system The <code>ActorSystem</code> instance.
-     * @param features The <code>Features</code> instance.
+     * @param system The {@code ActorSystem} instance.
+     * @param features The {@code Features} instance.
      */
     @Inject
     public ProxyController(
-            final MetricsFactory metricsFactory,
             final ActorSystem system,
             final Features features) {
-        _metricsFactory = metricsFactory;
         _system = system;
         _enabled = features.isProxyEnabled();
         _materializer = ActorMaterializer.create(_system);
@@ -62,12 +58,12 @@ public class ProxyController extends Controller {
      * Proxy the specified stream.
      *
      * @param uri The uri of the stream to proxy.
-     * @return Proxied stream.
+     * @return Proxied web socket stream.
      * @throws URISyntaxException if supplied uri is invalid.
      */
     public WebSocket stream(final String uri) throws URISyntaxException {
         if (!_enabled) {
-            throw new IllegalStateException("Proxy disabled");
+            throw new IllegalStateException("Proxy feature is disabled");
         }
 
         final Http http = Http.get(_system);
@@ -84,7 +80,6 @@ public class ProxyController extends Controller {
 
 
     private ActorMaterializer _materializer;
-    private final MetricsFactory _metricsFactory;
     private final ActorSystem _system;
     private final boolean _enabled;
 }

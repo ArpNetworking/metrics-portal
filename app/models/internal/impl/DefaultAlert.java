@@ -180,7 +180,7 @@ public final class DefaultAlert implements Alert {
     private final NagiosExtension _nagiosExtension;
 
     /**
-     * Builder implementation for <code>DefaultAlert</code>.
+     * Builder implementation for {@link DefaultAlert}.
      */
     public static final class Builder extends OvalBuilder<DefaultAlert> {
 
@@ -195,7 +195,7 @@ public final class DefaultAlert implements Alert {
          * The identifier. Required. Cannot be null.
          *
          * @param value The identifier.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setId(final UUID value) {
             _id = value;
@@ -206,7 +206,7 @@ public final class DefaultAlert implements Alert {
          * The context. Required. Cannot be null or empty.
          *
          * @param value The context.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setContext(final Context value) {
             _context = value;
@@ -217,7 +217,7 @@ public final class DefaultAlert implements Alert {
          * The name. Required. Cannot be null or empty.
          *
          * @param value The name.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setName(final String value) {
             _name = value;
@@ -228,7 +228,7 @@ public final class DefaultAlert implements Alert {
          * The cluster. Required. Cannot be null or empty.
          *
          * @param value The cluster.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setCluster(final String value) {
             _cluster = value;
@@ -239,7 +239,7 @@ public final class DefaultAlert implements Alert {
          * The service. Required. Cannot be null or empty.
          *
          * @param value The service.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setService(final String value) {
             _service = value;
@@ -250,7 +250,7 @@ public final class DefaultAlert implements Alert {
          * The metric. Required. Cannot be null or empty.
          *
          * @param value The metric.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setMetric(final String value) {
             _metric = value;
@@ -261,7 +261,7 @@ public final class DefaultAlert implements Alert {
          * The statistic. Required. Cannot be null or empty.
          *
          * @param value The statistic.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setStatistic(final String value) {
             _statistic = value;
@@ -272,7 +272,7 @@ public final class DefaultAlert implements Alert {
          * The period. Required. Cannot be null or empty.
          *
          * @param value The period.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setPeriod(final Duration value) {
             _period = value;
@@ -283,7 +283,7 @@ public final class DefaultAlert implements Alert {
          * The operator. Required. Cannot be null or empty.
          *
          * @param value The operator.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setOperator(final Operator value) {
             _operator = value;
@@ -294,7 +294,7 @@ public final class DefaultAlert implements Alert {
          * The value. Required. Cannot be null or empty.
          *
          * @param value The value.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setValue(final Quantity value) {
             _value = value;
@@ -305,7 +305,7 @@ public final class DefaultAlert implements Alert {
          * The nagios specific extensions.
          *
          * @param value The extensions.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setNagiosExtension(@Nullable final NagiosExtension value) {
             _nagiosExtension = value;

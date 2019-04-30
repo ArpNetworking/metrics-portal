@@ -20,7 +20,9 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 
 /**
- * View model of <code>Alert</code>. Play view models are mutable.
+ * View model of {@link models.internal.Alert}. Play view models are mutable.
+ *
+ * TODO(ville): Update view model with appropriate nullability of fields.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
