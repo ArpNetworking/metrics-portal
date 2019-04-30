@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * this repository serves as a marker to disable the host registry feature in
  * the user interface.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class NoHostRepository implements HostRepository {
 

@@ -18,7 +18,7 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 /**
  * Integration tests for {@code DatabaseHostRepository}.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class DatabaseHostRepositoryIT {
 

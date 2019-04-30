@@ -18,7 +18,7 @@ package com.arpnetworking.metrics.portal.health;
 /**
  * Interface for evaluating the health of the service.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface HealthProvider {
 

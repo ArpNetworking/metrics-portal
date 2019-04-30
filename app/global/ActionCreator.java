@@ -28,7 +28,7 @@ import javax.inject.Inject;
 /**
  * Request handler for the application.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 @SuppressFBWarnings("NM_SAME_SIMPLE_NAME_AS_INTERFACE")
 public class ActionCreator implements play.http.ActionCreator {

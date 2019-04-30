@@ -90,7 +90,7 @@ import javax.inject.Singleton;
 /**
  * Module that defines the main bindings.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 public class MainModule extends AbstractModule {
 

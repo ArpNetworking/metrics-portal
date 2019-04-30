@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Model class containing metadata about paginated results.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public class Pagination {
