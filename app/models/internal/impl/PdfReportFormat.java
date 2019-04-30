@@ -18,6 +18,7 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.Min;
@@ -86,7 +87,9 @@ public final class PdfReportFormat implements ReportFormat {
         return Objects.hash(_widthInches, _heightInches);
     }
 
+    @JsonProperty("widthInches")
     private final float _widthInches;
+    @JsonProperty("heightInches")
     private final float _heightInches;
 
     /**
