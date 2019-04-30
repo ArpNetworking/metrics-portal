@@ -25,7 +25,6 @@ import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.Result;
 import models.internal.Host;
 import models.internal.HostQuery;
-import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
@@ -207,16 +206,6 @@ public class CassandraHostRepository implements HostRepository {
         final models.cassandra.Host.HostQueries accessor = mapper.getManager().createAccessor(models.cassandra.Host.HostQueries.class);
         final Result<models.cassandra.Host> result = accessor.getHostsForOrganization(organization.getId());
         return StreamSupport.stream(result.spliterator(), false).count();
-    }
-
-    @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        final models.cassandra.Host.HostQueries accessor = mapper.getManager().createAccessor(models.cassandra.Host.HostQueries.class);
-        final Result<models.cassandra.Host> result = accessor.getHostsForOrganization(organization.getId());
-        return StreamSupport.stream(result.spliterator(), false)
-                .filter(host -> metricsSoftwareState.name().equals(host.getMetricsSoftwareState()))
-                .count();
     }
 
     private void assertIsOpen() {

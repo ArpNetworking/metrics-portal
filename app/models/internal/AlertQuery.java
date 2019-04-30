@@ -28,7 +28,7 @@ public interface AlertQuery {
      * Set the text to query for. Optional. Defaults to no text.
      *
      * @param contains The text to match.
-     * @return This instance of <code>ExpressionQuery</code>.
+     * @return This instance of {@link AlertQuery}.
      */
     AlertQuery contains(Optional<String> contains);
 
@@ -36,7 +36,7 @@ public interface AlertQuery {
      * Set the context to query for. Optional. Defaults to all context types.
      *
      * @param context The context to match.
-     * @return This instance of <code>AlertQuery</code>.
+     * @return This instance of {@code AlertQuery}.
      */
     AlertQuery context(Optional<Context> context);
 
@@ -44,7 +44,7 @@ public interface AlertQuery {
      * Set the cluster to query for. Optional. Defaults to all clusters.
      *
      * @param cluster The cluster to match.
-     * @return This instance of <code>AlertQuery</code>.
+     * @return This instance of {@link AlertQuery}.
      */
     AlertQuery cluster(Optional<String> cluster);
 
@@ -52,7 +52,7 @@ public interface AlertQuery {
      * Set the service to query for. Optional. Defaults to all services.
      *
      * @param service The service to match.
-     * @return This instance of <code>AlertQuery</code>.
+     * @return This instance of {@link AlertQuery}.
      */
     AlertQuery service(Optional<String> service);
 
@@ -60,7 +60,7 @@ public interface AlertQuery {
      * The maximum number of alerts to return.  Optional. Default is 1000.
      *
      * @param limit The maximum number of alerts to return.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link AlertQuery}.
      */
     AlertQuery limit(int limit);
 
@@ -68,7 +68,7 @@ public interface AlertQuery {
      * The offset into the result set. Optional. Default is not set.
      *
      * @param offset The offset into the result set.
-     * @return This instance of <code>AlertQuery</code>.
+     * @return This instance of {@link AlertQuery}.
      */
     AlertQuery offset(Optional<Integer> offset);
 

@@ -26,7 +26,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 /**
- * Represents the nagios specific data for an alert.
+ * Represents the Nagios specific data for an {@link Alert}.
  *
  * @author Deepika Misra (deepika at groupon dot com)
  */
@@ -100,7 +100,7 @@ public final class NagiosExtension {
     private final Duration _freshnessThreshold;
 
     /**
-     * Builder implementation for <code>NagiosExtension</code>.
+     * {@code Builder} implementation for {@link NagiosExtension}.
      */
     public static final class Builder extends OvalBuilder<NagiosExtension> {
 
@@ -115,7 +115,7 @@ public final class NagiosExtension {
          * The severity. Required. Cannot be null.
          *
          * @param value The severity.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setSeverity(final String value) {
             _severity = value;
@@ -126,7 +126,7 @@ public final class NagiosExtension {
          * The email to notify to. Required. Cannot be null.
          *
          * @param value The notification address.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setNotify(final String value) {
             _notify = value;
@@ -137,7 +137,7 @@ public final class NagiosExtension {
          * The maximum number of attempts to check the value. Required. Cannot be null.
          *
          * @param value The maximum number of check attempts.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setMaxCheckAttempts(final Integer value) {
             _maxCheckAttempts = value;
@@ -148,7 +148,7 @@ public final class NagiosExtension {
          * The freshness threshold in seconds. Required. Cannot be null.
          *
          * @param value The freshness threshold in seconds.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setFreshnessThresholdInSeconds(final Long value) {
             _freshnessThresholdInSeconds = value;

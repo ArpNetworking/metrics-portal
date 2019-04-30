@@ -35,8 +35,8 @@ public final class DefaultHostQuery implements HostQuery {
     /**
      * Public constructor.
      *
-     * @param repository The <code>HostRepository</code>
-     * @param organization The <code>Organization</code> to search in
+     * @param repository the {@link HostRepository} to query
+     * @param organization the {@link Organization} to search in
      */
     public DefaultHostQuery(final HostRepository repository, final Organization organization) {
         _repository = repository;

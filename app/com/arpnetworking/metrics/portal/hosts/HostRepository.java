@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.hosts;
 
 import models.internal.Host;
 import models.internal.HostQuery;
-import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
 
@@ -33,71 +32,61 @@ import java.util.Optional;
 public interface HostRepository extends AutoCloseable {
 
     /**
-     * Open the <code>HostRepository</code>.
+     * Open this {@link HostRepository}.
      */
     void open();
 
     /**
-     * Close the <code>HostRepository</code>.
+     * Close the {@link HostRepository}.
      */
     void close();
 
     /**
-     * Retrieve from the repository.
+     * Retrieve a {@link Host} from the repository for an {@link Organization}.
      *
-     * @param hostname The hostname of the host to remove.
-     * @param organization The organization owning the host.
-     * @return The matching <code>Host</code> if found or <code>Optional.empty()</code>.
+     * @param hostname The name of the host to retrieve.
+     * @param organization The {@link Organization} owning the host.
+     * @return The matching {@link Host} if found or else {@code Optional.empty()}.
      */
     Optional<Host> getHost(String hostname, Organization organization);
 
     /**
-     * Add a new host or update an existing host in the repository.
+     * Add a new {@link Host} or update the existing one in the repository.
      *
-     * @param host The host to add to the repository.
-     * @param organization The organization owning the host.
+     * @param host The {@link Host} to add to the repository.
+     * @param organization The {@link Organization} owning the host.
      */
     void addOrUpdateHost(Host host, Organization organization);
 
     /**
-     * Remove the host by hostname from the repository.
+     * Remove the {@link Host} by hostname from the repository.
      *
-     * @param hostname The hostname of the host to remove.
-     * @param organization The organization owning the host.
+     * @param hostname The name of the {@link Host} to remove.
+     * @param organization The {@link Organization} owning the host.
      */
     void deleteHost(String hostname, Organization organization);
 
     /**
      * Create a query against the hosts repository.
      *
-     * @param organization Organization to search in.
-     * @return Instance of <code>HostQuery</code>.
+     * @param organization {@link Organization} to search in.
+     * @return Instance of {@link HostQuery}.
      */
     HostQuery createHostQuery(Organization organization);
 
     /**
-     * Query the hosts repository.
+     * Query hosts.
      *
-     * @param query Instance of <code>HostQuery</code>.
-     * @return Instance of <code>HostQueryResult</code>.
+     * @param query Instance of {@link HostQuery}.
+     * @return The {@code Collection} of all hosts.
      */
     QueryResult<Host> queryHosts(HostQuery query);
 
     /**
-     * Retrieve the total number of hosts in the repository.
+     * Retrieve the total number of hosts in the repository for an {@link Organization}.
      *
      * @param organization The organization owning the hosts.
      * @return The total number of hosts.
      */
     long getHostCount(Organization organization);
-
-    /**
-     * Retrieve the number of hosts with metrics software in the specified
-     * state.
-     *
-     * @param metricsSoftwareState The state to filter on.
-     * @param organization The organization owning the host.
-     * @return The number of hosts in the specified state.
-     */
-    long getHostCount(MetricsSoftwareState metricsSoftwareState, Organization organization);
 }

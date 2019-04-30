@@ -34,8 +34,8 @@ public final class PagedContainer<T> {
     /**
      * Public constructor.
      *
-     * @param data <code>List</code> of data elements.
-     * @param pagination <code>Pagination</code> metadata.
+     * @param data {@code List} of data elements.
+     * @param pagination {@link Pagination} metadata.
      */
     public PagedContainer(final List<? extends T> data, final Pagination pagination) {
         _data = data;

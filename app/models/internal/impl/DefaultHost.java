@@ -93,7 +93,7 @@ public final class DefaultHost implements Host {
     private final Optional<String> _cluster;
 
     /**
-     * Implementation of builder pattern for <code>DefaultHost</code>.
+     * Implementation of builder pattern for {@link DefaultHost}.
      *
      * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
@@ -110,7 +110,7 @@ public final class DefaultHost implements Host {
          * The hostname. Cannot be null or empty.
          *
          * @param value The hostname.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setHostname(final String value) {
             _hostname = value;
@@ -121,7 +121,7 @@ public final class DefaultHost implements Host {
          * The cluster. Optional. Cannot be empty.
          *
          * @param value The cluster.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setCluster(@Nullable final String value) {
             _cluster = value;
@@ -132,7 +132,7 @@ public final class DefaultHost implements Host {
          * The state of the metrics software. Cannot be null.
          *
          * @param value The state of the metrics software.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setMetricsSoftwareState(final MetricsSoftwareState value) {
             _metricsSoftwareState = value;

@@ -40,7 +40,7 @@ public abstract class BaseSchedule implements Schedule {
     /**
      * Protected constructor.
      *
-     * @param builder Instance of <code>Builder</code>.
+     * @param builder Instance of {@link Builder}.
      */
     protected BaseSchedule(final Builder<?, ?> builder) {
         _runAtAndAfter = builder._runAtAndAfter;
@@ -119,9 +119,9 @@ public abstract class BaseSchedule implements Schedule {
 
         /**
          * Called by setters to always return appropriate subclass of
-         * <code>Builder</code>, even from setters of base class.
+         * {@link Builder}, even from setters of base class.
          *
-         * @return instance with correct <code>Builder</code> class type.
+         * @return instance with correct {@link Builder} class type.
          */
         protected abstract B self();
 
@@ -129,7 +129,7 @@ public abstract class BaseSchedule implements Schedule {
          * The earliest time at which the schedule should run. Required. Cannot be null.
          *
          * @param runAtAndAfter The time.
-         * @return This instance of {@code Builder}.
+         * @return This instance of {@link Builder}.
          */
         public B setRunAtAndAfter(final Instant runAtAndAfter) {
             _runAtAndAfter = runAtAndAfter;
@@ -140,7 +140,7 @@ public abstract class BaseSchedule implements Schedule {
          * The last time at which the schedule should ever run. Optional. Defaults to null.
          *
          * @param runUntil The time.
-         * @return This instance of {@code Builder}.
+         * @return This instance of {@link Builder}.
          */
         public B setRunUntil(@Nullable final Instant runUntil) {
             _runUntil = runUntil;
