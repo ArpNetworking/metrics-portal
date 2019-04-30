@@ -47,7 +47,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests class <code>CassandraAlertRepository</code>.
+ * Tests class {@link com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository}.
  *
  * TODO(ville): Convert this to an integration test.
  *

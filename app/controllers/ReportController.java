@@ -47,8 +47,8 @@ public class ReportController extends Controller {
     /**
      * Public constructor.
      *
-     * @param configuration        Instance of Play's {@link Config}.
-     * @param reportRepository     Instance of {@link ReportRepository}.
+     * @param configuration Instance of Play's {@code Config}.
+     * @param reportRepository Instance of {@link ReportRepository}.
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
@@ -73,7 +73,7 @@ public class ReportController extends Controller {
      *
      * @param limit  The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
-     * @return <code>Result</code> paginated matching reports.
+     * @return {@link Result} paginated matching reports.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
@@ -117,8 +117,7 @@ public class ReportController extends Controller {
     private ReportController(
             final int maxLimit,
             final ReportRepository reportRepository,
-            final OrganizationRepository organizationRepository
-    ) {
+            final OrganizationRepository organizationRepository) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
         _organizationRepository = organizationRepository;
