@@ -18,10 +18,12 @@ package models.view;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
+import javax.annotation.Nullable;
+
 /**
- * View model of <code>Host</code>. Play view models are mutable.
+ * View model of {@link models.internal.Host}. Play view models are mutable.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class Host {
@@ -34,18 +36,20 @@ public final class Host {
         return _hostname;
     }
 
-    public void setMetricsSoftwareState(final String value) {
+    public void setMetricsSoftwareState(@Nullable final String value) {
         _metricsSoftwareState = value;
     }
 
+    @Nullable
     public String getMetricsSoftwareState() {
         return _metricsSoftwareState;
     }
 
-    public void setCluster(final String value) {
+    public void setCluster(@Nullable final String value) {
         _cluster = value;
     }
 
+    @Nullable
     public String getCluster() {
         return _cluster;
     }

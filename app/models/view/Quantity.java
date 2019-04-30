@@ -18,10 +18,12 @@ package models.view;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
+import javax.annotation.Nullable;
+
 /**
- * View model of <code>Quantity</code>. Play view models are mutable.
+ * View model of {@link models.internal.Quantity}. Play view models are mutable.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class Quantity {
@@ -34,10 +36,11 @@ public final class Quantity {
         return _value;
     }
 
-    public void setUnit(final String value) {
+    public void setUnit(@Nullable final String value) {
         _unit = value;
     }
 
+    @Nullable
     public String getUnit() {
         return _unit;
     }

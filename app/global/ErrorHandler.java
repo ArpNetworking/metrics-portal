@@ -28,7 +28,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * Error handler for the application.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 public class ErrorHandler implements HttpErrorHandler {
     @Override

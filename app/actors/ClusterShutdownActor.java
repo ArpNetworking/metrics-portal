@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * Actor that subscribes to cluster events and triggers a CompletableFuture when it sees itself removed
  * from the cluster.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 public class ClusterShutdownActor extends AbstractActor {
     /**

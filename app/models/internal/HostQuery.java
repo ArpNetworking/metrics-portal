@@ -20,16 +20,16 @@ import java.util.Optional;
 /**
  * Internal model interface for a host query.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface HostQuery {
 
     /**
      * Set the hostname to query for. Optional. Defaults to all hosts. If this field is not set it is strongly
-     * encouraged that the <code>limit</code> field is set.
+     * encouraged that the {@code limit} field is set.
      *
      * @param partialHostname The partial or complete hostname to match.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery partialHostname(Optional<String> partialHostname);
 
@@ -37,7 +37,7 @@ public interface HostQuery {
      * Set the metrics software state to query for. Optional. Defaults to any state.
      *
      * @param metricsSoftwareState The metrics software state to match.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery metricsSoftwareState(Optional<MetricsSoftwareState> metricsSoftwareState);
 
@@ -45,7 +45,7 @@ public interface HostQuery {
      * Set the cluster to query for. Optional. Defaults to all clusters.
      *
      * @param cluster The complete cluster to match.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery cluster(Optional<String> cluster);
 
@@ -53,7 +53,7 @@ public interface HostQuery {
      * The maximum number of hosts to return. Optional. Default is 1000.
      *
      * @param limit The maximum number of hosts to return.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery limit(int limit);
 
@@ -61,7 +61,7 @@ public interface HostQuery {
      * The offset into the result set. Optional. Default is not set.
      *
      * @param offset The offset into the result set.
-     * @return This instance of <code>HostQuery</code>.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery offset(Optional<Integer> offset);
 
@@ -70,8 +70,8 @@ public interface HostQuery {
      * implementation but it is strongly recommended that the repository make some attempt to sort by score or relevance
      * given the inputs.
      *
-     * @param field The <code>Field</code> to sort on.
-     * @return This instance of <code>HostQuery</code>.
+     * @param field The {@link Field} to sort on.
+     * @return This instance of {@link HostQuery}.
      */
     HostQuery sortBy(Optional<Field> field);
 

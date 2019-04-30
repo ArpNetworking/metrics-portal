@@ -41,7 +41,7 @@ import javax.persistence.Version;
  * which serializes the state of the object can be dangerous (e.g. {@code toString},
  * {@code @Loggable}, etc.).
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity

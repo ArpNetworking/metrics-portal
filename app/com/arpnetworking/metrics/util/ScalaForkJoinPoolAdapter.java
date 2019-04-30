@@ -19,9 +19,9 @@ import scala.concurrent.forkjoin.ForkJoinPool;
 
 /**
  * This is a partial adapter to enable instrumentation of Scala's
- * <code>ForkJoinPool</code> as if it were a Java <code>ForkJoinPool</code>.
+ * {@code ForkJoinPool} as if it were a Java {@code ForkJoinPool}.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ScalaForkJoinPoolAdapter extends InstrumentingPoolAdapter {
 

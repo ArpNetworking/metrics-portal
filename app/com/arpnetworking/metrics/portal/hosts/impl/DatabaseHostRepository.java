@@ -32,7 +32,6 @@ import io.ebean.Transaction;
 import io.ebeaninternal.server.rawsql.DRawSql;
 import models.internal.Host;
 import models.internal.HostQuery;
-import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
@@ -51,18 +50,18 @@ import java.util.stream.Collectors;
 import javax.inject.Named;
 
 /**
- * Implementation of <code>HostRepository</code> using SQL database.
+ * Implementation of {@link HostRepository} using Postgresql database.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public class DatabaseHostRepository implements HostRepository {
 
     /**
      * Public constructor.
      *
-     * @param environment Play's <code>Environment</code> instance.
-     * @param config Play's <code>Configuration</code> instance.
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param environment Play's {@code Environment} instance.
+     * @param config Play's {@code Configuration} instance.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     @Inject
     public DatabaseHostRepository(
@@ -75,7 +74,7 @@ public class DatabaseHostRepository implements HostRepository {
     /**
      * Public constructor for manual configuration. This is intended for testing.
      *
-     * @param ebeanServer Play's <code>EbeanServer</code> for this repository.
+     * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     public DatabaseHostRepository(final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;
@@ -250,16 +249,6 @@ public class DatabaseHostRepository implements HostRepository {
         return _ebeanServer.find(models.ebean.Host.class)
                 .where()
                 .eq("organization.uuid", organization.getId())
-                .findCount();
-    }
-
-    @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
-        assertIsOpen();
-        return _ebeanServer.find(models.ebean.Host.class)
-                .where()
-                .eq("organization.uuid", organization.getId())
-                .eq("metrics_software_state", metricsSoftwareState.toString())
                 .findCount();
     }
 

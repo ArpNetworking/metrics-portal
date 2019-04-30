@@ -39,14 +39,14 @@ import java.util.UUID;
  * class is to for development and testing. This is <b>not</b> intended for
  * production usage.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class RandomHostProvider extends AbstractActor {
 
     /**
      * Public constructor.
      *
-     * @param hostRepository The <code>HostRepository</code> instance.
+     * @param hostRepository The {@link HostRepository} instance.
      * @param organizationRepository Repository to store organizations.
      * @param configuration Play configuration.
      */

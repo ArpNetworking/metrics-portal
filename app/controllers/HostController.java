@@ -43,12 +43,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 /**
  * Metrics portal host controller. Exposes APIs to query and manipulate hosts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Singleton
 public class HostController extends Controller {
@@ -124,16 +125,16 @@ public class HostController extends Controller {
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @param sort_by The field to sort results by. Optional.
-     * @return <code>Result</code> paginated matching hosts.
+     * @return {@code Result} paginated matching hosts.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
-            final String name,
-            final String state,
-            final String cluster,
-            final Integer limit,
-            final Integer offset,
-            final String sort_by) {
+            @Nullable final String name,
+            @Nullable final String state,
+            @Nullable final String cluster,
+            @Nullable final Integer limit,
+            @Nullable final Integer offset,
+            @Nullable final String sort_by) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
@@ -154,7 +155,7 @@ public class HostController extends Controller {
         final Optional<String> argCluster = Optional.ofNullable(cluster);
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
         final Optional<HostQuery.Field> argSortBy = Optional.ofNullable(sortByValue);
-        final int argLimit = Math.min(_maxLimit, Optional.of(MoreObjects.firstNonNull(limit, _maxLimit)).get());
+        final int argLimit = Math.min(_maxLimit, MoreObjects.firstNonNull(limit, _maxLimit));
         if (argLimit < 0) {
             return badRequest("Invalid limit; must be greater than or equal to 0");
         }
@@ -164,18 +165,10 @@ public class HostController extends Controller {
 
         // Build conditions map
         final Map<String, String> conditions = Maps.newHashMap();
-        if (argName.isPresent()) {
-            conditions.put("name", argName.get());
-        }
-        if (argState.isPresent()) {
-            conditions.put("state", argState.get().toString());
-        }
-        if (argCluster.isPresent()) {
-            conditions.put("cluster", argCluster.get());
-        }
-        if (argSortBy.isPresent()) {
-            conditions.put("sort_by", argSortBy.get().toString());
-        }
+        argName.ifPresent(v -> conditions.put("name", v));
+        argState.ifPresent(v -> conditions.put("state", v.toString()));
+        argCluster.ifPresent(v -> conditions.put("cluster", v));
+        argSortBy.ifPresent(v -> conditions.put("sort_by", v.toString()));
 
         // Build a host repository query
         final HostQuery query = _hostRepository.createHostQuery(_organizationRepository.get(request()))

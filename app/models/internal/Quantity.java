@@ -20,19 +20,19 @@ import java.util.Optional;
 /**
  * Internal model interface for a quantity.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface Quantity {
 
     /**
-     * The value of the <code>Quantity</code>.
+     * The scalar value of this {@link Quantity}.
      *
      * @return The value.
      */
     double getValue();
 
     /**
-     * The optional unit of the value in the <code>Quantity</code>.
+     * The {@code Optional} unit of the scalar in this {@link Quantity}.
      *
      * @return The optional unit.
      */

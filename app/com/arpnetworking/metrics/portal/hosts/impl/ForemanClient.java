@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * Client for HTTP Foreman API.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ForemanClient {
     /**
@@ -331,7 +331,7 @@ public final class ForemanClient {
     /**
      * Wraps a ForemanHost from the ForemanAPI. This was used in at least version 1.8.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class ForemanHostContainer {
         public ForemanHost getHost() {
@@ -347,7 +347,7 @@ public final class ForemanClient {
         /**
          * Implementation of the builder pattern for {@link ForemanHostContainer}.
          *
-         * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+         * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
          */
         public static final class Builder extends OvalBuilder<ForemanHostContainer> {
             /**

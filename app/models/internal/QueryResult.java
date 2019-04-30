@@ -23,7 +23,7 @@ import java.util.Optional;
  *
  * @param <T> The result value type.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface QueryResult<T> {
 
@@ -46,7 +46,7 @@ public interface QueryResult<T> {
      * The etag representing the current state of the repository for this query. This should always exclude the
      * pagination. Otherwise, the etag may be specific to the query or general to the data store.
      *
-     * @return The <code>Optional</code> etag.
+     * @return The {@code Optional} etag.
      */
     Optional<String> etag();
 }

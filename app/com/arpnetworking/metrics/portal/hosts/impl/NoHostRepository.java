@@ -23,7 +23,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
-import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultHostQuery;
@@ -34,11 +33,9 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * This is a dummy implementation of <code>HostRepository</code>. The use of
- * this repository serves as a marker to disable the host registry feature in
- * the user interface.
+ * This is a dummy implementation of {@link HostRepository}.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class NoHostRepository implements HostRepository {
 
@@ -119,17 +116,6 @@ public final class NoHostRepository implements HostRepository {
         assertIsOpen();
         LOGGER.debug()
                 .setMessage("Getting host count")
-                .addData("organization", organization)
-                .log();
-        return 0;
-    }
-
-    @Override
-    public long getHostCount(final MetricsSoftwareState metricsSoftwareState, final Organization organization) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Getting host count in state")
-                .addData("state", metricsSoftwareState)
                 .addData("organization", organization)
                 .log();
         return 0;

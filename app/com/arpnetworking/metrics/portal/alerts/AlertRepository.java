@@ -26,67 +26,67 @@ import java.util.UUID;
 /**
  * Interface for repository of alerts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface AlertRepository {
 
     /**
-     * Open the <code>AlertRepository</code>.
+     * Open this {@link AlertRepository}.
      */
     void open();
 
     /**
-     * Close the <code>AlertRepository</code>.
+     * Close this {@link AlertRepository}.
      */
     void close();
 
     /**
-     * Get the <code>Alert</code> by identifier.
+     * Get the {@link Alert} by identifier and {@link Organization}.
      *
-     * @param identifier The <code>Alert</code> identifier.
-     * @param organization The organization owning the alert.
-     * @return The matching <code>Alert</code> if found or <code>Optional.empty()</code>.
+     * @param identifier The {@link Alert} identifier.
+     * @param organization The {@link Organization} owning the alert.
+     * @return The matching {@link Alert} if found or else {@code Optional.empty()}.
      */
     Optional<Alert> getAlert(UUID identifier, Organization organization);
 
     /**
-     * Delete an <code>Alert</code> by identifier.
+     * Delete an {@link Alert} by identifier.
      *
-     * @param identifier The <code>Alert</code> identifier.
-     * @param organization The organization owning the alert.
-     * @return The number of alerts deleted.
+     * @param identifier The {@link Alert} identifier.
+     * @param organization The {@link Organization} owning the alert.
+     * @return The number of alerts deleted; should be 1 or 0.
      */
     int deleteAlert(UUID identifier, Organization organization);
 
     /**
      * Create a query against the alerts repository.
      *
-     * @param organization Organization to search in.
-     * @return Instance of <code>AlertQuery</code>.
+     * @param organization {@link Organization} to search in.
+     * @return Instance of {@link AlertQuery}.
      */
     AlertQuery createAlertQuery(Organization organization);
 
     /**
      * Query alerts.
      *
-     * @param query Instance of <code>AlertQuery</code>.
-     * @return The <code>Collection</code> of all alerts.
+     * @param query Instance of {@link AlertQuery}.
+     * @return The {@code Collection} of all alerts.
      */
     QueryResult<Alert> queryAlerts(AlertQuery query);
 
     /**
-     * Retrieve the total number of alerts in the repository.
+     * Retrieve the total number of alerts in the repository for an {@link Organization}.
      *
-     * @param organization The organization owning the alerts.
-     * @return The total number of alerts.
+     * @param organization The {@link Organization} owning the alerts.
+     * @return The total number of alerts for the {@link Organization}.
      */
     long getAlertCount(Organization organization);
 
     /**
-     * Add a new alert or update an existing one in the repository.
+     * Add a new {@link Alert} or update the existing one in the repository.
      *
-     * @param alert The alert to add to the repository.
-     * @param organization The organization owning the alert.
+     * @param alert The {@link Alert} to add to or update in the repository.
+     * @param organization The {@link Organization} owning the alert.
      */
     void addOrUpdateAlert(Alert alert, Organization organization);
 }

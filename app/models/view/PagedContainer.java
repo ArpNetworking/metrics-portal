@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @param <T> The result type to paginate through.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class PagedContainer<T> {
@@ -34,8 +34,8 @@ public final class PagedContainer<T> {
     /**
      * Public constructor.
      *
-     * @param data <code>List</code> of data elements.
-     * @param pagination <code>Pagination</code> metadata.
+     * @param data {@code List} of data elements.
+     * @param pagination {@link Pagination} metadata.
      */
     public PagedContainer(final List<? extends T> data, final Pagination pagination) {
         _data = data;

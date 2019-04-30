@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutorService;
  * Actor responsible for collecting JVM metrics on a periodic basis.
  *
  * @author Deepika Misra (deepika at groupon dot com)
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class JvmMetricsCollector extends AbstractActor {
 
@@ -51,7 +51,7 @@ public final class JvmMetricsCollector extends AbstractActor {
      * Public constructor.
      *
      * @param configuration Play app configuration.
-     * @param metricsFactory An instance of <code>MetricsFactory</code>.
+     * @param metricsFactory An instance of {@code MetricsFactory}.
      */
     @Inject
     public JvmMetricsCollector(

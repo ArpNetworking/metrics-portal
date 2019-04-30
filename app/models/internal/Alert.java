@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 /**
  * Internal model interface for an alert.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface Alert {
 

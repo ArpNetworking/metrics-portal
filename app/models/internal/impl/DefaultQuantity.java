@@ -28,9 +28,7 @@ import java.util.Optional;
 /**
  * Default internal model implementation for a quantity.
  *
- * TODO(vkoskela): This should probably be unified with the tsd-core type Quantity.
- *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public final class DefaultQuantity implements Quantity {
@@ -84,9 +82,9 @@ public final class DefaultQuantity implements Quantity {
     private final Optional<String> _unit;
 
     /**
-     * Implementation of builder pattern for <code>DefaultQuantity</code>.
+     * Implementation of builder pattern for {@link DefaultQuantity}.
      *
-     * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
     public static final class Builder extends OvalBuilder<Quantity> {
 
@@ -101,7 +99,7 @@ public final class DefaultQuantity implements Quantity {
          * The value. Cannot be null.
          *
          * @param value The value.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setValue(final Double value) {
             _value = value;
@@ -112,7 +110,7 @@ public final class DefaultQuantity implements Quantity {
          * The unit of the value. Optional. Cannot be empty. Default is null.
          *
          * @param value The unit.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setUnit(final String value) {
             _unit = value;

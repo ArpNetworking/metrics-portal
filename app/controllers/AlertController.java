@@ -50,12 +50,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 /**
  * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Singleton
 public class AlertController extends Controller {
@@ -116,16 +117,16 @@ public class AlertController extends Controller {
      * @param service The service of the statistic to evaluate as part of the alert. Optional.
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
-     * @return <code>Result</code> paginated matching alerts.
+     * @return {@link Result} paginated matching alerts.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
-            final String contains,
-            final String context,
-            final String cluster,
-            final String service,
-            final Integer limit,
-            final Integer offset) {
+            @Nullable final String contains,
+            @Nullable final String context,
+            @Nullable final String cluster,
+            @Nullable final String service,
+            @Nullable final Integer limit,
+            @Nullable final Integer offset) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
@@ -140,7 +141,7 @@ public class AlertController extends Controller {
         final Optional<String> argCluster = Optional.ofNullable(cluster);
         final Optional<String> argService = Optional.ofNullable(service);
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
-        final int argLimit = Math.min(_maxLimit, Optional.of(MoreObjects.firstNonNull(limit, _maxLimit)).get());
+        final int argLimit = Math.min(_maxLimit, MoreObjects.firstNonNull(limit, _maxLimit));
         if (argLimit < 0) {
             return badRequest("Invalid limit; must be greater than or equal to 0");
         }
@@ -150,18 +151,10 @@ public class AlertController extends Controller {
 
         // Build conditions map
         final Map<String, String> conditions = Maps.newHashMap();
-        if (argContains.isPresent()) {
-            conditions.put("contains", argContains.get());
-        }
-        if (argContext.isPresent()) {
-            conditions.put("context", argContext.get().toString());
-        }
-        if (argCluster.isPresent()) {
-            conditions.put("cluster", argCluster.get());
-        }
-        if (argService.isPresent()) {
-            conditions.put("service", argService.get());
-        }
+        argContains.ifPresent(v -> conditions.put("contains", v));
+        argContext.ifPresent(v -> conditions.put("context", v.toString()));
+        argCluster.ifPresent(v -> conditions.put("cluster", v));
+        argService.ifPresent(v -> conditions.put("service", v));
 
         // Build a host repository query
         final AlertQuery query = _alertRepository.createAlertQuery(_organizationRepository.get(request()))
@@ -316,7 +309,7 @@ public class AlertController extends Controller {
         }
     }
 
-    private ImmutableMap<String, Object> mergeExtensions(final NagiosExtension nagiosExtension) {
+    private ImmutableMap<String, Object> mergeExtensions(@Nullable final NagiosExtension nagiosExtension) {
         final ImmutableMap.Builder<String, Object> nagiosMapBuilder = ImmutableMap.builder();
         if (nagiosExtension != null) {
             nagiosMapBuilder.put(NAGIOS_EXTENSION_SEVERITY_KEY, nagiosExtension.getSeverity());

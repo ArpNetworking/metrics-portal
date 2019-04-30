@@ -90,7 +90,7 @@ public final class DefaultOrganization implements Organization {
          * The id. Cannot be null or empty.
          *
          * @param value The id.
-         * @return This instance of <code>Builder</code>.
+         * @return This instance of {@link Builder}.
          */
         public Builder setId(final UUID value) {
             _id = value;

@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Model class containing metadata about paginated results.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Loggable
 public class Pagination {
@@ -40,7 +40,7 @@ public class Pagination {
      * @param size The number of records returned in this page.
      * @param limit The maximum number of records to return in one page.
      * @param offset The offset, in records, of the first record in this page.
-     * @param conditions The <code>Map</code> of query parameter key-value pairs.
+     * @param conditions The {@code Map} of query parameter key-value pairs.
      */
     public Pagination(
             final String path,
@@ -51,14 +51,13 @@ public class Pagination {
             final Map<String, String> conditions) {
         _total = total;
         _size = size;
-        _offset = offset.isPresent() ? offset.get() : 0;
+        _offset = offset.orElse(0);
 
         Optional<URI> previous = Optional.empty();
         Optional<URI> next = Optional.empty();
         if (_offset + _size < _total) {
             final int newOffset = _offset + _size;
-            final int newLimit = limit;
-            next = Optional.of(createReference(path, newLimit, newOffset, conditions));
+            next = Optional.of(createReference(path, limit, newOffset, conditions));
         }
         if (_offset > 0) {
             final int newOffset = Math.max(_offset - limit, 0);

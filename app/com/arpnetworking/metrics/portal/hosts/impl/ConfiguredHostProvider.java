@@ -40,7 +40,7 @@ import java.util.UUID;
  * class is to register host names that cannot otherwise be discovered but ones
  * that do not change frequently.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConfiguredHostProvider extends AbstractActor {
 

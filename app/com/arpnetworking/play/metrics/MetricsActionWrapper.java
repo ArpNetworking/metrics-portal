@@ -35,18 +35,16 @@ import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 /**
- * Simple action wrapper that wraps each call in a metrics timer.
+ * Play action wrapper that wraps each call in a metrics timer.
  *
- * TODO(vkoskela): Add to shared library with Play dependency (tsd-core?) [MAI-?]
- *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class MetricsActionWrapper extends Action.Simple {
 
     /**
      * Public constructor.
      *
-     * @param metricsFactory Instance of <code>MetricsFactory</code>.
+     * @param metricsFactory Instance of {@code MetricsFactory}.
      */
     public MetricsActionWrapper(final MetricsFactory metricsFactory) {
         _metricsFactory = metricsFactory;
@@ -78,7 +76,7 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     /**
-     * Create the name of the timer from a <code>Http.Context</code>.
+     * Create the name of the timer from a {@code Http.Context}.
      *
      * @param context Context of the HTTP request/response.
      * @return Name of the timer for the request/response.

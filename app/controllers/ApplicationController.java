@@ -18,7 +18,6 @@ package controllers;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import models.internal.Features;
 import play.mvc.Controller;
@@ -26,13 +25,14 @@ import play.mvc.Result;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
  * Metrics portal application Play controller.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 @Singleton
 public final class ApplicationController extends Controller {
@@ -40,7 +40,7 @@ public final class ApplicationController extends Controller {
     /**
      * Public constructor.
      *
-     * @param features The <code>Features</code> instance.
+     * @param features The {@link Features} instance.
      */
     @Inject
     public ApplicationController(final Features features) {
