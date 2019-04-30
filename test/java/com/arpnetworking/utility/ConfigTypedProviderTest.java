@@ -33,7 +33,7 @@ import static org.junit.Assert.assertSame;
 /**
  * Tests for {@link ConfigTypedProvider}.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
 public final class ConfigTypedProviderTest {
 

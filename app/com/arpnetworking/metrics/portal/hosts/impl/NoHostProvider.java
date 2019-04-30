@@ -28,7 +28,7 @@ import com.typesafe.config.Config;
  * The primary purpose of this class is to demonstrate how to implement a
  * host provider.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public class NoHostProvider extends AbstractActor {
 

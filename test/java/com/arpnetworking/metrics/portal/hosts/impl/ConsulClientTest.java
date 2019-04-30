@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests for <code>ConsulClient</code>.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConsulClientTest {
 

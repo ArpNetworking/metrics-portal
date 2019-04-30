@@ -53,7 +53,7 @@ import javax.inject.Named;
 /**
  * Implementation of <code>HostRepository</code> using SQL database.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public class DatabaseHostRepository implements HostRepository {
 

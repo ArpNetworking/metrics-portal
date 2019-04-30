@@ -27,7 +27,7 @@ import java.io.File;
 /**
  * Utility methods that provide common patterns when interacting with Play's <code>Config</code> class.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConfigurationHelper {
 
