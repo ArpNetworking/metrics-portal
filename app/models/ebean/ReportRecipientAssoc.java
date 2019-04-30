@@ -36,6 +36,11 @@ import javax.persistence.Table;
 /**
  * Data model for a mapping between a report and a recipient.
  *
+ * NOTE: This class is enhanced by Ebean to do things like lazy loading and
+ * resolving relationships between beans. Therefore, including functionality
+ * which serializes the state of the object can be dangerous (e.g. {@code toString},
+ * {@code @Loggable}, etc.).
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Entity

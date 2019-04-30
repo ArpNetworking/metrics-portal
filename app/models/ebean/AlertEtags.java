@@ -15,8 +15,6 @@
  */
 package models.ebean;
 
-import io.ebean.Finder;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,6 +26,11 @@ import javax.persistence.Table;
 
 /**
  * Model class to represent alert etag records.
+ *
+ * NOTE: This class is enhanced by Ebean to do things like lazy loading and
+ * resolving relationships between beans. Therefore, including functionality
+ * which serializes the state of the object can be dangerous (e.g. {@code toString},
+ * {@code @Loggable}, etc.).
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
@@ -70,7 +73,5 @@ public class AlertEtags {
     public void setEtag(final long value) {
         etag = value;
     }
-
-    private static final Finder<Long, AlertEtags> FINDER = new Finder<>(AlertEtags.class);
 }
 // CHECKSTYLE.ON: MemberNameCheck

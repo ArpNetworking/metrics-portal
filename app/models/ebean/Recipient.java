@@ -15,7 +15,6 @@
  */
 package models.ebean;
 
-import com.google.common.base.MoreObjects;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultEmailRecipient;
@@ -35,6 +34,11 @@ import javax.persistence.Table;
 
 /**
  * Data Model for SQL storage of a report recipient.
+ *
+ * NOTE: This class is enhanced by Ebean to do things like lazy loading and
+ * resolving relationships between beans. Therefore, including functionality
+ * which serializes the state of the object can be dangerous (e.g. {@code toString},
+ * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  * @see Recipient.RecipientType
@@ -112,16 +116,6 @@ public final class Recipient {
 
     public RecipientType getType() {
         return type;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("uuid", uuid)
-                .add("address", address)
-                .add("type", type)
-                .toString();
     }
 
     @Override
