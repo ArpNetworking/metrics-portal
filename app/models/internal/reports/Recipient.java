@@ -51,7 +51,7 @@ public interface Recipient {
 
     /**
      * {@code Visitor} abstracts over operations which could potentially handle various
-     * implementations of {@code BaseRecipientViewModel}.
+     * implementations of {@code Recipient}.
      *
      * @param <T> the return type of the visitor.
      */
