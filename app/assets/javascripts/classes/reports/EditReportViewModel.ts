@@ -134,6 +134,10 @@ class EditReportViewModel {
 }
 
 class EditRecipientViewModel extends BaseRecipientViewModel {
+
+    static DEFAULT_PDF_WIDTH_INCHES = 8.5;
+    static DEFAULT_PDF_HEIGHT_INCHES = 11;
+
     label(): string {
         return RecipientType[this.type]
     }
@@ -146,13 +150,18 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
     }
 
     toRequest(): any {
+        const format: any = {
+            type: ReportFormat[this.format()],
+        };
+        if (this.format() == ReportFormat.Pdf) {
+            format.widthInches = EditRecipientViewModel.DEFAULT_PDF_WIDTH_INCHES;
+            format.heightInches = EditRecipientViewModel.DEFAULT_PDF_HEIGHT_INCHES;
+        }
         return {
             type: RecipientType[this.type],
             id: this.id(),
             address: this.address(),
-            format: {
-                type: ReportFormat[this.format()],
-            },
+            format: format,
         }
     }
 

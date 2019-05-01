@@ -84,7 +84,9 @@ export class BaseScheduleViewModel {
         this.offsetString(raw.offset);
         this.zone(new ZoneInfo(raw.zone));
         this.start(moment(raw.runAtAndAfter));
-        this.end(moment(raw.runUntil));
+        if (raw.runUntil) {
+            this.end(moment(raw.runUntil));
+        }
         return this;
     }
 }

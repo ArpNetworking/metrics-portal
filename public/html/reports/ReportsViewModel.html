@@ -35,8 +35,8 @@
                     <th class="col-md-1">Name</td>
                     <th class="col-md-1">Source</td>
                     <th class="col-md-1">Schedule Type</td>
-                    <th class="col-md-2">From</td>
-                    <th class="col-md-2">Until</td>
+                    <th class="col-md-2">Start Time</td>
+                    <th class="col-md-2">End Time</td>
                     <th class="col-md-2">Recipients</td>
                     <th></th>
                 </tr>
@@ -66,7 +66,8 @@
                         <span data-bind="text: schedule.start"></span>
                     </td>
                     <td>
-                        <span data-bind="text: schedule.end"></span>
+                        <span data-bind="if schedule; text: schedule.end"></span>
+                        <span data-bind="if-not schedule">–</span>
                     </td>
                     <td data-bind="foreach: recipients">
                         <span class="badge" data-bind="text: badgeText"></span>
