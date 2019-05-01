@@ -132,7 +132,7 @@ public final class CachedJob<T> implements Job<T> {
     }
 
     @Override
-    public String getETag() {
+    public Optional<String> getETag() {
         return _cached.getETag();
     }
 

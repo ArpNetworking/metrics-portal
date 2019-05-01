@@ -31,9 +31,11 @@ import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import javax.annotation.Nullable;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -60,8 +62,8 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    public String getETag() {
-        return _eTag;
+    public Optional<String> getETag() {
+        return Optional.ofNullable(_eTag);
     }
 
     @Override
@@ -106,6 +108,7 @@ public final class DefaultReport implements Report {
     }
 
     private final UUID _id;
+    @Nullable
     private final String _eTag;
     private final String _name;
     private final Schedule _schedule;
@@ -157,7 +160,7 @@ public final class DefaultReport implements Report {
         }
 
         /**
-         * Set the report ETag. Required. Cannot be null or empty.
+         * Set the report ETag. Optional. Cannot be null or empty.
          *
          * The ETag should function like a strong hash of the report and all its transitive dependencies.
          *
@@ -215,8 +218,8 @@ public final class DefaultReport implements Report {
 
         @NotNull
         private UUID _id;
-        @NotNull
         @NotEmpty
+        @Nullable
         private String _eTag;
         @NotNull
         @NotEmpty

@@ -10,4 +10,11 @@ public class EmailRecipient extends Recipient {
         viewRecipient.setFormat(format);
         return viewRecipient;
     }
+
+    public DefaultEmailRecipient toInternal() {
+        return new DefaultEmailRecipient.Builder()
+                .setId(getId())
+                .setAddress(getAddress())
+                .build();
+    }
 }

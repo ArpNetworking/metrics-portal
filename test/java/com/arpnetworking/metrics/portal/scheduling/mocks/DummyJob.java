@@ -57,8 +57,8 @@ public final class DummyJob<T> implements Job<T> {
     }
 
     @Override
-    public String getETag() {
-        return _uuid.toString();
+    public Optional<String> getETag() {
+        return Optional.of(_uuid.toString());
     }
 
     @Override

@@ -2,6 +2,7 @@ package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSetMultimap;
 import models.internal.impl.DefaultReport;
 import models.view.scheduling.Schedule;
 
@@ -9,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -64,13 +66,20 @@ public class Report {
     }
 
     public models.internal.reports.Report toInternal() {
+        final ImmutableSetMultimap<models.internal.reports.ReportFormat, models.internal.reports.Recipient> internalRecipients =
+                _recipients
+                    .stream()
+                    .collect(ImmutableSetMultimap.toImmutableSetMultimap(
+                            r -> r.getFormat().toInternal(),
+                            Recipient::toInternal
+                    ));
+
         return new DefaultReport.Builder()
                 .setId(_id)
                 .setName(_name)
                 .setReportSource(_source.toInternal())
                 .setSchedule(_schedule.toInternal())
-                // FIXME(cbriones)
-//                .setRecipients((viewReport.getRecipients()))
+                .setRecipients(internalRecipients)
                 .build();
     }
 

@@ -145,12 +145,12 @@ public class JobCoordinatorTest {
 
         _messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
                         .setJobRef(makeRef(job1))
-                        .setETag(job1.getETag())
+                        .setETag(job1.getETag().orElse(null))
                         .build());
 
         _messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
                         .setJobRef(makeRef(job2))
-                        .setETag(job2.getETag())
+                        .setETag(job2.getETag().orElse(null))
                         .build());
 
         _messageExtractor.expectNoMessage();
