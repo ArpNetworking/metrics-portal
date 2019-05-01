@@ -147,7 +147,7 @@ public class DatabaseHostRepository implements HostRepository {
                     .reduce((s1, s2) -> s1 + " " + s2)
                     .orElse("");
 
-            _ebeanServer.save(host);
+            _ebeanServer.save(ebeanHost);
             _ebeanServer.createSqlUpdate(
                     "UPDATE portal.hosts SET name_idx_col = "
                             + "setweight(to_tsvector('simple', coalesce(:hostname,'')), 'A')"
