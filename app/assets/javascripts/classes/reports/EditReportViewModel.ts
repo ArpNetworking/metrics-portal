@@ -61,7 +61,6 @@ class EditReportViewModel {
 
     loadReport(id: String): void {
         $.getJSON("/v1/reports/" + id, null, (rawReport) => {
-            // FIXME(cbriones): Bind these to the view model.
             this.id(rawReport.id);
             this.name(rawReport.name);
             this.existingReport(true);
@@ -97,7 +96,6 @@ class EditReportViewModel {
     save(): void {
         const request = this.toRequest();
 
-        console.log(request);
         $.ajax({
             type: "PUT",
             url: "/v1/reports",
@@ -178,12 +176,8 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
 
 class EditSourceViewModel extends BaseSourceViewModel {
     toRequest() {
-        let requestType;
-        if (this.type() == SourceType.ChromeScreenshot) {
-            requestType = "ChromeScreenshot"
-        }
         return {
-            type: requestType,
+            type: SourceType[this.type()],
             id: this.id(),
             uri: this.url(),
             title: this.title(),
