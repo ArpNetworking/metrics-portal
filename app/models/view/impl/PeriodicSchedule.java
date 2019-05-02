@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Dropbox, Inc.
+ * Copyright 2019 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import java.time.ZoneId;
 
 /**
  * Schedule for a job that repeats periodically.
+ *
+ * Play view models are mutable.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
@@ -65,11 +67,19 @@ public final class PeriodicSchedule implements Schedule {
                 .build();
     }
 
+    /**
+     * Create a {@code PeriodicSchedule} from its internal representation.
+     *
+     * @param schedule The internal model.
+     * @return The view model.
+     */
     public static PeriodicSchedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule schedule) {
         final PeriodicSchedule viewSchedule = new PeriodicSchedule();
         viewSchedule._runAtAndAfter = schedule.getRunAtAndAfter();
         viewSchedule._runUntil = schedule.getRunUntil().orElse(null);
-        final Periodicity period = Periodicity.fromValue(schedule.getPeriod());
+        final Periodicity period =
+                Periodicity.fromValue(schedule.getPeriod())
+                        .orElseThrow(() -> new IllegalArgumentException("No corresponding schedule period for " + schedule.getPeriod()));
         viewSchedule.setPeriod(period);
         viewSchedule.setOffset(schedule.getOffset());
         viewSchedule.setZone(schedule.getZone());

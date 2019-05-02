@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Dropbox, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -10,17 +25,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * View model for a {@link models.internal.reports.Report}.
  *
- * This class is mutable.
+ * Play view models are mutable.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class Report {
+public final class Report {
     private Report() {
         // Clients should use Report::fromInternal.
     }
@@ -65,6 +79,11 @@ public class Report {
         return _recipients;
     }
 
+    /**
+     * Convert this report into its internal representation.
+     *
+     * @return The internal model.
+     */
     public models.internal.reports.Report toInternal() {
         final ImmutableSetMultimap<models.internal.reports.ReportFormat, models.internal.reports.Recipient> internalRecipients =
                 _recipients
@@ -83,6 +102,12 @@ public class Report {
                 .build();
     }
 
+    /**
+     * Create a {@code Report} from an internal model.
+     *
+     * @param report The internal model
+     * @return The view model.
+     */
     public static Report fromInternal(final models.internal.reports.Report report) {
         final models.view.reports.Report viewReport = new Report();
         viewReport.setId(report.getId());
@@ -99,7 +124,10 @@ public class Report {
         return viewReport;
     }
 
-    private static Stream<Recipient> recipientsFromEntry(final Map.Entry<models.internal.reports.ReportFormat, Collection<models.internal.reports.Recipient>> entry) {
+    private static Stream<Recipient> recipientsFromEntry(
+            final Map.Entry<models.internal.reports.ReportFormat,
+            Collection<models.internal.reports.Recipient>> entry
+    ) {
         final models.internal.reports.ReportFormat format = entry.getKey();
         final ReportFormat viewFormat = ReportFormat.fromInternal(format);
         return entry.getValue().stream().map(r -> Recipient.fromInternal(r, viewFormat));

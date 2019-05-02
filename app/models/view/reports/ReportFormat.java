@@ -37,12 +37,18 @@ import models.view.impl.PdfReportFormat;
 })
 public interface ReportFormat {
     /**
-     * Convert to an internal model {@link models.internal.reports.ReportFormat}.
+     * Convert to an internal model.
      *
      * @return The internal model.
      */
     models.internal.reports.ReportFormat toInternal();
 
+    /**
+     * Convert from an internal model.
+     *
+     * @param format The internal model.
+     * @return the view model.
+     */
     static ReportFormat fromInternal(models.internal.reports.ReportFormat format) {
         final Visitor<ReportFormat> fromInternalVisitor = new Visitor<ReportFormat>() {
             @Override

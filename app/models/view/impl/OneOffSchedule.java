@@ -23,6 +23,8 @@ import java.time.Instant;
 /**
  * Schedule that should be executed exactly once.
  *
+ * Play view models are mutable.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class OneOffSchedule implements Schedule {
@@ -42,6 +44,11 @@ public final class OneOffSchedule implements Schedule {
                 .build();
     }
 
+    /**
+     * Create a {@code OneOffSchedule} from its internal representation.
+     * @param schedule The internal model.
+     * @return The view model.
+     */
     public static OneOffSchedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule schedule) {
         final OneOffSchedule viewSchedule = new OneOffSchedule();
         viewSchedule.setRunAt(schedule.getRunAtAndAfter());

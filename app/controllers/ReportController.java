@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
@@ -35,13 +36,14 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
-import javax.annotation.Nullable;
-import javax.inject.Singleton;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.inject.Singleton;
 
 /**
  * Metrics portal report controller. Exposes APIs to query and manipulate reports.
@@ -54,8 +56,8 @@ public class ReportController extends Controller {
     /**
      * Public constructor.
      *
-     * @param configuration Instance of Play's {@code Config}.
-     * @param reportRepository Instance of {@link ReportRepository}.
+     * @param configuration          Instance of Play's {@code Config}.
+     * @param reportRepository       Instance of {@link ReportRepository}.
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
@@ -72,6 +74,29 @@ public class ReportController extends Controller {
      * @return Ok if the report was added or updated successfully, an HTTP error code otherwise.
      */
     public Result addOrUpdate() {
+        final Report report;
+        try {
+            final JsonNode body = request().body().asJson();
+            report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
+        } catch (final IOException e) {
+            LOGGER.error()
+                    .setMessage("Failed to build a report.")
+                    .setThrowable(e)
+                    .log();
+            return badRequest("Invalid request body.");
+        }
+
+        try {
+            _reportRepository.addOrUpdateReport(report, _organizationRepository.get(request()));
+            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Failed to add or update a report.")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
         return noContent();
     }
 
@@ -99,12 +124,10 @@ public class ReportController extends Controller {
             return badRequest("Invalid offset; must be greater than or equal to 0");
         }
 
-        // Build a host repository query
         final ReportQuery query = _reportRepository.createReportQuery(_organizationRepository.get(request()))
                 .limit(argLimit)
                 .offset(argOffset.orElse(0));
 
-        // Execute the query
         final QueryResult<Report> result;
         try {
             result = query.execute();
@@ -120,11 +143,7 @@ public class ReportController extends Controller {
 
         final Map<String, String> conditions = ImmutableMap.of();
 
-        // Wrap the query results and return as JSON
-        if (result.etag().isPresent()) {
-            response().setHeader(HttpHeaders.ETAG, result.etag().get());
-        }
-        // Wrap the query results and return as JSON
+        result.etag().ifPresent(etag -> response().setHeader(HttpHeaders.ETAG, etag));
         return ok(Json.toJson(new PagedContainer<>(
                 result.values()
                         .stream()
@@ -160,7 +179,7 @@ public class ReportController extends Controller {
         }
         final Optional<Report> report = _reportRepository.getReport(uuid, org);
         return report.map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElse(notFound());
+                .orElseGet(ReportController::notFound);
     }
 
     private ReportController(

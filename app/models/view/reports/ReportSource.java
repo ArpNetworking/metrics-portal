@@ -43,10 +43,11 @@ public interface ReportSource {
     /**
      * Convert from an internal model {@link models.internal.reports.ReportSource}.
      *
+     * @param source The internal model.
      * @return The view model.
      * @throws IllegalArgumentException if the internal model cannot be represented in the view.
      */
-    public static ReportSource fromInternal(final models.internal.reports.ReportSource source) {
+    static ReportSource fromInternal(final models.internal.reports.ReportSource source) {
         if (source instanceof models.internal.impl.ChromeScreenshotReportSource) {
             return models.view.impl.ChromeScreenshotReportSource.fromInternal((models.internal.impl.ChromeScreenshotReportSource) source);
         } else {

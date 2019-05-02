@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package models.view.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
@@ -41,6 +40,12 @@ public final class HtmlReportFormat implements ReportFormat {
                 .build();
     }
 
+    /**
+     * Create a {@code HtmlReportFormat} from its internal representation.
+     *
+     * @param format The internal model.
+     * @return The view model.
+     */
     public static HtmlReportFormat fromInternal(final models.internal.impl.HtmlReportFormat format) {
         return new HtmlReportFormat();
     }

@@ -28,6 +28,8 @@ import java.util.UUID;
 /**
  * Internal model for a report source that pulls screenshots from a Chrome web browser.
  *
+ * Play view models are mutable.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
@@ -84,6 +86,12 @@ public final class ChromeScreenshotReportSource implements ReportSource {
                 .build();
     }
 
+    /**
+     * Create a {@code ChromeScreenshotReportSource} from its internal representation.
+     *
+     * @param source The internal model.
+     * @return The view model.
+     */
     public static ChromeScreenshotReportSource fromInternal(final models.internal.impl.ChromeScreenshotReportSource source) {
         final ChromeScreenshotReportSource viewSource = new ChromeScreenshotReportSource();
         viewSource.setId(source.getId());

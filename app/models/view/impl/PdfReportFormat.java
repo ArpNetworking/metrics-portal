@@ -25,6 +25,8 @@ import java.util.Objects;
 /**
  * A PDF report format.
  *
+ * Play view models are mutable.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
@@ -54,6 +56,12 @@ public final class PdfReportFormat implements ReportFormat {
                 .build();
     }
 
+    /**
+     * Create a {@code PdfReportFormat} from its internal representation.
+     *
+     * @param format The internal model.
+     * @return The view model.
+     */
     public static PdfReportFormat fromInternal(final models.internal.impl.PdfReportFormat format) {
         final PdfReportFormat viewFormat = new PdfReportFormat();
         viewFormat.setWidthInches(format.getWidthInches());

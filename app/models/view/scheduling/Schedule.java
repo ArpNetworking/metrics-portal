@@ -42,10 +42,10 @@ public interface Schedule {
 
     /**
      * Convert from an internal model {@link com.arpnetworking.metrics.portal.scheduling.Schedule}.
-     * @param schedule
+     * @param schedule The internal schedule model
      * @return The view model.
      */
-    public static Schedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.Schedule schedule) {
+    static Schedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.Schedule schedule) {
         if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule) {
             return OneOffSchedule.fromInternal((com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule) schedule);
         } else if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule) {
