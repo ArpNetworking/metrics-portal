@@ -66,8 +66,7 @@
                         <span data-bind="text: schedule.start"></span>
                     </td>
                     <td>
-                        <span data-bind="if schedule; text: schedule.end"></span>
-                        <span data-bind="if-not schedule">–</span>
+                        <span data-bind="text: schedule.end ? schedule.end : '–'"></span>
                     </td>
                     <td data-bind="foreach: recipients">
                         <span class="badge" data-bind="text: badgeText"></span>
