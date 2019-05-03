@@ -79,10 +79,7 @@ public abstract class Recipient {
         return visitor.visit(recipient);
     }
 
-    @JsonProperty("id")
     private UUID _id;
-    @JsonProperty("address")
     private String _address;
-    @JsonProperty("format")
     private ReportFormat _format;
 }

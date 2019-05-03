@@ -49,7 +49,7 @@ import javax.annotation.Nullable;
 public final class DefaultReport implements Report {
     private DefaultReport(final Builder builder) {
         _id = builder._id;
-        _eTag = builder._eTag;
+        _eTag = Optional.ofNullable(builder._eTag);
         _name = builder._name;
         _schedule = builder._schedule;
         _source = builder._source;
@@ -63,7 +63,7 @@ public final class DefaultReport implements Report {
 
     @Override
     public Optional<String> getETag() {
-        return Optional.ofNullable(_eTag);
+        return _eTag;
     }
 
     @Override
@@ -108,8 +108,7 @@ public final class DefaultReport implements Report {
     }
 
     private final UUID _id;
-    @Nullable
-    private final String _eTag;
+    private final Optional<String> _eTag;
     private final String _name;
     private final Schedule _schedule;
     private final ReportSource _source;
@@ -160,14 +159,14 @@ public final class DefaultReport implements Report {
         }
 
         /**
-         * Set the report ETag. Optional. Cannot be null or empty.
+         * Set the report ETag. Optional. Cannot be empty.
          *
          * The ETag should function like a strong hash of the report and all its transitive dependencies.
          *
          * @param eTag The ETag.
          * @return This instance of {@code Builder}.
          */
-        public Builder setETag(final String eTag) {
+        public Builder setETag(@Nullable final String eTag) {
             _eTag = eTag;
             return this;
         }
@@ -218,8 +217,8 @@ public final class DefaultReport implements Report {
 
         @NotNull
         private UUID _id;
+        @NotNull
         @NotEmpty
-        @Nullable
         private String _eTag;
         @NotNull
         @NotEmpty

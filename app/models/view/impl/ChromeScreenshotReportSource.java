@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Internal model for a report source that pulls screenshots from a Chrome web browser.
+ * View model for a report source that pulls screenshots from a Chrome web browser.
  *
  * Play view models are mutable.
  *

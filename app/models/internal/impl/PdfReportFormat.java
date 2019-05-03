@@ -87,9 +87,7 @@ public final class PdfReportFormat implements ReportFormat {
         return Objects.hash(_widthInches, _heightInches);
     }
 
-    @JsonProperty("widthInches")
     private final float _widthInches;
-    @JsonProperty("heightInches")
     private final float _heightInches;
 
     /**

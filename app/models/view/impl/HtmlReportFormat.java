@@ -22,6 +22,8 @@ import models.view.reports.ReportFormat;
 /**
  * An HTML report format.
  *
+ * Play view models are mutable.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
@@ -47,6 +49,6 @@ public final class HtmlReportFormat implements ReportFormat {
      * @return The view model.
      */
     public static HtmlReportFormat fromInternal(final models.internal.impl.HtmlReportFormat format) {
-        return new HtmlReportFormat();
+        return INSTANCE;
     }
 }

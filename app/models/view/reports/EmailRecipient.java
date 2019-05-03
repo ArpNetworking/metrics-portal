@@ -24,7 +24,7 @@ import models.internal.impl.DefaultEmailRecipient;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class EmailRecipient extends Recipient {
+public final class EmailRecipient extends Recipient {
     /**
      * Create a view model from an internal model.
      *

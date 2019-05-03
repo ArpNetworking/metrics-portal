@@ -56,8 +56,8 @@ public class ReportController extends Controller {
     /**
      * Public constructor.
      *
-     * @param configuration          Instance of Play's {@code Config}.
-     * @param reportRepository       Instance of {@link ReportRepository}.
+     * @param configuration Instance of Play's {@code Config}.
+     * @param reportRepository Instance of {@link ReportRepository}.
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      */
     @Inject
@@ -103,7 +103,7 @@ public class ReportController extends Controller {
     /**
      * Query for reports.
      *
-     * @param limit  The maximum number of results to return. Optional.
+     * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @return {@link Result} paginated matching reports.
      */

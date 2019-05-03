@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * BaseScheduleViewModel that should be executed exactly once.
+ * Schedule that should be executed exactly once.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */

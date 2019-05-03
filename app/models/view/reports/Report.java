@@ -35,10 +35,6 @@ import java.util.stream.Stream;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class Report {
-    private Report() {
-        // Clients should use Report::fromInternal.
-    }
-
     public UUID getId() {
         return _id;
     }
@@ -55,7 +51,7 @@ public final class Report {
         this._name = name;
     }
 
-    public ReportSource getReportSource() {
+    public ReportSource getSource() {
         return _source;
     }
 
@@ -133,14 +129,9 @@ public final class Report {
         return entry.getValue().stream().map(r -> Recipient.fromInternal(r, viewFormat));
     }
 
-    @JsonProperty("id")
     private UUID _id;
-    @JsonProperty("name")
     private String _name;
-    @JsonProperty("source")
     private ReportSource _source;
-    @JsonProperty("schedule")
     private Schedule _schedule;
-    @JsonProperty("recipients")
     private List<Recipient> _recipients;
 }

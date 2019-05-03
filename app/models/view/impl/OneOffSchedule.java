@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Dropbox, Inc.
+ * Copyright 2019 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package models.view.impl;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import models.view.scheduling.Schedule;
 
 import java.time.Instant;
@@ -29,32 +28,32 @@ import java.time.Instant;
  */
 public final class OneOffSchedule implements Schedule {
 
-    public Instant getRunAt() {
-        return _runAt;
+    public Instant getRunAtAndAfter() {
+        return _runAtAndAfter;
     }
 
-    public void setRunAt(final Instant runAt) {
-        _runAt = runAt;
+    public void setRunAtAndAfter(final Instant runAtAndAfter) {
+        _runAtAndAfter = runAtAndAfter;
     }
 
     @Override
     public com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule toInternal() {
         return new com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule.Builder()
-                .setRunAtAndAfter(_runAt)
+                .setRunAtAndAfter(_runAtAndAfter)
                 .build();
     }
 
     /**
      * Create a {@code OneOffSchedule} from its internal representation.
+     *
      * @param schedule The internal model.
      * @return The view model.
      */
     public static OneOffSchedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule schedule) {
         final OneOffSchedule viewSchedule = new OneOffSchedule();
-        viewSchedule.setRunAt(schedule.getRunAtAndAfter());
+        viewSchedule.setRunAtAndAfter(schedule.getRunAtAndAfter());
         return viewSchedule;
     }
 
-    @JsonProperty("runAt")
-    private Instant _runAt;
+    private Instant _runAtAndAfter;
 }

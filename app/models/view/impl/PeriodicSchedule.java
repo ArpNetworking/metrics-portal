@@ -15,7 +15,6 @@
  */
 package models.view.impl;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import models.view.scheduling.Periodicity;
 import models.view.scheduling.Schedule;
 
@@ -25,12 +24,28 @@ import java.time.ZoneId;
 
 /**
  * Schedule for a job that repeats periodically.
- *
+ * <p>
  * Play view models are mutable.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class PeriodicSchedule implements Schedule {
+
+    public Instant getRunAtAndAfter() {
+        return _runAtAndAfter;
+    }
+
+    public void setRunAtAndAfter(final Instant runAtAndAfter) {
+        this._runAtAndAfter = runAtAndAfter;
+    }
+
+    public Instant getRunUntil() {
+        return _runUntil;
+    }
+
+    public void setRunUntil(final Instant runUntil) {
+        this._runUntil = runUntil;
+    }
 
     public Periodicity getPeriod() {
         return _period;
@@ -86,15 +101,9 @@ public final class PeriodicSchedule implements Schedule {
         return viewSchedule;
     }
 
-    @JsonProperty("runAtAndAfter")
     private Instant _runAtAndAfter;
-    @JsonProperty("runUntil")
     private Instant _runUntil;
-    @JsonProperty("period")
     private Periodicity _period;
-    @JsonProperty("offset")
     private Duration _offset;
-    @JsonProperty("zone")
     private ZoneId _zone;
-
 }
