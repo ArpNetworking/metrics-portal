@@ -72,23 +72,31 @@ class SourceViewModel extends BaseSourceViewModel {
 }
 
 class ScheduleViewModel extends BaseScheduleViewModel {
-    displayType: KnockoutComputed<string>;
+    static readonly DatetimeFormat = "llll";
 
-    constructor() {
-        super();
-        this.displayType = ko.computed(() => {
-            switch (this.repeat()) {
-                case ScheduleRepetition.OneOff:
-                    return "One-off";
-                case ScheduleRepetition.Daily:
-                    return "Daily";
-                case ScheduleRepetition.Hourly:
-                    return "Hourly";
-                case ScheduleRepetition.Monthly:
-                    return "Monthly";
-                case ScheduleRepetition.Weekly:
-                    return "Weekly";
-            }
-        });
-    }
+    // Unlike EditScheduleViewModel, we use a more readable format for displaying datetimes, since
+    // this value does not need to be parsed (unlike in an editable form field).
+    startText: KnockoutComputed<string> =
+        ko.pureComputed(() => this.start().format(ScheduleViewModel.DatetimeFormat));
+    endText: KnockoutComputed<string> = ko.pureComputed(() => {
+        const end = this.end();
+        if (!end) {
+            return "–";
+        }
+        return end.format(ScheduleViewModel.DatetimeFormat);
+    });
+    displayType: KnockoutComputed<string> = ko.pureComputed(() => {
+        switch (this.repeat()) {
+            case ScheduleRepetition.ONE_OFF:
+                return "One-off";
+            case ScheduleRepetition.DAILY:
+                return "Daily";
+            case ScheduleRepetition.HOURLY:
+                return "Hourly";
+            case ScheduleRepetition.MONTHLY:
+                return "Monthly";
+            case ScheduleRepetition.WEEKLY:
+                return "Weekly";
+        }
+    });
 }

@@ -4,24 +4,24 @@ import ko = require('knockout');
 import moment = require('moment-timezone/moment-timezone');
 
 export enum RecipientType {
-    Email,
+    EMAIL,
 }
 
 export enum ReportFormat {
-    Pdf,
-    Html,
+    PDF,
+    HTML,
 }
 
 export enum SourceType {
-    ChromeScreenshot,
+    CHROME_SCREENSHOT,
 }
 
 export enum ScheduleRepetition {
-    OneOff,
-    Hourly,
-    Daily,
-    Weekly,
-    Monthly,
+    ONE_OFF,
+    HOURLY,
+    DAILY,
+    WEEKLY,
+    MONTHLY,
 }
 
 export class ZoneInfo {
@@ -40,7 +40,7 @@ export class ZoneInfo {
 
 export class BaseSourceViewModel {
     id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
+    type = ko.observable<SourceType>(SourceType.CHROME_SCREENSHOT);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");
@@ -63,7 +63,7 @@ export class BaseSourceViewModel {
 }
 
 export class BaseScheduleViewModel {
-    repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.OneOff);
+    repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.ONE_OFF);
     start = ko.observable<moment.Moment>();
     end = ko.observable<moment.Moment | undefined>(undefined);
     offset = ko.pureComputed<moment.Duration>(() => moment.duration(this.offsetString()));
@@ -72,20 +72,22 @@ export class BaseScheduleViewModel {
     offsetString = ko.observable<string>("");
 
     public load(raw: any): this {
-        if (raw.type == "OneOff") {
-            this.repeat(ScheduleRepetition.OneOff)
-        } else if (raw.type == "Periodic") {
+        this.start(moment(raw.runAtAndAfter));
+        if (raw.type == "ONE_OFF") {
+            this.repeat(ScheduleRepetition.ONE_OFF)
+        } else if (raw.type == "PERIODIC") {
             const repeat = raw.period && ScheduleRepetition[raw.period as string];
-            if (repeat === undefined || repeat == ScheduleRepetition.OneOff) {
+            if (repeat === undefined || repeat == ScheduleRepetition.ONE_OFF) {
                 throw new Error(`Invalid schedule period: ${raw.period}`);
             }
             this.repeat(repeat);
-        }
-        this.offsetString(raw.offset);
-        this.zone(new ZoneInfo(raw.zone));
-        this.start(moment(raw.runAtAndAfter));
-        if (raw.runUntil) {
-            this.end(moment(raw.runUntil));
+            this.zone(new ZoneInfo(raw.zone));
+            this.offsetString(raw.offset);
+            if (raw.runUntil) {
+                this.end(moment(raw.runUntil));
+            }
+        } else {
+            throw new Error(`Invalid schedule type: ${raw.type}`)
         }
         return this;
     }
@@ -99,9 +101,9 @@ export class BaseRecipientViewModel {
 
     constructor(type?: RecipientType) {
         this.id = ko.observable(uuid.v4());
-        this.type = type || RecipientType.Email;
+        this.type = type || RecipientType.EMAIL;
         this.address = ko.observable("");
-        this.format = ko.observable(ReportFormat.Pdf);
+        this.format = ko.observable(ReportFormat.PDF);
     }
 
     public load(raw): this {

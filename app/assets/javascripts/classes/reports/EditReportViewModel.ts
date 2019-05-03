@@ -127,7 +127,7 @@ class EditReportViewModel {
     }
 
     readonly availableRecipientTypes = [
-        {value: RecipientType.Email,  text: "Email"},
+        {value: RecipientType.EMAIL,  text: "Email"},
     ];
 }
 
@@ -142,7 +142,7 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
 
     placeholder(): string {
         switch (this.type) {
-            case RecipientType.Email:
+            case RecipientType.EMAIL:
                 return 'example@domain.com'
         }
     }
@@ -151,7 +151,7 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
         const format: any = {
             type: ReportFormat[this.format()],
         };
-        if (this.format() == ReportFormat.Pdf) {
+        if (this.format() == ReportFormat.PDF) {
             format.widthInches = EditRecipientViewModel.DEFAULT_PDF_WIDTH_INCHES;
             format.heightInches = EditRecipientViewModel.DEFAULT_PDF_HEIGHT_INCHES;
         }
@@ -164,8 +164,8 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
     }
 
     readonly availableFormats = [
-        {value: ReportFormat.Pdf,  text: "PDF"},
-        {value: ReportFormat.Html,  text: "HTML"},
+        {value: ReportFormat.PDF,  text: "PDF"},
+        {value: ReportFormat.HTML,  text: "HTML"},
     ];
 
     readonly helpMessages = {
@@ -188,7 +188,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
 
     // Used by KO data-bind.
     readonly availableSourceTypes = [
-        {value: SourceType.ChromeScreenshot,  text: "Browser rendered"},
+        {value: SourceType.CHROME_SCREENSHOT,  text: "Browser rendered"},
     ];
 
     readonly helpMessages = {
@@ -215,7 +215,7 @@ class EditScheduleViewModel extends BaseScheduleViewModel {
             queryTokenizer: tokenizer,
         });
         this.engine.initialize();
-        this.isPeriodic = ko.pureComputed(() => this.repeat() != ScheduleRepetition.OneOff);
+        this.isPeriodic = ko.pureComputed(() => this.repeat() != ScheduleRepetition.ONE_OFF);
     }
 
     getAutocompleteOpts(): any {
@@ -247,15 +247,15 @@ class EditScheduleViewModel extends BaseScheduleViewModel {
             zone,
         };
         const repeat = this.repeat();
-        if (repeat == ScheduleRepetition.OneOff) {
+        if (repeat == ScheduleRepetition.ONE_OFF) {
             return Object.assign(baseRequest, {
-                type: "OneOff",
+                type: "ONE_OFF",
             });
         } else {
             let offset = this.offset().toISOString();
             let period = ScheduleRepetition[repeat];
             return Object.assign(baseRequest, {
-                type: "Periodic",
+                type: "PERIODIC",
                 period,
                 offset,
             });
@@ -263,11 +263,11 @@ class EditScheduleViewModel extends BaseScheduleViewModel {
     }
 
     readonly availableRepeatTypes = [
-        {value: ScheduleRepetition.OneOff,  text: "Does not repeat"},
-        {value: ScheduleRepetition.Hourly,  text: "Hourly"},
-        {value: ScheduleRepetition.Daily,   text: "Daily"},
-        {value: ScheduleRepetition.Weekly,  text: "Weekly"},
-        {value: ScheduleRepetition.Monthly, text: "Monthly"},
+        {value: ScheduleRepetition.ONE_OFF, text: "Does not repeat"},
+        {value: ScheduleRepetition.HOURLY,  text: "Hourly"},
+        {value: ScheduleRepetition.DAILY,   text: "Daily"},
+        {value: ScheduleRepetition.WEEKLY,  text: "Weekly"},
+        {value: ScheduleRepetition.MONTHLY, text: "Monthly"},
     ];
 
     readonly helpMessages = {
