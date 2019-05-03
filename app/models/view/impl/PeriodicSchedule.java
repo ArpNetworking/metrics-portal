@@ -19,7 +19,6 @@ import models.view.scheduling.Periodicity;
 import models.view.scheduling.Schedule;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneId;
 
 /**
@@ -29,23 +28,7 @@ import java.time.ZoneId;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PeriodicSchedule implements Schedule {
-
-    public Instant getRunAtAndAfter() {
-        return _runAtAndAfter;
-    }
-
-    public void setRunAtAndAfter(final Instant runAtAndAfter) {
-        this._runAtAndAfter = runAtAndAfter;
-    }
-
-    public Instant getRunUntil() {
-        return _runUntil;
-    }
-
-    public void setRunUntil(final Instant runUntil) {
-        this._runUntil = runUntil;
-    }
+public final class PeriodicSchedule extends Schedule {
 
     public Periodicity getPeriod() {
         return _period;
@@ -74,11 +57,11 @@ public final class PeriodicSchedule implements Schedule {
     @Override
     public com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule toInternal() {
         return new com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule.Builder()
-                .setRunAtAndAfter(_runAtAndAfter)
-                .setRunUntil(_runUntil)
+                .setRunAtAndAfter(getRunAtAndAfter())
+                .setRunUntil(getRunUntil())
+                .setZone(_zone)
                 .setPeriod(_period.toInternal())
                 .setOffset(_offset)
-                .setZone(_zone)
                 .build();
     }
 
@@ -90,8 +73,8 @@ public final class PeriodicSchedule implements Schedule {
      */
     public static PeriodicSchedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule schedule) {
         final PeriodicSchedule viewSchedule = new PeriodicSchedule();
-        viewSchedule._runAtAndAfter = schedule.getRunAtAndAfter();
-        viewSchedule._runUntil = schedule.getRunUntil().orElse(null);
+        viewSchedule.setRunAtAndAfter(schedule.getRunAtAndAfter());
+        viewSchedule.setRunUntil(schedule.getRunUntil().orElse(null));
         final Periodicity period =
                 Periodicity.fromValue(schedule.getPeriod())
                         .orElseThrow(() -> new IllegalArgumentException("No corresponding schedule period for " + schedule.getPeriod()));
@@ -101,8 +84,6 @@ public final class PeriodicSchedule implements Schedule {
         return viewSchedule;
     }
 
-    private Instant _runAtAndAfter;
-    private Instant _runUntil;
     private Periodicity _period;
     private Duration _offset;
     private ZoneId _zone;

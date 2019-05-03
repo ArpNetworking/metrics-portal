@@ -20,6 +20,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
 
+import java.time.Instant;
+import javax.annotation.Nullable;
+
 /**
  * View model of {@link com.arpnetworking.metrics.portal.scheduling.Schedule}. Play view models are mutable.
  *
@@ -33,19 +36,37 @@ import models.view.impl.PeriodicSchedule;
         @JsonSubTypes.Type(value = PeriodicSchedule.class, name = "Periodic"),
         @JsonSubTypes.Type(value = OneOffSchedule.class, name = "OneOff"),
 })
-public interface Schedule {
+public abstract class Schedule {
+
+    public Instant getRunAtAndAfter() {
+        return _runAtAndAfter;
+    }
+
+    public void setRunAtAndAfter(final Instant runAtAndAfter) {
+        this._runAtAndAfter = runAtAndAfter;
+    }
+
+    public Instant getRunUntil() {
+        return _runUntil;
+    }
+
+    public void setRunUntil(@Nullable final Instant runUntil) {
+        this._runUntil = runUntil;
+    }
     /**
      * Convert to an internal model {@link com.arpnetworking.metrics.portal.scheduling.Schedule}.
+     *
      * @return The internal model.
      */
-    com.arpnetworking.metrics.portal.scheduling.Schedule toInternal();
+    public abstract com.arpnetworking.metrics.portal.scheduling.Schedule toInternal();
 
     /**
      * Convert from an internal model {@link com.arpnetworking.metrics.portal.scheduling.Schedule}.
+     *
      * @param schedule The internal schedule model
      * @return The view model.
      */
-    static Schedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.Schedule schedule) {
+    public static Schedule fromInternal(final com.arpnetworking.metrics.portal.scheduling.Schedule schedule) {
         if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule) {
             return OneOffSchedule.fromInternal((com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule) schedule);
         } else if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule) {
@@ -54,4 +75,8 @@ public interface Schedule {
             throw new IllegalArgumentException("Cannot convert class " + schedule.getClass() + " to a view model.");
         }
     }
+
+    private Instant _runAtAndAfter;
+    @Nullable
+    private Instant _runUntil;
 }

@@ -17,8 +17,6 @@ package models.view.impl;
 
 import models.view.scheduling.Schedule;
 
-import java.time.Instant;
-
 /**
  * Schedule that should be executed exactly once.
  *
@@ -26,20 +24,12 @@ import java.time.Instant;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class OneOffSchedule implements Schedule {
-
-    public Instant getRunAtAndAfter() {
-        return _runAtAndAfter;
-    }
-
-    public void setRunAtAndAfter(final Instant runAtAndAfter) {
-        _runAtAndAfter = runAtAndAfter;
-    }
+public final class OneOffSchedule extends Schedule {
 
     @Override
     public com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule toInternal() {
         return new com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule.Builder()
-                .setRunAtAndAfter(_runAtAndAfter)
+                .setRunAtAndAfter(getRunAtAndAfter())
                 .build();
     }
 
@@ -54,6 +44,4 @@ public final class OneOffSchedule implements Schedule {
         viewSchedule.setRunAtAndAfter(schedule.getRunAtAndAfter());
         return viewSchedule;
     }
-
-    private Instant _runAtAndAfter;
 }
