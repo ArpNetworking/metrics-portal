@@ -32,6 +32,7 @@ import io.ebean.PagedList;
 import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
+import models.internal.scheduling.Period;
 import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
@@ -433,7 +434,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         if (internalSchedule instanceof PeriodicSchedule) {
             final PeriodicSchedule internalPeriodic = (PeriodicSchedule) internalSchedule;
             final PeriodicReportSchedule beanPeriodic = new PeriodicReportSchedule();
-            final PeriodicReportSchedule.Period beanPeriod = PeriodicReportSchedule.Period.fromChronoUnit(internalPeriodic.getPeriod());
+            final Period beanPeriod = Period.fromChronoUnit(internalPeriodic.getPeriod());
             beanPeriodic.setRunAt(internalPeriodic.getRunAtAndAfter());
             beanPeriodic.setRunUntil(internalPeriodic.getRunUntil().orElse(null));
             beanPeriodic.setOffsetNanos(internalPeriodic.getOffset().toNanos());

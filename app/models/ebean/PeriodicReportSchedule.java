@@ -18,10 +18,10 @@ package models.ebean;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import models.internal.scheduling.Period;
 
 import java.time.Duration;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
@@ -103,69 +103,6 @@ public class PeriodicReportSchedule extends ReportSchedule {
                 .setZone(zone)
                 .setPeriod(period.toChronoUnit())
                 .build();
-    }
-
-    /**
-     * The period with which this schedule recurs.
-     */
-    public enum Period {
-        /**
-         * A period of 1 hour.
-         */
-        HOURLY,
-        /**
-         * A period of 1 day.
-         */
-        DAILY,
-        /**
-         * A period of 1 week.
-         */
-        WEEKLY,
-        /**
-         * A period of 1 month.
-         */
-        MONTHLY;
-
-        /**
-         * Convert a {@code ChronoUnit} to a {@code Period}.
-         *
-         * @param unit the chronounit to convert.
-         * @return the analogous {@code Period} instance
-         */
-        public static Period fromChronoUnit(final ChronoUnit unit) {
-            switch (unit) {
-                case HOURS:
-                    return Period.HOURLY;
-                case DAYS:
-                    return Period.DAILY;
-                case WEEKS:
-                    return Period.WEEKLY;
-                case MONTHS:
-                    return Period.MONTHLY;
-                default:
-                    throw new IllegalArgumentException("Unsupported ChronoUnit: " + unit.toString());
-            }
-        }
-
-        /**
-         * Convert this period to a ChronoUnit.
-         *
-         * @return the analogous {@code ChronoUnit} instance
-         */
-        public ChronoUnit toChronoUnit() {
-            switch (this) {
-                case HOURLY:
-                    return ChronoUnit.HOURS;
-                case DAILY:
-                    return ChronoUnit.DAYS;
-                case WEEKLY:
-                    return ChronoUnit.WEEKS;
-                case MONTHLY:
-                    return ChronoUnit.MONTHS;
-                default:
-                    throw new AssertionError("unreachable branch");
-            }
-        }
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

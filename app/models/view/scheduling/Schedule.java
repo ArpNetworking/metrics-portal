@@ -21,7 +21,6 @@ import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
 
 import java.time.Instant;
-import javax.annotation.Nullable;
 
 /**
  * View model of {@link com.arpnetworking.metrics.portal.scheduling.Schedule}. Play view models are mutable.
@@ -33,8 +32,8 @@ import javax.annotation.Nullable;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = PeriodicSchedule.class, name = "Periodic"),
-        @JsonSubTypes.Type(value = OneOffSchedule.class, name = "OneOff"),
+        @JsonSubTypes.Type(value = PeriodicSchedule.class, name = "PERIODIC"),
+        @JsonSubTypes.Type(value = OneOffSchedule.class, name = "ONE_OFF"),
 })
 public abstract class Schedule {
 
@@ -46,13 +45,6 @@ public abstract class Schedule {
         this._runAtAndAfter = runAtAndAfter;
     }
 
-    public Instant getRunUntil() {
-        return _runUntil;
-    }
-
-    public void setRunUntil(@Nullable final Instant runUntil) {
-        this._runUntil = runUntil;
-    }
     /**
      * Convert to an internal model {@link com.arpnetworking.metrics.portal.scheduling.Schedule}.
      *
@@ -77,6 +69,4 @@ public abstract class Schedule {
     }
 
     private Instant _runAtAndAfter;
-    @Nullable
-    private Instant _runUntil;
 }

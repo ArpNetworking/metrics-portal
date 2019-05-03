@@ -30,7 +30,7 @@ import models.view.impl.ChromeScreenshotReportSource;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = ChromeScreenshotReportSource.class, name = "ChromeScreenshot"),
+        @JsonSubTypes.Type(value = ChromeScreenshotReportSource.class, name = "CHROME_SCREENSHOT"),
 })
 public interface ReportSource {
     /**

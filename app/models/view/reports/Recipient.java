@@ -35,7 +35,7 @@ import java.util.UUID;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = EmailRecipient.class, name = "Email"),
+        @JsonSubTypes.Type(value = EmailRecipient.class, name = "EMAIL"),
 })
 public abstract class Recipient {
     public UUID getId() {

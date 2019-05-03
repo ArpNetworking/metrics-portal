@@ -32,8 +32,8 @@ import models.view.impl.PdfReportFormat;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = HtmlReportFormat.class, name = "Html"),
-        @JsonSubTypes.Type(value = PdfReportFormat.class, name = "Pdf"),
+        @JsonSubTypes.Type(value = HtmlReportFormat.class, name = "HTML"),
+        @JsonSubTypes.Type(value = PdfReportFormat.class, name = "PDF"),
 })
 public interface ReportFormat {
     /**

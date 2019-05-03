@@ -15,11 +15,13 @@
  */
 package models.view.impl;
 
-import models.view.scheduling.Periodicity;
+import models.internal.scheduling.Period;
 import models.view.scheduling.Schedule;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
+import javax.annotation.Nullable;
 
 /**
  * Schedule for a job that repeats periodically.
@@ -30,11 +32,19 @@ import java.time.ZoneId;
  */
 public final class PeriodicSchedule extends Schedule {
 
-    public Periodicity getPeriod() {
+    public Instant getRunUntil() {
+        return _runUntil;
+    }
+
+    public void setRunUntil(@Nullable final Instant runUntil) {
+        this._runUntil = runUntil;
+    }
+
+    public Period getPeriod() {
         return _period;
     }
 
-    public void setPeriod(final Periodicity period) {
+    public void setPeriod(final Period period) {
         _period = period;
     }
 
@@ -58,9 +68,9 @@ public final class PeriodicSchedule extends Schedule {
     public com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule toInternal() {
         return new com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule.Builder()
                 .setRunAtAndAfter(getRunAtAndAfter())
-                .setRunUntil(getRunUntil())
+                .setRunUntil(_runUntil)
                 .setZone(_zone)
-                .setPeriod(_period.toInternal())
+                .setPeriod(_period.toChronoUnit())
                 .setOffset(_offset)
                 .build();
     }
@@ -75,16 +85,15 @@ public final class PeriodicSchedule extends Schedule {
         final PeriodicSchedule viewSchedule = new PeriodicSchedule();
         viewSchedule.setRunAtAndAfter(schedule.getRunAtAndAfter());
         viewSchedule.setRunUntil(schedule.getRunUntil().orElse(null));
-        final Periodicity period =
-                Periodicity.fromValue(schedule.getPeriod())
-                        .orElseThrow(() -> new IllegalArgumentException("No corresponding schedule period for " + schedule.getPeriod()));
+        final Period period = Period.fromChronoUnit(schedule.getPeriod());
         viewSchedule.setPeriod(period);
         viewSchedule.setOffset(schedule.getOffset());
         viewSchedule.setZone(schedule.getZone());
         return viewSchedule;
     }
 
-    private Periodicity _period;
+    private Instant _runUntil;
+    private Period _period;
     private Duration _offset;
     private ZoneId _zone;
 }

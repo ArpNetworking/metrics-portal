@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
+import models.internal.scheduling.Period;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
@@ -106,8 +107,8 @@ public final class TestBeanFactory {
         final Schedule schedule;
         switch (RANDOM.nextInt(3)) {
             case 2:
-                final ChronoUnit chronoUnit = models.ebean.PeriodicReportSchedule.Period.values()[
-                        RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)].toChronoUnit();
+                final ChronoUnit chronoUnit = Period.values()[
+                        RANDOM.nextInt(Period.values().length)].toChronoUnit();
                 final ZoneId zoneId = ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[
                         RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]);
                 schedule = new PeriodicSchedule.Builder()
