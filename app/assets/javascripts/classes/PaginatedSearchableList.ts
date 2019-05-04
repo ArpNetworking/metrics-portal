@@ -19,6 +19,17 @@ import ko = require('knockout');
 interface PagerElement { name: string; page: number; disabled: boolean; active: boolean}
 interface Pagination { total: number; offset: number}
 
+interface PagerOptions {
+    // The title to display above the pager.
+    title?: string;
+    // Whether or not to display the create entity button in the pager.
+    create?: boolean,
+    // The text to display on the create entity button.
+    createLabel?: string;
+    // The URI to link to from the create entity button.
+    createUri?: string;
+}
+
 abstract class PaginatedSearchableList<T> {
     filteredEntities: KnockoutObservableArray<T> = ko.observableArray<T>();
     searchExpression: KnockoutObservable<string> = ko.observable('');
@@ -30,9 +41,20 @@ abstract class PaginatedSearchableList<T> {
     private pagerElements: KnockoutComputed<PagerElement[]>;
     private perPage = 24;
 
-    constructor() {
+    entityName: string;
+    options: PagerOptions = {};
+
+    constructor(entityName, options: PagerOptions = {}) {
         var self = this;
         this.searchExpressionThrottled.subscribe(() => {this.page(1); this.query();});
+
+        this.entityName = entityName;
+        this.options = {
+            title: options.title || (entityName.charAt(0).toUpperCase() + entityName.slice(1) + 's'),
+            create: options.create === undefined ? true : options.create,
+            createLabel: options.createLabel || `Create new ${entityName}`,
+            createUri: options.createUri || `#${entityName}/edit`,
+        };
 
         this.pagerElements = ko.computed(() => {
             var p = this.page();

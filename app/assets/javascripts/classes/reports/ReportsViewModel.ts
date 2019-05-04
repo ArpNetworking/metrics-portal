@@ -16,8 +16,13 @@
 
 import PaginatedSearchableList = require("../PaginatedSearchableList");
 import Report from "./Report";
+import csrf from '../Csrf'
 
 class ReportsList extends PaginatedSearchableList<Report> {
+    constructor() {
+        super("report");
+    }
+
     fetchData(query: any, callback) {
         $.getJSON("v1/reports/query", query, (page) => {
             const reportList: Report[] = page.data.map((rawReport)=> {
