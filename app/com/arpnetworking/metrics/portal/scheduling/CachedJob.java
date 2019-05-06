@@ -112,7 +112,7 @@ public final class CachedJob<T> implements Job<T> {
      * @throws NoSuchJobException If a reload is necessary but the job can't be loaded from the repository.
      */
     public void reloadIfOutdated(final Injector injector, final String upToDateETag) throws NoSuchJobException {
-        final boolean upToDate = _cached.getETag().equals(upToDateETag);
+        final boolean upToDate = _cached.getETag().map(upToDateETag::equals).orElse(false);
         _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", upToDate ? 1 : 0);
         if (upToDate) {
             return;
@@ -132,7 +132,7 @@ public final class CachedJob<T> implements Job<T> {
     }
 
     @Override
-    public String getETag() {
+    public Optional<String> getETag() {
         return _cached.getETag();
     }
 

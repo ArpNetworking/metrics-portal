@@ -48,6 +48,7 @@ import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import models.internal.scheduling.Job;
+import models.internal.scheduling.Period;
 import play.Environment;
 
 import java.time.Instant;
@@ -433,7 +434,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         if (internalSchedule instanceof PeriodicSchedule) {
             final PeriodicSchedule internalPeriodic = (PeriodicSchedule) internalSchedule;
             final PeriodicReportSchedule beanPeriodic = new PeriodicReportSchedule();
-            final PeriodicReportSchedule.Period beanPeriod = PeriodicReportSchedule.Period.fromChronoUnit(internalPeriodic.getPeriod());
+            final Period beanPeriod = Period.fromChronoUnit(internalPeriodic.getPeriod());
             beanPeriodic.setRunAt(internalPeriodic.getRunAtAndAfter());
             beanPeriodic.setRunUntil(internalPeriodic.getRunUntil().orElse(null));
             beanPeriodic.setOffsetNanos(internalPeriodic.getOffset().toNanos());

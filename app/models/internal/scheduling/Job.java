@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -41,9 +42,9 @@ public interface Job<T> {
     /**
      * Gets an <a href="https://en.wikipedia.org/wiki/HTTP_ETag">ETag</a> that changes each time the job changes.
      *
-     * @return The ETag.
+     * @return The ETag, if any.
      */
-    String getETag();
+    Optional<String> getETag();
 
     /**
      * Returns the schedule on which the Job should be repeated.

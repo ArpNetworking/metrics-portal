@@ -162,7 +162,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                     jobExecutorRegion.tell(
                             new JobExecutorActor.Reload.Builder<T>()
                                     .setJobRef(ref)
-                                    .setETag(job.getETag())
+                                    .setETag(job.getETag().orElse(null))
                                     .build(),
                             coordinator);
                 });

@@ -36,6 +36,7 @@ import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
+import models.internal.scheduling.Period;
 
 import java.net.URI;
 import java.time.Duration;
@@ -106,8 +107,8 @@ public final class TestBeanFactory {
         final Schedule schedule;
         switch (RANDOM.nextInt(3)) {
             case 2:
-                final ChronoUnit chronoUnit = models.ebean.PeriodicReportSchedule.Period.values()[
-                        RANDOM.nextInt(models.ebean.PeriodicReportSchedule.Period.values().length)].toChronoUnit();
+                final ChronoUnit chronoUnit = Period.values()[
+                        RANDOM.nextInt(Period.values().length)].toChronoUnit();
                 final ZoneId zoneId = ZoneId.of(ZoneId.getAvailableZoneIds().toArray(new String[0])[
                         RANDOM.nextInt(ZoneId.getAvailableZoneIds().size())]);
                 schedule = new PeriodicSchedule.Builder()
