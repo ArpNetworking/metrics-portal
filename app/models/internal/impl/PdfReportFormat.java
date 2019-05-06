@@ -18,7 +18,6 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.Min;

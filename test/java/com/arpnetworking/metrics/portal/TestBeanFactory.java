@@ -22,7 +22,6 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
-import models.internal.scheduling.Period;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
@@ -37,6 +36,7 @@ import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
+import models.internal.scheduling.Period;
 
 import java.net.URI;
 import java.time.Duration;

@@ -32,7 +32,6 @@ import io.ebean.PagedList;
 import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
-import models.internal.scheduling.Period;
 import models.ebean.PeriodicReportSchedule;
 import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
@@ -49,6 +48,7 @@ import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import models.internal.scheduling.Job;
+import models.internal.scheduling.Period;
 import play.Environment;
 
 import java.time.Instant;

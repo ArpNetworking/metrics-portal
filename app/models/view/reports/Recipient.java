@@ -15,7 +15,6 @@
  */
 package models.view.reports;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import models.internal.impl.DefaultEmailRecipient;

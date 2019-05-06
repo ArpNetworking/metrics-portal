@@ -15,7 +15,6 @@
  */
 package models.view.reports;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.internal.impl.DefaultReport;
