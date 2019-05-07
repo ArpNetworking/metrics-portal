@@ -26,7 +26,7 @@ class HostList extends PaginatedSearchableList<HostData> {
     versionFilter: KnockoutObservable <string> = ko.observable('');
 
     constructor() {
-        super();
+        super("host", {create: false});
         this.versionFilter.subscribe(() => {this.page(1); this.query()});
     };
 

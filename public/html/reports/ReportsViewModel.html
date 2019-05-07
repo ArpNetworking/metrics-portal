@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2018 Dropbox, Inc.
+  ~ Copyright 2019 Dropbox, Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -13,19 +13,71 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <div class="container-fluid">
-    <div class="row-fluid">
-        <div class="col-md-12">
-            <h2>Reports</h2>
-        </div>
-    </div>
-    <div class="row-fluid">
-        <div class="col-md-12">
-            <div><a href="#report/edit" class="btn btn-default" style="margin-bottom: .5em">New Report</a></div>
-            <div data-bind="compose: { model: reports, view: '/assets/html/components/Pager.html', mode: 'templated' }">
-                <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" class="col-md-4 col-lg-3 col-sm-6">
-                </div>
+    <div class="row">
+        <div class="container col-md-offset-1 col-md-10">
+            <div data-bind="compose: {model: reports, view: '/assets/html/components/Pager.html', mode: 'templated'}">
+                <!-- XXX:
+                 <tr> elements **MUST** be contained within <table> and <tbody> elements. Since Durandal creates DOMElements
+                 before binding them in the template, they must be valid elements at creation, not just when rendered.
+
+                 As a hack we use an if binding that is never visible so that these <tr>'s can be specified without being
+                 mangled by the browser.
+                 -->
+                <!-- ko if: false -->
+                <table>
+                    <tbody>
+                <!-- /ko -->
+                    <tr class="row" data-part="entityLabels">
+                        <th class="col-md-3">ID</th>
+                        <th class="col-md-1">Name</td>
+                        <th class="col-md-1">Source</td>
+                        <th class="col-md-1">Schedule Type</td>
+                        <th class="col-md-2">Start Time</td>
+                        <th class="col-md-2">End Time</td>
+                        <th class="col-md-2">Recipients</td>
+                        <th></th>
+                    </tr>
+                    <tr class="row" data-part="entityRow">
+                        <td data-bind="text: id"></td>
+                        <td data-bind="text: name"></td>
+                        <td>
+                            <span data-bind="text: source.title"></span>
+                            <div class="popover-content hidden" data-bind="attr: {'data-id': 'source-'+id}">
+                                <dl class="container col-md-12 dl-horizontal">
+                                    <dt>url:</dt><dd data-bind="text: source.url"></dd>
+                                    <dt>event:</dt><dd data-bind="text: source.eventName"></dd>
+                                    <dt>ignore cert errors:</dt><dd data-bind="text: source.ignoreCertificateErrors"></dd>
+                                </dl>
+                            </div>
+                            <span class="glyphicon glyphicon-info-sign"
+                                  data-title="Source details"
+                                  data-html="true"
+                                  data-bind="popover: {id: 'source-'+id}"
+                                  data-trigger="hover"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: schedule.displayType"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: schedule.startText"></span>
+                        </td>
+                        <td>
+                            <span data-bind="text: schedule.endText"></span>
+                        </td>
+                        <td data-bind="foreach: recipients">
+                            <span class="badge" data-bind="text: badgeText"></span>
+                        </td>
+                        <td>
+                            <a data-bind="attr: { href: editUri }">
+                                <i class="fa fa-pencil-square-o"></i>
+                            </a>
+                        </td>
+                    </tr>
+                <!-- ko if: false -->
+                    </tbody>
+                </table>
+                <!-- /ko -->
             </div>
         </div>
     </div>

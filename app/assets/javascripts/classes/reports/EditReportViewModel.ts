@@ -14,25 +14,34 @@
  * limitations under the License.
  */
 
-import ReportData = require('./Report');
 import ko = require('knockout');
 import $ = require('jquery');
 import uuid = require('../Uuid');
-import csrf from '../Csrf';
-import DateTimeFormat = Intl.DateTimeFormat;
-
-import * as _ from 'underscore';
-
+// @ts-ignore: import is valid
 import moment = require('moment-timezone/moment-timezone');
+import csrf from '../Csrf';
+
+import {
+    BaseRecipientViewModel,
+    BaseScheduleViewModel,
+    BaseSourceViewModel,
+    RecipientType,
+    ReportFormat,
+    ScheduleRepetition,
+    SourceType,
+    ZoneInfo,
+} from "./Models";
 
 class EditReportViewModel {
+    enabled = true;
+
     id = ko.observable<string>("");
     name = ko.observable<string>("");
     source = new EditSourceViewModel();
     schedule = new EditScheduleViewModel();
 
     // Recipients
-    recipients = ko.observableArray<Recipient>();
+    recipients = ko.observableArray<EditRecipientViewModel>();
     existingReport = ko.observable<boolean>(false);
 
     // Alert for showing error messages on save
@@ -51,14 +60,32 @@ class EditReportViewModel {
     }
 
     loadReport(id: String): void {
-        $.getJSON("/v1/reports/" + id, {}, (data) => {
-            // TODO(cbriones): Bind these to the view model.
+        $.getJSON("/v1/reports/" + id, null, (rawReport) => {
+            this.id(rawReport.id);
+            this.name(rawReport.name);
             this.existingReport(true);
+            this.source.load(rawReport.source);
+            this.schedule.load(rawReport.schedule);
+
+            rawReport.recipients.forEach((raw) => {
+                const model = new EditRecipientViewModel();
+                model.load(raw);
+                this.recipients.push(model);
+            });
+        }).fail(() => {
+            this.alertMessage("Report not found");
+            this.enabled = false;
         });
     }
 
+    compositionComplete() {
+        if (!this.enabled) {
+            $("#editReportForm :input").attr("disabled", "true");
+        }
+    }
+
     addRecipient(recipientType: RecipientType): void {
-        let recipient = new Recipient(recipientType);
+        let recipient = new EditRecipientViewModel(recipientType);
         this.recipients.push(recipient);
     }
 
@@ -67,6 +94,8 @@ class EditReportViewModel {
     }
 
     save(): void {
+        const request = this.toRequest();
+
         $.ajax({
             type: "PUT",
             url: "/v1/reports",
@@ -75,7 +104,7 @@ class EditReportViewModel {
             },
             contentType: "application/json",
             dataType: "json",
-            data: JSON.stringify(this.toRequest())
+            data: JSON.stringify(request),
         })
         .fail(() => {
             this.alertMessage(EditReportViewModel.ERROR_MESSAGE);
@@ -98,31 +127,14 @@ class EditReportViewModel {
     }
 
     readonly availableRecipientTypes = [
-        {value: RecipientType.Email,  text: "Email"},
+        {value: RecipientType.EMAIL,  text: "Email"},
     ];
 }
 
-enum RecipientType {
-    Email,
-}
+class EditRecipientViewModel extends BaseRecipientViewModel {
 
-enum ReportFormat {
-    Pdf,
-    Html,
-}
-
-class Recipient {
-    id: KnockoutObservable<string>;
-    type: RecipientType;
-    address: KnockoutObservable<string>;
-    format: KnockoutObservable<ReportFormat>;
-
-    constructor(type: RecipientType) {
-        this.id = ko.observable(uuid.v4());
-        this.type = type;
-        this.address = ko.observable("");
-        this.format = ko.observable(ReportFormat.Pdf);
-    }
+    static DEFAULT_PDF_WIDTH_INCHES = 8.5;
+    static DEFAULT_PDF_HEIGHT_INCHES = 11;
 
     label(): string {
         return RecipientType[this.type]
@@ -130,27 +142,30 @@ class Recipient {
 
     placeholder(): string {
         switch (this.type) {
-            case RecipientType.Email:
+            case RecipientType.EMAIL:
                 return 'example@domain.com'
         }
     }
 
     toRequest(): any {
+        const format: any = {
+            type: ReportFormat[this.format()],
+        };
+        if (this.format() == ReportFormat.PDF) {
+            format.widthInches = EditRecipientViewModel.DEFAULT_PDF_WIDTH_INCHES;
+            format.heightInches = EditRecipientViewModel.DEFAULT_PDF_HEIGHT_INCHES;
+        }
         return {
             type: RecipientType[this.type],
             id: this.id(),
             address: this.address(),
-            formats: [
-                {
-                    type: ReportFormat[this.format()],
-                }
-            ],
+            format: format,
         }
     }
 
     readonly availableFormats = [
-        {value: ReportFormat.Pdf,  text: "PDF"},
-        {value: ReportFormat.Html,  text: "HTML"},
+        {value: ReportFormat.PDF,  text: "PDF"},
+        {value: ReportFormat.HTML,  text: "HTML"},
     ];
 
     readonly helpMessages = {
@@ -159,25 +174,10 @@ class Recipient {
     };
 }
 
-enum SourceType {
-    ChromeScreenshot,
-}
-
-class EditSourceViewModel {
-    id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.ChromeScreenshot);
-    title = ko.observable<string>("");
-    url = ko.observable<string>("");
-    eventName = ko.observable<string>("");
-    ignoreCertificateErrors = ko.observable<boolean>(false);
-
+class EditSourceViewModel extends BaseSourceViewModel {
     toRequest() {
-        let requestType;
-        if (this.type() == SourceType.ChromeScreenshot) {
-            requestType = "CHROME_SCREENSHOT"
-        }
         return {
-            type: requestType,
+            type: SourceType[this.type()],
             id: this.id(),
             uri: this.url(),
             title: this.title(),
@@ -188,7 +188,7 @@ class EditSourceViewModel {
 
     // Used by KO data-bind.
     readonly availableSourceTypes = [
-        {value: SourceType.ChromeScreenshot,  text: "Browser rendered"},
+        {value: SourceType.CHROME_SCREENSHOT,  text: "Browser rendered"},
     ];
 
     readonly helpMessages = {
@@ -201,35 +201,12 @@ class EditSourceViewModel {
     };
 }
 
-enum ScheduleRepetition {
-    OneOff,
-    Hourly,
-    Daily,
-    Weekly,
-    Monthly
-}
-
-class ZoneInfo {
-    value: string;
-    display: string;
-
-    constructor(value: string) {
-        this.value = value;
-        this.display = `${this.value} (${moment.tz(this.value).zoneAbbr()})`;
-    }
-}
-
-class EditScheduleViewModel {
-    repeat = ko.observable<ScheduleRepetition>(ScheduleRepetition.OneOff);
-    start = ko.observable<moment.Moment>();
-    end = ko.observable<moment.Moment | undefined>(undefined);
-    offsetString = ko.observable<string>("");
-    offset = ko.pureComputed<moment.Duration>(() => moment.duration(this.offsetString()));
-    zone = ko.observable<ZoneInfo>(new ZoneInfo(moment.tz.guess()));
+class EditScheduleViewModel extends BaseScheduleViewModel {
     engine: Bloodhound<ZoneInfo>;
-    isPeriodic = ko.pureComputed<boolean>(() => this.repeat() != ScheduleRepetition.OneOff);
+    isPeriodic: KnockoutComputed<boolean>;
 
     constructor() {
+        super();
         const tokenizer = (s: string) => s.toLowerCase().split(/[ \/_()]/);
         const names: [ZoneInfo] = moment.tz.names().map((name) => new ZoneInfo(name));
         this.engine = new Bloodhound({
@@ -238,6 +215,7 @@ class EditScheduleViewModel {
             queryTokenizer: tokenizer,
         });
         this.engine.initialize();
+        this.isPeriodic = ko.pureComputed(() => this.repeat() != ScheduleRepetition.ONE_OFF);
     }
 
     getAutocompleteOpts(): any {
@@ -269,28 +247,27 @@ class EditScheduleViewModel {
             zone,
         };
         const repeat = this.repeat();
-        if (repeat == ScheduleRepetition.OneOff) {
+        if (repeat == ScheduleRepetition.ONE_OFF) {
             return Object.assign(baseRequest, {
-                type: "OneOff",
+                type: "ONE_OFF",
             });
         } else {
             let offset = this.offset().toISOString();
             let period = ScheduleRepetition[repeat];
             return Object.assign(baseRequest, {
-                type: "Periodic",
+                type: "PERIODIC",
                 period,
                 offset,
             });
         }
-
     }
 
     readonly availableRepeatTypes = [
-        {value: ScheduleRepetition.OneOff,  text: "Does not repeat"},
-        {value: ScheduleRepetition.Hourly,  text: "Hourly"},
-        {value: ScheduleRepetition.Daily,   text: "Daily"},
-        {value: ScheduleRepetition.Weekly,  text: "Weekly"},
-        {value: ScheduleRepetition.Monthly, text: "Monthly"},
+        {value: ScheduleRepetition.ONE_OFF, text: "Does not repeat"},
+        {value: ScheduleRepetition.HOURLY,  text: "Hourly"},
+        {value: ScheduleRepetition.DAILY,   text: "Daily"},
+        {value: ScheduleRepetition.WEEKLY,  text: "Weekly"},
+        {value: ScheduleRepetition.MONTHLY, text: "Monthly"},
     ];
 
     readonly helpMessages = {

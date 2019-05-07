@@ -13,14 +13,90 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class Report {
+import ko = require('knockout');
+
+import {
+    BaseRecipientViewModel,
+    BaseScheduleViewModel,
+    BaseSourceViewModel,
+    ReportFormat,
+    ScheduleRepetition,
+} from "./Models";
+
+export default class Report {
     id: string;
     name: string;
 
-    constructor(id: string, name: string) {
+    schedule: ScheduleViewModel;
+    source: SourceViewModel;
+    recipients: RecipientViewModel[];
+
+    editUri: string;
+
+    constructor(id: string, name: string, source: any, schedule: any, recipients: object[]) {
         this.id = id;
         this.name = name;
+
+        this.recipients = recipients.map((raw) =>
+            new RecipientViewModel().load(raw)
+        );
+        this.schedule = new ScheduleViewModel().load(schedule);
+        this.source = new SourceViewModel().load(source);
+
+        this.editUri = `#report/edit/${this.id}`;
     }
 }
 
-export = Report
+class RecipientViewModel extends BaseRecipientViewModel {
+    badgeText: KnockoutComputed<string>;
+
+    constructor() {
+        super();
+        this.badgeText = ko.computed(() =>
+            `${this.address()} (${ReportFormat[this.format()].toUpperCase()})`
+        );
+    }
+}
+
+class SourceViewModel extends BaseSourceViewModel {
+    displayText: KnockoutComputed<string>;
+
+    constructor() {
+        super();
+        this.displayText = ko.computed<string>(() => {
+            const type = "Browser rendered";
+            return `${this.title()} (${type})`
+        });
+    }
+
+}
+
+class ScheduleViewModel extends BaseScheduleViewModel {
+    static readonly DatetimeFormat = "llll";
+
+    // Unlike EditScheduleViewModel, we use a more readable format for displaying datetimes, since
+    // this value does not need to be parsed (unlike in an editable form field).
+    startText: KnockoutComputed<string> =
+        ko.pureComputed(() => this.start().format(ScheduleViewModel.DatetimeFormat));
+    endText: KnockoutComputed<string> = ko.pureComputed(() => {
+        const end = this.end();
+        if (!end) {
+            return "–";
+        }
+        return end.format(ScheduleViewModel.DatetimeFormat);
+    });
+    displayType: KnockoutComputed<string> = ko.pureComputed(() => {
+        switch (this.repeat()) {
+            case ScheduleRepetition.ONE_OFF:
+                return "One-off";
+            case ScheduleRepetition.DAILY:
+                return "Daily";
+            case ScheduleRepetition.HOURLY:
+                return "Hourly";
+            case ScheduleRepetition.MONTHLY:
+                return "Monthly";
+            case ScheduleRepetition.WEEKLY:
+                return "Weekly";
+        }
+    });
+}

@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright 2017 Smartsheet.com
+  ~ Copyright 2019 Dropbox, Inc.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -13,23 +13,53 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<div class="col-md-12 col-sm-12 col-lg-12 search-header">
-    <form role="form" class="form-inline">
-        <div class="form-group has-feedback">
-            <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
-            <span class="glyphicon glyphicon-search form-control-feedback"></span>
+<div class="container-fluid">
+    <div class="row">
+        <h2 data-bind="text: options.title"></h2>
+        <div class ="row">
+            <div class="col-md-1" data-bind="if: options.create">
+                <a data-bind="attr: {href: options.createUri}, text: options.createLabel" class="btn btn-default" style="margin-bottom: .5em"></a>
+            </div>
+            <div class="col-md-offset-7 col-md-4">
+                <form role="form" class="form-inline">
+                    <div class="form-group has-feedback pull-right">
+                        <input class="form-control" data-bind="value: searchExpression, valueUpdate: 'keyup'" type="text" placeholder="Search">
+                        <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                    </div>
+                </form>
+            </div>
         </div>
-    </form>
-</div>
-<div style="font-size: large; overflow-style: scrollbar; overflow-y: auto; margin-bottom: 6em" class="col-md-12 col-sm-12 col-lg-12">
-    <div data-bind="foreach: filteredEntities" class="row">
-        <div data-part="content"></div>
+        <table class="table table-hover">
+            <thead>
+                <tr data-part="entityLabels" class="row"></tr>
+            </thead>
+            <tbody data-bind="foreach: filteredEntities">
+                <tr data-part="entityRow"></tr>
+            </tbody>
+        </table>
+        <nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
+            <div class="text-center">
+                <ul class="pagination" data-bind="foreach: pagerElements">
+                    <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
+    <div id="confirm-delete-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Are you sure?</h4>
+                </div>
+                <div class="modal-body">
+                    <div>Are you sure you want to delete the <span data-bind="text: entityName"></span>?</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" data-bind="click: $parent.confirmDelete">Confirm</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-<nav class="navbar navbar-inverse navbar-fixed-bottom col-md-12 footer">
-    <div class="text-center">
-        <ul class="pagination" data-bind="foreach: pagerElements">
-            <li data-bind="css: {active: active, disabled: disabled}"><a href="#" data-bind="text: name, click: $parent.gotoPage"></a></li>
-        </ul>
-    </div>
-</nav>

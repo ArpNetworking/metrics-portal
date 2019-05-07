@@ -20,6 +20,10 @@ import $ = require('jquery');
 import csrf from '../Csrf'
 
 class AlertsList extends PaginatedSearchableList<AlertData> {
+    constructor() {
+        super("alert");
+    }
+
     fetchData(query, callback) {
         $.getJSON("v1/alerts/query", query, (data) => {
             var alertsList: AlertData[] = data.data.map((v: AlertData)=> { return new AlertData(
@@ -55,7 +59,7 @@ class AlertsViewModel {
         };
     }
 
-    confirmDelete() {
+    confirmDelete = () => {
         $.ajax({
             type: "DELETE",
             url: "/v1/alerts/" + this.deletingId,

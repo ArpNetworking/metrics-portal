@@ -1,14 +1,33 @@
 <div class="container-fluid">
     <div class="row-fluid">
-        <div class="col-md-12">
-            <h2>Host Registry</h2>
-            <div data-bind="compose: { model: hosts, view: '/assets/html/components/Pager.html', mode: 'templated' }">
-                <div data-part="content" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap" class="col-md-4 col-lg-3 col-sm-6">
-                    <button class="btn btn-default btn-xs" data-bind="enable: connectable, click: $parent.click">
-                        <i class="glyphicon" data-bind="css: connectionStyle"></i>
-                    </button>
-                    <span data-bind="text: hostname, tooltip:{ title: hostname, tooltipClass: 'host-tip'}, attr: {title: hostname}"></span>
-                </div>
+        <div class="col-md-offset-3 col-md-6">
+            <div data-bind="compose: {model: hosts, view: '/assets/html/components/Pager.html', mode: 'templated'}">
+                <!-- XXX:
+                 <tr> elements **MUST** be contained within <table> and <tbody> elements. Since Durandal creates DOMElements
+                 before binding them in the template, they must be valid elements at creation, not just when rendered.
+
+                 As a hack we use an if binding that is never visible so that these <tr>'s can be specified without being
+                 mangled by the browser.
+                 -->
+                <!-- ko if: false -->
+                <table>
+                    <tbody>
+                    <!-- /ko -->
+                    <tr data-part="entityLabels">
+                        <th></th>
+                    </tr>
+                    <tr data-part="entityRow">
+                        <td class="text-center">
+                            <button class="btn btn-default btn-xs" data-bind="enable: connectable, click: $parent.click">
+                                <i class="glyphicon" data-bind="css: connectionStyle"></i>
+                            </button>
+                            <span data-bind="text: hostname, tooltip: { title: hostname, tooltipClass: 'host-tip'}, attr: {title: hostname}"></span>
+                        </td>
+                    </tr>
+                    <!-- ko if: false -->
+                    </tbody>
+                </table>
+                <!-- /ko -->
             </div>
         </div>
     </div>

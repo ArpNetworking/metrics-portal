@@ -30,3 +30,7 @@ eclipse-bin/
 
 # Akka test persistence data
 test-snapshots/
+
+# VSCode
+.vscode/
+.project

@@ -9,6 +9,7 @@ import $ = require('jquery');
 import _ = require('underscore');
 import bootstrap = require('bootstrap');
 
+// @ts-ignore: import is valid
 import * as moment from 'moment-timezone/moment-timezone';
 
 // This const is necessary for typescript to see bootstrap as a 'used' import and not remove it as dead code
@@ -57,8 +58,25 @@ module kobindings {
     ko.bindingHandlers['popover'] = {
         init: function(element, valueAccessor) {
             const value = valueAccessor();
-            const valueUnwrapped = ko.utils.unwrapObservable(value);
-            $(element).popover({content: valueUnwrapped});
+            const valueUnwrapped = ko.unwrap(value);
+
+            let options;
+            if (valueUnwrapped === Object(valueUnwrapped)) {
+                // It's an options map
+                if (valueUnwrapped.hasOwnProperty('content')) {
+                    options = {content: valueUnwrapped.content};
+                } else if (valueUnwrapped.hasOwnProperty('id')) {
+                    const id = ko.unwrap(valueUnwrapped.id);
+                    const selector = `.popover-content[data-id="${id}"]`;
+                    options = {
+                        content: $(selector).html(),
+                    }
+                }
+            } else {
+                // Bind the top level value as the content
+                options = {content: valueUnwrapped};
+            }
+            $(element).popover(options);
         }
     };
 
@@ -149,7 +167,6 @@ module kobindings {
                     });
                 } else {
                     ta.on('blur', (event) => {
-                        console.log("blur time", event, ta.val(), valueUnwrapped.value());
                         if (ta.typeahead('val') != displayFn(valueUnwrapped.value())) {
                             valueUnwrapped.value(null);
                         }

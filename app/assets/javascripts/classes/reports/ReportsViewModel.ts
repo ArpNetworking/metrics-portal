@@ -15,13 +15,26 @@
  */
 
 import PaginatedSearchableList = require("../PaginatedSearchableList");
-import Report = require("./Report");
+import Report from "./Report";
+import csrf from '../Csrf'
 
 class ReportsList extends PaginatedSearchableList<Report> {
+    constructor() {
+        super("report");
+    }
+
     fetchData(query: any, callback) {
-        $.getJSON("v1/reports/query", query, (reportData) => {
-            var hostList: Report[] = reportData.data.map((v: Report)=> { return null;});
-            callback(hostList, reportData.pagination);
+        $.getJSON("v1/reports/query", query, (page) => {
+            const reportList: Report[] = page.data.map((rawReport)=> {
+                return new Report(
+                    rawReport.id,
+                    rawReport.name,
+                    rawReport.source,
+                    rawReport.schedule,
+                    rawReport.recipients,
+                )
+            });
+            callback(reportList, page.pagination);
         })
     }
 
@@ -36,4 +49,5 @@ class ReportsViewModel {
         this.reports.query();
     };
 }
+
 export = ReportsViewModel;
