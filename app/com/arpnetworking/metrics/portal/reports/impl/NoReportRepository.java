@@ -62,6 +62,17 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
+    public int deleteReport(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+        LOGGER.debug()
+                .setMessage("Deleting report")
+                .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getId())
+                .log();
+        return 0;
+    }
+
+    @Override
     public void addOrUpdateReport(final Report report, final Organization organization) {
         assertIsOpen();
         LOGGER.debug()

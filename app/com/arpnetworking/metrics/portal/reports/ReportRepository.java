@@ -44,6 +44,16 @@ public interface ReportRepository extends JobRepository<Report.Result> {
     Optional<Report> getReport(UUID identifier, Organization organization);
 
     /**
+     * Delete a {@code Report} given its identifier.
+     *
+     * @param identifier The {@code Report} identifier.
+     * @param organization The {@code Organization} which owns the report.
+     * @throws javax.persistence.PersistenceException if the delete was unsuccessful.
+     * @return the number of reports deleted. Should be 0 or 1.
+     */
+    int deleteReport(UUID identifier, Organization organization);
+
+    /**
      * Create or update a {@code Report}.
      *
      * @param report The {@code Report} to create or update.

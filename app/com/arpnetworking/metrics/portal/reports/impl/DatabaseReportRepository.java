@@ -176,6 +176,47 @@ public final class DatabaseReportRepository implements ReportRepository {
         return getBeanReport(identifier, organization).map(models.ebean.Report::toInternal);
     }
 
+    @Override
+    public int deleteReport(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+
+        LOGGER.debug()
+                .setMessage("Deleting report")
+                .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getId())
+                .log();
+
+        final Optional<models.ebean.Report> report;
+        try (Transaction transaction = _ebeanServer.beginTransaction()) {
+            // Ebean does not generate the soft-delete correctly when using the query builder, instead
+            // we must fetch the report entity first and then call delete with that.
+            report = getBeanReport(identifier, organization);
+            report.ifPresent(r -> {
+                _ebeanServer.delete(r);
+                LOGGER.debug()
+                        .setMessage("Deleted report")
+                        .addData("uuid", identifier)
+                        .addData("organization.uuid", organization.getId())
+                        .log();
+            });
+            transaction.commit();
+            // CHECKSTYLE.OFF: IllegalCatchCheck
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatchCheck
+            LOGGER.error()
+                    .setMessage("Failed to delete report")
+                    .addData("uuid", identifier)
+                    .addData("organization.uuid", organization.getId())
+                    .setThrowable(e)
+                    .log();
+            throw new PersistenceException(e);
+        }
+        if (report.isPresent()) {
+            return 1;
+        }
+        return 0;
+    }
+
     private Optional<models.ebean.Report> getBeanReport(final UUID reportId, final Organization organization) {
         return _ebeanServer.find(models.ebean.Report.class)
                 .where()

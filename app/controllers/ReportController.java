@@ -44,6 +44,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
+import javax.persistence.PersistenceException;
 
 /**
  * Metrics portal report controller. Exposes APIs to query and manipulate reports.
@@ -113,6 +114,13 @@ public class ReportController extends Controller {
             @Nullable final Integer offset) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
+        final Organization organization;
+        try {
+            organization = _organizationRepository.get(request());
+        } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+
         // Convert and validate parameters
         final int argLimit = Optional.ofNullable(limit).map(l -> Math.min(l, _maxLimit)).orElse(_maxLimit);
         if (argLimit < 0) {
@@ -124,7 +132,7 @@ public class ReportController extends Controller {
             return badRequest("Invalid offset; must be greater than or equal to 0");
         }
 
-        final ReportQuery query = _reportRepository.createReportQuery(_organizationRepository.get(request()))
+        final ReportQuery query = _reportRepository.createReportQuery(organization)
                 .limit(argLimit)
                 .offset(argOffset.orElse(0));
 
@@ -162,24 +170,55 @@ public class ReportController extends Controller {
      * Get specific report.
      *
      * @param id The identifier of the report.
-     * @return Matching report.
+     * @return The report, if any, otherwise notFound.
      */
-    public Result get(final String id) {
-        final Organization org;
+    public Result get(final UUID id) {
+        final Organization organization;
         try {
-            org = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request());
         } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+        try {
+            final Optional<Report> report = _reportRepository.getReport(id, organization);
+            return report.map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
+                    .orElseGet(ReportController::notFound);
+        } catch (final PersistenceException e) {
+            LOGGER.error()
+                    .setMessage("Get report failed")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
+    }
+
+    /**
+     * Delete a specific report.
+     *
+     * @param id The identifier of the report.
+     * @return No content if successful, otherwise an HTTP error code.
+     */
+    public Result delete(final UUID id) {
+        final Organization organization;
+        try {
+            organization = _organizationRepository.get(request());
+        } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+        final int deletedCount;
+        try {
+            deletedCount = _reportRepository.deleteReport(id, organization);
+        } catch (final PersistenceException e) {
+            LOGGER.error()
+                    .setMessage("Delete report failed")
+                    .setThrowable(e)
+                    .log();
+            return internalServerError();
+        }
+        if (deletedCount == 0) {
             return notFound();
         }
-        final UUID uuid;
-        try {
-            uuid = UUID.fromString(id);
-        } catch (final IllegalArgumentException e) {
-            return badRequest();
-        }
-        final Optional<Report> report = _reportRepository.getReport(uuid, org);
-        return report.map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElseGet(ReportController::notFound);
+        return noContent();
     }
 
     private ReportController(

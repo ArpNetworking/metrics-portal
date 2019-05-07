@@ -42,7 +42,8 @@ PUT        /v1/alerts                           controllers.AlertController.addO
 
 # Reports
 GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/reports/:id                      controllers.ReportController.get(id: String)
+GET        /v1/reports/:id                      controllers.ReportController.get(id: java.util.UUID)
+DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID)
 PUT        /v1/reports                          controllers.ReportController.addOrUpdate
 
 # Templates
