@@ -137,6 +137,24 @@ public class DatabaseReportRepositoryIT {
     }
 
     @Test
+    public void testDeleteExistingReport() {
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
+
+        final int deleted = _repository.deleteReport(report.getId(), _organization);
+        assertThat("The report should have been deleted", deleted, equalTo(1));
+
+        final Optional<Report> result = _repository.getReport(report.getId(), _organization);
+        assertThat("The report should not have been returned", result.orElse(null), nullValue());
+    }
+
+    @Test
+    public void testDeleteMissingReport() {
+        final int deleted = _repository.deleteReport(UUID.randomUUID(), _organization);
+        assertThat("No reports should have been deleted", deleted, equalTo(0));
+    }
+
+    @Test
     public void testUpdateName() {
         final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
         final Report initialReport = reportBuilder.setName(ORIGINAL_REPORT_NAME).build();
