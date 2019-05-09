@@ -37,7 +37,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -45,7 +44,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
-import javax.persistence.PersistenceException;
 
 /**
  * Metrics portal report controller. Exposes APIs to query and manipulate reports.
