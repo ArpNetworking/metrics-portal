@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -79,7 +80,7 @@ public class ReportController extends Controller {
         try {
             final JsonNode body = request().body().asJson();
             report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
-        } catch (final IOException e) {
+        } catch (final JsonProcessingException e) {
             LOGGER.error()
                     .setMessage("Failed to build a report.")
                     .setThrowable(e)
@@ -179,17 +180,10 @@ public class ReportController extends Controller {
         } catch (final NoSuchElementException e) {
             return internalServerError();
         }
-        try {
-            final Optional<Report> report = _reportRepository.getReport(id, organization);
-            return report.map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                    .orElseGet(ReportController::notFound);
-        } catch (final PersistenceException e) {
-            LOGGER.error()
-                    .setMessage("Get report failed")
-                    .setThrowable(e)
-                    .log();
-            return internalServerError();
-        }
+        final Optional<Report> report = _reportRepository.getReport(id, organization);
+        return report
+                .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
+                .orElseGet(ReportController::notFound);
     }
 
     /**
@@ -199,22 +193,8 @@ public class ReportController extends Controller {
      * @return No content if successful, otherwise an HTTP error code.
      */
     public Result delete(final UUID id) {
-        final Organization organization;
-        try {
-            organization = _organizationRepository.get(request());
-        } catch (final NoSuchElementException e) {
-            return internalServerError();
-        }
-        final int deletedCount;
-        try {
-            deletedCount = _reportRepository.deleteReport(id, organization);
-        } catch (final PersistenceException e) {
-            LOGGER.error()
-                    .setMessage("Delete report failed")
-                    .setThrowable(e)
-                    .log();
-            return internalServerError();
-        }
+        final Organization organization = _organizationRepository.get(request());
+        final int deletedCount = _reportRepository.deleteReport(id, organization);
         if (deletedCount == 0) {
             return notFound();
         }

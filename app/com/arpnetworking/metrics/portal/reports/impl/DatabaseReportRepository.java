@@ -28,7 +28,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.typesafe.config.Config;
 import io.ebean.EbeanServer;
+import io.ebean.Finder;
 import io.ebean.PagedList;
+import io.ebean.Query;
 import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
@@ -71,6 +73,7 @@ import javax.persistence.PersistenceException;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class DatabaseReportRepository implements ReportRepository {
+
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportRepository.class);
     private static final ReportFormat.Visitor<models.ebean.ReportFormat> INTERNAL_TO_BEAN_FORMAT_VISITOR =
@@ -186,35 +189,23 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .addData("organization.uuid", organization.getId())
                 .log();
 
-        final Optional<models.ebean.Report> report;
-        try (Transaction transaction = _ebeanServer.beginTransaction()) {
-            // Ebean does not generate the soft-delete correctly when using the query builder, instead
-            // we must fetch the report entity first and then call delete with that.
-            report = getBeanReport(identifier, organization);
-            report.ifPresent(r -> {
-                _ebeanServer.delete(r);
-                LOGGER.debug()
-                        .setMessage("Deleted report")
-                        .addData("uuid", identifier)
-                        .addData("organization.uuid", organization.getId())
-                        .log();
-            });
-            transaction.commit();
-            // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatchCheck
-            LOGGER.error()
-                    .setMessage("Failed to delete report")
-                    .addData("uuid", identifier)
-                    .addData("organization.uuid", organization.getId())
-                    .setThrowable(e)
-                    .log();
-            throw new PersistenceException(e);
-        }
-        if (report.isPresent()) {
-            return 1;
-        }
-        return 0;
+        // Ebean does not generate the soft-delete update correctly when using Query#delete, so instead we update
+        // the 'deleted' column ourselves
+        final int deleted =
+            _ebeanServer.update(models.ebean.Report.class)
+                    .set("deleted", true)
+                    .where()
+                    .eq("uuid", identifier)
+                    .eq("organization.uuid", organization.getId())
+                    .eq("deleted", false)
+                    .update();
+
+        LOGGER.debug()
+                .setMessage("Deleted report")
+                .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getId())
+                .log();
+        return deleted;
     }
 
     private Optional<models.ebean.Report> getBeanReport(final UUID reportId, final Organization organization) {

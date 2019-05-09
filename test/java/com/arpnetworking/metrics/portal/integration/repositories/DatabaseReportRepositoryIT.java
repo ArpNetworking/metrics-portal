@@ -146,6 +146,9 @@ public class DatabaseReportRepositoryIT {
 
         final Optional<Report> result = _repository.getReport(report.getId(), _organization);
         assertThat("The report should not have been returned", result.orElse(null), nullValue());
+
+        final int deletedAgain = _repository.deleteReport(report.getId(), _organization);
+        assertThat("The report should have already been marked as deleted", deletedAgain, equalTo(0));
     }
 
     @Test
