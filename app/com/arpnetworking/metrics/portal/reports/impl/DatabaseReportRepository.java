@@ -198,11 +198,13 @@ public final class DatabaseReportRepository implements ReportRepository {
                     .eq("deleted", false)
                     .update();
 
-        LOGGER.debug()
-                .setMessage("Deleted report")
-                .addData("uuid", identifier)
-                .addData("organization.uuid", organization.getId())
-                .log();
+        if (deleted > 0) {
+            LOGGER.debug()
+                    .setMessage("Deleted report")
+                    .addData("uuid", identifier)
+                    .addData("organization.uuid", organization.getId())
+                    .log();
+        }
         return deleted;
     }
 
