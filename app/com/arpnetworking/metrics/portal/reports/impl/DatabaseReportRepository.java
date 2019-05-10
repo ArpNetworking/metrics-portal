@@ -72,6 +72,7 @@ import javax.persistence.PersistenceException;
  */
 public final class DatabaseReportRepository implements ReportRepository {
 
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportRepository.class);
     private static final ReportFormat.Visitor<models.ebean.ReportFormat> INTERNAL_TO_BEAN_FORMAT_VISITOR =
             new ReportFormat.Visitor<models.ebean.ReportFormat>() {
@@ -174,6 +175,37 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .log();
 
         return getBeanReport(identifier, organization).map(models.ebean.Report::toInternal);
+    }
+
+    @Override
+    public int deleteReport(final UUID identifier, final Organization organization) {
+        assertIsOpen();
+
+        LOGGER.debug()
+                .setMessage("Deleting report")
+                .addData("uuid", identifier)
+                .addData("organization.uuid", organization.getId())
+                .log();
+
+        // Ebean does not generate the soft-delete update correctly when using Query#delete, so instead we update
+        // the 'deleted' column ourselves
+        final int deleted =
+            _ebeanServer.update(models.ebean.Report.class)
+                    .set("deleted", true)
+                    .where()
+                    .eq("uuid", identifier)
+                    .eq("organization.uuid", organization.getId())
+                    .eq("deleted", false)
+                    .update();
+
+        if (deleted > 0) {
+            LOGGER.debug()
+                    .setMessage("Deleted report")
+                    .addData("uuid", identifier)
+                    .addData("organization.uuid", organization.getId())
+                    .log();
+        }
+        return deleted;
     }
 
     private Optional<models.ebean.Report> getBeanReport(final UUID reportId, final Organization organization) {

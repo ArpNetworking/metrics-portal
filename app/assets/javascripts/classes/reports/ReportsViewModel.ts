@@ -43,11 +43,31 @@ class ReportsList extends PaginatedSearchableList<Report> {
 class ReportsViewModel {
     reports: ReportsList = new ReportsList();
     deletingId: string = null
-    remove: (alert: Report) => void
 
     constructor() {
         this.reports.query();
     };
+
+    remove: (Report) => void = (report: Report) => {
+        this.deletingId = report.id;
+        $("#confirm-delete-modal").modal('show');
+    };
+
+    confirmDelete: () => void = () => {
+        $.ajax({
+            type: "DELETE",
+            url: "/v1/reports/" + this.deletingId,
+            beforeSend: function(request) {
+                request.setRequestHeader("Csrf-Token", csrf.getToken());
+            },
+            contentType: "application/json"
+        }).done(() => {
+            $("#confirm-delete-modal").modal('hide');
+            this.reports.query();
+            this.deletingId = null;
+        });
+    }
+
 }
 
 export = ReportsViewModel;

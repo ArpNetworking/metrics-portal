@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -36,7 +37,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -78,7 +78,7 @@ public class ReportController extends Controller {
         try {
             final JsonNode body = request().body().asJson();
             report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
-        } catch (final IOException e) {
+        } catch (final JsonProcessingException e) {
             LOGGER.error()
                     .setMessage("Failed to build a report.")
                     .setThrowable(e)
@@ -113,6 +113,13 @@ public class ReportController extends Controller {
             @Nullable final Integer offset) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
+        final Organization organization;
+        try {
+            organization = _organizationRepository.get(request());
+        } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+
         // Convert and validate parameters
         final int argLimit = Optional.ofNullable(limit).map(l -> Math.min(l, _maxLimit)).orElse(_maxLimit);
         if (argLimit < 0) {
@@ -124,7 +131,7 @@ public class ReportController extends Controller {
             return badRequest("Invalid offset; must be greater than or equal to 0");
         }
 
-        final ReportQuery query = _reportRepository.createReportQuery(_organizationRepository.get(request()))
+        final ReportQuery query = _reportRepository.createReportQuery(organization)
                 .limit(argLimit)
                 .offset(argOffset.orElse(0));
 
@@ -162,24 +169,34 @@ public class ReportController extends Controller {
      * Get specific report.
      *
      * @param id The identifier of the report.
-     * @return Matching report.
+     * @return The report, if any, otherwise notFound.
      */
-    public Result get(final String id) {
-        final Organization org;
+    public Result get(final UUID id) {
+        final Organization organization;
         try {
-            org = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request());
         } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+        final Optional<Report> report = _reportRepository.getReport(id, organization);
+        return report
+                .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
+                .orElseGet(ReportController::notFound);
+    }
+
+    /**
+     * Delete a specific report.
+     *
+     * @param id The identifier of the report.
+     * @return No content if successful, otherwise an HTTP error code.
+     */
+    public Result delete(final UUID id) {
+        final Organization organization = _organizationRepository.get(request());
+        final int deletedCount = _reportRepository.deleteReport(id, organization);
+        if (deletedCount == 0) {
             return notFound();
         }
-        final UUID uuid;
-        try {
-            uuid = UUID.fromString(id);
-        } catch (final IllegalArgumentException e) {
-            return badRequest();
-        }
-        final Optional<Report> report = _reportRepository.getReport(uuid, org);
-        return report.map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElseGet(ReportController::notFound);
+        return noContent();
     }
 
     private ReportController(
