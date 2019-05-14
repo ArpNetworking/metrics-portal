@@ -16,12 +16,14 @@
 package com.arpnetworking.kairos.client;
 
 import akka.http.javadsl.model.Uri;
+import com.arpnetworking.logback.annotations.Loggable;
 
 /**
  * An exception that represents a non-2xx KairosDB request.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@Loggable
 public class KairosDbRequestException extends RuntimeException {
 
     public int getHttpStatus() {
@@ -44,6 +46,7 @@ public class KairosDbRequestException extends RuntimeException {
      * @param requestUri the uri requested
      */
     public KairosDbRequestException(final int httpStatus, final String httpMessage, final Uri requestUri) {
+        super(String.format("KairosDb request to %s failed because %s (%d)", requestUri, httpMessage, httpStatus));
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
         _requestUri = requestUri;

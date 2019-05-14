@@ -147,6 +147,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void handleTagNamesMessage(final TagNamesMessage message) {
         _metrics.recordCounter("rollup/tag_names_message/received", 1);
         if (message.isFailure()) {
+            _metrics.recordCounter("rollup/tag_names_message/success", 0);
             LOGGER.warn()
                     .setMessage("Failed to get tag names for metric.")
                     .addData("metricName", message.getMetricName())
@@ -156,6 +157,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             // Get the next metric
             getSelf().tell(FETCH_METRIC, ActorRef.noSender());
         } else {
+            _metrics.recordCounter("rollup/tag_names_message/success", 1);
             _periodsInFlight = Lists.newArrayList(RollupPeriod.values());
             final String metricName = message.getMetricName();
             final long startTime = System.nanoTime();
@@ -180,6 +182,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
         _metrics.recordCounter("rollup/last_data_point_message/received", 1);
         if (message.isFailure()) {
+            _metrics.recordCounter("rollup/last_data_point_message/success", 0);
             LOGGER.warn()
                     .setMessage("Failed to get last data point for metric.")
                     .addData("metricName", message.getMetricName())
@@ -193,6 +196,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             .build(),
                     ActorRef.noSender());
         } else {
+            _metrics.recordCounter("rollup/last_data_point_message/success", 1);
             final Instant recentPeriodEndTime = message.getPeriod()
                     .recentEndTime(_clock.instant());
 
