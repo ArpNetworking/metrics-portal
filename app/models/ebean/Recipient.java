@@ -77,13 +77,14 @@ public final class Recipient {
     }
 
     /**
-     * Create a new Recipient with the given emailAddress.
+     * Create a new Recipient with the given address.
      *
-     * @param emailAddress The address of the recipient
+     * @param type The {@link RecipientType} of the recipient
+     * @param address The address of the recipient
      * @return A new email recipient.
      */
-    public static Recipient newEmailRecipient(final String emailAddress) {
-        return new Recipient(RecipientType.EMAIL, emailAddress);
+    public static Recipient newRecipient(final RecipientType type, final String address) {
+        return new Recipient(type, address);
     }
 
     public void setUuid(final UUID value) {

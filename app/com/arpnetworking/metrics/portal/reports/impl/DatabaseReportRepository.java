@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
@@ -38,7 +39,6 @@ import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
-import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
 import models.internal.impl.HtmlReportFormat;
@@ -117,19 +117,15 @@ public final class DatabaseReportRepository implements ReportRepository {
         _ebeanServer = ebeanServer;
     }
 
-    private final Recipient.Visitor<models.ebean.Recipient> _internalToEbeanVisitor =
-            new Recipient.Visitor<models.ebean.Recipient>() {
-                @Override
-                public models.ebean.Recipient visit(final DefaultRecipient recipient) {
-                    final models.ebean.Recipient ebeanRecipient = _ebeanServer.createQuery(models.ebean.Recipient.class)
-                            .where()
-                            .eq("uuid", recipient.getId())
-                            .findOneOrEmpty()
-                            .orElseGet(() -> models.ebean.Recipient.newEmailRecipient(recipient.getAddress()));
-                    ebeanRecipient.setUuid(recipient.getId());
-                    return ebeanRecipient;
-                }
-            };
+    private models.ebean.Recipient getOrCreateEbeanRecipient(final Recipient recipient) {
+        final models.ebean.Recipient ebeanRecipient = _ebeanServer.createQuery(models.ebean.Recipient.class)
+                .where()
+                .eq("uuid", recipient.getId())
+                .findOneOrEmpty()
+                .orElseGet(() -> models.ebean.Recipient.newRecipient(RecipientType.EMAIL /*TODO*/, recipient.getAddress()));
+        ebeanRecipient.setUuid(recipient.getId());
+        return ebeanRecipient;
+    }
 
     @Override
     public void open() {
@@ -513,7 +509,7 @@ public final class DatabaseReportRepository implements ReportRepository {
         for (final Map.Entry<ReportFormat, Collection<Recipient>> entry : recipients.entrySet()) {
             final models.ebean.ReportFormat beanFormat = INTERNAL_TO_BEAN_FORMAT_VISITOR.visit(entry.getKey());
             for (final Recipient recipient : entry.getValue()) {
-                multimapBuilder.put(beanFormat, _internalToEbeanVisitor.visit(recipient));
+                multimapBuilder.put(beanFormat, getOrCreateEbeanRecipient(recipient));
             }
         }
         return multimapBuilder.build();
