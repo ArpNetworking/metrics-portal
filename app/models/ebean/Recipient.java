@@ -15,6 +15,7 @@
  */
 package models.ebean;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
 import models.internal.impl.DefaultEmailRecipient;
@@ -41,7 +42,7 @@ import javax.persistence.Table;
  * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
- * @see Recipient.RecipientType
+ * @see RecipientType
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
@@ -138,15 +139,6 @@ public final class Recipient {
         return Objects.hash(id, uuid, address, type);
     }
 
-    /**
-     * The type of report recipient.
-     */
-    public enum RecipientType {
-        /**
-         * An email address.
-         */
-        EMAIL
-    }
 
     /* package */ models.internal.reports.Recipient toInternal() {
         if (type == RecipientType.EMAIL) {
