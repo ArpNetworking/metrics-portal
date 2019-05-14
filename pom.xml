@@ -189,6 +189,10 @@
         <directory>${project.basedir}/public</directory>
         <targetPath>public</targetPath>
       </resource>
+      <resource>
+        <directory>${project.basedir}/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
     </resources>
     <testResources>
       <testResource>

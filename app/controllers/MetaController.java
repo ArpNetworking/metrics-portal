@@ -15,11 +15,17 @@
  */
 package controllers;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import play.mvc.Controller;
@@ -58,6 +64,15 @@ public final class MetaController extends Controller {
     public Result config() {
         final JsonNode node = getConfigNode(_configuration);
         return ok(node);
+    }
+
+    /**
+     * Endpoint implementation to retrieve service status as JSON.
+     *
+     * @return Serialized response containing service status.
+     */
+    public Result status() {
+        return ok(STATUS_JSON);
     }
 
     /**
@@ -127,6 +142,24 @@ public final class MetaController extends Controller {
     private final HealthProvider _healthProvider;
     private final Config _configuration;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MetaController.class);
+    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
+    private static final JsonNode STATUS_JSON;
+
+    static {
+        JsonNode statusJson = JsonNodeFactory.instance.objectNode();
+        try {
+            statusJson = OBJECT_MAPPER.readTree(
+                    Resources.toString(
+                            Resources.getResource("status.json"),
+                            Charsets.UTF_8));
+            // CHECKSTYLE.OFF: IllegalCatch - Prevent program shutdown
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error("Resource load failure; resource=status.json", e);
+        }
+        STATUS_JSON = statusJson;
+    }
 }
