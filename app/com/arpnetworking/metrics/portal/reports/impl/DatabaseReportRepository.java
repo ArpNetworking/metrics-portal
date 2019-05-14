@@ -38,7 +38,7 @@ import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.ChromeScreenshotReportSource;
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
 import models.internal.impl.HtmlReportFormat;
@@ -120,7 +120,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     private final Recipient.Visitor<models.ebean.Recipient> _internalToEbeanVisitor =
             new Recipient.Visitor<models.ebean.Recipient>() {
                 @Override
-                public models.ebean.Recipient visit(final DefaultEmailRecipient recipient) {
+                public models.ebean.Recipient visit(final DefaultRecipient recipient) {
                     final models.ebean.Recipient ebeanRecipient = _ebeanServer.createQuery(models.ebean.Recipient.class)
                             .where()
                             .eq("uuid", recipient.getId())

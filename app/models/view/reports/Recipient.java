@@ -17,7 +17,7 @@ package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 
 import java.util.UUID;
 
@@ -71,7 +71,7 @@ public abstract class Recipient {
     static Recipient fromInternal(final models.internal.reports.Recipient recipient, final ReportFormat format) {
         final models.internal.reports.Recipient.Visitor<Recipient> visitor = new models.internal.reports.Recipient.Visitor<Recipient>() {
             @Override
-            public Recipient visit(final DefaultEmailRecipient emailRecipient) {
+            public Recipient visit(final DefaultRecipient emailRecipient) {
                 return EmailRecipient.fromInternal(emailRecipient, format);
             }
         };

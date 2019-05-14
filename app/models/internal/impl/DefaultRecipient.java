@@ -29,11 +29,11 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DefaultEmailRecipient implements Recipient {
+public final class DefaultRecipient implements Recipient {
     private final UUID _id;
     private final String _address;
 
-    private DefaultEmailRecipient(final Builder builder) {
+    private DefaultRecipient(final Builder builder) {
         _id = builder._id;
         _address = builder._address;
     }
@@ -61,7 +61,7 @@ public final class DefaultEmailRecipient implements Recipient {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final DefaultEmailRecipient that = (DefaultEmailRecipient) o;
+        final DefaultRecipient that = (DefaultRecipient) o;
         return _id.equals(that._id)
                 && _address.equals(that._address);
     }
@@ -72,9 +72,9 @@ public final class DefaultEmailRecipient implements Recipient {
     }
 
     /**
-     * Builder implementation that constructs {@code DefaultEmailRecipient}.
+     * Builder implementation that constructs {@code DefaultRecipient}.
      */
-    public static final class Builder extends OvalBuilder<DefaultEmailRecipient> {
+    public static final class Builder extends OvalBuilder<DefaultRecipient> {
         @NotNull
         private UUID _id;
         @Email
@@ -85,7 +85,7 @@ public final class DefaultEmailRecipient implements Recipient {
          * Default constructor.
          */
         public Builder() {
-            super(DefaultEmailRecipient::new);
+            super(DefaultRecipient::new);
         }
 
         /**

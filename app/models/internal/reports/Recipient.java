@@ -16,7 +16,7 @@
 
 package models.internal.reports;
 
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 
 import java.util.UUID;
 
@@ -57,12 +57,12 @@ public interface Recipient {
      */
     interface Visitor<T> {
         /**
-         * Visit an {@code DefaultEmailRecipient}.
+         * Visit an {@code DefaultRecipient}.
          *
          * @param emailRecipient The recipient to visit.
          * @return The result of applying the visitor.
          */
-        T visit(DefaultEmailRecipient emailRecipient);
+        T visit(DefaultRecipient emailRecipient);
 
         /**
          * Convenience method equivalent to {@code recipient.accept(this) }.

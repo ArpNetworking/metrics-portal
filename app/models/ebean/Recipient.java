@@ -18,7 +18,7 @@ package models.ebean;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -142,7 +142,7 @@ public final class Recipient {
 
     /* package */ models.internal.reports.Recipient toInternal() {
         if (type == RecipientType.EMAIL) {
-            return new DefaultEmailRecipient.Builder()
+            return new DefaultRecipient.Builder()
                     .setId(uuid)
                     .setAddress(address)
                     .build();

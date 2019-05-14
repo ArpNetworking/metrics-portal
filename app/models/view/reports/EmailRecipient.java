@@ -15,12 +15,12 @@
  */
 package models.view.reports;
 
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 
 /**
  * View model for a recipient specified by an email address.
  *
- * See {@link DefaultEmailRecipient} for the equivalent internal model.
+ * See {@link DefaultRecipient} for the equivalent internal model.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -32,7 +32,7 @@ public final class EmailRecipient extends Recipient {
      * @param format The format to use for this recipient.
      * @return The view model.
      */
-    public static EmailRecipient fromInternal(final DefaultEmailRecipient recipient, final ReportFormat format) {
+    public static EmailRecipient fromInternal(final DefaultRecipient recipient, final ReportFormat format) {
         final EmailRecipient viewRecipient = new EmailRecipient();
         viewRecipient.setId(recipient.getId());
         viewRecipient.setAddress(recipient.getAddress());
@@ -45,8 +45,8 @@ public final class EmailRecipient extends Recipient {
      *
      * @return The internal model corresponding to this view.
      */
-    public DefaultEmailRecipient toInternal() {
-        return new DefaultEmailRecipient.Builder()
+    public DefaultRecipient toInternal() {
+        return new DefaultRecipient.Builder()
                 .setId(getId())
                 .setAddress(getAddress())
                 .build();

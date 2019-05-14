@@ -28,7 +28,7 @@ import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultAlert;
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultReport;
@@ -134,7 +134,7 @@ public final class TestBeanFactory {
                 .setName(TEST_NAME + UUID.randomUUID().toString())
                 .setRecipients(ImmutableSetMultimap.of(
                         format,
-                        new DefaultEmailRecipient.Builder()
+                        new DefaultRecipient.Builder()
                                 .setId(UUID.randomUUID())
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
@@ -155,7 +155,7 @@ public final class TestBeanFactory {
      * @return a report recipient
      */
     public static Recipient createRecipient() {
-        return new DefaultEmailRecipient.Builder()
+        return new DefaultRecipient.Builder()
                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                 .setId(UUID.randomUUID())
                 .build();
