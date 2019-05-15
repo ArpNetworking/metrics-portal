@@ -67,12 +67,12 @@ public final class MetaController extends Controller {
     }
 
     /**
-     * Endpoint implementation to retrieve service status as JSON.
+     * Endpoint implementation to retrieve service version as JSON.
      *
-     * @return Serialized response containing service status.
+     * @return Serialized response containing service version.
      */
-    public Result status() {
-        return ok(STATUS_JSON);
+    public Result version() {
+        return ok(VERSION_JSON);
     }
 
     /**
@@ -146,20 +146,20 @@ public final class MetaController extends Controller {
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
-    private static final JsonNode STATUS_JSON;
+    private static final JsonNode VERSION_JSON;
 
     static {
-        JsonNode statusJson = JsonNodeFactory.instance.objectNode();
+        JsonNode versionJson = JsonNodeFactory.instance.objectNode();
         try {
-            statusJson = OBJECT_MAPPER.readTree(
+            versionJson = OBJECT_MAPPER.readTree(
                     Resources.toString(
-                            Resources.getResource("status.json"),
+                            Resources.getResource("version.json"),
                             Charsets.UTF_8));
             // CHECKSTYLE.OFF: IllegalCatch - Prevent program shutdown
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error("Resource load failure; resource=status.json", e);
+            LOGGER.error("Resource load failure; resource=version.json", e);
         }
-        STATUS_JSON = statusJson;
+        VERSION_JSON = versionJson;
     }
 }
