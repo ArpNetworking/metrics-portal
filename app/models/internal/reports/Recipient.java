@@ -16,7 +16,7 @@
 
 package models.internal.reports;
 
-import models.internal.impl.DefaultRecipient;
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 
 import java.util.UUID;
 
@@ -34,44 +34,16 @@ public interface Recipient {
     UUID getId();
 
     /**
+     * Get the {@link RecipientType} of this recipient.
+     *
+     * @return the address of this recipient
+     */
+    RecipientType getType();
+
+    /**
      * Get the address of this recipient.
      *
      * @return the address of this recipient
      */
     String getAddress();
-
-    /**
-     * Applies a {@code Visitor} to this recipient. This should delegate the to the appropriate {@code Visitor#visit} overload.
-     *
-     * @param recipientVisitor the visitor
-     * @param <T> the return type of the visitor. Use {@link Void} for visitors that do not need to return a result.
-     * @return The result of applying the visitor.
-     */
-    <T> T accept(Visitor<T> recipientVisitor);
-
-    /**
-     * {@code Visitor} abstracts over operations which could potentially handle various
-     * implementations of {@code Recipient}.
-     *
-     * @param <T> the return type of the visitor.
-     */
-    interface Visitor<T> {
-        /**
-         * Visit an {@code DefaultRecipient}.
-         *
-         * @param emailRecipient The recipient to visit.
-         * @return The result of applying the visitor.
-         */
-        T visit(DefaultRecipient emailRecipient);
-
-        /**
-         * Convenience method equivalent to {@code recipient.accept(this) }.
-         *
-         * @param recipient The recipient to visit.
-         * @return The result of applying the visitor
-         */
-        default T visit(Recipient recipient) {
-            return recipient.accept(this);
-        }
-    }
 }

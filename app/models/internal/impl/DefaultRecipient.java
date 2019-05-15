@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import models.internal.reports.Recipient;
 import net.sf.oval.constraint.Email;
 import net.sf.oval.constraint.NotNull;
@@ -31,10 +32,12 @@ import java.util.UUID;
  */
 public final class DefaultRecipient implements Recipient {
     private final UUID _id;
+    private final RecipientType _type;
     private final String _address;
 
     private DefaultRecipient(final Builder builder) {
         _id = builder._id;
+        _type = builder._type;
         _address = builder._address;
     }
 
@@ -44,13 +47,13 @@ public final class DefaultRecipient implements Recipient {
     }
 
     @Override
-    public String getAddress() {
-        return _address;
+    public RecipientType getType() {
+        return _type;
     }
 
     @Override
-    public <T> T accept(final Visitor<T> visitor) {
-        return visitor.visit(this);
+    public String getAddress() {
+        return _address;
     }
 
     @Override
@@ -77,6 +80,8 @@ public final class DefaultRecipient implements Recipient {
     public static final class Builder extends OvalBuilder<DefaultRecipient> {
         @NotNull
         private UUID _id;
+        @NotNull
+        private RecipientType _type;
         @Email
         @NotNull
         private String _address;
@@ -96,6 +101,17 @@ public final class DefaultRecipient implements Recipient {
          */
         public Builder setId(final UUID id) {
             _id = id;
+            return this;
+        }
+
+        /**
+         * Set the recipient's type. Required. Cannot be null.
+         *
+         * @param type the email type
+         * @return this instance of {@code Builder}
+         */
+        public Builder setType(final RecipientType type) {
+            _type = type;
             return this;
         }
 

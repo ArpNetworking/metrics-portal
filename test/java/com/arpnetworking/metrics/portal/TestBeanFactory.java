@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
@@ -136,6 +137,7 @@ public final class TestBeanFactory {
                         format,
                         new DefaultRecipient.Builder()
                                 .setId(UUID.randomUUID())
+                                .setType(RecipientType.EMAIL)
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
                 .setReportSource(
@@ -157,6 +159,7 @@ public final class TestBeanFactory {
     public static Recipient createRecipient() {
         return new DefaultRecipient.Builder()
                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
+                .setType(RecipientType.EMAIL)
                 .setId(UUID.randomUUID())
                 .build();
     }

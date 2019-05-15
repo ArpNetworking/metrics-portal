@@ -35,6 +35,7 @@ public final class EmailRecipient extends Recipient {
     public static EmailRecipient fromInternal(final DefaultRecipient recipient, final ReportFormat format) {
         final EmailRecipient viewRecipient = new EmailRecipient();
         viewRecipient.setId(recipient.getId());
+        viewRecipient.setType(recipient.getType());
         viewRecipient.setAddress(recipient.getAddress());
         viewRecipient.setFormat(format);
         return viewRecipient;
@@ -48,6 +49,7 @@ public final class EmailRecipient extends Recipient {
     public DefaultRecipient toInternal() {
         return new DefaultRecipient.Builder()
                 .setId(getId())
+                .setType(getType())
                 .setAddress(getAddress())
                 .build();
     }

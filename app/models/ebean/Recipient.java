@@ -30,7 +30,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PersistenceException;
 import javax.persistence.Table;
 
 /**
@@ -142,13 +141,11 @@ public final class Recipient {
 
 
     /* package */ models.internal.reports.Recipient toInternal() {
-        if (type == RecipientType.EMAIL) {
-            return new DefaultRecipient.Builder()
-                    .setId(uuid)
-                    .setAddress(address)
-                    .build();
-        }
-        throw new PersistenceException("recipient type does not have an internal representation: " + type);
+        return new DefaultRecipient.Builder()
+                .setId(uuid)
+                .setType(type)
+                .setAddress(address)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

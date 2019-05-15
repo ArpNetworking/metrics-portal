@@ -15,9 +15,9 @@
  */
 package models.view.reports;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import models.internal.impl.DefaultRecipient;
 
 import java.util.UUID;
 
@@ -29,20 +29,21 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-@JsonTypeInfo(
-        use = JsonTypeInfo.Id.NAME,
-        include = JsonTypeInfo.As.PROPERTY,
-        property = "type")
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = EmailRecipient.class, name = "EMAIL"),
-})
-public abstract class Recipient {
+public class Recipient {
     public UUID getId() {
         return _id;
     }
 
     public void setId(final UUID id) {
         this._id = id;
+    }
+
+    public RecipientType getType() {
+        return _type;
+    }
+
+    public void setType(final RecipientType type) {
+        this._type = type;
     }
 
     public String getAddress() {
@@ -66,19 +67,25 @@ public abstract class Recipient {
      *
      * @return The internal model for this Recipient.
      */
-    public abstract models.internal.reports.Recipient toInternal();
+    public models.internal.reports.Recipient toInternal() {
+        return new models.internal.impl.DefaultRecipient.Builder()
+                .setId(_id)
+                .setType(_type)
+                .setAddress(_address)
+                .build();
+    }
 
     static Recipient fromInternal(final models.internal.reports.Recipient recipient, final ReportFormat format) {
-        final models.internal.reports.Recipient.Visitor<Recipient> visitor = new models.internal.reports.Recipient.Visitor<Recipient>() {
-            @Override
-            public Recipient visit(final DefaultRecipient emailRecipient) {
-                return EmailRecipient.fromInternal(emailRecipient, format);
-            }
-        };
-        return visitor.visit(recipient);
+        final Recipient result = new Recipient();
+        result.setId(recipient.getId());
+        result.setType(recipient.getType());
+        result.setAddress(recipient.getAddress());
+        result.setFormat(format);
+        return result;
     }
 
     private UUID _id;
+    private RecipientType _type;
     private String _address;
     private ReportFormat _format;
 }
