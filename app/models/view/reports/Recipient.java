@@ -16,8 +16,6 @@
 package models.view.reports;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.UUID;
 
@@ -29,7 +27,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class Recipient {
+public final class Recipient {
     public UUID getId() {
         return _id;
     }

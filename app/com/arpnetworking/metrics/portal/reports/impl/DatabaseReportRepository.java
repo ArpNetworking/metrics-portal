@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
@@ -122,7 +121,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .where()
                 .eq("uuid", recipient.getId())
                 .findOneOrEmpty()
-                .orElseGet(() -> models.ebean.Recipient.newRecipient(RecipientType.EMAIL /*TODO*/, recipient.getAddress()));
+                .orElseGet(() -> models.ebean.Recipient.newRecipient(recipient.getType(), recipient.getAddress()));
         ebeanRecipient.setUuid(recipient.getId());
         return ebeanRecipient;
     }
