@@ -42,6 +42,11 @@ public final class DefaultRecipient implements Recipient {
     }
 
     @Override
+    public <T> T accept(final Visitor<T> visitor) {
+        return visitor.visit(this);
+    }
+
+    @Override
     public UUID getId() {
         return _id;
     }

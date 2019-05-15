@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.view.reports;
+package models.view.impl;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
-import models.view.impl.DefaultRecipient;
+import models.view.reports.Recipient;
+import models.view.reports.ReportFormat;
 
 import java.util.UUID;
 
@@ -28,7 +29,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public abstract class Recipient {
+public final class DefaultRecipient extends Recipient {
     public UUID getId() {
         return _id;
     }
@@ -66,21 +67,21 @@ public abstract class Recipient {
      *
      * @return The internal model for this Recipient.
      */
-    public abstract models.internal.reports.Recipient toInternal();
+    public models.internal.reports.Recipient toInternal() {
+        return new models.internal.impl.DefaultRecipient.Builder()
+                .setId(_id)
+                .setType(_type)
+                .setAddress(_address)
+                .build();
+    }
 
-    static Recipient fromInternal(final models.internal.reports.Recipient recipient, final ReportFormat format) {
-        final models.internal.reports.Recipient.Visitor<Recipient> visitor = new models.internal.reports.Recipient.Visitor<Recipient>() {
-            @Override
-            public Recipient visit(final models.internal.impl.DefaultRecipient emailRecipient) {
-                final Recipient result = new DefaultRecipient();
-                result.setId(recipient.getId());
-                result.setType(recipient.getType());
-                result.setAddress(recipient.getAddress());
-                result.setFormat(format);
-                return result;
-            }
-        };
-        return visitor.visit(recipient);
+    static DefaultRecipient fromInternal(final models.internal.reports.Recipient recipient, final ReportFormat format) {
+        final DefaultRecipient result = new DefaultRecipient();
+        result.setId(recipient.getId());
+        result.setType(recipient.getType());
+        result.setAddress(recipient.getAddress());
+        result.setFormat(format);
+        return result;
     }
 
     private UUID _id;
