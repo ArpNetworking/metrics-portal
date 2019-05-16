@@ -562,7 +562,7 @@
                 <skip>${docker.skip.metrics-portal}</skip>
                 <env>
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
-                  <JAVA_OPTS>${dockerJavaOptions}</JAVA_OPTS>
+                  <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions} -Dplay.filters.disabled.0=play.filters.csrf.CSRFFilter</ADDITIONAL_JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
                 </env>
                 <dependsOn>
