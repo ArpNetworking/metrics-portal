@@ -82,7 +82,6 @@ public final class DefaultRecipient implements Recipient {
         private UUID _id;
         @NotNull
         private RecipientType _type;
-        @Email
         @NotNull
         private String _address;
 
