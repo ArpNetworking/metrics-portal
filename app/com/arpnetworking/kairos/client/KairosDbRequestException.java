@@ -15,8 +15,9 @@
  */
 package com.arpnetworking.kairos.client;
 
-import akka.http.javadsl.model.Uri;
 import com.arpnetworking.logback.annotations.Loggable;
+
+import java.net.URI;
 
 /**
  * An exception that represents a non-2xx KairosDB request.
@@ -34,7 +35,7 @@ public class KairosDbRequestException extends RuntimeException {
         return _httpMessage;
     }
 
-    public Uri getRequestUri() {
+    public URI getRequestUri() {
         return _requestUri;
     }
 
@@ -45,7 +46,7 @@ public class KairosDbRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDbRequestException(final int httpStatus, final String httpMessage, final Uri requestUri) {
+    public KairosDbRequestException(final int httpStatus, final String httpMessage, final URI requestUri) {
         super(String.format("KairosDb request to %s failed because %s (%d)", requestUri, httpMessage, httpStatus));
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
@@ -60,7 +61,7 @@ public class KairosDbRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDbRequestException(final String message, final int httpStatus, final String httpMessage, final Uri requestUri) {
+    public KairosDbRequestException(final String message, final int httpStatus, final String httpMessage, final URI requestUri) {
         super(message);
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
@@ -76,11 +77,12 @@ public class KairosDbRequestException extends RuntimeException {
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
      */
-    public KairosDbRequestException(final String message,
-                                    final Throwable cause,
-                                    final int httpStatus,
-                                    final String httpMessage,
-                                    final Uri requestUri) {
+    public KairosDbRequestException(
+            final String message,
+            final Throwable cause,
+            final int httpStatus,
+            final String httpMessage,
+            final URI requestUri) {
         super(message, cause);
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
@@ -89,6 +91,6 @@ public class KairosDbRequestException extends RuntimeException {
 
     private final int _httpStatus;
     private final String _httpMessage;
-    private final Uri _requestUri;
+    private final URI _requestUri;
     private static final long serialVersionUID = 6622759488133086527L;
 }
