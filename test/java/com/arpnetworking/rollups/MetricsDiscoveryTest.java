@@ -36,10 +36,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
@@ -50,7 +54,7 @@ import static org.mockito.Mockito.when;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class MetricsDiscoveryTest {
+public final class MetricsDiscoveryTest {
 
     @Before
     public void setUp() {
@@ -195,6 +199,79 @@ public class MetricsDiscoveryTest {
             assertNotNull(msg2);
             assertTrue(msg2.getNextRefreshMillis() < 3000);
         }};
+    }
+
+    @Test
+    public void testFilterMetricNames() {
+        final boolean whiteListDefault = true;
+        final boolean blackListDefault = false;
+        final Collection<String> names = Arrays.asList(
+                "web_perf/foo",
+                "desktop/bar",
+                "mobile/abc");
+
+        // No white list and no black list => everything is matched
+        assertEquals(
+                names,
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), blackListDefault))
+                .collect(Collectors.toList()));
+
+        // Only white list => only white listed is matched
+        assertEquals(
+                Collections.singletonList("web_perf/foo"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Collections.singletonList("web_perf/.*"), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), blackListDefault))
+                        .collect(Collectors.toList()));
+
+        // Both white list and black list => only white listed is matched
+        assertEquals(
+                Collections.singletonList("web_perf/foo"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Collections.singletonList("web_perf/.*"), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.singletonList("desktop/.*"), blackListDefault))
+                        .collect(Collectors.toList()));
+
+        // Only black list => non-black listed is matched
+        assertEquals(
+                Arrays.asList("web_perf/foo", "mobile/abc"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.singletonList("desktop/.*"), blackListDefault))
+                        .collect(Collectors.toList()));
+
+        // Multiple white list => white listed is matched
+        assertEquals(
+                Arrays.asList("web_perf/foo", "desktop/bar"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Arrays.asList("web_perf/.*", "desktop/.*"), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), blackListDefault))
+                        .collect(Collectors.toList()));
+
+        // Only multiple black list => non-black listed is matched
+        assertEquals(
+                Arrays.asList("mobile/abc"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Collections.emptyList(), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Arrays.asList("web_perf/.*", "desktop/.*"), blackListDefault))
+                        .collect(Collectors.toList()));
+
+        // Black list takes precedence over white list
+        assertEquals(
+                Collections.singletonList("web_perf/foo"),
+                MetricsDiscovery.filterMetricNames(
+                        names,
+                        MetricsDiscovery.toPredicate(Arrays.asList("web_perf/.*", "desktop/.*"), whiteListDefault),
+                        MetricsDiscovery.toPredicate(Collections.singletonList("desktop/.*"), blackListDefault))
+                        .collect(Collectors.toList()));
     }
 
     private Injector _injector;
