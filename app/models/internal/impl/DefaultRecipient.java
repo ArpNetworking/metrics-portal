@@ -19,7 +19,6 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import models.internal.reports.Recipient;
-import net.sf.oval.constraint.Email;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Objects;
