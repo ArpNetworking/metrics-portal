@@ -30,6 +30,7 @@ import com.typesafe.config.Config;
 import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
@@ -114,10 +116,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     }
 
     private void updateMetricsSet(final KairosMetricNamesQueryResponse response) {
-        response.getResults().stream()
-                .filter(ROLLUP_METRIC_PREDICATE.negate())
-                .filter(_whiteList.or(_blackList.negate())) // If on the whitelist or not on the blacklist
-                .forEach(_metricsSet::add);
+        filterMetricNames(response.getResults(), _whiteList, _blackList).forEach(_metricsSet::add);
         _setIterator = _metricsSet.iterator();
     }
 
@@ -133,7 +132,17 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         return Optional.ofNullable(next);
     }
 
-    private Predicate<String> toPredicate(final List<String> regexList, final boolean defaultResult) {
+    static Stream<String> filterMetricNames(
+            final Collection<String> metricNames,
+            final Predicate<String> whiteList,
+            final Predicate<String> blackList) {
+        return metricNames.stream()
+                .filter(ROLLUP_METRIC_PREDICATE.negate())
+                .filter(whiteList)
+                .filter(blackList.negate());
+    }
+
+    static Predicate<String> toPredicate(final List<String> regexList, final boolean defaultResult) {
         return regexList
                 .stream()
                 .map(Pattern::compile)
