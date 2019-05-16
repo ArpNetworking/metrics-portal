@@ -106,9 +106,9 @@ public final class MetricsDiscoveryTest {
     public void testNoMoreMetrics() {
         when(_config.getStringList(eq("rollup.metric.whitelist")))
                 .thenReturn(ImmutableList.of(
-                        "^cmf/web_perf/.*$",
-                        "^cmf/test/.*$"));
-        when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(ImmutableList.of("^cmf/.*$"));
+                        "^metric([\\d])*$",
+                        "^cmf/.*$"));
+        when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(ImmutableList.of("^cmf/foo/.*$"));
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
                         .completedFuture(new KairosMetricNamesQueryResponse.Builder()
