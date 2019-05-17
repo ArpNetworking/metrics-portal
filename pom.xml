@@ -525,7 +525,7 @@
                   <alias>postgres</alias>
                 </network>
                 <ports>
-                  <port>+postgres.host:5432:5432</port>
+                  <port>+postgres.host:6432:5432</port>
                 </ports>
                 <volumes>
                   <bind>
