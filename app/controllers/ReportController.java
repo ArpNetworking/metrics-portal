@@ -37,6 +37,7 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -68,6 +69,15 @@ public class ReportController extends Controller {
         this(configuration.getInt("reports.limit"), reportRepository, organizationRepository);
     }
 
+    /* package-private */ static models.internal.reports.Report deserializeReport(final String json) throws IOException {
+        LOGGER.warn().setMessage("deserializing report").addData("data", json).log();
+        return OBJECT_MAPPER.readValue(json, models.view.reports.Report.class).toInternal();
+    }
+
+    /* package-private */ static String serializeReport(final models.internal.reports.Report report) throws IOException {
+        return OBJECT_MAPPER.writeValueAsString(models.view.reports.Report.fromInternal(report));
+    }
+
     /**
      * Updates a report within the report repository, or creates one if it doesn't already exist.
      *
@@ -76,11 +86,10 @@ public class ReportController extends Controller {
     public Result addOrUpdate() {
         final Report report;
         try {
-            final JsonNode body = request().body().asJson();
-            report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
-        } catch (final JsonProcessingException e) {
+            report = deserializeReport(request().body().asText());
+        } catch (final IOException e) {
             LOGGER.error()
-                    .setMessage("Failed to build a report.")
+                    .setMessage("Failed to deserialize a report.")
                     .setThrowable(e)
                     .log();
             return badRequest("Invalid request body.");
