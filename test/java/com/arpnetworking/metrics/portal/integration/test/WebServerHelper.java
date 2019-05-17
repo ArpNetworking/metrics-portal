@@ -76,6 +76,7 @@ public final class WebServerHelper {
 
         return HttpClients.custom()
                 .setConnectionManager(clientManagerSupplier.get())
+                .disableCookieManagement()
                 .build();
     });
 }
