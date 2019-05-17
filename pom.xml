@@ -189,6 +189,10 @@
         <directory>${project.basedir}/public</directory>
         <targetPath>public</targetPath>
       </resource>
+      <resource>
+        <directory>${project.basedir}/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
     </resources>
     <testResources>
       <testResource>
@@ -558,7 +562,7 @@
                 <skip>${docker.skip.metrics-portal}</skip>
                 <env>
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
-                  <JAVA_OPTS>${dockerJavaOptions}</JAVA_OPTS>
+                  <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
                 </env>
                 <dependsOn>
