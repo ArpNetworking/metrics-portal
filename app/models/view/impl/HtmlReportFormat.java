@@ -48,7 +48,10 @@ public final class HtmlReportFormat implements ReportFormat {
         return 984576476; // keyboard mash
     }
 
-    private HtmlReportFormat() {}
+    /**
+     * Build a new HTML report format.
+     */
+    public HtmlReportFormat() {}
 
     @Override
     public models.internal.impl.HtmlReportFormat toInternal() {
