@@ -68,21 +68,3 @@ public interface ReportSource {
         }
     }
 }
-//
-//class ____ {
-//    interface RenderedReport { byte[] toBytes(); }
-//    interface Format {}
-//    interface Source {}
-//    interface Renderer<S extends Source, F extends Format> {
-//        CompletionStage<RenderedReport> render(S source, F format);
-//    }
-//    class Report {
-//        final Source _source;
-//        final Format _format;
-//        CompletionStage<Void> execute(final Injector injector) {
-//            final Renderer renderer = injector.getInstance(Key.get(Renderer.class,
-//            Names.named(_source.getSourceTypeName() + " " + _format.getFormatTypeName())));
-//            return renderer.render(_source, _format);
-//        }
-//    }
-//}
