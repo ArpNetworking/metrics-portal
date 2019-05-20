@@ -16,6 +16,9 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import models.internal.reports.ReportFormat;
+import models.internal.reports.ReportSource;
+
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -27,7 +30,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public interface Renderer<S, F> {
+public interface Renderer<S extends ReportSource, F extends ReportFormat> {
     /**
      * TODO(spencerpearson).
      * @param source TODO(spencerpearson).
