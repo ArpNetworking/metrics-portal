@@ -97,7 +97,7 @@ public final class DefaultReport implements Report {
                 .thenCompose(
                         formatToRendered -> Senders.sendAll(injector, _recipients.inverse(), formatToRendered)
                 ).thenApply(
-                        nothing -> new Result()
+                        nothing -> null
                 );
     }
 
@@ -141,8 +141,6 @@ public final class DefaultReport implements Report {
     public int hashCode() {
         return Objects.hash(_id, _name, _schedule, _source, _recipients);
     }
-
-    private static final class Result implements Report.Result {}
 
     /**
      * Builder implementation that constructs {@code DefaultReport}.
