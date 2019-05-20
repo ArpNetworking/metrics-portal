@@ -14,38 +14,29 @@
  * limitations under the License.
  */
 
-package models.internal.reports;
+package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
+import models.internal.reports.Recipient;
+import models.internal.reports.ReportFormat;
 
 import java.util.concurrent.CompletionStage;
 
 /**
- * Utilities for sending reports.
+ * Mechanism for sending reports.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class Senders {
+public interface Sender {
     /**
      * TODO(spencerpearson).
-     * @param injector TODO(spencerpearson).
-     * @param recipientToFormats TODO(spencerpearson).
+     * @param recipients TODO(spencerpearson).
      * @param formatToRendered TODO(spencerpearson).
      * @return TODO(spencerpearson).
      */
-    public static CompletionStage<Void> send(
-            final Injector injector,
-            final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
-            final ImmutableMap<ReportFormat, RenderedReport> formatToRendered
-    ) {
-        final String typeName = recipientToFormats.keySet().iterator().next().getType().name();
-        final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(typeName)));
-        return sender.send(recipientToFormats, formatToRendered);
-    }
-
-    private Senders() {}
+    CompletionStage<Void> send(
+            ImmutableMultimap<Recipient, ReportFormat> recipients,
+            ImmutableMap<ReportFormat, RenderedReport> formatToRendered
+    );
 }

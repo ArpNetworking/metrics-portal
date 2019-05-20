@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.internal.reports;
+package com.arpnetworking.metrics.portal.reports;
 
 import java.util.concurrent.CompletionStage;
 

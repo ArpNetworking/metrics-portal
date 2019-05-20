@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package models.internal.reports;
+package com.arpnetworking.metrics.portal.reports;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
+import models.internal.reports.ReportFormat;
+import models.internal.reports.ReportSource;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -31,16 +38,30 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class Renderers {
+
     /**
      * TODO(spencerpearson).
      * @param injector The injector to retrieve the appropriate renderer from.
+     * @param formats The {@link ReportFormat}s to be rendered.
      * @param source The {@link ReportSource} to be rendered.
-     * @param format The {@link ReportFormat} to be rendered.
-     * @param <S> The type of {@link ReportSource} to be rendered.
-     * @param <F> The type of {@link ReportFormat} to be rendered.
      * @return TODO(spencerpearson).
      */
-    public static <S extends ReportSource, F extends ReportFormat> CompletionStage<RenderedReport> render(
+    public static CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
+            final Injector injector,
+            final ImmutableSet<ReportFormat> formats,
+            final ReportSource source
+            ) {
+        final Map<ReportFormat, RenderedReport> result = Maps.newHashMap(); // TODO(spencerpearson) -- ConcurrentMap?
+        final CompletableFuture<?>[] resultSettingFutures = formats
+                .stream()
+                .map(format -> render(injector, source, format)
+                        .thenApply(rendered -> result.put(format, rendered))
+                        .toCompletableFuture())
+                .toArray(CompletableFuture[]::new);
+        return CompletableFuture.allOf(resultSettingFutures).thenApply(nothing -> ImmutableMap.copyOf(result));
+    }
+
+    /* package private */ static <S extends ReportSource, F extends ReportFormat> CompletionStage<RenderedReport> render(
             final Injector injector,
             final S source,
             final F format
@@ -52,13 +73,7 @@ public final class Renderers {
 
     private Renderers() {}
 
-    /**
-     * TODO(spencerpearson).
-     * @param source TODO(spencerpearson).
-     * @param format TODO(spencerpearson).
-     * @return TODO(spencerpearson).
-     */
-    private static String getKeyName(final ReportSource source, final ReportFormat format) {
+    /* package private */ static String getKeyName(final ReportSource source, final ReportFormat format) {
         return SOURCE_TYPE_VISITOR.visit(source) + " " + FORMAT_TYPE_VISITOR.visit(format);
     }
 

@@ -18,37 +18,27 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.reports.Renderers;
+import com.arpnetworking.metrics.portal.reports.Senders;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
-import models.internal.reports.RenderedReport;
-import models.internal.reports.Renderers;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
-import models.internal.reports.Senders;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -97,44 +87,18 @@ public final class DefaultReport implements Report {
         return _recipients.asMap();
     }
 
-    private static <K, V> ImmutableSet<ImmutableSet<V>> partition(final Collection<V> values, final Function<V, K> getKey) {
-        final Map<K, Set<V>> result = Maps.newHashMap();
-        for (V value : values) {
-            result.computeIfAbsent(getKey.apply(value), v -> Sets.newHashSet()).add(value);
-        }
-        return ImmutableSet.copyOf(result.values().stream().map(ImmutableSet::copyOf).collect(Collectors.toSet()));
-    }
-
     @Override
     @SuppressFBWarnings(
             value = "NP_NONNULL_PARAM_VIOLATION",
             justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
     )
     public CompletionStage<Result> execute(final Injector injector, final Instant scheduled) {
-        return renderAllFormats(injector).thenCompose(formatToRendered -> sendAll(injector, formatToRendered));
-    }
-
-    private CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAllFormats(final Injector injector) {
-        final Map<ReportFormat, RenderedReport> result = Maps.newHashMap(); // TODO(spencerpearson) -- ConcurrentMap?
-        final CompletableFuture<?>[] resultSettingFutures = getRecipientsByFormat()
-                .keySet()
-                .stream()
-                .map(format -> Renderers.render(injector, getSource(), format)
-                        .thenApply(rendered -> result.put(format, rendered))
-                        .toCompletableFuture())
-                .toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(resultSettingFutures).thenApply(nothing -> ImmutableMap.copyOf(result));
-    }
-
-    private CompletionStage<Result> sendAll(final Injector injector, final ImmutableMap<ReportFormat, RenderedReport> formatToRendered) {
-        final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = _recipients.inverse();
-        final ImmutableSet<Recipient> recipients = recipientToFormats.keySet();
-        final ImmutableSet<ImmutableSet<Recipient>> recipientTypeGroups = partition(recipients, Recipient::getType);
-        final CompletableFuture<?>[] futures = recipientTypeGroups
-                .stream()
-                .map(group -> Senders.send(injector, group, recipientToFormats).toCompletableFuture())
-                .toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(futures).thenApply(nothing -> new Result());
+        return Renderers.renderAll(injector, _recipients.keySet(), getSource())
+                .thenCompose(
+                        formatToRendered -> Senders.sendAll(injector, _recipients.inverse(), formatToRendered)
+                ).thenApply(
+                        nothing -> new Result()
+                );
     }
 
     @Override

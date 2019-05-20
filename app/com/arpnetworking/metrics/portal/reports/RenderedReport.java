@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package models.internal.reports;
+package com.arpnetworking.metrics.portal.reports;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-
-import java.util.concurrent.CompletionStage;
+import models.internal.reports.ReportFormat;
 
 /**
- * Mechanism for sending reports.
+ * TODO(spencerpearson).
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public interface Sender {
+public interface RenderedReport {
     /**
      * TODO(spencerpearson).
-     * @param recipients TODO(spencerpearson).
-     * @param formatToRendered TODO(spencerpearson).
      * @return TODO(spencerpearson).
      */
-    CompletionStage<Void> send(
-            ImmutableMultimap<Recipient, ReportFormat> recipients,
-            ImmutableMap<ReportFormat, RenderedReport> formatToRendered
-    );
+    byte[] toBytes();
+
+    /**
+     * TODO(spencerpearson).
+     * @return TODO(spencerpearson).
+     */
+    ReportFormat getFormat();
 }
