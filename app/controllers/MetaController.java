@@ -15,25 +15,30 @@
  */
 package controllers;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
-import com.arpnetworking.steno.Logger;
-import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
+import models.view.StatusResponse;
+import models.view.VersionInfo;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
@@ -47,13 +52,21 @@ public final class MetaController extends Controller {
     /**
      * Public constructor.
      *
-     * @param healthProvider Instace of {@link HealthProvider}.
+     * @param actorSystem Instance of Akka {@code ActorSystem}.
+     * @param healthProvider Instance of {@link HealthProvider}.
      * @param configuration Play configuration for the app.
+     * @param statusActor Reference to Akka {@link StatusActor}.
      */
     @Inject
-    public MetaController(final HealthProvider healthProvider, final Config configuration) {
+    public MetaController(
+            final ActorSystem actorSystem,
+            final HealthProvider healthProvider,
+            final Config configuration,
+            @Named("status") final ActorRef statusActor) {
+        _actorSystem = actorSystem;
         _healthProvider = healthProvider;
         _configuration = configuration;
+        _statusActor = statusActor;
     }
 
     /**
@@ -64,15 +77,6 @@ public final class MetaController extends Controller {
     public Result config() {
         final JsonNode node = getConfigNode(_configuration);
         return ok(node);
-    }
-
-    /**
-     * Endpoint implementation to retrieve service version as JSON.
-     *
-     * @return Serialized response containing service version.
-     */
-    public Result version() {
-        return ok(VERSION_JSON);
     }
 
     /**
@@ -90,6 +94,32 @@ public final class MetaController extends Controller {
         }
         result.put("status", UNHEALTHY_STATE);
         return internalServerError(result);
+    }
+
+    /**
+     * Endpoint implementation to retrieve service status as JSON.
+     *
+     * @return Serialized response containing service status.
+     */
+    public CompletionStage<Result> status() {
+        return PatternsCS.ask(
+                _statusActor,
+                new StatusActor.StatusRequest(),
+                Duration.ofSeconds(1))
+                .exceptionally(t -> new StatusResponse.Builder()
+                        .setLocalAddress(_actorSystem.provider().getDefaultAddress())
+                        .build())
+                .thenApply(status -> ok(OBJECT_MAPPER.<JsonNode>valueToTree(status)));
+
+    }
+
+    /**
+     * Endpoint implementation to retrieve service version as JSON.
+     *
+     * @return Serialized response containing service version.
+     */
+    public Result version() {
+        return ok(OBJECT_MAPPER.<JsonNode>valueToTree(VersionInfo.getInstance()));
     }
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
@@ -139,27 +169,12 @@ public final class MetaController extends Controller {
         }
     }
 
+    private final ActorSystem _actorSystem;
     private final HealthProvider _healthProvider;
     private final Config _configuration;
+    private final ActorRef _statusActor;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MetaController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
-    private static final JsonNode VERSION_JSON;
-
-    static {
-        JsonNode versionJson = JsonNodeFactory.instance.objectNode();
-        try {
-            versionJson = OBJECT_MAPPER.readTree(
-                    Resources.toString(
-                            Resources.getResource("version.json"),
-                            Charsets.UTF_8));
-            // CHECKSTYLE.OFF: IllegalCatch - Prevent program shutdown
-        } catch (final Exception e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error("Resource load failure; resource=version.json", e);
-        }
-        VERSION_JSON = versionJson;
-    }
 }

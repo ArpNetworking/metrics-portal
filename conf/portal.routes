@@ -22,8 +22,9 @@ GET        /                                    controllers.Assets.at(path="/pub
 
 # Meta
 GET        /config                              controllers.MetaController.config()
-GET        /version                             controllers.MetaController.version()
 GET        /ping                                controllers.MetaController.ping()
+GET        /status                              controllers.MetaController.status()
+GET        /version                             controllers.MetaController.version()
 
 # Telemetry proxy
 GET        /v1/proxy/stream                     controllers.ProxyController.stream(uri: String ?= null)
