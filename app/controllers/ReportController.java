@@ -21,7 +21,6 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -69,15 +68,6 @@ public class ReportController extends Controller {
         this(configuration.getInt("reports.limit"), reportRepository, organizationRepository);
     }
 
-    /* package-private */ static models.internal.reports.Report deserializeReport(final String json) throws IOException {
-        LOGGER.warn().setMessage("deserializing report").addData("data", json).log();
-        return OBJECT_MAPPER.readValue(json, models.view.reports.Report.class).toInternal();
-    }
-
-    /* package-private */ static String serializeReport(final models.internal.reports.Report report) throws IOException {
-        return OBJECT_MAPPER.writeValueAsString(models.view.reports.Report.fromInternal(report));
-    }
-
     /**
      * Updates a report within the report repository, or creates one if it doesn't already exist.
      *
@@ -86,7 +76,7 @@ public class ReportController extends Controller {
     public Result addOrUpdate() {
         final Report report;
         try {
-            report = deserializeReport(request().body().asText());
+            report = OBJECT_MAPPER.treeToValue(request().body().asJson(), models.view.reports.Report.class).toInternal();
         } catch (final IOException e) {
             LOGGER.error()
                     .setMessage("Failed to deserialize a report.")

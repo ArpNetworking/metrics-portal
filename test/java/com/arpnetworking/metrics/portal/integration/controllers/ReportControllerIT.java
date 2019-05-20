@@ -23,6 +23,7 @@ import com.google.common.io.Resources;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
@@ -44,10 +45,10 @@ public final class ReportControllerIT {
 
     @Test
     public void testCreateValidCase() throws IOException {
-        HttpPut request = new HttpPut(WebServerHelper.getUri("/v1/reports"));
-        request.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        request.setEntity(new StringEntity(loadResource("testCreateValidCase")));
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
+        HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
+        putRequest.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+        putRequest.setEntity(new StringEntity(loadResource("testCreateValidCase")));
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(putRequest)) {
             assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
         }
 
@@ -55,8 +56,8 @@ public final class ReportControllerIT {
                 .readValue(loadResource("testCreateValidCase"), models.view.reports.Report.class)
                 .getId()
                 .toString();
-        request = new HttpPut(WebServerHelper.getUri("/v1/reports/" + reportId));
-        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
+        HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
             assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
         }
 
