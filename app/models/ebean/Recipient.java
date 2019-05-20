@@ -15,9 +15,10 @@
  */
 package models.ebean;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.UpdatedTimestamp;
-import models.internal.impl.DefaultEmailRecipient;
+import models.internal.impl.DefaultRecipient;
 
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -29,7 +30,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PersistenceException;
 import javax.persistence.Table;
 
 /**
@@ -41,7 +41,7 @@ import javax.persistence.Table;
  * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
- * @see Recipient.RecipientType
+ * @see RecipientType
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
@@ -76,13 +76,14 @@ public final class Recipient {
     }
 
     /**
-     * Create a new Recipient with the given emailAddress.
+     * Create a new Recipient with the given address.
      *
-     * @param emailAddress The address of the recipient
+     * @param type The {@link RecipientType} of the recipient
+     * @param address The address of the recipient
      * @return A new email recipient.
      */
-    public static Recipient newEmailRecipient(final String emailAddress) {
-        return new Recipient(RecipientType.EMAIL, emailAddress);
+    public static Recipient newRecipient(final RecipientType type, final String address) {
+        return new Recipient(type, address);
     }
 
     public void setUuid(final UUID value) {
@@ -138,24 +139,13 @@ public final class Recipient {
         return Objects.hash(id, uuid, address, type);
     }
 
-    /**
-     * The type of report recipient.
-     */
-    public enum RecipientType {
-        /**
-         * An email address.
-         */
-        EMAIL
-    }
 
     /* package */ models.internal.reports.Recipient toInternal() {
-        if (type == RecipientType.EMAIL) {
-            return new DefaultEmailRecipient.Builder()
-                    .setId(uuid)
-                    .setAddress(address)
-                    .build();
-        }
-        throw new PersistenceException("recipient type does not have an internal representation: " + type);
+        return new DefaultRecipient.Builder()
+                .setId(uuid)
+                .setType(type)
+                .setAddress(address)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

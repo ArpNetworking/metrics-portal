@@ -17,8 +17,8 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import models.internal.reports.Recipient;
-import net.sf.oval.constraint.Email;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Objects;
@@ -29,12 +29,14 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DefaultEmailRecipient implements Recipient {
+public final class DefaultRecipient implements Recipient {
     private final UUID _id;
+    private final RecipientType _type;
     private final String _address;
 
-    private DefaultEmailRecipient(final Builder builder) {
+    private DefaultRecipient(final Builder builder) {
         _id = builder._id;
+        _type = builder._type;
         _address = builder._address;
     }
 
@@ -44,13 +46,13 @@ public final class DefaultEmailRecipient implements Recipient {
     }
 
     @Override
-    public String getAddress() {
-        return _address;
+    public RecipientType getType() {
+        return _type;
     }
 
     @Override
-    public <T> T accept(final Visitor<T> visitor) {
-        return visitor.visit(this);
+    public String getAddress() {
+        return _address;
     }
 
     @Override
@@ -61,7 +63,7 @@ public final class DefaultEmailRecipient implements Recipient {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final DefaultEmailRecipient that = (DefaultEmailRecipient) o;
+        final DefaultRecipient that = (DefaultRecipient) o;
         return _id.equals(that._id)
                 && _address.equals(that._address);
     }
@@ -72,12 +74,13 @@ public final class DefaultEmailRecipient implements Recipient {
     }
 
     /**
-     * Builder implementation that constructs {@code DefaultEmailRecipient}.
+     * Builder implementation that constructs {@code DefaultRecipient}.
      */
-    public static final class Builder extends OvalBuilder<DefaultEmailRecipient> {
+    public static final class Builder extends OvalBuilder<DefaultRecipient> {
         @NotNull
         private UUID _id;
-        @Email
+        @NotNull
+        private RecipientType _type;
         @NotNull
         private String _address;
 
@@ -85,7 +88,7 @@ public final class DefaultEmailRecipient implements Recipient {
          * Default constructor.
          */
         public Builder() {
-            super(DefaultEmailRecipient::new);
+            super(DefaultRecipient::new);
         }
 
         /**
@@ -96,6 +99,17 @@ public final class DefaultEmailRecipient implements Recipient {
          */
         public Builder setId(final UUID id) {
             _id = id;
+            return this;
+        }
+
+        /**
+         * Set the recipient's type. Required. Cannot be null.
+         *
+         * @param type the email type
+         * @return this instance of {@code Builder}
+         */
+        public Builder setType(final RecipientType type) {
+            _type = type;
             return this;
         }
 

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
@@ -28,9 +29,9 @@ import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultAlert;
-import models.internal.impl.DefaultEmailRecipient;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
+import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
@@ -134,8 +135,9 @@ public final class TestBeanFactory {
                 .setName(TEST_NAME + UUID.randomUUID().toString())
                 .setRecipients(ImmutableSetMultimap.of(
                         format,
-                        new DefaultEmailRecipient.Builder()
+                        new DefaultRecipient.Builder()
                                 .setId(UUID.randomUUID())
+                                .setType(RecipientType.EMAIL)
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
                 .setReportSource(
@@ -155,8 +157,9 @@ public final class TestBeanFactory {
      * @return a report recipient
      */
     public static Recipient createRecipient() {
-        return new DefaultEmailRecipient.Builder()
+        return new DefaultRecipient.Builder()
                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
+                .setType(RecipientType.EMAIL)
                 .setId(UUID.randomUUID())
                 .build();
     }
