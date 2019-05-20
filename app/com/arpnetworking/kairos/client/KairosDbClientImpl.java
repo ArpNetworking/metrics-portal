@@ -139,7 +139,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
                         throw new KairosDbRequestException(
                                 httpResponse.status().intValue(),
                                 httpResponse.status().reason(),
-                                request.getUri());
+                                URI.create(request.getUri().toString()));
                     }
                     return httpResponse.entity()
                             .toStrict(_readTimeout.toMillis(), _materializer)

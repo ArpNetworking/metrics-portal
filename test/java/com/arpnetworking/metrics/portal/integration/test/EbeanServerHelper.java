@@ -24,6 +24,7 @@ import io.ebean.config.ServerConfig;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
@@ -46,7 +47,7 @@ public final class EbeanServerHelper {
             // Report.java:188 - The association is bound to the default server.
             ebeanServer = createEbeanServer(
                     getEnvOrDefault("PG_HOST", "localhost"),
-                    DEFAULT_POSTGRES_PORT,
+                    getEnvOrDefault("PG_PORT", DEFAULT_POSTGRES_PORT, Integer::parseInt),
                     METRICS_DATABASE_NAME,
                     METRICS_DATABASE_USERNAME,
                     METRICS_DATABASE_PASSWORD,
@@ -86,8 +87,12 @@ public final class EbeanServerHelper {
     }
 
     private static String getEnvOrDefault(final String name, final String defaultValue) {
+        return getEnvOrDefault(name, defaultValue, Function.identity());
+    }
+
+    private static <T> T getEnvOrDefault(final String name, final T defaultValue, final Function<String, T> map) {
         @Nullable final String value = System.getenv(name);
-        return value == null ? defaultValue : value;
+        return value == null ? defaultValue : map.apply(value);
     }
 
     private EbeanServerHelper() {}
@@ -96,6 +101,6 @@ public final class EbeanServerHelper {
     private static final String METRICS_DATABASE_NAME = "metrics";
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";
     private static final String METRICS_DATABASE_PASSWORD = "metrics_app_password";
-    private static final int DEFAULT_POSTGRES_PORT = 5432;
+    private static final int DEFAULT_POSTGRES_PORT = 6432;
     private static final int DEFAULT_POOL_SIZE = 50;
 }

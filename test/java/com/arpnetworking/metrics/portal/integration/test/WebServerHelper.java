@@ -15,11 +15,16 @@
  */
 package com.arpnetworking.metrics.portal.integration.test;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.java.util.function.SingletonSupplier;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
@@ -50,12 +55,55 @@ public final class WebServerHelper {
         final StringBuilder urlBuilder = new StringBuilder("http://");
         urlBuilder.append(getEnvOrDefault("METRICS_PORTAL_HOST", "localhost"));
         urlBuilder.append(":");
-        urlBuilder.append(getEnvOrDefault("METRICS_PORTA_PORT", "8080"));
+        urlBuilder.append(getEnvOrDefault("METRICS_PORTAL_PORT", "8080"));
         if (!path.startsWith("/")) {
             urlBuilder.append("/");
         }
         urlBuilder.append(path);
         return urlBuilder.toString();
+    }
+
+    /**
+     * Return the response content as a {@code JsonNode}.
+     *
+     * @param response the {@code CloseableHttpResponse} to read
+     * @return response content as a {@code JsonNode}
+     * @throws IOException if reading the response content fails
+     */
+    public static JsonNode readContentAsJson(final CloseableHttpResponse response) throws IOException {
+        return ObjectMapperFactory.getInstance().readTree(response.getEntity().getContent());
+    }
+
+    /**
+     * Return the response content as a {@code String}.
+     *
+     * @param response the {@code CloseableHttpResponse} to read
+     * @return response content as a {@code String}
+     * @throws IOException if reading the response content fails
+     */
+    public static String readContentAsString(final CloseableHttpResponse response) throws IOException {
+        return readContent(response).toString("UTF-8");
+    }
+
+    /**
+     * Return the response content as a {@code byte[]}.
+     *
+     * @param response the {@code CloseableHttpResponse} to read
+     * @return response content as a {@code byte[]}
+     * @throws IOException if reading the response content fails
+     */
+    public static byte[] readContentAsBytes(final CloseableHttpResponse response) throws IOException {
+        return readContent(response).toByteArray();
+    }
+
+    private static ByteArrayOutputStream readContent(final CloseableHttpResponse response) throws IOException {
+        final ByteArrayOutputStream result = new ByteArrayOutputStream();
+        final byte[] buffer = new byte[1024];
+        int length;
+        while ((length = response.getEntity().getContent().read(buffer)) != -1) {
+            result.write(buffer, 0, length);
+        }
+        return result;
     }
 
     private static String getEnvOrDefault(final String name, final String defaultValue) {
@@ -76,6 +124,7 @@ public final class WebServerHelper {
 
         return HttpClients.custom()
                 .setConnectionManager(clientManagerSupplier.get())
+                .disableCookieManagement()
                 .build();
     });
 }

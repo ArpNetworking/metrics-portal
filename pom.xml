@@ -28,7 +28,7 @@
   <packaging>play2</packaging>
   <name>Metrics Portal</name>
   <description>Web user interface for managing the metrics stack.</description>
-  <version>0.9.6-SNAPSHOT</version>
+  <version>0.9.7-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -188,6 +188,10 @@
       <resource>
         <directory>${project.basedir}/public</directory>
         <targetPath>public</targetPath>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/main/resources</directory>
+        <filtering>true</filtering>
       </resource>
     </resources>
     <testResources>
@@ -525,7 +529,7 @@
                   <alias>postgres</alias>
                 </network>
                 <ports>
-                  <port>+postgres.host:5432:5432</port>
+                  <port>+postgres.host:6432:5432</port>
                 </ports>
                 <volumes>
                   <bind>
@@ -558,7 +562,7 @@
                 <skip>${docker.skip.metrics-portal}</skip>
                 <env>
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
-                  <JAVA_OPTS>${dockerJavaOptions}</JAVA_OPTS>
+                  <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
                 </env>
                 <dependsOn>
