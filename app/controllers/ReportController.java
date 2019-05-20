@@ -21,6 +21,8 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
@@ -35,7 +37,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -75,10 +76,11 @@ public class ReportController extends Controller {
     public Result addOrUpdate() {
         final Report report;
         try {
-            report = OBJECT_MAPPER.treeToValue(request().body().asJson(), models.view.reports.Report.class).toInternal();
-        } catch (final IOException e) {
+            final JsonNode body = request().body().asJson();
+            report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
+        } catch (final JsonProcessingException e) {
             LOGGER.error()
-                    .setMessage("Failed to deserialize a report.")
+                    .setMessage("Failed to build a report.")
                     .setThrowable(e)
                     .log();
             return badRequest("Invalid request body.");
