@@ -17,10 +17,12 @@ package models.view.scheduling;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.base.MoreObjects;
 import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
 
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * View model of {@link com.arpnetworking.metrics.portal.scheduling.Schedule}. Play view models are mutable.
@@ -66,6 +68,30 @@ public abstract class Schedule {
         } else {
             throw new IllegalArgumentException("Cannot convert class " + schedule.getClass() + " to a view model.");
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Schedule)) {
+            return false;
+        }
+        final Schedule schedule = (Schedule) o;
+        return _runAtAndAfter.equals(schedule._runAtAndAfter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_runAtAndAfter);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_runAtAndAfter", _runAtAndAfter)
+                .toString();
     }
 
     private Instant _runAtAndAfter;

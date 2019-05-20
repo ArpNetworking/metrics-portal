@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import models.view.reports.Report;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -52,13 +53,13 @@ public final class ReportControllerIT {
             assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
         }
 
-        final String reportId = OBJECT_MAPPER
-                .readValue(loadResource("testCreateValidCase"), models.view.reports.Report.class)
-                .getId()
-                .toString();
+        final Report writtenReport = OBJECT_MAPPER.readValue(loadResource("testCreateValidCase"), models.view.reports.Report.class);
+        final String reportId = writtenReport.getId().toString();
         HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
-            assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
+            assertEquals(Http.Status.OK, response.getStatusLine().getStatusCode());
+            final Report returnedReport = OBJECT_MAPPER.readValue(response.getEntity().getContent(), models.view.reports.Report.class);
+            assertEquals(writtenReport, returnedReport);
         }
 
     }
