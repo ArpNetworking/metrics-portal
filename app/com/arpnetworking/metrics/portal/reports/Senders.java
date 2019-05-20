@@ -38,7 +38,8 @@ import java.util.stream.Collectors;
 public final class Senders {
 
     /**
-     * TODO(spencerpearson).
+     * Send a report (possibly rendered into many formats) to many recipients.
+     *
      * @param injector TODO(spencerpearson).
      * @param recipientToFormats TODO(spencerpearson).
      * @param formatToRendered TODO(spencerpearson).

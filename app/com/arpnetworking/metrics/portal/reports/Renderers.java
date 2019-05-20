@@ -40,8 +40,9 @@ import java.util.concurrent.CompletionStage;
 public final class Renderers {
 
     /**
-     * TODO(spencerpearson).
-     * @param injector The injector to retrieve the appropriate renderer from.
+     * Renders a source into each of several formats, yielding a map from each format to that rendering.
+     *
+     * @param injector The injector to retrieve the appropriate renderers from.
      * @param formats The {@link ReportFormat}s to be rendered.
      * @param source The {@link ReportSource} to be rendered.
      * @return TODO(spencerpearson).
