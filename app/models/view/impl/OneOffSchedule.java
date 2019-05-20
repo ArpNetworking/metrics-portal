@@ -15,7 +15,6 @@
  */
 package models.view.impl;
 
-import com.google.common.base.MoreObjects;
 import models.view.scheduling.Schedule;
 
 /**

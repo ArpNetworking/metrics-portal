@@ -19,8 +19,6 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.view.reports.ReportFormat;
 
-import java.util.Objects;
-
 /**
  * An HTML report format.
  *
@@ -47,7 +45,7 @@ public final class HtmlReportFormat implements ReportFormat {
 
     @Override
     public int hashCode() {
-        return 984576476;
+        return 984576476; // keyboard mash
     }
 
     private HtmlReportFormat() {}

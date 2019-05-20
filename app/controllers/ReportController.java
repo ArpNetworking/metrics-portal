@@ -21,7 +21,6 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
