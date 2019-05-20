@@ -106,6 +106,11 @@ public final class WebPageReportSource implements ReportSource {
     }
 
     @Override
+    public <T> T accept(final Visitor<T> sourceVisitor) {
+        return sourceVisitor.visit(this);
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (this == o) {
             return true;

@@ -15,8 +15,8 @@
  */
 package models.internal.scheduling;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.google.inject.Injector;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -56,10 +56,10 @@ public interface Job<T> {
     /**
      * Starts a particular instant's execution of the job running.
      *
-     * @param scheduler The Akka actor that's scheduling this job to be run.
+     * @param injector A Guice injector to provide dependencies.
      * @param scheduled The instant that the job is running for. (Should probably have come from {@code getSchedule().nextRun(...)}.)
      * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
      */
-    CompletionStage<T> execute(ActorRef scheduler, Instant scheduled);
+    CompletionStage<? extends T> execute(Injector injector, Instant scheduled);
 }
 

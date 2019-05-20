@@ -16,6 +16,8 @@
 
 package models.internal.reports;
 
+import models.internal.impl.ChromeScreenshotReportSource;
+
 import java.util.UUID;
 
 /**
@@ -30,5 +32,57 @@ public interface ReportSource {
      * @return the id of this report source.
      */
     UUID getId();
-}
 
+    /**
+     * Applies a {@code Visitor} to this source. This should delegate the to the appropriate {@code Visitor#visit} overload.
+     *
+     * @param sourceVisitor the visitor
+     * @param <T> the return type of the visitor. Use {@link Void} for visitors that do not need to return a result.
+     * @return The result of applying the visitor.
+     */
+    <T> T accept(Visitor<T> sourceVisitor);
+
+    /**
+     * {@code Visitor} abstracts over operations which could potentially handle various
+     * implementations of ReportFormat.
+     *
+     * @param <T> the return type of the visitor.
+     */
+    interface Visitor<T> {
+        /**
+         * Visit a {@link ChromeScreenshotReportSource}.
+         *
+         * @param source The source to visit.
+         * @return The result of applying the visitor.
+         */
+        T visit(ChromeScreenshotReportSource source);
+
+        /**
+         * Convenience method equivalent to {@code format.accept(this) }.
+         *
+         * @param format The format to visit.
+         * @return The result of applying the visitor
+         */
+        default T visit(ReportSource format) {
+            return format.accept(this);
+        }
+    }
+}
+//
+//class ____ {
+//    interface RenderedReport { byte[] toBytes(); }
+//    interface Format {}
+//    interface Source {}
+//    interface Renderer<S extends Source, F extends Format> {
+//        CompletionStage<RenderedReport> render(S source, F format);
+//    }
+//    class Report {
+//        final Source _source;
+//        final Format _format;
+//        CompletionStage<Void> execute(final Injector injector) {
+//            final Renderer renderer = injector.getInstance(Key.get(Renderer.class,
+//            Names.named(_source.getSourceTypeName() + " " + _format.getFormatTypeName())));
+//            return renderer.render(_source, _format);
+//        }
+//    }
+//}
