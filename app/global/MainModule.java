@@ -245,7 +245,10 @@ public class MainModule extends AbstractModule {
                 new ParallelLeastShardAllocationStrategy(
                         100,
                         3,
-                        Optional.of(system.actorSelection("/user/cluster-status"))),
+                        // TODO(ville): Link the shard allocation strategy to the status cache.
+                        // 
+                        Optional.empty()),
+                        //Optional.of(system.actorSelection("/user/cluster-status")),
                 PoisonPill.getInstance());
     }
 
