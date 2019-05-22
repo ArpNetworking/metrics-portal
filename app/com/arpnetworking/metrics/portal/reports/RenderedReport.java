@@ -46,12 +46,6 @@ public interface RenderedReport {
 
     /**
      * TODO(spencerpearson).
-     * @return The MIME type of the data returned by {@code toBytes()}.
-     */
-    String getMimeType();
-
-    /**
-     * TODO(spencerpearson).
      * @return TODO(spencerpearson).
      */
     ReportFormat getFormat();

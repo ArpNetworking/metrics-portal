@@ -45,11 +45,6 @@ public final class DefaultRenderedReport implements RenderedReport {
     }
 
     @Override
-    public String getMimeType() {
-        return _mimeType;
-    }
-
-    @Override
     public ReportFormat getFormat() {
         return _format;
     }
@@ -58,7 +53,6 @@ public final class DefaultRenderedReport implements RenderedReport {
     private final byte[] _bytes;
     private final Instant _scheduledFor;
     private final Instant _generatedAt;
-    private final String _mimeType;
     private final ReportFormat _format;
 
     /**
@@ -106,17 +100,6 @@ public final class DefaultRenderedReport implements RenderedReport {
         }
 
         /**
-         * Set the report mimeType. Required. Cannot be null.
-         *
-         * @param mimeType The report mimeType.
-         * @return This instance of {@code Builder}.
-         */
-        public Builder setMimeType(final String mimeType) {
-            _mimeType = mimeType;
-            return this;
-        }
-
-        /**
          * Set the report format. Required. Cannot be null.
          *
          * @param format The report format.
@@ -134,8 +117,6 @@ public final class DefaultRenderedReport implements RenderedReport {
         @NotNull
         private Instant _generatedAt;
         @NotNull
-        private String _mimeType;
-        @NotNull
         private ReportFormat _format;
     }
 
@@ -143,7 +124,6 @@ public final class DefaultRenderedReport implements RenderedReport {
         _bytes = builder._bytes;
         _scheduledFor = builder._scheduledFor;
         _generatedAt = builder._generatedAt;
-        _mimeType = builder._mimeType;
         _format = builder._format;
     }
 }
