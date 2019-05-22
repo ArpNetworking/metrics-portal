@@ -20,8 +20,6 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.utility.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import models.internal.scheduling.Period;
 import models.view.impl.ChromeScreenshotReportSource;
 import models.view.impl.HtmlReportFormat;
@@ -35,13 +33,11 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.time.Duration;
 import java.time.ZoneId;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests for [de]serializing Report-relevant types.

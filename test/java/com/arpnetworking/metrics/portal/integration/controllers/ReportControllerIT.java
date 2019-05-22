@@ -18,12 +18,8 @@ package com.arpnetworking.metrics.portal.integration.controllers;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
-import com.arpnetworking.utility.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import models.view.reports.Report;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -34,10 +30,8 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import java.io.IOException;
-import java.net.URL;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * Integration tests for {@code ReportController}.

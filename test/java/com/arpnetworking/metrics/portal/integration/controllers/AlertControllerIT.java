@@ -20,8 +20,6 @@ import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.utility.ResourceHelper;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import io.ebean.EbeanServer;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -31,7 +29,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 import org.junit.After;
 import org.junit.Before;
@@ -39,12 +36,10 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * Integration tests for {@code AlertController}.
