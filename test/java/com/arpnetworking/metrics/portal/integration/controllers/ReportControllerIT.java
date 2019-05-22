@@ -46,7 +46,7 @@ public final class ReportControllerIT {
 
     @Test
     public void testCreateValid() throws IOException {
-        HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
+        final HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
         putRequest.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
         putRequest.setEntity(new StringEntity(loadResource("testCreateValid")));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(putRequest)) {
@@ -55,7 +55,7 @@ public final class ReportControllerIT {
 
         final Report writtenReport = OBJECT_MAPPER.readValue(loadResource("testCreateValid"), models.view.reports.Report.class);
         final String reportId = writtenReport.getId().toString();
-        HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
+        final HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
             assertEquals(Http.Status.OK, response.getStatusLine().getStatusCode());
             final Report returnedReport = OBJECT_MAPPER.readValue(response.getEntity().getContent(), models.view.reports.Report.class);

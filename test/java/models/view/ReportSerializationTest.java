@@ -38,7 +38,9 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.ZoneId;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for [de]serializing Report-relevant types.
@@ -57,7 +59,10 @@ public class ReportSerializationTest {
 
     @Test
     public void testValidPeriodicSchedule() throws IOException {
-        final PeriodicSchedule schedule = (PeriodicSchedule) OBJECT_MAPPER.readValue(loadResource("testValidPeriodicSchedule"), Schedule.class);
+        final PeriodicSchedule schedule = (PeriodicSchedule) OBJECT_MAPPER.readValue(
+                loadResource("testValidPeriodicSchedule"),
+                Schedule.class
+        );
         assertEquals(Period.DAILY, schedule.getPeriod());
         assertEquals(Duration.parse("PT4H"), schedule.getOffset());
         assertEquals(ZoneId.of("America/Los_Angeles"), schedule.getZone());
@@ -71,7 +76,7 @@ public class ReportSerializationTest {
         assertEquals(new HtmlReportFormat(), recipient.getFormat());
     }
 
-    @Test(expected=com.fasterxml.jackson.databind.exc.InvalidFormatException.class)
+    @Test(expected = com.fasterxml.jackson.databind.exc.InvalidFormatException.class)
     public void testInvalidRecipientNoSuchType() throws IOException {
         OBJECT_MAPPER.readValue(loadResource("testInvalidRecipientNoSuchType"), Recipient.class);
     }
