@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports;
 
 import models.internal.reports.ReportFormat;
 
+import java.io.InputStream;
 import java.time.Instant;
 
 /**
@@ -39,7 +40,7 @@ public interface RenderedReport {
      *
      * @return The bytes.
      */
-    byte[] toBytes();
+    InputStream getBytes();
 
     /**
      * The instant that the report was scheduled for.

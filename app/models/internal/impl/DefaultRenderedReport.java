@@ -21,6 +21,8 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.NotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.time.Instant;
 
 /**
@@ -30,8 +32,8 @@ import java.time.Instant;
  */
 public final class DefaultRenderedReport implements RenderedReport {
     @Override
-    public byte[] toBytes() {
-        return _bytes;
+    public InputStream getBytes() {
+        return new ByteArrayInputStream(_bytes);
     }
 
     @Override
