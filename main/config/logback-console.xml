@@ -21,6 +21,7 @@
       <compressLoggerName>true</compressLoggerName>
       <jacksonModule class="com.fasterxml.jackson.datatype.guava.GuavaModule" />
       <jacksonModule class="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" />
+      <jacksonModule class="com.arpnetworking.commons.jackson.databind.module.akka.AkkaLoggingModule" />
       <injectBeanIdentifier>true</injectBeanIdentifier>
     </encoder>
   </appender>
