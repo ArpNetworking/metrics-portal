@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
 
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class ReportSerializationTest {
+public final class ReportSerializationTest {
     @Test
     public void testValidReport() throws IOException, URISyntaxException {
         final Report report = OBJECT_MAPPER.readValue(loadResource("testValidReport"), Report.class);
