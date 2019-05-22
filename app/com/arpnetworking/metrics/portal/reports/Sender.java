@@ -29,10 +29,11 @@ import java.util.concurrent.CompletionStage;
  */
 public interface Sender {
     /**
-     * TODO(spencerpearson).
-     * @param recipient TODO(spencerpearson).
-     * @param formatToRendered TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * Send some {@link RenderedReport} documents to a {@link Recipient}.
+     *
+     * @param recipient The recipient to notify.
+     * @param formatToRendered The reports to send.
+     * @return A CompletionStage that completes when the transmission has completed.
      */
     CompletionStage<Void> send(
             Recipient recipient,

@@ -40,18 +40,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * TODO(spencerpearson).
+ * Utilities for execution of {@link Report}s.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class ReportExecution {
 
     /**
-     * TODO(spencerpearson).
-     * @param report TODO(spencerpearson).
-     * @param injector TODO(spencerpearson).
-     * @param scheduled TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * Render and send a report.
+     *
+     * @param report The report to render&execute.
+     * @param injector A Guice injector to pull dependencies out of.
+     * @param scheduled The instant the report was scheduled for.
+     * @return A CompletionStage that completes when sending has completed for every recipient.
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()

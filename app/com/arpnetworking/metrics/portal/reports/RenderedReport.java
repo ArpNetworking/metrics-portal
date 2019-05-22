@@ -21,32 +21,37 @@ import models.internal.reports.ReportFormat;
 import java.time.Instant;
 
 /**
- * TODO(spencerpearson).
+ * A document containing the results of a particular rendering of a particular {@link models.internal.reports.Report}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface RenderedReport {
+
     /**
-     * TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * The format of the report.
+     *
+     * @return The format.
+     */
+    ReportFormat getFormat();
+
+    /**
+     * The raw bytes of the document.
+     *
+     * @return The bytes.
      */
     byte[] toBytes();
 
     /**
-     * TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * The instant that the report was scheduled for.
+     *
+     * @return The instant.
      */
     Instant getScheduledFor();
 
     /**
-     * TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * The instant that the report was actually generated. (Ideally, this should not affect the report content.)
+     *
+     * @return The instant.
      */
     Instant getGeneratedAt();
-
-    /**
-     * TODO(spencerpearson).
-     * @return TODO(spencerpearson).
-     */
-    ReportFormat getFormat();
 }

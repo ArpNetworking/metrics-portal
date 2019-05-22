@@ -23,21 +23,21 @@ import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**
+ * A mechanism for rendering a particular kind of {@link ReportSource} into a particular kind of {@link ReportFormat}.
  *
- * TODO(spencerpearson).
- *
- * @param <S> TODO(spencerpearson).
- * @param <F> TODO(spencerpearson).
+ * @param <S> The type of {@link ReportSource} to render.
+ * @param <F> The type of {@link ReportFormat} to render into.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface Renderer<S extends ReportSource, F extends ReportFormat> {
     /**
-     * TODO(spencerpearson).
-     * @param source TODO(spencerpearson).
-     * @param format TODO(spencerpearson).
-     * @param scheduled TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * Render a ReportSource.
+     *
+     * @param source The source to render.
+     * @param format The format to render into.
+     * @param scheduled The instant that the report-job was scheduled for.
+     * @return A CompletionStage that completes when the report has been rendered.
      */
     CompletionStage<RenderedReport> render(S source, F format, Instant scheduled);
 }

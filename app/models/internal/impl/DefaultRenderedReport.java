@@ -24,7 +24,7 @@ import net.sf.oval.constraint.NotNull;
 import java.time.Instant;
 
 /**
- * TODO(spencerpearson).
+ * A document containing the results of a particular rendering of a particular {@link models.internal.reports.Report}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
