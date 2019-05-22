@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.reports;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
+import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -35,7 +36,8 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * TODO(spencerpearson).
      * @param source TODO(spencerpearson).
      * @param format TODO(spencerpearson).
+     * @param scheduled TODO(spencerpearson).
      * @return TODO(spencerpearson).
      */
-    CompletionStage<RenderedReport> render(S source, F format);
+    CompletionStage<RenderedReport> render(S source, F format, Instant scheduled);
 }

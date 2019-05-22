@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 
@@ -31,12 +30,12 @@ import java.util.concurrent.CompletionStage;
 public interface Sender {
     /**
      * TODO(spencerpearson).
-     * @param recipients TODO(spencerpearson).
+     * @param recipient TODO(spencerpearson).
      * @param formatToRendered TODO(spencerpearson).
      * @return TODO(spencerpearson).
      */
     CompletionStage<Void> send(
-            ImmutableMultimap<Recipient, ReportFormat> recipients,
+            Recipient recipient,
             ImmutableMap<ReportFormat, RenderedReport> formatToRendered
     );
 }

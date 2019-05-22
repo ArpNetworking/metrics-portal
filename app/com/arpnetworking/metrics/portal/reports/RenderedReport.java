@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.reports;
 
 import models.internal.reports.ReportFormat;
 
+import java.time.Instant;
+
 /**
  * TODO(spencerpearson).
  *
@@ -32,9 +34,21 @@ public interface RenderedReport {
 
     /**
      * TODO(spencerpearson).
+     * @return TODO(spencerpearson).
+     */
+    Instant getScheduledFor();
+
+    /**
+     * TODO(spencerpearson).
+     * @return TODO(spencerpearson).
+     */
+    Instant getGeneratedAt();
+
+    /**
+     * TODO(spencerpearson).
      * @return The MIME type of the data returned by {@code toBytes()}.
      */
-    String mimeType();
+    String getMimeType();
 
     /**
      * TODO(spencerpearson).
