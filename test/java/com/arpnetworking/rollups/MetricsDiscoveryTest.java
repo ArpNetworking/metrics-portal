@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -86,8 +87,8 @@ public final class MetricsDiscoveryTest {
         _system = null;
     }
 
-    private ActorRef createActor() {
-        return _system.actorOf(GuiceActorCreator.props(_injector, MetricsDiscovery.class));
+    private TestActorRef<MetricsDiscovery> createActor() {
+        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, MetricsDiscovery.class));
     }
 
     @Test
@@ -119,9 +120,11 @@ public final class MetricsDiscoveryTest {
                                         "cmf/test/foobar"
                                 ))
                                 .build()));
+
         new TestKit(_system) {{
-            final ActorRef actor = createActor();
+            final TestActorRef<MetricsDiscovery> actor = createActor();
             final ActorRef testActor = getTestActor();
+
             awaitAssert(() -> {
                 actor.tell(MetricFetch.getInstance(), testActor);
                 return expectMsg("metric1");

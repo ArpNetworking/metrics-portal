@@ -26,6 +26,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.Sets;
 import com.typesafe.config.Config;
 import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
@@ -36,6 +37,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -62,6 +64,10 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                             _refreshDeadline = _fetchInterval.fromNow();
                             fetchMetricsForRollup();
                         })
+                .matchEquals(
+                        RECORD_METRICS_MSG,
+                        work -> _periodicMetrics.recordGauge("rollup/discovery/queue_size", _metricsSet.size())
+                )
                 .match(KairosMetricNamesQueryResponse.class, this::updateMetricsSet)
                 .match(
                         Status.Failure.class,
@@ -97,6 +103,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         _setIterator = _metricsSet.iterator();
         _refreshDeadline = Deadline.now();
         getSelf().tell(FETCH_MSG, ActorRef.noSender());
+        getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
 
     private void fetchMetricsForRollup() {
@@ -105,9 +112,9 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                 _kairosDbClient.queryMetricNames()
                 .whenComplete((response, failure) -> {
                     // Record metrics
-                    _periodicMetrics.recordCounter("rollup/metric_names/success", failure == null ? 1 : 0);
+                    _periodicMetrics.recordCounter("rollup/discovery/metric_names/success", failure == null ? 1 : 0);
                     _periodicMetrics.recordTimer(
-                            "rollup/metric_names/request",
+                            "rollup/discovery/metric_names/latency",
                             System.nanoTime() - startTime,
                             Optional.of(Units.NANOSECOND));
                 }),
@@ -116,7 +123,10 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     }
 
     private void updateMetricsSet(final KairosMetricNamesQueryResponse response) {
-        filterMetricNames(response.getResults(), _whiteList, _blackList).forEach(_metricsSet::add);
+        final Set<String> newMetricsSet = Sets.newLinkedHashSet();
+        filterMetricNames(response.getResults(), _whiteList, _blackList).forEach(newMetricsSet::add);
+        _periodicMetrics.recordCounter("rollup/discovery/discovered", newMetricsSet.size());
+        _metricsSet.addAll(newMetricsSet);
         _setIterator = _metricsSet.iterator();
     }
 
@@ -159,6 +169,9 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     private final Predicate<String> _whiteList;
     private final Predicate<String> _blackList;
 
+    private static final String RECORD_METRICS_MSG = "record_metrics";
+    private static final String METRICS_TIMER = "metrics_timer";
+    private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
     private static final String REFRESH_TIMER = "refresh_timer";
     private static final Object FETCH_MSG = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsDiscovery.class);
