@@ -46,8 +46,8 @@ import static org.junit.Assert.assertTrue;
  */
 public final class ReportSerializationTest {
     @Test
-    public void testValidReport() throws IOException, URISyntaxException {
-        final Report report = OBJECT_MAPPER.readValue(loadResource("testValidReport"), Report.class);
+    public void testValidReport() throws URISyntaxException {
+        final Report report = loadResourceAs("testValidReport", Report.class);
         assertEquals(new URI("https://example.com"), ((ChromeScreenshotReportSource) report.getSource()).getUri());
         assertTrue(report.getSchedule() instanceof OneOffSchedule);
         assertEquals(1, report.getRecipients().size());
@@ -55,32 +55,27 @@ public final class ReportSerializationTest {
     }
 
     @Test
-    public void testValidPeriodicSchedule() throws IOException {
-        final PeriodicSchedule schedule = (PeriodicSchedule) OBJECT_MAPPER.readValue(
-                loadResource("testValidPeriodicSchedule"),
-                Schedule.class
-        );
+    public void testValidPeriodicSchedule() {
+        final PeriodicSchedule schedule = (PeriodicSchedule) loadResourceAs("testValidPeriodicSchedule", Schedule.class);
         assertEquals(Period.DAILY, schedule.getPeriod());
         assertEquals(Duration.parse("PT4H"), schedule.getOffset());
         assertEquals(ZoneId.of("America/Los_Angeles"), schedule.getZone());
     }
 
     @Test
-    public void testValidRecipient() throws IOException {
-        final Recipient recipient = OBJECT_MAPPER.readValue(loadResource("testValidRecipient"), Recipient.class);
+    public void testValidRecipient() {
+        final Recipient recipient = loadResourceAs("testValidRecipient", Recipient.class);
         assertEquals("nobody@example.com", recipient.getAddress());
         assertEquals(RecipientType.EMAIL, recipient.getType());
         assertEquals(new HtmlReportFormat(), recipient.getFormat());
     }
 
     @Test(expected = com.fasterxml.jackson.databind.exc.InvalidFormatException.class)
-    public void testInvalidRecipientNoSuchType() throws IOException {
-        OBJECT_MAPPER.readValue(loadResource("testInvalidRecipientNoSuchType"), Recipient.class);
+    public void testInvalidRecipientNoSuchType() {
+        loadResourceAs("testInvalidRecipientNoSuchType", Recipient.class);
     }
 
-    private String loadResource(final String resourceSuffix) {
-        return ResourceHelper.loadResource(getClass(), resourceSuffix);
+    private <T> T loadResourceAs(final String resourceSuffix, final Class<T> clazz) {
+        return ResourceHelper.loadResourceAs(getClass(), resourceSuffix, clazz);
     }
-
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

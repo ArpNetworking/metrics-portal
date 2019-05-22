@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.utility;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import org.apache.http.HttpEntity;
@@ -32,6 +33,15 @@ import static org.junit.Assert.fail;
  */
 public final class ResourceHelper {
 
+    /**
+     * Load a resource associated with a particular class.
+     *
+     * E.g. for class {@code foo.bar.Baz}, with suffix {@code quux}, the resource will live at {@code foo/bar/Baz.quux.json}.
+     *
+     * @param testClass The test-class that owns the resource.
+     * @param suffix A resource identifier appended to the class's basename.
+     * @return The contents of that resource-file, as a string.
+     */
     public static String loadResource(final Class<?> testClass, final String suffix) {
         final String resourcePath = testClass.getCanonicalName().replace(".", "/")
                 + "."
@@ -43,6 +53,23 @@ public final class ResourceHelper {
         }
         try {
             return Resources.toString(resourceUrl, Charsets.UTF_8);
+        } catch (final IOException e) {
+            fail("Failed with exception: " + e);
+            return null;
+        }
+    }
+
+    /**
+     * Load a resource associated with a particular class (see {@code loadResource}), deserialized using Jackson.
+     *
+     * @param testClass The test-class that owns the resource.
+     * @param suffix A resource identifier appended to the class's basename.
+     * @param clazz The type of object to deserialize.
+     * @return The contents of that resource-file.
+     */
+    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<T> clazz) {
+        try {
+            return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;
