@@ -245,7 +245,7 @@ public class MainModule extends AbstractModule {
                 new ParallelLeastShardAllocationStrategy(
                         100,
                         3,
-                        Optional.empty()),
+                        Optional.of(system.actorSelection("/user/cluster-status"))),
                 PoisonPill.getInstance());
     }
 
