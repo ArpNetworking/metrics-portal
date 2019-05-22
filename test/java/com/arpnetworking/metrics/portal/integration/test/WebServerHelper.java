@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.integration.test;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.java.util.function.SingletonSupplier;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -94,6 +95,19 @@ public final class WebServerHelper {
      */
     public static byte[] readContentAsBytes(final CloseableHttpResponse response) throws IOException {
         return readContent(response).toByteArray();
+    }
+
+    /**
+     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     *
+     * @param <T> the type of object to deserialize
+     * @param response the {@code CloseableHttpResponse} to read
+     * @param clazz the class to deserialize
+     * @return response content as a {@code T}
+     * @throws IOException if reading the response content fails
+     */
+    public static <T> T readContentAs(final CloseableHttpResponse response, final Class<T> clazz) throws IOException {
+        return ObjectMapperFactory.getInstance().readValue(readContentAsString(response), clazz);
     }
 
     private static ByteArrayOutputStream readContent(final CloseableHttpResponse response) throws IOException {

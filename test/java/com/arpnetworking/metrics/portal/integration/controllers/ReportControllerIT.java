@@ -60,7 +60,7 @@ public final class ReportControllerIT {
         final HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
             assertEquals(Http.Status.OK, response.getStatusLine().getStatusCode());
-            final Report returnedReport = OBJECT_MAPPER.readValue(response.getEntity().getContent(), models.view.reports.Report.class);
+            final Report returnedReport = WebServerHelper.readContentAs(response, models.view.reports.Report.class);
             assertEquals(report, returnedReport);
         }
 
