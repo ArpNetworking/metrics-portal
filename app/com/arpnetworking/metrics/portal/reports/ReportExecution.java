@@ -49,7 +49,7 @@ public final class ReportExecution {
     /**
      * Render and send a report.
      *
-     * @param report The report to render&execute.
+     * @param report The report to render and execute.
      * @param injector A Guice injector to pull dependencies out of.
      * @param scheduled The instant the report was scheduled for.
      * @return A CompletionStage that completes when sending has completed for every recipient.
