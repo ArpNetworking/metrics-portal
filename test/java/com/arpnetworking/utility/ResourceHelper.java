@@ -18,13 +18,9 @@ package com.arpnetworking.utility;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
 import java.net.URL;
-
-import static org.junit.Assert.fail;
 
 /**
  * Helper to load resources.
@@ -41,8 +37,9 @@ public final class ResourceHelper {
      * @param testClass The test-class that owns the resource.
      * @param suffix A resource identifier appended to the class's basename.
      * @return The contents of that resource-file, as a string.
+     * @throws IOException if the resource can't be loaded.
      */
-    public static String loadResource(final Class<?> testClass, final String suffix) {
+    public static String loadResource(final Class<?> testClass, final String suffix) throws IOException {
         final String resourcePath = testClass.getCanonicalName().replace(".", "/")
                 + "."
                 + suffix
@@ -51,38 +48,21 @@ public final class ResourceHelper {
         if (resourceUrl == null) {
             throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
         }
-        try {
-            return Resources.toString(resourceUrl, Charsets.UTF_8);
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+        return Resources.toString(resourceUrl, Charsets.UTF_8);
     }
 
     /**
      * Load a resource associated with a particular class (see {@code loadResource}), deserialized using Jackson.
      *
+     * @param <T> The type of object to deserialize.
      * @param testClass The test-class that owns the resource.
      * @param suffix A resource identifier appended to the class's basename.
      * @param clazz The type of object to deserialize.
      * @return The contents of that resource-file.
+     * @throws IOException if the resource can't be loaded, or if deserialization fails.
      */
-    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<T> clazz) {
-        try {
-            return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
-    }
-
-    public static HttpEntity createEntity(final Class<?> testClass, final String resourceSuffix) {
-        try {
-            return new StringEntity(loadResource(testClass, resourceSuffix));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<T> clazz) throws IOException {
+        return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
     }
 
     private ResourceHelper() {}

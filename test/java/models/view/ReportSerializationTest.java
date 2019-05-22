@@ -16,10 +16,8 @@
 
 package models.view;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.utility.ResourceHelper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import models.internal.scheduling.Period;
 import models.view.impl.ChromeScreenshotReportSource;
 import models.view.impl.HtmlReportFormat;
@@ -46,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  */
 public final class ReportSerializationTest {
     @Test
-    public void testValidReport() throws URISyntaxException {
+    public void testValidReport() throws IOException, URISyntaxException {
         final Report report = loadResourceAs("testValidReport", Report.class);
         assertEquals(new URI("https://example.com"), ((ChromeScreenshotReportSource) report.getSource()).getUri());
         assertTrue(report.getSchedule() instanceof OneOffSchedule);
@@ -55,7 +53,7 @@ public final class ReportSerializationTest {
     }
 
     @Test
-    public void testValidPeriodicSchedule() {
+    public void testValidPeriodicSchedule() throws IOException {
         final PeriodicSchedule schedule = (PeriodicSchedule) loadResourceAs("testValidPeriodicSchedule", Schedule.class);
         assertEquals(Period.DAILY, schedule.getPeriod());
         assertEquals(Duration.parse("PT4H"), schedule.getOffset());
@@ -63,7 +61,7 @@ public final class ReportSerializationTest {
     }
 
     @Test
-    public void testValidRecipient() {
+    public void testValidRecipient() throws IOException {
         final Recipient recipient = loadResourceAs("testValidRecipient", Recipient.class);
         assertEquals("nobody@example.com", recipient.getAddress());
         assertEquals(RecipientType.EMAIL, recipient.getType());
@@ -71,11 +69,11 @@ public final class ReportSerializationTest {
     }
 
     @Test(expected = com.fasterxml.jackson.databind.exc.InvalidFormatException.class)
-    public void testInvalidRecipientNoSuchType() {
+    public void testInvalidRecipientNoSuchType() throws IOException {
         loadResourceAs("testInvalidRecipientNoSuchType", Recipient.class);
     }
 
-    private <T> T loadResourceAs(final String resourceSuffix, final Class<T> clazz) {
+    private <T> T loadResourceAs(final String resourceSuffix, final Class<T> clazz) throws IOException {
         return ResourceHelper.loadResourceAs(getClass(), resourceSuffix, clazz);
     }
 }

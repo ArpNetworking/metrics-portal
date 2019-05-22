@@ -29,6 +29,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHeader;
 import org.junit.After;
 import org.junit.Before;
@@ -294,8 +295,8 @@ public final class AlertControllerIT {
         // TODO(ville): We should validate that the update actually did something!
     }
 
-    private HttpEntity createEntity(final String resourceSuffix) {
-        return ResourceHelper.createEntity(getClass(), resourceSuffix);
+    private HttpEntity createEntity(final String resourceSuffix) throws IOException {
+        return new StringEntity(ResourceHelper.loadResource(getClass(), resourceSuffix));
     }
 
     private EbeanServer _ebeanServer;
