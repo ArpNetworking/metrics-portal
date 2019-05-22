@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -142,8 +141,8 @@ public final class CachedJob<T> implements Job<T> {
     }
 
     @Override
-    public CompletionStage<T> execute(final ActorRef scheduler, final Instant scheduled) {
-        return _cached.execute(scheduler, scheduled);
+    public CompletionStage<? extends T> execute(final Injector injector, final Instant scheduled) {
+        return _cached.execute(injector, scheduled);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedJob.class);
