@@ -27,6 +27,7 @@ import play.mvc.Http;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -37,7 +38,40 @@ import static org.junit.Assert.assertTrue;
 public final class MetaControllerIT {
 
     @Test
-    public void test() throws IOException {
+    public void testPing() throws IOException {
+        final HttpGet request = new HttpGet(WebServerHelper.getUri("/ping"));
+
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
+            assertEquals(Http.Status.OK, response.getStatusLine().getStatusCode());
+            assertEquals(ContentType.APPLICATION_JSON.getMimeType(), response.getLastHeader(HttpHeaders.CONTENT_TYPE).getValue());
+
+            final JsonNode pingJson = WebServerHelper.readContentAsJson(response);
+            assertEquals("HEALTHY", pingJson.get("status").asText());
+        }
+    }
+
+    @Test
+    public void testStatus() throws IOException {
+        final HttpGet request = new HttpGet(WebServerHelper.getUri("/status"));
+
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {
+            assertEquals(Http.Status.OK, response.getStatusLine().getStatusCode());
+            assertEquals(ContentType.APPLICATION_JSON.getMimeType(), response.getLastHeader(HttpHeaders.CONTENT_TYPE).getValue());
+
+            final JsonNode statusJson = WebServerHelper.readContentAsJson(response);
+            assertEquals("Metrics Portal", statusJson.get("name").asText());
+            assertTrue(statusJson.get("version").asText().matches("[\\d]+\\.[\\d]+\\.[\\d]+(-SNAPSHOT)?"));
+            assertTrue(statusJson.get("sha").asText().matches("[a-f0-9]{40}"));
+            assertTrue(statusJson.get("isLeader").asBoolean());
+            assertTrue(statusJson.get("members").isArray());
+            assertEquals(1, statusJson.get("members").size());
+            assertNotNull(statusJson.get("clusterLeader"));
+            assertNotNull(statusJson.get("localAddress"));
+        }
+    }
+
+    @Test
+    public void testVersion() throws IOException {
         final HttpGet request = new HttpGet(WebServerHelper.getUri("/version"));
 
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(request)) {

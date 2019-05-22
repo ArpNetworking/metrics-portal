@@ -38,7 +38,9 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
+import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
@@ -243,7 +245,10 @@ public class MainModule extends AbstractModule {
                 new ParallelLeastShardAllocationStrategy(
                         100,
                         3,
+                        // TODO(ville): Link the shard allocation strategy to the status cache.
+                        // 
                         Optional.empty()),
+                        //Optional.of(system.actorSelection("/user/cluster-status")),
                 PoisonPill.getInstance());
     }
 
@@ -258,6 +263,18 @@ public class MainModule extends AbstractModule {
         final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
         actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
+    }
+
+    @Provides
+    @com.google.inject.Singleton
+    @com.google.inject.name.Named("status")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private ActorRef provideStatusActor(
+            final ActorSystem system,
+            final MetricsFactory metricsFactory) {
+        final Cluster cluster = Cluster.get(system);
+        final ActorRef clusterStatusCache = system.actorOf(ClusterStatusCacheActor.props(cluster, metricsFactory), "cluster-status");
+        return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
