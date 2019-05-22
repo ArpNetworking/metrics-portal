@@ -18,6 +18,7 @@ package models.view;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.arpnetworking.utility.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -81,24 +82,9 @@ public final class ReportSerializationTest {
         OBJECT_MAPPER.readValue(loadResource("testInvalidRecipientNoSuchType"), Recipient.class);
     }
 
-    private String loadResource(final String suffix) {
-        final String resourcePath = "models/view/"
-                + CLASS_NAME
-                + "."
-                + suffix
-                + ".json";
-        final URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-        if (resourceUrl == null) {
-            throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
-        }
-        try {
-            return Resources.toString(resourceUrl, Charsets.UTF_8);
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+    private String loadResource(final String resourceSuffix) {
+        return ResourceHelper.loadResource(getClass(), resourceSuffix);
     }
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = ReportSerializationTest.class.getSimpleName();
 }

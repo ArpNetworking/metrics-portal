@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.integration.controllers;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
+import com.arpnetworking.utility.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -48,12 +49,12 @@ public final class ReportControllerIT {
     public void testCreateValid() throws IOException {
         final HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
         putRequest.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
-        putRequest.setEntity(new StringEntity(loadResource("testCreateValid")));
+        putRequest.setEntity(new StringEntity(ResourceHelper.loadResource(getClass(), "testCreateValid")));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(putRequest)) {
             assertEquals(Http.Status.NO_CONTENT, response.getStatusLine().getStatusCode());
         }
 
-        final Report writtenReport = OBJECT_MAPPER.readValue(loadResource("testCreateValid"), models.view.reports.Report.class);
+        final Report writtenReport = OBJECT_MAPPER.readValue(ResourceHelper.loadResource(getClass(), "testCreateValid"), models.view.reports.Report.class);
         final String reportId = writtenReport.getId().toString();
         final HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
         try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
@@ -64,32 +65,5 @@ public final class ReportControllerIT {
 
     }
 
-    private String loadResource(final String suffix) {
-        final String resourcePath = "com/arpnetworking/metrics/portal/integration/controllers/"
-                + CLASS_NAME
-                + "."
-                + suffix
-                + ".json";
-        final URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-        if (resourceUrl == null) {
-            throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
-        }
-        try {
-            return Resources.toString(resourceUrl, Charsets.UTF_8);
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
-    }
-    private HttpEntity createEntity(final String resourceSuffix) {
-        try {
-            return new StringEntity(loadResource(resourceSuffix));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
-    }
-
-    private static final String CLASS_NAME = ReportControllerIT.class.getSimpleName();
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
 }

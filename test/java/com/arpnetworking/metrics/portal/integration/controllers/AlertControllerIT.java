@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
+import com.arpnetworking.utility.ResourceHelper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import io.ebean.EbeanServer;
@@ -299,25 +300,9 @@ public final class AlertControllerIT {
     }
 
     private HttpEntity createEntity(final String resourceSuffix) {
-        final String resourcePath = "com/arpnetworking/metrics/portal/integration/controllers/"
-                + CLASS_NAME
-                + "."
-                + resourceSuffix
-                + ".json";
-        final URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-        if (resourceUrl == null) {
-            throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
-        }
-        try {
-            return new StringEntity(Resources.toString(resourceUrl, Charsets.UTF_8));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+        return ResourceHelper.createEntity(getClass(), resourceSuffix);
     }
 
     private EbeanServer _ebeanServer;
     private DatabaseAlertRepository _alertRepo;
-
-    private static final String CLASS_NAME = AlertControllerIT.class.getSimpleName();
 }
