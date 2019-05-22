@@ -75,7 +75,7 @@ public final class DefaultRenderedReport implements RenderedReport {
          * @return This instance of {@code Builder}.
          */
         public Builder setBytes(final byte[] bytes) {
-            _bytes = bytes;
+            _bytes = bytes.clone();
             return this;
         }
 
