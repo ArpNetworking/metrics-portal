@@ -19,7 +19,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
-import com.arpnetworking.utility.ResourceHelper;
+import com.arpnetworking.utility.test.ResourceHelper;
 import io.ebean.EbeanServer;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.utility;
+package com.arpnetworking.utility.test;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.google.common.base.Charsets;

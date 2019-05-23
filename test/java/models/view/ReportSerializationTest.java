@@ -17,7 +17,7 @@
 package models.view;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
-import com.arpnetworking.utility.ResourceHelper;
+import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.Lists;
 import models.internal.scheduling.Period;
 import models.view.impl.ChromeScreenshotReportSource;
