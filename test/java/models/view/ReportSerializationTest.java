@@ -26,20 +26,17 @@ import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
 import models.view.reports.Recipient;
 import models.view.reports.Report;
-import models.view.reports.ReportSource;
 import models.view.scheduling.Schedule;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for [de]serializing Report-relevant types.
