@@ -173,15 +173,21 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             //   they should self-terminate next time they execute.
 
             periodicMetrics.recordTimer(
-                    "job_coordinator_tick_time",
+                    "jobs/coordinator/anti_entropy/latency",
                     ChronoUnit.NANOS.between(startTime, clock.instant()),
                     Optional.of(NANOS));
+
+            periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 1);
 
             LOGGER.debug()
                     .setMessage("finished anti-entropy")
                     .addData("repositoryType", repositoryType)
                     .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, clock.instant()))
                     .log();
+            // CHECKSTYLE.OFF: IllegalCatch - Just for metrics
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 0);
         } finally {
             coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
         }
