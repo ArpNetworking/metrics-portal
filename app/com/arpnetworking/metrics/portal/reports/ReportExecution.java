@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 /**
  * Utilities for execution of {@link Report}s.
@@ -55,6 +56,7 @@ public final class ReportExecution {
      * @return A CompletionStage that completes when sending has completed for every recipient.
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
+        verifyDependencies(report, injector);
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
                 .stream()
@@ -68,6 +70,18 @@ public final class ReportExecution {
                 ).thenApply(
                         nothing -> null
                 );
+    }
+
+    /* package private */ static void verifyDependencies(final Report report, final Injector injector) {
+        for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
+            getRenderer(injector, report.getSource(), format);
+        }
+        final Collection<Recipient> allRecipients = report.getRecipientsByFormat().values().stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
+        for (final Recipient recipient : allRecipients) {
+            getSender(injector, recipient);
+        }
     }
 
     /* package private */ static CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
@@ -92,13 +106,7 @@ public final class ReportExecution {
             final F format,
             final Instant scheduled
     ) {
-        final String keyName = getRendererKeyName(source, format);
-        @SuppressWarnings("unchecked")
-        final Renderer<S, F> renderer = injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
-        if (renderer == null) {
-            throw new IllegalArgumentException("no Renderer exists for key name '" + keyName + "'");
-        }
-        return renderer.render(source, format, scheduled);
+        return getRenderer(injector, source, format).render(source, format, scheduled);
     }
 
     /* package private */ static CompletionStage<Void> sendAll(
@@ -110,16 +118,34 @@ public final class ReportExecution {
                 .asMap()
                 .entrySet()
                 .stream()
-                .map(entry -> {
-                    final String keyName = getSenderKeyName(entry.getKey());
-                    final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
-                    if (sender == null) {
-                        throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
-                    }
-                    return sender.send(entry.getKey(), mask(formatToRendered, entry.getValue())).toCompletableFuture();
-                })
+                .map(entry -> getSender(injector, entry.getKey())
+                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()))
+                        .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
+    }
+
+    private static <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
+            final Injector injector,
+            final S source,
+            final F format
+    ) {
+        final String keyName = getRendererKeyName(source, format);
+        @SuppressWarnings("unchecked")
+        final Renderer<S, F> renderer = injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
+        if (renderer == null) {
+            throw new IllegalArgumentException("no Renderer exists for key name '" + keyName + "'");
+        }
+        return renderer;
+    }
+
+    private static Sender getSender(final Injector injector, final Recipient recipient) {
+        final String keyName = getSenderKeyName(recipient);
+        final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
+        if (sender == null) {
+            throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
+        }
+        return sender;
     }
 
     /* package private */ static String getSenderKeyName(final Recipient recipient) {
