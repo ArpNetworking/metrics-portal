@@ -92,8 +92,12 @@ public final class ReportExecution {
             final F format,
             final Instant scheduled
     ) {
+        final String keyName = getRendererKeyName(source, format);
         @SuppressWarnings("unchecked")
-        final Renderer<S, F> renderer = injector.getInstance(Key.get(Renderer.class, Names.named(getRendererKeyName(source, format))));
+        final Renderer<S, F> renderer = injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
+        if (renderer == null) {
+            throw new IllegalArgumentException("no Renderer exists for key name '" + keyName + "'");
+        }
         return renderer.render(source, format, scheduled);
     }
 
@@ -107,7 +111,11 @@ public final class ReportExecution {
                 .entrySet()
                 .stream()
                 .map(entry -> {
-                    final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(getSenderKeyName(entry.getKey()))));
+                    final String keyName = getSenderKeyName(entry.getKey());
+                    final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
+                    if (sender == null) {
+                        throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
+                    }
                     return sender.send(entry.getKey(), mask(formatToRendered, entry.getValue())).toCompletableFuture();
                 })
                 .toArray(CompletableFuture[]::new);
