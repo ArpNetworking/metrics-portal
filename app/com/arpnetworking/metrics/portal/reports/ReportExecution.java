@@ -91,7 +91,7 @@ public final class ReportExecution {
             final ReportSource source,
             final Instant scheduled
     ) {
-        final Map<ReportFormat, RenderedReport> result = Maps.newHashMap(); // TODO(spencerpearson) -- ConcurrentMap?
+        final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
                 .map(format -> render(injector, source, format, scheduled)
