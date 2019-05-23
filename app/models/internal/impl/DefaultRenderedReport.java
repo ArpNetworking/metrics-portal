@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
@@ -33,6 +34,7 @@ import java.util.Objects;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@Loggable
 public final class DefaultRenderedReport implements RenderedReport {
     @Override
     public InputStream getBytes() {
@@ -84,6 +86,13 @@ public final class DefaultRenderedReport implements RenderedReport {
                 .add("generatedAt", _generatedAt)
                 .add("format", _format)
                 .toString();
+    }
+
+    private DefaultRenderedReport(final Builder builder) {
+        _bytes = builder._bytes;
+        _scheduledFor = builder._scheduledFor;
+        _generatedAt = builder._generatedAt;
+        _format = builder._format;
     }
 
     private final byte[] _bytes;
@@ -154,12 +163,5 @@ public final class DefaultRenderedReport implements RenderedReport {
         private Instant _generatedAt;
         @NotNull
         private ReportFormat _format;
-    }
-
-    private DefaultRenderedReport(final Builder builder) {
-        _bytes = builder._bytes;
-        _scheduledFor = builder._scheduledFor;
-        _generatedAt = builder._generatedAt;
-        _format = builder._format;
     }
 }
