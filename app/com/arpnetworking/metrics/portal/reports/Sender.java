@@ -32,11 +32,11 @@ public interface Sender {
      * Send some {@link RenderedReport} documents to a {@link Recipient}.
      *
      * @param recipient The recipient to notify.
-     * @param formatToRendered The reports to send.
+     * @param formatsToSend The reports to send.
      * @return A CompletionStage that completes when the transmission has completed.
      */
     CompletionStage<Void> send(
             Recipient recipient,
-            ImmutableMap<ReportFormat, RenderedReport> formatToRendered
+            ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     );
 }
