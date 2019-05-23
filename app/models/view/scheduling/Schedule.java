@@ -17,6 +17,7 @@ package models.view.scheduling;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import models.view.impl.NeverSchedule;
 import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
 
@@ -34,6 +35,7 @@ import java.time.Instant;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PeriodicSchedule.class, name = "PERIODIC"),
         @JsonSubTypes.Type(value = OneOffSchedule.class, name = "ONE_OFF"),
+        @JsonSubTypes.Type(value = NeverSchedule.class, name = "NEVER"),
 })
 public abstract class Schedule {
 
@@ -63,6 +65,8 @@ public abstract class Schedule {
             return OneOffSchedule.fromInternal((com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule) schedule);
         } else if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule) {
             return PeriodicSchedule.fromInternal((com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule) schedule);
+        } else if (schedule instanceof com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule) {
+            return NeverSchedule.fromInternal((com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule) schedule);
         } else {
             throw new IllegalArgumentException("Cannot convert class " + schedule.getClass() + " to a view model.");
         }
