@@ -19,8 +19,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
+import com.arpnetworking.utility.test.ResourceHelper;
 import io.ebean.EbeanServer;
 import models.ebean.NagiosExtension;
 import models.internal.Alert;
@@ -38,12 +37,10 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * Integration tests for {@code AlertController}.
@@ -298,26 +295,10 @@ public final class AlertControllerIT {
         // TODO(ville): We should validate that the update actually did something!
     }
 
-    private HttpEntity createEntity(final String resourceSuffix) {
-        final String resourcePath = "com/arpnetworking/metrics/portal/integration/controllers/"
-                + CLASS_NAME
-                + "."
-                + resourceSuffix
-                + ".json";
-        final URL resourceUrl = getClass().getClassLoader().getResource(resourcePath);
-        if (resourceUrl == null) {
-            throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
-        }
-        try {
-            return new StringEntity(Resources.toString(resourceUrl, Charsets.UTF_8));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+    private HttpEntity createEntity(final String resourceSuffix) throws IOException {
+        return new StringEntity(ResourceHelper.loadResource(getClass(), resourceSuffix));
     }
 
     private EbeanServer _ebeanServer;
     private DatabaseAlertRepository _alertRepo;
-
-    private static final String CLASS_NAME = AlertControllerIT.class.getSimpleName();
 }

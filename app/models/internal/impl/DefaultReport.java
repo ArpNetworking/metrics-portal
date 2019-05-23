@@ -159,7 +159,7 @@ public final class DefaultReport implements Report {
         }
 
         /**
-         * Set the report ETag. Optional. Cannot be empty.
+         * Set the report ETag. Optional.
          *
          * The ETag should function like a strong hash of the report and all its transitive dependencies.
          *
@@ -217,8 +217,6 @@ public final class DefaultReport implements Report {
 
         @NotNull
         private UUID _id;
-        @NotNull
-        @NotEmpty
         private String _eTag;
         @NotNull
         @NotEmpty
