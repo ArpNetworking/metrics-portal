@@ -94,20 +94,12 @@ public final class ReportExecution {
         final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
-                .map(format -> render(injector, source, format, scheduled)
+                .map(format -> getRenderer(injector, source, format)
+                        .render(source, format, scheduled)
                         .thenApply(rendered -> result.put(format, rendered))
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(resultSettingFutures).thenApply(nothing -> ImmutableMap.copyOf(result));
-    }
-
-    /* package private */ static <S extends ReportSource, F extends ReportFormat> CompletionStage<RenderedReport> render(
-            final Injector injector,
-            final S source,
-            final F format,
-            final Instant scheduled
-    ) {
-        return getRenderer(injector, source, format).render(source, format, scheduled);
     }
 
     /* package private */ static CompletionStage<Void> sendAll(
