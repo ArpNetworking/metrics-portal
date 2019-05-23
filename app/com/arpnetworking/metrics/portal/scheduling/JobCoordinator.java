@@ -188,6 +188,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatch
             periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 0);
+            throw e;
         } finally {
             coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
         }
