@@ -77,9 +77,9 @@ public final class DefaultRecipient implements Recipient {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_id", _id)
-                .add("_type", _type)
-                .add("_address", _address)
+                .add("id", _id)
+                .add("type", _type)
+                .add("address", _address)
                 .toString();
     }
 

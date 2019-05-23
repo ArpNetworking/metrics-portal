@@ -79,10 +79,10 @@ public final class DefaultRenderedReport implements RenderedReport {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_bytes", _bytes)
-                .add("_scheduledFor", _scheduledFor)
-                .add("_generatedAt", _generatedAt)
-                .add("_format", _format)
+                .add("bytes", _bytes)
+                .add("scheduledFor", _scheduledFor)
+                .add("generatedAt", _generatedAt)
+                .add("format", _format)
                 .toString();
     }
 
