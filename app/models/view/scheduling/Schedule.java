@@ -82,8 +82,8 @@ public abstract class Schedule {
         if (!(o instanceof Schedule)) {
             return false;
         }
-        final Schedule schedule = (Schedule) o;
-        return _runAtAndAfter.equals(schedule._runAtAndAfter);
+        final Schedule otherSchedule = (Schedule) o;
+        return Objects.equals(_runAtAndAfter, otherSchedule._runAtAndAfter);
     }
 
     @Override

@@ -92,11 +92,11 @@ public final class Recipient {
         if (!(o instanceof Recipient)) {
             return false;
         }
-        final Recipient recipient = (Recipient) o;
-        return _id.equals(recipient._id)
-                && _type == recipient._type
-                && _address.equals(recipient._address)
-                && _format.equals(recipient._format);
+        final Recipient otherRecipient = (Recipient) o;
+        return Objects.equals(_id, otherRecipient._id)
+                && Objects.equals(_type, otherRecipient._type)
+                && Objects.equals(_address, otherRecipient._address)
+                && Objects.equals(_format, otherRecipient._format);
     }
 
     @Override

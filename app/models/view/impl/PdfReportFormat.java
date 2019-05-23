@@ -82,12 +82,12 @@ public final class PdfReportFormat implements ReportFormat {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof PdfReportFormat)) {
             return false;
         }
-        final PdfReportFormat that = (PdfReportFormat) o;
-        return Float.compare(that._widthInches, _widthInches) == 0
-                && Float.compare(that._heightInches, _heightInches) == 0;
+        final PdfReportFormat otherPdfReportFormat = (PdfReportFormat) o;
+        return Float.compare(otherPdfReportFormat._widthInches, _widthInches) == 0
+                && Float.compare(otherPdfReportFormat._heightInches, _heightInches) == 0;
     }
 
     @Override
