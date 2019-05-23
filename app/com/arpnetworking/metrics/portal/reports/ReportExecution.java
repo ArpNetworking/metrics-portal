@@ -51,10 +51,14 @@ public final class ReportExecution {
     /**
      * Render and send a report.
      *
+     * Renders the report into all necessary formats (using the given Injector to look up the necessary {@link Renderer}s)
+     * and then sends each recipient their requested formats of {@link RenderedReport} (using the Injector to look up the {@link Sender}s).
+     *
      * @param report The report to render and execute.
      * @param injector A Guice injector to pull dependencies out of.
      * @param scheduled The instant the report was scheduled for.
      * @return A CompletionStage that completes when sending has completed for every recipient.
+     * @throws IllegalArgumentException if any necessary class is missing from the given Injector.
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
         verifyDependencies(report, injector);
@@ -73,6 +77,11 @@ public final class ReportExecution {
                 );
     }
 
+    /**
+     * Verify that the given Injector has everything necessary to render the given Report.
+     *
+     * @throws IllegalArgumentException if anything is missing.
+     */
     /* package private */ static void verifyDependencies(final Report report, final Injector injector) {
         for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
             getRenderer(injector, report.getSource(), format);
@@ -85,6 +94,11 @@ public final class ReportExecution {
         }
     }
 
+    /**
+     * Render a ReportSource into many different formats.
+     * @return a CompletionStage mapping each given format to its RenderedReport. Completes when every render has finished.
+     * @throws IllegalArgumentException if any necessary {@link Renderer} is missing from the given Injector.
+     */
     /* package private */ static CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
             final Injector injector,
             final ImmutableSet<ReportFormat> formats,
@@ -102,6 +116,14 @@ public final class ReportExecution {
         return CompletableFuture.allOf(resultSettingFutures).thenApply(nothing -> ImmutableMap.copyOf(result));
     }
 
+    /**
+     * Send RenderedReports to many different recipients.
+     * @param recipientToFormats specifies which formats of report each recipient should receive.
+     * @param formatToRendered maps each format to the report rendered into that format.
+     *                         The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
+     * @return a CompletionStage that completes when every send has finished.
+     * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
+     */
     /* package private */ static CompletionStage<Void> sendAll(
             final Injector injector,
             final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
