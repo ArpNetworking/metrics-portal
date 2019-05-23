@@ -123,7 +123,7 @@ public final class ReportExecution {
     }
 
     /* package private */ static String getSenderKeyName(final Recipient recipient) {
-        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, recipient.getType().name());
+        return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, recipient.getType().name());
     }
 
     /* package private */ static String getRendererKeyName(final ReportSource source, final ReportFormat format) {
