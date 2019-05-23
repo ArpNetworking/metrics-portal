@@ -26,6 +26,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
@@ -68,7 +69,7 @@ public final class ReportExecution {
                 .thenCompose(
                         formatToRendered -> sendAll(injector, recipientToFormats, formatToRendered)
                 ).thenApply(
-                        nothing -> null
+                        nothing -> new DefaultReportResult()
                 );
     }
 
