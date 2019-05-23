@@ -102,17 +102,6 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         return viewSource;
     }
 
-    @JsonProperty("id")
-    private UUID _id;
-    @JsonProperty("uri")
-    private URI _uri;
-    @JsonProperty("title")
-    private String _title;
-    @JsonProperty("ignoreCertificateErrors")
-    private boolean _ignoreCertificateErrors;
-    @JsonProperty("triggeringEventName")
-    private String _triggeringEventName;
-
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
@@ -129,15 +118,15 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ChromeScreenshotReportSource)) {
             return false;
         }
-        final ChromeScreenshotReportSource that = (ChromeScreenshotReportSource) o;
-        return _ignoreCertificateErrors == that._ignoreCertificateErrors
-                && Objects.equals(_id, that._id)
-                && Objects.equals(_uri, that._uri)
-                && Objects.equals(_title, that._title)
-                && Objects.equals(_triggeringEventName, that._triggeringEventName);
+        final ChromeScreenshotReportSource otherChromeScreenshotReportSource = (ChromeScreenshotReportSource) o;
+        return _ignoreCertificateErrors == otherChromeScreenshotReportSource._ignoreCertificateErrors
+                && Objects.equals(_id, otherChromeScreenshotReportSource._id)
+                && Objects.equals(_uri, otherChromeScreenshotReportSource._uri)
+                && Objects.equals(_title, otherChromeScreenshotReportSource._title)
+                && Objects.equals(_triggeringEventName, otherChromeScreenshotReportSource._triggeringEventName);
     }
 
     @Override
@@ -145,4 +134,15 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _triggeringEventName);
     }
 
+
+    @JsonProperty("id")
+    private UUID _id;
+    @JsonProperty("uri")
+    private URI _uri;
+    @JsonProperty("title")
+    private String _title;
+    @JsonProperty("ignoreCertificateErrors")
+    private boolean _ignoreCertificateErrors;
+    @JsonProperty("triggeringEventName")
+    private String _triggeringEventName;
 }
