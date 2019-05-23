@@ -135,15 +135,15 @@ public final class Report {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof Report)) {
             return false;
         }
-        final Report report = (Report) o;
-        return _id.equals(report._id)
-                && _name.equals(report._name)
-                && _source.equals(report._source)
-                && _schedule.equals(report._schedule)
-                && _recipients.equals(report._recipients);
+        final Report otherReport = (Report) o;
+        return Objects.equals(_id, otherReport._id)
+                && Objects.equals(_name, otherReport._name)
+                && Objects.equals(_source, otherReport._source)
+                && Objects.equals(_schedule, otherReport._schedule)
+                && Objects.equals(_recipients, otherReport._recipients);
     }
 
     @Override
