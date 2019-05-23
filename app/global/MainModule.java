@@ -30,6 +30,7 @@ import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -207,9 +208,12 @@ public class MainModule extends AbstractModule {
     @Singleton
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private ObjectMapper provideObjectMapper(final ApplicationLifecycle lifecycle) {
+    private ObjectMapper provideObjectMapper(
+            final ApplicationLifecycle lifecycle,
+            final ActorSystem actorSystem) {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.registerModule(PlayJsonModule$.MODULE$);
+        objectMapper.registerModule(new AkkaModule(actorSystem));
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
@@ -245,10 +249,7 @@ public class MainModule extends AbstractModule {
                 new ParallelLeastShardAllocationStrategy(
                         100,
                         3,
-                        // TODO(ville): Link the shard allocation strategy to the status cache.
-                        // 
-                        Optional.empty()),
-                        //Optional.of(system.actorSelection("/user/cluster-status")),
+                        Optional.of(system.actorSelection("/user/cluster-status"))),
                 PoisonPill.getInstance());
     }
 

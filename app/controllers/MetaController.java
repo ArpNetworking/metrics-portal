@@ -18,7 +18,6 @@ package controllers;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.PatternsCS;
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +51,7 @@ public final class MetaController extends Controller {
     /**
      * Public constructor.
      *
+     * @param objectMapper Instance of {@code ObjectMapper}.
      * @param actorSystem Instance of Akka {@code ActorSystem}.
      * @param healthProvider Instance of {@link HealthProvider}.
      * @param configuration Play configuration for the app.
@@ -59,10 +59,12 @@ public final class MetaController extends Controller {
      */
     @Inject
     public MetaController(
+            final ObjectMapper objectMapper,
             final ActorSystem actorSystem,
             final HealthProvider healthProvider,
             final Config configuration,
             @Named("status") final ActorRef statusActor) {
+        _objectMapper = objectMapper;
         _actorSystem = actorSystem;
         _healthProvider = healthProvider;
         _configuration = configuration;
@@ -109,7 +111,7 @@ public final class MetaController extends Controller {
                 .exceptionally(t -> new StatusResponse.Builder()
                         .setLocalAddress(_actorSystem.provider().getDefaultAddress())
                         .build())
-                .thenApply(status -> ok(OBJECT_MAPPER.<JsonNode>valueToTree(status)));
+                .thenApply(status -> ok(_objectMapper.<JsonNode>valueToTree(status)));
 
     }
 
@@ -119,7 +121,7 @@ public final class MetaController extends Controller {
      * @return Serialized response containing service version.
      */
     public Result version() {
-        return ok(OBJECT_MAPPER.<JsonNode>valueToTree(VersionInfo.getInstance()));
+        return ok(_objectMapper.<JsonNode>valueToTree(VersionInfo.getInstance()));
     }
 
     // TODO(vkoskela): Convert this to a JSON serializer [MAI-65]
@@ -169,12 +171,12 @@ public final class MetaController extends Controller {
         }
     }
 
+    private final ObjectMapper _objectMapper;
     private final ActorSystem _actorSystem;
     private final HealthProvider _healthProvider;
     private final Config _configuration;
     private final ActorRef _statusActor;
 
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String UNHEALTHY_STATE = "UNHEALTHY";
     private static final String HEALTHY_STATE = "HEALTHY";
 }
