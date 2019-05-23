@@ -110,7 +110,7 @@ public final class PeriodicSchedule extends BaseSchedule {
     }
 
     /**
-     * Implementation of builder pattern for {@link OneOffSchedule}.
+     * Implementation of builder pattern for {@link PeriodicSchedule}.
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
