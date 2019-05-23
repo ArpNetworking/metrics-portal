@@ -18,6 +18,7 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.google.common.base.MoreObjects;
 import models.internal.reports.Recipient;
 import net.sf.oval.constraint.NotNull;
 
@@ -71,6 +72,15 @@ public final class DefaultRecipient implements Recipient {
     @Override
     public int hashCode() {
         return Objects.hash(_id, _address);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_id", _id)
+                .add("_type", _type)
+                .add("_address", _address)
+                .toString();
     }
 
     /**

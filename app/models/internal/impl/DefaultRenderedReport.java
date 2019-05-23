@@ -18,12 +18,15 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A document containing the results of a particular rendering of a particular {@link models.internal.reports.Report}.
@@ -51,6 +54,37 @@ public final class DefaultRenderedReport implements RenderedReport {
         return _format;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DefaultRenderedReport)) {
+            return false;
+        }
+        final DefaultRenderedReport that = (DefaultRenderedReport) o;
+        return Arrays.equals(_bytes, that._bytes)
+                && _scheduledFor.equals(that._scheduledFor)
+                && _generatedAt.equals(that._generatedAt)
+                && _format.equals(that._format);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(_scheduledFor, _generatedAt, _format);
+        result = 31 * result + Arrays.hashCode(_bytes);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_bytes", _bytes)
+                .add("_scheduledFor", _scheduledFor)
+                .add("_generatedAt", _generatedAt)
+                .add("_format", _format)
+                .toString();
+    }
 
     private final byte[] _bytes;
     private final Instant _scheduledFor;
