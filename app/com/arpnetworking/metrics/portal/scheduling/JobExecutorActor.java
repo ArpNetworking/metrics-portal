@@ -184,9 +184,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 job.execute(getSelf(), scheduled)
                         .handle((result, error) -> {
                             _periodicMetrics.recordTimer(
-                                    "job_executor_job/"
+                                    "jobs/executor/execution_time",
+                                    System.nanoTime() - startTime,
+                                    Optional.of(Units.NANOSECOND));
+
+                            _periodicMetrics.recordTimer(
+                                    "jobs/executor/by_type/"
                                             + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
-                                            + "execution_time",
+                                            + "/execution_time",
                                     System.nanoTime() - startTime,
                                     Optional.of(Units.NANOSECOND));
 
@@ -210,12 +215,18 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @throws ActorNotInitializedException If the actor (somehow) receives this message before getting a handle to a {@link JobRef}.
      */
     private void tick(final Tick message) throws ActorNotInitializedException {
-        _periodicMetrics.recordCounter("job_executor_actor_ticks", 1);
+        _periodicMetrics.recordCounter("jobs/executor/tick", 1);
 
         if (!_cachedJob.isPresent()) {
             throw new ActorNotInitializedException("somehow, uninitialized JobExecutorActor is trying to tick");
         }
         final CachedJob<T> cachedJob = _cachedJob.get();
+
+        _periodicMetrics.recordCounter(
+                "jobs/executor/by_type/"
+                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                        + "/tick",
+                1);
 
         final Optional<Instant> nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
         if (!nextRun.isPresent()) {
@@ -246,7 +257,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private void reload(final Reload<T> message) {
         final Optional<String> eTag = message.getETag();
         final CachedJob<T> cachedJob;
-        _periodicMetrics.recordCounter("job_executor_actor_reloads", 1);
+        _periodicMetrics.recordCounter("jobs/executor/reload", 1);
         try {
             cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
             if (eTag.isPresent()) {
@@ -254,6 +265,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             } else {
                 cachedJob.reload(_injector);
             }
+            _periodicMetrics.recordCounter(
+                    "jobs/executor/by_type/"
+                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                            + "/reload",
+                    1);
         } catch (final NoSuchJobException error) {
             LOGGER.warn()
                     .setMessage("tried to reload job, but job no longer exists in repository")
@@ -285,12 +301,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         try {
             final int successMetricValue = message.getError() == null ? 1 : 0;
             _periodicMetrics.recordCounter(
-                    "job_executor_actor_execution_successes",
+                    "jobs/executor/execution_success",
                     successMetricValue);
             _periodicMetrics.recordCounter(
-                    "job_executor_job/"
+                    "jobs/executor/by_type/"
                     + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
-                    + "/success",
+                    + "/execution_success",
                     successMetricValue);
             if (message.getError() == null) {
                 if (typedMessage.getResult() == null) {
