@@ -15,6 +15,7 @@
  */
 package models.view.reports;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.internal.impl.DefaultReport;
@@ -23,6 +24,7 @@ import models.view.scheduling.Schedule;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -126,6 +128,38 @@ public final class Report {
         final models.internal.reports.ReportFormat format = entry.getKey();
         final ReportFormat viewFormat = ReportFormat.fromInternal(format);
         return entry.getValue().stream().map(r -> Recipient.fromInternal(r, viewFormat));
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final Report report = (Report) o;
+        return _id.equals(report._id)
+                && _name.equals(report._name)
+                && _source.equals(report._source)
+                && _schedule.equals(report._schedule)
+                && _recipients.equals(report._recipients);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_id, _name, _source, _schedule, _recipients);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_id", _id)
+                .add("_name", _name)
+                .add("_source", _source)
+                .add("_schedule", _schedule)
+                .add("_recipients", _recipients)
+                .toString();
     }
 
     private UUID _id;

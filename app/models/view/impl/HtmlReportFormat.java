@@ -28,13 +28,30 @@ import models.view.reports.ReportFormat;
  */
 @Loggable
 public final class HtmlReportFormat implements ReportFormat {
-    private static final HtmlReportFormat INSTANCE = new HtmlReportFormat();
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .toString();
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o instanceof HtmlReportFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return 984576476; // keyboard mash
+    }
+
+    /**
+     * Build a new HTML report format.
+     */
+    public HtmlReportFormat() {}
 
     @Override
     public models.internal.impl.HtmlReportFormat toInternal() {
@@ -49,6 +66,6 @@ public final class HtmlReportFormat implements ReportFormat {
      * @return The view model.
      */
     public static HtmlReportFormat fromInternal(final models.internal.impl.HtmlReportFormat format) {
-        return INSTANCE;
+        return new HtmlReportFormat();
     }
 }

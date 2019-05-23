@@ -16,7 +16,9 @@
 package models.view.reports;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.google.common.base.MoreObjects;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -80,6 +82,36 @@ public final class Recipient {
         result.setAddress(recipient.getAddress());
         result.setFormat(format);
         return result;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Recipient)) {
+            return false;
+        }
+        final Recipient recipient = (Recipient) o;
+        return _id.equals(recipient._id)
+                && _type == recipient._type
+                && _address.equals(recipient._address)
+                && _format.equals(recipient._format);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_id, _type, _address, _format);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_id", _id)
+                .add("_type", _type)
+                .add("_address", _address)
+                .add("_format", _format)
+                .toString();
     }
 
     private UUID _id;

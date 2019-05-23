@@ -96,6 +96,19 @@ public final class WebServerHelper {
         return readContent(response).toByteArray();
     }
 
+    /**
+     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     *
+     * @param <T> the type of object to deserialize
+     * @param response the {@code CloseableHttpResponse} to read
+     * @param clazz the class to deserialize
+     * @return response content as a {@code T}
+     * @throws IOException if reading the response content fails
+     */
+    public static <T> T readContentAs(final CloseableHttpResponse response, final Class<T> clazz) throws IOException {
+        return ObjectMapperFactory.getInstance().readValue(readContentAsString(response), clazz);
+    }
+
     private static ByteArrayOutputStream readContent(final CloseableHttpResponse response) throws IOException {
         final ByteArrayOutputStream result = new ByteArrayOutputStream();
         final byte[] buffer = new byte[1024];
