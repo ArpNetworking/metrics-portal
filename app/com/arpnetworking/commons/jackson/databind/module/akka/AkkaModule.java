@@ -40,7 +40,7 @@ public final class AkkaModule extends SimpleModule {
 
     @Override
     public void setupModule(final SetupContext context) {
-        addSerializer(ActorRef.class, new ActorRefSerializer(_system));
+        addSerializer(ActorRef.class, new ActorRefSerializer());
         addDeserializer(ActorRef.class, new ActorRefDeserializer(_system));
         super.setupModule(context);
     }
