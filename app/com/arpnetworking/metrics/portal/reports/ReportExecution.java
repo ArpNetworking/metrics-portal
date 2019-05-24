@@ -16,7 +16,6 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.google.common.base.CaseFormat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -155,16 +154,12 @@ public final class ReportExecution {
     }
 
     private static Sender getSender(final Injector injector, final Recipient recipient) {
-        final String keyName = getSenderKeyName(recipient);
+        final String keyName = recipient.getType().getName();
         final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
         if (sender == null) {
             throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
         }
         return sender;
-    }
-
-    /* package private */ static String getSenderKeyName(final Recipient recipient) {
-        return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_UNDERSCORE, recipient.getType().name());
     }
 
     /* package private */ static String getRendererKeyName(final ReportSource source, final ReportFormat format) {

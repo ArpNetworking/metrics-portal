@@ -24,5 +24,15 @@ public enum RecipientType {
     /**
      * Email.
      */
-    EMAIL,
+    EMAIL("email");
+
+    public String getName() {
+        return _name;
+    }
+
+    RecipientType(final String name) {
+        _name = name;
+    }
+
+    private final String _name;
 }
