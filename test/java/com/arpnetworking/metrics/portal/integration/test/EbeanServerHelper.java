@@ -21,6 +21,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.ebean.EbeanServer;
 import io.ebean.EbeanServerFactory;
 import io.ebean.config.ServerConfig;
+import org.flywaydb.core.Flyway;
 
 import java.util.Map;
 import java.util.UUID;
@@ -52,6 +53,13 @@ public final class EbeanServerHelper {
                     METRICS_DATABASE_USERNAME,
                     METRICS_DATABASE_PASSWORD,
                     true);
+            migrateServer(
+                    getEnvOrDefault("PG_HOST", "localhost"),
+                    getEnvOrDefault("PG_PORT", DEFAULT_POSTGRES_PORT, Integer::parseInt),
+                    METRICS_DATABASE_NAME,
+                    METRICS_DATABASE_ADMIN_USERNAME,
+                    METRICS_DATABASE_ADMIN_PASSWORD);
+
             EBEAN_SERVER_MAP.put(METRICS_DATABASE_NAME, ebeanServer);
         }
         return ebeanServer;
@@ -68,11 +76,7 @@ public final class EbeanServerHelper {
 
         final HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setDriverClassName("org.postgresql.Driver");
-        hikariConfig.setJdbcUrl(String.format(
-                "jdbc:postgresql://%s:%d/%s?currentSchema=portal",
-                hostname,
-                port,
-                database));
+        hikariConfig.setJdbcUrl(createJdbcUrl(hostname, port, database));
         hikariConfig.setMaximumPoolSize(DEFAULT_POOL_SIZE);
         hikariConfig.setPassword(password);
         hikariConfig.setPoolName(name);
@@ -84,6 +88,29 @@ public final class EbeanServerHelper {
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
         serverConfig.addPackage("models.ebean");
         return EbeanServerFactory.create(serverConfig);
+    }
+
+    private static void migrateServer(
+            final String hostname,
+            final int port,
+            final String database,
+            final String username,
+            final String password) {
+        final Flyway flyway = new Flyway();
+        flyway.setDataSource(createJdbcUrl(hostname, port, database), username, password);
+        flyway.setSchemas("portal");
+        flyway.setValidateOnMigrate(true);
+        flyway.setEncoding("UTF-8");
+        flyway.setLocations("db/migration/metrics_portal_ddl");
+        flyway.migrate();
+    }
+
+    private static String createJdbcUrl(final String hostname, final int port, final String database) {
+        return String.format(
+                "jdbc:postgresql://%s:%d/%s?currentSchema=portal",
+                hostname,
+                port,
+                database);
     }
 
     private static String getEnvOrDefault(final String name, final String defaultValue) {
@@ -101,6 +128,8 @@ public final class EbeanServerHelper {
     private static final String METRICS_DATABASE_NAME = "metrics";
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";
     private static final String METRICS_DATABASE_PASSWORD = "metrics_app_password";
+    private static final String METRICS_DATABASE_ADMIN_USERNAME = "metrics_dba";
+    private static final String METRICS_DATABASE_ADMIN_PASSWORD = "metrics_dba_password";
     private static final int DEFAULT_POSTGRES_PORT = 6432;
     private static final int DEFAULT_POOL_SIZE = 50;
 }

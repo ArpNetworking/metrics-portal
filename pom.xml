@@ -88,7 +88,8 @@
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
-    <flyway.version>4.0.0</flyway.version>
+    <flyway.core.version>4.2.0</flyway.core.version>
+    <flyway.play.version>4.0.0</flyway.play.version>
     <guava.version>21.0</guava.version>
     <guice.version>4.0</guice.version>
     <guice.assisted.version>4.1.0</guice.assisted.version>
@@ -1013,8 +1014,13 @@
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
       <artifactId>flyway-play_${scala.package.version}</artifactId>
-      <version>${flyway.version}</version>
+      <version>${flyway.play.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
