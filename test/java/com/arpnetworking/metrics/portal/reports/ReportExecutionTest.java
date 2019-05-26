@@ -24,6 +24,7 @@ import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
@@ -121,6 +122,7 @@ public class ReportExecutionTest {
 
     @Test(expected = ConfigurationException.class)
     public void testExecuteThrowsIfNoSenderFound() {
+        @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
         final Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
