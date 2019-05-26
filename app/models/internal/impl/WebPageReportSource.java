@@ -112,7 +112,7 @@ public final class WebPageReportSource implements ReportSource {
 
     @Override
     public <T> T accept(final Visitor<T> sourceVisitor) {
-        return sourceVisitor.visit(this);
+        return sourceVisitor.visitWeb(this);
     }
 
     @Override

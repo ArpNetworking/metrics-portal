@@ -55,14 +55,14 @@ public interface ReportSource {
      *
      * @param <T> the return type of the visitor.
      */
-    interface Visitor<T> {
+    abstract class Visitor<T> {
         /**
          * Visit a {@link ChromeScreenshotReportSource}.
          *
          * @param source The source to visit.
          * @return The result of applying the visitor.
          */
-        T visit(ChromeScreenshotReportSource source);
+        public abstract T visitWeb(ChromeScreenshotReportSource source);
 
         /**
          * Convenience method equivalent to {@code source.accept(this) }.
@@ -70,7 +70,7 @@ public interface ReportSource {
          * @param source The source to visit.
          * @return The result of applying the visitor
          */
-        default T visit(ReportSource source) {
+        public final T visit(final ReportSource source) {
             return source.accept(this);
         }
     }
