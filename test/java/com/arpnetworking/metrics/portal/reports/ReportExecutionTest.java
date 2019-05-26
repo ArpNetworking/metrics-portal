@@ -95,7 +95,7 @@ public class ReportExecutionTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        Mockito.doReturn(CompletableFuture.completedFuture(null)).when(_sender).send(Mockito.any(), Mockito.any());
+        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_sender).send(Mockito.any(), Mockito.any());
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
