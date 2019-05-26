@@ -24,6 +24,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import com.typesafe.config.ConfigException;
 import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
@@ -60,7 +61,13 @@ public final class ReportExecution {
      * @throws IllegalArgumentException if any necessary class is missing from the given Injector.
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
-        verifyDependencies(report, injector);
+        try {
+            verifyDependencies(report, injector);
+        } catch (final ConfigException exception) {
+            return CompletableFuture.supplyAsync(() -> {
+                throw exception;
+            });
+        }
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
                 .stream()
