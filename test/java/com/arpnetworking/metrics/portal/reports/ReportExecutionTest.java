@@ -99,7 +99,7 @@ public class ReportExecutionTest {
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Sender.class).annotatedWith(Names.named("email")).toInstance(_sender);
+                bind(Sender.class).annotatedWith(Names.named("EMAIL")).toInstance(_sender);
                 bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
                 bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }

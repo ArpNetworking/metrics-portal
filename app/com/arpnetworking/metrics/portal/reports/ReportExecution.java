@@ -25,10 +25,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.ConfigException;
-import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReportResult;
-import models.internal.impl.HtmlReportFormat;
-import models.internal.impl.PdfReportFormat;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -161,7 +158,7 @@ public final class ReportExecution {
     }
 
     private static Sender getSender(final Injector injector, final Recipient recipient) {
-        final String keyName = recipient.getType().getName();
+        final String keyName = recipient.getType().name();
         final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
         if (sender == null) {
             throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
