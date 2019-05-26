@@ -170,7 +170,7 @@ public final class ReportExecution {
     }
 
     /* package private */ static String getRendererKeyName(final ReportSource source, final ReportFormat format) {
-        return SOURCE_TYPE_VISITOR.visit(source) + " " + FORMAT_TYPE_VISITOR.visit(format);
+        return source.getTypeName() + " " + format.getMimeType();
     }
 
     /**
@@ -181,21 +181,4 @@ public final class ReportExecution {
     }
 
     private ReportExecution() {}
-
-    private static final ReportSource.Visitor<String> SOURCE_TYPE_VISITOR = new ReportSource.Visitor<String>() {
-        @Override
-        public String visit(final ChromeScreenshotReportSource source) {
-            return "web";
-        }
-    };
-    private static final ReportFormat.Visitor<String> FORMAT_TYPE_VISITOR = new ReportFormat.Visitor<String>() {
-        @Override
-        public String visit(final HtmlReportFormat format) {
-            return "html";
-        }
-        @Override
-        public String visit(final PdfReportFormat format) {
-            return "pdf";
-        }
-    };
 }

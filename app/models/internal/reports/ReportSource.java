@@ -34,6 +34,13 @@ public interface ReportSource {
     UUID getId();
 
     /**
+     * Return the "type" of this report (e.g. "web"), represented as a string.
+     *
+     * @return the type.
+     */
+    String getTypeName();
+
+    /**
      * Applies a {@code Visitor} to this source. This should delegate the to the appropriate {@code Visitor#visit} overload.
      *
      * @param sourceVisitor the visitor

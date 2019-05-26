@@ -100,8 +100,8 @@ public class ReportExecutionTest {
             @Override
             protected void configure() {
                 bind(Sender.class).annotatedWith(Names.named("email")).toInstance(_sender);
-                bind(Renderer.class).annotatedWith(Names.named("web html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web pdf")).to(MockPdfRenderer.class).asEagerSingleton();
+                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
+                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }
         });
     }
@@ -124,8 +124,8 @@ public class ReportExecutionTest {
         final Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Renderer.class).annotatedWith(Names.named("web html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web pdf")).to(MockPdfRenderer.class).asEagerSingleton();
+                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
+                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }
         });
         ReportExecution.execute(EXAMPLE_REPORT, injector, T0);
