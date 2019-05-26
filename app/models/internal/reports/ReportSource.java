@@ -65,13 +65,13 @@ public interface ReportSource {
         T visit(ChromeScreenshotReportSource source);
 
         /**
-         * Convenience method equivalent to {@code format.accept(this) }.
+         * Convenience method equivalent to {@code source.accept(this) }.
          *
-         * @param format The format to visit.
+         * @param source The source to visit.
          * @return The result of applying the visitor
          */
-        default T visit(ReportSource format) {
-            return format.accept(this);
+        default T visit(ReportSource source) {
+            return source.accept(this);
         }
     }
 }
