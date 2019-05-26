@@ -121,8 +121,8 @@ public class ReportExecutionTest {
     }
 
     @Test(expected = ConfigurationException.class)
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     public void testExecuteThrowsIfNoSenderFound() {
-        @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
         final Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
