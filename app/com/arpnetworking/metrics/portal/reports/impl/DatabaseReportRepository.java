@@ -76,7 +76,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     private static final ReportFormat.Visitor<models.ebean.ReportFormat> INTERNAL_TO_BEAN_FORMAT_VISITOR =
             new ReportFormat.Visitor<models.ebean.ReportFormat>() {
                 @Override
-                public models.ebean.ReportFormat visit(final PdfReportFormat internalFormat) {
+                public models.ebean.ReportFormat visitPdf(final PdfReportFormat internalFormat) {
                     final models.ebean.PdfReportFormat beanFormat = new models.ebean.PdfReportFormat();
                     beanFormat.setWidthInches(internalFormat.getWidthInches());
                     beanFormat.setHeightInches(internalFormat.getHeightInches());
@@ -84,7 +84,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 }
 
                 @Override
-                public models.ebean.ReportFormat visit(final HtmlReportFormat htmlFormat) {
+                public models.ebean.ReportFormat visitHtml(final HtmlReportFormat htmlFormat) {
                     return new models.ebean.HtmlReportFormat();
                 }
             };
