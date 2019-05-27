@@ -18,7 +18,7 @@ package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import models.view.impl.ChromeScreenshotReportSource;
+import models.view.impl.WebReportSource;
 
 /**
  * View model of {@link models.internal.reports.ReportSource}. Play view models are mutable.
@@ -30,7 +30,7 @@ import models.view.impl.ChromeScreenshotReportSource;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = ChromeScreenshotReportSource.class, name = "CHROME_SCREENSHOT"),
+        @JsonSubTypes.Type(value = WebReportSource.class, name = "WEB"),
 })
 public interface ReportSource {
     /**
@@ -48,8 +48,8 @@ public interface ReportSource {
      * @throws IllegalArgumentException if the internal model cannot be represented in the view.
      */
     static ReportSource fromInternal(final models.internal.reports.ReportSource source) {
-        if (source instanceof models.internal.impl.ChromeScreenshotReportSource) {
-            return models.view.impl.ChromeScreenshotReportSource.fromInternal((models.internal.impl.ChromeScreenshotReportSource) source);
+        if (source instanceof models.internal.impl.WebReportSource) {
+            return WebReportSource.fromInternal((models.internal.impl.WebReportSource) source);
         } else {
             throw new IllegalArgumentException("Cannot convert class " + source.getClass() + " to a view model.");
         }

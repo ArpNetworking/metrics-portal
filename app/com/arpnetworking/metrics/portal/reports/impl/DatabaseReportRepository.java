@@ -37,7 +37,7 @@ import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.WebReportSource;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
 import models.internal.impl.HtmlReportFormat;
@@ -485,15 +485,15 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     private models.ebean.ReportSource internalModelToBean(final ReportSource reportSource) {
-        if (reportSource instanceof ChromeScreenshotReportSource) {
-            final ChromeScreenshotReportSource internalChromeSource = (ChromeScreenshotReportSource) reportSource;
+        if (reportSource instanceof WebReportSource) {
+            final WebReportSource internalWebSource = (WebReportSource) reportSource;
 
-            final models.ebean.ChromeScreenshotReportSource ebeanSource = new models.ebean.ChromeScreenshotReportSource();
+            final models.ebean.WebReportSource ebeanSource = new models.ebean.WebReportSource();
             ebeanSource.setUuid(reportSource.getId());
-            ebeanSource.setIgnoreCertificateErrors(internalChromeSource.ignoresCertificateErrors());
-            ebeanSource.setUri(internalChromeSource.getUri());
-            ebeanSource.setTriggeringEventName(internalChromeSource.getTriggeringEventName());
-            ebeanSource.setTitle(internalChromeSource.getTitle());
+            ebeanSource.setIgnoreCertificateErrors(internalWebSource.ignoresCertificateErrors());
+            ebeanSource.setUri(internalWebSource.getUri());
+            ebeanSource.setTriggeringEventName(internalWebSource.getTriggeringEventName());
+            ebeanSource.setTitle(internalWebSource.getTitle());
             return ebeanSource;
         }
         throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());
