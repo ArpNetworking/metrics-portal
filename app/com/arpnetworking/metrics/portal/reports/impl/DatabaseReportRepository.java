@@ -506,7 +506,7 @@ public final class DatabaseReportRepository implements ReportRepository {
                 ImmutableSetMultimap.builder();
 
         for (final Map.Entry<ReportFormat, Collection<Recipient>> entry : recipients.entrySet()) {
-            final models.ebean.ReportFormat beanFormat = INTERNAL_TO_BEAN_FORMAT_VISITOR.visit(entry.getKey());
+            final models.ebean.ReportFormat beanFormat = entry.getKey().accept(INTERNAL_TO_BEAN_FORMAT_VISITOR);
             for (final Recipient recipient : entry.getValue()) {
                 multimapBuilder.put(beanFormat, getOrCreateEbeanRecipient(recipient));
             }

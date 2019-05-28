@@ -61,7 +61,7 @@ public interface ReportFormat {
                 return HtmlReportFormat.fromInternal(htmlReportFormat);
             }
         };
-        return fromInternalVisitor.visit(format);
+        return format.accept(fromInternalVisitor);
     }
 
 }

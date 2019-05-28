@@ -56,15 +56,5 @@ public interface ReportFormat {
          * @return The result of applying the visitor.
          */
         public abstract T visitHtml(HtmlReportFormat htmlReportFormat);
-
-        /**
-         * Convenience method equivalent to {@code format.accept(this) }.
-         *
-         * @param format The format to visit.
-         * @return The result of applying the visitor
-         */
-        public final T visit(final ReportFormat format) {
-            return format.accept(this);
-        }
     }
 }
