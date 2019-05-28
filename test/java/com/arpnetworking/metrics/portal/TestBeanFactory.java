@@ -158,7 +158,7 @@ public final class TestBeanFactory {
                                 .setId(UUID.randomUUID())
                                 .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
                                 .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
-                                .setTimeout(Duration.ofMillis((long)(10000 * RANDOM.nextFloat())))
+                                .setTimeout(Duration.ofMillis((long) (10000 * RANDOM.nextFloat())))
                                 .setJsRunOnLoad(jsRunOnLoad)
                                 .setIgnoreCertificateErrors(true)
                                 .build())

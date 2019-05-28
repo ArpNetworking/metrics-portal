@@ -27,11 +27,11 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
-import javax.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Internal model for a report source that pulls content from a web page.
