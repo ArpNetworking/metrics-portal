@@ -107,7 +107,7 @@ public final class WebPageReportSource implements ReportSource {
 
     @Override
     public String getTypeName() {
-        return "web_page";
+        return "web";
     }
 
     @Override
