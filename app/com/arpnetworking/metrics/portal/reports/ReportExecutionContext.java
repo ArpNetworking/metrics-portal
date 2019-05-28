@@ -23,12 +23,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.inject.AbstractModule;
+import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
@@ -65,7 +66,7 @@ public final class ReportExecutionContext {
     public CompletionStage<Report.Result> execute(final Report report, final Instant scheduled) {
         try {
             verifyDependencies(report);
-        } catch (final ConfigException exception) {
+        } catch (final ConfigurationException exception) {
             return CompletableFuture.supplyAsync(() -> {
                 throw exception;
             });
@@ -203,24 +204,27 @@ public final class ReportExecutionContext {
         @Override
         protected void configure() {
             // TODO(spencerpearson): make less hacky
-            final Config rendererConfig = _config.getConfig("reports.renderers");
-            for (final Map.Entry<String, ConfigValue> sourceEntry : rendererConfig.entrySet()) {
+            final ConfigObject rendererConfig = _config.getObject("reports.renderers");
+            for (final Map.Entry<String, Object> sourceEntry : rendererConfig.unwrapped().entrySet()) {
                 final String sourceType = sourceEntry.getKey();
-                for (final Map.Entry<String, ConfigValue> formatEntry : ((Config) sourceEntry.getValue().unwrapped()).entrySet()) {
+                @SuppressWarnings("unchecked")
+                final Map<String, Object> formatToProps = (Map<String, Object>) sourceEntry.getValue();
+                for (final Map.Entry<String, Object> formatEntry : formatToProps.entrySet()) {
                     final String formatType = formatEntry.getKey();
+                    final String key = sourceType + "." + formatType + ".type";
                     bind(Renderer.class)
                             .annotatedWith(Names.named(getRendererKeyName(sourceType, formatType)))
-                            .to(ConfigurationHelper.getType(_environment, rendererConfig, formatEntry.getKey() + ".type"))
+                            .to(ConfigurationHelper.getType(_environment, rendererConfig.toConfig(), key))
                             .asEagerSingleton();
                 }
             }
 
-            final Config senderConfig = _config.getConfig("reports.senders");
+            final ConfigObject senderConfig = _config.getObject("reports.senders");
             for (final Map.Entry<String, ConfigValue> entry : senderConfig.entrySet()) {
                 final String recipientType = entry.getKey();
                 bind(Renderer.class)
                         .annotatedWith(Names.named(recipientType))
-                        .to(ConfigurationHelper.getType(_environment, rendererConfig, entry.getKey() + ".type"))
+                        .to(ConfigurationHelper.getType(_environment, senderConfig.toConfig(), entry.getKey() + ".type"))
                         .asEagerSingleton();
             }
         }

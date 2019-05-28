@@ -19,11 +19,9 @@ package com.arpnetworking.metrics.portal.reports;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.inject.AbstractModule;
 import com.google.inject.ConfigurationException;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.name.Names;
+import com.google.inject.Inject;
+import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
@@ -39,12 +37,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import play.Environment;
 
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for {@link ReportExecutionContext}.
@@ -88,7 +88,6 @@ public class ReportExecutionContextTest {
             .build();
 
 
-    private Injector _injector;
     @Mock
     private Sender _sender;
     private ReportExecutionContext _context;
@@ -96,18 +95,25 @@ public class ReportExecutionContextTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_sender).send(Mockito.any(), Mockito.any());
-        _injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Sender.class).annotatedWith(Names.named("EMAIL")).toInstance(_sender);
-                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
-            }
-        });
 
-        _context = new ReportExecutionContext(oh, no);
+        _context = new ReportExecutionContext(Environment.simple(), ConfigFactory.parseMap(ImmutableMap.of("reports", ImmutableMap.of(
+                "renderers", ImmutableMap.of(
+                        "web_page", ImmutableMap.of(
+                                "text/html", ImmutableMap.of(
+                                        "type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockHtmlRenderer"
+                                ),
+                                "application/pdf", ImmutableMap.of(
+                                        "type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockPdfRenderer"
+                                )
+                        )
+                ),
+                "senders", ImmutableMap.of(
+                        "EMAIL", ImmutableMap.of(
+                                "type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockEmailSender"
+                        )
+                )
+        ))));
     }
 
     @Test
@@ -119,21 +125,14 @@ public class ReportExecutionContextTest {
     }
 
     @Test(expected = ConfigurationException.class)
-    public void testExecuteThrowsIfNoRendererFound() {
-        _context.execute(EXAMPLE_REPORT, T0);
+    public void testExecuteThrowsIfNoRendererFound() throws ConfigurationException, InterruptedException {
+        unwrapAsyncThrow(_context.execute(EXAMPLE_REPORT, T0), ConfigurationException.class);
     }
 
     @Test(expected = ConfigurationException.class)
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    public void testExecuteThrowsIfNoSenderFound() {
-        final Injector injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
-            }
-        });
-        _context.execute(EXAMPLE_REPORT, T0);
+    public void testExecuteThrowsIfNoSenderFound() throws  ConfigurationException, InterruptedException {
+        unwrapAsyncThrow(_context.execute(EXAMPLE_REPORT, T0), ConfigurationException.class);
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
@@ -145,6 +144,31 @@ public class ReportExecutionContextTest {
                 .build();
     }
 
+    private <T, E extends Throwable> T unwrapAsyncThrow(
+            final CompletionStage<T> stage,
+            final Class<E> clazz
+    ) throws E, InterruptedException {
+        try {
+            return stage.toCompletableFuture().get();
+        } catch (final ExecutionException exc) {
+            throw clazz.cast(exc.getCause());
+        }
+    }
+
+    private static final class MockEmailSender implements Sender {
+        @Override
+        public CompletionStage<Void> send(
+                final Recipient recipient,
+                final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+        ) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Inject
+        MockEmailSender() {}
+
+    }
+
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
         public CompletionStage<RenderedReport> render(
@@ -154,6 +178,9 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
+
+        @Inject
+        MockHtmlRenderer() {}
     }
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
@@ -165,5 +192,8 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
+
+        @Inject
+        MockPdfRenderer() {}
     }
 }
