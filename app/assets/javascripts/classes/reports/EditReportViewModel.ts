@@ -182,6 +182,8 @@ class EditSourceViewModel extends BaseSourceViewModel {
             uri: this.url(),
             title: this.title(),
             ignoreCertificateErrors: this.ignoreCertificateErrors(),
+            timeout: this.timeout(),
+            jsRunOnLoad: this.jsRunOnLoad(),
             triggeringEventName: this.eventName(),
         }
     }

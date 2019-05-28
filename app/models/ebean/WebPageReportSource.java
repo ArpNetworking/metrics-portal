@@ -16,6 +16,7 @@
 package models.ebean;
 
 import java.net.URI;
+import java.time.Duration;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -42,6 +43,12 @@ public class WebPageReportSource extends ReportSource {
 
     @Column(name = "ignore_certificate_errors")
     private boolean ignoreCertificateErrors;
+
+    @Column(name = "timeout")
+    private Duration timeout;
+
+    @Column(name = "js_run_on_load")
+    private String jsRunOnLoad;
 
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
@@ -70,6 +77,22 @@ public class WebPageReportSource extends ReportSource {
         ignoreCertificateErrors = value;
     }
 
+    public Duration getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(final Duration value) {
+        timeout = value;
+    }
+
+    public String getJsRunOnLoad() {
+        return jsRunOnLoad;
+    }
+
+    public void setJsRunOnLoad(final String value) {
+        jsRunOnLoad = value;
+    }
+
     public String getTriggeringEventName() {
         return triggeringEventName;
     }
@@ -85,6 +108,8 @@ public class WebPageReportSource extends ReportSource {
                 .setUri(uri)
                 .setTitle(title)
                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
+                .setTimeout(timeout)
+                .setJsRunOnLoad(jsRunOnLoad)
                 .setTriggeringEventName(triggeringEventName)
                 .build();
     }

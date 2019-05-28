@@ -26,6 +26,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -40,6 +41,8 @@ public final class WebPageReportSource implements ReportSource {
     private final URI _uri;
     private final String _title;
     private final boolean _ignoreCertificateErrors;
+    private final Duration _timeout;
+    private final String _jsRunOnLoad;
     private final String _triggeringEventName;
 
     private WebPageReportSource(final Builder builder) {
@@ -47,6 +50,8 @@ public final class WebPageReportSource implements ReportSource {
         _uri = builder._uri;
         _title = builder._title;
         _ignoreCertificateErrors = builder._ignoreCertificateErrors;
+        _timeout = builder._timeout;
+        _jsRunOnLoad = builder._jsRunOnLoad;
         _triggeringEventName = builder._triggeringEventName;
     }
 
@@ -57,6 +62,8 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
+                .add("timeout", _timeout)
+                .add("jsRunOnLoad", _jsRunOnLoad)
                 .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }
@@ -94,6 +101,24 @@ public final class WebPageReportSource implements ReportSource {
     }
 
     /**
+     * The timeout to wait before giving up on rendering the report.
+     *
+     * @return the timeout.
+     */
+    public Duration getTimeout() {
+        return _timeout;
+    }
+
+    /**
+     * Any JavaScript to run immediately after page load.
+     *
+     * @return the JavaScript.
+     */
+    public String getJsRunOnLoad() {
+        return _jsRunOnLoad;
+    }
+
+    /**
      * Get the browser event name used to trigger this report source.
      *
      * The report will be considered generated once an event with this name is registered
@@ -118,12 +143,13 @@ public final class WebPageReportSource implements ReportSource {
                 && Objects.equals(_id, that._id)
                 && Objects.equals(_uri, that._uri)
                 && Objects.equals(_title, that._title)
+                && Objects.equals(_jsRunOnLoad, that._jsRunOnLoad)
                 && Objects.equals(_triggeringEventName, that._triggeringEventName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _triggeringEventName);
+        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _jsRunOnLoad, _triggeringEventName);
     }
 
     /**
@@ -171,6 +197,28 @@ public final class WebPageReportSource implements ReportSource {
         }
 
         /**
+         * The timeout to wait before giving up on rendering the report. Required. Cannot be null.
+         *
+         * @param timeout The timeout.
+         * @return This instance of {@code Builder}
+         */
+        public Builder setTimeout(final Duration timeout) {
+            _timeout = timeout;
+            return this;
+        }
+
+        /**
+         * Any JavaScript to run when the page has loaded. Optional. Defaults to empty.
+         *
+         * @param js The JavaScript.
+         * @return This instance of {@code Builder}
+         */
+        public Builder setJsRunOnLoad(final String js) {
+            _jsRunOnLoad = js;
+            return this;
+        }
+
+        /**
          * The triggering event name for the source. Required. Cannot be null or empty.
          *
          * @param triggeringEventName The event name.
@@ -203,6 +251,10 @@ public final class WebPageReportSource implements ReportSource {
         @NotNull
         @NotEmpty
         private String _triggeringEventName;
+        @NotNull
+        private Duration _timeout;
+        @NotNull
+        private String _jsRunOnLoad = "";
         @NotNull
         private Boolean _ignoreCertificateErrors = false;
 
