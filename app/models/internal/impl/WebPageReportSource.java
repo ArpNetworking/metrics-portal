@@ -19,12 +19,15 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.AssertURL;
 import net.sf.oval.constraint.AssertURLCheck;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 
+import javax.annotation.Nullable;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
@@ -240,6 +243,11 @@ public final class WebPageReportSource implements ReportSource {
             return this;
         }
 
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
+        private boolean validateTimeoutIsPositive(@Nullable final Duration timeout) {
+            return (timeout != null) && (timeout.toNanos() > 0);
+        }
+
         @NotNull
         private UUID _id;
         @NotNull
@@ -252,6 +260,7 @@ public final class WebPageReportSource implements ReportSource {
         @NotEmpty
         private String _triggeringEventName;
         @NotNull
+        @ValidateWithMethod(methodName = "validateTimeoutIsPositive", parameterType = Duration.class)
         private Duration _timeout;
         @NotNull
         private String _jsRunOnLoad = "";
