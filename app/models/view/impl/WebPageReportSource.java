@@ -130,6 +130,8 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
+                .add("timeout", _timeout)
+                .add("jsRunOnLoad", _jsRunOnLoad)
                 .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }

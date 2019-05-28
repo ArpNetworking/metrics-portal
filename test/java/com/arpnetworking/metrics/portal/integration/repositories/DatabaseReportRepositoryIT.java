@@ -237,6 +237,8 @@ public class DatabaseReportRepositoryIT {
                 new WebPageReportSource.Builder()
                         .setId(UUID.randomUUID())
                         .setTitle("Test title")
+                        .setTimeout(Duration.ofSeconds(123))
+                        .setJsRunOnLoad("some_javascript()")
                         .setTriggeringEventName("onload")
                         .setUri(URI.create("https://foo.test.com"));
 
