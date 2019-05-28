@@ -32,7 +32,7 @@ import javax.persistence.Entity;
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@DiscriminatorValue("WEB")
+@DiscriminatorValue("INTERACTIVE_WEB")
 public class WebReportSource extends ReportSource {
     @Column(name = "url")
     private URI uri;

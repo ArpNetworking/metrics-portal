@@ -188,7 +188,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
 
     // Used by KO data-bind.
     readonly availableSourceTypes = [
-        {value: SourceType.WEB,  text: "Web page"},
+        {value: SourceType.INTERACTIVE_WEB,  text: "Web page"},
     ];
 
     readonly helpMessages = {

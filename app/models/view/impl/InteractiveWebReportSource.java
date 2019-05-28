@@ -33,7 +33,7 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
-public final class WebReportSource implements ReportSource {
+public final class InteractiveWebReportSource implements ReportSource {
 
     public UUID getId() {
         return _id;
@@ -87,13 +87,13 @@ public final class WebReportSource implements ReportSource {
     }
 
     /**
-     * Create a {@code WebReportSource} from its internal representation.
+     * Create a {@code InteractiveWebReportSource} from its internal representation.
      *
      * @param source The internal model.
      * @return The view model.
      */
-    public static WebReportSource fromInternal(final models.internal.impl.WebReportSource source) {
-        final WebReportSource viewSource = new WebReportSource();
+    public static InteractiveWebReportSource fromInternal(final models.internal.impl.WebReportSource source) {
+        final InteractiveWebReportSource viewSource = new InteractiveWebReportSource();
         viewSource.setId(source.getId());
         viewSource.setUri(source.getUri());
         viewSource.setTitle(source.getTitle());
@@ -118,15 +118,15 @@ public final class WebReportSource implements ReportSource {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof WebReportSource)) {
+        if (!(o instanceof InteractiveWebReportSource)) {
             return false;
         }
-        final WebReportSource otherWebReportSource = (WebReportSource) o;
-        return _ignoreCertificateErrors == otherWebReportSource._ignoreCertificateErrors
-                && Objects.equals(_id, otherWebReportSource._id)
-                && Objects.equals(_uri, otherWebReportSource._uri)
-                && Objects.equals(_title, otherWebReportSource._title)
-                && Objects.equals(_triggeringEventName, otherWebReportSource._triggeringEventName);
+        final InteractiveWebReportSource otherInteractiveWebReportSource = (InteractiveWebReportSource) o;
+        return _ignoreCertificateErrors == otherInteractiveWebReportSource._ignoreCertificateErrors
+                && Objects.equals(_id, otherInteractiveWebReportSource._id)
+                && Objects.equals(_uri, otherInteractiveWebReportSource._uri)
+                && Objects.equals(_title, otherInteractiveWebReportSource._title)
+                && Objects.equals(_triggeringEventName, otherInteractiveWebReportSource._triggeringEventName);
     }
 
     @Override

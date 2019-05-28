@@ -18,7 +18,7 @@ package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import models.view.impl.WebReportSource;
+import models.view.impl.InteractiveWebReportSource;
 
 /**
  * View model of {@link models.internal.reports.ReportSource}. Play view models are mutable.
@@ -30,7 +30,7 @@ import models.view.impl.WebReportSource;
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = WebReportSource.class, name = "WEB"),
+        @JsonSubTypes.Type(value = InteractiveWebReportSource.class, name = "INTERACTIVE_WEB"),
 })
 public interface ReportSource {
     /**
@@ -49,7 +49,7 @@ public interface ReportSource {
      */
     static ReportSource fromInternal(final models.internal.reports.ReportSource source) {
         if (source instanceof models.internal.impl.WebReportSource) {
-            return WebReportSource.fromInternal((models.internal.impl.WebReportSource) source);
+            return InteractiveWebReportSource.fromInternal((models.internal.impl.WebReportSource) source);
         } else {
             throw new IllegalArgumentException("Cannot convert class " + source.getClass() + " to a view model.");
         }
