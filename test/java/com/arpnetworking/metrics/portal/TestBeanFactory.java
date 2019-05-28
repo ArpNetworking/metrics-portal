@@ -27,7 +27,7 @@ import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
-import models.internal.impl.WebReportSource;
+import models.internal.impl.WebPageReportSource;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
@@ -141,7 +141,7 @@ public final class TestBeanFactory {
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
                 .setReportSource(
-                        new WebReportSource.Builder()
+                        new WebPageReportSource.Builder()
                                 .setTitle(TEST_TITLE + UUID.randomUUID().toString())
                                 .setId(UUID.randomUUID())
                                 .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())

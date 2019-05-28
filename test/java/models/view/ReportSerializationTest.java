@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.Lists;
 import models.internal.scheduling.Period;
-import models.view.impl.InteractiveWebReportSource;
+import models.view.impl.WebPageReportSource;
 import models.view.impl.HtmlReportFormat;
 import models.view.impl.OneOffSchedule;
 import models.view.impl.PeriodicSchedule;
@@ -50,7 +50,7 @@ public final class ReportSerializationTest {
         expected.setId(UUID.fromString("11111111-1111-1111-1111-111111111111"));
         expected.setName("My Report Name");
 
-        final InteractiveWebReportSource expectedSource = new InteractiveWebReportSource();
+        final WebPageReportSource expectedSource = new WebPageReportSource();
         expectedSource.setId(UUID.fromString("22222222-2222-2222-2222-222222222222"));
         expectedSource.setUri(URI.create("https://example.com"));
         expectedSource.setTitle("My Report Title");

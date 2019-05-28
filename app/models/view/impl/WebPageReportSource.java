@@ -33,7 +33,7 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
-public final class InteractiveWebReportSource implements ReportSource {
+public final class WebPageReportSource implements ReportSource {
 
     public UUID getId() {
         return _id;
@@ -76,8 +76,8 @@ public final class InteractiveWebReportSource implements ReportSource {
     }
 
     @Override
-    public models.internal.impl.WebReportSource toInternal() {
-        return new models.internal.impl.WebReportSource.Builder()
+    public models.internal.impl.WebPageReportSource toInternal() {
+        return new models.internal.impl.WebPageReportSource.Builder()
                 .setId(_id)
                 .setUri(_uri)
                 .setTitle(_title)
@@ -87,13 +87,13 @@ public final class InteractiveWebReportSource implements ReportSource {
     }
 
     /**
-     * Create a {@code InteractiveWebReportSource} from its internal representation.
+     * Create a {@code WebPageReportSource} from its internal representation.
      *
      * @param source The internal model.
      * @return The view model.
      */
-    public static InteractiveWebReportSource fromInternal(final models.internal.impl.WebReportSource source) {
-        final InteractiveWebReportSource viewSource = new InteractiveWebReportSource();
+    public static WebPageReportSource fromInternal(final models.internal.impl.WebPageReportSource source) {
+        final WebPageReportSource viewSource = new WebPageReportSource();
         viewSource.setId(source.getId());
         viewSource.setUri(source.getUri());
         viewSource.setTitle(source.getTitle());
@@ -118,15 +118,15 @@ public final class InteractiveWebReportSource implements ReportSource {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof InteractiveWebReportSource)) {
+        if (!(o instanceof WebPageReportSource)) {
             return false;
         }
-        final InteractiveWebReportSource otherInteractiveWebReportSource = (InteractiveWebReportSource) o;
-        return _ignoreCertificateErrors == otherInteractiveWebReportSource._ignoreCertificateErrors
-                && Objects.equals(_id, otherInteractiveWebReportSource._id)
-                && Objects.equals(_uri, otherInteractiveWebReportSource._uri)
-                && Objects.equals(_title, otherInteractiveWebReportSource._title)
-                && Objects.equals(_triggeringEventName, otherInteractiveWebReportSource._triggeringEventName);
+        final WebPageReportSource otherWebPageReportSource = (WebPageReportSource) o;
+        return _ignoreCertificateErrors == otherWebPageReportSource._ignoreCertificateErrors
+                && Objects.equals(_id, otherWebPageReportSource._id)
+                && Objects.equals(_uri, otherWebPageReportSource._uri)
+                && Objects.equals(_title, otherWebPageReportSource._title)
+                && Objects.equals(_triggeringEventName, otherWebPageReportSource._triggeringEventName);
     }
 
     @Override

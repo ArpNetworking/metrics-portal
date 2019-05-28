@@ -30,19 +30,19 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Internal model for a report source that pulls content from the web.
+ * Internal model for a report source that pulls content from a web page.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
-public final class WebReportSource implements ReportSource {
+public final class WebPageReportSource implements ReportSource {
     private final UUID _id;
     private final URI _uri;
     private final String _title;
     private final boolean _ignoreCertificateErrors;
     private final String _triggeringEventName;
 
-    private WebReportSource(final Builder builder) {
+    private WebPageReportSource(final Builder builder) {
         _id = builder._id;
         _uri = builder._uri;
         _title = builder._title;
@@ -113,7 +113,7 @@ public final class WebReportSource implements ReportSource {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final WebReportSource that = (WebReportSource) o;
+        final WebPageReportSource that = (WebPageReportSource) o;
         return _ignoreCertificateErrors == that._ignoreCertificateErrors
                 && Objects.equals(_id, that._id)
                 && Objects.equals(_uri, that._uri)
@@ -127,14 +127,14 @@ public final class WebReportSource implements ReportSource {
     }
 
     /**
-     * Builder implementation that constructs {@link WebReportSource}.
+     * Builder implementation that constructs {@link WebPageReportSource}.
      */
-    public static final class Builder extends OvalBuilder<WebReportSource> {
+    public static final class Builder extends OvalBuilder<WebPageReportSource> {
         /**
          * Public constructor.
          */
         public Builder() {
-            super(WebReportSource::new);
+            super(WebPageReportSource::new);
         }
 
         /**

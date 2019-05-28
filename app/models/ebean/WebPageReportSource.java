@@ -32,8 +32,8 @@ import javax.persistence.Entity;
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@DiscriminatorValue("INTERACTIVE_WEB")
-public class WebReportSource extends ReportSource {
+@DiscriminatorValue("WEB_PAGE")
+public class WebPageReportSource extends ReportSource {
     @Column(name = "url")
     private URI uri;
 
@@ -80,7 +80,7 @@ public class WebReportSource extends ReportSource {
 
     @Override
     public models.internal.reports.ReportSource toInternal() {
-        return new models.internal.impl.WebReportSource.Builder()
+        return new models.internal.impl.WebPageReportSource.Builder()
                 .setId(getUuid())
                 .setUri(uri)
                 .setTitle(title)
