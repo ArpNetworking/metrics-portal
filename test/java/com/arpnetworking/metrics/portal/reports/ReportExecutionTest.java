@@ -25,7 +25,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.WebPageReportSource;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
@@ -70,7 +70,7 @@ public class ReportExecutionTest {
     private static final Report EXAMPLE_REPORT = new DefaultReport.Builder()
             .setId(UUID.randomUUID())
             .setName("My Name")
-            .setReportSource(new ChromeScreenshotReportSource.Builder()
+            .setReportSource(new WebPageReportSource.Builder()
                     .setId(UUID.randomUUID())
                     .setTitle("My Report Title")
                     .setTriggeringEventName("myTriggeringEventName")
@@ -142,10 +142,10 @@ public class ReportExecutionTest {
                 .build();
     }
 
-    private static final class MockHtmlRenderer implements Renderer<ChromeScreenshotReportSource, HtmlReportFormat> {
+    private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
         public CompletionStage<RenderedReport> render(
-                final ChromeScreenshotReportSource source,
+                final WebPageReportSource source,
                 final HtmlReportFormat format,
                 final Instant scheduled
         ) {
@@ -153,10 +153,10 @@ public class ReportExecutionTest {
         }
     }
 
-    private static final class MockPdfRenderer implements Renderer<ChromeScreenshotReportSource, PdfReportFormat> {
+    private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
         public CompletionStage<RenderedReport> render(
-                final ChromeScreenshotReportSource source,
+                final WebPageReportSource source,
                 final PdfReportFormat format,
                 final Instant scheduled
         ) {

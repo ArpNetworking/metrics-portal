@@ -16,7 +16,7 @@
 
 package models.internal.reports;
 
-import models.internal.impl.ChromeScreenshotReportSource;
+import models.internal.impl.WebPageReportSource;
 
 import java.util.UUID;
 
@@ -57,21 +57,11 @@ public interface ReportSource {
      */
     abstract class Visitor<T> {
         /**
-         * Visit a {@link ChromeScreenshotReportSource}.
+         * Visit a {@link WebPageReportSource}.
          *
          * @param source The source to visit.
          * @return The result of applying the visitor.
          */
-        public abstract T visitWeb(ChromeScreenshotReportSource source);
-
-        /**
-         * Convenience method equivalent to {@code source.accept(this) }.
-         *
-         * @param source The source to visit.
-         * @return The result of applying the visitor
-         */
-        public final T visit(final ReportSource source) {
-            return source.accept(this);
-        }
+        public abstract T visitWeb(WebPageReportSource source);
     }
 }
