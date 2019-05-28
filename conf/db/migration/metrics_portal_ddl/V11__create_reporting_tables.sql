@@ -20,7 +20,7 @@ CREATE TABLE portal.report_sources (
     type VARCHAR(255) NOT NULL,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
-    -- CHROME_SCREENSHOT
+    -- WEB_PAGE
     url VARCHAR(255),
     title VARCHAR(255) DEFAULT '',
     ignore_certificate_errors BOOLEAN NOT NULL DEFAULT FALSE,

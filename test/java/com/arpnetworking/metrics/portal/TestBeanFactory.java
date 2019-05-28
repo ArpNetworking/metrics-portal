@@ -27,7 +27,6 @@ import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
-import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
@@ -35,6 +34,7 @@ import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
+import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 import models.internal.scheduling.Period;
@@ -141,7 +141,7 @@ public final class TestBeanFactory {
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
                 .setReportSource(
-                        new ChromeScreenshotReportSource.Builder()
+                        new WebPageReportSource.Builder()
                                 .setTitle(TEST_TITLE + UUID.randomUUID().toString())
                                 .setId(UUID.randomUUID())
                                 .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())

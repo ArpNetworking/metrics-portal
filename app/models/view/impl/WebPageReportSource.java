@@ -26,14 +26,14 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * View model for a report source that pulls screenshots from a Chrome web browser.
+ * View model for a report source that pulls screenshots from the web.
  *
  * Play view models are mutable.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
-public final class ChromeScreenshotReportSource implements ReportSource {
+public final class WebPageReportSource implements ReportSource {
 
     public UUID getId() {
         return _id;
@@ -76,8 +76,8 @@ public final class ChromeScreenshotReportSource implements ReportSource {
     }
 
     @Override
-    public models.internal.impl.ChromeScreenshotReportSource toInternal() {
-        return new models.internal.impl.ChromeScreenshotReportSource.Builder()
+    public models.internal.impl.WebPageReportSource toInternal() {
+        return new models.internal.impl.WebPageReportSource.Builder()
                 .setId(_id)
                 .setUri(_uri)
                 .setTitle(_title)
@@ -87,13 +87,13 @@ public final class ChromeScreenshotReportSource implements ReportSource {
     }
 
     /**
-     * Create a {@code ChromeScreenshotReportSource} from its internal representation.
+     * Create a {@code WebPageReportSource} from its internal representation.
      *
      * @param source The internal model.
      * @return The view model.
      */
-    public static ChromeScreenshotReportSource fromInternal(final models.internal.impl.ChromeScreenshotReportSource source) {
-        final ChromeScreenshotReportSource viewSource = new ChromeScreenshotReportSource();
+    public static WebPageReportSource fromInternal(final models.internal.impl.WebPageReportSource source) {
+        final WebPageReportSource viewSource = new WebPageReportSource();
         viewSource.setId(source.getId());
         viewSource.setUri(source.getUri());
         viewSource.setTitle(source.getTitle());
@@ -118,15 +118,15 @@ public final class ChromeScreenshotReportSource implements ReportSource {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ChromeScreenshotReportSource)) {
+        if (!(o instanceof WebPageReportSource)) {
             return false;
         }
-        final ChromeScreenshotReportSource otherChromeScreenshotReportSource = (ChromeScreenshotReportSource) o;
-        return _ignoreCertificateErrors == otherChromeScreenshotReportSource._ignoreCertificateErrors
-                && Objects.equals(_id, otherChromeScreenshotReportSource._id)
-                && Objects.equals(_uri, otherChromeScreenshotReportSource._uri)
-                && Objects.equals(_title, otherChromeScreenshotReportSource._title)
-                && Objects.equals(_triggeringEventName, otherChromeScreenshotReportSource._triggeringEventName);
+        final WebPageReportSource otherWebPageReportSource = (WebPageReportSource) o;
+        return _ignoreCertificateErrors == otherWebPageReportSource._ignoreCertificateErrors
+                && Objects.equals(_id, otherWebPageReportSource._id)
+                && Objects.equals(_uri, otherWebPageReportSource._uri)
+                && Objects.equals(_title, otherWebPageReportSource._title)
+                && Objects.equals(_triggeringEventName, otherWebPageReportSource._triggeringEventName);
     }
 
     @Override

@@ -21,7 +21,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
 /**
- * Data Model for SQL storage of a chrome screenshot based report generation scheme.
+ * Data Model for SQL storage of a web based report generation scheme.
  *
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality
@@ -32,8 +32,8 @@ import javax.persistence.Entity;
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@DiscriminatorValue("CHROME_SCREENSHOT")
-public class ChromeScreenshotReportSource extends ReportSource {
+@DiscriminatorValue("WEB_PAGE")
+public class WebPageReportSource extends ReportSource {
     @Column(name = "url")
     private URI uri;
 
@@ -80,7 +80,7 @@ public class ChromeScreenshotReportSource extends ReportSource {
 
     @Override
     public models.internal.reports.ReportSource toInternal() {
-        return new models.internal.impl.ChromeScreenshotReportSource.Builder()
+        return new models.internal.impl.WebPageReportSource.Builder()
                 .setId(getUuid())
                 .setUri(uri)
                 .setTitle(title)

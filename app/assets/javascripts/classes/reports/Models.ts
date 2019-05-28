@@ -13,7 +13,7 @@ export enum ReportFormat {
 }
 
 export enum SourceType {
-    CHROME_SCREENSHOT,
+    WEB_PAGE,
 }
 
 export enum ScheduleRepetition {
@@ -40,7 +40,7 @@ export class ZoneInfo {
 
 export class BaseSourceViewModel {
     id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.CHROME_SCREENSHOT);
+    type = ko.observable<SourceType>(SourceType.WEB_PAGE);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");

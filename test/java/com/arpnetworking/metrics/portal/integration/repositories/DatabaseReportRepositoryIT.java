@@ -27,10 +27,10 @@ import io.ebean.EbeanServer;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.ChromeScreenshotReportSource;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -233,8 +233,8 @@ public class DatabaseReportRepositoryIT {
     public void testUpdateReportSource() {
         final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
 
-        final ChromeScreenshotReportSource.Builder sourceBuilder =
-                new ChromeScreenshotReportSource.Builder()
+        final WebPageReportSource.Builder sourceBuilder =
+                new WebPageReportSource.Builder()
                         .setId(UUID.randomUUID())
                         .setTitle("Test title")
                         .setTriggeringEventName("onload")
