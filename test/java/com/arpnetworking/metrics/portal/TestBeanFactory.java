@@ -129,6 +129,18 @@ public final class TestBeanFactory {
             default:
                 schedule = NeverSchedule.getInstance();
         }
+        final String jsRunOnLoad;
+        switch (RANDOM.nextInt(3)) {
+            case 2:
+                jsRunOnLoad = "";
+                break;
+            case 1:
+                jsRunOnLoad = "some_javascript()";
+                break;
+            case 0:
+            default:
+                jsRunOnLoad = "(() => {console.log({foo: 'bar', baz: new Quux()})})()";
+        }
         return new DefaultReport.Builder()
                 .setId(UUID.randomUUID())
                 .setETag(TEST_ETAG + UUID.randomUUID().toString())
@@ -146,8 +158,8 @@ public final class TestBeanFactory {
                                 .setId(UUID.randomUUID())
                                 .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
                                 .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
-                                .setTimeout(Duration.ofSeconds(123))
-                                .setJsRunOnLoad("some_javascript()")
+                                .setTimeout(Duration.ofMillis((long)(10000 * RANDOM.nextFloat())))
+                                .setJsRunOnLoad(jsRunOnLoad)
                                 .setIgnoreCertificateErrors(true)
                                 .build())
                 .setSchedule(schedule);
