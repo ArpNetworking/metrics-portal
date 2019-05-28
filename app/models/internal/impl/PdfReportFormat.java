@@ -39,7 +39,7 @@ public final class PdfReportFormat implements ReportFormat {
 
     @Override
     public <T> T accept(final Visitor<T> formatVisitor) {
-        return formatVisitor.visit(this);
+        return formatVisitor.visitPdf(this);
     }
 
     /**

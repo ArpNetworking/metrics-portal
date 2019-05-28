@@ -40,14 +40,14 @@ public interface ReportFormat {
      *
      * @param <T> the return type of the visitor.
      */
-    interface Visitor<T> {
+    abstract class Visitor<T> {
         /**
          * Visit an {@code PdfReportFormat}.
          *
          * @param pdfReportFormat The format to visit.
          * @return The result of applying the visitor.
          */
-        T visit(PdfReportFormat pdfReportFormat);
+        public abstract T visitPdf(PdfReportFormat pdfReportFormat);
 
         /**
          * Visit an {@code HtmlReportFormat}.
@@ -55,16 +55,6 @@ public interface ReportFormat {
          * @param htmlReportFormat The format to visit.
          * @return The result of applying the visitor.
          */
-        T visit(HtmlReportFormat htmlReportFormat);
-
-        /**
-         * Convenience method equivalent to {@code format.accept(this) }.
-         *
-         * @param format The format to visit.
-         * @return The result of applying the visitor
-         */
-        default T visit(ReportFormat format) {
-            return format.accept(this);
-        }
+        public abstract T visitHtml(HtmlReportFormat htmlReportFormat);
     }
 }
