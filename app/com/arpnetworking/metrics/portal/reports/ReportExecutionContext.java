@@ -222,7 +222,7 @@ public final class ReportExecutionContext {
             final ConfigObject senderConfig = _config.getObject("reports.senders");
             for (final Map.Entry<String, ConfigValue> entry : senderConfig.entrySet()) {
                 final String recipientType = entry.getKey();
-                bind(Renderer.class)
+                bind(Sender.class)
                         .annotatedWith(Names.named(recipientType))
                         .to(ConfigurationHelper.getType(_environment, senderConfig.toConfig(), entry.getKey() + ".type"))
                         .asEagerSingleton();
