@@ -45,6 +45,7 @@ import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
@@ -228,6 +229,13 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Clock provideClock() {
         return Clock.systemUTC();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private ReportExecutionContext provideReportExecutionContext(final Environment environment, final Config config) {
+        return new ReportExecutionContext(environment, config);
     }
 
     @Provides

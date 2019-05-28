@@ -47,11 +47,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Tests for {@link ReportExecution}.
+ * Tests for {@link ReportExecutionContext}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class ReportExecutionTest {
+public class ReportExecutionContextTest {
 
     private static final Recipient ALICE = new DefaultRecipient.Builder()
             .setId(UUID.randomUUID())
@@ -91,6 +91,7 @@ public class ReportExecutionTest {
     private Injector _injector;
     @Mock
     private Sender _sender;
+    private ReportExecutionContext _context;
 
     @Before
     public void setUp() {
@@ -105,11 +106,13 @@ public class ReportExecutionTest {
                 bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }
         });
+
+        _context = new ReportExecutionContext(oh, no);
     }
 
     @Test
     public void testExecute() throws Exception {
-        ReportExecution.execute(EXAMPLE_REPORT, _injector, T0).toCompletableFuture().get();
+        _context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
 
         Mockito.verify(_sender).send(ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)));
         Mockito.verify(_sender).send(BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)));
@@ -117,7 +120,7 @@ public class ReportExecutionTest {
 
     @Test(expected = ConfigurationException.class)
     public void testExecuteThrowsIfNoRendererFound() {
-        ReportExecution.execute(EXAMPLE_REPORT, Guice.createInjector(), T0);
+        _context.execute(EXAMPLE_REPORT, T0);
     }
 
     @Test(expected = ConfigurationException.class)
@@ -130,7 +133,7 @@ public class ReportExecutionTest {
                 bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }
         });
-        ReportExecution.execute(EXAMPLE_REPORT, injector, T0);
+        _context.execute(EXAMPLE_REPORT, T0);
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {

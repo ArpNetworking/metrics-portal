@@ -16,20 +16,26 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigValue;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
+import play.Environment;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -43,7 +49,7 @@ import java.util.stream.Collectors;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class ReportExecution {
+public final class ReportExecutionContext {
 
     /**
      * Render and send a report.
@@ -52,14 +58,13 @@ public final class ReportExecution {
      * and then sends each recipient their requested formats of {@link RenderedReport} (using the Injector to look up the {@link Sender}s).
      *
      * @param report The report to render and execute.
-     * @param injector A Guice injector to pull dependencies out of.
      * @param scheduled The instant the report was scheduled for.
      * @return A CompletionStage that completes when sending has completed for every recipient.
      * @throws IllegalArgumentException if any necessary class is missing from the given Injector.
      */
-    public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
+    public CompletionStage<Report.Result> execute(final Report report, final Instant scheduled) {
         try {
-            verifyDependencies(report, injector);
+            verifyDependencies(report);
         } catch (final ConfigException exception) {
             return CompletableFuture.supplyAsync(() -> {
                 throw exception;
@@ -72,9 +77,9 @@ public final class ReportExecution {
                         Map.Entry::getKey,
                         e -> e.getValue().stream()));
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
-        return renderAll(injector, formatToRecipients.keySet(), report.getSource(), scheduled)
+        return renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
                 .thenCompose(
-                        formatToRendered -> sendAll(injector, recipientToFormats, formatToRendered)
+                        formatToRendered -> sendAll(recipientToFormats, formatToRendered)
                 ).thenApply(
                         nothing -> new DefaultReportResult()
                 );
@@ -85,15 +90,15 @@ public final class ReportExecution {
      *
      * @throws IllegalArgumentException if anything is missing.
      */
-    /* package private */ static void verifyDependencies(final Report report, final Injector injector) {
+    /* package private */ void verifyDependencies(final Report report) {
         for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
-            getRenderer(injector, report.getSource(), format);
+            getRenderer(report.getSource(), format);
         }
         final Collection<Recipient> allRecipients = report.getRecipientsByFormat().values().stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
         for (final Recipient recipient : allRecipients) {
-            getSender(injector, recipient);
+            getSender(recipient);
         }
     }
 
@@ -102,8 +107,7 @@ public final class ReportExecution {
      * @return a CompletionStage mapping each given format to its RenderedReport. Completes when every render has finished.
      * @throws IllegalArgumentException if any necessary {@link Renderer} is missing from the given Injector.
      */
-    /* package private */ static CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
-            final Injector injector,
+    /* package private */ CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
             final ImmutableSet<ReportFormat> formats,
             final ReportSource source,
             final Instant scheduled
@@ -111,7 +115,7 @@ public final class ReportExecution {
         final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
-                .map(format -> getRenderer(injector, source, format)
+                .map(format -> getRenderer(source, format)
                         .render(source, format, scheduled)
                         .thenApply(rendered -> result.put(format, rendered))
                         .toCompletableFuture())
@@ -127,8 +131,7 @@ public final class ReportExecution {
      * @return a CompletionStage that completes when every send has finished.
      * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
      */
-    /* package private */ static CompletionStage<Void> sendAll(
-            final Injector injector,
+    /* package private */ CompletionStage<Void> sendAll(
             final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
             final ImmutableMap<ReportFormat, RenderedReport> formatToRendered
     ) {
@@ -136,38 +139,37 @@ public final class ReportExecution {
                 .asMap()
                 .entrySet()
                 .stream()
-                .map(entry -> getSender(injector, entry.getKey())
+                .map(entry -> getSender(entry.getKey())
                         .send(entry.getKey(), mask(formatToRendered, entry.getValue()))
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
     }
 
-    private static <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
-            final Injector injector,
+    private <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
             final S source,
             final F format
     ) {
-        final String keyName = getRendererKeyName(source, format);
+        final String keyName = getRendererKeyName(source.getTypeName(), format.getMimeType());
         @SuppressWarnings("unchecked")
-        final Renderer<S, F> renderer = injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
+        final Renderer<S, F> renderer = _injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
         if (renderer == null) {
             throw new IllegalArgumentException("no Renderer exists for key name '" + keyName + "'");
         }
         return renderer;
     }
 
-    private static Sender getSender(final Injector injector, final Recipient recipient) {
+    private Sender getSender(final Recipient recipient) {
         final String keyName = recipient.getType().name();
-        final Sender sender = injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
+        final Sender sender = _injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
         if (sender == null) {
             throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
         }
         return sender;
     }
 
-    /* package private */ static String getRendererKeyName(final ReportSource source, final ReportFormat format) {
-        return source.getTypeName() + " " + format.getMimeType();
+    /* package private */ static String getRendererKeyName(final String sourceType, final String formatType) {
+        return sourceType + " " + formatType;
     }
 
     /**
@@ -177,5 +179,51 @@ public final class ReportExecution {
         return keys.stream().collect(ImmutableMap.toImmutableMap(key -> key, map::get));
     }
 
-    private ReportExecution() {}
+    /**
+     * TODO(spencerpearson).
+     * @param environment TODO(spencerpearson).
+     * @param config TODO(spencerpearson).
+     */
+    public ReportExecutionContext(final Environment environment, final Config config) {
+        _injector = Guice.createInjector(new ReportingModule(environment, config));
+    }
+
+    private final Injector _injector;
+
+    private static final class ReportingModule extends AbstractModule {
+        ReportingModule(final Environment environment, final Config config) {
+            super();
+            _environment = environment;
+            _config = config;
+        }
+
+        private final Environment _environment;
+        private final Config _config;
+
+        @Override
+        protected void configure() {
+            // TODO(spencerpearson): make less hacky
+            final Config rendererConfig = _config.getConfig("reports.renderers");
+            for (final Map.Entry<String, ConfigValue> sourceEntry : rendererConfig.entrySet()) {
+                final String sourceType = sourceEntry.getKey();
+                for (final Map.Entry<String, ConfigValue> formatEntry : ((Config) sourceEntry.getValue().unwrapped()).entrySet()) {
+                    final String formatType = formatEntry.getKey();
+                    bind(Renderer.class)
+                            .annotatedWith(Names.named(getRendererKeyName(sourceType, formatType)))
+                            .to(ConfigurationHelper.getType(_environment, rendererConfig, formatEntry.getKey() + ".type"))
+                            .asEagerSingleton();
+                }
+            }
+
+            final Config senderConfig = _config.getConfig("reports.senders");
+            for (final Map.Entry<String, ConfigValue> entry : senderConfig.entrySet()) {
+                final String recipientType = entry.getKey();
+                bind(Renderer.class)
+                        .annotatedWith(Names.named(recipientType))
+                        .to(ConfigurationHelper.getType(_environment, rendererConfig, entry.getKey() + ".type"))
+                        .asEagerSingleton();
+            }
+        }
+    }
+
 }
