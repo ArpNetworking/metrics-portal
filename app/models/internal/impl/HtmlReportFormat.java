@@ -34,7 +34,7 @@ public final class HtmlReportFormat implements ReportFormat {
 
     @Override
     public <T> T accept(final Visitor<T> formatVisitor) {
-        return formatVisitor.visit(this);
+        return formatVisitor.visitHtml(this);
     }
 
     @Override

@@ -52,16 +52,16 @@ public interface ReportFormat {
     static ReportFormat fromInternal(models.internal.reports.ReportFormat format) {
         final Visitor<ReportFormat> fromInternalVisitor = new Visitor<ReportFormat>() {
             @Override
-            public ReportFormat visit(final models.internal.impl.PdfReportFormat pdfReportFormat) {
+            public ReportFormat visitPdf(final models.internal.impl.PdfReportFormat pdfReportFormat) {
                 return PdfReportFormat.fromInternal(pdfReportFormat);
             }
 
             @Override
-            public ReportFormat visit(final models.internal.impl.HtmlReportFormat htmlReportFormat) {
+            public ReportFormat visitHtml(final models.internal.impl.HtmlReportFormat htmlReportFormat) {
                 return HtmlReportFormat.fromInternal(htmlReportFormat);
             }
         };
-        return fromInternalVisitor.visit(format);
+        return format.accept(fromInternalVisitor);
     }
 
 }
