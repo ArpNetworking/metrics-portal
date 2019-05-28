@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-ALTER TABLE portal.report_sources ADD COLUMN timeout DECIMAL;
+ALTER TABLE portal.report_sources ADD COLUMN timeout BIGINT;
 ALTER TABLE portal.report_sources ADD COLUMN js_run_on_load VARCHAR(8191);

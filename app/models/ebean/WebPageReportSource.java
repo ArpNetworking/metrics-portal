@@ -44,8 +44,8 @@ public class WebPageReportSource extends ReportSource {
     @Column(name = "ignore_certificate_errors")
     private boolean ignoreCertificateErrors;
 
-    @Column(name = "timeout")
-    private Duration timeout;
+    @Column(name = "timeout_nanos")
+    private long timeoutNanos;
 
     @Column(name = "js_run_on_load")
     private String jsRunOnLoad;
@@ -77,12 +77,12 @@ public class WebPageReportSource extends ReportSource {
         ignoreCertificateErrors = value;
     }
 
-    public Duration getTimeout() {
-        return timeout;
+    public long getTimeout() {
+        return timeoutNanos;
     }
 
-    public void setTimeout(final Duration value) {
-        timeout = value;
+    public void setTimeout(final long value) {
+        timeoutNanos = value;
     }
 
     public String getJsRunOnLoad() {
@@ -108,7 +108,7 @@ public class WebPageReportSource extends ReportSource {
                 .setUri(uri)
                 .setTitle(title)
                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
-                .setTimeout(timeout)
+                .setTimeout(Duration.ofNanos(timeoutNanos))
                 .setJsRunOnLoad(jsRunOnLoad)
                 .setTriggeringEventName(triggeringEventName)
                 .build();
