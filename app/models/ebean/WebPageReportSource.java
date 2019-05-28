@@ -16,6 +16,7 @@
 package models.ebean;
 
 import java.net.URI;
+import java.time.Duration;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -42,6 +43,9 @@ public class WebPageReportSource extends ReportSource {
 
     @Column(name = "ignore_certificate_errors")
     private boolean ignoreCertificateErrors;
+
+    @Column(name = "timeout_nanos")
+    private long timeoutNanos;
 
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
@@ -70,6 +74,14 @@ public class WebPageReportSource extends ReportSource {
         ignoreCertificateErrors = value;
     }
 
+    public long getTimeout() {
+        return timeoutNanos;
+    }
+
+    public void setTimeout(final long value) {
+        timeoutNanos = value;
+    }
+
     public String getTriggeringEventName() {
         return triggeringEventName;
     }
@@ -85,6 +97,7 @@ public class WebPageReportSource extends ReportSource {
                 .setUri(uri)
                 .setTitle(title)
                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
+                .setTimeout(Duration.ofNanos(timeoutNanos))
                 .setTriggeringEventName(triggeringEventName)
                 .build();
     }

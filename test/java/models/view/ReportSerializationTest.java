@@ -55,6 +55,7 @@ public final class ReportSerializationTest {
         expectedSource.setUri(URI.create("https://example.com"));
         expectedSource.setTitle("My Report Title");
         expectedSource.setIgnoreCertificateErrors(false);
+        expectedSource.setTimeout(Duration.ofSeconds(123));
         expectedSource.setTriggeringEventName("myTriggeringEventName");
         expected.setSource(expectedSource);
 

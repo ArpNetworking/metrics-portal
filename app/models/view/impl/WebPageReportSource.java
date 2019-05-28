@@ -22,6 +22,7 @@ import com.google.common.base.MoreObjects;
 import models.view.reports.ReportSource;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -67,6 +68,14 @@ public final class WebPageReportSource implements ReportSource {
         _ignoreCertificateErrors = value;
     }
 
+    public Duration getTimeout() {
+        return _timeout;
+    }
+
+    public void setTimeout(final Duration value) {
+        _timeout = value;
+    }
+
     public String getTriggeringEventName() {
         return _triggeringEventName;
     }
@@ -82,6 +91,7 @@ public final class WebPageReportSource implements ReportSource {
                 .setUri(_uri)
                 .setTitle(_title)
                 .setIgnoreCertificateErrors(_ignoreCertificateErrors)
+                .setTimeout(_timeout)
                 .setTriggeringEventName(_triggeringEventName)
                 .build();
     }
@@ -98,6 +108,7 @@ public final class WebPageReportSource implements ReportSource {
         viewSource.setUri(source.getUri());
         viewSource.setTitle(source.getTitle());
         viewSource.setTriggeringEventName(source.getTriggeringEventName());
+        viewSource.setTimeout(source.getTimeout());
         viewSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
         return viewSource;
     }
@@ -109,6 +120,7 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
+                .add("timeout", _timeout)
                 .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }
@@ -126,6 +138,7 @@ public final class WebPageReportSource implements ReportSource {
                 && Objects.equals(_id, otherWebPageReportSource._id)
                 && Objects.equals(_uri, otherWebPageReportSource._uri)
                 && Objects.equals(_title, otherWebPageReportSource._title)
+                && Objects.equals(_timeout, otherWebPageReportSource._timeout)
                 && Objects.equals(_triggeringEventName, otherWebPageReportSource._triggeringEventName);
     }
 
@@ -143,6 +156,8 @@ public final class WebPageReportSource implements ReportSource {
     private String _title;
     @JsonProperty("ignoreCertificateErrors")
     private boolean _ignoreCertificateErrors;
+    @JsonProperty("timeout")
+    private Duration _timeout;
     @JsonProperty("triggeringEventName")
     private String _triggeringEventName;
 }

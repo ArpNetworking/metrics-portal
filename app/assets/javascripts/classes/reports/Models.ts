@@ -44,6 +44,7 @@ export class BaseSourceViewModel {
     title = ko.observable<string>("");
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");
+    timeout = ko.observable<number>(0);
     ignoreCertificateErrors = ko.observable<boolean>(false);
 
     public load(raw): this {
@@ -51,6 +52,7 @@ export class BaseSourceViewModel {
         this.url(raw.uri);
         this.title(raw.title);
         this.eventName(raw.triggeringEventName);
+        this.timeout(raw.timeout);
         this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
 
         const type = SourceType[raw.type as string];

@@ -494,6 +494,7 @@ public final class DatabaseReportRepository implements ReportRepository {
             ebeanSource.setUri(internalWebSource.getUri());
             ebeanSource.setTriggeringEventName(internalWebSource.getTriggeringEventName());
             ebeanSource.setTitle(internalWebSource.getTitle());
+            ebeanSource.setTimeout(internalWebSource.getTimeout().toNanos());
             return ebeanSource;
         }
         throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());

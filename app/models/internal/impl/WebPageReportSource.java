@@ -20,15 +20,19 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.base.MoreObjects;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.AssertURL;
 import net.sf.oval.constraint.AssertURLCheck;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
  * Internal model for a report source that pulls content from a web page.
@@ -41,6 +45,7 @@ public final class WebPageReportSource implements ReportSource {
     private final URI _uri;
     private final String _title;
     private final boolean _ignoreCertificateErrors;
+    private final Duration _timeout;
     private final String _triggeringEventName;
 
     private WebPageReportSource(final Builder builder) {
@@ -48,6 +53,7 @@ public final class WebPageReportSource implements ReportSource {
         _uri = builder._uri;
         _title = builder._title;
         _ignoreCertificateErrors = builder._ignoreCertificateErrors;
+        _timeout = builder._timeout;
         _triggeringEventName = builder._triggeringEventName;
     }
 
@@ -58,6 +64,7 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
+                .add("timeout", _timeout)
                 .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }
@@ -95,6 +102,15 @@ public final class WebPageReportSource implements ReportSource {
     }
 
     /**
+     * The timeout to wait before giving up on rendering the report.
+     *
+     * @return the timeout.
+     */
+    public Duration getTimeout() {
+        return _timeout;
+    }
+
+    /**
      * Get the browser event name used to trigger this report source.
      *
      * The report will be considered generated once an event with this name is registered
@@ -129,6 +145,7 @@ public final class WebPageReportSource implements ReportSource {
                 && Objects.equals(_id, that._id)
                 && Objects.equals(_uri, that._uri)
                 && Objects.equals(_title, that._title)
+                && Objects.equals(_timeout, that._timeout)
                 && Objects.equals(_triggeringEventName, that._triggeringEventName);
     }
 
@@ -182,6 +199,17 @@ public final class WebPageReportSource implements ReportSource {
         }
 
         /**
+         * The timeout to wait before giving up on rendering the report. Required. Cannot be null.
+         *
+         * @param timeout The timeout.
+         * @return This instance of {@code Builder}
+         */
+        public Builder setTimeout(final Duration timeout) {
+            _timeout = timeout;
+            return this;
+        }
+
+        /**
          * The triggering event name for the source. Required. Cannot be null or empty.
          *
          * @param triggeringEventName The event name.
@@ -203,6 +231,11 @@ public final class WebPageReportSource implements ReportSource {
             return this;
         }
 
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
+        private boolean validateTimeoutIsPositive(@Nullable final Duration timeout) {
+            return (timeout != null) && (timeout.toNanos() > 0);
+        }
+
         @NotNull
         private UUID _id;
         @NotNull
@@ -215,6 +248,8 @@ public final class WebPageReportSource implements ReportSource {
         @NotEmpty
         private String _triggeringEventName;
         @NotNull
+        @ValidateWithMethod(methodName = "validateTimeoutIsPositive", parameterType = Duration.class)
+        private Duration _timeout;
         private Boolean _ignoreCertificateErrors = false;
 
     }
