@@ -27,7 +27,7 @@ GET        /status                              controllers.MetaController.statu
 GET        /version                             controllers.MetaController.version()
 
 # Telemetry proxy
-GET        /v1/proxy/stream                     controllers.ProxyController.stream(uri: String ?= null)
+GET        /v1/proxy/stream                     controllers.TelemetryProxyController.stream(uri: String ?= null)
 
 # Hosts
 GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
@@ -50,10 +50,15 @@ PUT        /v1/reports                          controllers.ReportController.add
 GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
-# Kairosdb proxying
-# The original Kairos routes start with /api/v1 and this is a direct
-# replacement for them
--> /api/v1 kairosdb.Routes
+# Kairosdb proxy
+GET        /metricnames                         controllers.KairosDbProxyController.metricNames(containing: String ?= null)
+GET        /health/check                        controllers.KairosDbProxyController.healthCheck()
+GET        /health/status                       controllers.KairosDbProxyController.status()
+GET        /tagnames                            controllers.KairosDbProxyController.tagNames()
+GET        /tagvalues                           controllers.KairosDbProxyController.tagValues()
+POST       /version                             controllers.KairosDbProxyController.version()
+POST       /datapoints/query/tags               controllers.KairosDbProxyController.queryTags()
+POST       /datapoints/query                    controllers.KairosDbProxyController.queryMetrics()
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path = "/public", file: Asset)

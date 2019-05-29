@@ -60,12 +60,12 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
- * A generic proxy controller.
+ * KairosDb proxy controller.
  *
  * @author Brandon Arp (barp at groupon dot com)
  */
 @Singleton
-public class KairosDbProxy extends Controller {
+public class KairosDbProxyController extends Controller {
     /**
      * Public constructor.
      *
@@ -75,7 +75,7 @@ public class KairosDbProxy extends Controller {
      * @param mapper ObjectMapper to use for JSON serialization
      */
     @Inject
-    public KairosDbProxy(
+    public KairosDbProxyController(
             final Config configuration,
             final WSClient client,
             final KairosDbClient kairosDbClient,
@@ -233,7 +233,7 @@ public class KairosDbProxy extends Controller {
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxy.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
     private static final String METRICS_KEY = "METRICNAMES";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
 
