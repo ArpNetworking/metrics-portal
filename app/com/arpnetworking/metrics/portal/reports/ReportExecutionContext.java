@@ -16,8 +16,6 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -25,22 +23,14 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
-import com.google.inject.AbstractModule;
 import com.google.inject.ConfigurationException;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
-import com.typesafe.config.ConfigValue;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
-import play.Environment;
 
 import java.io.IOException;
 import java.time.Instant;

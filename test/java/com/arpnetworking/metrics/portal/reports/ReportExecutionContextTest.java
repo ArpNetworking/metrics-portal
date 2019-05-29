@@ -101,7 +101,8 @@ public class ReportExecutionContextTest {
     private Config _config;
 
     @Before
-    public void setUp() throws IOException {
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(Mockito.any(), Mockito.any());
 
@@ -111,7 +112,7 @@ public class ReportExecutionContextTest {
             public void setupModule(final SetupContext context) {
                 addDeserializer(MockEmailSender.class, new JsonDeserializer<MockEmailSender>() {
                     @Override
-                    public MockEmailSender deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
+                    public MockEmailSender deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
                         return _emailSender;
                     }
                 });
@@ -119,13 +120,16 @@ public class ReportExecutionContextTest {
             }
         });
         _config = ConfigFactory.parseMap(ImmutableMap.of(
+                // CHECKSTYLE.OFF: LineLength
                 "reports.renderers.web_page.\"text/html\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockHtmlRenderer",
                 "reports.renderers.web_page.\"application/pdf\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockPdfRenderer",
                 "reports.senders.EMAIL.type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockEmailSender"
+                // CHECKSTYLE.ON: LineLength
         ));
     }
 
     @Test
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
         final ReportExecutionContext context = new ReportExecutionContext(_objectMapper, _config);
         context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
@@ -174,6 +178,7 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
+        @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
         public CompletionStage<Void> send(
                 final Recipient recipient,
                 final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
