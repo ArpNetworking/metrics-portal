@@ -58,13 +58,6 @@ public final class ReportExecution {
      *   (or exceptionally with an {@link IllegalArgumentException} if any dependency is missing).
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
-        try {
-            verifyDependencies(report, injector);
-        } catch (final ConfigException exception) {
-            final CompletableFuture<Report.Result> result = new CompletableFuture<>();
-            result.completeExceptionally(exception);
-            return result;
-        }
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
                 .stream()
@@ -72,12 +65,17 @@ public final class ReportExecution {
                         Map.Entry::getKey,
                         e -> e.getValue().stream()));
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
-        return renderAll(injector, formatToRecipients.keySet(), report.getSource(), scheduled)
-                .thenCompose(
-                        formatToRendered -> sendAll(injector, recipientToFormats, formatToRendered)
-                ).thenApply(
-                        nothing -> new DefaultReportResult()
-                );
+
+        return CompletableFuture.completedFuture(null).thenApply(nothing -> {
+            verifyDependencies(report, injector);
+            return null;
+        }).thenCompose(nothing ->
+                renderAll(injector, formatToRecipients.keySet(), report.getSource(), scheduled)
+        ).thenCompose(formatToRendered ->
+                sendAll(injector, recipientToFormats, formatToRendered)
+        ).thenApply(nothing ->
+                new DefaultReportResult()
+        );
     }
 
     /**

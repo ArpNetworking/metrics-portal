@@ -45,6 +45,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for {@link ReportExecution}.
@@ -116,13 +117,13 @@ public class ReportExecutionTest {
     }
 
     @Test(expected = ConfigurationException.class)
-    public void testExecuteThrowsIfNoRendererFound() {
-        ReportExecution.execute(EXAMPLE_REPORT, Guice.createInjector(), T0);
+    public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
+        unwrapAsyncThrow(ReportExecution.execute(EXAMPLE_REPORT, Guice.createInjector(), T0), ConfigurationException.class);
     }
 
     @Test(expected = ConfigurationException.class)
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    public void testExecuteThrowsIfNoSenderFound() {
+    public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
         final Injector injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
@@ -130,7 +131,7 @@ public class ReportExecutionTest {
                 bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
             }
         });
-        ReportExecution.execute(EXAMPLE_REPORT, injector, T0);
+        unwrapAsyncThrow(ReportExecution.execute(EXAMPLE_REPORT, injector, T0), ConfigurationException.class);
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
@@ -140,6 +141,17 @@ public class ReportExecutionTest {
                 .setScheduledFor(scheduled)
                 .setGeneratedAt(scheduled)
                 .build();
+    }
+
+    private <T, E extends Throwable> T unwrapAsyncThrow(
+            final CompletionStage<T> stage,
+            final Class<E> clazz
+    ) throws E, InterruptedException {
+        try {
+            return stage.toCompletableFuture().get();
+        } catch (final ExecutionException exc) {
+            throw clazz.cast(exc.getCause());
+        }
     }
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
