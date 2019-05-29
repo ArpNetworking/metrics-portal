@@ -1,8 +1,0 @@
-GET   /metricnames                                    controllers.KairosDbProxy.metricNames(containing: String ?= null)
-GET   /health/check                                   controllers.KairosDbProxy.healthCheck()
-GET   /health/status                                  controllers.KairosDbProxy.status()
-GET   /tagnames                                       controllers.KairosDbProxy.tagNames()
-GET   /tagvalues                                      controllers.KairosDbProxy.tagValues()
-POST  /version                                        controllers.KairosDbProxy.version()
-POST  /datapoints/query/tags                          controllers.KairosDbProxy.queryTags()
-POST  /datapoints/query                               controllers.KairosDbProxy.queryMetrics()

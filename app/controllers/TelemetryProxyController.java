@@ -33,11 +33,11 @@ import java.net.URISyntaxException;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Metrics portal proxy controller. Exposes API to proxy streaming to application hosts.
+ * Telemetry streaming proxy controller.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public class ProxyController extends Controller {
+public class TelemetryProxyController extends Controller {
 
     /**
      * Public constructor.
@@ -46,7 +46,7 @@ public class ProxyController extends Controller {
      * @param features The {@code Features} instance.
      */
     @Inject
-    public ProxyController(
+    public TelemetryProxyController(
             final ActorSystem system,
             final Features features) {
         _system = system;
