@@ -54,16 +54,16 @@ public final class ReportExecution {
      * @param report The report to render and execute.
      * @param injector A Guice injector to pull dependencies out of.
      * @param scheduled The instant the report was scheduled for.
-     * @return A CompletionStage that completes when sending has completed for every recipient.
-     * @throws IllegalArgumentException if any necessary class is missing from the given Injector.
+     * @return A CompletionStage that completes when sending has completed for every recipient
+     *   (or exceptionally with an {@link IllegalArgumentException} if any dependency is missing).
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
         try {
             verifyDependencies(report, injector);
         } catch (final ConfigException exception) {
-            return CompletableFuture.supplyAsync(() -> {
-                throw exception;
-            });
+            final CompletableFuture<Report.Result> result = new CompletableFuture<>();
+            result.completeExceptionally(exception);
+            return result;
         }
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
@@ -99,6 +99,7 @@ public final class ReportExecution {
 
     /**
      * Render a ReportSource into many different formats.
+     *
      * @return a CompletionStage mapping each given format to its RenderedReport. Completes when every render has finished.
      * @throws IllegalArgumentException if any necessary {@link Renderer} is missing from the given Injector.
      */
@@ -123,7 +124,7 @@ public final class ReportExecution {
      * Send RenderedReports to many different recipients.
      * @param recipientToFormats specifies which formats of report each recipient should receive.
      * @param formatToRendered maps each format to the report rendered into that format.
-     *                         The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
+     *   The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
      * @return a CompletionStage that completes when every send has finished.
      * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
      */
