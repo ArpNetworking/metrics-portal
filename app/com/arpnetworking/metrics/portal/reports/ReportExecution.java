@@ -24,7 +24,6 @@ import com.google.common.collect.Maps;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.typesafe.config.ConfigException;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -54,8 +53,7 @@ public final class ReportExecution {
      * @param report The report to render and execute.
      * @param injector A Guice injector to pull dependencies out of.
      * @param scheduled The instant the report was scheduled for.
-     * @return A CompletionStage that completes when sending has completed for every recipient
-     *   (or exceptionally with an {@link IllegalArgumentException} if any dependency is missing).
+     * @return A CompletionStage that completes when sending has completed for every recipient.
      */
     public static CompletionStage<Report.Result> execute(final Report report, final Injector injector, final Instant scheduled) {
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
