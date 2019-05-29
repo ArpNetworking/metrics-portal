@@ -19,6 +19,7 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
+import com.arpnetworking.metrics.portal.reports.ReportExecution;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
