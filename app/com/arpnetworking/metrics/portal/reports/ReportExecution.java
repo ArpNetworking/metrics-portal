@@ -122,6 +122,7 @@ public final class ReportExecution {
 
     /**
      * Send RenderedReports to many different recipients.
+     *
      * @param recipientToFormats specifies which formats of report each recipient should receive.
      * @param formatToRendered maps each format to the report rendered into that format.
      *   The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
