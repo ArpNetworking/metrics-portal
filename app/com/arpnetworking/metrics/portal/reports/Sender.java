@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableMap;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
@@ -27,6 +28,11 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type"
+)
 public interface Sender {
     /**
      * Send some {@link RenderedReport} documents to a {@link Recipient}.

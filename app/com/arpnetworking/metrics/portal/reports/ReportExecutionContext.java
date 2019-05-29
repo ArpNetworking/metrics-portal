@@ -16,7 +16,10 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -30,6 +33,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigValue;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
@@ -38,6 +42,7 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import play.Environment;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
@@ -151,26 +156,24 @@ public final class ReportExecutionContext {
             final S source,
             final F format
     ) {
-        final String keyName = getRendererKeyName(source.getTypeName(), format.getMimeType());
         @SuppressWarnings("unchecked")
-        final Renderer<S, F> renderer = _injector.getInstance(Key.get(Renderer.class, Names.named(keyName)));
-        if (renderer == null) {
-            throw new IllegalArgumentException("no Renderer exists for key name '" + keyName + "'");
+        final Renderer<S, F> result = _renderers.getOrDefault(source.getTypeName(), ImmutableMap.of()).get(format.getMimeType());
+        if (result == null) {
+            throw new IllegalArgumentException(
+                    "no Renderer exists for source type " + source.getTypeName() + ", MIME type " + format.getMimeType()
+            );
         }
-        return renderer;
+        return result;
     }
 
     private Sender getSender(final Recipient recipient) {
-        final String keyName = recipient.getType().name();
-        final Sender sender = _injector.getInstance(Key.get(Sender.class, Names.named(keyName)));
-        if (sender == null) {
-            throw new IllegalArgumentException("no Sender exists for key name '" + keyName + "'");
+        final Sender result = _senders.get(recipient.getType().name());
+        if (result == null) {
+            throw new IllegalArgumentException(
+                    "no Sender exists for recipient type " + recipient.getType().name()
+            );
         }
-        return sender;
-    }
-
-    /* package private */ static String getRendererKeyName(final String sourceType, final String formatType) {
-        return sourceType + " " + formatType;
+        return result;
     }
 
     /**
@@ -182,52 +185,21 @@ public final class ReportExecutionContext {
 
     /**
      * TODO(spencerpearson).
-     * @param environment TODO(spencerpearson).
+     * @param objectMapper TODO(spencerpearson).
      * @param config TODO(spencerpearson).
+     * @throws IOException TODO(spencerpearson).
      */
-    public ReportExecutionContext(final Environment environment, final Config config) {
-        _injector = Guice.createInjector(new ReportingModule(environment, config));
+    public ReportExecutionContext(final ObjectMapper objectMapper, final Config config) throws IOException {
+        _renderers = objectMapper.readValue(
+                config.getObject("reports.renderers").render(ConfigRenderOptions.concise()),
+                new TypeReference<Map<String, Map<String, Renderer<?, ?>>>>() {}
+        );
+        _senders = objectMapper.readValue(
+                config.getObject("reports.senders").render(ConfigRenderOptions.concise()),
+                new TypeReference<Map<String, Sender>>() {}
+        );
     }
 
-    private final Injector _injector;
-
-    private static final class ReportingModule extends AbstractModule {
-        ReportingModule(final Environment environment, final Config config) {
-            super();
-            _environment = environment;
-            _config = config;
-        }
-
-        private final Environment _environment;
-        private final Config _config;
-
-        @Override
-        protected void configure() {
-            // TODO(spencerpearson): make less hacky
-            final ConfigObject rendererConfig = _config.getObject("reports.renderers");
-            for (final Map.Entry<String, Object> sourceEntry : rendererConfig.unwrapped().entrySet()) {
-                final String sourceType = sourceEntry.getKey();
-                @SuppressWarnings("unchecked")
-                final Map<String, Object> formatToProps = (Map<String, Object>) sourceEntry.getValue();
-                for (final Map.Entry<String, Object> formatEntry : formatToProps.entrySet()) {
-                    final String formatType = formatEntry.getKey();
-                    final String key = sourceType + "." + formatType + ".type";
-                    bind(Renderer.class)
-                            .annotatedWith(Names.named(getRendererKeyName(sourceType, formatType)))
-                            .to(ConfigurationHelper.getType(_environment, rendererConfig.toConfig(), key))
-                            .asEagerSingleton();
-                }
-            }
-
-            final ConfigObject senderConfig = _config.getObject("reports.senders");
-            for (final Map.Entry<String, ConfigValue> entry : senderConfig.entrySet()) {
-                final String recipientType = entry.getKey();
-                bind(Sender.class)
-                        .annotatedWith(Names.named(recipientType))
-                        .to(ConfigurationHelper.getType(_environment, senderConfig.toConfig(), entry.getKey() + ".type"))
-                        .asEagerSingleton();
-            }
-        }
-    }
-
+    private final Map<String, Map<String, Renderer>> _renderers;
+    private final Map<String, Sender> _senders;
 }

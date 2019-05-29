@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
@@ -30,6 +31,11 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type"
+)
 public interface Renderer<S extends ReportSource, F extends ReportFormat> {
     /**
      * Render a ReportSource.

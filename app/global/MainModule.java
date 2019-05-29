@@ -81,6 +81,7 @@ import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Collections;
@@ -234,8 +235,8 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
-    private ReportExecutionContext provideReportExecutionContext(final Environment environment, final Config config) {
-        return new ReportExecutionContext(environment, config);
+    private ReportExecutionContext provideReportExecutionContext(final ObjectMapper objectMapper, final Config config) throws IOException {
+        return new ReportExecutionContext(objectMapper, config);
     }
 
     @Provides
