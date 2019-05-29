@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -36,7 +35,7 @@ public class EmailSender implements Sender {
             final Recipient recipient,
             final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     ) {
-        return CompletableFuture.completedFuture(null); // TODO(spencerpearson)
+        throw new RuntimeException();
     }
 
     EmailSender() {}
