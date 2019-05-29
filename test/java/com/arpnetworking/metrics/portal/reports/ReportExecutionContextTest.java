@@ -153,7 +153,7 @@ public class ReportExecutionContextTest {
                 _objectMapper,
                 _config.withoutPath("reports.senders.EMAIL")
         );
-        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), ConfigurationException.class);
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {

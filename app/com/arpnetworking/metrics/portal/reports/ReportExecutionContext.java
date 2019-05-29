@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
-import com.google.inject.ConfigurationException;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
 import models.internal.impl.DefaultReportResult;
@@ -56,16 +55,8 @@ public final class ReportExecutionContext {
      * @param report The report to render and execute.
      * @param scheduled The instant the report was scheduled for.
      * @return A CompletionStage that completes when sending has completed for every recipient.
-     * @throws IllegalArgumentException if any necessary class is missing from the given Injector.
      */
     public CompletionStage<Report.Result> execute(final Report report, final Instant scheduled) {
-        try {
-            verifyDependencies(report);
-        } catch (final ConfigurationException exception) {
-            return CompletableFuture.supplyAsync(() -> {
-                throw exception;
-            });
-        }
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
                 .stream()
@@ -73,12 +64,17 @@ public final class ReportExecutionContext {
                         Map.Entry::getKey,
                         e -> e.getValue().stream()));
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
-        return renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
-                .thenCompose(
-                        formatToRendered -> sendAll(recipientToFormats, formatToRendered)
-                ).thenApply(
-                        nothing -> new DefaultReportResult()
-                );
+
+        return CompletableFuture.completedFuture(null).thenApply(nothing -> {
+            verifyDependencies(report);
+            return null;
+        }).thenCompose(nothing ->
+                renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
+        ).thenCompose(formatToRendered ->
+                sendAll(recipientToFormats, formatToRendered)
+        ).thenApply(nothing ->
+                new DefaultReportResult()
+        );
     }
 
     /**
@@ -100,6 +96,7 @@ public final class ReportExecutionContext {
 
     /**
      * Render a ReportSource into many different formats.
+     *
      * @return a CompletionStage mapping each given format to its RenderedReport. Completes when every render has finished.
      * @throws IllegalArgumentException if any necessary {@link Renderer} is missing from the given Injector.
      */
@@ -121,9 +118,10 @@ public final class ReportExecutionContext {
 
     /**
      * Send RenderedReports to many different recipients.
+     *
      * @param recipientToFormats specifies which formats of report each recipient should receive.
      * @param formatToRendered maps each format to the report rendered into that format.
-     *                         The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
+     *   The {@code keySet()} must contain every format in the union of {@code recipientToFormats.values()}.
      * @return a CompletionStage that completes when every send has finished.
      * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
      */

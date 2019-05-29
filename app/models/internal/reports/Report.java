@@ -62,5 +62,7 @@ public interface Report extends Job<Report.Result> {
     @JsonSubTypes(
             @JsonSubTypes.Type(value = DefaultReportResult.class, name = "DefaultReportResult")
     )
-    interface Result {}
+    interface Result {
+        // TODO(spencerpearson): what should this expose? RenderedReports? Map<Recipient, DeliveryStatus>?
+    }
 }
