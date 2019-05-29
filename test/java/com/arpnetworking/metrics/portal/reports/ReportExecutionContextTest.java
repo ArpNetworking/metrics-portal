@@ -25,8 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.inject.ConfigurationException;
-import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -121,8 +119,8 @@ public class ReportExecutionContextTest {
         });
         _config = ConfigFactory.parseMap(ImmutableMap.of(
                 // CHECKSTYLE.OFF: LineLength
-                "reports.renderers.web_page.\"text/html\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockHtmlRenderer",
-                "reports.renderers.web_page.\"application/pdf\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockPdfRenderer",
+                "reports.renderers.web.\"text/html\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockHtmlRenderer",
+                "reports.renderers.web.\"application/pdf\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockPdfRenderer",
                 "reports.senders.EMAIL.type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockEmailSender"
                 // CHECKSTYLE.ON: LineLength
         ));
@@ -141,7 +139,7 @@ public class ReportExecutionContextTest {
     public void testExecuteThrowsIfNoRendererFound() throws InterruptedException, IOException {
         final ReportExecutionContext context = new ReportExecutionContext(
                 _objectMapper,
-                _config.withoutPath("reports.renderers.web_page.\"text/html\"")
+                _config.withoutPath("reports.renderers.web.\"text/html\"")
         );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
@@ -186,7 +184,6 @@ public class ReportExecutionContextTest {
             return CompletableFuture.completedFuture(null);
         }
 
-        @Inject
         MockEmailSender() {}
 
     }
@@ -201,7 +198,6 @@ public class ReportExecutionContextTest {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
 
-        @Inject
         MockHtmlRenderer() {}
     }
 
@@ -215,7 +211,6 @@ public class ReportExecutionContextTest {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
 
-        @Inject
         MockPdfRenderer() {}
     }
 }
