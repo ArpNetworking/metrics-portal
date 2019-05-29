@@ -181,7 +181,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         final long startTime = System.nanoTime();
         PatternsCS.pipe(
-                job.execute(getSelf(), scheduled)
+                job.execute(_injector, scheduled)
                         .handle((result, error) -> {
                             _periodicMetrics.recordTimer(
                                     "jobs/executor/execution_time",

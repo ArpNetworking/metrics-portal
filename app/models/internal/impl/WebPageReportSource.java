@@ -106,6 +106,16 @@ public final class WebPageReportSource implements ReportSource {
     }
 
     @Override
+    public String getTypeName() {
+        return "web";
+    }
+
+    @Override
+    public <T> T accept(final Visitor<T> sourceVisitor) {
+        return sourceVisitor.visitWeb(this);
+    }
+
+    @Override
     public boolean equals(final Object o) {
         if (this == o) {
             return true;

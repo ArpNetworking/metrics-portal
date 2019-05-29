@@ -42,6 +42,11 @@ public final class PdfReportFormat implements ReportFormat {
         return formatVisitor.visitPdf(this);
     }
 
+    @Override
+    public String getMimeType() {
+        return "application/pdf";
+    }
+
     /**
      * Get the width of the PDF in inches.
      *

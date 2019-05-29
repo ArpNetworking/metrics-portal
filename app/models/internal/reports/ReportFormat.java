@@ -25,6 +25,14 @@ import models.internal.impl.PdfReportFormat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public interface ReportFormat {
+
+    /**
+     * The MIME type that documents of this format have.
+     *
+     * @return The MIME type.
+     */
+    String getMimeType();
+
     /**
      * Applies a {@code Visitor} to this format. This should delegate the to the appropriate {@code Visitor#visit} overload.
      *

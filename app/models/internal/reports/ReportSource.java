@@ -16,6 +16,8 @@
 
 package models.internal.reports;
 
+import models.internal.impl.WebPageReportSource;
+
 import java.util.UUID;
 
 /**
@@ -30,5 +32,36 @@ public interface ReportSource {
      * @return the id of this report source.
      */
     UUID getId();
-}
 
+    /**
+     * Return the "type" of this report (e.g. "web"), represented as a string.
+     *
+     * @return the type.
+     */
+    String getTypeName();
+
+    /**
+     * Applies a {@code Visitor} to this source. This should delegate the to the appropriate {@code Visitor#visit} overload.
+     *
+     * @param sourceVisitor the visitor
+     * @param <T> the return type of the visitor. Use {@link Void} for visitors that do not need to return a result.
+     * @return The result of applying the visitor.
+     */
+    <T> T accept(Visitor<T> sourceVisitor);
+
+    /**
+     * {@code Visitor} abstracts over operations which could potentially handle various
+     * implementations of ReportFormat.
+     *
+     * @param <T> the return type of the visitor.
+     */
+    abstract class Visitor<T> {
+        /**
+         * Visit a {@link WebPageReportSource}.
+         *
+         * @param source The source to visit.
+         * @return The result of applying the visitor.
+         */
+        public abstract T visitWeb(WebPageReportSource source);
+    }
+}

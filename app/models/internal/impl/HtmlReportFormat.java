@@ -33,6 +33,11 @@ public final class HtmlReportFormat implements ReportFormat {
     private HtmlReportFormat(final Builder builder) {}
 
     @Override
+    public String getMimeType() {
+        return "text/html";
+    }
+
+    @Override
     public <T> T accept(final Visitor<T> formatVisitor) {
         return formatVisitor.visitHtml(this);
     }

@@ -16,13 +16,14 @@
 
 package models.internal.impl;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.reports.ReportExecution;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -36,7 +37,6 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
 
@@ -91,8 +91,8 @@ public final class DefaultReport implements Report {
             value = "NP_NONNULL_PARAM_VIOLATION",
             justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
     )
-    public CompletionStage<Result> execute(final ActorRef scheduler, final Instant scheduled) {
-        return CompletableFuture.completedFuture(null);
+    public CompletionStage<Result> execute(final Injector injector, final Instant scheduled) {
+        return ReportExecution.execute(this, injector, scheduled);
     }
 
     @Override
@@ -228,4 +228,5 @@ public final class DefaultReport implements Report {
         @NotNull
         private Schedule _schedule;
     }
+
 }

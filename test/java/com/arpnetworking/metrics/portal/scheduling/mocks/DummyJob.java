@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.mocks;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
@@ -75,7 +75,7 @@ public final class DummyJob<T> implements Job<T> {
     }
 
     @Override
-    public CompletionStage<T> execute(final ActorRef scheduler, final Instant scheduled) {
+    public CompletionStage<T> execute(final Injector injector, final Instant scheduled) {
         return _blocker.thenCompose(whatever -> {
             final CompletableFuture<T> future = new CompletableFuture<>();
             if (_result.isPresent()) {
