@@ -291,6 +291,7 @@ public class RollupGeneratorTest {
         assertEquals("metric_1h", hourlyQuery.getMetrics().get(0).getName());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
                 hourlyQuery.getStartTime());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), hourlyQuery.getEndTime().get());
 
         final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertTrue(lastDataPointMessage1.isFailure());
@@ -360,7 +361,7 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
                 rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
         assertEquals(1, rollupQuery.getMetrics().size());
         final Metric metric = rollupQuery.getMetrics().get(0);
         assertEquals(1, metric.getGroupBy().size());
@@ -434,7 +435,7 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
                 rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
 
         _probe.expectNoMessage();
     }
@@ -493,7 +494,7 @@ public class RollupGeneratorTest {
         assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
         assertEquals(lastDataPoint, rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
 
         _probe.expectNoMessage();
     }
@@ -564,7 +565,7 @@ public class RollupGeneratorTest {
         assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
         assertEquals(lastDataPoint, rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), rollupQuery.getEndTime().get());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
 
         _probe.expectNoMessage();
     }
