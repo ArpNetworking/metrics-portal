@@ -116,9 +116,9 @@ public class ReportExecutionContextTest {
         _environment = Environment.simple();
 
         _config = ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$MockHtmlRenderer",
-                "reports.renderers.web.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
-                "reports.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
+                "reporting.renderers.web.\"text/html\".type", getClass().getName() + "$MockHtmlRenderer",
+                "reporting.renderers.web.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
+                "reporting.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
         ));
     }
 
@@ -136,7 +136,7 @@ public class ReportExecutionContextTest {
         final ReportExecutionContext context = new ReportExecutionContext(
                 _injector,
                 _environment,
-                _config.withoutPath("reports.renderers.web.\"text/html\"")
+                _config.withoutPath("reporting.renderers.web.\"text/html\"")
         );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
@@ -146,7 +146,7 @@ public class ReportExecutionContextTest {
         final ReportExecutionContext context = new ReportExecutionContext(
                 _injector,
                 _environment,
-                _config.withoutPath("reports.senders.EMAIL")
+                _config.withoutPath("reporting.senders.EMAIL")
         );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
@@ -154,42 +154,42 @@ public class ReportExecutionContextTest {
     @Test(expected = Exception.class)
     public void testBadConfigWithNoType() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.\"text/html\".something", "something"
+                "reporting.renderers.web.\"text/html\".something", "something"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithUnloadableType() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.\"text/html\".type", "no.such.package.MyClass"
+                "reporting.renderers.web.\"text/html\".type", "no.such.package.MyClass"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithUninjectableType() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$ClassNotRegisteredWithInjector"
+                "reporting.renderers.web.\"text/html\".type", getClass().getName() + "$ClassNotRegisteredWithInjector"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRenderers() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers", "not a ConfigObject"
+                "reporting.renderers", "not a ConfigObject"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRenderersByFormat() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web", "not a ConfigObject"
+                "reporting.renderers.web", "not a ConfigObject"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRendererSpec() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.text", "not a ConfigObject"
+                "reporting.renderers.web.text", "not a ConfigObject"
         )));
     }
 

@@ -181,9 +181,9 @@ public final class ReportExecutionContext {
      */
     @Inject
     public ReportExecutionContext(final Injector injector, final Environment environment, final Config config) {
-        if (config.hasPath("reports")) {
-            _renderers = loadMapMapObject(injector, environment, config.getObject("reports.renderers"));
-            _senders = loadMapObject(injector, environment, config.getObject("reports.senders"));
+        if (config.hasPath("reporting")) {
+            _renderers = loadMapMapObject(injector, environment, config.getObject("reporting.renderers"));
+            _senders = loadMapObject(injector, environment, config.getObject("reporting.senders"));
         } else {
             _renderers = ImmutableMap.of();
             _senders = ImmutableMap.of();
