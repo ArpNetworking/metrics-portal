@@ -16,28 +16,30 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.ConfigObject;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
+import play.Environment;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Utilities for execution of {@link Report}s.
@@ -172,22 +174,45 @@ public final class ReportExecutionContext {
     }
 
     /**
-     * TODO(spencerpearson).
-     * @param objectMapper TODO(spencerpearson).
-     * @param config TODO(spencerpearson).
-     * @throws IOException TODO(spencerpearson).
+     * Public constructor.
+     *
+     * @param injector Guice Injector to load the classes specified in the config.
+     * @param environment Environment used to load the classes specified in the config.
+     * @param config Config to identify {@link Renderer}s / {@link Sender}s / other necessary objects for report execution.
      */
-    public ReportExecutionContext(final ObjectMapper objectMapper, final Config config) throws IOException {
-        _renderers = objectMapper.readValue(
-                config.getObject("reports.renderers").render(ConfigRenderOptions.concise()),
-                new TypeReference<Map<String, Map<String, Renderer<?, ?>>>>() {}
-        );
-        _senders = objectMapper.readValue(
-                config.getObject("reports.senders").render(ConfigRenderOptions.concise()),
-                new TypeReference<Map<String, Sender>>() {}
-        );
+    @Inject
+    public ReportExecutionContext(final Injector injector, final Environment environment, final Config config) {
+        _renderers = loadMapMapObject(injector, environment, config.getObject("reports.renderers"));
+        _senders = loadMapObject(injector, environment, config.getObject("reports.senders"));
     }
 
-    private final Map<String, Map<String, Renderer>> _renderers;
-    private final Map<String, Sender> _senders;
+    @Nullable
+    private <T> T loadObject(final Injector injector, final Environment environment, final ConfigObject config) {
+        final Class<? extends T> senderClass = ConfigurationHelper.getType(environment, config.toConfig(), "type");
+        return injector.getInstance(senderClass);
+    }
+    private <T> ImmutableMap<String, T> loadMapObject(
+            final Injector injector,
+            final Environment environment,
+            final ConfigObject config
+    ) {
+        return config.entrySet().stream().collect(ImmutableMap.toImmutableMap(
+                Map.Entry::getKey,
+                e -> loadObject(injector, environment, (ConfigObject) e.getValue())
+        ));
+    }
+    private <T> ImmutableMap<String, ImmutableMap<String, T>> loadMapMapObject(
+            final Injector injector,
+            final Environment environment,
+            final ConfigObject config
+    ) {
+        return config.entrySet().stream().collect(ImmutableMap.toImmutableMap(
+                Map.Entry::getKey,
+                e -> loadMapObject(injector, environment, (ConfigObject) e.getValue())
+        ));
+    }
+
+    private final ImmutableMap<String, ImmutableMap<String, Renderer>> _renderers;
+    private final ImmutableMap<String, Sender> _senders;
+
 }
