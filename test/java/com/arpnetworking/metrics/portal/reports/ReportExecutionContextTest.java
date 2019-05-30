@@ -105,10 +105,7 @@ public class ReportExecutionContextTest {
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
-            protected void configure() {
-                bind(MockHtmlRenderer.class).asEagerSingleton();
-                bind(MockPdfRenderer.class).asEagerSingleton();
-            }
+            protected void configure() {}
 
             @Provides
             private MockEmailSender provideMockEmailSender() {

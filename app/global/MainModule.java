@@ -153,9 +153,6 @@ public class MainModule extends AbstractModule {
 
         // Reporting
         bind(ReportExecutionContext.class).asEagerSingleton();
-        bind(HtmlScreenshotRenderer.class).asEagerSingleton();
-        bind(PdfScreenshotRenderer.class).asEagerSingleton();
-        bind(EmailSender.class).asEagerSingleton();
     }
 
     @Singleton
