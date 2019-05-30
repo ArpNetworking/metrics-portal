@@ -108,6 +108,7 @@ public class ReportExecutionContextTest {
             protected void configure() {}
 
             @Provides
+            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by Guice")
             private MockEmailSender provideMockEmailSender() {
                 return _emailSender;
             }
