@@ -18,9 +18,9 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
-import com.arpnetworking.metrics.portal.reports.SourceType;
 import net.sf.oval.constraint.AssertURL;
 import net.sf.oval.constraint.AssertURLCheck;
 import net.sf.oval.constraint.NotEmpty;
