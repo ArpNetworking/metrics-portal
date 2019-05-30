@@ -16,14 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
-import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
@@ -49,7 +42,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import play.Environment;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
@@ -144,13 +136,21 @@ public class ReportExecutionContextTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
-        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config.withoutPath("reports.renderers.web.\"text/html\""));
+        final ReportExecutionContext context = new ReportExecutionContext(
+                _injector,
+                _environment,
+                _config.withoutPath("reports.renderers.web.\"text/html\"")
+        );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
-        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config.withoutPath("reports.senders.EMAIL"));
+        final ReportExecutionContext context = new ReportExecutionContext(
+                _injector,
+                _environment,
+                _config.withoutPath("reports.senders.EMAIL")
+        );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
 

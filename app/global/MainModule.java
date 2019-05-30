@@ -84,7 +84,6 @@ import play.inject.ApplicationLifecycle;
 import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Collections;
