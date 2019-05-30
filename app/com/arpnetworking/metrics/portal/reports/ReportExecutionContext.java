@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 
 /**
  * Utilities for execution of {@link Report}s.
@@ -191,7 +190,11 @@ public final class ReportExecutionContext {
         }
     }
 
-    @Nullable
+    /**
+     * Instantiates a POJO from a ConfigObject specification like {@code {type: "com.foo..."}}.
+     * Someday, will probably allow the ConfigObject to specify other parameters too, and use reflective Builder magic
+     *   to plumb them into the instantiated object.
+     */
     private <T> T loadObject(final Injector injector, final Environment environment, final ConfigObject config) {
         final Class<? extends T> senderClass = ConfigurationHelper.getType(environment, config.toConfig(), "type");
         return injector.getInstance(senderClass);
