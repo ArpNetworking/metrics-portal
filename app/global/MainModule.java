@@ -47,6 +47,9 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.EmailSender;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.HtmlScreenshotRenderer;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.PdfScreenshotRenderer;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -148,6 +151,11 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupGenerator"))
                 .toProvider(RollupGeneratorProvider.class)
                 .asEagerSingleton();
+
+        bind(ReportExecutionContext.class).asEagerSingleton();
+        bind(HtmlScreenshotRenderer.class).asEagerSingleton();
+        bind(PdfScreenshotRenderer.class).asEagerSingleton();
+        bind(EmailSender.class).asEagerSingleton();
     }
 
     @Singleton
@@ -230,13 +238,6 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Clock provideClock() {
         return Clock.systemUTC();
-    }
-
-    @Provides
-    @Singleton
-    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
-    private ReportExecutionContext provideReportExecutionContext(final ObjectMapper objectMapper, final Config config) throws IOException {
-        return new ReportExecutionContext(objectMapper, config);
     }
 
     @Provides

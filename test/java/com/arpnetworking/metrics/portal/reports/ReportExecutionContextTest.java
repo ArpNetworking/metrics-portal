@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -25,6 +26,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -42,6 +47,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import play.Environment;
 
 import java.io.IOException;
 import java.net.URI;
@@ -93,9 +99,10 @@ public class ReportExecutionContextTest {
             .build();
 
 
+    private Injector _injector;
+    private Environment _environment;
     @Mock
     private MockEmailSender _emailSender;
-    private ObjectMapper _objectMapper;
     private Config _config;
 
     @Before
@@ -104,54 +111,89 @@ public class ReportExecutionContextTest {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(Mockito.any(), Mockito.any());
 
-        _objectMapper = ObjectMapperFactory.createInstance();
-        _objectMapper.registerModule(new SimpleModule() {
+        _injector = Guice.createInjector(new AbstractModule() {
             @Override
-            public void setupModule(final SetupContext context) {
-                addDeserializer(MockEmailSender.class, new JsonDeserializer<MockEmailSender>() {
-                    @Override
-                    public MockEmailSender deserialize(final JsonParser jsonParser, final DeserializationContext deserializationContext) {
-                        return _emailSender;
-                    }
-                });
-                super.setupModule(context);
+            protected void configure() {
+                bind(MockHtmlRenderer.class).asEagerSingleton();
+                bind(MockPdfRenderer.class).asEagerSingleton();
+            }
+
+            @Provides
+            private MockEmailSender provideMockEmailSender() {
+                return _emailSender;
             }
         });
+
+        _environment = Environment.simple();
+
         _config = ConfigFactory.parseMap(ImmutableMap.of(
-                // CHECKSTYLE.OFF: LineLength
-                "reports.renderers.web.\"text/html\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockHtmlRenderer",
-                "reports.renderers.web.\"application/pdf\".type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockPdfRenderer",
-                "reports.senders.EMAIL.type", "com.arpnetworking.metrics.portal.reports.ReportExecutionContextTest$MockEmailSender"
-                // CHECKSTYLE.ON: LineLength
+                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$MockHtmlRenderer",
+                "reports.renderers.web.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
+                "reports.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
         ));
     }
 
     @Test
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
-        final ReportExecutionContext context = new ReportExecutionContext(_objectMapper, _config);
+        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
         context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
         Mockito.verify(_emailSender).send(ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)));
         Mockito.verify(_emailSender).send(BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testExecuteThrowsIfNoRendererFound() throws InterruptedException, IOException {
-        final ReportExecutionContext context = new ReportExecutionContext(
-                _objectMapper,
-                _config.withoutPath("reports.renderers.web.\"text/html\"")
-        );
+    public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
+        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config.withoutPath("reports.renderers.web.\"text/html\""));
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    public void testExecuteThrowsIfNoSenderFound() throws  IllegalArgumentException, InterruptedException, IOException {
-        final ReportExecutionContext context = new ReportExecutionContext(
-                _objectMapper,
-                _config.withoutPath("reports.senders.EMAIL")
-        );
+    public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
+        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config.withoutPath("reports.senders.EMAIL"));
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNoType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers.web.\"text/html\".something", "something"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithUnloadableType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers.web.\"text/html\".type", "no.such.package.MyClass"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithUninjectableType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$ClassNoRegisteredWithInjector"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRenderers() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers", "not a ConfigObject"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRenderersByFormat() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers.web", "not a ConfigObject"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRendererSpec() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reports.renderers.web.text", "not a ConfigObject"
+        )));
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
@@ -213,4 +255,6 @@ public class ReportExecutionContextTest {
 
         MockPdfRenderer() {}
     }
+
+    private static final class ClassNoRegisteredWithInjector {}
 }
