@@ -171,7 +171,7 @@ public class ReportExecutionContextTest {
     @Test(expected = Exception.class)
     public void testBadConfigWithUninjectableType() {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
-                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$ClassNoRegisteredWithInjector"
+                "reports.renderers.web.\"text/html\".type", getClass().getName() + "$ClassNotRegisteredWithInjector"
         )));
     }
 
@@ -230,9 +230,6 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(null);
         }
-
-        MockEmailSender() {}
-
     }
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
@@ -244,8 +241,6 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
-
-        MockHtmlRenderer() {}
     }
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
@@ -257,9 +252,7 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
-
-        MockPdfRenderer() {}
     }
 
-    private static final class ClassNoRegisteredWithInjector {}
+    private static final class ClassNotRegisteredWithInjector {}
 }
