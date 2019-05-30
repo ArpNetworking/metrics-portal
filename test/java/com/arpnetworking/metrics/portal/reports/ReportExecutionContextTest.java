@@ -196,6 +196,11 @@ public class ReportExecutionContextTest {
         )));
     }
 
+    @Test
+    public void testOkIfNoReportsSectionPresent() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
+    }
+
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
         return new DefaultRenderedReport.Builder()
                 .setBytes(new byte[0])
