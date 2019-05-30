@@ -276,6 +276,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return _kairosDbClient.queryMetrics(
                 new MetricsQuery.Builder()
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(_maxBackFillPeriods)))
+                        .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
                                 new Metric.Builder()
                                         .setName(metricName)
@@ -304,7 +305,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
             queryBuilder.setStartTime(lastDataPoint);
         }
 
-        queryBuilder.setEndTime(period.recentEndTime(_clock.instant()));
+        // We subtract a millisecond from the endTime because KairosDB treats both start and end time as being
+        // inclusive.  If we don't then we will save a rollup for the next period which will be incomplete.
+        queryBuilder.setEndTime(period.recentEndTime(_clock.instant()).minusMillis(1));
 
         metricBuilder.setName(message.getMetricName());
         if (!message.getTags().isEmpty()) {
