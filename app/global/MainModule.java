@@ -151,6 +151,7 @@ public class MainModule extends AbstractModule {
                 .toProvider(RollupGeneratorProvider.class)
                 .asEagerSingleton();
 
+        // Reporting
         bind(ReportExecutionContext.class).asEagerSingleton();
         bind(HtmlScreenshotRenderer.class).asEagerSingleton();
         bind(PdfScreenshotRenderer.class).asEagerSingleton();
