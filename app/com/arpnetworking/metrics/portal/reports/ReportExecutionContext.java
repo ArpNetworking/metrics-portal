@@ -146,20 +146,20 @@ public final class ReportExecutionContext {
             final F format
     ) {
         @SuppressWarnings("unchecked")
-        final Renderer<S, F> result = _renderers.getOrDefault(source.getTypeName(), ImmutableMap.of()).get(format.getMimeType());
+        final Renderer<S, F> result = _renderers.getOrDefault(source.getType(), ImmutableMap.of()).get(format.getMimeType());
         if (result == null) {
             throw new IllegalArgumentException(
-                    "no Renderer exists for source type " + source.getTypeName() + ", MIME type " + format.getMimeType()
+                    "no Renderer exists for source type " + source.getType() + ", MIME type " + format.getMimeType()
             );
         }
         return result;
     }
 
     private Sender getSender(final Recipient recipient) {
-        final Sender result = _senders.get(recipient.getType().name());
+        final Sender result = _senders.get(recipient.getType());
         if (result == null) {
             throw new IllegalArgumentException(
-                    "no Sender exists for recipient type " + recipient.getType().name()
+                    "no Sender exists for recipient type " + recipient.getType()
             );
         }
         return result;
@@ -182,8 +182,20 @@ public final class ReportExecutionContext {
     @Inject
     public ReportExecutionContext(final Injector injector, final Environment environment, final Config config) {
         if (config.hasPath("reporting")) {
-            _renderers = loadMapMapObject(injector, environment, config.getObject("reporting.renderers"));
-            _senders = loadMapObject(injector, environment, config.getObject("reporting.senders"));
+            _renderers = this.<Renderer>loadMapMapObject(injector, environment, config.getObject("reporting.renderers"))
+                    .entrySet()
+                    .stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            e -> SourceType.valueOf(e.getKey()),
+                            Map.Entry::getValue
+                    ));
+            _senders = this.<Sender>loadMapObject(injector, environment, config.getObject("reporting.senders"))
+                    .entrySet()
+                    .stream()
+                    .collect(ImmutableMap.toImmutableMap(
+                            e -> RecipientType.valueOf(e.getKey()),
+                            Map.Entry::getValue
+                    ));
         } else {
             _renderers = ImmutableMap.of();
             _senders = ImmutableMap.of();
@@ -220,7 +232,7 @@ public final class ReportExecutionContext {
         ));
     }
 
-    private final ImmutableMap<String, ImmutableMap<String, Renderer>> _renderers;
-    private final ImmutableMap<String, Sender> _senders;
+    private final ImmutableMap<SourceType, ImmutableMap<String, Renderer>> _renderers;
+    private final ImmutableMap<RecipientType, Sender> _senders;
 
 }

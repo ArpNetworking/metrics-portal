@@ -20,6 +20,7 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
+import com.arpnetworking.metrics.portal.reports.SourceType;
 import net.sf.oval.constraint.AssertURL;
 import net.sf.oval.constraint.AssertURLCheck;
 import net.sf.oval.constraint.NotEmpty;
@@ -106,8 +107,8 @@ public final class WebPageReportSource implements ReportSource {
     }
 
     @Override
-    public String getTypeName() {
-        return "web";
+    public SourceType getType() {
+        return SourceType.WEB_PAGE;
     }
 
     @Override
