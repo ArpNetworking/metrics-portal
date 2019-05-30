@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
@@ -28,12 +29,12 @@ public class RollupPeriodTest {
     @Test
     public void testRecentEndTimeMillis() {
         assertEquals(
-                Instant.parse("2019-01-30T05:00:00Z"),
-                RollupPeriod.HOURLY.nextPeriodStart(Instant.parse("2019-01-30T04:20:00Z")));
+                Instant.parse("2019-01-30T04:00:00Z"),
+                RollupPeriod.HOURLY.recentEndTime(Instant.parse("2019-01-30T04:20:00Z")));
 
         assertEquals(
-                Instant.parse("2019-01-31T00:00:00Z"),
-                RollupPeriod.DAILY.nextPeriodStart(Instant.parse("2019-01-30T04:20:00Z")));
+                Instant.parse("2019-01-30T00:00:00Z"),
+                RollupPeriod.DAILY.recentEndTime(Instant.parse("2019-01-30T04:20:00Z")));
     }
 
     @Test
@@ -45,5 +46,14 @@ public class RollupPeriodTest {
         assertEquals(
                 Instant.parse("2019-02-01T00:00:00Z"),
                 RollupPeriod.DAILY.nextPeriodStart(Instant.parse("2019-01-31T03:24:00Z")));
+    }
+
+    @Test
+    public void testPeriodCountToDuration() {
+        assertEquals(Duration.ofHours(4),
+                RollupPeriod.HOURLY.periodCountToDuration(4));
+
+        assertEquals(Duration.ofDays(4),
+                RollupPeriod.DAILY.periodCountToDuration(4));
     }
 }
