@@ -18,7 +18,7 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.arpnetworking.metrics.portal.reports.ReportExecution;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
@@ -92,7 +92,7 @@ public final class DefaultReport implements Report {
             justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
     )
     public CompletionStage<Result> execute(final Injector injector, final Instant scheduled) {
-        return ReportExecution.execute(this, injector, scheduled);
+        return injector.getInstance(ReportExecutionContext.class).execute(this, scheduled);
     }
 
     @Override

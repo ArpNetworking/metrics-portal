@@ -20,10 +20,11 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
-import com.google.inject.ConfigurationException;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.name.Names;
+import com.google.inject.Provides;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import play.Environment;
 
 import java.net.URI;
 import java.time.Instant;
@@ -48,11 +50,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Tests for {@link ReportExecution}.
+ * Tests for {@link ReportExecutionContext}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class ReportExecutionTest {
+public class ReportExecutionContextTest {
 
     private static final Recipient ALICE = new DefaultRecipient.Builder()
             .setId(UUID.randomUUID())
@@ -90,48 +92,111 @@ public class ReportExecutionTest {
 
 
     private Injector _injector;
+    private Environment _environment;
     @Mock
-    private Sender _sender;
+    private MockEmailSender _emailSender;
+    private Config _config;
 
     @Before
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(Mockito.any(), Mockito.any());
 
-        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_sender).send(Mockito.any(), Mockito.any());
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
-            protected void configure() {
-                bind(Sender.class).annotatedWith(Names.named("EMAIL")).toInstance(_sender);
-                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
+            protected void configure() {}
+
+            @Provides
+            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by Guice")
+            private MockEmailSender provideMockEmailSender() {
+                return _emailSender;
             }
         });
+
+        _environment = Environment.simple();
+
+        _config = ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE.\"text/html\".type", getClass().getName() + "$MockHtmlRenderer",
+                "reporting.renderers.WEB_PAGE.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
+                "reporting.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
+        ));
     }
 
     @Test
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
-        ReportExecution.execute(EXAMPLE_REPORT, _injector, T0).toCompletableFuture().get();
-
-        Mockito.verify(_sender).send(ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)));
-        Mockito.verify(_sender).send(BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)));
+        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
+        context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
+        Mockito.verify(_emailSender).send(ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)));
+        Mockito.verify(_emailSender).send(BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)));
     }
 
-    @Test(expected = ConfigurationException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
-        unwrapAsyncThrow(ReportExecution.execute(EXAMPLE_REPORT, Guice.createInjector(), T0), ConfigurationException.class);
+        final ReportExecutionContext context = new ReportExecutionContext(
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html\"")
+        );
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
 
-    @Test(expected = ConfigurationException.class)
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
+    @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
-        final Injector injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(Renderer.class).annotatedWith(Names.named("web text/html")).to(MockHtmlRenderer.class).asEagerSingleton();
-                bind(Renderer.class).annotatedWith(Names.named("web application/pdf")).to(MockPdfRenderer.class).asEagerSingleton();
-            }
-        });
-        unwrapAsyncThrow(ReportExecution.execute(EXAMPLE_REPORT, injector, T0), ConfigurationException.class);
+        final ReportExecutionContext context = new ReportExecutionContext(
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.senders.EMAIL")
+        );
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNoType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE.\"text/html\".something", "something"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithUnloadableType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE.\"text/html\".type", "no.such.package.MyClass"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithUninjectableType() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE.\"text/html\".type", getClass().getName() + "$ClassNotRegisteredWithInjector"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRenderers() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers", "not a ConfigObject"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRenderersByFormat() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE", "not a ConfigObject"
+        )));
+    }
+
+    @Test(expected = Exception.class)
+    public void testBadConfigWithNonobjectRendererSpec() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+                "reporting.renderers.WEB_PAGE.text", "not a ConfigObject"
+        )));
+    }
+
+    @Test
+    public void testOkIfNoReportsSectionPresent() {
+        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
     private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
@@ -151,6 +216,17 @@ public class ReportExecutionTest {
             return stage.toCompletableFuture().get();
         } catch (final ExecutionException exc) {
             throw clazz.cast(exc.getCause());
+        }
+    }
+
+    private static class MockEmailSender implements Sender {
+        @Override
+        @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
+        public CompletionStage<Void> send(
+                final Recipient recipient,
+                final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+        ) {
+            return CompletableFuture.completedFuture(null);
         }
     }
 
@@ -175,4 +251,6 @@ public class ReportExecutionTest {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
     }
+
+    private static final class ClassNotRegisteredWithInjector {}
 }

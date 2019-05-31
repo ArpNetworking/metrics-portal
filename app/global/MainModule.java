@@ -45,6 +45,7 @@ import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
@@ -146,6 +147,9 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupGenerator"))
                 .toProvider(RollupGeneratorProvider.class)
                 .asEagerSingleton();
+
+        // Reporting
+        bind(ReportExecutionContext.class).asEagerSingleton();
     }
 
     @Singleton

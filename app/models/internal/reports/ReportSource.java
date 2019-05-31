@@ -16,6 +16,7 @@
 
 package models.internal.reports;
 
+import com.arpnetworking.metrics.portal.reports.SourceType;
 import models.internal.impl.WebPageReportSource;
 
 import java.util.UUID;
@@ -34,11 +35,11 @@ public interface ReportSource {
     UUID getId();
 
     /**
-     * Return the "type" of this report (e.g. "web"), represented as a string.
+     * Return the {@link SourceType} of this source. Should probably depend only on class, not instance variables.
      *
      * @return the type.
      */
-    String getTypeName();
+    SourceType getType();
 
     /**
      * Applies a {@code Visitor} to this source. This should delegate the to the appropriate {@code Visitor#visit} overload.
