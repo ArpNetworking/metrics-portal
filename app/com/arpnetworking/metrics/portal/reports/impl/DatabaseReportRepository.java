@@ -484,19 +484,22 @@ public final class DatabaseReportRepository implements ReportRepository {
         throw new IllegalArgumentException("Unsupported internal model: " + internalSchedule.getClass());
     }
 
-    private models.ebean.ReportSource internalModelToBean(final ReportSource reportSource) {
-        if (reportSource instanceof WebPageReportSource) {
-            final WebPageReportSource internalWebSource = (WebPageReportSource) reportSource;
-
+    private static final ReportSource.Visitor<models.ebean.ReportSource> FROM_INTERNAL_SOURCE_VISITOR =
+            new ReportSource.Visitor<models.ebean.ReportSource>() {
+        @Override
+        public models.ebean.ReportSource visitWeb(final WebPageReportSource source) {
             final models.ebean.WebPageReportSource ebeanSource = new models.ebean.WebPageReportSource();
-            ebeanSource.setUuid(reportSource.getId());
-            ebeanSource.setIgnoreCertificateErrors(internalWebSource.ignoresCertificateErrors());
-            ebeanSource.setUri(internalWebSource.getUri());
-            ebeanSource.setTriggeringEventName(internalWebSource.getTriggeringEventName());
-            ebeanSource.setTitle(internalWebSource.getTitle());
+            ebeanSource.setUuid(source.getId());
+            ebeanSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
+            ebeanSource.setUri(source.getUri());
+            ebeanSource.setTriggeringEventName(source.getTriggeringEventName());
+            ebeanSource.setTitle(source.getTitle());
             return ebeanSource;
         }
-        throw new IllegalArgumentException("Unsupported internal model: " + reportSource.getClass());
+    };
+
+    private models.ebean.ReportSource internalModelToBean(final ReportSource reportSource) {
+        return reportSource.accept(FROM_INTERNAL_SOURCE_VISITOR);
     }
 
     private ImmutableSetMultimap<models.ebean.ReportFormat, models.ebean.Recipient> internalModelToBean(
