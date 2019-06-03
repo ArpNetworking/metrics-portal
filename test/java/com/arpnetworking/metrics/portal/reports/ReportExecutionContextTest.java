@@ -104,7 +104,12 @@ public class ReportExecutionContextTest {
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any()
+        );
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -139,8 +144,18 @@ public class ReportExecutionContextTest {
     public void testExecute() throws Exception {
         final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
         context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
-        Mockito.verify(_emailSender).send(EXAMPLE_REPORT, ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)), T0);
-        Mockito.verify(_emailSender).send(EXAMPLE_REPORT, BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)), T0);
+        Mockito.verify(_emailSender).send(
+                EXAMPLE_REPORT,
+                ALICE,
+                ImmutableMap.of(HTML, mockRendered(HTML, T0)),
+                T0
+        );
+        Mockito.verify(_emailSender).send(
+                EXAMPLE_REPORT,
+                BOB,
+                ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)),
+                T0
+        );
     }
 
     @Test(expected = IllegalArgumentException.class)

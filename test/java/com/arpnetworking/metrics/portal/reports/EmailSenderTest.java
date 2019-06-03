@@ -31,7 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
@@ -45,7 +45,7 @@ public class EmailSenderTest {
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
     @Captor
-    private ArgumentCaptor<Email> message;
+    private ArgumentCaptor<Email> _message;
 
     @Before
     public void setUp() {
@@ -54,14 +54,14 @@ public class EmailSenderTest {
 
     @Test
     public void testSend() throws InterruptedException, ExecutionException {
-        Mailer mailer = Mockito.mock(Mailer.class);
+        final Mailer mailer = Mockito.mock(Mailer.class);
         final EmailSender sender = new EmailSender(mailer);
         final ReportFormat format = new HtmlReportFormat.Builder().build();
         final RenderedReport rendered = new DefaultRenderedReport.Builder()
                 .setFormat(format)
                 .setGeneratedAt(T0)
                 .setScheduledFor(T0)
-                .setBytes("my html".getBytes())
+                .setBytes("my html".getBytes(StandardCharsets.UTF_8))
                 .build();
 
         sender.send(
@@ -70,10 +70,10 @@ public class EmailSenderTest {
                 ImmutableMap.of(format, rendered),
                 Instant.parse("2019-01-01T00:00:00.000Z")
         ).toCompletableFuture().get();
-        Mockito.verify(mailer).sendMail(message.capture());
+        Mockito.verify(mailer).sendMail(_message.capture());
 
-        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", message.getValue().getSubject());
-        Assert.assertEquals("my html", message.getValue().getHTMLText());
+        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", _message.getValue().getSubject());
+        Assert.assertEquals("my html", _message.getValue().getHTMLText());
     }
 
 }

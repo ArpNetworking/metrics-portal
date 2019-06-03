@@ -34,8 +34,8 @@ import org.simplejavamail.mailer.Mailer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -126,7 +126,7 @@ public class EmailSender implements Sender {
     }
 
     private static String readString(final InputStream stream) throws IOException {
-        return CharStreams.toString(new InputStreamReader(stream));
+        return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     private final Mailer _mailer;
