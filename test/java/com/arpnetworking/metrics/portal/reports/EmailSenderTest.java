@@ -18,20 +18,18 @@ package com.arpnetworking.metrics.portal.reports;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.EmailSender;
 import com.google.common.collect.ImmutableMap;
-import models.internal.impl.DefaultRenderedReport;
-import models.internal.impl.HtmlReportFormat;
-import models.internal.reports.ReportFormat;
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
@@ -46,34 +44,60 @@ public class EmailSenderTest {
 
     @Captor
     private ArgumentCaptor<Email> _message;
+    @Mock
+    private Mailer _mailer;
+    private EmailSender _sender;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        _sender = new EmailSender(_mailer);
     }
 
     @Test
     public void testSend() throws InterruptedException, ExecutionException {
-        final Mailer mailer = Mockito.mock(Mailer.class);
-        final EmailSender sender = new EmailSender(mailer);
-        final ReportFormat format = new HtmlReportFormat.Builder().build();
-        final RenderedReport rendered = new DefaultRenderedReport.Builder()
-                .setFormat(format)
-                .setGeneratedAt(T0)
-                .setScheduledFor(T0)
-                .setBytes("my html".getBytes(StandardCharsets.UTF_8))
-                .build();
-
-        sender.send(
+        final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
+        _sender.send(
                 TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
                 TestBeanFactory.createRecipient(),
-                ImmutableMap.of(format, rendered),
+                ImmutableMap.of(report.getFormat(), report),
                 Instant.parse("2019-01-01T00:00:00.000Z")
         ).toCompletableFuture().get();
-        Mockito.verify(mailer).sendMail(_message.capture());
 
+        Mockito.verify(_mailer).sendMail(_message.capture());
         Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", _message.getValue().getSubject());
-        Assert.assertEquals("my html", _message.getValue().getHTMLText());
+        Assert.assertEquals("report content", _message.getValue().getHTMLText());
     }
 
+    @Test
+    public void testSendSucceedsWithNoFormats() throws InterruptedException, ExecutionException {
+        _sender.send(
+                TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
+                TestBeanFactory.createRecipient(),
+                ImmutableMap.of(),
+                Instant.parse("2019-01-01T00:00:00.000Z")
+        ).toCompletableFuture().get();
+
+        Mockito.verify(_mailer).sendMail(_message.capture());
+        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", _message.getValue().getSubject());
+        Assert.assertNull(_message.getValue().getHTMLText());
+        Assert.assertEquals(Lists.newArrayList(), _message.getValue().getAttachments());
+    }
+
+    @Test(expected = MailException.class)
+    public void testSendFailsIfExceptionThrown() throws MailException, InterruptedException {
+        Mockito.doThrow(new MailException()).when(_mailer).sendMail(Mockito.any());
+        try {
+            _sender.send(
+                    TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
+                    TestBeanFactory.createRecipient(),
+                    ImmutableMap.of(),
+                    Instant.parse("2019-01-01T00:00:00.000Z")
+            ).toCompletableFuture().get();
+        } catch (final ExecutionException e) {
+            throw (MailException) e.getCause();
+        }
+    }
+
+    private static final class MailException extends RuntimeException {}
 }
