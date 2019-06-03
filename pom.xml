@@ -726,6 +726,13 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- Reporting -->
+    <dependency>
+      <groupId>org.simplejavamail</groupId>
+      <artifactId>simple-java-mail</artifactId>
+      <version>5.0.0</version>
+    </dependency>
+
     <!-- Akka -->
     <dependency>
       <groupId>com.typesafe.akka</groupId>

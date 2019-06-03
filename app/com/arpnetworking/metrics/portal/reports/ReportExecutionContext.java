@@ -72,7 +72,7 @@ public final class ReportExecutionContext {
         }).thenCompose(nothing ->
                 renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
         ).thenCompose(formatToRendered ->
-                sendAll(recipientToFormats, formatToRendered)
+                sendAll(report, recipientToFormats, formatToRendered, scheduled)
         ).thenApply(nothing ->
                 new DefaultReportResult()
         );
@@ -127,15 +127,17 @@ public final class ReportExecutionContext {
      * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
      */
     /* package private */ CompletionStage<Void> sendAll(
+            final Report report,
             final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
-            final ImmutableMap<ReportFormat, RenderedReport> formatToRendered
+            final ImmutableMap<ReportFormat, RenderedReport> formatToRendered,
+            final Instant scheduled
     ) {
         final CompletableFuture<?>[] futures = recipientToFormats
                 .asMap()
                 .entrySet()
                 .stream()
                 .map(entry -> getSender(entry.getKey())
-                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()))
+                        .send(report, entry.getKey(), mask(formatToRendered, entry.getValue()), scheduled)
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
