@@ -38,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -79,8 +78,8 @@ public class EmailSender implements Sender {
                 .to(recipient.getAddress())
                 .withSubject(subject);
 
-        for (Map.Entry<ReportFormat, RenderedReport> entry : formatsToSend.entrySet()) {
-            builder = addFormat(builder, entry.getKey(), entry.getValue());
+        for (final RenderedReport rendered : formatsToSend.values()) {
+            builder = addFormat(builder, rendered);
         }
 
         LOGGER.info()
@@ -100,10 +99,9 @@ public class EmailSender implements Sender {
 
     private EmailPopulatingBuilder addFormat(
             final EmailPopulatingBuilder builder,
-            final ReportFormat format,
             final RenderedReport rendered
     ) throws IOException {
-        final String mimeType = format.getMimeType();
+        final String mimeType = rendered.getFormat().getMimeType();
         final InputStream content = rendered.getBytes();
         if (mimeType.equals("text/html")) {
             return builder.withHTMLText(readString(content));
