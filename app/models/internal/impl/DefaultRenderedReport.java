@@ -20,11 +20,10 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.base.MoreObjects;
+import com.google.common.io.ByteSource;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.NotNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
@@ -37,8 +36,8 @@ import java.util.Objects;
 @Loggable
 public final class DefaultRenderedReport implements RenderedReport {
     @Override
-    public InputStream getBytes() {
-        return new ByteArrayInputStream(_bytes);
+    public ByteSource getBytes() {
+        return ByteSource.wrap(_bytes);
     }
 
     @Override

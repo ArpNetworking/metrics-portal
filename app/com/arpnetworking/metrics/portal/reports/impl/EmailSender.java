@@ -21,8 +21,8 @@ import com.arpnetworking.metrics.portal.reports.Sender;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.CharStreams;
+import com.google.common.io.ByteSource;
+import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -32,11 +32,9 @@ import org.simplejavamail.email.EmailPopulatingBuilder;
 import org.simplejavamail.mailer.Mailer;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -65,7 +63,7 @@ public class EmailSender implements Sender {
         });
     }
 
-    private String sendSync(
+    private void sendSync(
             final Report report,
             final Recipient recipient,
             final ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
@@ -89,11 +87,10 @@ public class EmailSender implements Sender {
                 .log();
 
         _mailer.sendMail(builder.buildEmail());
-        return "";
     }
 
     private String getSubject(final Report report, final Instant scheduled) {
-        final String formattedTime = ZonedDateTime.ofInstant(scheduled, ZoneId.of("UTC")).toString();
+        final String formattedTime = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).toString();
         return "[Report] " + report.getName() + " for " + formattedTime;
     }
 
@@ -102,11 +99,11 @@ public class EmailSender implements Sender {
             final RenderedReport rendered
     ) throws IOException {
         final String mimeType = rendered.getFormat().getMimeType();
-        final InputStream content = rendered.getBytes();
-        if (mimeType.equals("text/html")) {
-            return builder.withHTMLText(readString(content));
+        final ByteSource content = rendered.getBytes();
+        if (mimeType.equals(MediaType.HTML_UTF_8.toString())) {
+            return builder.withHTMLText(content.asCharSource(StandardCharsets.UTF_8).read());
         }
-        return builder.withAttachment("report", readBytes(content), mimeType);
+        return builder.withAttachment("report", content.read(), mimeType);
     }
 
     /**
@@ -117,14 +114,6 @@ public class EmailSender implements Sender {
     @Inject
     public EmailSender(final Mailer mailer) {
         _mailer = mailer;
-    }
-
-    private static byte[] readBytes(final InputStream stream) throws IOException {
-        return ByteStreams.toByteArray(stream);
-    }
-
-    private static String readString(final InputStream stream) throws IOException {
-        return CharStreams.toString(new InputStreamReader(stream, StandardCharsets.UTF_8));
     }
 
     private final Mailer _mailer;
