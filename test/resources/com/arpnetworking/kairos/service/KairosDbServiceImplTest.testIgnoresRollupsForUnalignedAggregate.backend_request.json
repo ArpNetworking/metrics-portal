@@ -1,0 +1,17 @@
+{
+  "start_absolute": 1,
+  "metrics": [
+    {
+      "name": "foo",
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": 1,
+            "unit": "HOURS"
+          }
+        }
+      ]
+    }
+  ]
+}

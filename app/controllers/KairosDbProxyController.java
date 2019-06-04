@@ -17,21 +17,14 @@ package controllers;
 
 import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.Aggregator;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
-import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
-import com.arpnetworking.kairos.client.models.Sampling;
-import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
@@ -52,20 +45,10 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -91,9 +74,9 @@ public class KairosDbProxyController extends Controller {
             final ObjectMapper mapper) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
-        _kairosDbClient = kairosDbClient;
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("proxy.filterRollups");
+        _kairosService = new KairosDbServiceImpl(kairosDbClient);
     }
 
     /**
@@ -149,9 +132,7 @@ public class KairosDbProxyController extends Controller {
     public CompletionStage<Result> queryMetrics() {
         try {
         final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
-        return getMetricNames()
-                .thenApply(list -> useAvailableRollups(list, metricsQuery))
-                .thenCompose(_kairosDbClient::queryMetrics)
+        return _kairosService.queryMetrics(metricsQuery)
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
         } catch (final IOException e) {
@@ -159,82 +140,7 @@ public class KairosDbProxyController extends Controller {
         }
     }
 
-    private static MetricsQuery useAvailableRollups(final List<String> metricNames, final MetricsQuery originalQuery) {
-        final MetricsQuery.Builder newQueryBuilder = new MetricsQuery.Builder()
-                .setStartTime(originalQuery.getStartTime());
 
-        originalQuery.getEndTime().ifPresent(newQueryBuilder::setEndTime);
-
-
-        newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
-            // Check to see if there are any rollups for this metrics
-            final String metricName = metric.getName();
-            final ImmutableList<String> filteredMetrics = filterMetricNames(metricNames, metricName, false);
-            final List<String> rollupMetrics = filteredMetrics
-                    .stream()
-                    .filter(IS_ROLLUP)
-                    .filter(s -> s.length() == metricName.length() + 3)
-                    .collect(Collectors.toList());
-
-            if (rollupMetrics.isEmpty()) {
-                // No rollups so execute what we received
-                return metric;
-            } else {
-                // There are rollups, now determine the appropriate one based on the max sampling period in the
-                // aggregators
-                final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
-                        .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
-                        .map(Aggregator::getSampling)
-                        .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
-                        .max(SamplingUnit::compareTo);
-
-                // No aggregators are sampling aligned so skip as rollups are always aligned
-                if (maxUnit.isPresent()) {
-
-                    final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
-                    rollupMetrics.forEach(name -> {
-                        final Optional<SamplingUnit> rollupUnit = rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
-                        rollupUnit.ifPresent(samplingUnit -> orderedRollups.put(samplingUnit, name));
-                    });
-
-                    final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
-                    final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
-                    final Metric.Builder metricBuilder = new Metric.Builder()
-                            .setName(rollupName)
-                            .setAggregators(metric.getAggregators())
-                            .setGroupBy(metric.getGroupBy())
-                            .setTags(new ImmutableMultimap.Builder<String, String>().putAll(metric.getTags()).build());
-
-                    metric.getOrder().ifPresent(metricBuilder::setOrder);
-                    metric.getLimit().ifPresent(metricBuilder::setLimit);
-                    return metricBuilder.build();
-                }
-
-                return metric;
-            }
-        })
-        .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf)));
-
-        return newQueryBuilder.build();
-    }
-
-    private static Optional<SamplingUnit> rollupSuffixToSamplingUnit(final String suffix) {
-        // Assuming we only rollup to a single sampling unit (e.g. 1 hour or 1 day) and not multiples
-        switch(suffix.charAt(suffix.length() - 1))  {
-            case 'h':
-                return Optional.of(SamplingUnit.HOURS);
-            case 'd':
-                return Optional.of(SamplingUnit.DAYS);
-            case 'w':
-                return Optional.of(SamplingUnit.WEEKS);
-            case 'm':
-                return Optional.of(SamplingUnit.MONTHS);
-            case 'y':
-                return Optional.of(SamplingUnit.YEARS);
-            default:
-                return Optional.empty();
-        }
-    }
 
     /**
      * Proxied version call.
@@ -252,71 +158,9 @@ public class KairosDbProxyController extends Controller {
      * @return Cached metric names, filtered by the query string.
      */
     public CompletionStage<Result> metricNames(final String containing) {
-        return getMetricNames()
-                .thenApply(list -> filterMetricNames(list, containing, _filterRollups))
-                .thenApply(list -> new KairosMetricNamesQueryResponse.Builder().setResults(list).build())
+        return _kairosService.queryMetricNames(Optional.ofNullable(containing), _filterRollups)
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
-    }
-
-    private CompletionStage<List<String>> getMetricNames() {
-        final List<String> metrics = _cache.getIfPresent(METRICS_KEY);
-
-        final CompletionStage<List<String>> response;
-        if (metrics != null) {
-            response = CompletableFuture.completedFuture(metrics);
-        } else {
-            // TODO(brandon): Investigate refreshing eagerly or in the background
-            // Refresh the cache
-            final CompletionStage<List<String>> queryResponse = _kairosDbClient.queryMetricNames()
-                    .thenApply(KairosMetricNamesQueryResponse::getResults)
-                    .thenApply(list -> {
-                        _cache.put(METRICS_KEY, list);
-                        _metricsList.set(list);
-                        return list;
-                    });
-
-            final List<String> metricsList = _metricsList.get();
-            if (metricsList != null) {
-                response = CompletableFuture.completedFuture(metricsList);
-            } else {
-                response = queryResponse;
-            }
-        }
-
-        return response;
-    }
-
-    private static ImmutableList<String> filterMetricNames(
-            final List<String> metricNames,
-            @Nullable final String containing,
-            final boolean filterRollups) {
-
-        final Predicate<String> baseFilter;
-        if (filterRollups) {
-            baseFilter = IS_ROLLUP.negate();
-        } else {
-            baseFilter = s -> true;
-        }
-
-        if (containing == null || containing.isEmpty()) {
-            return metricNames.stream()
-                    .filter(baseFilter)
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf));
-        }
-
-        final String lowerContaining = containing.toLowerCase(Locale.ENGLISH);
-        final Predicate<String> containsPredicate = s -> s.toLowerCase(Locale.getDefault()).contains(lowerContaining);
-
-        return metricNames.stream()
-                .filter(baseFilter)
-                .filter(IS_PT1M.negate())
-                .filter(containsPredicate)
-                .collect(Collector.of(
-                        ImmutableList::<String>builder,
-                        ImmutableList.Builder::add,
-                        (a, b) -> a.addAll(b.build()),
-                        ImmutableList.Builder::build));
     }
 
     /**
@@ -342,16 +186,11 @@ public class KairosDbProxyController extends Controller {
 
 
     private final ProxyClient _client;
-    private final KairosDbClient _kairosDbClient;
     private final ObjectMapper _mapper;
     private final boolean _filterRollups;
-    private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
-    private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
+    private final KairosDbService _kairosService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
-    private static final String METRICS_KEY = "METRICNAMES";
-    private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
-    private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
 
     private static class ResponseHandler extends AsyncCompletionHandler<Void> {
         ResponseHandler(
@@ -444,7 +283,7 @@ public class KairosDbProxyController extends Controller {
         }
 
         @Override
-        public Void onCompleted(final Response response) throws Exception {
+        public Void onCompleted(final Response response) {
             try {
                 _outputStream.flush();
                 _outputStream.close();

@@ -109,6 +109,12 @@ public final class MetricsQuery {
             return this;
         }
 
+        /**
+         * Sets the absolute start time in milliseconds.
+         *
+         * @param millis the start time in milliseconds
+         * @return this {@link Builder}
+         */
         @JsonProperty("start_absolute")
         public Builder setStartTimeMillis(final Long millis) {
             _startTime = Instant.ofEpochMilli(millis);
@@ -126,6 +132,12 @@ public final class MetricsQuery {
             return this;
         }
 
+        /**
+         * Sets the absolute end time in milliseconds.
+         *
+         * @param millis the end time in milliseconds
+         * @return this {@link Builder}
+         */
         @JsonProperty("end_absolute")
         public Builder setEndTimeMillis(final Long millis) {
             _endTime = Instant.ofEpochMilli(millis);
