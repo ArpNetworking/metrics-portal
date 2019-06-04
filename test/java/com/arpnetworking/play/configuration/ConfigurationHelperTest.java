@@ -1,10 +1,8 @@
 package com.arpnetworking.play.configuration;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -17,24 +15,23 @@ import java.util.Objects;
 public class ConfigurationHelperTest {
     @Test
     public void testGetInstance() {
-        final Injector injector = Guice.createInjector();
-
         final Config config = ConfigFactory.parseMap(ImmutableMap.of(
-                "type", "com.arpnetworking.play.configuration.ConfigurationHelperTest$InstantiatedClass"
+                "type", "com.arpnetworking.play.configuration.ConfigurationHelperTest$InstantiatedObject",
+                "model", "Civic"
         ));
 
-        final InstantiatedClass result = ConfigurationHelper.getInstance(injector, Environment.simple(), config);
-        Assert.assertEquals(config, result.getConfig());
+        final InstantiatedObject result = ConfigurationHelper.getInstance(Guice.createInjector(), Environment.simple(), config);
+        Assert.assertEquals("Civic", result.getModel());
     }
 
-    private static final class InstantiatedClass {
+    private static final class InstantiatedObject {
         @Inject
-        public InstantiatedClass(@Assisted final Config config) {
-            _config = config;
+        public InstantiatedObject(@Assisted final Config config) {
+            _model = config.getString("model");
         }
 
-        public Config getConfig() {
-            return _config;
+        public String getModel() {
+            return _model;
         }
 
         @Override
@@ -42,18 +39,18 @@ public class ConfigurationHelperTest {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof InstantiatedClass)) {
+            if (!(o instanceof InstantiatedObject)) {
                 return false;
             }
-            final InstantiatedClass that = (InstantiatedClass) o;
-            return _config.equals(that._config);
+            final InstantiatedObject that = (InstantiatedObject) o;
+            return _model.equals(that._model);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(_config);
+            return Objects.hash(_model);
         }
 
-        private final Config _config;
+        private final String _model;
     }
 }
