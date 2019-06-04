@@ -109,9 +109,6 @@ public class MainModule extends AbstractModule {
         bind(HealthProvider.class)
                 .toProvider(ConfigTypedProvider.provider("http.healthProvider.type"))
                 .in(Scopes.SINGLETON);
-        bind(QueryExecutor.class)
-                .toProvider(ConfigTypedProvider.provider("query.executor.type"))
-                .in(Scopes.SINGLETON);
 
         // Databases
         // NOTE: These are not singletons because the lifecycle is controlled by

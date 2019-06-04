@@ -230,7 +230,8 @@ public final class TimeSeriesResult {
             @NotNull
             private ImmutableList<TimeSeriesResult.Result> _results;
             @Min(0)
-            private long _sampleSize = 0;
+            @NotNull
+            private Long _sampleSize = 0L;
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
         }
