@@ -17,6 +17,10 @@ package com.arpnetworking.play.configuration;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.arpnetworking.utility.ConfigurationOverrideModule;
+import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import play.Environment;
 import scala.concurrent.duration.Duration;
@@ -87,6 +91,26 @@ public final class ConfigurationHelper {
         } catch (final ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Use Guice to instantiate a POJO from configuration.
+     *
+     * @param injector The injector to use to create the object.
+     * @param environment Play {@link Environment} instance.
+     * @param configuration The config to instantiate the object from. (Note that this should almost certainly <i>not</i> be
+     *   the entire Play {@link Config} instance; instead it is some sub-object describing the Java object to instantiate.
+     * @param <T> The type of object to instantiate.
+     * @return The instantiated object.
+     */
+    public static <T> T getInstance(
+            final Injector injector,
+            final Environment environment,
+            final Config configuration) {
+        final Class<? extends T> clazz = getType(environment, configuration, "type");
+        return injector
+                .createChildInjector(new ConfigurationOverrideModule(configuration))
+                .getInstance(clazz);
     }
 
     private ConfigurationHelper() {}
