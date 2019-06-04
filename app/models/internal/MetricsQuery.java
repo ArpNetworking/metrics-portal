@@ -15,7 +15,8 @@
  */
 package models.internal;
 
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * Interface to describe classes that represent a time series query.
@@ -35,12 +36,12 @@ public interface MetricsQuery {
      *
      * @return the start time
      */
-    DateTime getStart();
+    ZonedDateTime getStart();
 
     /**
      * Gets the end time for the query.
      *
      * @return the start time
      */
-    DateTime getEnd();
+    ZonedDateTime getEnd();
 }

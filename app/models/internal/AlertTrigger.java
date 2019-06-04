@@ -16,8 +16,8 @@
 package models.internal;
 
 import com.google.common.collect.ImmutableMap;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /**
@@ -31,14 +31,14 @@ public interface AlertTrigger {
      *
      * @return the start time
      */
-    DateTime getTime();
+    ZonedDateTime getTime();
 
     /**
      * The end time of the trigger.
      *
      * @return the end time; if indeterminate, {@code Optional.empty()}
      */
-    Optional<DateTime> getEndTime();
+    Optional<ZonedDateTime> getEndTime();
 
     /**
      * The arguments (tags) for the trigger.

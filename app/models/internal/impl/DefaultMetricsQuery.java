@@ -19,7 +19,8 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * View model for metrics queries.
@@ -34,12 +35,12 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
     }
 
     @Override
-    public DateTime getStart() {
+    public ZonedDateTime getStart() {
         return _start;
     }
 
     @Override
-    public DateTime getEnd() {
+    public ZonedDateTime getEnd() {
         return _end;
     }
 
@@ -50,8 +51,8 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
     }
 
     private final String _query;
-    private final DateTime _start;
-    private final DateTime _end;
+    private final ZonedDateTime _start;
+    private final ZonedDateTime _end;
 
     /**
      * Implementation of the builder pattern for {@link DefaultMetricsQuery}.
@@ -81,7 +82,7 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
          * @param value the end time
          * @return this {@link Builder}
          */
-        public Builder setEnd(final DateTime value) {
+        public Builder setEnd(final ZonedDateTime value) {
             _end = value;
             return this;
         }
@@ -92,7 +93,7 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
          * @param value the start time
          * @return this {@link Builder}
          */
-        public Builder setStart(final DateTime value) {
+        public Builder setStart(final ZonedDateTime value) {
             _start = value;
             return this;
         }
@@ -100,8 +101,8 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
         @NotEmpty
         private String _query;
         @NotNull
-        private DateTime _start;
+        private ZonedDateTime _start;
         @NotNull
-        private DateTime _end;
+        private ZonedDateTime _end;
     }
 }

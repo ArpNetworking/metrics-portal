@@ -21,8 +21,8 @@ import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.CheckWith;
 import net.sf.oval.constraint.CheckWithCheck;
 import net.sf.oval.constraint.NotNull;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /**
@@ -33,12 +33,12 @@ import java.util.Optional;
 @Loggable
 public final class DefaultAlertTrigger implements models.internal.AlertTrigger {
     @Override
-    public DateTime getTime() {
+    public ZonedDateTime getTime() {
         return _time;
     }
 
     @Override
-    public Optional<DateTime> getEndTime() {
+    public Optional<ZonedDateTime> getEndTime() {
         return _endTime;
     }
 
@@ -65,8 +65,8 @@ public final class DefaultAlertTrigger implements models.internal.AlertTrigger {
         _groupBy = builder._groupBy;
     }
 
-    private final DateTime _time;
-    private final Optional<DateTime> _endTime;
+    private final ZonedDateTime _time;
+    private final Optional<ZonedDateTime> _endTime;
     private final String _message;
     private final ImmutableMap<String, String> _groupBy;
     private final ImmutableMap<String, String> _args;
@@ -88,7 +88,7 @@ public final class DefaultAlertTrigger implements models.internal.AlertTrigger {
          * @param value the operator
          * @return this {@link Builder}
          */
-        public Builder setTime(final DateTime value) {
+        public Builder setTime(final ZonedDateTime value) {
             _time = value;
             return this;
         }
@@ -132,16 +132,16 @@ public final class DefaultAlertTrigger implements models.internal.AlertTrigger {
          * @param value the operator
          * @return this {@link Builder}
          */
-        public Builder setEndTime(final Optional<DateTime> value) {
+        public Builder setEndTime(final Optional<ZonedDateTime> value) {
             _endTime = value;
             return this;
         }
 
         @NotNull
-        private DateTime _time;
+        private ZonedDateTime _time;
         @NotNull
         @CheckWith(EndAfterStart.class)
-        private Optional<DateTime> _endTime = Optional.empty();
+        private Optional<ZonedDateTime> _endTime = Optional.empty();
         @NotNull
         private ImmutableMap<String, String> _args = ImmutableMap.of();
         @NotNull
