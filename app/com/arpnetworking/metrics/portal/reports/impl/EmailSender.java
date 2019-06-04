@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -72,7 +73,7 @@ public class EmailSender implements Sender {
 
         final String subject = getSubject(report, scheduled);
         EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
-                .from("no-reply+amp-reporting@dropbox.com")
+                .from(_fromAddress)
                 .to(recipient.getAddress())
                 .withSubject(subject);
 
@@ -109,14 +110,17 @@ public class EmailSender implements Sender {
     /**
      * Public constructor.
      *
-     * @param mailer The Mailer to send emails through.
+     * @param mailer The {@link Mailer} to send emails through.
+     * @param config The configuration for this sender.
      */
     @Inject
-    public EmailSender(final Mailer mailer) {
+    public EmailSender(final Mailer mailer, final Config config) {
         _mailer = mailer;
+        _fromAddress = config.getString("fromAddress");
     }
 
     private final Mailer _mailer;
+    private final String _fromAddress;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
 }
