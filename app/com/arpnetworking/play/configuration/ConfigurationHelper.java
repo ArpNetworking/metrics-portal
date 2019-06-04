@@ -101,7 +101,7 @@ public final class ConfigurationHelper {
      * @param <T> The type of object to instantiate.
      * @return The instantiated object.
      */
-    public static <T> T getInstance(
+    public static <T> T toInstance(
             final Injector injector,
             final Environment environment,
             final Config configuration) {

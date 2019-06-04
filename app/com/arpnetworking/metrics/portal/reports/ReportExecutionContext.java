@@ -212,7 +212,7 @@ public final class ReportExecutionContext {
     ) {
         return config.entrySet().stream().collect(ImmutableMap.toImmutableMap(
                 Map.Entry::getKey,
-                e -> ConfigurationHelper.getInstance(injector, environment, ((ConfigObject) e.getValue()).toConfig())
+                e -> ConfigurationHelper.toInstance(injector, environment, ((ConfigObject) e.getValue()).toConfig())
         ));
     }
     private <T> ImmutableMap<String, ImmutableMap<String, T>> loadMapMapObject(

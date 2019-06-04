@@ -38,7 +38,7 @@ public class ConfigurationHelperTest {
                 "name", "Harold"
         ));
 
-        final InstantiatedObject result = ConfigurationHelper.getInstance(Guice.createInjector(), Environment.simple(), config);
+        final InstantiatedObject result = ConfigurationHelper.toInstance(Guice.createInjector(), Environment.simple(), config);
         Assert.assertEquals("Harold", result.getName());
     }
 
