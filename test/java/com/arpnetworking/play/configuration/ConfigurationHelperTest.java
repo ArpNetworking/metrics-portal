@@ -17,40 +17,23 @@ public class ConfigurationHelperTest {
     public void testGetInstance() {
         final Config config = ConfigFactory.parseMap(ImmutableMap.of(
                 "type", "com.arpnetworking.play.configuration.ConfigurationHelperTest$InstantiatedObject",
-                "model", "Civic"
+                "name", "Harold"
         ));
 
         final InstantiatedObject result = ConfigurationHelper.getInstance(Guice.createInjector(), Environment.simple(), config);
-        Assert.assertEquals("Civic", result.getModel());
+        Assert.assertEquals("Harold", result.getName());
     }
 
     private static final class InstantiatedObject {
         @Inject
         public InstantiatedObject(@Assisted final Config config) {
-            _model = config.getString("model");
+            _name = config.getString("name");
         }
 
-        public String getModel() {
-            return _model;
+        public String getName() {
+            return _name;
         }
 
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof InstantiatedObject)) {
-                return false;
-            }
-            final InstantiatedObject that = (InstantiatedObject) o;
-            return _model.equals(that._model);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(_model);
-        }
-
-        private final String _model;
+        private final String _name;
     }
 }
