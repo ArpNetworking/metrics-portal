@@ -117,7 +117,7 @@ public class ReportExecutionContextTest {
         _environment = Environment.simple();
 
         _config = ConfigFactory.parseMap(ImmutableMap.of(
-                "reporting.renderers.WEB_PAGE.\"text/html\".type", getClass().getName() + "$MockHtmlRenderer",
+                "reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\".type", getClass().getName() + "$MockHtmlRenderer",
                 "reporting.renderers.WEB_PAGE.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
                 "reporting.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
         ));
@@ -137,7 +137,7 @@ public class ReportExecutionContextTest {
         final ReportExecutionContext context = new ReportExecutionContext(
                 _injector,
                 _environment,
-                _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html\"")
+                _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\"")
         );
         unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
     }
