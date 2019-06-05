@@ -68,7 +68,7 @@ public final class ReportExecutionContext {
                         e -> e.getValue().stream()));
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
 
-        return CompletableFuture.completedFuture(null).thenApply(nothing -> {
+        return CompletableFuture.supplyAsync(() -> {
             verifyDependencies(report);
             return null;
         }).thenCompose(nothing ->

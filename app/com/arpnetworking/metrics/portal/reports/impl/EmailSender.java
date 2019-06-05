@@ -100,12 +100,12 @@ public class EmailSender implements Sender {
             final EmailPopulatingBuilder builder,
             final RenderedReport rendered
     ) throws IOException {
-        final String mimeType = rendered.getFormat().getMimeType();
+        final MediaType mimeType = rendered.getFormat().getMimeType();
         final ByteSource content = rendered.getBytes();
-        if (mimeType.equals(MediaType.HTML_UTF_8.toString())) {
+        if (mimeType.equals(MediaType.HTML_UTF_8)) {
             return builder.withHTMLText(content.asCharSource(StandardCharsets.UTF_8).read());
         }
-        return builder.withAttachment("report", content.read(), mimeType);
+        return builder.withAttachment("report", content.read(), mimeType.toString());
     }
 
     /**
