@@ -34,13 +34,15 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * Render a ReportSource.
      *
      * @param source The source to render.
+     * @param format The format to render into.
      * @param builder Will be used to construct a report. All implementations of {@code render} must call `setBytes()`.
      * @param <B> The type of builder provided.
      * @param <R> The type of report to generate.
      * @return A {@link CompletionStage} that completes when the report has been rendered.
      */
-    <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<RenderedReport.Builder<B, R>> render(
+    <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
             S source,
-            RenderedReport.Builder<B, R> builder
+            F format,
+            B builder
     );
 }

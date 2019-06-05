@@ -34,9 +34,10 @@ import java.util.concurrent.CompletionStage;
     protected abstract byte[] getPageContent(WebPageReportSource source, F format, Object todo);
 
     @Override
-    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<RenderedReport.Builder<B, R>> render(
+    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
             final WebPageReportSource source,
-            final RenderedReport.Builder<B, R> builder
+            final F format,
+            final B builder
     ) {
         return CompletableFuture.completedFuture(
                 builder.setBytes(new byte[0])// TODO(spencerpearson)

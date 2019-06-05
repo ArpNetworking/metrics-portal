@@ -74,7 +74,7 @@ public final class ReportExecutionContext {
             verifyDependencies(report);
             return null;
         }).thenCompose(nothing ->
-                renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
+                renderAll(formatToRecipients.keySet(), report, scheduled)
         ).thenCompose(formatToRendered ->
                 sendAll(report, recipientToFormats, formatToRendered, scheduled)
         ).thenApply(nothing ->
@@ -107,15 +107,16 @@ public final class ReportExecutionContext {
      */
     /* package private */ CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
             final ImmutableSet<ReportFormat> formats,
-            final ReportSource source,
+            final Report report,
             final Instant scheduled
     ) {
         final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
                 .map(format ->
-                        getRenderer(source, format)
-                        .render(source, new DefaultRenderedReport.Builder()
+                        getRenderer(report.getSource(), format)
+                        .render(report.getSource(), format, new DefaultRenderedReport.Builder()
+                                .setReport(report)
                                 .setFormat(format)
                                 .setGeneratedAt(_clock.instant())
                                 .setScheduledFor(scheduled))
