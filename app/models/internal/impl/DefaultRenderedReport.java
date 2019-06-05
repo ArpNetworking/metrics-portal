@@ -16,10 +16,12 @@
 
 package models.internal.impl;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportFormat;
+import net.sf.oval.constraint.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -87,10 +89,10 @@ public final class DefaultRenderedReport implements RenderedReport {
     }
 
     private DefaultRenderedReport(final Builder builder) {
-        _bytes = builder.getBytes();
-        _scheduledFor = builder.getScheduledFor();
-        _generatedAt = builder.getGeneratedAt();
-        _format = builder.getFormat();
+        _bytes = builder._bytes;
+        _scheduledFor = builder._scheduledFor;
+        _generatedAt = builder._generatedAt;
+        _format = builder._format;
     }
 
     private final byte[] _bytes;
@@ -101,7 +103,9 @@ public final class DefaultRenderedReport implements RenderedReport {
     /**
      * Builder implementation that constructs {@code DefaultReport}.
      */
-    public static final class Builder extends RenderedReport.Builder<Builder, DefaultRenderedReport> {
+    public static final class Builder
+            extends OvalBuilder<DefaultRenderedReport>
+            implements RenderedReport.Builder<Builder, DefaultRenderedReport> {
         /**
          * Public Constructor.
          */
@@ -109,9 +113,57 @@ public final class DefaultRenderedReport implements RenderedReport {
             super(DefaultRenderedReport::new);
         }
 
-        @Override
-        protected Builder self() {
+        /**
+         * Set the report bytes. Required. Cannot be null.
+         *
+         * @param bytes The report bytes.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setBytes(final byte[] bytes) {
+            _bytes = bytes.clone();
             return this;
         }
+
+        /**
+         * Set the report bytes. Required. Cannot be null.
+         *
+         * @param scheduledFor The report scheduledFor.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setScheduledFor(final Instant scheduledFor) {
+            _scheduledFor = scheduledFor;
+            return this;
+        }
+
+        /**
+         * Set the report generatedAt. Required. Cannot be null.
+         *
+         * @param generatedAt The report generatedAt.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setGeneratedAt(final Instant generatedAt) {
+            _generatedAt = generatedAt;
+            return this;
+        }
+
+        /**
+         * Set the report format. Required. Cannot be null.
+         *
+         * @param format The report format.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setFormat(final ReportFormat format) {
+            _format = format;
+            return this;
+        }
+
+        @NotNull
+        private byte[] _bytes;
+        @NotNull
+        private Instant _scheduledFor;
+        @NotNull
+        private Instant _generatedAt;
+        @NotNull
+        private ReportFormat _format;
     }
 }

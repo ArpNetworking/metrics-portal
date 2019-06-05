@@ -16,13 +16,10 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
 import models.internal.reports.ReportFormat;
-import net.sf.oval.constraint.NotNull;
 
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.function.Function;
 
 /**
  * A document containing the results of a particular rendering of a particular {@link models.internal.reports.Report}.
@@ -64,22 +61,10 @@ public interface RenderedReport {
      *
      * Builder implementation that constructs {@code DefaultReport}.
      *
-     * @param <B>
-     * @param <S>
+     * @param <B> The concrete type of this builder.
+     * @param <R> The type of RenderedReport to build.
      */
-    abstract class Builder<B extends Builder<B, S>, S extends RenderedReport> extends OvalBuilder<S> {
-
-        protected Builder(final Function<B, S> targetConstructor) {
-            super(targetConstructor);
-        }
-
-        /**
-         * Called by setters to always return appropriate subclass of
-         * {@link Builder}, even from setters of base class.
-         *
-         * @return instance with correct {@link Builder} class type.
-         */
-        protected abstract B self();
+    interface Builder<B extends Builder<B, R>, R extends RenderedReport> extends com.arpnetworking.commons.builder.Builder<R> {
 
         /**
          * Set the report bytes. Required. Cannot be null.
@@ -87,10 +72,7 @@ public interface RenderedReport {
          * @param bytes The report bytes.
          * @return This instance of {@code Builder}.
          */
-        public B setBytes(final byte[] bytes) {
-            _bytes = bytes.clone();
-            return self();
-        }
+        B setBytes(byte[] bytes);
 
         /**
          * Set the report bytes. Required. Cannot be null.
@@ -98,10 +80,7 @@ public interface RenderedReport {
          * @param scheduledFor The report scheduledFor.
          * @return This instance of {@code Builder}.
          */
-        public B setScheduledFor(final Instant scheduledFor) {
-            _scheduledFor = scheduledFor;
-            return self();
-        }
+        B setScheduledFor(Instant scheduledFor);
 
         /**
          * Set the report generatedAt. Required. Cannot be null.
@@ -109,10 +88,7 @@ public interface RenderedReport {
          * @param generatedAt The report generatedAt.
          * @return This instance of {@code Builder}.
          */
-        public B setGeneratedAt(final Instant generatedAt) {
-            _generatedAt = generatedAt;
-            return self();
-        }
+        B setGeneratedAt(Instant generatedAt);
 
         /**
          * Set the report format. Required. Cannot be null.
@@ -120,34 +96,6 @@ public interface RenderedReport {
          * @param format The report format.
          * @return This instance of {@code Builder}.
          */
-        public B setFormat(final ReportFormat format) {
-            _format = format;
-            return self();
-        }
-
-        public byte[] getBytes() {
-            return _bytes;
-        }
-
-        public Instant getScheduledFor() {
-            return _scheduledFor;
-        }
-
-        public Instant getGeneratedAt() {
-            return _generatedAt;
-        }
-
-        public ReportFormat getFormat() {
-            return _format;
-        }
-
-        @NotNull
-        private byte[] _bytes;
-        @NotNull
-        private Instant _scheduledFor;
-        @NotNull
-        private Instant _generatedAt;
-        @NotNull
-        private ReportFormat _format;
+        B setFormat(ReportFormat format);
     }
 }
