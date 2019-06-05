@@ -166,7 +166,6 @@ public class MainModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
     private Mailer getEmailTransport(final Config config) {
-        config.getString("mail.smtp.host");
         final String host = config.hasPath("mail.smtp.host") ? config.getString("mail.smtp.host") : "localhost";
         final Integer port = config.hasPath("mail.smtp.port") ? config.getInt("mail.smtp.port") : 25;
         return MailerBuilder
