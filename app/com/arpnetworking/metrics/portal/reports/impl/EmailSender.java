@@ -18,10 +18,29 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Sender;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteSource;
+import com.google.common.net.MediaType;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.reports.Recipient;
+import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
+import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.email.EmailPopulatingBuilder;
+import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.mailer.MailerBuilder;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -35,9 +54,78 @@ public class EmailSender implements Sender {
             final Recipient recipient,
             final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     ) {
-        throw new RuntimeException();
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                sendSync(recipient, formatsToSend);
+            } catch (final IOException e) {
+                throw new CompletionException(e);
+            }
+            return null;
+        });
     }
 
-    EmailSender() {}
+    private void sendSync(
+            final Recipient recipient,
+            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+    ) throws IOException {
+        if (formatsToSend.isEmpty()) {
+            return;
+        }
+        final Report report = formatsToSend.values().iterator().next().getReport();
+        final Instant scheduled = formatsToSend.values().iterator().next().getScheduledFor();
+        final String subject = getSubject(report, scheduled);
+        EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
+                .from(_fromAddress)
+                .to(recipient.getAddress())
+                .withSubject(subject);
 
+        for (final RenderedReport rendered : formatsToSend.values()) {
+            builder = addFormat(builder, rendered);
+        }
+
+        LOGGER.info()
+                .setMessage("sending email")
+                .addData("report", report)
+                .addData("recipient", recipient)
+                .log();
+
+        _mailer.sendMail(builder.buildEmail());
+    }
+
+    private String getSubject(final Report report, final Instant scheduled) {
+        final String formattedTime = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).toString();
+        return "[Report] " + report.getName() + " for " + formattedTime; // TODO(spencerpearson): make format configurable
+    }
+
+    private EmailPopulatingBuilder addFormat(
+            final EmailPopulatingBuilder builder,
+            final RenderedReport rendered
+    ) throws IOException {
+        final MediaType mimeType = rendered.getFormat().getMimeType();
+        final ByteSource content = rendered.getBytes();
+        if (mimeType.equals(MediaType.HTML_UTF_8)) {
+            return builder.withHTMLText(content.asCharSource(StandardCharsets.UTF_8).read());
+        }
+        return builder.withAttachment("report", content.read(), mimeType.toString());
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param config The configuration for this sender.
+     */
+    @Inject
+    public EmailSender(@Assisted final Config config) {
+        _fromAddress = config.getString("fromAddress");
+        final String host = config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost";
+        final Integer port = config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25;
+        _mailer = MailerBuilder
+                .withSMTPServer(host, port)
+                .buildMailer();
+    }
+
+    private final Mailer _mailer;
+    private final String _fromAddress;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
 }

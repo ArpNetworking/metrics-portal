@@ -32,7 +32,7 @@ public interface Sender {
      * Send some {@link RenderedReport} documents to a {@link Recipient}.
      *
      * @param recipient The recipient to notify.
-     * @param formatsToSend The reports to send.
+     * @param formatsToSend The reports to send. Must be non-empty.
      * @return A CompletionStage that completes when the transmission has completed.
      */
     CompletionStage<Void> send(

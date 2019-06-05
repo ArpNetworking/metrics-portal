@@ -31,6 +31,7 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultRecipient;
+import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
@@ -40,7 +41,9 @@ import models.internal.reports.ReportFormat;
 import models.internal.scheduling.Period;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -162,6 +165,20 @@ public final class TestBeanFactory {
                 .setType(RecipientType.EMAIL)
                 .setId(UUID.randomUUID())
                 .build();
+    }
+
+    /**
+     * Factory method for creating a {@link DefaultRenderedReport} builder.
+     *
+     * @return a rendered report builder
+     */
+    public static DefaultRenderedReport.Builder createRenderedReportBuilder() {
+        return new DefaultRenderedReport.Builder()
+                .setReport(createReportBuilder().build())
+                .setFormat(new HtmlReportFormat.Builder().build())
+                .setScheduledFor(Instant.now())
+                .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
+                .setBytes("report content".getBytes(StandardCharsets.UTF_8));
     }
 
     /**

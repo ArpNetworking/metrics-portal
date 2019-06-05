@@ -104,7 +104,10 @@ public class ReportExecutionContextTest {
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(Mockito.any(), Mockito.any());
+        Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(
+                Mockito.any(),
+                Mockito.any()
+        );
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -139,8 +142,14 @@ public class ReportExecutionContextTest {
     public void testExecute() throws Exception {
         final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
         context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
-        Mockito.verify(_emailSender).send(ALICE, ImmutableMap.of(HTML, mockRendered(HTML, T0)));
-        Mockito.verify(_emailSender).send(BOB, ImmutableMap.of(HTML, mockRendered(HTML, T0), PDF, mockRendered(PDF, T0)));
+        Mockito.verify(_emailSender).send(
+                ALICE,
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, T0))
+        );
+        Mockito.verify(_emailSender).send(
+                BOB,
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, T0), PDF, mockRendered(EXAMPLE_REPORT, PDF, T0))
+        );
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -210,8 +219,9 @@ public class ReportExecutionContextTest {
         new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
-    private static DefaultRenderedReport mockRendered(final ReportFormat format, final Instant scheduled) {
+    private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final Instant scheduled) {
         return new DefaultRenderedReport.Builder()
+                .setReport(report)
                 .setBytes(new byte[0])
                 .setFormat(format)
                 .setScheduledFor(scheduled)
@@ -248,7 +258,7 @@ public class ReportExecutionContextTest {
                 final HtmlReportFormat format,
                 final Instant scheduled
         ) {
-            return CompletableFuture.completedFuture(mockRendered(format, scheduled));
+            return CompletableFuture.completedFuture(mockRendered(EXAMPLE_REPORT, format, scheduled));
         }
     }
 
@@ -259,7 +269,7 @@ public class ReportExecutionContextTest {
                 final PdfReportFormat format,
                 final Instant scheduled
         ) {
-            return CompletableFuture.completedFuture(mockRendered(format, scheduled));
+            return CompletableFuture.completedFuture(mockRendered(EXAMPLE_REPORT, format, scheduled));
         }
 
         public String getPdfCompatibilityVersion() {
