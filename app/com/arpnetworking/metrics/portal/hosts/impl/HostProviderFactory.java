@@ -18,10 +18,9 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 import akka.actor.Actor;
 import akka.actor.Props;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
-import com.google.inject.AbstractModule;
+import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 
 /**
@@ -62,17 +61,4 @@ public final class HostProviderFactory {
     }
 
     private final Injector _injector;
-
-    private static final class ConfigurationOverrideModule extends AbstractModule {
-        @Override
-        protected void configure() {
-            bind(Config.class).annotatedWith(Assisted.class).toInstance(_config);
-        }
-
-        private ConfigurationOverrideModule(final Config config) {
-            _config = config;
-        }
-
-        private final Config _config;
-    }
 }

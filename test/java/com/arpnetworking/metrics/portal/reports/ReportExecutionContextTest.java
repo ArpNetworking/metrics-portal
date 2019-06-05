@@ -21,8 +21,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
+import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,6 +37,7 @@ import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -119,8 +122,16 @@ public class ReportExecutionContextTest {
         _config = ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\".type", getClass().getName() + "$MockHtmlRenderer",
                 "reporting.renderers.WEB_PAGE.\"application/pdf\".type", getClass().getName() + "$MockPdfRenderer",
+                "reporting.renderers.WEB_PAGE.\"application/pdf\".pdfCompatibilityVersion", "2.0",
                 "reporting.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
         ));
+    }
+
+    @Test
+    public void testInstantiatesWithConfig() {
+        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
+        final MockPdfRenderer renderer = (MockPdfRenderer) context.getRenderer((WebPageReportSource) EXAMPLE_REPORT.getSource(), PDF);
+        Assert.assertEquals("2.0", renderer.getPdfCompatibilityVersion());
     }
 
     @Test
@@ -250,6 +261,17 @@ public class ReportExecutionContextTest {
         ) {
             return CompletableFuture.completedFuture(mockRendered(format, scheduled));
         }
+
+        public String getPdfCompatibilityVersion() {
+            return _pdfCompatibilityVersion;
+        }
+
+        @Inject
+        MockPdfRenderer(@Assisted final Config config) {
+            _pdfCompatibilityVersion = config.getString("pdfCompatibilityVersion");
+        }
+
+        private final String _pdfCompatibilityVersion;
     }
 
     private static final class ClassNotRegisteredWithInjector {}

@@ -143,7 +143,7 @@ public final class ReportExecutionContext {
         return CompletableFuture.allOf(futures);
     }
 
-    private <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
+    /* package private */ <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
             final S source,
             final F format
     ) {
@@ -157,7 +157,7 @@ public final class ReportExecutionContext {
         return result;
     }
 
-    private Sender getSender(final Recipient recipient) {
+    /* package private */ Sender getSender(final Recipient recipient) {
         final Sender result = _senders.get(recipient.getType());
         if (result == null) {
             throw new IllegalArgumentException(
@@ -217,14 +217,8 @@ public final class ReportExecutionContext {
     }
 
     /**
-     * Instantiates a POJO from a ConfigObject specification like {@code {type: "com.foo..."}}.
-     * Someday, will probably allow the ConfigObject to specify other parameters too, and use reflective Builder magic
-     *   to plumb them into the instantiated object.
+     * Helpers to instantiates maps of POJOs from a ConfigObject specification.
      */
-    private <T> T loadObject(final Injector injector, final Environment environment, final ConfigObject config) {
-        final Class<? extends T> senderClass = ConfigurationHelper.getType(environment, config.toConfig(), "type");
-        return injector.getInstance(senderClass);
-    }
     private <T> ImmutableMap<String, T> loadMapObject(
             final Injector injector,
             final Environment environment,
@@ -232,7 +226,7 @@ public final class ReportExecutionContext {
     ) {
         return config.entrySet().stream().collect(ImmutableMap.toImmutableMap(
                 Map.Entry::getKey,
-                e -> loadObject(injector, environment, (ConfigObject) e.getValue())
+                e -> ConfigurationHelper.toInstance(injector, environment, ((ConfigObject) e.getValue()).toConfig())
         ));
     }
     private <T> ImmutableMap<String, ImmutableMap<String, T>> loadMapMapObject(
