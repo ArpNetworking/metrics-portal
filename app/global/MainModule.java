@@ -72,8 +72,6 @@ import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
-import org.simplejavamail.mailer.Mailer;
-import org.simplejavamail.mailer.MailerBuilder;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
@@ -160,17 +158,6 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Config config) {
         return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
-    }
-
-    @Provides
-    @Singleton
-    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
-    private Mailer getEmailTransport(final Config config) {
-        final String host = config.hasPath("mail.smtp.host") ? config.getString("mail.smtp.host") : "localhost";
-        final Integer port = config.hasPath("mail.smtp.port") ? config.getInt("mail.smtp.port") : 25;
-        return MailerBuilder
-                .withSMTPServer(host, port)
-                .buildMailer();
     }
 
     @Provides

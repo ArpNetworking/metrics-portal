@@ -32,6 +32,7 @@ import models.internal.reports.ReportFormat;
 import org.simplejavamail.email.EmailBuilder;
 import org.simplejavamail.email.EmailPopulatingBuilder;
 import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.mailer.MailerBuilder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -111,13 +112,16 @@ public class EmailSender implements Sender {
     /**
      * Public constructor.
      *
-     * @param mailer The {@link Mailer} to send emails through.
      * @param config The configuration for this sender.
      */
     @Inject
-    public EmailSender(final Mailer mailer, @Assisted final Config config) {
-        _mailer = mailer;
+    public EmailSender(@Assisted final Config config) {
         _fromAddress = config.getString("fromAddress");
+        final String host = config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost";
+        final Integer port = config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25;
+        _mailer = MailerBuilder
+                .withSMTPServer(host, port)
+                .buildMailer();
     }
 
     private final Mailer _mailer;
