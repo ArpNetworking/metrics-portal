@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.reports;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.EmailSender;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.typesafe.config.ConfigFactory;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
