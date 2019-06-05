@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.io.ByteSource;
+import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 
 import java.time.Instant;
@@ -27,6 +28,13 @@ import java.time.Instant;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public interface RenderedReport {
+
+    /**
+     * The report that was rendered into this object.
+     *
+     * @return The format.
+     */
+    Report getReport();
 
     /**
      * The format of the report.

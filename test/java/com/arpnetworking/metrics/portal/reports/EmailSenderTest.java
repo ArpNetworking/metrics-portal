@@ -63,14 +63,14 @@ public class EmailSenderTest {
     @Test
     public void testSend() throws InterruptedException, ExecutionException {
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder()
+                .setReport(TestBeanFactory.createReportBuilder().setName("P75 TTI").build())
                 .setFormat(new HtmlReportFormat.Builder().build())
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8))
+                .setScheduledFor(Instant.parse("2019-01-01T00:00:00.000Z"))
                 .build();
         _sender.send(
-                TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
                 TestBeanFactory.createRecipient(),
-                ImmutableMap.of(report.getFormat(), report),
-                Instant.parse("2019-01-01T00:00:00.000Z")
+                ImmutableMap.of(report.getFormat(), report)
         ).toCompletableFuture().get();
 
         Mockito.verify(_mailer).sendMail(_message.capture());
@@ -79,29 +79,23 @@ public class EmailSenderTest {
     }
 
     @Test
-    public void testSendSucceedsWithNoFormats() throws InterruptedException, ExecutionException {
+    public void testNoEmailIsSentWithNoFormats() throws InterruptedException, ExecutionException {
         _sender.send(
-                TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
                 TestBeanFactory.createRecipient(),
-                ImmutableMap.of(),
-                Instant.parse("2019-01-01T00:00:00.000Z")
+                ImmutableMap.of()
         ).toCompletableFuture().get();
 
-        Mockito.verify(_mailer).sendMail(_message.capture());
-        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z", _message.getValue().getSubject());
-        Assert.assertNull(_message.getValue().getHTMLText());
-        Assert.assertEquals(Lists.newArrayList(), _message.getValue().getAttachments());
+        Mockito.verify(_mailer, Mockito.never()).sendMail(Mockito.any());
     }
 
     @Test(expected = MailException.class)
     public void testSendFailsIfExceptionThrown() throws MailException, InterruptedException {
+        final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         Mockito.doThrow(new MailException()).when(_mailer).sendMail(Mockito.any());
         try {
             _sender.send(
-                    TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
                     TestBeanFactory.createRecipient(),
-                    ImmutableMap.of(),
-                    Instant.parse("2019-01-01T00:00:00.000Z")
+                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
             ).toCompletableFuture().get();
         } catch (final ExecutionException e) {
             throw (MailException) e.getCause();

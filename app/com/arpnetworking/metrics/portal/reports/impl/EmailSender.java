@@ -50,14 +50,12 @@ import java.util.concurrent.CompletionStage;
 public class EmailSender implements Sender {
     @Override
     public CompletionStage<Void> send(
-            final Report report,
             final Recipient recipient,
-            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
-            final Instant scheduled
+            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     ) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                sendSync(report, recipient, formatsToSend, scheduled);
+                sendSync(recipient, formatsToSend);
             } catch (final IOException e) {
                 throw new CompletionException(e);
             }
@@ -66,12 +64,14 @@ public class EmailSender implements Sender {
     }
 
     private void sendSync(
-            final Report report,
             final Recipient recipient,
-            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
-            final Instant scheduled
+            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     ) throws IOException {
-
+        if (formatsToSend.isEmpty()) {
+            return;
+        }
+        final Report report = formatsToSend.values().iterator().next().getReport();
+        final Instant scheduled = formatsToSend.values().iterator().next().getScheduledFor();
         final String subject = getSubject(report, scheduled);
         EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
                 .from(_fromAddress)

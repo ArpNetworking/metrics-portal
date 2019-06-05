@@ -18,10 +18,8 @@ package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.collect.ImmutableMap;
 import models.internal.reports.Recipient;
-import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -33,16 +31,12 @@ public interface Sender {
     /**
      * Send some {@link RenderedReport} documents to a {@link Recipient}.
      *
-     * @param report The report being sent.
      * @param recipient The recipient to notify.
      * @param formatsToSend The reports to send. Must be non-empty.
-     * @param scheduled The instant that the report being sent was generated for.
      * @return A CompletionStage that completes when the transmission has completed.
      */
     CompletionStage<Void> send(
-            Report report,
             Recipient recipient,
-            ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
-            Instant scheduled
+            ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     );
 }

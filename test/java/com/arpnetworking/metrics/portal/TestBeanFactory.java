@@ -174,6 +174,7 @@ public final class TestBeanFactory {
      */
     public static DefaultRenderedReport.Builder createRenderedReportBuilder() {
         return new DefaultRenderedReport.Builder()
+                .setReport(createReportBuilder().build())
                 .setFormat(new HtmlReportFormat.Builder().build())
                 .setScheduledFor(Instant.now())
                 .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
