@@ -141,7 +141,7 @@ public final class ReportExecutionContext {
         return CompletableFuture.allOf(futures);
     }
 
-    private <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
+    /* package private */ <S extends ReportSource, F extends ReportFormat> Renderer<S, F> getRenderer(
             final S source,
             final F format
     ) {
@@ -155,7 +155,7 @@ public final class ReportExecutionContext {
         return result;
     }
 
-    private Sender getSender(final Recipient recipient) {
+    /* package private */ Sender getSender(final Recipient recipient) {
         final Sender result = _senders.get(recipient.getType());
         if (result == null) {
             throw new IllegalArgumentException(
