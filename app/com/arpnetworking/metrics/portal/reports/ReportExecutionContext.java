@@ -70,13 +70,13 @@ public final class ReportExecutionContext {
                         e -> e.getValue().stream()));
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
 
-        return CompletableFuture.completedFuture(null).thenApply(nothing -> {
+        return CompletableFuture.supplyAsync(() -> {
             verifyDependencies(report);
             return null;
         }).thenCompose(nothing ->
                 renderAll(formatToRecipients.keySet(), report.getSource(), scheduled)
         ).thenCompose(formatToRendered ->
-                sendAll(recipientToFormats, formatToRendered)
+                sendAll(report, recipientToFormats, formatToRendered, scheduled)
         ).thenApply(nothing ->
                 new DefaultReportResult()
         );
@@ -135,8 +135,10 @@ public final class ReportExecutionContext {
      * @throws IllegalArgumentException if any necessary {@link Sender} is missing from the given Injector.
      */
     /* package private */ CompletionStage<Void> sendAll(
+            final Report report,
             final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
-            final ImmutableMap<ReportFormat, RenderedReport> formatToRendered
+            final ImmutableMap<ReportFormat, RenderedReport> formatToRendered,
+            final Instant scheduled
     ) {
         final CompletableFuture<?>[] futures = recipientToFormats
                 .asMap()
