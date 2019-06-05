@@ -16,17 +16,38 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.google.inject.Inject;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 /**
- * Uses a headless Chrome instance to capture a page.
+ * Uses a headless Chrome instance to render a page as PDF.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
+
     @Override
-    protected byte[] getPageContent(final WebPageReportSource source, final PdfReportFormat format, final Object todo) {
-        return new byte[0]; // TODO(spencerpearson)
+    protected CompletionStage<byte[]> getPageContent(
+            final DevToolsService dts,
+            final WebPageReportSource source,
+            final PdfReportFormat format
+    ) {
+        final CompletableFuture<byte[]> result = new CompletableFuture<>();
+        dts.onLoad(() -> result.complete(dts.printToPdf(format.getWidthInches(), format.getHeightInches())));
+        return result;
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param devToolsFactory the {@link DevToolsFactory} to use to create tabs.
+     */
+    @Inject
+    public PdfScreenshotRenderer(final DevToolsFactory devToolsFactory) {
+        super(devToolsFactory);
     }
 }

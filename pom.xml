@@ -726,6 +726,14 @@
       <scope>runtime</scope>
     </dependency>
 
+
+    <!-- Reporting -->
+    <dependency>
+      <groupId>com.github.kklisura.cdt</groupId>
+      <artifactId>cdt-java-client</artifactId>
+      <version>${cdt.java.client.version}</version>
+    </dependency>
+
     <!-- Akka -->
     <dependency>
       <groupId>com.typesafe.akka</groupId>
@@ -982,12 +990,6 @@
       <artifactId>Java-WebSocket</artifactId>
       <version>${java.websocket.version}</version>
       <scope>runtime</scope>
-    </dependency>-->
-    <!-- Is this needed? -->
-    <!--<dependency>
-      <groupId>com.github.kklisura.cdt</groupId>
-      <artifactId>cdt-java-client</artifactId>
-      <version>${cdt.java.client.version}</version>
     </dependency>-->
     <!-- Is this needed? -->
     <!--<dependency>

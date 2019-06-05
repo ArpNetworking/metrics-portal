@@ -18,12 +18,12 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
+import com.google.inject.Inject;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -33,7 +33,7 @@ import java.util.concurrent.CompletionStage;
  */
 /* package private */ abstract class BaseScreenshotRenderer<F extends ReportFormat> implements Renderer<WebPageReportSource, F> {
 
-    protected abstract byte[] getPageContent(WebPageReportSource source, F format, Object todo);
+    protected abstract CompletionStage<byte[]> getPageContent(DevToolsService dts, WebPageReportSource source, F format);
 
     @Override
     public CompletionStage<RenderedReport> render(
@@ -41,11 +41,25 @@ import java.util.concurrent.CompletionStage;
             final F format,
             final Instant scheduled
     ) {
-        return CompletableFuture.completedFuture(new DefaultRenderedReport.Builder()
-                .setScheduledFor(scheduled)
-                .setGeneratedAt(Instant.now())
-                .setFormat(format)
-                .build()  // TODO(spencerpearson)
-        );
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
+        return getPageContent(dts, source, format)
+                .thenApply(bytes -> new DefaultRenderedReport.Builder()
+                        .setFormat(format)
+                        .setScheduledFor(scheduled)
+                        .setGeneratedAt(Instant.now())
+                        .setBytes(bytes)
+                        .build());
     }
+
+    /**
+     * Public constructor.
+     *
+     * @param devToolsFactory the {@link DevToolsFactory} to use to create tabs.
+     */
+    @Inject
+    BaseScreenshotRenderer(final DevToolsFactory devToolsFactory) {
+        _devToolsFactory = devToolsFactory;
+    }
+
+    private final DevToolsFactory _devToolsFactory;
 }

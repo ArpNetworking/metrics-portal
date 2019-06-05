@@ -16,17 +16,55 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.Renderer;
+import com.google.inject.Inject;
+import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
 /**
- * Uses a headless Chrome instance to capture a page.
+ * Uses a headless Chrome instance to render a page as HTML.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
+public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
     @Override
-    protected byte[] getPageContent(final WebPageReportSource source, final HtmlReportFormat format, final Object todo) {
-        return new byte[0]; // TODO(spencerpearson)
+    public CompletionStage<RenderedReport> render(
+            final WebPageReportSource source,
+            final HtmlReportFormat format,
+            final Instant scheduled
+    ) {
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
+        final CompletableFuture<RenderedReport> result = new CompletableFuture<>();
+        dts.onLoad(() -> {
+            final String srcdoc = (String) dts.evaluate("document.documentElement.outerHTML");
+            result.complete(new DefaultRenderedReport.Builder()
+                    .setFormat(format)
+                    .setScheduledFor(scheduled)
+                    .setGeneratedAt(Instant.now())
+                    .setBytes(srcdoc.getBytes(StandardCharsets.UTF_8))
+                    .build()
+            );
+        });
+        dts.navigate(source.getUri().toString());
+        return result;
     }
+
+    /**
+     * Public constructor.
+     *
+     * @param devToolsFactory the {@link DevToolsFactory} to use to create tabs.
+     */
+    @Inject
+    protected HtmlScreenshotRenderer(final DevToolsFactory devToolsFactory) {
+        _devToolsFactory = devToolsFactory;
+    }
+
+    private final DevToolsFactory _devToolsFactory;
 }
