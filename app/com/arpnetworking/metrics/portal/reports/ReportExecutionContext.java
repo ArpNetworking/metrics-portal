@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -184,24 +186,36 @@ public final class ReportExecutionContext {
     @Inject
     public ReportExecutionContext(final Injector injector, final Environment environment, final Config config) {
         if (config.hasPath("reporting")) {
-            _renderers = this.<Renderer>loadMapMapObject(injector, environment, config.getObject("reporting.renderers"))
-                    .entrySet()
-                    .stream()
-                    .collect(ImmutableMap.toImmutableMap(
-                            e -> SourceType.valueOf(e.getKey()),
-                            Map.Entry::getValue
-                    ));
-            _senders = this.<Sender>loadMapObject(injector, environment, config.getObject("reporting.senders"))
-                    .entrySet()
-                    .stream()
-                    .collect(ImmutableMap.toImmutableMap(
-                            e -> RecipientType.valueOf(e.getKey()),
-                            Map.Entry::getValue
-                    ));
+            _renderers = transformMap(
+                    this.<Renderer>loadMapMapObject(injector, environment, config.getObject("reporting.renderers")),
+                    SourceType::valueOf,
+                    v -> transformMap(v, MediaType::parse, v2 -> v2)
+            );
+            _senders = transformMap(
+                    this.<Sender>loadMapObject(injector, environment, config.getObject("reporting.senders")),
+                    RecipientType::valueOf,
+                    v -> v
+            );
         } else {
             _renderers = ImmutableMap.of();
             _senders = ImmutableMap.of();
         }
+    }
+
+    // CHECKSTYLE.OFF: MethodTypeParameterNameCheck
+    private static <K1, K2, V1, V2> ImmutableMap<K2, V2> transformMap(
+            final Map<K1, V1> map,
+            final Function<K1, K2> k,
+            final Function<V1, V2> v
+    ) {
+    // CHECKSTYLE.ON: MethodTypeParameterNameCheck
+        return map
+                .entrySet()
+                .stream()
+                .collect(ImmutableMap.toImmutableMap(
+                        e -> k.apply(e.getKey()),
+                        e -> v.apply(e.getValue())
+                ));
     }
 
     /**
@@ -228,7 +242,7 @@ public final class ReportExecutionContext {
         ));
     }
 
-    private final ImmutableMap<SourceType, ImmutableMap<String, Renderer>> _renderers;
+    private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer>> _renderers;
     private final ImmutableMap<RecipientType, Sender> _senders;
 
 }

@@ -44,8 +44,8 @@ public final class PdfReportFormat implements ReportFormat {
     }
 
     @Override
-    public String getMimeType() {
-        return MediaType.PDF.toString();
+    public MediaType getMimeType() {
+        return MediaType.PDF;
     }
 
     /**

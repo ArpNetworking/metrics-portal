@@ -34,8 +34,8 @@ public final class HtmlReportFormat implements ReportFormat {
     private HtmlReportFormat(final Builder builder) {}
 
     @Override
-    public String getMimeType() {
-        return MediaType.HTML_UTF_8.toString();
+    public MediaType getMimeType() {
+        return MediaType.HTML_UTF_8;
     }
 
     @Override
