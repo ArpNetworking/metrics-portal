@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -114,7 +115,7 @@ public class EmailSender implements Sender {
      * @param config The configuration for this sender.
      */
     @Inject
-    public EmailSender(final Mailer mailer, final Config config) {
+    public EmailSender(final Mailer mailer, @Assisted final Config config) {
         _mailer = mailer;
         _fromAddress = config.getString("fromAddress");
     }

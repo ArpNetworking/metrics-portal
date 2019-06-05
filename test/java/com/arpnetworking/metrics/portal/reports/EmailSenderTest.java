@@ -19,6 +19,8 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.EmailSender;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.typesafe.config.ConfigFactory;
+import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +32,7 @@ import org.mockito.MockitoAnnotations;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
@@ -51,12 +54,18 @@ public class EmailSenderTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(_mailer);
+        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
+                "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
+                "fromAddress", "me@invalid.net"
+        )));
     }
 
     @Test
     public void testSend() throws InterruptedException, ExecutionException {
-        final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
+        final RenderedReport report = TestBeanFactory.createRenderedReportBuilder()
+                .setFormat(new HtmlReportFormat.Builder().build())
+                .setBytes("report content".getBytes(StandardCharsets.UTF_8))
+                .build();
         _sender.send(
                 TestBeanFactory.createReportBuilder().setName("P75 TTI").build(),
                 TestBeanFactory.createRecipient(),
@@ -65,7 +74,7 @@ public class EmailSenderTest {
         ).toCompletableFuture().get();
 
         Mockito.verify(_mailer).sendMail(_message.capture());
-        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", _message.getValue().getSubject());
+        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z", _message.getValue().getSubject());
         Assert.assertEquals("report content", _message.getValue().getHTMLText());
     }
 
@@ -79,7 +88,7 @@ public class EmailSenderTest {
         ).toCompletableFuture().get();
 
         Mockito.verify(_mailer).sendMail(_message.capture());
-        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z[UTC]", _message.getValue().getSubject());
+        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z", _message.getValue().getSubject());
         Assert.assertNull(_message.getValue().getHTMLText());
         Assert.assertEquals(Lists.newArrayList(), _message.getValue().getAttachments());
     }

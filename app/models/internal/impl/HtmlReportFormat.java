@@ -19,6 +19,7 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import com.google.common.net.MediaType;
 import models.internal.reports.ReportFormat;
 
 /**
@@ -34,7 +35,7 @@ public final class HtmlReportFormat implements ReportFormat {
 
     @Override
     public String getMimeType() {
-        return "text/html";
+        return MediaType.HTML_UTF_8.toString();
     }
 
     @Override

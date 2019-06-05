@@ -19,6 +19,7 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import com.google.common.net.MediaType;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
@@ -44,7 +45,7 @@ public final class PdfReportFormat implements ReportFormat {
 
     @Override
     public String getMimeType() {
-        return "application/pdf";
+        return MediaType.PDF.toString();
     }
 
     /**
