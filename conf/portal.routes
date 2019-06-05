@@ -51,14 +51,14 @@ GET        /assets/lib/configure.js             controllers.ApplicationControlle
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
 # Kairosdb proxy
-GET        /metricnames                         controllers.KairosDbProxyController.metricNames(containing: String ?= null)
-GET        /health/check                        controllers.KairosDbProxyController.healthCheck()
-GET        /health/status                       controllers.KairosDbProxyController.status()
-GET        /tagnames                            controllers.KairosDbProxyController.tagNames()
-GET        /tagvalues                           controllers.KairosDbProxyController.tagValues()
-POST       /version                             controllers.KairosDbProxyController.version()
-POST       /datapoints/query/tags               controllers.KairosDbProxyController.queryTags()
-POST       /datapoints/query                    controllers.KairosDbProxyController.queryMetrics()
+GET        /api/v1/metricnames                  controllers.KairosDbProxyController.metricNames(containing: String ?= null)
+GET        /api/v1/health/check                 controllers.KairosDbProxyController.healthCheck()
+GET        /api/v1/health/status                controllers.KairosDbProxyController.status()
+GET        /api/v1/tagnames                     controllers.KairosDbProxyController.tagNames()
+GET        /api/v1/tagvalues                    controllers.KairosDbProxyController.tagValues()
+POST       /api/v1/version                      controllers.KairosDbProxyController.version()
+POST       /api/v1/datapoints/query/tags        controllers.KairosDbProxyController.queryTags()
+POST       /api/v1/datapoints/query             controllers.KairosDbProxyController.queryMetrics()
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path = "/public", file: Asset)
