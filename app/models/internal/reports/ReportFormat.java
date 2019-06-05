@@ -16,6 +16,7 @@
 
 package models.internal.reports;
 
+import com.google.common.net.MediaType;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 
@@ -31,7 +32,7 @@ public interface ReportFormat {
      *
      * @return The MIME type.
      */
-    String getMimeType();
+    MediaType getMimeType();
 
     /**
      * Applies a {@code Visitor} to this format. This should delegate the to the appropriate {@code Visitor#visit} overload.
