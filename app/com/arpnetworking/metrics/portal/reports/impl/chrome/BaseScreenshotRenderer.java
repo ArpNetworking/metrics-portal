@@ -18,11 +18,9 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
-import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -36,16 +34,12 @@ import java.util.concurrent.CompletionStage;
     protected abstract byte[] getPageContent(WebPageReportSource source, F format, Object todo);
 
     @Override
-    public CompletionStage<RenderedReport> render(
+    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<RenderedReport.Builder<B, R>> render(
             final WebPageReportSource source,
-            final F format,
-            final Instant scheduled
+            final RenderedReport.Builder<B, R> builder
     ) {
-        return CompletableFuture.completedFuture(new DefaultRenderedReport.Builder()
-                .setScheduledFor(scheduled)
-                .setGeneratedAt(Instant.now())
-                .setFormat(format)
-                .build()  // TODO(spencerpearson)
+        return CompletableFuture.completedFuture(
+                builder.setBytes(new byte[0])// TODO(spencerpearson)
         );
     }
 }

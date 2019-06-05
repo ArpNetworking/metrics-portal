@@ -19,7 +19,6 @@ package com.arpnetworking.metrics.portal.reports;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -35,9 +34,13 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * Render a ReportSource.
      *
      * @param source The source to render.
-     * @param format The format to render into.
-     * @param scheduled The instant that the report-job was scheduled for.
-     * @return A CompletionStage that completes when the report has been rendered.
+     * @param builder Will be used to construct a report. All implementations of {@code render} must call `setBytes()`.
+     * @param <B> The type of builder provided.
+     * @param <R> The type of report to generate.
+     * @return A {@link CompletionStage} that completes when the report has been rendered.
      */
-    CompletionStage<RenderedReport> render(S source, F format, Instant scheduled);
+    <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<RenderedReport.Builder<B, R>> render(
+            S source,
+            RenderedReport.Builder<B, R> builder
+    );
 }

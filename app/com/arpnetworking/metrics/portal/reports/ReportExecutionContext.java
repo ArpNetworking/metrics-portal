@@ -27,6 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -34,6 +35,7 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import play.Environment;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
@@ -111,9 +113,13 @@ public final class ReportExecutionContext {
         final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
-                .map(format -> getRenderer(source, format)
-                        .render(source, format, scheduled)
-                        .thenApply(rendered -> result.put(format, rendered))
+                .map(format ->
+                        getRenderer(source, format)
+                        .render(source, new DefaultRenderedReport.Builder()
+                                .setFormat(format)
+                                .setGeneratedAt(_clock.instant())
+                                .setScheduledFor(scheduled))
+                        .thenApply(builder -> result.put(format, builder.build()))
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(resultSettingFutures).thenApply(nothing -> ImmutableMap.copyOf(result));
@@ -177,12 +183,14 @@ public final class ReportExecutionContext {
     /**
      * Public constructor.
      *
+     * @param clock Clock to use to get the current time.
      * @param injector Guice Injector to load the classes specified in the config.
      * @param environment Environment used to load the classes specified in the config.
      * @param config Config to identify {@link Renderer}s / {@link Sender}s / other necessary objects for report execution.
      */
     @Inject
-    public ReportExecutionContext(final Injector injector, final Environment environment, final Config config) {
+    public ReportExecutionContext(final Clock clock, final Injector injector, final Environment environment, final Config config) {
+        _clock = clock;
         if (config.hasPath("reporting")) {
             _renderers = transformMap(
                     this.<Renderer>loadMapMapObject(injector, environment, config.getObject("reporting.renderers")),
@@ -240,6 +248,7 @@ public final class ReportExecutionContext {
         ));
     }
 
+    private final Clock _clock;
     private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer>> _renderers;
     private final ImmutableMap<RecipientType, Sender> _senders;
 
