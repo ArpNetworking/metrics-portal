@@ -41,7 +41,7 @@ public final class DevToolsFactory {
      * @throws ExecutionException if Chrome can't be started.
      */
     public DevToolsService create(final boolean ignoreCertificateErrors) throws ExecutionException {
-        final ChromeService service = CHROME_SERVICE_CACHE.get(_chromePath, this::createService);
+        final ChromeService service = CHROME_SERVICE_BY_PATH.get(_chromePath, this::createService);
         final ChromeTab tab = service.createTab();
         final com.github.kklisura.cdt.services.ChromeDevToolsService result = service.createDevToolsService(tab);
         if (ignoreCertificateErrors) {
@@ -81,5 +81,6 @@ public final class DevToolsFactory {
     }
 
     private final String _chromePath;
-    private static final Cache<String, ChromeService> CHROME_SERVICE_CACHE = CacheBuilder.newBuilder().build();
+
+    private static final Cache<String, ChromeService> CHROME_SERVICE_BY_PATH = CacheBuilder.newBuilder().build();
 }
