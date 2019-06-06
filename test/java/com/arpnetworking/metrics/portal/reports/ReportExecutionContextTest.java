@@ -262,6 +262,7 @@ public class ReportExecutionContextTest {
         public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
+                final Instant scheduled,
                 final B builder
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
@@ -273,6 +274,7 @@ public class ReportExecutionContextTest {
         public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final PdfReportFormat format,
+                final Instant scheduled,
                 final B builder
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
