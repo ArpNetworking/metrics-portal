@@ -259,7 +259,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
                 final Instant scheduled,
@@ -271,7 +271,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final PdfReportFormat format,
                 final Instant scheduled,

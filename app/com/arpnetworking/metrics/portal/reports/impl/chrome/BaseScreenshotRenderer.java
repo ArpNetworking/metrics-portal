@@ -35,7 +35,7 @@ import java.util.concurrent.CompletionStage;
     protected abstract byte[] getPageContent(WebPageReportSource source, F format, Object todo);
 
     @Override
-    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
             final F format,
             final Instant scheduled,
