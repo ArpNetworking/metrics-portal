@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -32,9 +33,10 @@ import java.util.concurrent.CompletionStage;
  */
 public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
     @Override
-    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
             final PdfReportFormat format,
+            final Instant scheduled,
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());

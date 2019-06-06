@@ -35,9 +35,10 @@ import java.util.concurrent.CompletionStage;
  */
 public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
     @Override
-    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
             final HtmlReportFormat format,
+            final Instant scheduled,
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
