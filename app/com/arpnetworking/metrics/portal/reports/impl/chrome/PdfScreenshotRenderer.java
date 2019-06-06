@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -28,16 +30,16 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
-
+public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
     @Override
-    protected CompletionStage<byte[]> getPageContent(
-            final DevToolsService dts,
+    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
             final WebPageReportSource source,
-            final PdfReportFormat format
+            final PdfReportFormat format,
+            final B builder
     ) {
-        final CompletableFuture<byte[]> result = new CompletableFuture<>();
-        dts.onLoad(() -> result.complete(dts.printToPdf(format.getWidthInches(), format.getHeightInches())));
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
+        final CompletableFuture<B> result = new CompletableFuture<>();
+        dts.onLoad(() -> result.complete(builder.setBytes(dts.printToPdf(format.getWidthInches(), format.getHeightInches()))));
         return result;
     }
 
@@ -48,6 +50,8 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfRepor
      */
     @Inject
     public PdfScreenshotRenderer(final DevToolsFactory devToolsFactory) {
-        super(devToolsFactory);
+        _devToolsFactory = devToolsFactory;
     }
+
+    private final DevToolsFactory _devToolsFactory;
 }

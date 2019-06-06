@@ -35,24 +35,16 @@ import java.util.concurrent.CompletionStage;
  */
 public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
     @Override
-    public CompletionStage<RenderedReport> render(
+    public <B extends RenderedReport.Builder<B, R>, R extends RenderedReport> CompletionStage<B> render(
             final WebPageReportSource source,
             final HtmlReportFormat format,
-            final Instant scheduled
+            final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
-        final CompletableFuture<RenderedReport> result = new CompletableFuture<>();
-        dts.onLoad(() -> {
-            final String srcdoc = (String) dts.evaluate("document.documentElement.outerHTML");
-            result.complete(new DefaultRenderedReport.Builder()
-                    .setFormat(format)
-                    .setScheduledFor(scheduled)
-                    .setGeneratedAt(Instant.now())
-                    .setBytes(srcdoc.getBytes(StandardCharsets.UTF_8))
-                    .build()
-            );
-        });
-        dts.navigate(source.getUri().toString());
+        final CompletableFuture<B> result = new CompletableFuture<>();
+        dts.onLoad(() -> result.complete(builder.setBytes(
+                ((String) dts.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
+        )));
         return result;
     }
 
@@ -62,7 +54,7 @@ public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSourc
      * @param devToolsFactory the {@link DevToolsFactory} to use to create tabs.
      */
     @Inject
-    protected HtmlScreenshotRenderer(final DevToolsFactory devToolsFactory) {
+    public HtmlScreenshotRenderer(final DevToolsFactory devToolsFactory) {
         _devToolsFactory = devToolsFactory;
     }
 

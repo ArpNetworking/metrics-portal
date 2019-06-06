@@ -18,9 +18,9 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 import java.util.function.Supplier;
-import javax.inject.Named;
 
 /**
  * A factory that sits atop a Chrome instance and creates tabs / dev-tools instances.

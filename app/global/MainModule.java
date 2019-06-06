@@ -188,10 +188,14 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
     private Supplier<ChromeService> getChromeService(final Config config) {
         return Suppliers.memoize(() -> {
+            final String chromePath = config.hasPath("chrome.path") ? config.getString("chrome.path") : System.getenv("CHROME_PATH");
+            if (chromePath == null) {
+                throw new RuntimeException("could not get path to Chrome from either CHROME_PATH env var or `chrome.path` in config");
+            }
             // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
             // This requires in our own custom "environment" (since it defaults to using System::getEnv).
             final ImmutableMap<String, String> env = ImmutableMap.of(
-                    ChromeLauncher.ENV_CHROME_PATH, config.getString("chrome.path")
+                    ChromeLauncher.ENV_CHROME_PATH, chromePath
             );
             // ^^^ In order to pass this environment in, we need to use a many-argument constructor,
             //   which doesn't have obvious default values. So I stole the arguments from the fewer-argument constructor:
