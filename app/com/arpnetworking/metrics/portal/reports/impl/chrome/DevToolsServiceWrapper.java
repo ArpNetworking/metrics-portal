@@ -70,26 +70,27 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public void onLoad(final Runnable callback) {
-        _dts.getPage().enable(); _dts.getPage().onLoadEventFired(e -> callback.run());
+        _dts.getPage().enable();
+        _dts.getPage().onLoadEventFired(e -> callback.run());
     }
 
     @Override
     public void onEvent(final String eventName, final Runnable callback) {
-        final String callbackId = UUID.randomUUID().toString();
-        final String jsonEventName, jsonCallbackId;
+        final String triggerMessage = eventName + " -- " + UUID.randomUUID();
+        final String jsonEventName, jsonTriggerMessage;
         try {
             jsonEventName = OBJECT_MAPPER.writeValueAsString(eventName);
-            jsonCallbackId = OBJECT_MAPPER.writeValueAsString(callbackId);
+            jsonTriggerMessage = OBJECT_MAPPER.writeValueAsString(triggerMessage);
         } catch (final JsonProcessingException e) {
             throw new AssertionError("json-encoding a String somehow failed", e);
         }
         _dts.getConsole().enable();
         _dts.getConsole().onMessageAdded(e -> {
-            if (e.getMessage().getText().equals(callbackId)) {
+            if (e.getMessage().getText().equals(triggerMessage)) {
                 callback.run();
             }
         });
-        evaluate("window.addEventListener(" + jsonEventName + ", () -> console.log(" + jsonCallbackId + "))");
+        evaluate("window.addEventListener(" + jsonEventName + ", () -> console.log(" + jsonTriggerMessage + "))");
     }
 
     @Override
