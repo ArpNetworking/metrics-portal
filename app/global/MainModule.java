@@ -59,8 +59,11 @@ import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
+import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
+import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -182,9 +185,27 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @Named("chrome-service") // TODO(spencerpearson): is this necessary? Does Guice play nice with generics?
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private Supplier<ChromeService> getChromeService() {
-        return Suppliers.memoize(() -> new ChromeLauncher().launch(true));
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private Supplier<ChromeService> getChromeService(final Config config) {
+        return Suppliers.memoize(() -> {
+            // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
+            // This requires in our own custom "environment" (since it defaults to using System::getEnv).
+            final ImmutableMap<String, String> env = ImmutableMap.of(
+                    ChromeLauncher.ENV_CHROME_PATH, config.getString("chrome.path")
+            );
+            // ^^^ In order to pass this environment in, we need to use a many-argument constructor,
+            //   which doesn't have obvious default values. So I stole the arguments from the fewer-argument constructor:
+            // CHECKSTYLE.OFF: LineLength
+            //   https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-java-client/src/main/java/com/github/kklisura/cdt/launch/ChromeLauncher.java#L105
+            // CHECKSTYLE.ON: LineLength
+            final ChromeLauncher launcher = new ChromeLauncher(
+                    new ProcessLauncherImpl(),
+                    env::get,
+                    new ChromeLauncher.RuntimeShutdownHookRegistry(),
+                    new ChromeLauncherConfiguration()
+            );
+            return launcher.launch(true);
+        });
     }
 
     @Provides
