@@ -110,7 +110,9 @@ public final class DefaultRenderedReport implements RenderedReport {
     /**
      * Builder implementation that constructs {@code DefaultReport}.
      */
-    public static final class Builder extends OvalBuilder<DefaultRenderedReport> {
+    public static final class Builder
+            extends OvalBuilder<DefaultRenderedReport>
+            implements RenderedReport.Builder<Builder, DefaultRenderedReport> {
         /**
          * Public Constructor.
          */
