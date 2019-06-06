@@ -37,7 +37,14 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * @param source The source to render.
      * @param format The format to render into.
      * @param scheduled The instant that the report-job was scheduled for.
-     * @return A CompletionStage that completes when the report has been rendered.
+     * @param builder Will be used to construct a report. All implementations of {@code render} must call `setBytes()`.
+     * @param <B> The type of builder provided.
+     * @return A {@link CompletionStage} that completes when the report has been rendered.
      */
-    CompletionStage<RenderedReport> render(S source, F format, Instant scheduled);
+    <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+            S source,
+            F format,
+            Instant scheduled,
+            B builder
+    );
 }

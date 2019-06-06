@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -46,7 +47,9 @@ import org.mockito.MockitoAnnotations;
 import play.Environment;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -73,6 +76,7 @@ public class ReportExecutionContextTest {
     private static final HtmlReportFormat HTML = new HtmlReportFormat.Builder().build();
     private static final PdfReportFormat PDF = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
     private static final Instant T0 = Instant.now();
+    private static final ManualClock CLOCK = new ManualClock(T0, Duration.ofSeconds(1), ZoneId.of("UTC"));
     private static final Report EXAMPLE_REPORT = new DefaultReport.Builder()
             .setId(UUID.randomUUID())
             .setName("My Name")
@@ -132,7 +136,7 @@ public class ReportExecutionContextTest {
 
     @Test
     public void testInstantiatesWithConfig() {
-        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
+        final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
         final MockPdfRenderer renderer = (MockPdfRenderer) context.getRenderer((WebPageReportSource) EXAMPLE_REPORT.getSource(), PDF);
         Assert.assertEquals("2.0", renderer.getPdfCompatibilityVersion());
     }
@@ -140,7 +144,7 @@ public class ReportExecutionContextTest {
     @Test
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
-        final ReportExecutionContext context = new ReportExecutionContext(_injector, _environment, _config);
+        final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
         context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
         Mockito.verify(_emailSender).send(
                 ALICE,
@@ -155,6 +159,7 @@ public class ReportExecutionContextTest {
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
         final ReportExecutionContext context = new ReportExecutionContext(
+                CLOCK,
                 _injector,
                 _environment,
                 _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\"")
@@ -165,6 +170,7 @@ public class ReportExecutionContextTest {
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
         final ReportExecutionContext context = new ReportExecutionContext(
+                CLOCK,
                 _injector,
                 _environment,
                 _config.withoutPath("reporting.senders.EMAIL")
@@ -174,49 +180,49 @@ public class ReportExecutionContextTest {
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNoType() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE.\"text/html\".something", "something"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithUnloadableType() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE.\"text/html\".type", "no.such.package.MyClass"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithUninjectableType() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE.\"text/html\".type", getClass().getName() + "$ClassNotRegisteredWithInjector"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRenderers() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers", "not a ConfigObject"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRenderersByFormat() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE", "not a ConfigObject"
         )));
     }
 
     @Test(expected = Exception.class)
     public void testBadConfigWithNonobjectRendererSpec() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of(
                 "reporting.renderers.WEB_PAGE.text", "not a ConfigObject"
         )));
     }
 
     @Test
     public void testOkIfNoReportsSectionPresent() {
-        new ReportExecutionContext(_injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
+        new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
     private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final Instant scheduled) {
@@ -253,23 +259,25 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public CompletionStage<RenderedReport> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
-                final Instant scheduled
+                final Instant scheduled,
+                final B builder
         ) {
-            return CompletableFuture.completedFuture(mockRendered(EXAMPLE_REPORT, format, scheduled));
+            return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }
     }
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public CompletionStage<RenderedReport> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final PdfReportFormat format,
-                final Instant scheduled
+                final Instant scheduled,
+                final B builder
         ) {
-            return CompletableFuture.completedFuture(mockRendered(EXAMPLE_REPORT, format, scheduled));
+            return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }
 
         public String getPdfCompatibilityVersion() {
