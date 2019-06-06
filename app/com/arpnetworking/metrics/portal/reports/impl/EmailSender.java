@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Sender;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import com.google.common.net.MediaType;
@@ -42,6 +43,7 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
  * Sends reports over email.
@@ -89,7 +91,7 @@ public class EmailSender implements Sender {
                 .addData("recipient", recipient)
                 .log();
 
-        _mailer.sendMail(builder.buildEmail());
+        _mailer.get().sendMail(builder.buildEmail());
     }
 
     private String getSubject(final Report report, final Instant scheduled) {
@@ -116,26 +118,27 @@ public class EmailSender implements Sender {
      */
     @Inject
     public EmailSender(@Assisted final Config config) {
-        this(
-                MailerBuilder
-                        .withSMTPServer(
-                                config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost",
-                                config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25
-                        )
-                        .buildMailer(),
-                config
-        );
+        this(Suppliers.memoize(() -> buildMailer(config)), config);
     }
 
     /**
      * Constructor for tests, allowing dependency injection of the {@link Mailer}.
      */
-    /* package private */ EmailSender(final Mailer mailer, final Config config) {
+    /* package private */ EmailSender(final Supplier<Mailer> mailer, final Config config) {
         _fromAddress = config.getString("fromAddress");
         _mailer = mailer;
     }
 
-    private final Mailer _mailer;
+    private static Mailer buildMailer(final Config config) {
+        return MailerBuilder
+                .withSMTPServer(
+                        config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost",
+                        config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25
+                )
+                .buildMailer();
+    }
+
+    private final Supplier<Mailer> _mailer;
     private final String _fromAddress;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
