@@ -15,12 +15,16 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.github.kklisura.cdt.launch.ChromeLauncher;
+import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
+import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 
-import java.util.function.Supplier;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A factory that sits atop a Chrome instance and creates tabs / dev-tools instances.
@@ -34,10 +38,12 @@ public final class DevToolsFactory {
      *
      * @param ignoreCertificateErrors whether the created tab should ignore certificate errors when loading resources.
      * @return the created service.
+     * @throws ExecutionException if Chrome can't be started.
      */
-    public DevToolsService create(final boolean ignoreCertificateErrors) {
-        final ChromeTab tab = _chromeServiceSupplier.get().createTab();
-        final com.github.kklisura.cdt.services.ChromeDevToolsService result = _chromeServiceSupplier.get().createDevToolsService(tab);
+    public DevToolsService create(final boolean ignoreCertificateErrors) throws ExecutionException {
+        final ChromeService service = CHROME_SERVICE_CACHE.get(_chromePath, this::createService);
+        final ChromeTab tab = service.createTab();
+        final com.github.kklisura.cdt.services.ChromeDevToolsService result = service.createDevToolsService(tab);
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
@@ -47,13 +53,33 @@ public final class DevToolsFactory {
     /**
      * Public constructor.
      *
-     * @param chromeServiceSupplier provides the Chrome instance that tabs are created for rendering on.
-     *   Using {@link Supplier} enables lazy instantiation, so nodes don't eagerly instantiate {@link ChromeService}.
+     * @param chromePath is the path to the Chrome binary to use.
      */
-    @Inject
-    public DevToolsFactory(@Named("chrome-service") final Supplier<ChromeService> chromeServiceSupplier) {
-        _chromeServiceSupplier = chromeServiceSupplier;
+    public DevToolsFactory(final String chromePath) {
+        _chromePath = chromePath;
     }
 
-    private final Supplier<ChromeService>  _chromeServiceSupplier;
+    private ChromeService createService() {
+        // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
+        // This requires in our own custom "environment" (since it defaults to using System::getEnv).
+        final ImmutableMap<String, String> env = ImmutableMap.of(
+                ChromeLauncher.ENV_CHROME_PATH, _chromePath
+        );
+        // ^^^ In order to pass this environment in, we need to use a many-argument constructor,
+        //   which doesn't have obvious default values. So I stole the arguments from the fewer-argument constructor:
+        // CHECKSTYLE.OFF: LineLength
+        //   https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-java-client/src/main/java/com/github/kklisura/cdt/launch/ChromeLauncher.java#L105
+        // CHECKSTYLE.ON: LineLength
+        final ChromeLauncher launcher = new ChromeLauncher(
+                new ProcessLauncherImpl(),
+                env::get,
+                new ChromeLauncher.RuntimeShutdownHookRegistry(),
+                new ChromeLauncherConfiguration()
+        );
+        return launcher.launch(true);
+
+    }
+
+    private final String _chromePath;
+    private static final Cache<String, ChromeService> CHROME_SERVICE_CACHE = CacheBuilder.newBuilder().build();
 }
