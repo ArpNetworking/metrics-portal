@@ -66,8 +66,7 @@ public interface RenderedReport {
 
 
     /**
-     *
-     * Builder implementation that constructs {@code DefaultReport}.
+     * Interface for Builders that construct {@link RenderedReport}s.
      *
      * @param <B> The concrete type of this builder.
      * @param <R> The type of RenderedReport to build.
