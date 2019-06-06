@@ -19,7 +19,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
-import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
