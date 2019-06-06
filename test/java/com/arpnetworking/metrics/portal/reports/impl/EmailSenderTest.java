@@ -53,7 +53,7 @@ public class EmailSenderTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(() -> _mailer, ConfigFactory.parseMap(ImmutableMap.of(
+        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
                 "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
                 "fromAddress", "me@invalid.net"
         )));
