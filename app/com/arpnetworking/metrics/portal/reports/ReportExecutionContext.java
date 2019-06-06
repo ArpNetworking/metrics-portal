@@ -115,7 +115,7 @@ public final class ReportExecutionContext {
                 .stream()
                 .map(format ->
                         getRenderer(report.getSource(), format)
-                        .render(report.getSource(), format, new DefaultRenderedReport.Builder()
+                        .render(report.getSource(), format, scheduled, new DefaultRenderedReport.Builder()
                                 .setReport(report)
                                 .setFormat(format)
                                 .setGeneratedAt(_clock.instant())
