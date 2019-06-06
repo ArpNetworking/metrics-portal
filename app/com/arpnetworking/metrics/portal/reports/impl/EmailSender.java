@@ -116,12 +116,23 @@ public class EmailSender implements Sender {
      */
     @Inject
     public EmailSender(@Assisted final Config config) {
+        this(
+                MailerBuilder
+                        .withSMTPServer(
+                                config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost",
+                                config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25
+                        )
+                        .buildMailer(),
+                config
+        );
+    }
+
+    /**
+     * Constructor for tests, allowing dependency injection of the {@link Mailer}.
+     */
+    /* package private */ EmailSender(final Mailer mailer, final Config config) {
         _fromAddress = config.getString("fromAddress");
-        final String host = config.hasPath("smtp.host") ? config.getString("smtp.host") : "localhost";
-        final Integer port = config.hasPath("smtp.port") ? config.getInt("smtp.port") : 25;
-        _mailer = MailerBuilder
-                .withSMTPServer(host, port)
-                .buildMailer();
+        _mailer = mailer;
     }
 
     private final Mailer _mailer;
