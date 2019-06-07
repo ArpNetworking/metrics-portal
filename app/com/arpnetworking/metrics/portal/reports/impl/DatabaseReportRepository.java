@@ -39,6 +39,7 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -494,6 +495,17 @@ public final class DatabaseReportRepository implements ReportRepository {
             ebeanSource.setUri(source.getUri());
             ebeanSource.setTriggeringEventName(source.getTriggeringEventName());
             ebeanSource.setTitle(source.getTitle());
+            return ebeanSource;
+        }
+
+        @Override
+        public models.ebean.ReportSource visitGrafana(final GrafanaReportPanelReportSource source) {
+            final models.ebean.GrafanaReportPanelReportSource ebeanSource = new models.ebean.GrafanaReportPanelReportSource();
+            ebeanSource.setUuid(source.getWebPageReportSource().getId());
+            ebeanSource.setIgnoreCertificateErrors(source.getWebPageReportSource().ignoresCertificateErrors());
+            ebeanSource.setUri(source.getWebPageReportSource().getUri());
+            ebeanSource.setTriggeringEventName(source.getWebPageReportSource().getTriggeringEventName());
+            ebeanSource.setTitle(source.getWebPageReportSource().getTitle());
             return ebeanSource;
         }
     };

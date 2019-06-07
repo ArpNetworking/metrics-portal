@@ -23,7 +23,11 @@ package com.arpnetworking.metrics.portal.reports;
  */
 public enum SourceType {
     /**
-     * A report generated from a web page.
+     * A report generated from a generic web page.
      */
     WEB_PAGE,
+    /**
+     * A report generated from a Grafana report panel.
+     */
+    GRAFANA,
 }
