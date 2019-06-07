@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports;
+package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.EmailSender;
+import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import models.internal.impl.HtmlReportFormat;
@@ -53,7 +53,7 @@ public class EmailSenderTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(ConfigFactory.parseMap(ImmutableMap.of(
+        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
                 "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
                 "fromAddress", "me@invalid.net"
         )));
