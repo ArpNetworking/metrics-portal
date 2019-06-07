@@ -45,6 +45,8 @@ import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
@@ -54,10 +56,12 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.utility.ConfigTypedProvider;
+import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -85,6 +89,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -204,6 +209,27 @@ public class MainModule extends AbstractModule {
                 .setMapper(mapper)
                 .setUri(URI.create(configuration.getString("kairosdb.uri")))
                 .setReadTimeout(ConfigurationHelper.getFiniteDuration(configuration, "kairosdb.timeout"))
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private QueryExecutorRegistry provideQueryExecutorRegistry(
+            final Config configuration,
+            final Injector injector,
+            final Environment environment) {
+        final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
+        final Config executorsConfig = configuration.getConfig("query.executors");
+        final Set<String> keys = executorsConfig.root().keySet();
+        for (final String key: keys) {
+            final Config subconfig = executorsConfig.getConfig(key);
+            final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
+            final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
+            registryMapBuilder.put(key, childInjector.getInstance(clazz));
+        }
+        return new QueryExecutorRegistry.Builder()
+                .setExecutors(registryMapBuilder.build())
                 .build();
     }
 

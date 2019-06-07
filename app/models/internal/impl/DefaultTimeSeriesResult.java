@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.kairos.client.models;
+package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.AlertTrigger;
 import models.internal.TimeSeriesResult;
-import models.internal.impl.DefaultTimeSeriesResult;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -42,47 +40,36 @@ import java.util.function.Function;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public final class MetricsQueryResponse {
+public final class DefaultTimeSeriesResult implements TimeSeriesResult {
     @JsonAnyGetter
     public ImmutableMap<String, Object> getOtherArgs() {
         return _otherArgs;
     }
 
-    public ImmutableList<Query> getQueries() {
+    @Override
+    public ImmutableList<? extends TimeSeriesResult.Query> getQueries() {
         return _queries;
     }
 
-    /**
-     * Converts this KairosDB model to an internal TimeSeriesResult model.
-     *
-     * @return a new {@link TimeSeriesResult} model
-     */
-    public TimeSeriesResult toTimeSeriesResult() {
-        return new DefaultTimeSeriesResult.Builder()
-                .setQueries(_queries.stream().map(Query::toInternal).collect(ImmutableList.toImmutableList()))
-                .setOtherArgs(_otherArgs)
-                .build();
-    }
-
-    private MetricsQueryResponse(final Builder builder) {
+    private DefaultTimeSeriesResult(final Builder builder) {
         _otherArgs = builder._otherArgs;
         _queries = builder._queries;
     }
 
     private final ImmutableMap<String, Object> _otherArgs;
-    private final ImmutableList<Query> _queries;
+    private final ImmutableList<? extends TimeSeriesResult.Query> _queries;
 
     /**
-     * Implementation of the builder pattern for {@link MetricsQueryResponse}.
+     * Implementation of the builder pattern for {@link DefaultTimeSeriesResult}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<MetricsQueryResponse> {
+    public static final class Builder extends OvalBuilder<DefaultTimeSeriesResult> {
         /**
          * Public constructor.
          */
         public Builder() {
-            super(MetricsQueryResponse::new);
+            super(DefaultTimeSeriesResult::new);
         }
 
         /**
@@ -115,13 +102,13 @@ public final class MetricsQueryResponse {
          * @param value the name
          * @return this {@link Builder}
          */
-        public Builder setQueries(final ImmutableList<Query> value) {
+        public Builder setQueries(final ImmutableList<? extends TimeSeriesResult.Query> value) {
             _queries = value;
             return this;
         }
 
         @NotNull
-        private ImmutableList<Query> _queries;
+        private ImmutableList<? extends TimeSeriesResult.Query> _queries;
         @NotNull
         private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
     }
@@ -131,7 +118,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Query {
+    public static final class Query implements TimeSeriesResult.Query {
         private Query(final Builder builder) {
             _otherArgs = builder._otherArgs;
             _sampleSize = builder._sampleSize;
@@ -143,37 +130,27 @@ public final class MetricsQueryResponse {
             return _otherArgs;
         }
 
+        @Override
         @JsonProperty("sample_size")
         public long getSampleSize() {
             return _sampleSize;
         }
 
-        public ImmutableList<QueryResult> getResults() {
+        @Override
+        public ImmutableList<? extends TimeSeriesResult.Result> getResults() {
             return _results;
         }
 
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.Query toInternal() {
-            return new DefaultTimeSeriesResult.Query.Builder()
-                    .setSampleSize(_sampleSize)
-                    .setOtherArgs(_otherArgs)
-                    .setResults(_results.stream().map(QueryResult::toInternal).collect(ImmutableList.toImmutableList()))
-                    .build();
-        }
         private final ImmutableMap<String, Object> _otherArgs;
         private final long _sampleSize;
-        private final ImmutableList<QueryResult> _results;
+        private final ImmutableList<? extends TimeSeriesResult.Result> _results;
 
         /**
          * Implementation of the builder pattern for {@link Query}.
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<Query> {
+        public static final class Builder extends OvalBuilder<TimeSeriesResult.Query> {
             /**
              * Public constructor.
              */
@@ -195,13 +172,24 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Set other args. Optional.
+             *
+             * @param value value for the other args
+             * @return this {@link Builder}
+             */
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
              * Sets the sample size. Required.
              *
              * @param value the sample size
              * @return this {@link Builder}
              */
             @JsonProperty("sample_size")
-            public Builder setSampleSize(final Long value) {
+            public Builder setSampleSize(final long value) {
                 _sampleSize = value;
                 return this;
             }
@@ -212,13 +200,13 @@ public final class MetricsQueryResponse {
              * @param value the results
              * @return this {@link Builder}
              */
-            public Builder setResults(final ImmutableList<QueryResult> value) {
+            public Builder setResults(final ImmutableList<? extends TimeSeriesResult.Result> value) {
                 _results = value;
                 return this;
             }
 
             @NotNull
-            private ImmutableList<QueryResult> _results;
+            private ImmutableList<? extends TimeSeriesResult.Result> _results;
             @Min(0)
             @NotNull
             private Long _sampleSize = 0L;
@@ -232,70 +220,65 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class QueryResult {
+    public static final class Result implements TimeSeriesResult.Result {
+        @Override
         public String getName() {
             return _name;
         }
 
-        public ImmutableList<DataPoint> getValues() {
+        @Override
+        public ImmutableList<? extends TimeSeriesResult.DataPoint> getValues() {
             return _values;
         }
 
+        @Override
         public ImmutableMultimap<String, String> getTags() {
             return _tags;
         }
 
-        @JsonProperty("group_by")
-        public ImmutableList<QueryGroupBy> getGroupBy() {
+        @Override
+        public ImmutableList<AlertTrigger> getAlerts() {
+            return _alerts;
+        }
+
+        @Override
+        public ImmutableList<? extends TimeSeriesResult.QueryGroupBy> getGroupBy() {
             return _groupBy;
         }
+
 
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
             return _otherArgs;
         }
 
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.Result toInternal() {
-            return new DefaultTimeSeriesResult.Result.Builder()
-                    .setAlerts(ImmutableList.of())
-                    .setGroupBy(_groupBy.stream().map(QueryGroupBy::toInternal).collect(ImmutableList.toImmutableList()))
-                    .setName(_name)
-                    .setValues(_values.stream().map(DataPoint::toInternal).collect(ImmutableList.toImmutableList()))
-                    .setTags(_tags)
-                    .setOtherArgs(_otherArgs)
-                    .build();
-        }
-
-        private QueryResult(final Builder builder) {
+        private Result(final Builder builder) {
             _otherArgs = builder._otherArgs;
             _values = builder._values;
+            _alerts = builder._alerts;
             _name = builder._name;
             _tags = builder._tags;
             _groupBy = builder._groupBy;
         }
 
         private final ImmutableMap<String, Object> _otherArgs;
-        private final ImmutableList<DataPoint> _values;
+        private final ImmutableList<? extends TimeSeriesResult.DataPoint> _values;
+        private final ImmutableList<AlertTrigger> _alerts;
         private final String _name;
         private final ImmutableMultimap<String, String> _tags;
-        private final ImmutableList<QueryGroupBy> _groupBy;
+        private final ImmutableList<? extends TimeSeriesResult.QueryGroupBy> _groupBy;
 
         /**
-         * Implementation of the builder pattern for a {@link QueryResult}.
+         * Implementation of the builder pattern for a {@link Result}.
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<QueryResult> {
+        public static final class Builder extends OvalBuilder<TimeSeriesResult.Result> {
             /**
              * Public constructor.
              */
             public Builder() {
-                super(QueryResult::new);
+                super(Result::new);
             }
 
             /**
@@ -317,7 +300,6 @@ public final class MetricsQueryResponse {
              * @param value value for the other args
              * @return this {@link Builder}
              */
-            @JsonAnySetter
             public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
                 _otherArgs = value;
                 return this;
@@ -329,7 +311,7 @@ public final class MetricsQueryResponse {
              * @param value the values
              * @return this {@link Builder}
              */
-            public Builder setValues(final ImmutableList<DataPoint> value) {
+            public Builder setValues(final ImmutableList<? extends TimeSeriesResult.DataPoint> value) {
                 _values = value;
                 return this;
             }
@@ -357,48 +339,136 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Sets the alerts. Optional. Cannot be null. Defaults to empty.
+             *
+             * @param value the alerts
+             * @return this {@link Builder}
+             */
+            public Builder setAlerts(final ImmutableList<AlertTrigger> value) {
+                _alerts = value;
+                return this;
+            }
+
+            /**
              * Sets the group by. Optional. Cannot be null.
              *
              * @param value the group by list
              * @return this {@link Builder}
              */
-            @JsonProperty("group_by")
-            public Builder setGroupBy(final ImmutableList<QueryGroupBy> value) {
+            public Builder setGroupBy(final ImmutableList<? extends TimeSeriesResult.QueryGroupBy> value) {
                 _groupBy = value;
                 return this;
             }
+
 
             @NotNull
             @NotEmpty
             private String _name;
             @NotNull
-            private ImmutableList<DataPoint> _values = ImmutableList.of();
+            private ImmutableList<? extends TimeSeriesResult.DataPoint> _values = ImmutableList.of();
             @NotNull
             private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
             @NotNull
+            private ImmutableList<AlertTrigger> _alerts = ImmutableList.of();
+            @NotNull
+            @NotEmpty
             private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
             @NotNull
-            private ImmutableList<QueryGroupBy> _groupBy = ImmutableList.of();
+            private ImmutableList<? extends TimeSeriesResult.QueryGroupBy> _groupBy = ImmutableList.of();
         }
     }
 
     /**
-     * Model for the group_by fields in the {@link QueryResult}.
+     * Model class for a data point in a kairosdb metrics query.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
-    @JsonSubTypes({
-            @JsonSubTypes.Type(name = "tag", value = QueryTagGroupBy.class),
-            @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class)})
-    public abstract static class QueryGroupBy {
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public abstract TimeSeriesResult.QueryGroupBy toInternal();
+    public static final class DataPoint implements TimeSeriesResult.DataPoint {
+        @Override
+        public Instant getTime() {
+            return _time;
+        }
 
+        @Override
+        public Object getValue() {
+            return _value;
+        }
+
+        @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Jackson
+        @JsonValue
+        private ImmutableList<Object> serialize() {
+            return ImmutableList.of(_time.toEpochMilli(), _value);
+        }
+
+        private DataPoint(final Builder builder) {
+            _time = builder._time;
+            _value = builder._value;
+        }
+
+        private final Instant _time;
+        private final Object _value;
+
+        /**
+         * Implementation of the builder pattern for a {@link DataPoint}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends OvalBuilder<TimeSeriesResult.DataPoint> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(DataPoint::new);
+            }
+
+            /**
+             * Public constructor.
+             *
+             * @param arr a 2-element {@link List} containing the time and value at that time.
+             */
+            @JsonCreator
+            public Builder(final List<Object> arr) {
+                super(DataPoint::new);
+                final long timestamp = (long) arr.get(0);
+                _time = Instant.ofEpochMilli(timestamp);
+                _value = arr.get(1);
+            }
+
+            /**
+             * Sets the time. Required. Cannot be null.
+             *
+             * @param value the time
+             * @return this {@link Builder}
+             */
+            public Builder setTime(final Instant value) {
+                _time = value;
+                return this;
+            }
+
+            /**
+             * Sets the value. Required. Cannot be null.
+             *
+             * @param value the value
+             * @return this {@link Builder}
+             */
+            public Builder setValue(final Object value) {
+                _value = value;
+                return this;
+            }
+
+            @NotNull
+            private Instant _time;
+            @NotNull
+            private Object _value;
+        }
+    }
+
+    /**
+     * Model for the group_by fields in the {@link Result}.
+     *
+     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+     */
+    public abstract static class QueryGroupBy implements TimeSeriesResult.QueryGroupBy {
         private QueryGroupBy(final Builder<?, ?> builder) {
         }
 
@@ -409,7 +479,7 @@ public final class MetricsQueryResponse {
          * @param <T> type of the thing to be built
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public abstract static class Builder<B extends Builder<B, T>, T extends QueryGroupBy> extends OvalBuilder<T> {
+        public abstract static class Builder<B extends Builder<B, T>, T extends TimeSeriesResult.QueryGroupBy> extends OvalBuilder<T> {
 
             /**
              * Protected constructor.
@@ -431,11 +501,11 @@ public final class MetricsQueryResponse {
     }
 
     /**
-     * Model for the group_by fields of type "tag" in the {@link QueryResult}.
+     * Model for the group_by fields of type "tag" in the {@link Result}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class QueryTagGroupBy extends QueryGroupBy {
+    public static final class QueryTagGroupBy extends QueryGroupBy implements TimeSeriesResult.QueryTagGroupBy{
         public ImmutableList<String> getTags() {
             return _tags;
         }
@@ -444,23 +514,6 @@ public final class MetricsQueryResponse {
             return _group;
         }
 
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.QueryTagGroupBy toInternal() {
-            return new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                    .setGroup(_group)
-                    .setTags(_tags)
-                    .build();
-        }
-
-        /**
-         * Converts this to an internal model.
-         *
-         * @return a new internal model
-         */
         private QueryTagGroupBy(final Builder builder) {
             super(builder);
             _tags = builder._tags;
@@ -475,7 +528,7 @@ public final class MetricsQueryResponse {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryTagGroupBy> {
+        public static final class Builder extends QueryGroupBy.Builder<Builder, TimeSeriesResult.QueryTagGroupBy> {
             /**
              * Public constructor.
              */
@@ -524,24 +577,13 @@ public final class MetricsQueryResponse {
     }
 
     /**
-     * Model for the group_by fields of type "type" in the {@link QueryResult}.
+     * Model for the group_by fields of type "type" in the {@link Result}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class QueryTypeGroupBy extends QueryGroupBy {
+    public static final class QueryTypeGroupBy extends QueryGroupBy implements TimeSeriesResult.QueryTypeGroupBy {
         public String getType() {
             return _type;
-        }
-
-        /**
-         * Converts this to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.QueryTypeGroupBy toInternal() {
-            return new DefaultTimeSeriesResult.QueryTypeGroupBy.Builder()
-                    .setType(_type)
-                    .build();
         }
 
         private QueryTypeGroupBy(final Builder builder) {
@@ -556,7 +598,7 @@ public final class MetricsQueryResponse {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryTypeGroupBy> {
+        public static final class Builder extends QueryGroupBy.Builder<Builder, TimeSeriesResult.QueryTypeGroupBy> {
             /**
              * Public constructor.
              */
@@ -587,101 +629,6 @@ public final class MetricsQueryResponse {
             @NotNull
             @NotEmpty
             private String _type;
-        }
-    }
-
-    /**
-     * Model class for a data point in a kairosdb metrics query.
-     *
-     * @author Brandon Arp (brandon dot arp at smartsheet dot com)
-     */
-    public static final class DataPoint {
-        public Instant getTime() {
-            return _time;
-        }
-
-        public Object getValue() {
-            return _value;
-        }
-
-        /**
-         * Converts this to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.DataPoint toInternal() {
-            return new DefaultTimeSeriesResult.DataPoint.Builder()
-                    .setTime(_time)
-                    .setValue(_value)
-                    .build();
-        }
-
-        @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Jackson
-        @JsonValue
-        private ImmutableList<Object> serialize() {
-            return ImmutableList.of(_time.toEpochMilli(), _value);
-        }
-
-        private DataPoint(final Builder builder) {
-            _time = builder._time;
-            _value = builder._value;
-        }
-
-        private final Instant _time;
-        private final Object _value;
-
-        /**
-         * Implementation of the builder pattern for a {@link DataPoint}.
-         *
-         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
-         */
-        public static final class Builder extends OvalBuilder<DataPoint> {
-            /**
-             * Public constructor.
-             */
-            public Builder() {
-                super(DataPoint::new);
-            }
-
-            /**
-             * Public constructor.
-             *
-             * @param arr a 2-element {@link List} containing the time and value at that time.
-             */
-            @JsonCreator
-            public Builder(final List<Object> arr) {
-                super(DataPoint::new);
-                final long timestamp = (long) arr.get(0);
-                _time = Instant.ofEpochMilli(timestamp);
-                _value = arr.get(1);
-            }
-
-            /**
-             * Sets the time. Required. Cannot be null.
-             *
-             * @param value the time
-             * @return this {@link Builder}
-             */
-            public Builder setTime(final Instant value) {
-                _time = value;
-                return this;
-            }
-
-            /**
-             * Sets the value. Required. Cannot be null.
-             *
-             * @param value the value
-             * @return this {@link Builder}
-             */
-            public Builder setValue(final Object value) {
-                _value = value;
-                return this;
-            }
-
-            @NotNull
-            private Instant _time;
-            @NotNull
-            private Object _value;
         }
     }
 }
