@@ -371,9 +371,9 @@ public class RollupGeneratorTest {
         assertEquals("merge", metric.getAggregators().get(0).getName());
         assertTrue(metric.getAggregators().get(0).getAlignSampling().isPresent());
         assertTrue(metric.getAggregators().get(0).getAlignSampling().get());
-        assertTrue(metric.getAggregators().get(0).getAlignEndTime().isPresent());
-        assertTrue(metric.getAggregators().get(0).getAlignEndTime().get());
-        assertFalse(metric.getAggregators().get(0).getAlignStartTime().isPresent());
+        assertTrue(metric.getAggregators().get(0).getAlignStartTime().isPresent());
+        assertTrue(metric.getAggregators().get(0).getAlignStartTime().get());
+        assertFalse(metric.getAggregators().get(0).getAlignEndTime().isPresent());
         assertTrue(metric.getAggregators().get(0).getSampling().isPresent());
         assertEquals(1L, metric.getAggregators().get(0).getSampling().get().getValue());
         assertEquals(SamplingUnit.HOURS, metric.getAggregators().get(0).getSampling().get().getUnit());
