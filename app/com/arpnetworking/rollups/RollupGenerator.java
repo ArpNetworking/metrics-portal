@@ -325,7 +325,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                         .setUnit(message.getPeriod().getSamplingUnit())
                                         .build())
                         .setAlignSampling(true)
-                        .setAlignEndTime(true)
+                        .setAlignStartTime(true)
                         .build(),
                 new Aggregator.Builder()
                         .setName("save_as")
