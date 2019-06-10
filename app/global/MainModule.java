@@ -79,7 +79,8 @@ import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
-import play.api.libs.json.jackson.PlayJsonModule$;
+import play.api.libs.json.JsonParserSettings;
+import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
@@ -242,7 +243,7 @@ public class MainModule extends AbstractModule {
             final ApplicationLifecycle lifecycle,
             final ActorSystem actorSystem) {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
-        objectMapper.registerModule(PlayJsonModule$.MODULE$);
+        objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {

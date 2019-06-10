@@ -36,6 +36,8 @@ import javax.persistence.Entity;
 @DiscriminatorValue("ONE_OFF")
 public class OneOffReportSchedule extends ReportSchedule {
 
+    public static final long serialVersionUID = 1;
+
     /**
      * Convert this schedule to its internal representation.
      *

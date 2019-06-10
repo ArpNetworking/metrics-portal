@@ -36,6 +36,8 @@ import javax.persistence.Entity;
 @DiscriminatorValue("NEVER")
 public class NeverReportSchedule extends ReportSchedule {
 
+    public static final long serialVersionUID = 1;
+
     /**
      * Convert this schedule to its internal representation.
      *

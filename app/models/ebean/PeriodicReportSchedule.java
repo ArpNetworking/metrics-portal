@@ -43,6 +43,9 @@ import javax.persistence.Enumerated;
 @Entity
 @DiscriminatorValue("PERIODIC")
 public class PeriodicReportSchedule extends ReportSchedule {
+
+    public static final long serialVersionUID = 1;
+
     @Column(name = "offset_nanos")
     private long offsetNanos;
     @Column(name = "period")
