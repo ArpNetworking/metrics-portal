@@ -88,7 +88,7 @@ public class EmailSenderTest {
     }
 
     @Test(expected = MailException.class)
-    public void testSendFailsIfExceptionThrown() throws MailException, InterruptedException {
+    public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         Mockito.doThrow(new MailException()).when(_mailer).sendMail(Mockito.any());
         try {
@@ -97,9 +97,14 @@ public class EmailSenderTest {
                     ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
             ).toCompletableFuture().get();
         } catch (final ExecutionException e) {
-            throw (MailException) e.getCause();
+            if (e.getCause() instanceof MailException) {
+                throw (MailException) e.getCause();
+            }
+            throw e;    
         }
     }
 
-    private static final class MailException extends RuntimeException {}
+    private static final class MailException extends RuntimeException {
+        private static final long serialVersionUID = -2972735310213868006L;
+    }
 }
