@@ -45,6 +45,8 @@ import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
@@ -54,15 +56,11 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.utility.ConfigTypedProvider;
+import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.kklisura.cdt.launch.ChromeLauncher;
-import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
-import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
-import com.github.kklisura.cdt.services.ChromeService;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -81,7 +79,8 @@ import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
-import play.api.libs.json.jackson.PlayJsonModule$;
+import play.api.libs.json.JsonParserSettings;
+import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
@@ -91,9 +90,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -184,36 +183,6 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @Singleton
-    @Named("chrome-service") // TODO(spencerpearson): is this necessary? Does Guice play nice with generics?
-    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
-    private Supplier<ChromeService> getChromeService(final Config config) {
-        return Suppliers.memoize(() -> {
-            final String chromePath = config.hasPath("chrome.path") ? config.getString("chrome.path") : System.getenv("CHROME_PATH");
-            if (chromePath == null) {
-                throw new RuntimeException("could not get path to Chrome from either CHROME_PATH env var or `chrome.path` in config");
-            }
-            // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
-            // This requires in our own custom "environment" (since it defaults to using System::getEnv).
-            final ImmutableMap<String, String> env = ImmutableMap.of(
-                    ChromeLauncher.ENV_CHROME_PATH, chromePath
-            );
-            // ^^^ In order to pass this environment in, we need to use a many-argument constructor,
-            //   which doesn't have obvious default values. So I stole the arguments from the fewer-argument constructor:
-            // CHECKSTYLE.OFF: LineLength
-            //   https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-java-client/src/main/java/com/github/kklisura/cdt/launch/ChromeLauncher.java#L105
-            // CHECKSTYLE.ON: LineLength
-            final ChromeLauncher launcher = new ChromeLauncher(
-                    new ProcessLauncherImpl(),
-                    env::get,
-                    new ChromeLauncher.RuntimeShutdownHookRegistry(),
-                    new ChromeLauncherConfiguration()
-            );
-            return launcher.launch(true);
-        });
-    }
-
-    @Provides
-    @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Features getFeatures(final Config configuration) {
         return new DefaultFeatures(configuration);
@@ -244,6 +213,27 @@ public class MainModule extends AbstractModule {
                 .build();
     }
 
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private QueryExecutorRegistry provideQueryExecutorRegistry(
+            final Config configuration,
+            final Injector injector,
+            final Environment environment) {
+        final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
+        final Config executorsConfig = configuration.getConfig("query.executors");
+        final Set<String> keys = executorsConfig.root().keySet();
+        for (final String key: keys) {
+            final Config subconfig = executorsConfig.getConfig(key);
+            final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
+            final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
+            registryMapBuilder.put(key, childInjector.getInstance(clazz));
+        }
+        return new QueryExecutorRegistry.Builder()
+                .setExecutors(registryMapBuilder.build())
+                .build();
+    }
+
     //Note: This is essentially the same as Play's ObjectMapperModule, but uses the Commons ObjectMapperFactory
     //  instance as the base
     @Singleton
@@ -253,7 +243,7 @@ public class MainModule extends AbstractModule {
             final ApplicationLifecycle lifecycle,
             final ActorSystem actorSystem) {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
-        objectMapper.registerModule(PlayJsonModule$.MODULE$);
+        objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {

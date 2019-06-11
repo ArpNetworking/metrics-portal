@@ -64,6 +64,7 @@ import static org.junit.Assert.assertTrue;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 @Ignore
+@SuppressWarnings("deprecation")
 public class CassandraAlertRepositoryTest extends WithApplication {
 
     @Override

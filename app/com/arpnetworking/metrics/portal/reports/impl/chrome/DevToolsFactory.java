@@ -20,11 +20,10 @@ import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
 import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 
 /**
  * A factory that sits atop a Chrome instance and creates tabs / dev-tools instances.
@@ -38,10 +37,9 @@ public final class DevToolsFactory {
      *
      * @param ignoreCertificateErrors whether the created tab should ignore certificate errors when loading resources.
      * @return the created service.
-     * @throws ExecutionException if Chrome can't be started.
      */
-    public DevToolsService create(final boolean ignoreCertificateErrors) throws ExecutionException {
-        final ChromeService service = CHROME_SERVICE_BY_PATH.get(_chromePath, this::createService);
+    public DevToolsService create(final boolean ignoreCertificateErrors) {
+        final ChromeService service = CHROME_SERVICE_BY_PATH.computeIfAbsent(_chromePath, s -> createService());
         final ChromeTab tab = service.createTab();
         final com.github.kklisura.cdt.services.ChromeDevToolsService result = service.createDevToolsService(tab);
         if (ignoreCertificateErrors) {
@@ -82,5 +80,5 @@ public final class DevToolsFactory {
 
     private final String _chromePath;
 
-    private static final Cache<String, ChromeService> CHROME_SERVICE_BY_PATH = CacheBuilder.newBuilder().build();
+    private static final Map<String, ChromeService> CHROME_SERVICE_BY_PATH = Maps.newHashMap();
 }

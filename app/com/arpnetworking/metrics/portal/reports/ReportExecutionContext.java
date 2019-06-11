@@ -156,14 +156,15 @@ public final class ReportExecutionContext {
             final S source,
             final F format
     ) {
-        @SuppressWarnings("unchecked")
-        final Renderer<S, F> result = _renderers.getOrDefault(source.getType(), ImmutableMap.of()).get(format.getMimeType());
+        final Renderer<?, ?> result = _renderers.getOrDefault(source.getType(), ImmutableMap.of()).get(format.getMimeType());
         if (result == null) {
             throw new IllegalArgumentException(
                     "no Renderer exists for source type " + source.getType() + ", MIME type " + format.getMimeType()
             );
         }
-        return result;
+        @SuppressWarnings("unchecked")
+        final Renderer<S, F> uncheckedResult = (Renderer<S, F>) result;
+        return uncheckedResult;
     }
 
     /* package private */ Sender getSender(final Recipient recipient) {
@@ -196,7 +197,7 @@ public final class ReportExecutionContext {
         _clock = clock;
         if (config.hasPath("reporting")) {
             _renderers = transformMap(
-                    this.<Renderer>loadMapMapObject(injector, environment, config.getObject("reporting.renderers")),
+                    this.<Renderer<?, ?>>loadMapMapObject(injector, environment, config.getObject("reporting.renderers")),
                     SourceType::valueOf,
                     v -> transformMap(v, MediaType::parse, v2 -> v2)
             );
@@ -252,7 +253,7 @@ public final class ReportExecutionContext {
     }
 
     private final Clock _clock;
-    private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer>> _renderers;
+    private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer<?, ?>>> _renderers;
     private final ImmutableMap<RecipientType, Sender> _senders;
 
 }

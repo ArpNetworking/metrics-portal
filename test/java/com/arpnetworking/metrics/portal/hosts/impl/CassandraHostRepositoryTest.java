@@ -54,6 +54,7 @@ import static org.junit.Assert.assertEquals;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 @Ignore
+@SuppressWarnings("deprecation")
 public final class CassandraHostRepositoryTest extends WithApplication {
 
     @Override
