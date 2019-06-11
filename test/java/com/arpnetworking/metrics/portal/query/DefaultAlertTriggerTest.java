@@ -17,10 +17,10 @@ package com.arpnetworking.metrics.portal.query;
 
 import models.internal.impl.DefaultAlertTrigger;
 import net.sf.oval.exception.ConstraintsViolatedException;
-import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 /**
@@ -33,17 +33,8 @@ public class DefaultAlertTriggerTest {
     @Test
     public void testEmptyEndDate() {
         final DefaultAlertTrigger trigger = new DefaultAlertTrigger.Builder()
-                .setTime(DateTime.now())
+                .setTime(ZonedDateTime.now())
                 .setEndTime(Optional.empty())
-                .build();
-        Assert.assertNotNull(trigger);
-    }
-
-    @Test(expected = ConstraintsViolatedException.class)
-    public void testNullEndDate() {
-        final DefaultAlertTrigger trigger = new DefaultAlertTrigger.Builder()
-                .setTime(DateTime.now())
-                .setEndTime(null)
                 .build();
         Assert.assertNotNull(trigger);
     }
@@ -51,8 +42,8 @@ public class DefaultAlertTriggerTest {
     @Test(expected = ConstraintsViolatedException.class)
     public void testEndBeforeStart() {
         final DefaultAlertTrigger trigger = new DefaultAlertTrigger.Builder()
-                .setTime(DateTime.now())
-                .setEndTime(Optional.of(DateTime.now().minusMinutes(5)))
+                .setTime(ZonedDateTime.now())
+                .setEndTime(Optional.of(ZonedDateTime.now().minusMinutes(5)))
                 .build();
         Assert.assertNotNull(trigger);
     }
