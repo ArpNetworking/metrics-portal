@@ -42,6 +42,7 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
         final CompletableFuture<B> result = new CompletableFuture<>();
         dts.onLoad(() -> result.complete(builder.setBytes(dts.printToPdf(format.getWidthInches(), format.getHeightInches()))));
+        dts.navigate(source.getUri().toString());
         return result;
     }
 

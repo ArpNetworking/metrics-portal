@@ -45,6 +45,7 @@ public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSourc
         dts.onLoad(() -> result.complete(builder.setBytes(
                 ((String) dts.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
         )));
+        dts.navigate(source.getUri().toString());
         return result;
     }
 
