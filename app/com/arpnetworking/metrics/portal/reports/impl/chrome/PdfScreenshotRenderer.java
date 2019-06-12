@@ -19,6 +19,8 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
@@ -49,11 +51,14 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
     /**
      * Public constructor.
      *
-     * @param devToolsFactory the {@link DevToolsFactory} to use to create tabs.
+     * @param config the configuration for this renderer. Meaningful keys:
+     * <ul>
+     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
+     * </ul>
      */
     @Inject
-    public PdfScreenshotRenderer(final DevToolsFactory devToolsFactory) {
-        _devToolsFactory = devToolsFactory;
+    public PdfScreenshotRenderer(@Assisted final Config config) {
+        _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
     }
 
     private final DevToolsFactory _devToolsFactory;
