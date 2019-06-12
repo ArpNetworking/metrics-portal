@@ -200,7 +200,7 @@ public final class JobExecutorActorTest {
 
     private static final Instant T_0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
-    private static final Organization ORGANIZATION = TestBeanFactory.getDefautOrganization();
+    private static final Organization ORGANIZATION = TestBeanFactory.organizationFrom(TestBeanFactory.createEbeanOrganization());
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
