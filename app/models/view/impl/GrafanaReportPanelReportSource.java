@@ -25,11 +25,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 /**
- * View model for a report source that pulls screenshots from the web.
+ * View model for a report source that pulls screenshots from a Grafana report panel.
  *
  * Play view models are mutable.
  *
- * @author Christian Briones (cbriones at dropbox dot com)
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
 public final class GrafanaReportPanelReportSource implements ReportSource {
