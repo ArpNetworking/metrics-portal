@@ -28,7 +28,6 @@ import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
 
 import java.util.List;
 import java.util.Locale;
@@ -126,7 +125,7 @@ public class KairosDbServiceImpl implements KairosDbService {
         final Predicate<String> containsFilter;
 
         if (containing.isPresent() && !containing.get().isEmpty()) {
-            final String lowerContaining = containing.get().toLowerCase(Locale.ENGLISH);
+            final String lowerContaining = containing.get().toLowerCase(Locale.getDefault());
             containsFilter = s -> s.toLowerCase(Locale.getDefault()).contains(lowerContaining);
         } else {
             containsFilter = s -> true;
@@ -178,51 +177,54 @@ public class KairosDbServiceImpl implements KairosDbService {
         newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
             // Check to see if there are any rollups for this metrics
             final String metricName = metric.getName();
-            final ImmutableList<String> filteredMetrics = filterMetricNames(metricNames, Optional.of(metricName), false);
-            final List<String> rollupMetrics = filteredMetrics
-                    .stream()
-                    .filter(IS_ROLLUP)
-                    .filter(s -> s.length() == metricName.length() + 3)
-                    .collect(Collectors.toList());
-
-            if (rollupMetrics.isEmpty()) {
-                // No rollups so execute what we received
-                return metric;
+            if (metricName.endsWith("_!")) {
+                // Special case a _! suffix to not apply rollup selection
+                // Drop the suffix and forward the request
+                return Metric.Builder.fromMetric(metric)
+                        .setName(metricName.substring(0, metricName.length() - 2))
+                        .build();
             } else {
-                // There are rollups, now determine the appropriate one based on the max sampling period in the
-                // aggregators
-                final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
-                        .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
-                        .map(Aggregator::getSampling)
-                        .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
-                        .max(SamplingUnit::compareTo);
+                final ImmutableList<String> filteredMetrics = filterMetricNames(metricNames, Optional.of(metricName), false);
+                final List<String> rollupMetrics = filteredMetrics
+                        .stream()
+                        .filter(IS_ROLLUP)
+                        .filter(s -> s.length() == metricName.length() + 3)
+                        .collect(Collectors.toList());
 
-                // No aggregators are sampling aligned so skip as rollups are always aligned
-                if (maxUnit.isPresent()) {
+                if (rollupMetrics.isEmpty()) {
+                    // No rollups so execute what we received
+                    return metric;
+                } else {
+                    // There are rollups, now determine the appropriate one based on the max sampling period in the
+                    // aggregators
+                    final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
+                            .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
+                            .map(Aggregator::getSampling)
+                            .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
+                            .min(SamplingUnit::compareTo);
 
-                    final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
-                    rollupMetrics.forEach(name -> {
-                        final Optional<SamplingUnit> rollupUnit = rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
-                        rollupUnit.ifPresent(samplingUnit -> orderedRollups.put(samplingUnit, name));
-                    });
+                    // No aggregators are sampling aligned so skip as rollups are always aligned
+                    if (maxUnit.isPresent()) {
 
-                    final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
-                    final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
-                    final Metric.Builder metricBuilder = new Metric.Builder()
-                            .setName(rollupName)
-                            .setAggregators(metric.getAggregators())
-                            .setGroupBy(metric.getGroupBy())
-                            .setTags(new ImmutableMultimap.Builder<String, String>().putAll(metric.getTags()).build());
+                        final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
+                        rollupMetrics.forEach(name -> {
+                            final Optional<SamplingUnit> rollupUnit = rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
+                            rollupUnit.ifPresent(samplingUnit -> orderedRollups.put(samplingUnit, name));
+                        });
 
-                    metric.getOrder().ifPresent(metricBuilder::setOrder);
-                    metric.getLimit().ifPresent(metricBuilder::setLimit);
-                    return metricBuilder.build();
+                        final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
+                        final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
+                        final Metric.Builder metricBuilder = Metric.Builder.fromMetric(metric)
+                                .setName(rollupName);
+
+                        return metricBuilder.build();
+                    }
+
+                    return metric;
                 }
-
-                return metric;
             }
         })
-                .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf)));
+                .collect(ImmutableList.toImmutableList()));
 
 
         return newQueryBuilder.build();

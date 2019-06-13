@@ -2,7 +2,7 @@
   "queries": [
     {
       "results": [{
-        "name": "foo_1d",
+        "name": "foo_1h",
         "values": [],
         "tags": {}
       }]

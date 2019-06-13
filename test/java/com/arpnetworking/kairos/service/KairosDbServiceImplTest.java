@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Dropbox.com
+ * Copyright 2019 Dropbox Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,11 +127,11 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
-    public void testSelectsLargestRollupBasedOnAggregate() throws Exception {
+    public void testSelectsSmallestRollupBasedOnAggregate() throws Exception {
         when(_mockClient.queryMetrics(any())).thenReturn(
                 CompletableFuture.completedFuture(
                         OBJECT_MAPPER.readValue(
-                                readResource("testSelectsLargestRollupBasedOnAggregate.backend_response"),
+                                readResource("testSelectsSmallestRollupBasedOnAggregate.backend_response"),
                                 MetricsQueryResponse.class
                         )
                 )
@@ -139,7 +139,7 @@ public class KairosDbServiceImplTest {
 
         _service.queryMetrics(
                 OBJECT_MAPPER.readValue(
-                        readResource("testSelectsLargestRollupBasedOnAggregate.request"),
+                        readResource("testSelectsSmallestRollupBasedOnAggregate.request"),
                         MetricsQuery.class)
         );
 
@@ -149,7 +149,33 @@ public class KairosDbServiceImplTest {
         assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
-        assertEquals("foo_1d", metric.getName());
+        assertEquals("foo_1h", metric.getName());
+    }
+
+    @Test
+    public void testIgnoresRollupsForSpecialCase() throws Exception {
+        when(_mockClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testIgnoresRollupsForSpecialCase.backend_response"),
+                                MetricsQueryResponse.class
+                        )
+                )
+        );
+
+        _service.queryMetrics(
+                OBJECT_MAPPER.readValue(
+                        readResource("testIgnoresRollupsForSpecialCase.request"),
+                        MetricsQuery.class)
+        );
+
+        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        verify(_mockClient, times(1)).queryMetrics(captor.capture());
+        final MetricsQuery request = captor.getValue();
+        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(1, request.getMetrics().size());
+        final Metric metric = request.getMetrics().get(0);
+        assertEquals("foo", metric.getName());
     }
 
     private String readResource(final String resourceSuffix) {
