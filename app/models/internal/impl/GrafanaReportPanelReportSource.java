@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotNull;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -37,15 +38,24 @@ import java.util.UUID;
 @Loggable
 public final class GrafanaReportPanelReportSource implements ReportSource {
     private final WebPageReportSource _webPageReportSource;
+    private final ChronoUnit _timeRangePeriod;
+    private final int _timeRangeWidthPeriods;
+    private final int _timeRangeEndPeriodsAgo;
 
     private GrafanaReportPanelReportSource(final Builder builder) {
         _webPageReportSource = builder._webPageReportSource;
+        _timeRangePeriod = builder._timeRangePeriod;
+        _timeRangeWidthPeriods = builder._timeRangeWidthPeriods;
+        _timeRangeEndPeriodsAgo = builder._timeRangeEndPeriodsAgo;
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("webPageReportSource", _webPageReportSource)
+                .add("_webPageReportSource", _webPageReportSource)
+                .add("_timeRangePeriod", _timeRangePeriod)
+                .add("_timeRangeWidthPeriods", _timeRangeWidthPeriods)
+                .add("_timeRangeEndPeriodsAgo", _timeRangeEndPeriodsAgo)
                 .toString();
     }
 
@@ -63,6 +73,18 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
         return _webPageReportSource;
     }
 
+    public ChronoUnit getTimeRangePeriod() {
+        return _timeRangePeriod;
+    }
+
+    public int getTimeRangeWidthPeriods() {
+        return _timeRangeWidthPeriods;
+    }
+
+    public int getTimeRangeEndPeriodsAgo() {
+        return _timeRangeEndPeriodsAgo;
+    }
+
     @Override
     public SourceType getType() {
         return SourceType.GRAFANA;
@@ -78,16 +100,19 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof GrafanaReportPanelReportSource)) {
             return false;
         }
         final GrafanaReportPanelReportSource that = (GrafanaReportPanelReportSource) o;
-        return Objects.equals(_webPageReportSource, that._webPageReportSource);
+        return _timeRangeWidthPeriods == that._timeRangeWidthPeriods
+                && _timeRangeEndPeriodsAgo == that._timeRangeEndPeriodsAgo
+                && _webPageReportSource.equals(that._webPageReportSource)
+                && _timeRangePeriod == that._timeRangePeriod;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_webPageReportSource);
+        return Objects.hash(_webPageReportSource, _timeRangePeriod, _timeRangeWidthPeriods, _timeRangeEndPeriodsAgo);
     }
 
     /**
@@ -112,8 +137,52 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
             return this;
         }
 
+        /**
+         * The unit of time that the time-range start/end times will be truncated to. Required. Cannot be null.
+         *
+         * @param period The underlying web page report source.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setTimeRangePeriod(final ChronoUnit period) {
+            _timeRangePeriod = period;
+            return this;
+        }
+
+        /**
+         * The width of the time range to query Grafana for, in periods. Required. Cannot be null.
+         *
+         * @param widthPeriods The number of periods.
+         *   For example, if at 2am you want to run a report for the previous day, you probably have Period=DAILY and widthPeriods=1.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setTimeRangeWidthPeriods(final int widthPeriods) {
+            _timeRangeWidthPeriods = widthPeriods;
+            return this;
+        }
+
+        /**
+         * The number of periods between the end-time and the (truncated) scheduled reporting time. Required. Cannot be null.
+         *
+         * @param endPeriodsAgo The number of periods.
+         *   For example, if at 2am you want to run a report for the previous day, you would have Period=DAILY and endPeriodsAgo=0
+         *   (because the scheduled time will get rounded to the start of the day; which is exactly when the time-range should end).
+         *   If you for some reason wanted to run a report for the <i>previous</i> previous day (e.g. on 2am Apr 3 you want to generate
+         *   a report looking at Apr 1), then you would have Period=DAILY and endPeriodsAgo=1.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setTimeRangeEndPeriodsAgo(final int endPeriodsAgo) {
+            _timeRangeEndPeriodsAgo = endPeriodsAgo;
+            return this;
+        }
+
         @NotNull
         private WebPageReportSource _webPageReportSource;
+        @NotNull
+        private ChronoUnit _timeRangePeriod;
+        @NotNull
+        private int _timeRangeWidthPeriods;
+        @NotNull
+        private int _timeRangeEndPeriodsAgo;
 
     }
 }

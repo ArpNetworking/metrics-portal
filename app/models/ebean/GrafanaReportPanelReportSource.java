@@ -16,9 +16,12 @@
 package models.ebean;
 
 import java.net.URI;
+import java.time.temporal.ChronoUnit;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 
 /**
  * Data Model for SQL storage of a Grafana based report generation scheme.
@@ -45,6 +48,16 @@ public class GrafanaReportPanelReportSource extends ReportSource {
 
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
+
+    @Column(name = "time_range_period")
+    @Enumerated(EnumType.STRING)
+    private ChronoUnit timeRangePeriod;
+
+    @Column(name = "time_range_width_periods")
+    private int timeRangeWidthPeriods;
+
+    @Column(name = "time_range_end_periods_ago")
+    private int timeRangeEndPeriodsAgo;
 
     public URI getUri() {
         return uri;
@@ -78,17 +91,45 @@ public class GrafanaReportPanelReportSource extends ReportSource {
         triggeringEventName = value;
     }
 
+    public ChronoUnit getTimeRangePeriod() {
+        return timeRangePeriod;
+    }
+
+    public void setTimeRangePeriod(final ChronoUnit value) {
+        timeRangePeriod = value;
+    }
+
+    public int getTimeRangeWidthPeriods() {
+        return timeRangeWidthPeriods;
+    }
+
+    public void setTimeRangeWidthPeriods(final int value) {
+        timeRangeWidthPeriods = value;
+    }
+
+    public int getTimeRangeEndPeriodsAgo() {
+        return timeRangeEndPeriodsAgo;
+    }
+
+    public void setTimeRangeEndPeriodsAgo(final int value) {
+        timeRangeEndPeriodsAgo = value;
+    }
+
     @Override
     public models.internal.impl.GrafanaReportPanelReportSource toInternal() {
-        return new models.internal.impl.GrafanaReportPanelReportSource.Builder().setWebPageReportSource(
-                new models.internal.impl.WebPageReportSource.Builder()
-                    .setId(getUuid())
-                    .setUri(uri)
-                    .setTitle(title)
-                    .setIgnoreCertificateErrors(ignoreCertificateErrors)
-                    .setTriggeringEventName(triggeringEventName)
-                    .build()
-        ).build();
+        return new models.internal.impl.GrafanaReportPanelReportSource.Builder()
+                .setWebPageReportSource(
+                        new models.internal.impl.WebPageReportSource.Builder()
+                                .setId(getUuid())
+                                .setUri(uri)
+                                .setTitle(title)
+                                .setIgnoreCertificateErrors(ignoreCertificateErrors)
+                                .setTriggeringEventName(triggeringEventName)
+                                .build())
+                .setTimeRangePeriod(timeRangePeriod)
+                .setTimeRangeWidthPeriods(timeRangeWidthPeriods)
+                .setTimeRangeEndPeriodsAgo(timeRangeEndPeriodsAgo)
+                .build();
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

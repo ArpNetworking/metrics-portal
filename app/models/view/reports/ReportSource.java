@@ -42,6 +42,9 @@ public interface ReportSource {
      */
     models.internal.reports.ReportSource toInternal();
 
+    /**
+     * Visitor to convert internal-model {@link models.internal.reports.ReportSource}s into {@link ReportSource}s.
+     */
     models.internal.reports.ReportSource.Visitor<ReportSource> FROM_INTERNAL_VISITOR =
             new models.internal.reports.ReportSource.Visitor<ReportSource>() {
                 @Override
@@ -51,7 +54,7 @@ public interface ReportSource {
 
                 @Override
                 public ReportSource visitGrafana(final models.internal.impl.GrafanaReportPanelReportSource source) {
-                    return GrafanaReportPanelReportSource.fromInternal(source)
+                    return GrafanaReportPanelReportSource.fromInternal(source);
                 }
             };
 
