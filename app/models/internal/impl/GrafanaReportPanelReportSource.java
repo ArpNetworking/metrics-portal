@@ -21,6 +21,8 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
+import net.sf.oval.constraint.Min;
+import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.temporal.ChronoUnit;
@@ -180,9 +182,11 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
         @NotNull
         private ChronoUnit _timeRangePeriod;
         @NotNull
-        private int _timeRangeWidthPeriods;
+        @Min(value = 1)
+        private Integer _timeRangeWidthPeriods;
         @NotNull
-        private int _timeRangeEndPeriodsAgo;
+        @NotNegative
+        private Integer _timeRangeEndPeriodsAgo;
 
     }
 }

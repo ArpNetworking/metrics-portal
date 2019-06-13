@@ -131,5 +131,7 @@ public class GrafanaReportPanelReportSource extends ReportSource {
                 .setTimeRangeEndPeriodsAgo(timeRangeEndPeriodsAgo)
                 .build();
     }
+
+    private static final long serialVersionUID = -4832920449387394L;
 }
 // CHECKSTYLE.ON: MemberNameCheck
