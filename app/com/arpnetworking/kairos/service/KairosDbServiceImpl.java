@@ -135,7 +135,7 @@ public class KairosDbServiceImpl implements KairosDbService {
                 .filter(baseFilter)
                 .filter(IS_PT1M.negate())
                 .filter(containsFilter)
-                .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf));
+                .collect(ImmutableList.toImmutableList());
     }
 
 
