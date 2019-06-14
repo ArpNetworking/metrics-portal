@@ -21,10 +21,10 @@ import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
+import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -38,7 +38,7 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
     public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
             final PdfReportFormat format,
-            final Instant scheduled,
+            final TimeRange timeRange,
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());

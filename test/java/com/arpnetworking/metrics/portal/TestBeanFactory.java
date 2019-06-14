@@ -27,6 +27,7 @@ import models.internal.Context;
 import models.internal.MetricsSoftwareState;
 import models.internal.Operator;
 import models.internal.Organization;
+import models.internal.TimeRange;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQuantity;
@@ -176,7 +177,7 @@ public final class TestBeanFactory {
         return new DefaultRenderedReport.Builder()
                 .setReport(createReportBuilder().build())
                 .setFormat(new HtmlReportFormat.Builder().build())
-                .setScheduledFor(Instant.now())
+                .setTimeRange(new TimeRange(Instant.now(), Instant.now().plus(Duration.ofSeconds((long) (100000 * RANDOM.nextDouble())))))
                 .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8));
     }

@@ -26,6 +26,7 @@ import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
+import models.internal.TimeRange;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -36,7 +37,6 @@ import org.simplejavamail.mailer.MailerBuilder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -72,8 +72,8 @@ public class EmailSender implements Sender {
             return;
         }
         final Report report = formatsToSend.values().iterator().next().getReport();
-        final Instant scheduled = formatsToSend.values().iterator().next().getScheduledFor();
-        final String subject = getSubject(report, scheduled);
+        final TimeRange timeRange = formatsToSend.values().iterator().next().getTimeRange();
+        final String subject = getSubject(report, timeRange);
         EmailPopulatingBuilder builder = EmailBuilder.startingBlank()
                 .from(_fromAddress)
                 .to(recipient.getAddress())
@@ -92,8 +92,8 @@ public class EmailSender implements Sender {
         _mailer.sendMail(builder.buildEmail());
     }
 
-    private String getSubject(final Report report, final Instant scheduled) {
-        final String formattedTime = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).toString();
+    private String getSubject(final Report report, final TimeRange timeRange) {
+        final String formattedTime = ZonedDateTime.ofInstant(timeRange.getStart(), ZoneOffset.UTC).toString();
         return "[Report] " + report.getName() + " for " + formattedTime; // TODO(spencerpearson): make format configurable
     }
 

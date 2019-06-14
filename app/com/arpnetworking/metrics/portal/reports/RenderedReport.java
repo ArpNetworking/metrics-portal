@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.io.ByteSource;
+import models.internal.TimeRange;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 
@@ -51,11 +52,11 @@ public interface RenderedReport {
     ByteSource getBytes();
 
     /**
-     * The instant that the report was scheduled for.
+     * The time range that the report covers.
      *
      * @return The instant.
      */
-    Instant getScheduledFor();
+    TimeRange getTimeRange();
 
     /**
      * The instant that the report was actually generated. (Ideally, this should not affect the report content.)
@@ -82,12 +83,12 @@ public interface RenderedReport {
         B setBytes(byte[] bytes);
 
         /**
-         * Set the report bytes. Required. Cannot be null.
+         * Set the time range the report was rendered covering. Required. Cannot be null.
          *
-         * @param scheduledFor The report scheduledFor.
+         * @param timeRange The time range.
          * @return This instance of {@code Builder}.
          */
-        B setScheduledFor(Instant scheduledFor);
+        B setTimeRange(TimeRange timeRange);
 
         /**
          * Set the report generatedAt. Required. Cannot be null.
