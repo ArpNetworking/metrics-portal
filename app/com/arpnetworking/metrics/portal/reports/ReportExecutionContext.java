@@ -16,6 +16,10 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -27,6 +31,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import models.internal.TimeRange;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Recipient;
@@ -37,6 +42,7 @@ import play.Environment;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -62,6 +68,11 @@ public final class ReportExecutionContext {
      * @return A CompletionStage that completes when sending has completed for every recipient.
      */
     public CompletionStage<Report.Result> execute(final Report report, final Instant scheduled) {
+        final ChronoUnit resolution = report.getSchedule().accept(TimeRangeVisitor.getInstance());
+        final TimeRange timeRange = new TimeRange(
+                resolution.addTo(scheduled.truncatedTo(resolution), -1),
+                scheduled.truncatedTo(resolution)
+        );
         final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
                 .entrySet()
                 .stream()
@@ -74,9 +85,9 @@ public final class ReportExecutionContext {
             verifyDependencies(report);
             return null;
         }).thenCompose(nothing ->
-                renderAll(formatToRecipients.keySet(), report, scheduled)
+                renderAll(formatToRecipients.keySet(), report, timeRange)
         ).thenCompose(formatToRendered ->
-                sendAll(report, recipientToFormats, formatToRendered, scheduled)
+                sendAll(report, recipientToFormats, formatToRendered, timeRange)
         ).thenApply(nothing ->
                 new DefaultReportResult()
         );
@@ -108,18 +119,18 @@ public final class ReportExecutionContext {
     /* package private */ CompletionStage<ImmutableMap<ReportFormat, RenderedReport>> renderAll(
             final ImmutableSet<ReportFormat> formats,
             final Report report,
-            final Instant scheduled
+            final TimeRange timeRange
     ) {
         final Map<ReportFormat, RenderedReport> result = Maps.newConcurrentMap();
         final CompletableFuture<?>[] resultSettingFutures = formats
                 .stream()
                 .map(format ->
                         getRenderer(report.getSource(), format)
-                        .render(report.getSource(), format, scheduled, new DefaultRenderedReport.Builder()
+                        .render(report.getSource(), format, timeRange, new DefaultRenderedReport.Builder()
                                 .setReport(report)
                                 .setFormat(format)
                                 .setGeneratedAt(_clock.instant())
-                                .setScheduledFor(scheduled))
+                                .setTimeRange(timeRange))
                         .thenApply(builder -> result.put(format, builder.build()))
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
@@ -139,7 +150,7 @@ public final class ReportExecutionContext {
             final Report report,
             final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats,
             final ImmutableMap<ReportFormat, RenderedReport> formatToRendered,
-            final Instant scheduled
+            final TimeRange timeRange
     ) {
         final CompletableFuture<?>[] futures = recipientToFormats
                 .asMap()
@@ -255,5 +266,28 @@ public final class ReportExecutionContext {
     private final Clock _clock;
     private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer<?, ?>>> _renderers;
     private final ImmutableMap<RecipientType, Sender> _senders;
+
+    private static final class TimeRangeVisitor extends Schedule.Visitor<ChronoUnit> {
+        private static final TimeRangeVisitor INSTANCE = new TimeRangeVisitor();
+
+        public static TimeRangeVisitor getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public ChronoUnit visitPeriodic(final PeriodicSchedule schedule) {
+            return schedule.getPeriod();
+        }
+
+        @Override
+        public ChronoUnit visitOneOff(final OneOffSchedule schedule) {
+            return ChronoUnit.DAYS;
+        }
+
+        @Override
+        public ChronoUnit visitNever(final NeverSchedule schedule) {
+            return ChronoUnit.DAYS;
+        }
+    }
 
 }

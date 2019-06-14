@@ -48,6 +48,11 @@ public final class NeverSchedule extends BaseSchedule {
         return Optional.empty();
     }
 
+    @Override
+    public <T> T accept(final Visitor<T> visitor) {
+        return visitor.visitNever(this);
+    }
+
     /**
      * Implementation of builder pattern for {@link NeverSchedule}.
      *
