@@ -16,6 +16,7 @@
 
 package models.internal;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 import java.time.Instant;
@@ -26,7 +27,8 @@ import java.util.Objects;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class TimeRange {
+@Loggable
+public final class TimeRange {
     private final Instant _start;
     private final Instant _end;
 
