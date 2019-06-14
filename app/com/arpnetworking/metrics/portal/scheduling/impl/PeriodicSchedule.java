@@ -64,6 +64,11 @@ public final class PeriodicSchedule extends BaseSchedule {
         return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
     }
 
+    @Override
+    public <T> T accept(final Visitor<T> visitor) {
+        return visitor.visitPeriodic(this);
+    }
+
     public ChronoUnit getPeriod() {
         return _period;
     }

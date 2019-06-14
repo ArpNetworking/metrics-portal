@@ -40,8 +40,6 @@ public final class BaseScheduleTest {
 
     private static final class MinimalSchedule extends BaseSchedule {
 
-        public static final MinimalSchedule INSTANCE = new Builder().build();
-
         private MinimalSchedule(final Builder builder) {
             super(builder);
         }
@@ -49,6 +47,11 @@ public final class BaseScheduleTest {
         @Override
         protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
             return Optional.empty();
+        }
+
+        @Override
+        public <T> T accept(final Visitor<T> visitor) {
+            return visitor.visitNever(NeverSchedule.getInstance());
         }
 
         /**
