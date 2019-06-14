@@ -109,7 +109,7 @@ For example:
 
 Arguments before the `--` are interpreted by the JVM while arguments after `--` are passed to Metrics Portal.
 
-##### Extras
+##### Reporting
 
 If you have reporting enabled (`reports.enabled = true` in `portal.application.conf`), and you want to render web-based reports, you will need to have Chrome or Chromium installed alongside Metrics Portal, and set the `chromePath` configuration for those renderers to point to the appropriate executable file.
 
