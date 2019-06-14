@@ -20,6 +20,7 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -65,18 +66,20 @@ public class KairosDbProxyController extends Controller {
      * @param client ws client to use
      * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
+     * @param metricsFactory MetricsFactory for recording request metrics
      */
     @Inject
     public KairosDbProxyController(
             final Config configuration,
             final WSClient client,
             final KairosDbClient kairosDbClient,
-            final ObjectMapper mapper) {
+            final ObjectMapper mapper,
+            final MetricsFactory metricsFactory) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("proxy.filterRollups");
-        _kairosService = new KairosDbServiceImpl(kairosDbClient);
+        _kairosService = new KairosDbServiceImpl(kairosDbClient, metricsFactory);
     }
 
     /**

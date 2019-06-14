@@ -21,6 +21,9 @@ import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import io.ebeaninternal.util.IOUtils;
@@ -28,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
@@ -53,18 +57,26 @@ public class KairosDbServiceImplTest {
 
     @Mock
     private KairosDbClient _mockClient;
+    @Mock
+    private MetricsFactory _mockMetricsFactory;
+    @Mock
+    private Metrics _mockMetrics;
+
     private KairosDbServiceImpl _service;
 
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _service = new KairosDbServiceImpl(_mockClient);
+        _service = new KairosDbServiceImpl(_mockClient, _mockMetricsFactory);
         when(_mockClient.queryMetricNames())
                 .thenReturn(CompletableFuture.completedFuture(new KairosMetricNamesQueryResponse.Builder()
                         .setResults(ImmutableList.<String>builder().add("foo", "foo_1h", "foo_1d", "bar").build())
                         .build())
                 );
+
+        when(_mockMetricsFactory.create()).thenReturn(_mockMetrics);
+        when(_mockMetrics.createTimer(any())).thenReturn(Mockito.mock(Timer.class));
     }
 
     @Test

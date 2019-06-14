@@ -25,6 +25,9 @@ import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.Timer;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -56,10 +59,12 @@ public class KairosDbServiceImpl implements KairosDbService {
     /**
      * Public constructor.
      *
-     * @param kairosDbClient - Client to use to make requests to backend kairosdb
+     * @param kairosDbClient Client to use to make requests to backend kairosdb
+     * @param metricsFactory MetricsFactory instance for recording service metrics
      */
-    public KairosDbServiceImpl(final KairosDbClient kairosDbClient) {
+    public KairosDbServiceImpl(final KairosDbClient kairosDbClient, final MetricsFactory metricsFactory) {
         this._kairosDbClient = kairosDbClient;
+        this._metricsFactory = metricsFactory;
     }
 
     @Override
@@ -89,9 +94,16 @@ public class KairosDbServiceImpl implements KairosDbService {
 
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery metricsQuery) {
-        return getMetricNames()
-                .thenApply(list -> useAvailableRollups(list, metricsQuery))
-                .thenCompose(_kairosDbClient::queryMetrics);
+        final Metrics metrics = _metricsFactory.create();
+        final Timer timer = metrics.createTimer("kairosService/queryMetrics/request");
+        return getMetricNames(metrics)
+                .thenApply(list -> useAvailableRollups(list, metricsQuery, metrics))
+                .thenCompose(_kairosDbClient::queryMetrics)
+                .whenComplete((result, error) -> {
+                    timer.stop();
+                    metrics.incrementCounter("kairosService/queryMetrics/success", error == null ? 1 : 0);
+                    metrics.close();
+                });
     }
 
     /**
@@ -104,10 +116,21 @@ public class KairosDbServiceImpl implements KairosDbService {
     public CompletionStage<KairosMetricNamesQueryResponse> queryMetricNames(
             final Optional<String> containing,
             final boolean filterRollups) {
+        final Metrics metrics = _metricsFactory.create();
+        final Timer timer = metrics.createTimer("kairosService/queryMetricNames/request");
 
-        return getMetricNames()
+        return getMetricNames(metrics)
                 .thenApply(list -> filterMetricNames(list, containing, filterRollups))
-                .thenApply(list -> new KairosMetricNamesQueryResponse.Builder().setResults(list).build());
+                .thenApply(list -> new KairosMetricNamesQueryResponse.Builder().setResults(list).build())
+                .whenComplete((result, error) -> {
+                    timer.stop();
+                    metrics.incrementCounter("kairosService/queryMetricNames/success", error == null ? 1 : 0);
+                    metrics.addAnnotation("containing", containing.isPresent() ? "true" : "false");
+                    if (result != null) {
+                        metrics.incrementCounter("kairosService/queryMetricNames/count", result.getResults().size());
+                    }
+                    metrics.close();
+                });
     }
 
     private static ImmutableList<String> filterMetricNames(
@@ -139,16 +162,23 @@ public class KairosDbServiceImpl implements KairosDbService {
     }
 
 
-    private CompletionStage<List<String>> getMetricNames() {
-        final List<String> metrics = _cache.getIfPresent(METRICS_KEY);
+    private CompletionStage<List<String>> getMetricNames(final Metrics metrics) {
+        final List<String> metricsNames = _cache.getIfPresent(METRICS_KEY);
 
         final CompletionStage<List<String>> response;
-        if (metrics != null) {
-            response = CompletableFuture.completedFuture(metrics);
+        if (metricsNames != null) {
+            metrics.incrementCounter("kairosService/metricNames/cache", 1);
+            response = CompletableFuture.completedFuture(metricsNames);
         } else {
+            metrics.incrementCounter("kairosService/metricNames/cache", 0);
             // TODO(brandon): Investigate refreshing eagerly or in the background
             // Refresh the cache
+            final Timer timer = metrics.createTimer("kairosService/metricNames/request");
             final CompletionStage<List<String>> queryResponse = _kairosDbClient.queryMetricNames()
+                    .whenComplete((result, error) -> {
+                        timer.stop();
+                        metrics.incrementCounter("kairosService/metricNames/success", error == null ? 1 : 0);
+                    })
                     .thenApply(KairosMetricNamesQueryResponse::getResults)
                     .thenApply(list -> {
                         _cache.put(METRICS_KEY, list);
@@ -167,7 +197,10 @@ public class KairosDbServiceImpl implements KairosDbService {
         return response;
     }
 
-    private static MetricsQuery useAvailableRollups(final List<String> metricNames, final MetricsQuery originalQuery) {
+    private static MetricsQuery useAvailableRollups(
+            final List<String> metricNames,
+            final MetricsQuery originalQuery,
+            final Metrics metrics) {
         final MetricsQuery.Builder newQueryBuilder = new MetricsQuery.Builder()
                 .setStartTime(originalQuery.getStartTime());
 
@@ -178,6 +211,7 @@ public class KairosDbServiceImpl implements KairosDbService {
             // Check to see if there are any rollups for this metrics
             final String metricName = metric.getName();
             if (metricName.endsWith("_!")) {
+                metrics.incrementCounter("kairosService/useRollups/bypass", 1);
                 // Special case a _! suffix to not apply rollup selection
                 // Drop the suffix and forward the request
                 return Metric.Builder.fromMetric(metric)
@@ -192,6 +226,7 @@ public class KairosDbServiceImpl implements KairosDbService {
                         .collect(Collectors.toList());
 
                 if (rollupMetrics.isEmpty()) {
+                    metrics.incrementCounter("kairosService/useRollups/noRollups", 1);
                     // No rollups so execute what we received
                     return metric;
                 } else {
@@ -213,11 +248,14 @@ public class KairosDbServiceImpl implements KairosDbService {
                         });
 
                         final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
+                        metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", floorEntry != null ? 1 : 0);
                         final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
                         final Metric.Builder metricBuilder = Metric.Builder.fromMetric(metric)
                                 .setName(rollupName);
 
                         return metricBuilder.build();
+                    } else {
+                        metrics.incrementCounter("kairosService/useRollups/notEligible", 1);
                     }
 
                     return metric;
@@ -250,6 +288,7 @@ public class KairosDbServiceImpl implements KairosDbService {
     }
 
     private final KairosDbClient _kairosDbClient;
+    private final MetricsFactory _metricsFactory;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
