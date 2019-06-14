@@ -21,6 +21,7 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.base.MoreObjects;
 import com.google.common.io.ByteSource;
+import models.internal.TimeRange;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
 import net.sf.oval.constraint.NotNull;
@@ -47,8 +48,8 @@ public final class DefaultRenderedReport implements RenderedReport {
     }
 
     @Override
-    public Instant getScheduledFor() {
-        return _scheduledFor;
+    public TimeRange getTimeRange() {
+        return _timeRange;
     }
 
     @Override
@@ -71,14 +72,14 @@ public final class DefaultRenderedReport implements RenderedReport {
         }
         final DefaultRenderedReport that = (DefaultRenderedReport) o;
         return Arrays.equals(_bytes, that._bytes)
-                && _scheduledFor.equals(that._scheduledFor)
+                && _timeRange.equals(that._timeRange)
                 && _generatedAt.equals(that._generatedAt)
                 && _format.equals(that._format);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(_scheduledFor, _generatedAt, _format);
+        int result = Objects.hash(_timeRange, _generatedAt, _format);
         result = 31 * result + Arrays.hashCode(_bytes);
         return result;
     }
@@ -87,7 +88,7 @@ public final class DefaultRenderedReport implements RenderedReport {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("bytes", _bytes)
-                .add("scheduledFor", _scheduledFor)
+                .add("timeRange", _timeRange)
                 .add("generatedAt", _generatedAt)
                 .add("format", _format)
                 .toString();
@@ -96,14 +97,14 @@ public final class DefaultRenderedReport implements RenderedReport {
     private DefaultRenderedReport(final Builder builder) {
         _report = builder._report;
         _bytes = builder._bytes;
-        _scheduledFor = builder._scheduledFor;
+        _timeRange = builder._timeRange;
         _generatedAt = builder._generatedAt;
         _format = builder._format;
     }
 
     private final Report _report;
     private final byte[] _bytes;
-    private final Instant _scheduledFor;
+    private final TimeRange _timeRange;
     private final Instant _generatedAt;
     private final ReportFormat _format;
 
@@ -143,13 +144,13 @@ public final class DefaultRenderedReport implements RenderedReport {
         }
 
         /**
-         * Set the report bytes. Required. Cannot be null.
+         * Set the time range the report was rendered covering. Required. Cannot be null.
          *
-         * @param scheduledFor The report scheduledFor.
+         * @param timeRange The time range.
          * @return This instance of {@code Builder}.
          */
-        public Builder setScheduledFor(final Instant scheduledFor) {
-            _scheduledFor = scheduledFor;
+        public Builder setTimeRange(final TimeRange timeRange) {
+            _timeRange = timeRange;
             return this;
         }
 
@@ -180,7 +181,7 @@ public final class DefaultRenderedReport implements RenderedReport {
         @NotNull
         private byte[] _bytes;
         @NotNull
-        private Instant _scheduledFor;
+        private TimeRange _timeRange;
         @NotNull
         private Instant _generatedAt;
         @NotNull

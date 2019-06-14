@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
+import models.internal.TimeRange;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
@@ -38,7 +39,7 @@ import java.util.concurrent.CompletionStage;
     public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
             final F format,
-            final Instant scheduled,
+            final TimeRange timeRange,
             final B builder
     ) {
         return CompletableFuture.completedFuture(

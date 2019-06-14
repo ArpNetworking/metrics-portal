@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
+import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
@@ -65,7 +66,7 @@ public class EmailSenderTest {
                 .setReport(TestBeanFactory.createReportBuilder().setName("P75 TTI").build())
                 .setFormat(new HtmlReportFormat.Builder().build())
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8))
-                .setScheduledFor(Instant.parse("2019-01-01T00:00:00.000Z"))
+                .setTimeRange(new TimeRange(T0, T0))
                 .build();
         _sender.send(
                 TestBeanFactory.createRecipient(),
