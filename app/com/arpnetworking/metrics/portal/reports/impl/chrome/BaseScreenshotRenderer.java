@@ -22,7 +22,6 @@ import models.internal.TimeRange;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 

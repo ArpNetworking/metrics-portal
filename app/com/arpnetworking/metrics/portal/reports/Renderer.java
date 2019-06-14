@@ -20,7 +20,6 @@ import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**

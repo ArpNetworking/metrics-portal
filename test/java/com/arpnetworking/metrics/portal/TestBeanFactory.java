@@ -177,7 +177,7 @@ public final class TestBeanFactory {
         return new DefaultRenderedReport.Builder()
                 .setReport(createReportBuilder().build())
                 .setFormat(new HtmlReportFormat.Builder().build())
-                .setTimeRange(new TimeRange(Instant.now(), Instant.now().plus(Duration.ofSeconds((long)(100000 * RANDOM.nextDouble())))))
+                .setTimeRange(new TimeRange(Instant.now(), Instant.now().plus(Duration.ofSeconds((long) (100000 * RANDOM.nextDouble())))))
                 .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8));
     }
