@@ -33,6 +33,7 @@ import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
@@ -66,7 +67,7 @@ public class EmailSenderTest {
                 .setReport(TestBeanFactory.createReportBuilder().setName("P75 TTI").build())
                 .setFormat(new HtmlReportFormat.Builder().build())
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8))
-                .setTimeRange(new TimeRange(T0, T0))
+                .setTimeRange(new TimeRange(T0, T0.plus(Duration.ofDays(1))))
                 .build();
         _sender.send(
                 TestBeanFactory.createRecipient(),
