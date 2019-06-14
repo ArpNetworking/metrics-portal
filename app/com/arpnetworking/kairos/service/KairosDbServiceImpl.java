@@ -214,7 +214,7 @@ public class KairosDbServiceImpl implements KairosDbService {
                 metrics.incrementCounter("kairosService/useRollups/bypass", 1);
                 // Special case a _! suffix to not apply rollup selection
                 // Drop the suffix and forward the request
-                return Metric.Builder.fromMetric(metric)
+                return Metric.Builder.<Metric, Metric.Builder>clone(metric)
                         .setName(metricName.substring(0, metricName.length() - 2))
                         .build();
             } else {

@@ -161,23 +161,6 @@ public final class Metric {
             return this;
         }
 
-        /**
-         * Static factory initializes a builder with state from
-         * the source instance.
-         *
-         * @param source Metric to copy values from
-         * @return Builder resulting builder with values copied
-         */
-        public static Builder fromMetric(final Metric source) {
-            return new Builder()
-                    .setName(source.getName())
-                    .setTags(ImmutableMultimap.copyOf(source.getTags()))
-                    .setLimit(source.getLimit().orElse(null))
-                    .setOrder(source.getOrder().orElse(null))
-                    .setGroupBy(source.getGroupBy())
-                    .setAggregators(source.getAggregators());
-        }
-
         @NotNull
         @NotEmpty
         private String _name;
