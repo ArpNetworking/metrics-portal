@@ -250,7 +250,7 @@ public class KairosDbServiceImpl implements KairosDbService {
                         final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
                         metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", floorEntry != null ? 1 : 0);
                         final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
-                        final Metric.Builder metricBuilder =  Metric.Builder.<Metric, Metric.Builder>clone(metric)
+                        final Metric.Builder metricBuilder = Metric.Builder.<Metric, Metric.Builder>clone(metric)
                                 .setName(rollupName);
 
                         return metricBuilder.build();
