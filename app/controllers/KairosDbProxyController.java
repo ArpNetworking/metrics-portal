@@ -17,15 +17,15 @@ package controllers;
 
 import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.KairosDbServiceImpl;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
@@ -46,17 +46,10 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
-import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -73,17 +66,20 @@ public class KairosDbProxyController extends Controller {
      * @param client ws client to use
      * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
+     * @param metricsFactory MetricsFactory for recording request metrics
      */
     @Inject
     public KairosDbProxyController(
             final Config configuration,
             final WSClient client,
             final KairosDbClient kairosDbClient,
-            final ObjectMapper mapper) {
+            final ObjectMapper mapper,
+            final MetricsFactory metricsFactory) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
-        _kairosDbClient = kairosDbClient;
         _mapper = mapper;
+        _filterRollups = configuration.getBoolean("proxy.filterRollups");
+        _kairosService = new KairosDbServiceImpl(kairosDbClient, metricsFactory);
     }
 
     /**
@@ -137,8 +133,17 @@ public class KairosDbProxyController extends Controller {
      * @return Proxied queryMetrics response.
      */
     public CompletionStage<Result> queryMetrics() {
-        return proxy();
+        try {
+        final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+        return _kairosService.queryMetrics(metricsQuery)
+                .<JsonNode>thenApply(_mapper::valueToTree)
+                .thenApply(Results::ok);
+        } catch (final IOException e) {
+            return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
+        }
     }
+
+
 
     /**
      * Proxied version call.
@@ -156,53 +161,9 @@ public class KairosDbProxyController extends Controller {
      * @return Cached metric names, filtered by the query string.
      */
     public CompletionStage<Result> metricNames(final String containing) {
-        final List<String> metrics = _cache.getIfPresent(METRICS_KEY);
-
-        final CompletionStage<List<String>> response;
-        if (metrics != null) {
-            response = CompletableFuture.completedFuture(metrics);
-        } else {
-            // TODO(brandon): Investigate refreshing eagerly or in the background
-            // Refresh the cache
-            final CompletionStage<List<String>> queryResponse = _kairosDbClient.queryMetricNames()
-                    .thenApply(KairosMetricNamesQueryResponse::getResults)
-                    .thenApply(list -> {
-                        _cache.put(METRICS_KEY, list);
-                        _metricsList.set(list);
-                        return list;
-                    });
-
-            final List<String> metricsList = _metricsList.get();
-            if (metricsList != null) {
-                response = CompletableFuture.completedFuture(metricsList);
-            } else {
-                response = queryResponse;
-            }
-        }
-
-        return response
-                .thenApply(list -> filterMetricNames(list, containing))
-                .thenApply(list -> new KairosMetricNamesQueryResponse.Builder().setResults(list).build())
+        return _kairosService.queryMetricNames(Optional.ofNullable(containing), _filterRollups)
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
-    }
-
-    private static ImmutableList<String> filterMetricNames(final List<String> metricNames, @Nullable final String containing) {
-        if (containing == null || containing.isEmpty()) {
-            return ImmutableList.copyOf(metricNames);
-        }
-
-        final String lowerContaining = containing.toLowerCase(Locale.ENGLISH);
-        final Predicate<String> containsPredicate = s -> s.toLowerCase(Locale.getDefault()).contains(lowerContaining);
-
-        return metricNames.stream()
-                .filter(IS_PT1M.negate())
-                .filter(containsPredicate)
-                .collect(Collector.of(
-                        ImmutableList::<String>builder,
-                        ImmutableList.Builder::add,
-                        (a, b) -> a.addAll(b.build()),
-                        ImmutableList.Builder::build));
     }
 
     /**
@@ -228,14 +189,11 @@ public class KairosDbProxyController extends Controller {
 
 
     private final ProxyClient _client;
-    private final KairosDbClient _kairosDbClient;
     private final ObjectMapper _mapper;
-    private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
-    private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
+    private final boolean _filterRollups;
+    private final KairosDbService _kairosService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
-    private static final String METRICS_KEY = "METRICNAMES";
-    private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
 
     private static class ResponseHandler extends AsyncCompletionHandler<Void> {
         ResponseHandler(
@@ -328,7 +286,7 @@ public class KairosDbProxyController extends Controller {
         }
 
         @Override
-        public Void onCompleted(final Response response) throws Exception {
+        public Void onCompleted(final Response response) {
             try {
                 _outputStream.flush();
                 _outputStream.close();
