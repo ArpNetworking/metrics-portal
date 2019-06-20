@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
