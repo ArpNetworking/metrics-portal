@@ -46,6 +46,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
@@ -159,7 +160,7 @@ public class RollupGeneratorTest {
 
     @Test
     public void testHandlesTagNamesFailure() {
-        final CompletableFuture<MetricsQueryResponse> future =  new CompletableFuture<>();
+        final CompletableFuture<MetricsQueryResponse> future = new CompletableFuture<>();
         future.completeExceptionally(new RuntimeException("Failure"));
         when(_kairosDbClient.queryMetricTags(any())).thenReturn(future);
 
@@ -355,31 +356,39 @@ public class RollupGeneratorTest {
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
 
-        verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
-        final MetricsQuery rollupQuery = captor.getAllValues().get(0);
-        assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
-                rollupQuery.getStartTime());
-        assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
-        assertEquals(1, rollupQuery.getMetrics().size());
-        final Metric metric = rollupQuery.getMetrics().get(0);
-        assertEquals(1, metric.getGroupBy().size());
-        assertEquals("tag", metric.getGroupBy().get(0).getName());
-        assertEquals(ImmutableSet.of("tag1", "tag2"), metric.getGroupBy().get(0).getOtherArgs().get("tags"));
-        assertEquals(2, metric.getAggregators().size());
-        assertEquals("merge", metric.getAggregators().get(0).getName());
-        assertTrue(metric.getAggregators().get(0).getAlignSampling().isPresent());
-        assertTrue(metric.getAggregators().get(0).getAlignSampling().get());
-        assertTrue(metric.getAggregators().get(0).getAlignStartTime().isPresent());
-        assertTrue(metric.getAggregators().get(0).getAlignStartTime().get());
-        assertFalse(metric.getAggregators().get(0).getAlignEndTime().isPresent());
-        assertTrue(metric.getAggregators().get(0).getSampling().isPresent());
-        assertEquals(1L, metric.getAggregators().get(0).getSampling().get().getValue());
-        assertEquals(SamplingUnit.HOURS, metric.getAggregators().get(0).getSampling().get().getUnit());
-        assertEquals("save_as", metric.getAggregators().get(1).getName());
-        assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("metric_name"));
-        assertFalse(metric.getAggregators().get(1).getSampling().isPresent());
+        verify(_kairosDbClient, times(4)).queryMetrics(captor.capture());
+        final List<MetricsQuery> rollupQueries = captor.getAllValues();
+        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
+
+        for (final MetricsQuery rollupQuery : rollupQueries) {
+            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
+            assertEquals(startTime, rollupQuery.getStartTime());
+            assertTrue(rollupQuery.getEndTime().isPresent());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupQuery.getEndTime().get());
+            assertEquals(1, rollupQuery.getMetrics().size());
+            final Metric metric = rollupQuery.getMetrics().get(0);
+            assertEquals(1, metric.getGroupBy().size());
+            assertEquals("tag", metric.getGroupBy().get(0).getName());
+            assertEquals(ImmutableSet.of("tag1", "tag2"), metric.getGroupBy().get(0).getOtherArgs().get("tags"));
+            assertEquals(3, metric.getAggregators().size());
+            assertEquals("merge", metric.getAggregators().get(0).getName());
+            assertTrue(metric.getAggregators().get(0).getAlignSampling().isPresent());
+            assertTrue(metric.getAggregators().get(0).getAlignSampling().get());
+            assertTrue(metric.getAggregators().get(0).getAlignStartTime().isPresent());
+            assertTrue(metric.getAggregators().get(0).getAlignStartTime().get());
+            assertFalse(metric.getAggregators().get(0).getAlignEndTime().isPresent());
+            assertTrue(metric.getAggregators().get(0).getSampling().isPresent());
+            assertEquals(1L, metric.getAggregators().get(0).getSampling().get().getValue());
+            assertEquals(SamplingUnit.HOURS, metric.getAggregators().get(0).getSampling().get().getUnit());
+            assertEquals("save_as", metric.getAggregators().get(1).getName());
+            assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("metric_name"));
+            assertFalse(metric.getAggregators().get(1).getSampling().isPresent());
+            assertEquals("count", metric.getAggregators().get(2).getName());
+            assertFalse(metric.getAggregators().get(2).getSampling().isPresent());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
 
         _probe.expectNoMessage();
     }
@@ -429,13 +438,18 @@ public class RollupGeneratorTest {
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
 
-        verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
-        final MetricsQuery rollupQuery = captor.getValue();
-        assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
-                rollupQuery.getStartTime());
-        assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
+        verify(_kairosDbClient, times(4)).queryMetrics(captor.capture());
+        final List<MetricsQuery> rollupQueries = captor.getAllValues();
+        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
+        for (final MetricsQuery rollupQuery : rollupQueries) {
+            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
+            assertEquals(startTime, rollupQuery.getStartTime());
+            assertTrue(rollupQuery.getEndTime().isPresent());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupQuery.getEndTime().get());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
 
         _probe.expectNoMessage();
     }
@@ -473,7 +487,7 @@ public class RollupGeneratorTest {
 
         final Instant lastDataPoint = RollupPeriod.HOURLY
                 .recentEndTime(_clock.instant())
-                .minus(RollupPeriod.HOURLY.periodCountToDuration(2));
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(3));
 
         actor.tell(
                 new LastDataPointMessage.Builder()
@@ -489,12 +503,17 @@ public class RollupGeneratorTest {
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
 
-        verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
-        final MetricsQuery rollupQuery = captor.getAllValues().get(0);
-        assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(lastDataPoint, rollupQuery.getStartTime());
-        assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
+        verify(_kairosDbClient, times(2)).queryMetrics(captor.capture());
+        final List<MetricsQuery> rollupQueries = captor.getAllValues();
+        Instant startTime = lastDataPoint.plus(1, ChronoUnit.HOURS);
+        for (final MetricsQuery rollupQuery : rollupQueries) {
+            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
+            assertEquals(startTime, rollupQuery.getStartTime());
+            assertTrue(rollupQuery.getEndTime().isPresent());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupQuery.getEndTime().get());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
 
         _probe.expectNoMessage();
     }
@@ -504,7 +523,8 @@ public class RollupGeneratorTest {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
-        final Instant lastDataPoint = RollupPeriod.HOURLY.recentEndTime(_clock.instant());
+        final Instant lastDataPoint = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(1));
 
         actor.tell(
                 new LastDataPointMessage.Builder()
@@ -544,7 +564,7 @@ public class RollupGeneratorTest {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
-        final Instant lastDataPoint = RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(ChronoUnit.HOURS.getDuration());
+        final Instant lastDataPoint = RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(2, ChronoUnit.HOURS);
 
         actor.tell(
                 new LastDataPointMessage.Builder()
@@ -561,9 +581,9 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
 
         verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
-        final MetricsQuery rollupQuery = captor.getAllValues().get(0);
+        final MetricsQuery rollupQuery = captor.getValue();
         assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(lastDataPoint, rollupQuery.getStartTime());
+        assertEquals(lastDataPoint.plus(1, ChronoUnit.HOURS), rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
 
