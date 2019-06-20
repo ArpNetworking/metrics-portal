@@ -42,37 +42,10 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
         _webPageReportSource = value;
     }
 
-    public ChronoUnit getTimeRangePeriod() {
-        return _timeRangePeriod;
-    }
-
-    public void setTimeRangePeriod(final ChronoUnit value) {
-        _timeRangePeriod = value;
-    }
-
-    public int getTimeRangeWidthPeriods() {
-        return _timeRangeWidthPeriods;
-    }
-
-    public void setTimeRangeWidthPeriods(final int value) {
-        _timeRangeWidthPeriods = value;
-    }
-
-    public int getTimeRangeEndPeriodsAgo() {
-        return _timeRangeEndPeriodsAgo;
-    }
-
-    public void setTimeRangeEndPeriodsAgo(final int value) {
-        _timeRangeEndPeriodsAgo = value;
-    }
-
     @Override
     public models.internal.impl.GrafanaReportPanelReportSource toInternal() {
         return new models.internal.impl.GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(_webPageReportSource.toInternal())
-                .setTimeRangePeriod(_timeRangePeriod)
-                .setTimeRangeWidthPeriods(_timeRangeWidthPeriods)
-                .setTimeRangeEndPeriodsAgo(_timeRangeEndPeriodsAgo)
                 .build();
     }
 
@@ -92,9 +65,6 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("_webPageReportSource", _webPageReportSource)
-                .add("_timeRangePeriod", _timeRangePeriod)
-                .add("_timeRangeWidthPeriods", _timeRangeWidthPeriods)
-                .add("_timeRangeEndPeriodsAgo", _timeRangeEndPeriodsAgo)
                 .toString();
     }
 
@@ -107,23 +77,14 @@ public final class GrafanaReportPanelReportSource implements ReportSource {
             return false;
         }
         final GrafanaReportPanelReportSource that = (GrafanaReportPanelReportSource) o;
-        return _timeRangeWidthPeriods == that._timeRangeWidthPeriods
-                && _timeRangeEndPeriodsAgo == that._timeRangeEndPeriodsAgo
-                && _webPageReportSource.equals(that._webPageReportSource)
-                && _timeRangePeriod == that._timeRangePeriod;
+        return _webPageReportSource.equals(that._webPageReportSource);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_webPageReportSource, _timeRangePeriod, _timeRangeWidthPeriods, _timeRangeEndPeriodsAgo);
+        return Objects.hash(_webPageReportSource);
     }
 
     @JsonProperty("webPageReportSource")
     private WebPageReportSource _webPageReportSource;
-    @JsonProperty("timeRangePeriod")
-    private ChronoUnit _timeRangePeriod;
-    @JsonProperty("timeRangeWidthPeriods")
-    private int _timeRangeWidthPeriods;
-    @JsonProperty("timeRangeEndPeriodsAgo")
-    private int _timeRangeEndPeriodsAgo;
 }

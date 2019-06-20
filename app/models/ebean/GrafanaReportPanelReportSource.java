@@ -49,16 +49,6 @@ public class GrafanaReportPanelReportSource extends ReportSource {
     @Column(name = "triggering_event_name")
     private String triggeringEventName;
 
-    @Column(name = "time_range_period")
-    @Enumerated(EnumType.STRING)
-    private ChronoUnit timeRangePeriod;
-
-    @Column(name = "time_range_width_periods")
-    private int timeRangeWidthPeriods;
-
-    @Column(name = "time_range_end_periods_ago")
-    private int timeRangeEndPeriodsAgo;
-
     public URI getUri() {
         return uri;
     }
@@ -91,30 +81,6 @@ public class GrafanaReportPanelReportSource extends ReportSource {
         triggeringEventName = value;
     }
 
-    public ChronoUnit getTimeRangePeriod() {
-        return timeRangePeriod;
-    }
-
-    public void setTimeRangePeriod(final ChronoUnit value) {
-        timeRangePeriod = value;
-    }
-
-    public int getTimeRangeWidthPeriods() {
-        return timeRangeWidthPeriods;
-    }
-
-    public void setTimeRangeWidthPeriods(final int value) {
-        timeRangeWidthPeriods = value;
-    }
-
-    public int getTimeRangeEndPeriodsAgo() {
-        return timeRangeEndPeriodsAgo;
-    }
-
-    public void setTimeRangeEndPeriodsAgo(final int value) {
-        timeRangeEndPeriodsAgo = value;
-    }
-
     @Override
     public models.internal.impl.GrafanaReportPanelReportSource toInternal() {
         return new models.internal.impl.GrafanaReportPanelReportSource.Builder()
@@ -126,9 +92,6 @@ public class GrafanaReportPanelReportSource extends ReportSource {
                                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
                                 .setTriggeringEventName(triggeringEventName)
                                 .build())
-                .setTimeRangePeriod(timeRangePeriod)
-                .setTimeRangeWidthPeriods(timeRangeWidthPeriods)
-                .setTimeRangeEndPeriodsAgo(timeRangeEndPeriodsAgo)
                 .build();
     }
 
