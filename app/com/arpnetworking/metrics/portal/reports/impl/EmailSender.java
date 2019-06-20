@@ -84,9 +84,10 @@ public class EmailSender implements Sender {
         }
 
         LOGGER.info()
-                .setMessage("sending email")
+                .setMessage("SRP -- sending email")
                 .addData("report", report)
                 .addData("recipient", recipient)
+                .addData("html", builder.buildEmail().getHTMLText())
                 .log();
 
         _mailer.sendMail(builder.buildEmail());

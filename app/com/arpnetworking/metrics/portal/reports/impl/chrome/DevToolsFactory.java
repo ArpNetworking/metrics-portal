@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
 import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
@@ -74,7 +75,7 @@ public final class DevToolsFactory {
                 new ChromeLauncher.RuntimeShutdownHookRegistry(),
                 new ChromeLauncherConfiguration()
         );
-        return launcher.launch(true);
+        return launcher.launch(ChromeArguments.defaults(true).additionalArguments("no-sandbox", true).build());
 
     }
 
