@@ -73,11 +73,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
     /**
      * RollupGenerator actor constructor.
      *
-     * @param configuration    play configuration
+     * @param configuration play configuration
      * @param metricsDiscovery actor ref to metrics discovery actor
-     * @param kairosDbClient   kairosdb client
-     * @param clock            clock to use for time calculations
-     * @param metrics          periodic metrics instance
+     * @param kairosDbClient kairosdb client
+     * @param clock clock to use for time calculations
+     * @param metrics periodic metrics instance
      */
     @Inject
     public RollupGenerator(
@@ -320,7 +320,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
         if (!message.getTags().isEmpty()) {
             metricBuilder.setGroupBy(ImmutableList.of(
                     new MetricsQuery.GroupBy.Builder()
-                            .setName("tag").addOtherArg("tags", message.getTags())
+                            .setName("tag")
+                            .addOtherArg("tags", message.getTags())
                             .build()
             ));
         }
