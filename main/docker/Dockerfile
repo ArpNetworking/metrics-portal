@@ -19,6 +19,9 @@ MAINTAINER inscopemetrics.io
 EXPOSE 8080
 WORKDIR /opt/metrics-portal
 
+RUN addgroup -S -g 1234 mportal
+RUN adduser -S -u 1234 -G mportal mportal
+
 # Configuration
 #
 # There are two groups of arguments:
@@ -77,8 +80,10 @@ ADD deps /opt/metrics-portal/lib/
 ADD bin /opt/metrics-portal/bin/
 ADD config /opt/metrics-portal/config/
 ADD lib /opt/metrics-portal/lib/
+RUN chown -R mportal /opt/metrics-portal
 
 # Entry point
+USER mportal
 ENTRYPOINT [ \
     "/opt/metrics-portal/bin/metrics-portal", \
     "${LOGBACK_CONFIG}", \
