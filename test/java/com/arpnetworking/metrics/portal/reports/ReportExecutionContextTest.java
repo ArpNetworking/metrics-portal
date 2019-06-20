@@ -29,6 +29,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.TimeRange;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
@@ -50,6 +51,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -75,8 +77,10 @@ public class ReportExecutionContextTest {
 
     private static final HtmlReportFormat HTML = new HtmlReportFormat.Builder().build();
     private static final PdfReportFormat PDF = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-    private static final Instant T0 = Instant.now();
-    private static final ManualClock CLOCK = new ManualClock(T0, Duration.ofSeconds(1), ZoneId.of("UTC"));
+    private static final Instant T1 = Instant.now().truncatedTo(ChronoUnit.DAYS);
+    private static final Instant T0 = ChronoUnit.DAYS.addTo(T1, -1);
+    private static final TimeRange TIME_RANGE = new TimeRange(T0, T1);
+    private static final ManualClock CLOCK = new ManualClock(T1, Duration.ofSeconds(1), ZoneId.of("UTC"));
     private static final Report EXAMPLE_REPORT = new DefaultReport.Builder()
             .setId(UUID.randomUUID())
             .setName("My Name")
@@ -145,14 +149,14 @@ public class ReportExecutionContextTest {
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
         final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
-        context.execute(EXAMPLE_REPORT, T0).toCompletableFuture().get();
+        context.execute(EXAMPLE_REPORT, T1).toCompletableFuture().get();
         Mockito.verify(_emailSender).send(
                 ALICE,
-                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, T0))
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE))
         );
         Mockito.verify(_emailSender).send(
                 BOB,
-                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, T0), PDF, mockRendered(EXAMPLE_REPORT, PDF, T0))
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE), PDF, mockRendered(EXAMPLE_REPORT, PDF, TIME_RANGE))
         );
     }
 
@@ -164,7 +168,7 @@ public class ReportExecutionContextTest {
                 _environment,
                 _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\"")
         );
-        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), IllegalArgumentException.class);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -175,7 +179,7 @@ public class ReportExecutionContextTest {
                 _environment,
                 _config.withoutPath("reporting.senders.EMAIL")
         );
-        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T0), IllegalArgumentException.class);
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), IllegalArgumentException.class);
     }
 
     @Test(expected = Exception.class)
@@ -225,13 +229,13 @@ public class ReportExecutionContextTest {
         new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
-    private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final Instant scheduled) {
+    private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final TimeRange timeRange) {
         return new DefaultRenderedReport.Builder()
                 .setReport(report)
                 .setBytes(new byte[0])
                 .setFormat(format)
-                .setScheduledFor(scheduled)
-                .setGeneratedAt(scheduled)
+                .setTimeRange(timeRange)
+                .setGeneratedAt(timeRange.getEnd())
                 .build();
     }
 
@@ -262,7 +266,7 @@ public class ReportExecutionContextTest {
         public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
-                final Instant scheduled,
+                final TimeRange timeRange,
                 final B builder
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
@@ -274,7 +278,7 @@ public class ReportExecutionContextTest {
         public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
                 final WebPageReportSource source,
                 final PdfReportFormat format,
-                final Instant scheduled,
+                final TimeRange timeRange,
                 final B builder
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));

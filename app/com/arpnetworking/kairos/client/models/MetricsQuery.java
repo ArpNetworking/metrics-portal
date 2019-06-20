@@ -110,6 +110,18 @@ public final class MetricsQuery {
         }
 
         /**
+         * Sets the absolute start time in milliseconds.
+         *
+         * @param millis the start time in milliseconds
+         * @return this {@link Builder}
+         */
+        @JsonProperty("start_absolute")
+        public Builder setStartTimeMillis(final Long millis) {
+            _startTime = Instant.ofEpochMilli(millis);
+            return this;
+        }
+
+        /**
          * Sets the end time of the query. Null is used as "now" from KairosDB.  Optional. Default is null.
          *
          * @param value the end time
@@ -117,6 +129,18 @@ public final class MetricsQuery {
          */
         public Builder setEndTime(@Nullable final Instant value) {
             _endTime = value;
+            return this;
+        }
+
+        /**
+         * Sets the absolute end time in milliseconds.
+         *
+         * @param millis the end time in milliseconds
+         * @return this {@link Builder}
+         */
+        @JsonProperty("end_absolute")
+        public Builder setEndTimeMillis(final Long millis) {
+            _endTime = Instant.ofEpochMilli(millis);
             return this;
         }
 

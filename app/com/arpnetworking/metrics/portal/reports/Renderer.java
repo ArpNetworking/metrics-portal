@@ -16,10 +16,10 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -36,7 +36,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      *
      * @param source The source to render.
      * @param format The format to render into.
-     * @param scheduled The instant that the report-job was scheduled for.
+     * @param timeRange The time range to describe in the report.
      * @param builder Will be used to construct a report. All implementations of {@code render} must call `setBytes()`.
      * @param <B> The type of builder provided.
      * @return A {@link CompletionStage} that completes when the report has been rendered.
@@ -44,7 +44,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
     <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             S source,
             F format,
-            Instant scheduled,
+            TimeRange timeRange,
             B builder
     );
 }

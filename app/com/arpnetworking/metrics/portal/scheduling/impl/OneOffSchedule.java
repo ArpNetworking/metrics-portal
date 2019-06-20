@@ -50,6 +50,11 @@ public final class OneOffSchedule extends BaseSchedule {
         return Optional.of(getWhenRun());
     }
 
+    @Override
+    public <T> T accept(final Visitor<T> visitor) {
+        return visitor.visitOneOff(this);
+    }
+
     /**
      * Implementation of builder pattern for {@link OneOffSchedule}.
      *
