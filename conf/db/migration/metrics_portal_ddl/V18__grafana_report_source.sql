@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-ALTER TABLE portal.report_sources ADD COLUMN time_range_period VARCHAR(255) NOT NULL;
+ALTER TABLE portal.report_sources ADD COLUMN time_range_period VARCHAR(255);
 ALTER TABLE portal.report_sources ADD COLUMN time_range_width_periods INTEGER;
 ALTER TABLE portal.report_sources ADD COLUMN time_range_end_periods_ago INTEGER;
