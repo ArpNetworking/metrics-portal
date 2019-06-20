@@ -35,14 +35,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -70,11 +74,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
     /**
      * RollupGenerator actor constructor.
      *
-     * @param configuration play configuration
+     * @param configuration    play configuration
      * @param metricsDiscovery actor ref to metrics discovery actor
-     * @param kairosDbClient kairosdb client
-     * @param clock clock to use for time calculations
-     * @param metrics periodic metrics instance
+     * @param kairosDbClient   kairosdb client
+     * @param clock            clock to use for time calculations
+     * @param metrics          periodic metrics instance
      */
     @Inject
     public RollupGenerator(
@@ -114,31 +118,31 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                         .build()
                         ))
                         .build()).handle((response, failure) -> {
-                            final String baseMetricName = "rollup/generator/tag_names";
-                            _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
-                            _metrics.recordTimer(
-                                    baseMetricName + "/latency",
-                                    System.nanoTime() - startTime,
-                                    Optional.of(Units.NANOSECOND));
-                            if (failure != null) {
-                                return new TagNamesMessage.Builder()
-                                        .setMetricName(metricName)
-                                        .setFailure(failure)
-                                        .build();
-                            } else {
-                                if (response.getQueries().isEmpty() || response.getQueries().get(0).getResults().isEmpty()) {
-                                    return new TagNamesMessage.Builder()
-                                            .setMetricName(metricName)
-                                            .setFailure(new Exception("Unexpected query result."))
-                                            .build();
-                                } else {
-                                    return new TagNamesMessage.Builder()
-                                            .setMetricName(metricName)
-                                            .setTagNames(response.getQueries().get(0).getResults().get(0).getTags().keySet())
-                                            .build();
-                                }
-                            }
-                        }),
+                    final String baseMetricName = "rollup/generator/tag_names";
+                    _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
+                    _metrics.recordTimer(
+                            baseMetricName + "/latency",
+                            System.nanoTime() - startTime,
+                            Optional.of(Units.NANOSECOND));
+                    if (failure != null) {
+                        return new TagNamesMessage.Builder()
+                                .setMetricName(metricName)
+                                .setFailure(failure)
+                                .build();
+                    } else {
+                        if (response.getQueries().isEmpty() || response.getQueries().get(0).getResults().isEmpty()) {
+                            return new TagNamesMessage.Builder()
+                                    .setMetricName(metricName)
+                                    .setFailure(new Exception("Unexpected query result."))
+                                    .build();
+                        } else {
+                            return new TagNamesMessage.Builder()
+                                    .setMetricName(metricName)
+                                    .setTagNames(response.getQueries().get(0).getResults().get(0).getTags().keySet())
+                                    .build();
+                        }
+                    }
+                }),
                 getContext().dispatcher())
                 .to(getSelf());
 
@@ -197,13 +201,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     ActorRef.noSender());
         } else {
             _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
-            final Instant recentPeriodEndTime = message.getPeriod()
-                    .recentEndTime(_clock.instant());
+            final Instant recentPeriodStartTime = message.getPeriod().recentStartTime(_clock.instant());
 
             final long startTime = System.nanoTime();
-            // If the most recent period aligned end time is after the most recent datapoint then
+            // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
-            if (recentPeriodEndTime.isAfter(message.getLastDataPointTime().orElse(Instant.EPOCH))) {
+            if (recentPeriodStartTime.isAfter(message.getLastDataPointTime().orElse(Instant.EPOCH))) {
                 PatternsCS.pipe(
                         runRollupQuery(message)
                                 .handle((response, failure) -> {
@@ -297,45 +300,62 @@ public class RollupGenerator extends AbstractActorWithTimers {
         final String rollupMetricName = message.getMetricName() + message.getPeriod().getSuffix();
         final RollupPeriod period = message.getPeriod();
 
+        // The last datapoint contains data for the period that follows it
         final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
         final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(_maxBackFillPeriods));
-        if (lastDataPoint.isBefore(oldestBackfillPoint)) {
-            queryBuilder.setStartTime(oldestBackfillPoint);
-        } else {
-            queryBuilder.setStartTime(lastDataPoint);
-        }
+        final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
 
-        // We subtract a millisecond from the endTime because KairosDB treats both start and end time as being
-        // inclusive.  If we don't then we will save a rollup for the next period which will be incomplete.
-        queryBuilder.setEndTime(period.recentEndTime(_clock.instant()).minusMillis(1));
+        // We either want to start at the oldest backfill point or the start of the period after the last datapoint.
+        Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
+                ? oldestBackfillPoint : lastDataPoint.plus(period.periodCountToDuration(1));
+
+        final Queue<Instant> startTimes = new LinkedList<>();
+
+        // We need to rollup every period up to and including the most recent period.
+        while (rollupPeriodStart.isBefore(startOfRecentClosedPeriod) || rollupPeriodStart.equals(startOfRecentClosedPeriod)) {
+            startTimes.add(rollupPeriodStart);
+            rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
+        }
 
         metricBuilder.setName(message.getMetricName());
         if (!message.getTags().isEmpty()) {
             metricBuilder.setGroupBy(ImmutableList.of(
                     new MetricsQuery.GroupBy.Builder()
-                    .setName("tag").addOtherArg("tags", message.getTags())
-                    .build()
+                            .setName("tag").addOtherArg("tags", message.getTags())
+                            .build()
             ));
         }
         metricBuilder.setAggregators(ImmutableList.of(
                 new Aggregator.Builder()
                         .setName("merge")
                         .setSampling(new Sampling.Builder()
-                                        .setValue(1)
-                                        .setUnit(message.getPeriod().getSamplingUnit())
-                                        .build())
+                                .setValue(1)
+                                .setUnit(message.getPeriod().getSamplingUnit())
+                                .build())
                         .setAlignSampling(true)
                         .setAlignStartTime(true)
                         .build(),
                 new Aggregator.Builder()
                         .setName("save_as")
                         .setOtherArgs(ImmutableMap.of("metric_name", rollupMetricName))
+                        .build(),
+                new Aggregator.Builder()
+                        .setName("count")
                         .build()
         ));
 
-        return _kairosDbClient.queryMetrics(
-                queryBuilder.setMetrics(ImmutableList.of(metricBuilder.build()))
-                .build());
+        // Walk through the start times and create a query per period
+        CompletionStage<MetricsQueryResponse> completionStage = CompletableFuture.completedFuture(null);
+        while (!startTimes.isEmpty()) {
+            final Instant startTime = startTimes.poll();
+            queryBuilder.setStartTime(startTime);
+            queryBuilder.setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
+            completionStage = completionStage.thenCompose(response -> _kairosDbClient.queryMetrics(
+                    queryBuilder.setMetrics(ImmutableList.of(metricBuilder.build()))
+                            .build()));
+        }
+
+        return completionStage;
     }
 
     private final ActorRef _metricsDiscovery;

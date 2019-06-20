@@ -42,13 +42,23 @@ public enum RollupPeriod {
     }
 
     /**
-     * Calculates the most recent period aligned time relative to the instant provided.
+     * Calculates the most recent period end aligned time relative to the instant provided.
      *
      * @param time instant to use when calculating recent end time
      * @return most recent end time for supplied instant
      */
     public Instant recentEndTime(final Instant time) {
         return time.truncatedTo(_truncationUnit);
+    }
+
+    /**
+     * Calculates the most recent period start aligned time relative to the instant provided.
+     *
+     * @param time instant to use when calculating recent start time
+     * @return most recent end time for supplied instant
+     */
+    public Instant recentStartTime(final Instant time) {
+        return recentEndTime(time).minus(1, _truncationUnit);
     }
 
     /**
