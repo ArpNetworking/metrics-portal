@@ -16,12 +16,9 @@
 package models.ebean;
 
 import java.net.URI;
-import java.time.temporal.ChronoUnit;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 
 /**
  * Data Model for SQL storage of a Grafana based report generation scheme.

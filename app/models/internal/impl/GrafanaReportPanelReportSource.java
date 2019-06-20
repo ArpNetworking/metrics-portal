@@ -21,11 +21,8 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.ReportSource;
-import net.sf.oval.constraint.Min;
-import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.UUID;
 
