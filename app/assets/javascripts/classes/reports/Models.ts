@@ -14,6 +14,7 @@ export enum ReportFormat {
 
 export enum SourceType {
     WEB_PAGE,
+    GRAFANA,
 }
 
 export enum ScheduleRepetition {
