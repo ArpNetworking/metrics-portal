@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Dropbox, Inc.
+ * Copyright 2019 Dropbox Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.reports;
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package com.arpnetworking.kairos.service;
 
-/**
- * Mechanisms by which reports can be generated.
- *
- * @author Spencer Pearson (spencerpearson at dropbox dot com)
- */
-public enum SourceType {
-    /**
-     * A report generated from a generic web page.
-     */
-    WEB_PAGE,
-    /**
-     * A report generated from a Grafana report panel.
-     */
-    GRAFANA,
-}
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
+
+import javax.annotation.ParametersAreNonnullByDefault;

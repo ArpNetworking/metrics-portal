@@ -39,6 +39,7 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultJobQuery;
 import models.internal.impl.DefaultQueryResult;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -484,22 +485,8 @@ public final class DatabaseReportRepository implements ReportRepository {
         throw new IllegalArgumentException("Unsupported internal model: " + internalSchedule.getClass());
     }
 
-    private static final ReportSource.Visitor<models.ebean.ReportSource> FROM_INTERNAL_SOURCE_VISITOR =
-            new ReportSource.Visitor<models.ebean.ReportSource>() {
-        @Override
-        public models.ebean.ReportSource visitWeb(final WebPageReportSource source) {
-            final models.ebean.WebPageReportSource ebeanSource = new models.ebean.WebPageReportSource();
-            ebeanSource.setUuid(source.getId());
-            ebeanSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
-            ebeanSource.setUri(source.getUri());
-            ebeanSource.setTriggeringEventName(source.getTriggeringEventName());
-            ebeanSource.setTitle(source.getTitle());
-            return ebeanSource;
-        }
-    };
-
     private models.ebean.ReportSource internalModelToBean(final ReportSource reportSource) {
-        return reportSource.accept(FROM_INTERNAL_SOURCE_VISITOR);
+        return reportSource.accept(FromInternalSourceVisitor.getInstance());
     }
 
     private ImmutableSetMultimap<models.ebean.ReportFormat, models.ebean.Recipient> internalModelToBean(
@@ -526,4 +513,35 @@ public final class DatabaseReportRepository implements ReportRepository {
             throw new IllegalStateException(String.format("DatabaseReportRepository is not %s", expectedState ? "open" : "closed"));
         }
     }
+
+    private static final class FromInternalSourceVisitor extends ReportSource.Visitor<models.ebean.ReportSource> {
+        private static final FromInternalSourceVisitor INSTANCE = new FromInternalSourceVisitor();
+
+        public static FromInternalSourceVisitor getInstance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public models.ebean.ReportSource visitWeb(final WebPageReportSource source) {
+            final models.ebean.WebPageReportSource ebeanSource = new models.ebean.WebPageReportSource();
+            ebeanSource.setUuid(source.getId());
+            ebeanSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
+            ebeanSource.setUri(source.getUri());
+            ebeanSource.setTriggeringEventName(source.getTriggeringEventName());
+            ebeanSource.setTitle(source.getTitle());
+            return ebeanSource;
+        }
+
+        @Override
+        public models.ebean.ReportSource visitGrafana(final GrafanaReportPanelReportSource source) {
+            final models.ebean.GrafanaReportPanelReportSource ebeanSource = new models.ebean.GrafanaReportPanelReportSource();
+            ebeanSource.setUuid(source.getWebPageReportSource().getId());
+            ebeanSource.setIgnoreCertificateErrors(source.getWebPageReportSource().ignoresCertificateErrors());
+            ebeanSource.setUri(source.getWebPageReportSource().getUri());
+            ebeanSource.setTriggeringEventName(source.getWebPageReportSource().getTriggeringEventName());
+            ebeanSource.setTitle(source.getWebPageReportSource().getTitle());
+            return ebeanSource;
+        }
+    }
+
 }

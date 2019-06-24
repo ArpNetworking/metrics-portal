@@ -18,6 +18,7 @@ package models.view.reports;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import models.view.impl.GrafanaReportPanelReportSource;
 import models.view.impl.WebPageReportSource;
 
 /**
@@ -31,6 +32,7 @@ import models.view.impl.WebPageReportSource;
         property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = WebPageReportSource.class, name = "WEB_PAGE"),
+        @JsonSubTypes.Type(value = GrafanaReportPanelReportSource.class, name = "GRAFANA"),
 })
 public interface ReportSource {
     /**
@@ -41,6 +43,22 @@ public interface ReportSource {
     models.internal.reports.ReportSource toInternal();
 
     /**
+     * Visitor to convert internal-model {@link models.internal.reports.ReportSource}s into {@link ReportSource}s.
+     */
+    models.internal.reports.ReportSource.Visitor<ReportSource> FROM_INTERNAL_VISITOR =
+            new models.internal.reports.ReportSource.Visitor<ReportSource>() {
+                @Override
+                public ReportSource visitWeb(final models.internal.impl.WebPageReportSource source) {
+                    return WebPageReportSource.fromInternal(source);
+                }
+
+                @Override
+                public ReportSource visitGrafana(final models.internal.impl.GrafanaReportPanelReportSource source) {
+                    return GrafanaReportPanelReportSource.fromInternal(source);
+                }
+            };
+
+    /**
      * Convert from an internal model {@link models.internal.reports.ReportSource}.
      *
      * @param source The internal model.
@@ -48,11 +66,7 @@ public interface ReportSource {
      * @throws IllegalArgumentException if the internal model cannot be represented in the view.
      */
     static ReportSource fromInternal(final models.internal.reports.ReportSource source) {
-        if (source instanceof models.internal.impl.WebPageReportSource) {
-            return WebPageReportSource.fromInternal((models.internal.impl.WebPageReportSource) source);
-        } else {
-            throw new IllegalArgumentException("Cannot convert class " + source.getClass() + " to a view model.");
-        }
+        return source.accept(FROM_INTERNAL_VISITOR);
     }
 }
 
