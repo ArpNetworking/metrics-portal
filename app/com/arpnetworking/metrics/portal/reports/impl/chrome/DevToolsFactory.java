@@ -75,7 +75,9 @@ public final class DevToolsFactory {
                 new ChromeLauncher.RuntimeShutdownHookRegistry(),
                 new ChromeLauncherConfiguration()
         );
-        return launcher.launch(ChromeArguments.defaults(true).additionalArguments("no-sandbox", true).build());
+        return launcher.launch(ChromeArguments.defaults(true)
+                .additionalArguments("no-sandbox", true)
+                .build());
 
     }
 
