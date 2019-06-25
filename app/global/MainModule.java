@@ -47,13 +47,11 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
-import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
-import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -66,7 +64,6 @@ import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -81,13 +78,6 @@ import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
-import models.internal.impl.DefaultRecipient;
-import models.internal.impl.DefaultReport;
-import models.internal.impl.HtmlReportFormat;
-import models.internal.impl.WebPageReportSource;
-import models.internal.reports.Recipient;
-import models.internal.reports.Report;
-import models.internal.reports.ReportFormat;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
@@ -100,14 +90,10 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -180,55 +166,6 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Props getHostProviderProps(final HostProviderFactory provider, final Environment environment, final Config config) {
         return provider.create(config.getConfig("hostProvider"), ConfigurationHelper.getType(environment, config, "hostProvider.type"));
-    }
-    private static final Logger LOGGER = LoggerFactory.getLogger(MainModule.class);
-
-    @Provides
-    @Singleton
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private SRPFoo getFoo(final ReportExecutionContext context) throws InterruptedException, ExecutionException {
-        LOGGER.info()
-                .setMessage("SRP -- in getFoo")
-                .log();
-        final WebPageReportSource source = new WebPageReportSource.Builder()
-                .setTitle("mytitle")
-                .setId(UUID.randomUUID())
-                .setTriggeringEventName("load")
-                .setUri(URI.create("http://example.com"))
-                .setIgnoreCertificateErrors(true)
-                .build();
-        final ImmutableSetMultimap<ReportFormat, Recipient> recipients = ImmutableSetMultimap.of(
-                new HtmlReportFormat.Builder().build(), new DefaultRecipient.Builder().setType(RecipientType.EMAIL).setId(UUID.randomUUID()).setAddress("srp@srp").build()
-        );
-        final Report report = new DefaultReport.Builder()
-                .setId(UUID.randomUUID())
-                .setName("myname")
-                .setReportSource(source)
-                .setSchedule(NeverSchedule.getInstance())
-                .setRecipients(recipients)
-                .build();
-        LOGGER.info()
-                .setMessage("SRP -- executing...")
-                .log();
-        final CompletionStage<?> stage = context.execute(report, Instant.now());
-        LOGGER.info()
-                .setMessage("SRP -- spawned...")
-                .log();
-        stage.handle((whatever, error) -> {
-            if (error != null) {
-                LOGGER.error()
-                        .setMessage("SRP -- failure :(")
-                        .setThrowable(error)
-                        .log();
-            } else {
-                LOGGER.error()
-                        .setMessage("SRP -- success :)")
-                        .log();
-            }
-            return null;
-        });
-//        stage.toCompletableFuture().get();
-        return new SRPFoo();
     }
 
     @Provides
@@ -668,7 +605,5 @@ public class MainModule extends AbstractModule {
         private final Injector _injector;
         private final ActorSystem _system;
     }
-
-    private static final class SRPFoo {}
 
 }
