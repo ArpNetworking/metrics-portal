@@ -26,6 +26,7 @@ import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -42,7 +43,7 @@ public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSourc
             final TimeRange timeRange,
             final B builder
     ) {
-        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
         final CompletableFuture<B> result = new CompletableFuture<>();
         dts.onLoad(() -> result.complete(builder.setBytes(
                 ((String) dts.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
@@ -62,7 +63,9 @@ public final class HtmlScreenshotRenderer implements Renderer<WebPageReportSourc
     @Inject
     public HtmlScreenshotRenderer(@Assisted final Config config) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
+        _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }
 
     private final DevToolsFactory _devToolsFactory;
+    private final Map<String, Object> _chromeArgs;
 }

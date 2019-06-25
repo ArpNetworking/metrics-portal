@@ -25,6 +25,7 @@ import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -41,7 +42,7 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
             final TimeRange timeRange,
             final B builder
     ) {
-        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors());
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
         final CompletableFuture<B> result = new CompletableFuture<>();
         dts.onLoad(() -> result.complete(builder.setBytes(dts.printToPdf(format.getWidthInches(), format.getHeightInches()))));
         dts.navigate(source.getUri().toString());
@@ -59,7 +60,9 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
     @Inject
     public PdfScreenshotRenderer(@Assisted final Config config) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
+        _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }
 
     private final DevToolsFactory _devToolsFactory;
+    private final Map<String, Object> _chromeArgs;
 }

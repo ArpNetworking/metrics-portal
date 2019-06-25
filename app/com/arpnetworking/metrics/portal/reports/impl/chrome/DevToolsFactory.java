@@ -37,10 +37,11 @@ public final class DevToolsFactory {
      * Create a {@link DevToolsService}.
      *
      * @param ignoreCertificateErrors whether the created tab should ignore certificate errors when loading resources.
+     * @param chromeArgs any extra command-line flags that should be passed to Chrome.
      * @return the created service.
      */
-    public DevToolsService create(final boolean ignoreCertificateErrors) {
-        final ChromeService service = CHROME_SERVICE_BY_PATH.computeIfAbsent(_chromePath, s -> createService());
+    public DevToolsService create(final boolean ignoreCertificateErrors, final Map<String, Object> chromeArgs) {
+        final ChromeService service = CHROME_SERVICE_BY_PATH.computeIfAbsent(_chromePath, s -> createService(chromeArgs));
         final ChromeTab tab = service.createTab();
         final com.github.kklisura.cdt.services.ChromeDevToolsService result = service.createDevToolsService(tab);
         if (ignoreCertificateErrors) {
@@ -58,7 +59,7 @@ public final class DevToolsFactory {
         _chromePath = chromePath;
     }
 
-    private ChromeService createService() {
+    private ChromeService createService(final Map<String, Object> chromeArgs) {
         // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
         // This requires in our own custom "environment" (since it defaults to using System::getEnv).
         final ImmutableMap<String, String> env = ImmutableMap.of(
@@ -76,7 +77,7 @@ public final class DevToolsFactory {
                 new ChromeLauncherConfiguration()
         );
         return launcher.launch(ChromeArguments.defaults(true)
-                .additionalArguments("no-sandbox", true)
+                .additionalArguments(chromeArgs)
                 .build());
 
     }
