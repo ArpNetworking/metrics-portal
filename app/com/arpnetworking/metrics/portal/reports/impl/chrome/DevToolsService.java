@@ -24,7 +24,8 @@ public interface DevToolsService {
     /**
      * Evaluates some JavaScript in the tab.
      *
-     * @param js A JavaScript expression. (If you need multiple statements, wrap them in an IIFE.)
+     * @param js A JavaScript expression. (If you need multiple statements, wrap them in an
+     *   <a href="https://developer.mozilla.org/en-US/docs/Glossary/IIFE">IIFE</a>.)
      * @return The result of the evaluation. (e.g. a String, a Double, a-- I don't know about arrays/objects.)
      */
     Object evaluate(String js);

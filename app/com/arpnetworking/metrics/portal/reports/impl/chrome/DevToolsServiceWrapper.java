@@ -23,7 +23,7 @@ import java.util.Base64;
 import java.util.UUID;
 
 /**
- * Wraps a <code>com.github.kklisura.cdt.services.DevToolsService</code> to conform to the {@link DevToolsService} interface.
+ * Wraps a {@link com.github.kklisura.cdt.services.ChromeDevToolsService} to conform to the {@link DevToolsService} interface.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
@@ -31,7 +31,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
 
     /**
-     * @param dts The <code>com.github.kklisura.cdt.services.DevToolsService</code> instance to wrap.
+     * @param dts The {@link com.github.kklisura.cdt.services.ChromeDevToolsService} instance to wrap.
      */
     public DevToolsServiceWrapper(final com.github.kklisura.cdt.services.ChromeDevToolsService dts) {
         _dts = dts;

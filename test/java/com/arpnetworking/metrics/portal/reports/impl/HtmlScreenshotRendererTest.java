@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.HtmlScreenshotRenderer;
+import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
@@ -39,7 +40,9 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -97,7 +100,7 @@ public class HtmlScreenshotRendererTest {
                         )
         );
 
-        CompletionStage<MockRendereredReportBuilder> stage = renderer.render(
+        final CompletionStage<MockRendereredReportBuilder> stage = renderer.render(
                 source,
                 new HtmlReportFormat.Builder().build(),
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
@@ -107,9 +110,10 @@ public class HtmlScreenshotRendererTest {
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(_renderedReportBuilder).setBytes(bytes.capture());
-        final String response = new String(bytes.getValue(), StandardCharsets.UTF_8);
+        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
         assertTrue(response.contains("here are some bytes"));
     }
 
-    private static abstract class MockRendereredReportBuilder implements RenderedReport.Builder<MockRendereredReportBuilder, RenderedReport> {}
+    private abstract static class MockRendereredReportBuilder
+            implements RenderedReport.Builder<MockRendereredReportBuilder, RenderedReport> {}
 }

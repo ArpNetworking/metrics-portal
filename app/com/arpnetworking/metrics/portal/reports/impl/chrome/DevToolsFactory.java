@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * A factory that sits atop a Chrome instance and creates tabs / dev-tools instances.
@@ -84,5 +85,5 @@ public final class DevToolsFactory {
 
     private final String _chromePath;
 
-    private static final Map<String, ChromeService> CHROME_SERVICE_BY_PATH = Maps.newHashMap();
+    private static final ConcurrentMap<String, ChromeService> CHROME_SERVICE_BY_PATH = Maps.newConcurrentMap();
 }
