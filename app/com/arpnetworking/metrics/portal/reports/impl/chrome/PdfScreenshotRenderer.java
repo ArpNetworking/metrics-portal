@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
-import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
@@ -25,28 +24,24 @@ import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as PDF.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
+public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
     @Override
-    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
+            final CompletableFuture<B> result,
+            final DevToolsService devToolsService,
             final WebPageReportSource source,
             final PdfReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
-        final CompletableFuture<B> result = new CompletableFuture<>();
-        dts.onLoad(() -> result.complete(builder.setBytes(dts.printToPdf(format.getWidthInches(), format.getHeightInches()))));
-        dts.navigate(source.getUri().toString());
-        return result;
+        result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
     }
 
     /**
@@ -59,10 +54,6 @@ public final class PdfScreenshotRenderer implements Renderer<WebPageReportSource
      */
     @Inject
     public PdfScreenshotRenderer(@Assisted final Config config) {
-        _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
-        _chromeArgs = config.getObject("chromeArgs").unwrapped();
+        super(config);
     }
-
-    private final DevToolsFactory _devToolsFactory;
-    private final Map<String, Object> _chromeArgs;
 }

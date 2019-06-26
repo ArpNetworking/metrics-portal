@@ -17,34 +17,48 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
-import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
+import models.internal.reports.ReportFormat;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
  *
+ * @param <F> the format to render into.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
+/* package private */ abstract class BaseScreenshotRenderer<F extends ReportFormat> implements Renderer<WebPageReportSource, F> {
+
+    abstract <B extends RenderedReport.Builder<B, ?>> void onLoad(
+            CompletableFuture<B> result,
+            DevToolsService devToolsService,
+            WebPageReportSource source,
+            F format,
+            TimeRange timeRange,
+            B builder
+    );
+
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            final CompletableFuture<B> result,
-            final DevToolsService devToolsService,
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
             final WebPageReportSource source,
-            final HtmlReportFormat format,
+            final F format,
             final TimeRange timeRange,
             final B builder
     ) {
-        result.complete(builder.setBytes(
-                ((String) devToolsService.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
-        ));
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
+        final CompletableFuture<B> result = new CompletableFuture<>();
+        dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
+        dts.navigate(source.getUri().toString());
+        return result;
     }
 
     /**
@@ -56,7 +70,11 @@ public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlRep
      * </ul>
      */
     @Inject
-    public HtmlScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    BaseScreenshotRenderer(@Assisted final Config config) {
+        _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
+        _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }
+
+    private final DevToolsFactory _devToolsFactory;
+    private final Map<String, Object> _chromeArgs;
 }
