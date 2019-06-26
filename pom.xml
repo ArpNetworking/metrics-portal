@@ -746,12 +746,6 @@
       <artifactId>utils-mail-dkim</artifactId>
       <version>1.1.12</version>
     </dependency>
-    <dependency>
-      <groupId>com.github.kirviq</groupId>
-      <artifactId>dumbster</artifactId>
-      <version>1.7.1</version>
-      <scope>test</scope>
-    </dependency>
 
 
     <!-- Akka -->
@@ -1146,6 +1140,12 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${thrift.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.kirviq</groupId>
+      <artifactId>dumbster</artifactId>
+      <version>1.7.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
