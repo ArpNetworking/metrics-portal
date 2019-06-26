@@ -20,20 +20,14 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
 import com.google.common.collect.ImmutableMap;
-import com.sun.mail.util.MailConnectException;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
-import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
 
@@ -82,7 +76,7 @@ public class EmailSenderTest {
                 ImmutableMap.of(report.getFormat(), report)
         ).toCompletableFuture().get();
 
-        List<SmtpMessage> emails = _server.getReceivedEmails();
+        final List<SmtpMessage> emails = _server.getReceivedEmails();
         Assert.assertEquals(1, emails.size());
         final SmtpMessage email = emails.get(0);
 
@@ -118,7 +112,7 @@ public class EmailSenderTest {
     }
 
     private static int getFreePort() throws IOException {
-        try (final ServerSocket socket = new ServerSocket(0)) {
+        try (ServerSocket socket = new ServerSocket(0)) {
             socket.setReuseAddress(true);
             return socket.getLocalPort();
         }
