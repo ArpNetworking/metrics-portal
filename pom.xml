@@ -741,6 +741,18 @@
       <artifactId>simple-java-mail</artifactId>
       <version>5.0.0</version>
     </dependency>
+    <dependency>
+      <groupId>net.markenwerk</groupId>
+      <artifactId>utils-mail-dkim</artifactId>
+      <version>1.1.12</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.kirviq</groupId>
+      <artifactId>dumbster</artifactId>
+      <version>1.7.1</version>
+      <scope>test</scope>
+    </dependency>
+
 
     <!-- Akka -->
     <dependency>

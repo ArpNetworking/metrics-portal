@@ -17,7 +17,10 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.dumbster.smtp.SimpleSmtpServer;
+import com.dumbster.smtp.SmtpMessage;
 import com.google.common.collect.ImmutableMap;
+import com.sun.mail.util.MailConnectException;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
@@ -29,12 +32,17 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.simplejavamail.MailException;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.mailer.MailerBuilder;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -46,14 +54,14 @@ public class EmailSenderTest {
 
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
-    @Captor
-    private ArgumentCaptor<Email> _message;
-    @Mock
     private Mailer _mailer;
     private EmailSender _sender;
+    private SimpleSmtpServer _server;
 
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
+        _server = SimpleSmtpServer.start(getFreePort());
+        _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
         MockitoAnnotations.initMocks(this);
         _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
                 "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
@@ -74,9 +82,12 @@ public class EmailSenderTest {
                 ImmutableMap.of(report.getFormat(), report)
         ).toCompletableFuture().get();
 
-        Mockito.verify(_mailer).sendMail(_message.capture());
-        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z", _message.getValue().getSubject());
-        Assert.assertEquals("report content", _message.getValue().getHTMLText());
+        List<SmtpMessage> emails = _server.getReceivedEmails();
+        Assert.assertEquals(1, emails.size());
+        final SmtpMessage email = emails.get(0);
+
+        Assert.assertEquals("[Report] P75 TTI for 2019-01-01T00:00Z", email.getHeaderValue("Subject"));
+        Assert.assertTrue(email.getBody().contains("report content")); // server provides no good way to extract message parts
     }
 
     @Test
@@ -86,13 +97,13 @@ public class EmailSenderTest {
                 ImmutableMap.of()
         ).toCompletableFuture().get();
 
-        Mockito.verify(_mailer, Mockito.never()).sendMail(Mockito.any());
+        Assert.assertEquals(0, _server.getReceivedEmails().size());
     }
 
     @Test(expected = MailException.class)
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
+        _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
-        Mockito.doThrow(new MailException()).when(_mailer).sendMail(Mockito.any());
         try {
             _sender.send(
                     TestBeanFactory.createRecipient(),
@@ -106,7 +117,10 @@ public class EmailSenderTest {
         }
     }
 
-    private static final class MailException extends RuntimeException {
-        private static final long serialVersionUID = -2972735310213868006L;
+    private static int getFreePort() throws IOException {
+        try (final ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(true);
+            return socket.getLocalPort();
+        }
     }
 }
