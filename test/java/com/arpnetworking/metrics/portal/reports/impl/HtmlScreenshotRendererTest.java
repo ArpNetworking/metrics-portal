@@ -26,6 +26,7 @@ import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,11 +68,15 @@ public class HtmlScreenshotRendererTest {
     @Mock
     private MockRendereredReportBuilder _renderedReportBuilder;
 
+    @BeforeClass
+    public static void validateChromeBinaryPath() {
+        if (CHROME_BINARY_PATH.isEmpty()) {
+            fail("set HtmlScreenshotRendererTest.CHROME_BINARY_PATH in order to run these tests");
+        }
+    }
+
     @Before
     public void setUp() throws Exception {
-        if (CHROME_BINARY_PATH.isEmpty()) {
-            fail("set " + getClass().getSimpleName() + ".CHROME_BINARY_PATH");
-        }
         MockitoAnnotations.initMocks(this);
         _baseURI = new URI("http://localhost:" + _wireMock.port());
     }
