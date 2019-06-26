@@ -57,7 +57,7 @@ import static org.junit.Assert.fail;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Ignore
-public class HtmlScreenshotRendererTest {
+public class HtmlScreenshotRendererIT {
     private static final String CHROME_BINARY_PATH = "";
 
     @Rule
@@ -71,7 +71,7 @@ public class HtmlScreenshotRendererTest {
     @BeforeClass
     public static void validateChromeBinaryPath() {
         if (CHROME_BINARY_PATH.isEmpty()) {
-            fail("set HtmlScreenshotRendererTest.CHROME_BINARY_PATH in order to run these tests");
+            fail("set HtmlScreenshotRendererIT.CHROME_BINARY_PATH in order to run these tests");
         }
     }
 
