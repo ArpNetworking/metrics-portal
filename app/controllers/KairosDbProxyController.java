@@ -124,7 +124,14 @@ public class KairosDbProxyController extends Controller {
      * @return Proxied queryTags response.
      */
     public CompletionStage<Result> queryTags() {
-        return proxy();
+        try {
+            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            return _kairosService.queryMetricTags(metricsQuery)
+                    .<JsonNode>thenApply(_mapper::valueToTree)
+                    .thenApply(Results::ok);
+        } catch (final IOException e) {
+            return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
+        }
     }
 
     /**

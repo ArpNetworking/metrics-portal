@@ -57,8 +57,7 @@ public class KairosDbServiceImpl implements KairosDbService {
 
 
     /**
-     * Public constructor.
-     *
+     * Public constructor. *
      * @param kairosDbClient Client to use to make requests to backend kairosdb
      * @param metricsFactory MetricsFactory instance for recording service metrics
      */
@@ -69,7 +68,16 @@ public class KairosDbServiceImpl implements KairosDbService {
 
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetricTags(final MetricsQuery query) {
-        throw new UnsupportedOperationException();
+        final Metrics metrics = _metricsFactory.create();
+        final Timer timer = metrics.createTimer("kairosService/queryMetricTags/request");
+        // Filter out rollup metric overrides and forward the query
+        return filterRollupOverrides(query)
+                .thenCompose(_kairosDbClient::queryMetricTags)
+                .whenComplete((result, error) -> {
+                    timer.stop();
+                    metrics.incrementCounter("kairosService/queryMetricTags/success", error == null ? 1 : 0);
+                    metrics.close();
+                });
     }
 
     @Override
@@ -210,7 +218,7 @@ public class KairosDbServiceImpl implements KairosDbService {
         newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
             // Check to see if there are any rollups for this metrics
             final String metricName = metric.getName();
-            if (metricName.endsWith("_!")) {
+            if (metricName.endsWith(ROLLUP_OVERRIDE)) {
                 metrics.incrementCounter("kairosService/useRollups/bypass", 1);
                 // Special case a _! suffix to not apply rollup selection
                 // Drop the suffix and forward the request
@@ -268,6 +276,29 @@ public class KairosDbServiceImpl implements KairosDbService {
         return newQueryBuilder.build();
     }
 
+    private CompletionStage<MetricsQuery> filterRollupOverrides(final MetricsQuery originalQuery) {
+        final MetricsQuery.Builder newQueryBuilder = new MetricsQuery.Builder()
+                .setStartTime(originalQuery.getStartTime());
+
+        originalQuery.getEndTime().ifPresent(newQueryBuilder::setEndTime);
+
+        newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
+            // Check to see if there are any rollups for this metrics
+            final String metricName = metric.getName();
+            if (metricName.endsWith(ROLLUP_OVERRIDE)) {
+                // Special case a _! suffix to not apply rollup selection
+                // Drop the suffix and forward the request
+                return Metric.Builder.<Metric, Metric.Builder>clone(metric)
+                        .setName(metricName.substring(0, metricName.length() - 2))
+                        .build();
+            } else {
+                return metric;
+            }
+        }).collect(ImmutableList.toImmutableList()));
+
+        return CompletableFuture.completedFuture(newQueryBuilder.build());
+    }
+
 
     private static Optional<SamplingUnit> rollupSuffixToSamplingUnit(final String suffix) {
         // Assuming we only rollup to a single sampling unit (e.g. 1 hour or 1 day) and not multiples
@@ -292,6 +323,7 @@ public class KairosDbServiceImpl implements KairosDbService {
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
+    private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
     private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
 }

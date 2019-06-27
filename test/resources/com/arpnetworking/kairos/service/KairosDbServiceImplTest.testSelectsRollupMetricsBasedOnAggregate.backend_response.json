@@ -1,11 +1,40 @@
 {
   "queries": [
     {
-      "results": [{
-        "name": "foo_1h",
-        "values": [],
-        "tags": {}
-      }]
+      "results": [
+        {
+          "name": "foo",
+          "tags": {
+            "browser_name": [
+              "Chrome",
+              "Firefox",
+              "Internet Explorer",
+              "Opera",
+              "Safari"
+            ],
+            "office_ip": [
+              "False",
+              "True"
+            ],
+            "os_name": [
+              "ChromeOS",
+              "Linux",
+              "Mac",
+              "Windows"
+            ],
+            "region": [
+              "Africa",
+              "Asia",
+              "Europe",
+              "Latin America and the Caribbean",
+              "Northern America",
+              "Oceania",
+              "unknown"
+            ]
+          },
+          "values": []
+        }
+      ]
     }
   ]
 }
