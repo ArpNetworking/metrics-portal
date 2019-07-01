@@ -279,7 +279,6 @@
         <configuration>
           <ignoredDependencies combine.children="append">
             <ignoredDependency>com.typesafe.play:play-java_${scala.package.version}:jar:*</ignoredDependency>
-            <ignoredDependency>net.markenwerk:utils-mail-dkim:jar:1.1.12</ignoredDependency>
           </ignoredDependencies>
         </configuration>
       </plugin>
@@ -748,6 +747,7 @@
       <groupId>net.markenwerk</groupId>
       <artifactId>utils-mail-dkim</artifactId>
       <version>${dkimutils.version}</version>
+      <scope>runtime</scope>
     </dependency>
 
 
