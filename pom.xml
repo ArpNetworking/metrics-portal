@@ -86,6 +86,7 @@
     <chrisomeara.pillar.version>2.3.0</chrisomeara.pillar.version>
     <commons.codec.version>1.10</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
+    <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
@@ -1148,7 +1149,7 @@
     <dependency>
       <groupId>com.github.kirviq</groupId>
       <artifactId>dumbster</artifactId>
-      <version>1.7.1</version>
+      <version>${dumbster.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
