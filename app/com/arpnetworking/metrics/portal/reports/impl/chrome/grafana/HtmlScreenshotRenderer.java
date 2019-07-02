@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.reports.impl.chrome;
+package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
-import models.internal.impl.WebPageReportSource;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
@@ -33,30 +33,21 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<WebPageReportSource, HtmlReportFormat> {
+public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
 
     @Override
-    protected boolean getIgnoreCertificateErrors(final WebPageReportSource source) {
-        return source.ignoresCertificateErrors();
-    }
-
-    @Override
-    protected URI getURI(final WebPageReportSource source) {
-        return source.getUri();
-    }
-
-    @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
+    protected <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
             final CompletableFuture<B> result,
             final DevToolsService devToolsService,
-            final WebPageReportSource source,
+            final GrafanaReportPanelReportSource source,
             final HtmlReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        result.complete(builder.setBytes(
-                ((String) devToolsService.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
-        ));
+        final String html = (String) devToolsService.evaluate(
+                "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
+        );
+        result.complete(builder.setBytes(html.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

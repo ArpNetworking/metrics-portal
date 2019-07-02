@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.HtmlScreenshotRenderer;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Before;
@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -58,7 +59,7 @@ import static org.junit.Assert.fail;
  */
 @Ignore
 public class HtmlScreenshotRendererIT {
-    private static final String CHROME_BINARY_PATH = "";
+    private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
@@ -90,18 +91,32 @@ public class HtmlScreenshotRendererIT {
                 )
         ));
         final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
-        final WebPageReportSource source = new WebPageReportSource.Builder()
-                .setId(UUID.randomUUID())
-                .setUri(URI.create("http://localhost:" + _wireMock.port() + "/potato"))
-                .setTitle("my title")
-                .setTriggeringEventName("load")
-                .setIgnoreCertificateErrors(false)
+        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
+                .setWebPageReportSource(
+                        new WebPageReportSource.Builder()
+                                .setId(UUID.randomUUID())
+                                .setUri(URI.create("http://localhost:" + _wireMock.port() + "/potato"))
+                                .setTitle("my title")
+                                .setTriggeringEventName("load")
+                                .setIgnoreCertificateErrors(false)
+                                .build())
                 .build();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/potato"))
                         .willReturn(aResponse()
-                                .withBody("here are some bytes")
+                                .withHeader("Content-Type", "text/html")
+                                .withBody("<html><head><script>" +
+                                        "  window.addEventListener('load', () => {" +
+                                        "    document.body.innerHTML = `" +
+                                        "      <iframe class=\"rendered-markdown-container\" srcdoc=\"content we care about\"></iframe>" +
+                                        "    `;" +
+                                        "    setTimeout(() => {" +
+                                        "      console.log('dispatching');" +
+                                        "      window.dispatchEvent(new Event('reportrendered'))" +
+                                        "    }, 0);" +
+                                        "  });" +
+                                        "</script></head><body>content we do not care about</body></html>")
                         )
         );
 
@@ -111,12 +126,12 @@ public class HtmlScreenshotRendererIT {
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
                 _renderedReportBuilder);
 
-        stage.toCompletableFuture().get();
+        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(_renderedReportBuilder).setBytes(bytes.capture());
         final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
-        assertTrue(response.contains("here are some bytes"));
+        assertTrue(response, response.equals("content we care about"));
     }
 
     private abstract static class MockRendereredReportBuilder

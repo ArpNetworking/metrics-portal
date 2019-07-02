@@ -14,45 +14,56 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.reports.impl.chrome;
+package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
-import models.internal.impl.WebPageReportSource;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Uses a headless Chrome instance to render a page as PDF.
+ * Uses a headless Chrome instance to render a page as HTML.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageReportSource, PdfReportFormat> {
-
+public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
     @Override
-    protected boolean getIgnoreCertificateErrors(final WebPageReportSource source) {
-        return source.ignoresCertificateErrors();
+    public boolean getIgnoreCertificateErrors(final GrafanaReportPanelReportSource source) {
+        return source.getWebPageReportSource().ignoresCertificateErrors();
     }
 
     @Override
-    protected URI getURI(final WebPageReportSource source) {
-        return source.getUri();
+    public URI getURI(final GrafanaReportPanelReportSource source) {
+        return source.getWebPageReportSource().getUri();
     }
 
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
+    public <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
             final CompletableFuture<B> result,
             final DevToolsService devToolsService,
-            final WebPageReportSource source,
+            final GrafanaReportPanelReportSource source,
             final PdfReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
+        devToolsService.onEvent("pagereplacedwithreport", () -> {
+            final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
+            result.complete(builder.setBytes(pdf));
+        });
+        devToolsService.evaluate(
+                "(() => {\n"
+                        + "  var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n"
+                        + "  document.open(); document.write(body); document.close();\n"
+                        + "  setTimeout(() => window.dispatchEvent(new Event('pagereplacedwithreport')), 100);\n"
+                        + "})();\n"
+        );
         result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
     }
 

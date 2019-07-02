@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
 /**
  * A relatively minimal interface for a Chrome tab's dev tools.
  *
@@ -65,4 +68,18 @@ public interface DevToolsService {
      * Closes the dev tools. After close() is called, any further interaction is illegal.
      */
     void close();
+
+    default void nowOrOnEvent(final String eventName, final Supplier<Boolean> ready, final Runnable callback) {
+        final AtomicBoolean alreadyComplete = new AtomicBoolean(false);
+        onEvent(eventName, () -> {
+            if (!alreadyComplete.getAndSet(true)) {
+                callback.run();
+            }
+        });
+        if (ready.get()) {
+            if (!alreadyComplete.getAndSet(true)) {
+                callback.run();
+            }
+        }
+    }
 }

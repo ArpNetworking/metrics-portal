@@ -92,7 +92,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
                 callback.run();
             }
         });
-        evaluate("window.addEventListener(" + jsonEventName + ", () -> console.log(" + jsonTriggerMessage + "))");
+        final String cmd = ("window.addEventListener(" + jsonEventName + ", () => console.log(" + jsonTriggerMessage + "))");
+        System.out.println("executing: " + cmd);
+        evaluate(cmd);
     }
 
     @Override
