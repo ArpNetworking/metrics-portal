@@ -16,17 +16,47 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
+import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+
 /**
- * Uses a headless Chrome instance to capture a page.
+ * Uses a headless Chrome instance to render a page as HTML.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
     @Override
-    protected byte[] getPageContent(final WebPageReportSource source, final HtmlReportFormat format, final Object todo) {
-        return new byte[0]; // TODO(spencerpearson)
+    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
+            final CompletableFuture<B> result,
+            final DevToolsService devToolsService,
+            final WebPageReportSource source,
+            final HtmlReportFormat format,
+            final TimeRange timeRange,
+            final B builder
+    ) {
+        result.complete(builder.setBytes(
+                ((String) devToolsService.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
+        ));
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param config the configuration for this renderer. Meaningful keys:
+     * <ul>
+     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
+     * </ul>
+     */
+    @Inject
+    public HtmlScreenshotRenderer(@Assisted final Config config) {
+        super(config);
     }
 }

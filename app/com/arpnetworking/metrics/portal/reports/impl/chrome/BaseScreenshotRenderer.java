@@ -18,21 +18,34 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Common code for renderers that use Chrome to load and scrape pages.
+ * Uses a headless Chrome instance to render a page as HTML.
+ *
+ * @param <F> the format to render into.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 /* package private */ abstract class BaseScreenshotRenderer<F extends ReportFormat> implements Renderer<WebPageReportSource, F> {
 
-    protected abstract byte[] getPageContent(WebPageReportSource source, F format, Object todo);
+    abstract <B extends RenderedReport.Builder<B, ?>> void onLoad(
+            CompletableFuture<B> result,
+            DevToolsService devToolsService,
+            WebPageReportSource source,
+            F format,
+            TimeRange timeRange,
+            B builder
+    );
 
     @Override
     public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
@@ -41,8 +54,27 @@ import java.util.concurrent.CompletionStage;
             final TimeRange timeRange,
             final B builder
     ) {
-        return CompletableFuture.completedFuture(
-                builder.setBytes(new byte[0])// TODO(spencerpearson)
-        );
+        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
+        final CompletableFuture<B> result = new CompletableFuture<>();
+        dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
+        dts.navigate(source.getUri().toString());
+        return result;
     }
+
+    /**
+     * Public constructor.
+     *
+     * @param config the configuration for this renderer. Meaningful keys:
+     * <ul>
+     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
+     * </ul>
+     */
+    @Inject
+    BaseScreenshotRenderer(@Assisted final Config config) {
+        _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
+        _chromeArgs = config.getObject("chromeArgs").unwrapped();
+    }
+
+    private final DevToolsFactory _devToolsFactory;
+    private final Map<String, Object> _chromeArgs;
 }

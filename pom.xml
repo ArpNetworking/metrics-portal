@@ -740,6 +740,11 @@
 
     <!-- Reporting -->
     <dependency>
+      <groupId>com.github.kklisura.cdt</groupId>
+      <artifactId>cdt-java-client</artifactId>
+      <version>${cdt.java.client.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.simplejavamail</groupId>
       <artifactId>simple-java-mail</artifactId>
       <version>${simplejavamail.version}</version>
@@ -1005,12 +1010,6 @@
       <artifactId>Java-WebSocket</artifactId>
       <version>${java.websocket.version}</version>
       <scope>runtime</scope>
-    </dependency>-->
-    <!-- Is this needed? -->
-    <!--<dependency>
-      <groupId>com.github.kklisura.cdt</groupId>
-      <artifactId>cdt-java-client</artifactId>
-      <version>${cdt.java.client.version}</version>
     </dependency>-->
     <!-- Is this needed? -->
     <!--<dependency>

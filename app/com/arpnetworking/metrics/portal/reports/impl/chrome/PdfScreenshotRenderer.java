@@ -16,17 +16,44 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
+import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
- * Uses a headless Chrome instance to capture a page.
+ * Uses a headless Chrome instance to render a page as PDF.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
     @Override
-    protected byte[] getPageContent(final WebPageReportSource source, final PdfReportFormat format, final Object todo) {
-        return new byte[0]; // TODO(spencerpearson)
+    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
+            final CompletableFuture<B> result,
+            final DevToolsService devToolsService,
+            final WebPageReportSource source,
+            final PdfReportFormat format,
+            final TimeRange timeRange,
+            final B builder
+    ) {
+        result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param config the configuration for this renderer. Meaningful keys:
+     * <ul>
+     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
+     * </ul>
+     */
+    @Inject
+    public PdfScreenshotRenderer(@Assisted final Config config) {
+        super(config);
     }
 }
