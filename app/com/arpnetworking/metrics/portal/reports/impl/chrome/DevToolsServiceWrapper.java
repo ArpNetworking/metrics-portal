@@ -31,6 +31,8 @@ public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
 
     /**
+     * Public constructor.
+     *
      * @param dts The {@link com.github.kklisura.cdt.services.ChromeDevToolsService} instance to wrap.
      */
     public DevToolsServiceWrapper(final com.github.kklisura.cdt.services.ChromeDevToolsService dts) {
