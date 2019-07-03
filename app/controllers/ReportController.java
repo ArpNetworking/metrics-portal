@@ -15,10 +15,14 @@
  */
 package controllers;
 
+import akka.actor.ActorRef;
+import akka.cluster.sharding.ClusterSharding;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
+import com.arpnetworking.metrics.portal.scheduling.JobRef;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -59,13 +64,17 @@ public class ReportController extends Controller {
      * @param configuration Instance of Play's {@code Config}.
      * @param reportRepository Instance of {@link ReportRepository}.
      * @param organizationRepository Instance of {@link OrganizationRepository}.
+     * @param jobExecutorRegion {@link ClusterSharding} actor balancing the execution of {@link models.internal.scheduling.Job}s.
      */
     @Inject
     public ReportController(
             final Config configuration,
             final ReportRepository reportRepository,
-            final OrganizationRepository organizationRepository) {
-        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository);
+            final OrganizationRepository organizationRepository,
+            @Named("job-execution-shard-region")
+            final ActorRef jobExecutorRegion
+    ) {
+        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository, jobExecutorRegion);
     }
 
     /**
@@ -86,8 +95,9 @@ public class ReportController extends Controller {
             return badRequest("Invalid request body.");
         }
 
+        final Organization organization = _organizationRepository.get(request());
         try {
-            _reportRepository.addOrUpdateReport(report, _organizationRepository.get(request()));
+            _reportRepository.addOrUpdateReport(report, organization);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -97,6 +107,8 @@ public class ReportController extends Controller {
                     .log();
             return internalServerError();
         }
+
+        kickJobExecutor(report.getId());
         return noContent();
     }
 
@@ -196,21 +208,38 @@ public class ReportController extends Controller {
         if (deletedCount == 0) {
             return notFound();
         }
+        kickJobExecutor(id);
         return noContent();
     }
 
     private ReportController(
             final int maxLimit,
             final ReportRepository reportRepository,
-            final OrganizationRepository organizationRepository) {
+            final OrganizationRepository organizationRepository,
+            final ActorRef jobExecutorRegion
+    ) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
         _organizationRepository = organizationRepository;
+        _jobExecutorRegion = jobExecutorRegion;
+    }
+
+    private void kickJobExecutor(final UUID reportId) {
+        _jobExecutorRegion.tell(
+                new JobExecutorActor.Reload.Builder<Report.Result>()
+                        .setJobRef(new JobRef.Builder<Report.Result>()
+                                .setId(reportId)
+                                .setOrganization(_organizationRepository.get(request()))
+                                .setRepositoryType(ReportRepository.class)
+                                .build())
+                        .build(),
+                ActorRef.noSender());
     }
 
     private final int _maxLimit;
     private final ReportRepository _reportRepository;
     private final OrganizationRepository _organizationRepository;
+    private final ActorRef _jobExecutorRegion;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
