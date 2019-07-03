@@ -31,10 +31,32 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Uses a headless Chrome instance to render a page as HTML.
  *
+ * @param <F> the format to render into.
+ *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public abstract class BaseScreenshotRenderer<F extends ReportFormat>
         extends com.arpnetworking.metrics.portal.reports.impl.chrome.BaseScreenshotRenderer<GrafanaReportPanelReportSource, F> {
+
+    /**
+     * todo.
+     * @param result todo.
+     * @param devToolsService todo.
+     * @param source todo.
+     * @param format todo.
+     * @param timeRange todo.
+     * @param builder todo.
+     * @param <B> todo.
+     */
+    protected abstract <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
+            CompletableFuture<B> result,
+            DevToolsService devToolsService,
+            GrafanaReportPanelReportSource source,
+            F format,
+            TimeRange timeRange,
+            B builder
+    );
+
     @Override
     public boolean getIgnoreCertificateErrors(final GrafanaReportPanelReportSource source) {
         return source.getWebPageReportSource().ignoresCertificateErrors();
@@ -44,15 +66,6 @@ public abstract class BaseScreenshotRenderer<F extends ReportFormat>
     public URI getURI(final GrafanaReportPanelReportSource source) {
         return source.getWebPageReportSource().getUri();
     }
-
-    protected abstract <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
-            CompletableFuture<B> result,
-            DevToolsService devToolsService,
-            GrafanaReportPanelReportSource source,
-            F format,
-            TimeRange timeRange,
-            B builder
-    );
 
     @Override
     public <B extends RenderedReport.Builder<B, ?>> void onLoad(
@@ -84,7 +97,7 @@ public abstract class BaseScreenshotRenderer<F extends ReportFormat>
      * </ul>
      */
     @Inject
-    public BaseScreenshotRenderer(@Assisted final Config config) {
+    /* package private */ BaseScreenshotRenderer(@Assisted final Config config) {
         super(config);
     }
 }

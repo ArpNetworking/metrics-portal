@@ -15,7 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
+import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +40,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -46,6 +50,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -53,87 +58,58 @@ import static org.junit.Assert.fail;
  * Tests class {@link HtmlScreenshotRenderer}.
  *
  * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
- * is marked {@code @Ignore}. If you want to run it manually, set {@link #CHROME_BINARY_PATH} as appropriate for your system first.
+ * is marked {@code @Ignore}. If you want to run it manually, set
+ * {@link com.arpnetworking.metrics.portal.reports.impl.testing.Utils#CHROME_PATH} as appropriate for your system first.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Ignore
 public class HtmlScreenshotRendererIT {
-    private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
-    private URI _baseURI;
-
-    @Mock
-    private MockRendereredReportBuilder _renderedReportBuilder;
-
-    @BeforeClass
-    public static void validateChromeBinaryPath() {
-        if (CHROME_BINARY_PATH.isEmpty()) {
-            fail("set HtmlScreenshotRendererIT.CHROME_BINARY_PATH in order to run these tests");
-        }
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        _baseURI = new URI("http://localhost:" + _wireMock.port());
-    }
-
-    @Test
-    public void testRendering() throws Exception {
-        final Config config = ConfigFactory.parseMap(ImmutableMap.of(
-                "chromePath", CHROME_BINARY_PATH,
-                "chromeArgs", ImmutableMap.of(
-                        "no-sandbox", true
-                )
-        ));
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
-        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
-                .setWebPageReportSource(
-                        new WebPageReportSource.Builder()
-                                .setId(UUID.randomUUID())
-                                .setUri(URI.create("http://localhost:" + _wireMock.port() + "/potato"))
-                                .setTitle("my title")
-                                .setTriggeringEventName("load")
-                                .setIgnoreCertificateErrors(false)
-                                .build())
-                .build();
+    private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
+        final Config config = com.arpnetworking.metrics.portal.reports.impl.testing.Utils.createChromeRendererConfig();
+        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
         _wireMock.givenThat(
-                get(urlEqualTo("/potato"))
+                get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
-                                .withBody("<html><head><script>" +
-                                        "  window.addEventListener('load', () => {" +
-                                        "    document.body.innerHTML = `" +
-                                        "      <iframe class=\"rendered-markdown-container\" srcdoc=\"content we care about\"></iframe>" +
-                                        "    `;" +
-                                        "    setTimeout(() => {" +
-                                        "      console.log('dispatching');" +
-                                        "      window.dispatchEvent(new Event('reportrendered'))" +
-                                        "    }, 0);" +
-                                        "  });" +
-                                        "</script></head><body>content we do not care about</body></html>")
+                                .withBody(Utils.mockGrafanaReportPanelPage(renderDelay))
                         )
         );
 
-        final CompletionStage<MockRendereredReportBuilder> stage = renderer.render(
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
+                .setWebPageReportSource(
+                        TestBeanFactory.createWebPageReportSourceBuilder()
+                                .setUri(URI.create("http://localhost:" + _wireMock.port()))
+                                .build())
+                .build();
+
+        final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
-                new HtmlReportFormat.Builder().build(),
+                format,
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
-                _renderedReportBuilder);
+                builder);
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(_renderedReportBuilder).setBytes(bytes.capture());
+        Mockito.verify(builder).setBytes(bytes.capture());
         final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
-        assertTrue(response, response.equals("content we care about"));
+        assertEquals(response, "content we care about");
     }
 
-    private abstract static class MockRendereredReportBuilder
-            implements RenderedReport.Builder<MockRendereredReportBuilder, RenderedReport> {}
+    @Test
+    public void testImmediateRendering() throws Exception {
+        runTestWithRenderDelay(Duration.ZERO);
+    }
+
+    @Test
+    public void testDelayedRendering() throws Exception {
+        runTestWithRenderDelay(Duration.ofSeconds(2));
+    }
 }

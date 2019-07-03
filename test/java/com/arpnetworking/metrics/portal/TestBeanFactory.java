@@ -22,6 +22,8 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import models.cassandra.Host;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -144,14 +146,7 @@ public final class TestBeanFactory {
                                 .setType(RecipientType.EMAIL)
                                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                                 .build()))
-                .setReportSource(
-                        new WebPageReportSource.Builder()
-                                .setTitle(TEST_TITLE + UUID.randomUUID().toString())
-                                .setId(UUID.randomUUID())
-                                .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
-                                .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
-                                .setIgnoreCertificateErrors(true)
-                                .build())
+                .setReportSource(createWebPageReportSourceBuilder().build())
                 .setSchedule(schedule);
     }
 
@@ -180,6 +175,15 @@ public final class TestBeanFactory {
                 .setTimeRange(new TimeRange(Instant.now(), Instant.now().plus(Duration.ofSeconds((long) (100000 * RANDOM.nextDouble())))))
                 .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static WebPageReportSource.Builder createWebPageReportSourceBuilder() {
+        return new WebPageReportSource.Builder()
+                .setTitle(TEST_TITLE + UUID.randomUUID().toString())
+                .setId(UUID.randomUUID())
+                .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
+                .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
+                .setIgnoreCertificateErrors(true);
     }
 
     /**

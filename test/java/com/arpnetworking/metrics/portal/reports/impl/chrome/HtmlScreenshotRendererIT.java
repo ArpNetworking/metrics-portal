@@ -15,30 +15,24 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
-import com.arpnetworking.metrics.portal.reports.RenderedReport;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.HtmlScreenshotRenderer;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
+import com.arpnetworking.metrics.portal.reports.impl.testing.Utils;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -46,79 +40,49 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests class {@link HtmlScreenshotRenderer}.
  *
  * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
- * is marked {@code @Ignore}. If you want to run it manually, set {@link #CHROME_BINARY_PATH} as appropriate for your system first.
+ * is marked {@code @Ignore}. If you want to run it manually, set {@link Utils#CHROME_PATH} as appropriate for your system first.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Ignore
 public class HtmlScreenshotRendererIT {
-    private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
-    private URI _baseURI;
-
-    @Mock
-    private MockRendereredReportBuilder _renderedReportBuilder;
-
-    @BeforeClass
-    public static void validateChromeBinaryPath() {
-        if (CHROME_BINARY_PATH.isEmpty()) {
-            fail("set HtmlScreenshotRendererIT.CHROME_BINARY_PATH in order to run these tests");
-        }
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        _baseURI = new URI("http://localhost:" + _wireMock.port());
-    }
-
     @Test
     public void testRendering() throws Exception {
-        final Config config = ConfigFactory.parseMap(ImmutableMap.of(
-                "chromePath", CHROME_BINARY_PATH,
-                "chromeArgs", ImmutableMap.of(
-                        "no-sandbox", true
-                )
-        ));
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
-        final WebPageReportSource source = new WebPageReportSource.Builder()
-                .setId(UUID.randomUUID())
-                .setUri(URI.create("http://localhost:" + _wireMock.port() + "/potato"))
-                .setTitle("my title")
-                .setTriggeringEventName("load")
-                .setIgnoreCertificateErrors(false)
-                .build();
+        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final Config config = Utils.createChromeRendererConfig();
 
         _wireMock.givenThat(
-                get(urlEqualTo("/potato"))
+                get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withBody("here are some bytes")
                         )
         );
 
-        final CompletionStage<MockRendereredReportBuilder> stage = renderer.render(
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
+                .setUri(URI.create("http://localhost:" + _wireMock.port()))
+                .build();
+
+        final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
-                new HtmlReportFormat.Builder().build(),
+                format,
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
-                _renderedReportBuilder);
+                builder);
 
         stage.toCompletableFuture().get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(_renderedReportBuilder).setBytes(bytes.capture());
+        Mockito.verify(builder).setBytes(bytes.capture());
         final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
         assertTrue(response.contains("here are some bytes"));
     }
-
-    private abstract static class MockRendereredReportBuilder
-            implements RenderedReport.Builder<MockRendereredReportBuilder, RenderedReport> {}
 }
