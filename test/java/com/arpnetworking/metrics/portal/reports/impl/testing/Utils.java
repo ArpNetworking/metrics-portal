@@ -33,7 +33,7 @@ public final class Utils {
     /**
      * Path to the Chrome binary to use for Chrome-renderer tests.
      */
-    public static final String CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    public static final String CHROME_PATH = "";
 
     /**
      * Build a {@link Config} suitable for instantiation of a Chrome-based renderer.
