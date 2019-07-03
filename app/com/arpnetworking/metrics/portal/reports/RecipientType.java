@@ -15,14 +15,11 @@
  */
 package com.arpnetworking.metrics.portal.reports;
 
-import com.arpnetworking.logback.annotations.Loggable;
-
 /**
  * Mechanisms by which reports can be sent to people.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-@Loggable
 public enum RecipientType {
     /**
      * Email.
