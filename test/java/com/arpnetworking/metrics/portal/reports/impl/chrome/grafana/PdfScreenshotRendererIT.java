@@ -42,7 +42,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests class {@link PdfScreenshotRenderer}.
+ * Tests class {@link PdfGrafanaScreenshotRenderer}.
  *
  * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
  * is marked {@code @Ignore}. If you want to run it manually, set
@@ -68,7 +68,7 @@ public class PdfScreenshotRendererIT {
                         )
         );
         final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(config);
+        final PdfGrafanaScreenshotRenderer renderer = new PdfGrafanaScreenshotRenderer(config);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()

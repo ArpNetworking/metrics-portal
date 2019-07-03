@@ -23,9 +23,9 @@ import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
-import models.internal.impl.PdfReportFormat;
+import models.internal.impl.HtmlReportFormat;
 
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -33,38 +33,21 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfReportFormat> {
-    @Override
-    public boolean getIgnoreCertificateErrors(final GrafanaReportPanelReportSource source) {
-        return source.getWebPageReportSource().ignoresCertificateErrors();
-    }
+public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRenderer<HtmlReportFormat> {
 
     @Override
-    public URI getURI(final GrafanaReportPanelReportSource source) {
-        return source.getWebPageReportSource().getUri();
-    }
-
-    @Override
-    public <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
+    protected <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
             final CompletableFuture<B> result,
             final DevToolsService devToolsService,
             final GrafanaReportPanelReportSource source,
-            final PdfReportFormat format,
+            final HtmlReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        devToolsService.onEvent("pagereplacedwithreport", () -> {
-            final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
-            result.complete(builder.setBytes(pdf));
-        });
-        devToolsService.evaluate(
-                "(() => {\n"
-                        + "  var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n"
-                        + "  document.open(); document.write(body); document.close();\n"
-                        + "  setTimeout(() => window.dispatchEvent(new Event('pagereplacedwithreport')), 100);\n"
-                        + "})();\n"
+        final String html = (String) devToolsService.evaluate(
+                "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
         );
-        result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
+        result.complete(builder.setBytes(html.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
@@ -76,7 +59,7 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<PdfRepor
      * </ul>
      */
     @Inject
-    public PdfScreenshotRenderer(@Assisted final Config config) {
+    public HtmlGrafanaScreenshotRenderer(@Assisted final Config config) {
         super(config);
     }
 }

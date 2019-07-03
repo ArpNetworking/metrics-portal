@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public abstract class BaseScreenshotRenderer<F extends ReportFormat>
+public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
         extends com.arpnetworking.metrics.portal.reports.impl.chrome.BaseScreenshotRenderer<GrafanaReportPanelReportSource, F> {
 
     /**
@@ -77,6 +77,7 @@ public abstract class BaseScreenshotRenderer<F extends ReportFormat>
             final TimeRange timeRange,
             final B builder
     ) {
+        devToolsService.nowOrOnEvent("reportrendered", () -> false, () -> System.out.println("did the thing!"));
         devToolsService.nowOrOnEvent(
                 "reportrendered",
                 () -> {
@@ -98,7 +99,7 @@ public abstract class BaseScreenshotRenderer<F extends ReportFormat>
      * </ul>
      */
     @Inject
-    /* package private */ BaseScreenshotRenderer(@Assisted final Config config) {
+    /* package private */ BaseGrafanaScreenshotRenderer(@Assisted final Config config) {
         super(config);
     }
 }

@@ -44,7 +44,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests class {@link HtmlScreenshotRenderer}.
+ * Tests class {@link HtmlGrafanaScreenshotRenderer}.
  *
  * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
  * is marked {@code @Ignore}. If you want to run it manually, set
@@ -70,7 +70,7 @@ public class HtmlScreenshotRendererIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(config);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()
