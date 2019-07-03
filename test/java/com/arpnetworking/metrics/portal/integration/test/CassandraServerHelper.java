@@ -37,7 +37,6 @@ import scala.collection.JavaConverters;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Date;
@@ -98,21 +97,7 @@ public final class CassandraServerHelper {
                         .asScala()
                         .toMap(Predef.conforms());
 
-        //Registry registry = null;
-        //try {
         final Registry registry = Registry.fromDirectory(new File("./conf/cassandra/migration/" + name));
-            /*
-                    new File(
-                            CassandraServerHelper.class.getClassLoader().getResource("cassandra/migration/" + name).toURI()));
-            if (registry.all().isEmpty()) {
-                registry = Registry.fromDirectory(
-                        new File(
-                                CassandraServerHelper.class.getClassLoader().getResource("cassandra/migration/" + name).toExternalForm()));
-            }
-        } catch (final URISyntaxException e) {
-            throw new RuntimeException(e);
-        }*/
-
         final Migrator migrator = new CassandraMigrator(registry);
         session.init();
         migrator.initialize(session, keyspace, new ReplicationOptions(replication));

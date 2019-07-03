@@ -31,7 +31,6 @@ import models.internal.impl.DefaultAlertQuery;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
