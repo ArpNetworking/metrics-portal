@@ -175,14 +175,34 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
 }
 
 class EditSourceViewModel extends BaseSourceViewModel {
-    toRequest() {
-        return {
-            type: SourceType[this.type()],
+    toRequest(): any {
+        let requiredFields = {
             id: this.id(),
-            uri: this.url(),
-            title: this.title(),
-            ignoreCertificateErrors: this.ignoreCertificateErrors(),
-            triggeringEventName: this.eventName(),
+            type: SourceType[this.type()],
+        };
+        switch (this.type()) {
+            case SourceType.WEB_PAGE:
+                return {
+                    ...requiredFields,
+                    uri: this.url(),
+                    title: this.title(),
+                    ignoreCertificateErrors: this.ignoreCertificateErrors(),
+                    triggeringEventName: this.eventName(),
+                };
+            case SourceType.GRAFANA:
+                return {
+                    ...requiredFields,
+                    webPageReportSource: {
+                        id: uuid.v4(),
+                        type: SourceType[SourceType.WEB_PAGE],
+                        uri: this.url(),
+                        title: this.title(),
+                        ignoreCertificateErrors: this.ignoreCertificateErrors(),
+                        triggeringEventName: this.eventName(),
+                    },
+                };
+            default:
+                console.error('unrecognized SourceType: ' + this.type());
         }
     }
 
@@ -197,6 +217,8 @@ class EditSourceViewModel extends BaseSourceViewModel {
               "<ul class='list-group'>"+
               "<li class='list-group-item'><b>Browser rendered</b> - A URL is loaded in the browser and the rendered " +
               "contents of the page are taken as the generated report.</li>" +
+              "<li class='list-group-item'><b>Grafana</b> - Like browser-rendered, but tweaked to pull data from a Grafana Report panel" +
+              " (which are loaded asynchronously after page-load, hence needing the specialization).</li>" +
               "</ul>",
         eventName: "When an event with this name is triggered, the report is considered fully rendered.",
     };
