@@ -16,7 +16,6 @@
 
 package models.internal.reports;
 
-import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 
 import java.util.UUID;
@@ -26,7 +25,6 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-@Loggable
 public interface Recipient {
     /**
      * Get the unique identifier of this recipient.

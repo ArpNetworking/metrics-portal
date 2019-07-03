@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.google.common.base.MoreObjects;
 import models.internal.reports.Recipient;
@@ -30,6 +31,7 @@ import java.util.UUID;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class DefaultRecipient implements Recipient {
     private final UUID _id;
     private final RecipientType _type;
