@@ -449,7 +449,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             /**
              * Public constructor.
              */
-            Builder() {
+            public Builder() {
                 super(Reload<T>::new);
             }
 
