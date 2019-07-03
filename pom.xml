@@ -85,6 +85,8 @@
     <cglib.version>3.2.1</cglib.version>
     <chrisomeara.pillar.version>2.3.0</chrisomeara.pillar.version>
     <commons.codec.version>1.10</commons.codec.version>
+    <dkimutils.version>1.1.12</dkimutils.version>
+    <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
@@ -116,6 +118,7 @@
     <scala.version>2.11.12</scala.version>
     <scala.java8.version>0.8.0</scala.java8.version>
     <scala.xml.version>1.0.6</scala.xml.version>
+    <simplejavamail.version>5.1.7</simplejavamail.version>
     <slf4j.version>1.7.25</slf4j.version>
     <spotbugs.annotations.version>3.1.12</spotbugs.annotations.version>
     <twirl.api.version>1.3.14</twirl.api.version>
@@ -737,10 +740,22 @@
 
     <!-- Reporting -->
     <dependency>
+      <groupId>com.github.kklisura.cdt</groupId>
+      <artifactId>cdt-java-client</artifactId>
+      <version>${cdt.java.client.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.simplejavamail</groupId>
       <artifactId>simple-java-mail</artifactId>
-      <version>5.0.0</version>
+      <version>${simplejavamail.version}</version>
     </dependency>
+    <dependency>
+      <groupId>net.markenwerk</groupId>
+      <artifactId>utils-mail-dkim</artifactId>
+      <version>${dkimutils.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
 
     <!-- Akka -->
     <dependency>
@@ -998,12 +1013,6 @@
     </dependency>-->
     <!-- Is this needed? -->
     <!--<dependency>
-      <groupId>com.github.kklisura.cdt</groupId>
-      <artifactId>cdt-java-client</artifactId>
-      <version>${cdt.java.client.version}</version>
-    </dependency>-->
-    <!-- Is this needed? -->
-    <!--<dependency>
       <groupId>org.simplejavamail</groupId>
       <artifactId>simple-java-mail</artifactId>
       <version>${java.mail.version}</version>
@@ -1134,6 +1143,12 @@
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${thrift.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.kirviq</groupId>
+      <artifactId>dumbster</artifactId>
+      <version>${dumbster.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
