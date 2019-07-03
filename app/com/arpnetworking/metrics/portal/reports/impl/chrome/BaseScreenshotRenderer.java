@@ -87,7 +87,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
         final CompletableFuture<B> result = new CompletableFuture<>();
         dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
         dts.navigate(getURI(source).toString());
-        result.thenRun(dts::close);
+        result.whenComplete((x, e) -> dts.close());
         return result;
     }
 
