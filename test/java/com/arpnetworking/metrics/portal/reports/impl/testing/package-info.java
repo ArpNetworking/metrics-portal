@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
 package com.arpnetworking.metrics.portal.reports.impl.testing;
 
-import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 
-/**
- * Non-generic implementation of {@link RenderedReport.Builder}, for ease of mocking.
- *
- * @author Spencer Pearson (spencerpearson at dropbox dot com)
- */
-public abstract class MockRenderedReportBuilder
-        implements RenderedReport.Builder<MockRenderedReportBuilder, RenderedReport> {}
+import javax.annotation.ParametersAreNonnullByDefault;

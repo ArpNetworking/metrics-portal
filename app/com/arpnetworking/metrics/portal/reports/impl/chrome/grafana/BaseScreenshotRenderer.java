@@ -39,14 +39,15 @@ public abstract class BaseScreenshotRenderer<F extends ReportFormat>
         extends com.arpnetworking.metrics.portal.reports.impl.chrome.BaseScreenshotRenderer<GrafanaReportPanelReportSource, F> {
 
     /**
-     * todo.
-     * @param result todo.
-     * @param devToolsService todo.
-     * @param source todo.
-     * @param format todo.
-     * @param timeRange todo.
-     * @param builder todo.
-     * @param <B> todo.
+     * Like {@link #onLoad}, but called when the Grafana report panel has been populated.
+     *
+     * @param result as {@link #onLoad}
+     * @param devToolsService as {@link #onLoad}
+     * @param source as {@link #onLoad}
+     * @param format as {@link #onLoad}
+     * @param timeRange as {@link #onLoad}
+     * @param builder as {@link #onLoad}
+     * @param <B> as {@link #onLoad}
      */
     protected abstract <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
             CompletableFuture<B> result,

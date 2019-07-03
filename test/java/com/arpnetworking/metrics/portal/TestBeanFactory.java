@@ -22,8 +22,6 @@ import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import models.cassandra.Host;
 import models.internal.Context;
 import models.internal.MetricsSoftwareState;
@@ -177,6 +175,11 @@ public final class TestBeanFactory {
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Factory method for creating a {@link WebPageReportSource.Builder}.
+     *
+     * @return the builder.
+     */
     public static WebPageReportSource.Builder createWebPageReportSourceBuilder() {
         return new WebPageReportSource.Builder()
                 .setTitle(TEST_TITLE + UUID.randomUUID().toString())

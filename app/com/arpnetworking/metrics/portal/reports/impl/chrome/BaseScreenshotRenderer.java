@@ -41,27 +41,31 @@ import java.util.concurrent.CompletionStage;
 public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends ReportFormat> implements Renderer<S, F> {
 
     /**
-     * todo.
-     * @param source todo.
-     * @return todo.
+     * Get, for a given source, whether we can safely ignore a bad certificate.
+     *
+     * @param source the source we'll be rendering
+     * @return whether we can safely ignore a bad certificate
      */
     protected abstract boolean getIgnoreCertificateErrors(S source);
+
     /**
-     * todo.
-     * @param source todo.
-     * @return todo.
+     * Get the URI to visit in order to render a given source.
+     *
+     * @param source the source we'll be rendering
+     * @return the URI to visit
      */
     protected abstract URI getURI(S source);
 
     /**
-     * todo.
-     * @param result todo.
-     * @param devToolsService todo.
-     * @param source todo.
-     * @param format todo.
-     * @param timeRange todo.
-     * @param builder todo.
-     * @param <B> todo.
+     * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
+     *
+     * @param result a {@link CompletableFuture} to complete when the page has been rendered
+     * @param devToolsService a
+     * @param source the source being rendered
+     * @param format the format being rendered into
+     * @param timeRange the time range being reported on
+     * @param builder the {@link RenderedReport.Builder} to populate from the page
+     * @param <B> the specific type of builder
      */
     protected abstract <B extends RenderedReport.Builder<B, ?>> void onLoad(
             CompletableFuture<B> result,
@@ -83,6 +87,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
         final CompletableFuture<B> result = new CompletableFuture<>();
         dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
         dts.navigate(getURI(source).toString());
+        result.thenRun(dts::close);
         return result;
     }
 
