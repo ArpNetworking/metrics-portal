@@ -658,6 +658,12 @@
       <artifactId>play_${scala.package.version}</artifactId>
       <version>${play2.version}</version>
     </dependency>
+    <dependency>	
+      <groupId>com.typesafe.play</groupId>	
+      <artifactId>play-guice_${scala.package.version}</artifactId>	
+      <version>${play2.version}</version>	
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
       <artifactId>play-json_${scala.package.version}</artifactId>
