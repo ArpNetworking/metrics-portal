@@ -239,6 +239,7 @@
           <systemPropertyVariables>
             <dockerHostAddress>${docker.host.address}</dockerHostAddress>
           </systemPropertyVariables>
+          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
@@ -577,13 +578,8 @@
                   <port>+cassandra.host:9042:9042</port>
                 </ports>
                 <wait>
-                  <tcp>
-                    <mode>direct</mode>
-                    <ports>
-                      <port>7000</port>
-                    </ports>
-                  </tcp>
-                  <time>20000</time>
+                  <log>Starting listening for CQL clients on</log>
+                  <time>30000</time>
                 </wait>
               </run>
             </image>
@@ -603,6 +599,7 @@
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
                   <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
+                  <CASSANDRA_HOST>cassandra</CASSANDRA_HOST>
                 </env>
                 <dependsOn>
                   <container>postgres</container>
@@ -627,8 +624,7 @@
                     <method>GET</method>
                     <status>200</status>
                   </http>
-                  <!-- NOTE: The service is _really_ slow to start-up under native docker -->
-                  <time>150000</time>
+                  <time>30000</time>
                   <kill>1000</kill>
                 </wait>
               </run>
@@ -660,11 +656,6 @@
     <dependency>
       <groupId>com.typesafe.play</groupId>
       <artifactId>play_${scala.package.version}</artifactId>
-      <version>${play2.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.typesafe.play</groupId>
-      <artifactId>play-guice_${scala.package.version}</artifactId>
       <version>${play2.version}</version>
     </dependency>
     <dependency>

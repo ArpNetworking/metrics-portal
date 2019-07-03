@@ -19,6 +19,7 @@ import com.arpnetworking.pillar.PillarInitializer;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.datastax.driver.mapping.MappingManager;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
@@ -128,6 +129,7 @@ public class PillarModule extends AbstractModule {
                     .withPort(port)
                     .withCodecRegistry(_registryProvider.get())
                     .build();
+            cluster.getConfiguration().getCodecRegistry().register(InstantCodec.instance);
             _lifecycleProvider.get().addStopHook(() -> {
                 final CompletableFuture<Void> done = new CompletableFuture<>();
                 cluster.closeAsync().addListener(() -> done.complete(null), MoreExecutors.directExecutor());

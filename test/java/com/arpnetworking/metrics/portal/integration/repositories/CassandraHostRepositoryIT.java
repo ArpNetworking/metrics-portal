@@ -17,21 +17,18 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.hosts.impl.CassandraHostRepository;
+import com.arpnetworking.metrics.portal.integration.test.CassandraServerHelper;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultOrganization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import play.Application;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,9 +43,9 @@ public final class CassandraHostRepositoryIT {
 
     @Before
     public void setUp() {
-        final Session cassandraSession = null;
-        final MappingManager mappingManager = null;
-        _hostRepo = new CassandraHostRepository(cassandraSession, mappingManager);
+        final Session cassandraSession = CassandraServerHelper.createSession();
+        _mappingManager = new MappingManager(cassandraSession);
+        _hostRepo = new CassandraHostRepository(cassandraSession, _mappingManager);
         _hostRepo.open();
     }
 
@@ -59,19 +56,19 @@ public final class CassandraHostRepositoryIT {
 
     @Test
     public void testQueryForInvalidHost() {
-        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.newOrganization());
         query.partialHostname(Optional.of(UUID.randomUUID().toString()));
         assertEquals(0L, _hostRepo.queryHosts(query).total());
     }
 
     @Test
-    public void testQueryForValidName() throws IOException {
+    public void testQueryForValidName() {
         final String name = "testqueryvalid.example.com";
-        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost();
+        final Organization organization = TestBeanFactory.newOrganization();
+        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost(organization);
         cassandraHost.setName(name);
-        final Organization org = TestBeanFactory.organizationFrom(cassandraHost.getOrganization());
 
-        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(organization);
         query.partialHostname(Optional.of(cassandraHost.getName()));
         assertEquals(0L, _hostRepo.queryHosts(query).total());
 
@@ -85,21 +82,19 @@ public final class CassandraHostRepositoryIT {
 
     @Test
     public void testGetHostCountWithNoHost() {
-        assertEquals(0, _hostRepo.getHostCount(new DefaultOrganization.Builder().setId(UUID.randomUUID()).build()));
+        assertEquals(0, _hostRepo.getHostCount(TestBeanFactory.newOrganization()));
     }
 
     @Test
-    public void testGetHostCountWithMultipleHost() throws JsonProcessingException {
-        final Organization org = new DefaultOrganization.Builder().setId(UUID.randomUUID()).build();
+    public void testGetHostCountWithMultipleHost() {
+        final Organization org = TestBeanFactory.newOrganization();
         assertEquals(0, _hostRepo.getHostCount(org));
         final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
 
-        final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost();
-        cassandraHost1.setOrganization(org.getId());
+        final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost(org);
         mapper.save(cassandraHost1);
 
-        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost();
-        cassandraHost.setOrganization(org.getId());
+        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost(org);
         mapper.save(cassandraHost);
 
         assertEquals(2, _hostRepo.getHostCount(org));
@@ -169,5 +164,4 @@ public final class CassandraHostRepositoryIT {
 
     private CassandraHostRepository _hostRepo;
     private MappingManager _mappingManager;
-    private Application _app;
 }
