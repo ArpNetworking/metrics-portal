@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
@@ -33,6 +34,7 @@ import java.util.Optional;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@Loggable
 public final class PeriodicSchedule extends BaseSchedule {
 
     private final ChronoUnit _period;
