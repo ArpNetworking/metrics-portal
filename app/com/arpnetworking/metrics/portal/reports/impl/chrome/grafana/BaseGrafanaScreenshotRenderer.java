@@ -77,7 +77,6 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
             final TimeRange timeRange,
             final B builder
     ) {
-        devToolsService.nowOrOnEvent("reportrendered", () -> false, () -> System.out.println("did the thing!"));
         devToolsService.nowOrOnEvent(
                 "reportrendered",
                 () -> {
