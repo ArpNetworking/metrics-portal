@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -34,6 +35,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@Loggable
 public final class CachedJob<T> implements Job<T> {
     private final JobRef<T> _ref;
     private final PeriodicMetrics _periodicMetrics;
