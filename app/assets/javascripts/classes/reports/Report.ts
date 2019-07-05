@@ -21,7 +21,6 @@ import {
     BaseSourceViewModel,
     ReportFormat,
     ScheduleRepetition,
-    SourceType,
 } from "./Models";
 
 export default class Report {

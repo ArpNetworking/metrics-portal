@@ -202,7 +202,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
                     },
                 };
             default:
-                console.error('unrecognized SourceType: ' + this.type());
+                console.error(`unrecognized SourceType: ${this.type()}`);
         }
     }
 
