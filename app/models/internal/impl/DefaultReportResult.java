@@ -16,6 +16,7 @@
 
 package models.internal.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import models.internal.reports.Report;
 
 
@@ -24,6 +25,7 @@ import models.internal.reports.Report;
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  */
+@Loggable
 public final class DefaultReportResult implements Report.Result {
     /**
      * Default Constructor.

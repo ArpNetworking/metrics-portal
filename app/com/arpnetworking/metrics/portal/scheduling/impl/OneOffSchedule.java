@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 import java.time.Instant;
@@ -25,6 +26,7 @@ import java.util.Optional;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
+@Loggable
 public final class OneOffSchedule extends BaseSchedule {
 
     private OneOffSchedule(final Builder builder) {
