@@ -87,7 +87,6 @@ public class DevToolsServiceWrapper implements DevToolsService {
         });
         if (ready.get()) {
             result.complete(null);
-        } else {
         }
         return result;
     }
