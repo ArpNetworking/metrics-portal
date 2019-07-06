@@ -82,9 +82,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     @Override
     public CompletionStage<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
-        waitForEvent(eventName).thenAccept(foo -> {
-            result.complete(null);
-        });
+        waitForEvent(eventName).thenAccept(foo -> result.complete(null));
         if (ready.get()) {
             result.complete(null);
         }
