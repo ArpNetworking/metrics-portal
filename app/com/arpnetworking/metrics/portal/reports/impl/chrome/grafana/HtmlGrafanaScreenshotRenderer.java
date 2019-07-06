@@ -27,6 +27,7 @@ import models.internal.impl.HtmlReportFormat;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -36,8 +37,7 @@ import java.util.concurrent.CompletableFuture;
 public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRenderer<HtmlReportFormat> {
 
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
-            final CompletableFuture<B> result,
+    protected <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenReportRendered(
             final DevToolsService devToolsService,
             final GrafanaReportPanelReportSource source,
             final HtmlReportFormat format,
@@ -47,7 +47,7 @@ public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRe
         final String html = (String) devToolsService.evaluate(
                 "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
         );
-        result.complete(builder.setBytes(html.getBytes(StandardCharsets.UTF_8)));
+        return CompletableFuture.completedFuture(builder.setBytes(html.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

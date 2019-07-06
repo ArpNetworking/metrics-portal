@@ -26,7 +26,7 @@ import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.net.URI;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -39,18 +39,17 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
         extends com.arpnetworking.metrics.portal.reports.impl.chrome.BaseScreenshotRenderer<GrafanaReportPanelReportSource, F> {
 
     /**
-     * Like {@link #onLoad}, but called when the Grafana report panel has been populated.
+     * Like {@link #whenLoaded}, but called when the Grafana report panel has been populated.
      *
-     * @param result as {@link #onLoad}
-     * @param devToolsService as {@link #onLoad}
-     * @param source as {@link #onLoad}
-     * @param format as {@link #onLoad}
-     * @param timeRange as {@link #onLoad}
-     * @param builder as {@link #onLoad}
-     * @param <B> as {@link #onLoad}
+     * @param <B> as {@link #whenLoaded}
+     * @param devToolsService as {@link #whenLoaded}
+     * @param source as {@link #whenLoaded}
+     * @param format as {@link #whenLoaded}
+     * @param timeRange as {@link #whenLoaded}
+     * @param builder as {@link #whenLoaded}
+     * @return TODO(spencerpearson)
      */
-    protected abstract <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
-            CompletableFuture<B> result,
+    protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenReportRendered(
             DevToolsService devToolsService,
             GrafanaReportPanelReportSource source,
             F format,
@@ -69,24 +68,22 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     }
 
     @Override
-    public <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            final CompletableFuture<B> result,
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             final DevToolsService devToolsService,
             final GrafanaReportPanelReportSource source,
             final F format,
             final TimeRange timeRange,
             final B builder
     ) {
-        devToolsService.nowOrOnEvent(
+        return devToolsService.nowOrOnEvent(
                 "reportrendered",
                 () -> {
                     final Object html = devToolsService.evaluate(
                             "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
                     );
                     return (html instanceof String) && !((String) html).isEmpty();
-                },
-                () -> onReportRendered(result, devToolsService, source, format, timeRange, builder)
-        );
+                }
+        ).thenCompose(whatever -> whenReportRendered(devToolsService, source, format, timeRange, builder));
     }
 
     /**

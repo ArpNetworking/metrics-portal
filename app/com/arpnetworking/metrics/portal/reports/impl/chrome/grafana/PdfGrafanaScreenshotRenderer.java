@@ -27,6 +27,7 @@ import models.internal.impl.PdfReportFormat;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -45,26 +46,23 @@ public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRen
     }
 
     @Override
-    public <B extends RenderedReport.Builder<B, ?>> void onReportRendered(
-            final CompletableFuture<B> result,
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenReportRendered(
             final DevToolsService devToolsService,
             final GrafanaReportPanelReportSource source,
             final PdfReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        devToolsService.onEvent("pagereplacedwithreport", () -> {
-            final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
-            result.complete(builder.setBytes(pdf));
-        });
+        final CompletableFuture<B> result = new CompletableFuture<>();
         devToolsService.evaluate(
                 "(() => {\n"
                         + "  var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n"
                         + "  document.open(); document.write(body); document.close();\n"
-                        + "  setTimeout(() => window.dispatchEvent(new Event('pagereplacedwithreport')), 100);\n"
                         + "})();\n"
         );
-        result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
+        final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
+        result.complete(builder.setBytes(pdf));
+        return result;
     }
 
     /**

@@ -26,6 +26,7 @@ import models.internal.impl.WebPageReportSource;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as PDF.
@@ -45,15 +46,16 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
     }
 
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            final CompletableFuture<B> result,
+    protected <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             final DevToolsService devToolsService,
             final WebPageReportSource source,
             final PdfReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        result.complete(builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())));
+        return CompletableFuture.completedFuture(
+                builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches()))
+        );
     }
 
     /**

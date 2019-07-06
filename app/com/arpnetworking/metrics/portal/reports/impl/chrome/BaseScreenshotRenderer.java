@@ -27,7 +27,6 @@ import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -59,16 +58,15 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
      *
-     * @param result a {@link CompletableFuture} to complete when the page has been rendered
+     * @param <B> the specific type of builder
      * @param devToolsService a
      * @param source the source being rendered
      * @param format the format being rendered into
      * @param timeRange the time range being reported on
      * @param builder the {@link RenderedReport.Builder} to populate from the page
-     * @param <B> the specific type of builder
+     * @return TODO(spencerpearson).
      */
-    protected abstract <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            CompletableFuture<B> result,
+    protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             DevToolsService devToolsService,
             S source,
             F format,
@@ -84,11 +82,9 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
-        final CompletableFuture<B> result = new CompletableFuture<>();
-        dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
-        dts.navigate(getURI(source).toString());
-        result.whenComplete((x, e) -> dts.close());
-        return result;
+        return dts.navigate(getURI(source).toString())
+                .thenCompose(whatever -> whenLoaded(dts, source, format, timeRange, builder))
+                .whenComplete((x, e) -> dts.close());
     }
 
     /**

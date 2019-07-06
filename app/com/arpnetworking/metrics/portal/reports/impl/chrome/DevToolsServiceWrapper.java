@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Base64;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
  * Wraps a {@link com.github.kklisura.cdt.services.ChromeDevToolsService} to conform to the {@link DevToolsService} interface.
@@ -66,18 +69,31 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
-    public void navigate(final String url) {
-        _dts.getPage().navigate(url);
-    }
-
-    @Override
-    public void onLoad(final Runnable callback) {
+    public CompletionStage<Void> navigate(final String url) {
+        final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
-        _dts.getPage().onLoadEventFired(e -> callback.run());
+        _dts.getPage().onLoadEventFired(e -> {
+            result.complete(null);
+        });
+        _dts.getPage().navigate(url);
+        return result;
     }
 
     @Override
-    public void onEvent(final String eventName, final Runnable callback) {
+    public CompletionStage<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
+        final CompletableFuture<Void> result = new CompletableFuture<>();
+        waitForEvent(eventName).thenAccept(foo -> {
+            result.complete(null);
+        });
+        if (ready.get()) {
+            result.complete(null);
+        } else {
+        }
+        return result;
+    }
+
+    private CompletionStage<Void> waitForEvent(final String eventName) {
+        final CompletableFuture<Void> result = new CompletableFuture<>();
         final String triggerMessage = eventName + " -- " + UUID.randomUUID();
         final String jsonEventName, jsonTriggerMessage;
         try {
@@ -89,10 +105,11 @@ public class DevToolsServiceWrapper implements DevToolsService {
         _dts.getConsole().enable();
         _dts.getConsole().onMessageAdded(e -> {
             if (e.getMessage().getText().equals(triggerMessage)) {
-                callback.run();
+                result.complete(null);
             }
         });
         evaluate("window.addEventListener(" + jsonEventName + ", () => console.log(" + jsonTriggerMessage + "))");
+        return result;
     }
 
     @Override
