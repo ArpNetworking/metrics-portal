@@ -195,6 +195,15 @@ public final class TestBeanFactory {
     }
 
     /**
+     * Factory method to create an random organization.
+     *
+     * @return an organization
+     */
+    public static Organization newOrganization() {
+        return organizationFrom(UUID.randomUUID());
+    }
+
+    /**
      * Factory method to create an organization from a uuid.
      *
      * @param id uuid for organization
@@ -343,15 +352,15 @@ public final class TestBeanFactory {
     /**
      * Factory method for creating a cassandra host.
      *
+     * @param organization the {@link Organization} to create the host in
      * @return a cassandra host
      */
-    public static Host createCassandraHost() {
+    public static Host createCassandraHost(final Organization organization) {
         final Host host = new Host();
         host.setName(TEST_HOST + UUID.randomUUID().toString() + ".example.com");
         host.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
         host.setMetricsSoftwareState(MetricsSoftwareState.values()[RANDOM.nextInt(MetricsSoftwareState.values().length)].name());
-        // TODO(ville): This should use a random organization
-        host.setOrganization(getDefautOrganization().getId());
+        host.setOrganization(organization.getId());
         return host;
     }
 }
