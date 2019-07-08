@@ -53,7 +53,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * @param source the source we'll be rendering
      * @return the URI to visit
      */
-    protected abstract URI getURI(S source);
+    protected abstract URI getUri(S source);
 
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
@@ -82,7 +82,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
-        return dts.navigate(getURI(source).toString())
+        return dts.navigate(getUri(source).toString())
                 .thenCompose(whatever -> whenLoaded(dts, source, format, timeRange, builder))
                 .whenComplete((x, e) -> dts.close());
     }

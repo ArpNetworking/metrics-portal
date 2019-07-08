@@ -41,7 +41,7 @@ public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRen
     }
 
     @Override
-    public URI getURI(final GrafanaReportPanelReportSource source) {
+    public URI getUri(final GrafanaReportPanelReportSource source) {
         return source.getWebPageReportSource().getUri();
     }
 

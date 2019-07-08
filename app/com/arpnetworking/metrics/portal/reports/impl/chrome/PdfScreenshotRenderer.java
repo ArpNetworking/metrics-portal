@@ -41,7 +41,7 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
     }
 
     @Override
-    protected URI getURI(final WebPageReportSource source) {
+    protected URI getUri(final WebPageReportSource source) {
         return source.getUri();
     }
 

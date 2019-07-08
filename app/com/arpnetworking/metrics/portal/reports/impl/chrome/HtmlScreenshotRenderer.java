@@ -42,7 +42,7 @@ public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<WebPage
     }
 
     @Override
-    protected URI getURI(final WebPageReportSource source) {
+    protected URI getUri(final WebPageReportSource source) {
         return source.getUri();
     }
 

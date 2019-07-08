@@ -63,7 +63,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     }
 
     @Override
-    public URI getURI(final GrafanaReportPanelReportSource source) {
+    public URI getUri(final GrafanaReportPanelReportSource source) {
         return source.getWebPageReportSource().getUri();
     }
 
