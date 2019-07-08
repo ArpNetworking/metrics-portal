@@ -57,7 +57,8 @@ public class KairosDbServiceImpl implements KairosDbService {
 
 
     /**
-     * Public constructor. *
+     * Public constructor.
+     *
      * @param kairosDbClient Client to use to make requests to backend kairosdb
      * @param metricsFactory MetricsFactory instance for recording service metrics
      */
@@ -226,6 +227,7 @@ public class KairosDbServiceImpl implements KairosDbService {
                         .setName(metricName.substring(0, metricName.length() - 2))
                         .build();
             } else {
+                metrics.incrementCounter("kairosService/useRollups/bypass", 0);
                 final ImmutableList<String> filteredMetrics = filterMetricNames(metricNames, Optional.of(metricName), false);
                 final List<String> rollupMetrics = filteredMetrics
                         .stream()
