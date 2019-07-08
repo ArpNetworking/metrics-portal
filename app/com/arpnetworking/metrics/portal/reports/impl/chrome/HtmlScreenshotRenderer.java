@@ -26,6 +26,7 @@ import models.internal.impl.WebPageReportSource;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -34,15 +35,14 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            final CompletableFuture<B> result,
+    protected <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             final DevToolsService devToolsService,
             final WebPageReportSource source,
             final HtmlReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        result.complete(builder.setBytes(
+        return CompletableFuture.completedFuture(builder.setBytes(
                 ((String) devToolsService.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
         ));
     }

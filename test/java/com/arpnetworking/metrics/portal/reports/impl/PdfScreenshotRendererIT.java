@@ -15,15 +15,18 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.HtmlScreenshotRenderer;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.PdfScreenshotRenderer;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.PdfScreenshotRenderer;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
-import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.PdfReportFormat;
+import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -49,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests class {@link HtmlScreenshotRenderer}.
+ * Tests class {@link PdfScreenshotRenderer}.
  *
  * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
  * is marked {@code @Ignore}. If you want to run it manually, set {@link #CHROME_BINARY_PATH} as appropriate for your system first.
@@ -57,13 +60,11 @@ import static org.junit.Assert.fail;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Ignore
-public class HtmlScreenshotRendererIT {
+public class PdfScreenshotRendererIT {
     private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
-
-    private URI _baseURI;
 
     @Mock
     private MockRendereredReportBuilder _renderedReportBuilder;
@@ -71,14 +72,13 @@ public class HtmlScreenshotRendererIT {
     @BeforeClass
     public static void validateChromeBinaryPath() {
         if (CHROME_BINARY_PATH.isEmpty()) {
-            fail("set HtmlScreenshotRendererIT.CHROME_BINARY_PATH in order to run these tests");
+            fail("set PdfScreenshotRendererIT.CHROME_BINARY_PATH in order to run these tests");
         }
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _baseURI = new URI("http://localhost:" + _wireMock.port());
     }
 
     @Test
@@ -89,7 +89,7 @@ public class HtmlScreenshotRendererIT {
                         "no-sandbox", true
                 )
         ));
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(config);
         final WebPageReportSource source = new WebPageReportSource.Builder()
                 .setId(UUID.randomUUID())
                 .setUri(URI.create("http://localhost:" + _wireMock.port() + "/potato"))
@@ -105,9 +105,9 @@ public class HtmlScreenshotRendererIT {
                         )
         );
 
-        final CompletionStage<MockRendereredReportBuilder> stage = renderer.render(
+        final CompletionStage<PdfScreenshotRendererIT.MockRendereredReportBuilder> stage = renderer.render(
                 source,
-                new HtmlReportFormat.Builder().build(),
+                new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build(),
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
                 _renderedReportBuilder);
 
@@ -115,10 +115,10 @@ public class HtmlScreenshotRendererIT {
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(_renderedReportBuilder).setBytes(bytes.capture());
-        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
-        assertTrue(response.contains("here are some bytes"));
+        assertTrue(bytes.getValue().length > 0);
     }
 
+
     private abstract static class MockRendereredReportBuilder
-            implements RenderedReport.Builder<MockRendereredReportBuilder, RenderedReport> {}
+            implements RenderedReport.Builder<PdfScreenshotRendererIT.MockRendereredReportBuilder, RenderedReport> {}
 }

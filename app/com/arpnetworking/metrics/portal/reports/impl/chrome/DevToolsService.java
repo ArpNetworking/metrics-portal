@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
+
 /**
  * A relatively minimal interface for a Chrome tab's dev tools.
  *
@@ -43,26 +46,27 @@ public interface DevToolsService {
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
+     * @return TODO(spencerpearson).
      */
-    void navigate(String url);
-
-    /**
-     * Registers a callback to get registered whenever a page loads.
-     *
-     * @param callback The function to invoke.
-     */
-    void onLoad(Runnable callback);
-
-    /**
-     * Registers a callback to get called when a JavaScript event fires.
-     *
-     * @param eventName Name of the JavaScript event (e.g. "click").
-     * @param callback The function to call when the event fires.
-     */
-    void onEvent(String eventName, Runnable callback);
+    CompletionStage<Void> navigate(String url);
 
     /**
      * Closes the dev tools. After close() is called, any further interaction is illegal.
      */
     void close();
+
+    /**
+     * Run a callback when the given {@code eventName} fires, or immediately if it looks like the event has already fired.
+     *
+     * (Context: event handlers can only be registered on a page after it's finished loading.
+     * This introduces the possibility that the event you want to listen for will have <i>already happened</i> by the time
+     * you attach a listener for it. It's impossible in the general case to tell whether this has happened,
+     * but if you can reliably tell whether the event has fired, then you can ensure that you either catch the event
+     * <i>or</i> notice that it's already fired.
+     *
+     * @param eventName The name of the JavaScript event to listen for.
+     * @param ready Determine whether the event has already fired.
+     * @return TODO(spencerpearson).
+     */
+    CompletionStage<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
 }
