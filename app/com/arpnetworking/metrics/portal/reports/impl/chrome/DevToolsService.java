@@ -56,7 +56,7 @@ public interface DevToolsService {
     void close();
 
     /**
-     * Run a callback when the given {@code eventName} fires, or immediately if it looks like the event has already fired.
+     * Create a {@link CompletionStage} that completes when {@code eventName} fires, or immediately if the event has already fired.
      *
      * (Context: event handlers can only be registered on a page after it's finished loading.
      * This introduces the possibility that the event you want to listen for will have <i>already happened</i> by the time
