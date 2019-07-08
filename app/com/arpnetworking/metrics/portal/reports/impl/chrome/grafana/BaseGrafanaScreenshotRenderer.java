@@ -47,7 +47,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
      * @param format as {@link #whenLoaded}
      * @param timeRange as {@link #whenLoaded}
      * @param builder as {@link #whenLoaded}
-     * @return TODO(spencerpearson)
+     * @return a {@link CompletionStage} that completes when the builder has been populated
      */
     protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenReportRendered(
             DevToolsService devToolsService,
