@@ -15,17 +15,13 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
-import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.PdfScreenshotRenderer;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.PdfScreenshotRenderer;
-import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
-import models.internal.impl.PdfReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Before;
@@ -39,7 +35,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -61,7 +56,7 @@ import static org.junit.Assert.fail;
  */
 @Ignore
 public class PdfScreenshotRendererIT {
-    private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    private static final String CHROME_BINARY_PATH = "";
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());

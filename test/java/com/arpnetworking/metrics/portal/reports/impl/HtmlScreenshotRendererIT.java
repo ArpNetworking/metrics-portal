@@ -58,7 +58,7 @@ import static org.junit.Assert.fail;
  */
 @Ignore
 public class HtmlScreenshotRendererIT {
-    private static final String CHROME_BINARY_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+    private static final String CHROME_BINARY_PATH = "";
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
