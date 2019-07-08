@@ -46,7 +46,7 @@ public interface DevToolsService {
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
-     * @return TODO(spencerpearson).
+     * @return A {@link CompletionStage} that completes when the page has loaded.
      */
     CompletionStage<Void> navigate(String url);
 
@@ -66,7 +66,7 @@ public interface DevToolsService {
      *
      * @param eventName The name of the JavaScript event to listen for.
      * @param ready Determine whether the event has already fired.
-     * @return TODO(spencerpearson).
+     * @return A {@link CompletionStage} that completes when the event has fired (or immediately, if {@code ready} returns true).
      */
     CompletionStage<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
 }

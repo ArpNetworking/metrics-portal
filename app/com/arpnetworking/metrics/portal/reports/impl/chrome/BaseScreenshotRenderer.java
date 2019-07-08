@@ -40,13 +40,13 @@ import java.util.concurrent.CompletionStage;
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
      *
-     * @param <B> the specific type of builder
-     * @param devToolsService a
+     * @param <B> the specific type of {@link RenderedReport.Builder} to populate from the page
+     * @param devToolsService a {@link DevToolsService} connected to the page that just loaded
      * @param source the source being rendered
      * @param format the format being rendered into
      * @param timeRange the time range being reported on
      * @param builder the {@link RenderedReport.Builder} to populate from the page
-     * @return TODO(spencerpearson).
+     * @return a {@link CompletionStage} that completes when the builder has been populated
      */
     protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             DevToolsService devToolsService,
