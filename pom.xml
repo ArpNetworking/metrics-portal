@@ -127,8 +127,6 @@
     <!-- Test Dependency Versions -->
     <apache.http.client.version>4.5.6</apache.http.client.version>
     <apache.http.core.version>4.4.10</apache.http.core.version>
-    <cassandra.all.version>3.9</cassandra.all.version>
-    <cassandra.unit.version>3.1.3.2</cassandra.unit.version>
     <hamcrest.version>2.1</hamcrest.version>
     <jsonassert.version>1.5.0</jsonassert.version>
     <junit.version>4.12</junit.version>
@@ -161,7 +159,7 @@
     <!-- Checkstyle -->
     <checkstyleExtraSuppressions>${project.basedir}/extra-checkstyle-suppressions.xml</checkstyleExtraSuppressions>
 
-    <!-- Findbugs -->
+    <!-- Spotbugs -->
     <spotbugs.exclude>${project.basedir}/spotbugs.exclude.xml</spotbugs.exclude>
 
     <!-- Code Coverage -->
@@ -175,8 +173,10 @@
     <!-- Docker Overrides -->
     <skipDockerBuild>false</skipDockerBuild>
     <docker.skip.postgres>false</docker.skip.postgres>
+    <docker.skip.cassandra>false</docker.skip.cassandra>
     <docker.skip.metrics-portal>false</docker.skip.metrics-portal>
     <docker.postgres.version>10.7</docker.postgres.version>
+    <docker.cassandra.version>3.11</docker.cassandra.version>
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
@@ -239,6 +239,7 @@
           <systemPropertyVariables>
             <dockerHostAddress>${docker.host.address}</dockerHostAddress>
           </systemPropertyVariables>
+          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
@@ -561,6 +562,27 @@
                 </wait>
               </run>
             </image>
+            <!-- Cassandra -->
+            <image>
+              <name>cassandra:${docker.cassandra.version}</name>
+              <alias>cassandra</alias>
+              <run>
+                <skip>${docker.skip.cassandra}</skip>
+                <network>
+                  <mode>custom</mode>
+                  <name>metrics-portal-net</name>
+                  <alias>cassandra</alias>
+                </network>
+                <ports>
+                  <port>+cassandra.host:7000:7000</port>
+                  <port>+cassandra.host:9042:9042</port>
+                </ports>
+                <wait>
+                  <log>Starting listening for CQL clients on</log>
+                  <time>30000</time>
+                </wait>
+              </run>
+            </image>
             <!-- Metrics Portal -->
             <image>
               <name>arpnetworking/metrics-portal:${project.version}</name>
@@ -577,6 +599,7 @@
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
                   <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
                   <PG_HOST>postgres</PG_HOST>
+                  <CASSANDRA_HOST>cassandra</CASSANDRA_HOST>
                 </env>
                 <dependsOn>
                   <container>postgres</container>
@@ -601,8 +624,7 @@
                     <method>GET</method>
                     <status>200</status>
                   </http>
-                  <!-- NOTE: The service is _really_ slow to start-up under native docker -->
-                  <time>150000</time>
+                  <time>30000</time>
                   <kill>1000</kill>
                 </wait>
               </run>
@@ -636,10 +658,11 @@
       <artifactId>play_${scala.package.version}</artifactId>
       <version>${play2.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.typesafe.play</groupId>
-      <artifactId>play-guice_${scala.package.version}</artifactId>
-      <version>${play2.version}</version>
+    <dependency>	
+      <groupId>com.typesafe.play</groupId>	
+      <artifactId>play-guice_${scala.package.version}</artifactId>	
+      <version>${play2.version}</version>	
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
@@ -1125,18 +1148,6 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
       <version>${apache.http.core.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.cassandraunit</groupId>
-      <artifactId>cassandra-unit</artifactId>
-      <version>${cassandra.unit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cassandra</groupId>
-      <artifactId>cassandra-all</artifactId>
-      <version>${cassandra.all.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

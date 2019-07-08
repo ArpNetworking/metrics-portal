@@ -18,6 +18,7 @@ package com.arpnetworking.pillar;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
@@ -52,7 +53,17 @@ public class Configuration {
         }
     }
 
+    /**
+     * Public constructor.
+     *
+     * @param datastores Mapping of datastore name to {@link DatastoreConfig}
+     */
+    public Configuration(final Map<String, DatastoreConfig> datastores) {
+        _datastores = Maps.newHashMap(datastores);
+    }
+
     public Map<String, DatastoreConfig> getDatastores() {
+        // TODO(ville): This should be an immutable map.
         return _datastores;
     }
 
@@ -78,6 +89,25 @@ public class Configuration {
 
         public ObjectNode getReplication() {
             return _replication;
+        }
+
+        /**
+         * Public constructor.
+         *
+         * @param directory migration directory
+         * @param hosts list of hosts
+         * @param keyspace keyspace name
+         * @param replication replication configuration
+         */
+        public DatastoreConfig(
+                final Path directory,
+                final List<String> hosts,
+                final String keyspace,
+                final ObjectNode replication) {
+            _directory = directory;
+            _hosts = Lists.newArrayList(hosts);
+            _keyspace = keyspace;
+            _replication = replication;
         }
 
         private DatastoreConfig(final String dbName, final Config config) {

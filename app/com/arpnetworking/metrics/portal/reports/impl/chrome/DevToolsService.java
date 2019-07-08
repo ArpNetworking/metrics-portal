@@ -46,7 +46,7 @@ public interface DevToolsService {
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
-     * @return TODO(spencerpearson).
+     * @return A {@link CompletionStage} that completes when the page has loaded.
      */
     CompletionStage<Void> navigate(String url);
 
@@ -56,7 +56,7 @@ public interface DevToolsService {
     void close();
 
     /**
-     * Run a callback when the given {@code eventName} fires, or immediately if it looks like the event has already fired.
+     * Create a {@link CompletionStage} that completes when {@code eventName} fires, or immediately if the event has already fired.
      *
      * (Context: event handlers can only be registered on a page after it's finished loading.
      * This introduces the possibility that the event you want to listen for will have <i>already happened</i> by the time
@@ -66,7 +66,7 @@ public interface DevToolsService {
      *
      * @param eventName The name of the JavaScript event to listen for.
      * @param ready Determine whether the event has already fired.
-     * @return TODO(spencerpearson).
+     * @return A {@link CompletionStage} that completes when the event has fired (or immediately, if {@code ready} returns true).
      */
     CompletionStage<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
 }

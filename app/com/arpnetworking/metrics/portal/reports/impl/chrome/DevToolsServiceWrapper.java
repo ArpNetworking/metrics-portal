@@ -72,9 +72,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     public CompletionStage<Void> navigate(final String url) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
-        _dts.getPage().onLoadEventFired(e -> {
-            result.complete(null);
-        });
+        _dts.getPage().onLoadEventFired(e -> result.complete(null));
         _dts.getPage().navigate(url);
         return result;
     }

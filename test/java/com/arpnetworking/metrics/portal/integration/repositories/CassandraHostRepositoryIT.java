@@ -13,34 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.hosts.impl;
+package com.arpnetworking.metrics.portal.integration.repositories;
 
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
-import com.arpnetworking.metrics.portal.CassandraConnectionFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.hosts.impl.CassandraHostRepository;
+import com.arpnetworking.metrics.portal.integration.test.CassandraServerHelper;
+import com.datastax.driver.core.Session;
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.typesafe.config.ConfigFactory;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
-import models.internal.impl.DefaultOrganization;
-import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
-import play.Application;
-import play.inject.Injector;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.test.WithApplication;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,78 +37,38 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests class {@link com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository}.
  *
- * TODO(ville): Convert this to an integration test.
- *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-@Ignore
-@SuppressWarnings("deprecation")
-public final class CassandraHostRepositoryTest extends WithApplication {
-
-    @Override
-    protected Application provideApplication() {
-        final String clusterName = EmbeddedCassandraServerHelper.getClusterName();
-        final int port = EmbeddedCassandraServerHelper.getNativeTransportPort();
-        final String host = EmbeddedCassandraServerHelper.getHost();
-        _app = new GuiceApplicationBuilder()
-                .loadConfig(ConfigFactory.load("portal.application.conf"))
-                .configure("hostRepository.type", CassandraHostRepository.class.getName())
-                .configure(AkkaClusteringConfigFactory.generateConfiguration())
-                .configure(CassandraConnectionFactory.generateConfiguration(clusterName, "portal", host, port))
-                .build();
-        return _app;
-    }
-
-    @BeforeClass
-    public static void setupFixture() throws ConfigurationException, IOException, TTransportException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra(EmbeddedCassandraServerHelper.CASSANDRA_RNDPORT_YML_FILE, 30000);
-    }
-
+public final class CassandraHostRepositoryIT {
 
     @Before
     public void setUp() {
-        final Injector injector = _app.injector();
-        _mappingManager = injector.instanceOf(MappingManager.class);
-        _hostRepo = injector.instanceOf(CassandraHostRepository.class);
+        final Session cassandraSession = CassandraServerHelper.createSession();
+        _mappingManager = new MappingManager(cassandraSession);
+        _hostRepo = new CassandraHostRepository(cassandraSession, _mappingManager);
         _hostRepo.open();
     }
 
     @After
     public void tearDown() {
-        if (_hostRepo != null) {
-            _hostRepo.close();
-        }
-        final int maxTries = 10;
-        for (int x = 1; x <= maxTries; x++) {
-            try {
-                EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
-                break;
-                // CHECKSTYLE.OFF: IllegalCatch - Retry any runtime exceptions
-            } catch (final RuntimeException e) {
-                // CHECKSTYLE.ON
-                if (x == maxTries) {
-                    throw e;
-                }
-            }
-
-        }
+        _hostRepo.close();
     }
 
     @Test
     public void testQueryForInvalidHost() {
-        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.newOrganization());
         query.partialHostname(Optional.of(UUID.randomUUID().toString()));
         assertEquals(0L, _hostRepo.queryHosts(query).total());
     }
 
     @Test
-    public void testQueryForValidName() throws IOException {
+    public void testQueryForValidName() {
         final String name = "testqueryvalid.example.com";
-        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost();
+        final Organization organization = TestBeanFactory.newOrganization();
+        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost(organization);
         cassandraHost.setName(name);
-        final Organization org = TestBeanFactory.organizationFrom(cassandraHost.getOrganization());
 
-        final HostQuery query = _hostRepo.createHostQuery(TestBeanFactory.getDefautOrganization());
+        final HostQuery query = _hostRepo.createHostQuery(organization);
         query.partialHostname(Optional.of(cassandraHost.getName()));
         assertEquals(0L, _hostRepo.queryHosts(query).total());
 
@@ -134,21 +82,19 @@ public final class CassandraHostRepositoryTest extends WithApplication {
 
     @Test
     public void testGetHostCountWithNoHost() {
-        assertEquals(0, _hostRepo.getHostCount(new DefaultOrganization.Builder().setId(UUID.randomUUID()).build()));
+        assertEquals(0, _hostRepo.getHostCount(TestBeanFactory.newOrganization()));
     }
 
     @Test
-    public void testGetHostCountWithMultipleHost() throws JsonProcessingException {
-        final Organization org = new DefaultOrganization.Builder().setId(UUID.randomUUID()).build();
+    public void testGetHostCountWithMultipleHost() {
+        final Organization org = TestBeanFactory.newOrganization();
         assertEquals(0, _hostRepo.getHostCount(org));
         final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
 
-        final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost();
-        cassandraHost1.setOrganization(org.getId());
+        final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost(org);
         mapper.save(cassandraHost1);
 
-        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost();
-        cassandraHost.setOrganization(org.getId());
+        final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost(org);
         mapper.save(cassandraHost);
 
         assertEquals(2, _hostRepo.getHostCount(org));
@@ -218,5 +164,4 @@ public final class CassandraHostRepositoryTest extends WithApplication {
 
     private CassandraHostRepository _hostRepo;
     private MappingManager _mappingManager;
-    private Application _app;
 }
