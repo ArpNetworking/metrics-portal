@@ -17,15 +17,11 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
-import com.arpnetworking.metrics.portal.reports.impl.testing.Utils;
 import com.github.tomakehurst.wiremock.common.Strings;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -38,26 +34,21 @@ import java.util.concurrent.CompletionStage;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests class {@link HtmlScreenshotRenderer}.
  *
- * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
- * is marked {@code @Ignore}. If you want to run it manually, set {@link Utils#CHROME_PATH} as appropriate for your system first.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-@Ignore
-public class HtmlScreenshotRendererIT {
-    @Rule
-    public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+public class HtmlScreenshotRendererIT extends BaseChromeIT {
 
     @Test
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
-        final Config config = Utils.createChromeRendererConfig();
+        final Config config = CHROME_RENDERER_CONFIG;
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))

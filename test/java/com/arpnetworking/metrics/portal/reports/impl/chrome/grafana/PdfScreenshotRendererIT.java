@@ -16,15 +16,13 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeIT;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -38,27 +36,21 @@ import java.util.concurrent.TimeUnit;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests class {@link PdfGrafanaScreenshotRenderer}.
  *
- * This test-class is only meant to be run manually: it depends on Chrome, which not all environments are guaranteed to have, so this class
- * is marked {@code @Ignore}. If you want to run it manually, set
- * {@link com.arpnetworking.metrics.portal.reports.impl.testing.Utils#CHROME_PATH} as appropriate for your system first.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-@Ignore
-public class PdfScreenshotRendererIT {
-    @Rule
-    public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+public class PdfScreenshotRendererIT extends BaseChromeIT {
 
     @Test
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
-        final Config config = com.arpnetworking.metrics.portal.reports.impl.testing.Utils.createChromeRendererConfig();
+        final Config config = CHROME_RENDERER_CONFIG;
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
