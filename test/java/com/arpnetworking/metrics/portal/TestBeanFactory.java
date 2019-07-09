@@ -186,7 +186,7 @@ public final class TestBeanFactory {
                 .setId(UUID.randomUUID())
                 .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
                 .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
-                .setIgnoreCertificateErrors(true);
+                .setIgnoreCertificateErrors(false);
     }
 
     /**
