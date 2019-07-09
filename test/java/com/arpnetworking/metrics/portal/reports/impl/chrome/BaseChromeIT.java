@@ -26,6 +26,7 @@ import org.junit.Rule;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
@@ -57,16 +58,15 @@ public class BaseChromeIT {
     /**
      * Path to the Chrome binary to use for Chrome-renderer tests.
      */
-    private static final String CHROME_PATH = POSSIBLE_CHROME_PATHS.stream()
+    private static final Optional<String> CHROME_PATH = POSSIBLE_CHROME_PATHS.stream()
             .filter(BaseChromeIT::isPathExecutable)
-            .findFirst()
-            .orElse("<could not find Chrome>");
+            .findFirst();
 
     /**
      * Config to use to instantiate Chrome-based renderers.
      */
     protected static final Config CHROME_RENDERER_CONFIG = ConfigFactory.parseMap(ImmutableMap.of(
-            "chromePath", CHROME_PATH,
+            "chromePath", CHROME_PATH.orElse("<could not find Chrome>"),
             "chromeArgs", ImmutableMap.of(
                     "headless", true,
                     "no-sandbox", true
@@ -79,6 +79,6 @@ public class BaseChromeIT {
 
     @BeforeClass
     public static void setUpClass() {
-        Assume.assumeTrue("could not find Chrome in any likely location", isPathExecutable(CHROME_PATH));
+        Assume.assumeTrue("could not find Chrome in any likely location", CHROME_PATH.isPresent());
     }
 }
