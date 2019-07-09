@@ -26,7 +26,6 @@ import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -38,8 +37,18 @@ import java.util.concurrent.CompletionStage;
  */
 /* package private */ abstract class BaseScreenshotRenderer<F extends ReportFormat> implements Renderer<WebPageReportSource, F> {
 
-    abstract <B extends RenderedReport.Builder<B, ?>> void onLoad(
-            CompletableFuture<B> result,
+    /**
+     * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
+     *
+     * @param <B> the specific type of {@link RenderedReport.Builder} to populate from the page
+     * @param devToolsService a {@link DevToolsService} connected to the page that just loaded
+     * @param source the source being rendered
+     * @param format the format being rendered into
+     * @param timeRange the time range being reported on
+     * @param builder the {@link RenderedReport.Builder} to populate from the page
+     * @return a {@link CompletionStage} that completes when the builder has been populated
+     */
+    protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             DevToolsService devToolsService,
             WebPageReportSource source,
             F format,
@@ -55,10 +64,9 @@ import java.util.concurrent.CompletionStage;
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
-        final CompletableFuture<B> result = new CompletableFuture<>();
-        dts.onLoad(() -> onLoad(result, dts, source, format, timeRange, builder));
-        dts.navigate(source.getUri().toString());
-        return result;
+        return dts.navigate(source.getUri().toString())
+                .thenCompose(whatever -> whenLoaded(dts, source, format, timeRange, builder))
+                .whenComplete((x, e) -> dts.close());
     }
 
     /**
