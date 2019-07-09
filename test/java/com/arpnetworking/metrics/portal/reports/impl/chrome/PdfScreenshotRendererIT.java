@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -67,7 +68,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
                 builder);
 
-        stage.toCompletableFuture().get();
+        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
