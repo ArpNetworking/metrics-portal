@@ -65,7 +65,7 @@ public class BaseChromeIT {
     /**
      * Config to use to instantiate Chrome-based renderers.
      */
-    protected static Config CHROME_RENDERER_CONFIG = ConfigFactory.parseMap(ImmutableMap.of(
+    protected static final Config CHROME_RENDERER_CONFIG = ConfigFactory.parseMap(ImmutableMap.of(
             "chromePath", CHROME_PATH,
             "chromeArgs", ImmutableMap.of(
                     "headless", true,
