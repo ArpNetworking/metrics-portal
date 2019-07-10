@@ -139,7 +139,7 @@
     <aspectj.maven.plugin.version>1.8</aspectj.maven.plugin.version>
     <build.helper.maven.plugin.version>1.10</build.helper.maven.plugin.version>
     <commons.io.version>2.5</commons.io.version>
-    <docker.maven.plugin.version>0.29.0</docker.maven.plugin.version>
+    <docker.maven.plugin.version>0.30.0</docker.maven.plugin.version>
     <javassist.maven.plugin.version>0.1.2</javassist.maven.plugin.version>
     <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
@@ -172,9 +172,11 @@
 
     <!-- Docker Overrides -->
     <skipDockerBuild>false</skipDockerBuild>
+    <docker.skip.kairosdb>false</docker.skip.kairosdb>
     <docker.skip.postgres>false</docker.skip.postgres>
     <docker.skip.cassandra>false</docker.skip.cassandra>
     <docker.skip.metrics-portal>false</docker.skip.metrics-portal>
+    <docker.kairosdb.version>2.1.7</docker.kairosdb.version>
     <docker.postgres.version>10.7</docker.postgres.version>
     <docker.cassandra.version>3.11</docker.cassandra.version>
 
@@ -543,7 +545,7 @@
                   <alias>postgres</alias>
                 </network>
                 <ports>
-                  <port>+postgres.host:6432:5432</port>
+                  <port>+postgres.ip:6432:5432</port>
                 </ports>
                 <volumes>
                   <bind>
@@ -574,12 +576,37 @@
                   <alias>cassandra</alias>
                 </network>
                 <ports>
-                  <port>+cassandra.host:7000:7000</port>
-                  <port>+cassandra.host:9042:9042</port>
+                  <port>+cassandra.ip:7000:7000</port>
+                  <port>+cassandra.ip:9042:9042</port>
                 </ports>
                 <wait>
                   <log>Starting listening for CQL clients on</log>
                   <time>30000</time>
+                </wait>
+              </run>
+            </image>
+            <!-- KairosDb (with extensions) -->
+            <image>
+              <name>inscopemetrics/kairosdb-extensions:${docker.kairosdb.version}</name>
+              <alias>kairosdb</alias>
+              <run>
+                <skip>${docker.skip.kairosdb}</skip>
+                <network>
+                  <mode>custom</mode>
+                  <name>metrics-portal-net</name>
+                  <alias>kairosdb</alias>
+                </network>
+                <ports>
+                  <port>+kairosdb.ip:8082:8080</port>
+                </ports>
+                <wait>
+                  <http>
+                    <url>http://${kairosdb.ip}:8082/api/v1/health/status</url>
+                    <method>GET</method>
+                    <status>200</status>
+                  </http>
+                  <time>30000</time>
+                  <kill>1000</kill>
                 </wait>
               </run>
             </image>
@@ -598,11 +625,14 @@
                 <env>
                   <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
                   <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
+                  <KAIROSDB_HOST>kairosdb</KAIROSDB_HOST>
+                  <KAIROSDB_PORT>8080</KAIROSDB_PORT>
                   <PG_HOST>postgres</PG_HOST>
                   <CASSANDRA_HOST>cassandra</CASSANDRA_HOST>
                 </env>
                 <dependsOn>
                   <container>postgres</container>
+                  <container>kairosdb</container>
                 </dependsOn>
                 <network>
                   <mode>custom</mode>
