@@ -1,0 +1,9 @@
+{
+  "start_absolute": 0,
+  "metrics": [
+    {
+      "name": "foo_!",
+      "tags": {}
+    }
+  ]
+}
