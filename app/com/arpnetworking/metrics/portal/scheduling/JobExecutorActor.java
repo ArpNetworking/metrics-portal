@@ -200,6 +200,16 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                                     .setError(error)
                                     .setResult(result)
                                     .build();
+                        })
+                        .whenComplete((result, exception) -> {
+                            if (exception != null) {
+                                LOGGER.error()
+                                        .setMessage("job execution failed")
+                                        .addData("job", job)
+                                        .addData("scheduled", scheduled)
+                                        .setThrowable(exception)
+                                        .log();
+                            }
                         }),
                 getContext().dispatcher()
         ).to(getSelf());
