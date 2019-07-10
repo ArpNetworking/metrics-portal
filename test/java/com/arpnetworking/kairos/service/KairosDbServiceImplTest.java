@@ -80,6 +80,32 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
+    public void testFiltersRollupOverrideForTagsQueries() throws Exception {
+        when(_mockClient.queryMetricTags(any())).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testFiltersRollupOverrideForTagsQueries.backend_response"),
+                                MetricsQueryResponse.class)
+                )
+        );
+
+        _service.queryMetricTags(
+                OBJECT_MAPPER.readValue(
+                        readResource("testFiltersRollupOverrideForTagsQueries.request"),
+                        MetricsQuery.class)
+        );
+
+        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        verify(_mockClient, times(1)).queryMetricTags(captor.capture());
+        final MetricsQuery request = captor.getValue();
+        assertEquals(Instant.ofEpochMilli(0), request.getStartTime());
+        assertEquals(1, request.getMetrics().size());
+        final Metric metric = request.getMetrics().get(0);
+        assertEquals("foo", metric.getName());
+    }
+
+
+    @Test
     public void testFiltersRollupMetrics() throws Exception {
         final CompletionStage<KairosMetricNamesQueryResponse> future = _service.queryMetricNames(Optional.empty(), true);
         final KairosMetricNamesQueryResponse response = future.toCompletableFuture().get();
