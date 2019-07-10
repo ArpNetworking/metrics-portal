@@ -24,6 +24,7 @@ import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -33,7 +34,18 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<HtmlReportFormat> {
+public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<WebPageReportSource, HtmlReportFormat> {
+
+    @Override
+    protected boolean getIgnoreCertificateErrors(final WebPageReportSource source) {
+        return source.ignoresCertificateErrors();
+    }
+
+    @Override
+    protected URI getUri(final WebPageReportSource source) {
+        return source.getUri();
+    }
+
     @Override
     protected <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             final DevToolsService devToolsService,

@@ -22,20 +22,38 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
-import models.internal.impl.WebPageReportSource;
 import models.internal.reports.ReportFormat;
+import models.internal.reports.ReportSource;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
  *
+ * @param <S> the type of {@link ReportSource} to render
  * @param <F> the format to render into.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-/* package private */ abstract class BaseScreenshotRenderer<F extends ReportFormat> implements Renderer<WebPageReportSource, F> {
+public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends ReportFormat> implements Renderer<S, F> {
+
+    /**
+     * Get, for a given source, whether we can safely ignore a bad certificate.
+     *
+     * @param source the source we'll be rendering
+     * @return whether we can safely ignore a bad certificate
+     */
+    protected abstract boolean getIgnoreCertificateErrors(S source);
+
+    /**
+     * Get the URI to visit in order to render a given source.
+     *
+     * @param source the source we'll be rendering
+     * @return the URI to visit
+     */
+    protected abstract URI getUri(S source);
 
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
@@ -50,7 +68,7 @@ import java.util.concurrent.CompletionStage;
      */
     protected abstract <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
             DevToolsService devToolsService,
-            WebPageReportSource source,
+            S source,
             F format,
             TimeRange timeRange,
             B builder
@@ -58,13 +76,13 @@ import java.util.concurrent.CompletionStage;
 
     @Override
     public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
-            final WebPageReportSource source,
+            final S source,
             final F format,
             final TimeRange timeRange,
             final B builder
     ) {
-        final DevToolsService dts = _devToolsFactory.create(source.ignoresCertificateErrors(), _chromeArgs);
-        return dts.navigate(source.getUri().toString())
+        final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
+        return dts.navigate(getUri(source).toString())
                 .thenCompose(whatever -> whenLoaded(dts, source, format, timeRange, builder))
                 .whenComplete((x, e) -> dts.close());
     }
@@ -78,7 +96,7 @@ import java.util.concurrent.CompletionStage;
      * </ul>
      */
     @Inject
-    BaseScreenshotRenderer(@Assisted final Config config) {
+    protected BaseScreenshotRenderer(@Assisted final Config config) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }

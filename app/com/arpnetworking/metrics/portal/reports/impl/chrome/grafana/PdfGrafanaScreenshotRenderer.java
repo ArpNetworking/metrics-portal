@@ -14,48 +14,55 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.reports.impl.chrome;
+package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
-import models.internal.impl.WebPageReportSource;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Uses a headless Chrome instance to render a page as PDF.
+ * Uses a headless Chrome instance to render a page as HTML.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageReportSource, PdfReportFormat> {
-
+public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRenderer<PdfReportFormat> {
     @Override
-    protected boolean getIgnoreCertificateErrors(final WebPageReportSource source) {
-        return source.ignoresCertificateErrors();
+    public boolean getIgnoreCertificateErrors(final GrafanaReportPanelReportSource source) {
+        return source.getWebPageReportSource().ignoresCertificateErrors();
     }
 
     @Override
-    protected URI getUri(final WebPageReportSource source) {
-        return source.getUri();
+    public URI getUri(final GrafanaReportPanelReportSource source) {
+        return source.getWebPageReportSource().getUri();
     }
 
     @Override
-    protected <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenLoaded(
+    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> whenReportRendered(
             final DevToolsService devToolsService,
-            final WebPageReportSource source,
+            final GrafanaReportPanelReportSource source,
             final PdfReportFormat format,
             final TimeRange timeRange,
             final B builder
     ) {
-        return CompletableFuture.completedFuture(
-                builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches()))
+        final CompletableFuture<B> result = new CompletableFuture<>();
+        devToolsService.evaluate(
+                "(() => {\n"
+                        + "  var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n"
+                        + "  document.open(); document.write(body); document.close();\n"
+                        + "})();\n"
         );
+        final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
+        result.complete(builder.setBytes(pdf));
+        return result;
     }
 
     /**
@@ -67,7 +74,7 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
      * </ul>
      */
     @Inject
-    public PdfScreenshotRenderer(@Assisted final Config config) {
+    public PdfGrafanaScreenshotRenderer(@Assisted final Config config) {
         super(config);
     }
 }
