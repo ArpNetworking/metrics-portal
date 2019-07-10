@@ -44,7 +44,6 @@ export class BaseSourceViewModel {
     type = ko.observable<SourceType>(SourceType.WEB_PAGE);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
-    eventName = ko.observable<string>("");
     ignoreCertificateErrors = ko.observable<boolean>(false);
 
     public load(raw): this {
@@ -60,13 +59,11 @@ export class BaseSourceViewModel {
             case SourceType.WEB_PAGE:
                 this.url(raw.uri);
                 this.title(raw.title);
-                this.eventName(raw.triggeringEventName);
                 this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
                 break;
             case SourceType.GRAFANA:
                 this.url(raw.webPageReportSource.uri);
                 this.title(raw.webPageReportSource.title);
-                this.eventName(raw.webPageReportSource.triggeringEventName);
                 this.ignoreCertificateErrors(raw.webPageReportSource.ignoreCertificateErrors);
                 break;
         }

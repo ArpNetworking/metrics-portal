@@ -528,7 +528,6 @@ public final class DatabaseReportRepository implements ReportRepository {
             ebeanSource.setUuid(source.getId());
             ebeanSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
             ebeanSource.setUri(source.getUri());
-            ebeanSource.setTriggeringEventName(source.getTriggeringEventName());
             ebeanSource.setTitle(source.getTitle());
             return ebeanSource;
         }
@@ -539,7 +538,6 @@ public final class DatabaseReportRepository implements ReportRepository {
             ebeanSource.setUuid(source.getWebPageReportSource().getId());
             ebeanSource.setIgnoreCertificateErrors(source.getWebPageReportSource().ignoresCertificateErrors());
             ebeanSource.setUri(source.getWebPageReportSource().getUri());
-            ebeanSource.setTriggeringEventName(source.getWebPageReportSource().getTriggeringEventName());
             ebeanSource.setTitle(source.getWebPageReportSource().getTitle());
             return ebeanSource;
         }

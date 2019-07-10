@@ -67,14 +67,6 @@ public final class WebPageReportSource implements ReportSource {
         _ignoreCertificateErrors = value;
     }
 
-    public String getTriggeringEventName() {
-        return _triggeringEventName;
-    }
-
-    public void setTriggeringEventName(final String value) {
-        _triggeringEventName = value;
-    }
-
     @Override
     public models.internal.impl.WebPageReportSource toInternal() {
         return new models.internal.impl.WebPageReportSource.Builder()
@@ -82,7 +74,6 @@ public final class WebPageReportSource implements ReportSource {
                 .setUri(_uri)
                 .setTitle(_title)
                 .setIgnoreCertificateErrors(_ignoreCertificateErrors)
-                .setTriggeringEventName(_triggeringEventName)
                 .build();
     }
 
@@ -97,7 +88,6 @@ public final class WebPageReportSource implements ReportSource {
         viewSource.setId(source.getId());
         viewSource.setUri(source.getUri());
         viewSource.setTitle(source.getTitle());
-        viewSource.setTriggeringEventName(source.getTriggeringEventName());
         viewSource.setIgnoreCertificateErrors(source.ignoresCertificateErrors());
         return viewSource;
     }
@@ -109,7 +99,6 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
-                .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }
 
@@ -125,13 +114,12 @@ public final class WebPageReportSource implements ReportSource {
         return _ignoreCertificateErrors == otherWebPageReportSource._ignoreCertificateErrors
                 && Objects.equals(_id, otherWebPageReportSource._id)
                 && Objects.equals(_uri, otherWebPageReportSource._uri)
-                && Objects.equals(_title, otherWebPageReportSource._title)
-                && Objects.equals(_triggeringEventName, otherWebPageReportSource._triggeringEventName);
+                && Objects.equals(_title, otherWebPageReportSource._title);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _triggeringEventName);
+        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors);
     }
 
 
@@ -143,6 +131,4 @@ public final class WebPageReportSource implements ReportSource {
     private String _title;
     @JsonProperty("ignoreCertificateErrors")
     private boolean _ignoreCertificateErrors;
-    @JsonProperty("triggeringEventName")
-    private String _triggeringEventName;
 }

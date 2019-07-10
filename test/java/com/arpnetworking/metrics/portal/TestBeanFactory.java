@@ -69,7 +69,6 @@ public final class TestBeanFactory {
     private static final String TEST_NAME = "test-name";
     private static final String TEST_ETAG = "test-etag";
     private static final String TEST_TITLE = "test-title";
-    private static final String TEST_EVENT = "onload-";
     private static final List<Operator> OPERATORS = Arrays.asList(
             Operator.EQUAL_TO,
             Operator.GREATER_THAN,
@@ -183,7 +182,6 @@ public final class TestBeanFactory {
         return new WebPageReportSource.Builder()
                 .setTitle(TEST_TITLE + UUID.randomUUID().toString())
                 .setId(UUID.randomUUID())
-                .setTriggeringEventName(TEST_EVENT + UUID.randomUUID().toString())
                 .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
                 .setIgnoreCertificateErrors(false);
     }
