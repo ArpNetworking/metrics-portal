@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
-ALTER TABLE portal.report_schedules ADD COLUMN timeout_nanos BIGINT;
+ALTER TABLE portal.reports ADD COLUMN timeout_nanos BIGINT;
+UPDATE portal.reports SET timeout_nanos = 120e9;
