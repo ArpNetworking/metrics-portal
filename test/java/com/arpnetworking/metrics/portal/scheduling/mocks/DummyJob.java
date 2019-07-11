@@ -24,6 +24,7 @@ import models.internal.scheduling.Job;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +40,7 @@ import java.util.concurrent.CompletionStage;
 public final class DummyJob<T> implements Job<T> {
     private final UUID _uuid;
     private final Schedule _schedule;
+    private final Duration _timeout;
     private final Optional<T> _result;
     private final Optional<Throwable> _error;
     private final CompletionStage<?> _blocker;
@@ -46,6 +48,7 @@ public final class DummyJob<T> implements Job<T> {
     private DummyJob(final Builder<T> builder) {
         _uuid = builder._uuid;
         _schedule = builder._schedule;
+        _timeout = builder._timeout;
         _result = builder._result;
         _error = builder._error;
         _blocker = builder._blocker;
@@ -64,6 +67,11 @@ public final class DummyJob<T> implements Job<T> {
     @Override
     public Schedule getSchedule() {
         return _schedule;
+    }
+
+    @Override
+    public Duration getTimeout() {
+        return _timeout;
     }
 
     public Optional<T> getResult() {
@@ -101,6 +109,8 @@ public final class DummyJob<T> implements Job<T> {
         private UUID _uuid = UUID.randomUUID();
         @NotNull
         private Schedule _schedule;
+        @NotNull
+        private Duration _timeout;
         @ValidateWithMethod(methodName = "validateResultXorError", parameterType = Object.class)
         private Optional<T> _result = Optional.empty();
         private Optional<Throwable> _error = Optional.empty();
@@ -132,6 +142,17 @@ public final class DummyJob<T> implements Job<T> {
          */
         public Builder<T> setSchedule(final Schedule schedule) {
             _schedule = schedule;
+            return this;
+        }
+
+        /**
+         * Sets timeout.
+         *
+         * @param timeout timeout to set
+         * @return this builder
+         */
+        public Builder<T> setTimeout(final Duration timeout) {
+            _timeout = timeout;
             return this;
         }
 

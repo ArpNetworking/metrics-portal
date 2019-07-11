@@ -18,6 +18,7 @@ package models.internal.scheduling;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.inject.Injector;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +55,13 @@ public interface Job<T> {
     Schedule getSchedule();
 
     /**
+     * How long the job should be allowed to run before getting cancelled.
+     *
+     * @return The timeout duration.
+     */
+    Duration getTimeout(/*TODO(spencerpearson): more context? Instant scheduled?*/);
+
+    /**
      * Starts a particular instant's execution of the job running.
      *
      * @param injector A Guice injector to provide dependencies.
@@ -61,5 +69,6 @@ public interface Job<T> {
      * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
      */
     CompletionStage<? extends T> execute(Injector injector, Instant scheduled);
+    // ^ TODO(spencerpearson): does this want to be a CompletableFuture now that we allow timeouts?
 }
 
