@@ -49,16 +49,25 @@ export class BaseSourceViewModel {
 
     public load(raw): this {
         this.id(raw.id);
-        this.url(raw.uri);
-        this.title(raw.title);
-        this.eventName(raw.triggeringEventName);
-        this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
 
         const type = SourceType[raw.type as string];
         if (type === undefined) {
             throw new Error(`Unknown source type: ${raw.type}`);
         }
         this.type(type);
+
+        switch (type) {
+            case SourceType.WEB_PAGE:
+                this.url(raw.uri);
+                this.title(raw.title);
+                this.eventName(raw.triggeringEventName);
+                this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
+            case SourceType.GRAFANA:
+                this.url(raw.webPageReportSource.uri);
+                this.title(raw.webPageReportSource.title);
+                this.eventName(raw.webPageReportSource.triggeringEventName);
+                this.ignoreCertificateErrors(raw.webPageReportSource.ignoreCertificateErrors);
+        }
         return this;
     }
 }

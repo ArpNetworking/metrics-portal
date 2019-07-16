@@ -34,6 +34,9 @@ import javax.persistence.Entity;
 @Entity
 @DiscriminatorValue("WEB_PAGE")
 public class WebPageReportSource extends ReportSource {
+
+    public static final long serialVersionUID = 1;
+
     @Column(name = "url")
     private URI uri;
 
