@@ -642,6 +642,7 @@
                 <ports>
                   <port>+metrics-portal.ip:${debugJavaPort}:${debugJavaPort}</port>
                   <port>+metrics-portal.ip:8080:8080</port>
+                  <port>+metrics-portal.ip:48928:48928</port>
                 </ports>
                 <volumes>
                   <bind>
