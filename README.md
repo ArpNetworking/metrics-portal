@@ -284,6 +284,12 @@ then attach your IDE and finally run/debug the integration test from your IDE.
 * To run tests in your IDE which rely on EBean classes, you must first run `./jdk-wrapper.sh ./mvnw process-classes` on
 the command line to enhance the Ebean classes.
 
+### Debugging
+
+(See also the list of debug flags in [the Building section](#building).)
+
+* _Debugging Chrome-based reports._ With the default options in `portal.application.conf`, Chrome offers a remote debugger on port 48928, which you can access by visiting <chrome://inspect> in another Chrome instance and adding `localhost:48928` under "Discover network targets".
+
 ### IntelliJ
 
 The project can be imported normally using "File / New / Project From Existing Sources..." using the Maven aspect.
