@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
@@ -81,9 +83,25 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
                     final Object html = devToolsService.evaluate(
                             "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
                     );
-                    return (html instanceof String) && !((String) html).isEmpty();
+                    final boolean ready = (html instanceof String) && !((String) html).isEmpty();
+                    LOGGER.debug()
+                            .setMessage("checked for readiness")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .addData("ready", ready)
+                            .log();
+                    return ready;
                 }
-        ).thenCompose(whatever -> whenReportRendered(devToolsService, source, format, timeRange, builder));
+        ).thenCompose(whatever -> {
+            LOGGER.debug()
+                    .setMessage("reportrendered event received or detected")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .log();
+            return whenReportRendered(devToolsService, source, format, timeRange, builder);
+        });
     }
 
     /**
@@ -98,4 +116,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     /* package private */ BaseGrafanaScreenshotRenderer(@Assisted final Config config) {
         super(config);
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
+
 }

@@ -16,6 +16,8 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -72,7 +74,17 @@ public class DevToolsServiceWrapper implements DevToolsService {
     public CompletionStage<Void> navigate(final String url) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
-        _dts.getPage().onLoadEventFired(e -> result.complete(null));
+        _dts.getPage().onLoadEventFired(e -> {
+            LOGGER.debug()
+                    .setMessage("navigated to")
+                    .addData("url", url)
+                    .log();
+            result.complete(null);
+        });
+        LOGGER.debug()
+                .setMessage("navigating to")
+                .addData("url", url)
+                .log();
         _dts.getPage().navigate(url);
         return result;
     }
@@ -113,5 +125,6 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DevToolsServiceWrapper.class);
 
 }
