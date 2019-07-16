@@ -22,18 +22,21 @@ import {
     ReportFormat,
     ScheduleRepetition,
 } from "./Models";
+// @ts-ignore: import is valid
+import moment = require('moment-timezone/moment-timezone');
 
 export default class Report {
     id: string;
     name: string;
 
     schedule: ScheduleViewModel;
+    timeout: moment.Duration;
     source: SourceViewModel;
     recipients: RecipientViewModel[];
 
     editUri: string;
 
-    constructor(id: string, name: string, source: any, schedule: any, recipients: object[]) {
+    constructor(id: string, name: string, source: any, schedule: any, timeout: string, recipients: object[]) {
         this.id = id;
         this.name = name;
 
@@ -41,6 +44,7 @@ export default class Report {
             new RecipientViewModel().load(raw)
         );
         this.schedule = new ScheduleViewModel().load(schedule);
+        this.timeout = moment.duration(timeout);
         this.source = new SourceViewModel().load(source);
 
         this.editUri = `#report/edit/${this.id}`;

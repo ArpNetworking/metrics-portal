@@ -69,6 +69,14 @@ public final class Report {
         this._schedule = schedule;
     }
 
+    public Duration getTimeout() {
+        return _timeout;
+    }
+
+    public void setTimeout(final Duration timeout) {
+        this._timeout = timeout;
+    }
+
     public void setRecipients(final List<Recipient> recipients) {
         this._recipients = recipients;
     }
@@ -112,6 +120,7 @@ public final class Report {
         viewReport.setId(report.getId());
         viewReport.setName(report.getName());
         viewReport.setSource(ReportSource.fromInternal(report.getSource()));
+        viewReport.setTimeout(report.getTimeout());
         viewReport.setSchedule(Schedule.fromInternal(report.getSchedule()));
         final List<models.view.reports.Recipient> recipients =
                 report.getRecipientsByFormat()

@@ -39,6 +39,9 @@ class EditReportViewModel {
     name = ko.observable<string>("");
     source = new EditSourceViewModel();
     schedule = new EditScheduleViewModel();
+    timeout = ko.pureComputed<moment.Duration>(() => moment.duration(this.timeoutString()));
+
+    timeoutString = ko.observable<string>("");
 
     // Recipients
     recipients = ko.observableArray<EditRecipientViewModel>();
@@ -66,6 +69,7 @@ class EditReportViewModel {
             this.existingReport(true);
             this.source.load(rawReport.source);
             this.schedule.load(rawReport.schedule);
+            this.timeoutString(rawReport.timeout);
 
             rawReport.recipients.forEach((raw) => {
                 const model = new EditRecipientViewModel();
@@ -121,6 +125,7 @@ class EditReportViewModel {
             id: this.id(),
             name: this.name(),
             schedule: this.schedule.toRequest(),
+            timeout: this.timeout(),
             source: this.source.toRequest(),
             recipients: this.recipients().map((r) => r.toRequest()),
         }
@@ -129,6 +134,10 @@ class EditReportViewModel {
     readonly availableRecipientTypes = [
         {value: RecipientType.EMAIL,  text: "Email"},
     ];
+
+    readonly helpMessages = {
+        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution.",
+    }
 }
 
 class EditRecipientViewModel extends BaseRecipientViewModel {
@@ -170,7 +179,7 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
 
     readonly helpMessages = {
         format: "The format that will be delivered to this recipient. For example, a PDF attached to an email or " +
-            "some HTML rendered inline."
+            "some HTML rendered inline.",
     };
 }
 

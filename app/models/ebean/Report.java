@@ -231,7 +231,7 @@ public class Report {
                 .setName(name)
                 .setRecipients(internalRecipients)
                 .setSchedule(schedule.toInternal())
-                .setTimeout(Duration.ofSeconds(30))
+                .setTimeout(Duration.ofNanos(timeoutNanos))
                 .setReportSource(reportSource.toInternal())
                 .build();
     }
