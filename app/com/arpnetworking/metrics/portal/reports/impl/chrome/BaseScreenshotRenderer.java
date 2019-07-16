@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
@@ -82,9 +84,33 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder
     ) {
         final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
+        LOGGER.debug()
+                .setMessage("rendering")
+                .addData("source", source)
+                .addData("format", format)
+                .addData("timeRange", timeRange)
+                .log();
         return dts.navigate(getUri(source).toString())
-                .thenCompose(whatever -> whenLoaded(dts, source, format, timeRange, builder))
-                .whenComplete((x, e) -> dts.close());
+                .thenCompose(whatever -> {
+                    LOGGER.debug()
+                            .setMessage("page load completed")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .log();
+                    return whenLoaded(dts, source, format, timeRange, builder);
+                })
+                .whenComplete((x, e) -> {
+                    LOGGER.debug()
+                            .setMessage("rendering completed")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .addData("result", x)
+                            .addData("exception", e)
+                            .log();
+                    dts.close();
+                });
     }
 
     /**
@@ -103,4 +129,6 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
 
     private final DevToolsFactory _devToolsFactory;
     private final Map<String, Object> _chromeArgs;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
 }
