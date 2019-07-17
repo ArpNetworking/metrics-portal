@@ -23,6 +23,7 @@ import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import models.internal.scheduling.Job;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -140,6 +141,11 @@ public final class CachedJob<T> implements Job<T> {
     @Override
     public Schedule getSchedule() {
         return _cached.getSchedule();
+    }
+
+    @Override
+    public Duration getTimeout() {
+        return _cached.getTimeout();
     }
 
     @Override

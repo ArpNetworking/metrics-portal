@@ -24,6 +24,7 @@ import models.internal.impl.DefaultReport;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -91,6 +92,9 @@ public class Report {
     @JoinColumn(name = "report_schedule_id")
     private ReportSchedule schedule;
 
+    @Column(name = "timeout_nanos")
+    private long timeoutNanos;
+
     @SoftDelete
     @Column(name = "deleted")
     private boolean deleted;
@@ -145,6 +149,14 @@ public class Report {
 
     public void setSchedule(final ReportSchedule value) {
         schedule = value;
+    }
+
+    public long getTimeout() {
+        return timeoutNanos;
+    }
+
+    public void setTimeout(final long value) {
+        timeoutNanos = value;
     }
 
     public Set<Recipient> getRecipients() {
@@ -219,6 +231,7 @@ public class Report {
                 .setName(name)
                 .setRecipients(internalRecipients)
                 .setSchedule(schedule.toInternal())
+                .setTimeout(Duration.ofNanos(timeoutNanos))
                 .setReportSource(reportSource.toInternal())
                 .build();
     }

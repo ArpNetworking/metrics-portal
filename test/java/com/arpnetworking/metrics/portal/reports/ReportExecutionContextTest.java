@@ -93,6 +93,7 @@ public class ReportExecutionContextTest {
                     .build()
             )
             .setSchedule(new OneOffSchedule.Builder().setRunAtAndAfter(T0).build())
+            .setTimeout(Duration.ofSeconds(30))
             .setRecipients(ImmutableSetMultimap.<ReportFormat, Recipient>builder()
                     .put(HTML, ALICE)
                     .put(HTML, BOB)

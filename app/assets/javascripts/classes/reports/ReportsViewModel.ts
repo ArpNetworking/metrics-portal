@@ -31,6 +31,7 @@ class ReportsList extends PaginatedSearchableList<Report> {
                     rawReport.name,
                     rawReport.source,
                     rawReport.schedule,
+                    rawReport.timeout,
                     rawReport.recipients,
                 )
             });
@@ -42,7 +43,7 @@ class ReportsList extends PaginatedSearchableList<Report> {
 
 class ReportsViewModel {
     reports: ReportsList = new ReportsList();
-    deletingId: string = null
+    deletingId: string = null;
 
     constructor() {
         this.reports.query();

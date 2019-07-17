@@ -115,7 +115,11 @@ public final class JobExecutorActorTest {
 
     @Test
     public void testJobSuccess() {
-        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(T_0).setResult(123).build());
+        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setOneOffSchedule(T_0)
+                .setTimeout(Duration.ofSeconds(30))
+                .setResult(123)
+                .build());
         makeAndInitializeExecutorActor(j);
 
         Mockito.verify(_repo, Mockito.timeout(1000)).jobSucceeded(
@@ -128,7 +132,11 @@ public final class JobExecutorActorTest {
     @Test
     public void testJobFailure() {
         final Throwable error = new Throwable("huh");
-        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>().setOneOffSchedule(T_0).setError(error).build());
+        final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setOneOffSchedule(T_0)
+                .setTimeout(Duration.ofSeconds(30))
+                .setError(error)
+                .build());
         makeAndInitializeExecutorActor(j);
 
         Mockito.verify(_repo, Mockito.timeout(1000)).jobFailed(
@@ -143,6 +151,7 @@ public final class JobExecutorActorTest {
         final Job<Integer> j = addJobToRepo(
                 new DummyJob.Builder<Integer>()
                         .setOneOffSchedule(T_0.plus(Duration.ofMinutes(1)))
+                        .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
         makeAndInitializeExecutorActor(j);
@@ -159,6 +168,7 @@ public final class JobExecutorActorTest {
         final Instant startAt = T_0.minus(period.getDuration());
         final CompletableFuture<Void> blocker = new CompletableFuture<>();
         final DummyJob<Integer> job = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setTimeout(Duration.ofSeconds(30))
                 .setSchedule(new PeriodicSchedule.Builder()
                         .setRunAtAndAfter(startAt)
                         .setZone(ZoneId.of("UTC"))

@@ -40,6 +40,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -131,11 +132,13 @@ public class JobCoordinatorTest {
     public void testRunsAntiEntropy() {
         final Job<Integer> job1 = addJobToRepo(new DummyJob.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
+                .setTimeout(Duration.ofSeconds(30))
                 .setOneOffSchedule(T0)
                 .setResult(123)
                 .build());
         final Job<Integer> job2 = addJobToRepo(new DummyJob.Builder<Integer>()
                 .setId(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                .setTimeout(Duration.ofSeconds(30))
                 .setOneOffSchedule(T0)
                 .setResult(456)
                 .build());

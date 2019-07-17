@@ -32,6 +32,7 @@ import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
@@ -52,6 +53,7 @@ public final class DefaultReport implements Report {
         _eTag = Optional.ofNullable(builder._eTag);
         _name = builder._name;
         _schedule = builder._schedule;
+        _timeout = builder._timeout;
         _source = builder._source;
         _recipients = builder._recipients;
     }
@@ -74,6 +76,11 @@ public final class DefaultReport implements Report {
     @Override
     public Schedule getSchedule() {
         return _schedule;
+    }
+
+    @Override
+    public Duration getTimeout() {
+        return _timeout;
     }
 
     @Override
@@ -102,6 +109,7 @@ public final class DefaultReport implements Report {
                 .add("eTag", _eTag)
                 .add("name", _name)
                 .add("schedule", _schedule)
+                .add("timeout", _timeout)
                 .add("source", _source)
                 .add("recipients", _recipients)
                 .toString();
@@ -111,6 +119,7 @@ public final class DefaultReport implements Report {
     private final Optional<String> _eTag;
     private final String _name;
     private final Schedule _schedule;
+    private final Duration _timeout;
     private final ReportSource _source;
 
     private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
@@ -127,6 +136,7 @@ public final class DefaultReport implements Report {
         return Objects.equals(_id, that._id)
                 && Objects.equals(_name, that._name)
                 && Objects.equals(_schedule, that._schedule)
+                && Objects.equals(_timeout, that._timeout)
                 && Objects.equals(_source, that._source)
                 && Objects.equals(_recipients, that._recipients);
     }
@@ -194,6 +204,17 @@ public final class DefaultReport implements Report {
         }
 
         /**
+         * Set the report timeout. Required. Cannot be null.
+         *
+         * @param timeout The report timeout.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setTimeout(final Duration timeout) {
+            _timeout = timeout;
+            return this;
+        }
+
+        /**
          * Set the report source. Required. Cannot be null.
          *
          * @param source The report source.
@@ -227,6 +248,8 @@ public final class DefaultReport implements Report {
         private ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
         @NotNull
         private Schedule _schedule;
+        @NotNull
+        private Duration _timeout;
     }
 
 }

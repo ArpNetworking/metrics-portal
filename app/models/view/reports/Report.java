@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import models.internal.impl.DefaultReport;
 import models.view.scheduling.Schedule;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,14 @@ public final class Report {
         this._schedule = schedule;
     }
 
+    public Duration getTimeout() {
+        return _timeout;
+    }
+
+    public void setTimeout(final Duration timeout) {
+        this._timeout = timeout;
+    }
+
     public void setRecipients(final List<Recipient> recipients) {
         this._recipients = recipients;
     }
@@ -95,6 +104,7 @@ public final class Report {
                 .setName(_name)
                 .setReportSource(_source.toInternal())
                 .setSchedule(_schedule.toInternal())
+                .setTimeout(_timeout)
                 .setRecipients(internalRecipients)
                 .build();
     }
@@ -110,6 +120,7 @@ public final class Report {
         viewReport.setId(report.getId());
         viewReport.setName(report.getName());
         viewReport.setSource(ReportSource.fromInternal(report.getSource()));
+        viewReport.setTimeout(report.getTimeout());
         viewReport.setSchedule(Schedule.fromInternal(report.getSchedule()));
         final List<models.view.reports.Recipient> recipients =
                 report.getRecipientsByFormat()
@@ -143,6 +154,7 @@ public final class Report {
                 && Objects.equals(_name, otherReport._name)
                 && Objects.equals(_source, otherReport._source)
                 && Objects.equals(_schedule, otherReport._schedule)
+                && Objects.equals(_timeout, otherReport._timeout)
                 && Objects.equals(_recipients, otherReport._recipients);
     }
 
@@ -158,6 +170,7 @@ public final class Report {
                 .add("_name", _name)
                 .add("_source", _source)
                 .add("_schedule", _schedule)
+                .add("_timeout", _timeout)
                 .add("_recipients", _recipients)
                 .toString();
     }
@@ -166,5 +179,6 @@ public final class Report {
     private String _name;
     private ReportSource _source;
     private Schedule _schedule;
+    private Duration _timeout;
     private List<Recipient> _recipients;
 }
