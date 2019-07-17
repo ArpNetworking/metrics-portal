@@ -41,7 +41,7 @@ class EditReportViewModel {
     schedule = new EditScheduleViewModel();
     timeout = ko.pureComputed<moment.Duration>(() => moment.duration(this.timeoutString()));
 
-    timeoutString = ko.observable<string>("");
+    timeoutString = ko.observable<string>("PT10M");
 
     // Recipients
     recipients = ko.observableArray<EditRecipientViewModel>();
@@ -136,7 +136,7 @@ class EditReportViewModel {
     ];
 
     readonly helpMessages = {
-        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution.",
+        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
     }
 }
 

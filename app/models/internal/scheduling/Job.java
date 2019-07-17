@@ -59,7 +59,7 @@ public interface Job<T> {
      *
      * @return The timeout duration.
      */
-    Duration getTimeout(/*TODO(spencerpearson): more context? Instant scheduled?*/);
+    Duration getTimeout();
 
     /**
      * Starts a particular instant's execution of the job running.
@@ -69,6 +69,6 @@ public interface Job<T> {
      * @return A {@link CompletionStage} that completes with the job's result, or with the exception the job encounters (if any).
      */
     CompletionStage<? extends T> execute(Injector injector, Instant scheduled);
-    // ^ TODO(spencerpearson): does this want to be a CompletableFuture now that we allow timeouts?
+    // ^ TODO(spencerpearson): change this signature so it can respect timeouts
 }
 
