@@ -62,11 +62,13 @@ export class BaseSourceViewModel {
                 this.title(raw.title);
                 this.eventName(raw.triggeringEventName);
                 this.ignoreCertificateErrors(raw.ignoreCertificateErrors);
+                break;
             case SourceType.GRAFANA:
                 this.url(raw.webPageReportSource.uri);
                 this.title(raw.webPageReportSource.title);
                 this.eventName(raw.webPageReportSource.triggeringEventName);
                 this.ignoreCertificateErrors(raw.webPageReportSource.ignoreCertificateErrors);
+                break;
         }
         return this;
     }
