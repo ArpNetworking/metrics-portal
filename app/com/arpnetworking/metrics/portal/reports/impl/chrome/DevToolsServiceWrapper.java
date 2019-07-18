@@ -81,12 +81,14 @@ public class DevToolsServiceWrapper implements DevToolsService {
                     .log();
             result.complete(null);
         });
-        LOGGER.debug()
-                .setMessage("navigating to")
-                .addData("url", url)
-                .log();
-        _dts.getPage().navigate(url);
-        return result;
+        return CompletableFuture.supplyAsync(() -> {
+            LOGGER.debug()
+                    .setMessage("navigating to")
+                    .addData("url", url)
+                    .log();
+            _dts.getPage().navigate(url);
+            return null;
+        }).thenCompose(nothing -> result);
     }
 
     @Override

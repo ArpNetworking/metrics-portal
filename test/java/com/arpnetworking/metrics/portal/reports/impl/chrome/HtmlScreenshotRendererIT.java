@@ -22,13 +22,16 @@ import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -68,7 +71,9 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
                 source,
                 format,
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
-                builder);
+                builder,
+                Duration.ofSeconds(15)
+        );
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 
@@ -76,5 +81,41 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         Mockito.verify(builder).setBytes(bytes.capture());
         final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
         assertTrue(response.contains("here are some bytes"));
+    }
+
+    @Test
+    public void testTimeout() throws Exception {
+        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final Config config = CHROME_RENDERER_CONFIG;
+
+        _wireMock.givenThat(
+                get(urlEqualTo("/"))
+                        .willReturn(aResponse()
+                                .withBody("here are some bytes")
+                                .withFixedDelay(1000)
+                        )
+        );
+
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
+                .setUri(URI.create("http://localhost:" + _wireMock.port()))
+                .build();
+
+        final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
+                source,
+                format,
+                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                builder,
+                Duration.ofMillis(500)
+        );
+
+        boolean cancelled = false;
+        try {
+            stage.toCompletableFuture().get(1, TimeUnit.SECONDS);
+        } catch (final CancellationException exception) {
+            cancelled = true;
+        }
+        Assert.assertTrue("render().get() should have thrown a CancellationException", cancelled);
     }
 }

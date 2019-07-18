@@ -26,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -66,7 +67,9 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
                 source,
                 format,
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
-                builder);
+                builder,
+                Duration.ofSeconds(15)
+        );
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 

@@ -20,6 +20,7 @@ import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -38,6 +39,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * @param format The format to render into.
      * @param timeRange The time range to describe in the report.
      * @param builder Will be used to construct a report. All implementations of {@code render} must call `setBytes()`.
+     * @param timeout How long the renderer should be allowed to run before aborting.
      * @param <B> The type of builder provided.
      * @return A {@link CompletionStage} that completes when the report has been rendered.
      */
@@ -45,6 +47,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
             S source,
             F format,
             TimeRange timeRange,
-            B builder
+            B builder,
+            Duration timeout
     );
 }

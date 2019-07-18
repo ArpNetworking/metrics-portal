@@ -28,8 +28,12 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -40,6 +44,8 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends ReportFormat> implements Renderer<S, F> {
+
+    private static final ScheduledThreadPoolExecutor TIMEOUT_EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
      * Get, for a given source, whether we can safely ignore a bad certificate.
@@ -81,7 +87,8 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final S source,
             final F format,
             final TimeRange timeRange,
-            final B builder
+            final B builder,
+            final Duration timeout
     ) {
         final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
         LOGGER.debug()
@@ -90,7 +97,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        return dts.navigate(getUri(source).toString())
+        final CompletableFuture<B> result = dts.navigate(getUri(source).toString())
                 .thenCompose(whatever -> {
                     LOGGER.debug()
                             .setMessage("page load completed")
@@ -100,17 +107,23 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                             .log();
                     return whenLoaded(dts, source, format, timeRange, builder);
                 })
-                .whenComplete((x, e) -> {
-                    LOGGER.debug()
-                            .setMessage("rendering completed")
-                            .addData("source", source)
-                            .addData("format", format)
-                            .addData("timeRange", timeRange)
-                            .addData("result", x)
-                            .addData("exception", e)
-                            .log();
-                    dts.close();
-                });
+                .toCompletableFuture();
+
+        result.whenComplete((x, e) -> {
+            LOGGER.debug()
+                    .setMessage("rendering completed")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .addData("result", x)
+                    .addData("exception", e)
+                    .log();
+            dts.close();
+        });
+
+        TIMEOUT_EXECUTOR.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+
+        return result;
     }
 
     /**
