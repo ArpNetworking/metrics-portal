@@ -53,7 +53,8 @@ public final class DefaultReport implements Report {
         _eTag = Optional.ofNullable(builder._eTag);
         _name = builder._name;
         _schedule = builder._schedule;
-        _timeout = builder._timeout;
+        _renderTimeout = builder._renderTimeout;
+        _sendTimeout = builder._sendTimeout;
         _source = builder._source;
         _recipients = builder._recipients;
     }
@@ -80,7 +81,17 @@ public final class DefaultReport implements Report {
 
     @Override
     public Duration getTimeout() {
-        return _timeout;
+        return _renderTimeout.plus(_sendTimeout).plus(TIMEOUT_SLOP);
+    }
+
+    @Override
+    public Duration getRenderTimeout() {
+        return _renderTimeout;
+    }
+
+    @Override
+    public Duration getSendTimeout() {
+        return _sendTimeout;
     }
 
     @Override
@@ -109,7 +120,8 @@ public final class DefaultReport implements Report {
                 .add("eTag", _eTag)
                 .add("name", _name)
                 .add("schedule", _schedule)
-                .add("timeout", _timeout)
+                .add("renderTimeout", _renderTimeout)
+                .add("sendTimeout", _sendTimeout)
                 .add("source", _source)
                 .add("recipients", _recipients)
                 .toString();
@@ -119,10 +131,16 @@ public final class DefaultReport implements Report {
     private final Optional<String> _eTag;
     private final String _name;
     private final Schedule _schedule;
-    private final Duration _timeout;
+    private final Duration _renderTimeout;
+    private final Duration _sendTimeout;
     private final ReportSource _source;
 
     private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
+
+    /**
+     * Running a job involves: rendering it;
+     */
+    private static final Duration TIMEOUT_SLOP = Duration.ofSeconds(5);
 
     @Override
     public boolean equals(final Object o) {
@@ -136,14 +154,15 @@ public final class DefaultReport implements Report {
         return Objects.equals(_id, that._id)
                 && Objects.equals(_name, that._name)
                 && Objects.equals(_schedule, that._schedule)
-                && Objects.equals(_timeout, that._timeout)
+                && Objects.equals(_renderTimeout, that._renderTimeout)
+                && Objects.equals(_sendTimeout, that._sendTimeout)
                 && Objects.equals(_source, that._source)
                 && Objects.equals(_recipients, that._recipients);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _name, _schedule, _source, _recipients);
+        return Objects.hash(_id, _name, _schedule, _renderTimeout, _sendTimeout, _source, _recipients);
     }
 
     /**
@@ -204,13 +223,24 @@ public final class DefaultReport implements Report {
         }
 
         /**
-         * Set the report timeout. Required. Cannot be null.
+         * Set the report render timeout. Required. Cannot be null.
          *
-         * @param timeout The report timeout.
+         * @param renderTimeout The report timeout.
          * @return This instance of {@code Builder}.
          */
-        public Builder setTimeout(final Duration timeout) {
-            _timeout = timeout;
+        public Builder setRenderTimeout(final Duration renderTimeout) {
+            _renderTimeout = renderTimeout;
+            return this;
+        }
+
+        /**
+         * Set the report send timeout. Required. Cannot be null.
+         *
+         * @param sendTimeout The report timeout.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setSendTimeout(final Duration sendTimeout) {
+            _sendTimeout = sendTimeout;
             return this;
         }
 
@@ -249,7 +279,9 @@ public final class DefaultReport implements Report {
         @NotNull
         private Schedule _schedule;
         @NotNull
-        private Duration _timeout;
+        private Duration _renderTimeout;
+        @NotNull
+        private Duration _sendTimeout;
     }
 
 }

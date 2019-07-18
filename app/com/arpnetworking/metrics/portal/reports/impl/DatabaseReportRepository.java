@@ -453,7 +453,8 @@ public final class DatabaseReportRepository implements ReportRepository {
         beanReport.setUuid(internalReport.getId());
         beanReport.setName(internalReport.getName());
         beanReport.setSchedule(schedule);
-        beanReport.setTimeout(internalReport.getTimeout().toNanos());
+        beanReport.setRenderTimeout(internalReport.getRenderTimeout().toNanos());
+        beanReport.setSendTimeout(internalReport.getSendTimeout().toNanos());
         beanReport.setReportSource(source);
         beanReport.setRecipients(internalModelToBean(internalReport.getRecipientsByFormat()));
         return beanReport;

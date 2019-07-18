@@ -92,8 +92,11 @@ public class Report {
     @JoinColumn(name = "report_schedule_id")
     private ReportSchedule schedule;
 
-    @Column(name = "timeout_nanos")
-    private long timeoutNanos;
+    @Column(name = "render_timeout_nanos")
+    private long renderTimeoutNanos;
+
+    @Column(name = "send_timeout_nanos")
+    private long sendTimeoutNanos;
 
     @SoftDelete
     @Column(name = "deleted")
@@ -151,12 +154,20 @@ public class Report {
         schedule = value;
     }
 
-    public long getTimeout() {
-        return timeoutNanos;
+    public long getRenderTimeout() {
+        return renderTimeoutNanos;
     }
 
-    public void setTimeout(final long value) {
-        timeoutNanos = value;
+    public void setRenderTimeout(final long value) {
+        renderTimeoutNanos = value;
+    }
+
+    public long getSendTimeout() {
+        return sendTimeoutNanos;
+    }
+
+    public void setSendTimeout(final long value) {
+        sendTimeoutNanos = value;
     }
 
     public Set<Recipient> getRecipients() {
@@ -231,7 +242,8 @@ public class Report {
                 .setName(name)
                 .setRecipients(internalRecipients)
                 .setSchedule(schedule.toInternal())
-                .setTimeout(Duration.ofNanos(timeoutNanos))
+                .setRenderTimeout(Duration.ofNanos(renderTimeoutNanos))
+                .setSendTimeout(Duration.ofNanos(sendTimeoutNanos))
                 .setReportSource(reportSource.toInternal())
                 .build();
     }

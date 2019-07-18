@@ -30,13 +30,14 @@ export default class Report {
     name: string;
 
     schedule: ScheduleViewModel;
-    timeout: moment.Duration;
+    renderTimeout: moment.Duration;
+    sendTimeout: moment.Duration;
     source: SourceViewModel;
     recipients: RecipientViewModel[];
 
     editUri: string;
 
-    constructor(id: string, name: string, source: any, schedule: any, timeout: string, recipients: object[]) {
+    constructor(id: string, name: string, source: any, schedule: any, renderTimeout: string, sendTimeout: string, recipients: object[]) {
         this.id = id;
         this.name = name;
 
@@ -44,7 +45,8 @@ export default class Report {
             new RecipientViewModel().load(raw)
         );
         this.schedule = new ScheduleViewModel().load(schedule);
-        this.timeout = moment.duration(timeout);
+        this.renderTimeout = moment.duration(renderTimeout);
+        this.sendTimeout = moment.duration(sendTimeout);
         this.source = new SourceViewModel().load(source);
 
         this.editUri = `#report/edit/${this.id}`;

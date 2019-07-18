@@ -39,9 +39,11 @@ class EditReportViewModel {
     name = ko.observable<string>("");
     source = new EditSourceViewModel();
     schedule = new EditScheduleViewModel();
-    timeout = ko.pureComputed<moment.Duration>(() => moment.duration(this.timeoutString()));
+    renderTimeout = ko.pureComputed<moment.Duration>(() => moment.duration(this.renderTimeoutString()));
+    sendTimeout = ko.pureComputed<moment.Duration>(() => moment.duration(this.sendTimeoutString()));
 
-    timeoutString = ko.observable<string>("PT10M");
+    renderTimeoutString = ko.observable<string>("PT10M");
+    sendTimeoutString = ko.observable<string>("PT10S");
 
     // Recipients
     recipients = ko.observableArray<EditRecipientViewModel>();
@@ -69,7 +71,8 @@ class EditReportViewModel {
             this.existingReport(true);
             this.source.load(rawReport.source);
             this.schedule.load(rawReport.schedule);
-            this.timeoutString(rawReport.timeout);
+            this.renderTimeoutString(rawReport.renderTimeout);
+            this.sendTimeoutString(rawReport.sendTimeout);
 
             rawReport.recipients.forEach((raw) => {
                 const model = new EditRecipientViewModel();
@@ -125,7 +128,8 @@ class EditReportViewModel {
             id: this.id(),
             name: this.name(),
             schedule: this.schedule.toRequest(),
-            timeout: this.timeout(),
+            renderTimeout: this.renderTimeout(),
+            sendTimeout: this.sendTimeout(),
             source: this.source.toRequest(),
             recipients: this.recipients().map((r) => r.toRequest()),
         }
@@ -136,7 +140,8 @@ class EditReportViewModel {
     ];
 
     readonly helpMessages = {
-        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
+        renderTimeout: "Time that can be spent rendering the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
+        sendTimeout: "Time that can be spent sending the report to its recipients before forcibly halting execution. HH:MM:SS or ISO-8601.",
     }
 }
 

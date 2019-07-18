@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.impl.DefaultReportResult;
 import models.internal.scheduling.Job;
 
+import java.time.Duration;
 import java.util.Collection;
 
 /**
@@ -50,6 +51,20 @@ public interface Report extends Job<Report.Result> {
      * @return A mapping of each {@link ReportFormat} to its recipients
      */
     ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat();
+
+    /**
+     * Get the duration to wait for this report to render.
+     *
+     * @return The the source for this report.
+     */
+    Duration getRenderTimeout();
+
+    /**
+     * Get the duration to wait for this report to send.
+     *
+     * @return The the source for this report.
+     */
+    Duration getSendTimeout();
 
     /**
      * Internal model for a result created from a report.

@@ -31,7 +31,8 @@ class ReportsList extends PaginatedSearchableList<Report> {
                     rawReport.name,
                     rawReport.source,
                     rawReport.schedule,
-                    rawReport.timeout,
+                    rawReport.renderTimeout,
+                    rawReport.sendTimeout,
                     rawReport.recipients,
                 )
             });

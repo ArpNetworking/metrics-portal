@@ -137,7 +137,8 @@ public final class TestBeanFactory {
                 .setId(UUID.randomUUID())
                 .setETag(TEST_ETAG + UUID.randomUUID().toString())
                 .setName(TEST_NAME + UUID.randomUUID().toString())
-                .setTimeout(Duration.ofSeconds(1 + RANDOM.nextInt(120)))
+                .setRenderTimeout(Duration.ofSeconds(1 + RANDOM.nextInt(120)))
+                .setSendTimeout(Duration.ofSeconds(1 + RANDOM.nextInt(120)))
                 .setRecipients(ImmutableSetMultimap.of(
                         format,
                         new DefaultRecipient.Builder()

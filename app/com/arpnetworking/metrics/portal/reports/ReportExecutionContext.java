@@ -135,7 +135,7 @@ public final class ReportExecutionContext {
                                         .setFormat(format)
                                         .setGeneratedAt(_clock.instant())
                                         .setTimeRange(timeRange),
-                                report.getTimeout()
+                                report.getRenderTimeout()
                         )
                         .thenApply(builder -> result.put(format, builder.build()))
                         .toCompletableFuture())
@@ -163,7 +163,7 @@ public final class ReportExecutionContext {
                 .entrySet()
                 .stream()
                 .map(entry -> getSender(entry.getKey())
-                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()), report.getTimeout())
+                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()), report.getSendTimeout())
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);

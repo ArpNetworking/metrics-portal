@@ -29,11 +29,19 @@
                     <input class="form-control" data-bind="value: name" type="text" id="nameInput" placeholder="Name">
                 </div>
                 <div class="form-group">
-                    <label for="timeoutString">Timeout</label>
+                    <label for="renderTimeoutString">Rendering Timeout</label>
                     <span class="glyphicon glyphicon-question-sign"
-                          data-bind="popover: helpMessages['timeout']"
+                          data-bind="popover: helpMessages['renderTimeout']"
                           data-trigger="hover"></span>
-                    <input class="form-control" type="text" id="timeoutString"
+                    <input class="form-control" type="text" id="renderTimeoutString"
+                           value=""
+                           placeholder="HH:MM:SS, or an ISO 8601 duration."
+                           data-bind="value: timeoutString">
+                    <label for="sendTimeoutString">Sending Timeout</label>
+                    <span class="glyphicon glyphicon-question-sign"
+                          data-bind="popover: helpMessages['sendTimeout']"
+                          data-trigger="hover"></span>
+                    <input class="form-control" type="text" id="sendTimeoutString"
                            value=""
                            placeholder="HH:MM:SS, or an ISO 8601 duration."
                            data-bind="value: timeoutString">

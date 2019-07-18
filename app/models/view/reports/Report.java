@@ -69,12 +69,20 @@ public final class Report {
         this._schedule = schedule;
     }
 
-    public Duration getTimeout() {
-        return _timeout;
+    public Duration getRenderTimeout() {
+        return _renderTimeout;
     }
 
-    public void setTimeout(final Duration timeout) {
-        this._timeout = timeout;
+    public void setRenderTimeout(final Duration timeout) {
+        this._renderTimeout = timeout;
+    }
+
+    public Duration getSendTimeout() {
+        return _sendTimeout;
+    }
+
+    public void setSendTimeout(final Duration timeout) {
+        this._sendTimeout = timeout;
     }
 
     public void setRecipients(final List<Recipient> recipients) {
@@ -104,7 +112,8 @@ public final class Report {
                 .setName(_name)
                 .setReportSource(_source.toInternal())
                 .setSchedule(_schedule.toInternal())
-                .setTimeout(_timeout)
+                .setRenderTimeout(_renderTimeout)
+                .setSendTimeout(_sendTimeout)
                 .setRecipients(internalRecipients)
                 .build();
     }
@@ -120,7 +129,8 @@ public final class Report {
         viewReport.setId(report.getId());
         viewReport.setName(report.getName());
         viewReport.setSource(ReportSource.fromInternal(report.getSource()));
-        viewReport.setTimeout(report.getTimeout());
+        viewReport.setRenderTimeout(report.getRenderTimeout());
+        viewReport.setSendTimeout(report.getSendTimeout());
         viewReport.setSchedule(Schedule.fromInternal(report.getSchedule()));
         final List<models.view.reports.Recipient> recipients =
                 report.getRecipientsByFormat()
@@ -154,7 +164,8 @@ public final class Report {
                 && Objects.equals(_name, otherReport._name)
                 && Objects.equals(_source, otherReport._source)
                 && Objects.equals(_schedule, otherReport._schedule)
-                && Objects.equals(_timeout, otherReport._timeout)
+                && Objects.equals(_renderTimeout, otherReport._renderTimeout)
+                && Objects.equals(_sendTimeout, otherReport._sendTimeout)
                 && Objects.equals(_recipients, otherReport._recipients);
     }
 
@@ -170,7 +181,8 @@ public final class Report {
                 .add("_name", _name)
                 .add("_source", _source)
                 .add("_schedule", _schedule)
-                .add("_timeout", _timeout)
+                .add("_renderTimeout", _renderTimeout)
+                .add("_sendTimeout", _sendTimeout)
                 .add("_recipients", _recipients)
                 .toString();
     }
@@ -179,6 +191,7 @@ public final class Report {
     private String _name;
     private ReportSource _source;
     private Schedule _schedule;
-    private Duration _timeout;
+    private Duration _renderTimeout;
+    private Duration _sendTimeout;
     private List<Recipient> _recipients;
 }

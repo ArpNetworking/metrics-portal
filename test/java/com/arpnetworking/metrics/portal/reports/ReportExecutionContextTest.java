@@ -93,7 +93,8 @@ public class ReportExecutionContextTest {
                     .build()
             )
             .setSchedule(new OneOffSchedule.Builder().setRunAtAndAfter(T0).build())
-            .setTimeout(Duration.ofSeconds(30))
+            .setRenderTimeout(Duration.ofSeconds(30))
+            .setSendTimeout(Duration.ofSeconds(10))
             .setRecipients(ImmutableSetMultimap.<ReportFormat, Recipient>builder()
                     .put(HTML, ALICE)
                     .put(HTML, BOB)
@@ -155,12 +156,12 @@ public class ReportExecutionContextTest {
         Mockito.verify(_emailSender).send(
                 ALICE,
                 ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE)),
-                Duration.ofSeconds(30)
+                Duration.ofSeconds(10)
         );
         Mockito.verify(_emailSender).send(
                 BOB,
                 ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE), PDF, mockRendered(EXAMPLE_REPORT, PDF, TIME_RANGE)),
-                Duration.ofSeconds(30)
+                Duration.ofSeconds(10)
         );
     }
 
