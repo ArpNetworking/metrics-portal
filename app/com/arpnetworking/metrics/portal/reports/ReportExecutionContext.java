@@ -163,7 +163,7 @@ public final class ReportExecutionContext {
                 .entrySet()
                 .stream()
                 .map(entry -> getSender(entry.getKey())
-                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()))
+                        .send(entry.getKey(), mask(formatToRendered, entry.getValue()), report.getTimeout())
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);

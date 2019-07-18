@@ -37,11 +37,14 @@ import org.simplejavamail.mailer.MailerBuilder;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Sends reports over email.
@@ -49,12 +52,16 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class EmailSender implements Sender {
+
+    private static final ScheduledThreadPoolExecutor TIMEOUT_EXECUTOR = new ScheduledThreadPoolExecutor(1);
+
     @Override
     public CompletionStage<Void> send(
             final Recipient recipient,
-            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+            final ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
+            final Duration timeout
     ) {
-        return CompletableFuture.supplyAsync(() -> {
+        final CompletableFuture<Void> result = CompletableFuture.supplyAsync(() -> {
             try {
                 sendSync(recipient, formatsToSend);
             } catch (final IOException e) {
@@ -62,6 +69,10 @@ public class EmailSender implements Sender {
             }
             return null;
         });
+
+        TIMEOUT_EXECUTOR.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+
+        return result;
     }
 
     private void sendSync(

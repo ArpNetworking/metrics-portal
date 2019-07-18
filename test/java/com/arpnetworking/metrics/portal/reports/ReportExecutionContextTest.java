@@ -115,6 +115,7 @@ public class ReportExecutionContextTest {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(
                 Mockito.any(),
+                Mockito.any(),
                 Mockito.any()
         );
 
@@ -153,11 +154,13 @@ public class ReportExecutionContextTest {
         context.execute(EXAMPLE_REPORT, T1).toCompletableFuture().get();
         Mockito.verify(_emailSender).send(
                 ALICE,
-                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE))
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE)),
+                Duration.ofSeconds(30)
         );
         Mockito.verify(_emailSender).send(
                 BOB,
-                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE), PDF, mockRendered(EXAMPLE_REPORT, PDF, TIME_RANGE))
+                ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE), PDF, mockRendered(EXAMPLE_REPORT, PDF, TIME_RANGE)),
+                Duration.ofSeconds(30)
         );
     }
 
@@ -256,8 +259,8 @@ public class ReportExecutionContextTest {
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
         public CompletionStage<Void> send(
                 final Recipient recipient,
-                final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
-        ) {
+                final ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
+                final Duration timeout) {
             return CompletableFuture.completedFuture(null);
         }
     }

@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -33,10 +34,12 @@ public interface Sender {
      *
      * @param recipient The recipient to notify.
      * @param formatsToSend The reports to send. Must be non-empty.
+     * @param timeout The amount of time to let sending run for before aborting.
      * @return A CompletionStage that completes when the transmission has completed.
      */
     CompletionStage<Void> send(
             Recipient recipient,
-            ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+            ImmutableMap<ReportFormat, RenderedReport> formatsToSend,
+            Duration timeout
     );
 }

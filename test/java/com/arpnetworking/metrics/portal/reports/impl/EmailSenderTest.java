@@ -20,12 +20,14 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
 import com.google.common.collect.ImmutableMap;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
 import org.simplejavamail.mailer.Mailer;
@@ -37,7 +39,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Tests class {@link EmailSender}.
@@ -51,16 +56,19 @@ public class EmailSenderTest {
     private Mailer _mailer;
     private EmailSender _sender;
     private SimpleSmtpServer _server;
+    private Config _config;
 
     @Before
     public void setUp() throws IOException {
         _server = SimpleSmtpServer.start(getFreePort());
         _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
-        MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
+        _config = ConfigFactory.parseMap(ImmutableMap.of(
                 "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
                 "fromAddress", "me@invalid.net"
-        )));
+        ));
+
+        MockitoAnnotations.initMocks(this);
+        _sender = new EmailSender(_mailer, _config);
     }
 
     @Test
@@ -73,7 +81,8 @@ public class EmailSenderTest {
                 .build();
         _sender.send(
                 TestBeanFactory.createRecipient(),
-                ImmutableMap.of(report.getFormat(), report)
+                ImmutableMap.of(report.getFormat(), report),
+                Duration.ofSeconds(1)
         ).toCompletableFuture().get();
 
         final List<SmtpMessage> emails = _server.getReceivedEmails();
@@ -88,7 +97,8 @@ public class EmailSenderTest {
     public void testNoEmailIsSentWithNoFormats() throws InterruptedException, ExecutionException {
         _sender.send(
                 TestBeanFactory.createRecipient(),
-                ImmutableMap.of()
+                ImmutableMap.of(),
+                Duration.ofSeconds(1)
         ).toCompletableFuture().get();
 
         Assert.assertEquals(0, _server.getReceivedEmails().size());
@@ -101,7 +111,8 @@ public class EmailSenderTest {
         try {
             _sender.send(
                     TestBeanFactory.createRecipient(),
-                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
+                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report),
+                    Duration.ofSeconds(1)
             ).toCompletableFuture().get();
         } catch (final ExecutionException e) {
             if (e.getCause() instanceof MailException) {
@@ -109,6 +120,29 @@ public class EmailSenderTest {
             }
             throw e;    
         }
+    }
+
+    @Test
+    public void testTimeout() throws Exception {
+        final Mailer mailer = Mockito.mock(Mailer.class);
+        Mockito.doAnswer(x -> {
+            Thread.sleep(100000);
+            return null;
+        }).when(mailer).sendMail(Mockito.any());
+        final EmailSender sender = new EmailSender(mailer, _config);
+        final CompletionStage<Void> send = sender.send(
+                TestBeanFactory.createRecipient(),
+                ImmutableMap.of(new HtmlReportFormat.Builder().build(), TestBeanFactory.createRenderedReportBuilder().build()),
+                Duration.ofMillis(500)
+        );
+
+        boolean cancelled = false;
+        try {
+            send.toCompletableFuture().get(1, TimeUnit.SECONDS);
+        } catch (final CancellationException exception) {
+            cancelled = true;
+        }
+        Assert.assertTrue("send().get() should have thrown a CancellationException", cancelled);
     }
 
     private static int getFreePort() throws IOException {
