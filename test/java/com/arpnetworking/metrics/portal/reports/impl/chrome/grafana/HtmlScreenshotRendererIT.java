@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -62,7 +63,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(config);
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(config, new ScheduledThreadPoolExecutor(1));
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()

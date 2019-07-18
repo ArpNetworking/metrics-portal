@@ -27,11 +27,13 @@ import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
+import javax.inject.Named;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -44,8 +46,6 @@ import java.util.concurrent.TimeUnit;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends ReportFormat> implements Renderer<S, F> {
-
-    private static final ScheduledThreadPoolExecutor TIMEOUT_EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
      * Get, for a given source, whether we can safely ignore a bad certificate.
@@ -121,7 +121,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             dts.close();
         });
 
-        TIMEOUT_EXECUTOR.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+        _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
 
         return result;
     }
@@ -133,15 +133,21 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param timeoutExecutor used to schedule timeouts on individual send operations
      */
     @Inject
-    protected BaseScreenshotRenderer(@Assisted final Config config) {
+    protected BaseScreenshotRenderer(
+            @Assisted final Config config,
+            @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor
+    ) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
+        _timeoutExecutor = timeoutExecutor;
     }
 
     private final DevToolsFactory _devToolsFactory;
     private final Map<String, Object> _chromeArgs;
+    private final ScheduledExecutorService _timeoutExecutor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
 }

@@ -29,6 +29,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -58,7 +59,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
         );
 
         final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(config);
+        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(config, new ScheduledThreadPoolExecutor(1));
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();

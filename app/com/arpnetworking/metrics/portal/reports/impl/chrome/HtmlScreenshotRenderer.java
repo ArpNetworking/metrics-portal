@@ -24,10 +24,12 @@ import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 
+import javax.inject.Named;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -66,9 +68,10 @@ public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<WebPage
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param timeoutExecutor used to schedule timeouts on individual send operations
      */
     @Inject
-    public HtmlScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    public HtmlScreenshotRenderer(@Assisted final Config config, @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor) {
+        super(config, timeoutExecutor);
     }
 }

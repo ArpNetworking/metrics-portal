@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -68,7 +69,7 @@ public class EmailSenderTest {
         ));
 
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(_mailer, _config);
+        _sender = new EmailSender(_mailer, _config, new ScheduledThreadPoolExecutor(1));
     }
 
     @Test
@@ -129,7 +130,7 @@ public class EmailSenderTest {
             Thread.sleep(100000);
             return null;
         }).when(mailer).sendMail(Mockito.any());
-        final EmailSender sender = new EmailSender(mailer, _config);
+        final EmailSender sender = new EmailSender(mailer, _config, new ScheduledThreadPoolExecutor(1));
         final CompletionStage<Void> send = sender.send(
                 TestBeanFactory.createRecipient(),
                 ImmutableMap.of(new HtmlReportFormat.Builder().build(), TestBeanFactory.createRenderedReportBuilder().build()),

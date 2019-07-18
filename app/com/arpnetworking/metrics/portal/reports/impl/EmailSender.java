@@ -35,6 +35,7 @@ import org.simplejavamail.email.EmailPopulatingBuilder;
 import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
 
+import javax.inject.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -43,7 +44,7 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,8 +53,6 @@ import java.util.concurrent.TimeUnit;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class EmailSender implements Sender {
-
-    private static final ScheduledThreadPoolExecutor TIMEOUT_EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     @Override
     public CompletionStage<Void> send(
@@ -70,7 +69,7 @@ public class EmailSender implements Sender {
             return null;
         });
 
-        TIMEOUT_EXECUTOR.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+        _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
 
         return result;
     }
@@ -124,18 +123,20 @@ public class EmailSender implements Sender {
      * Public constructor.
      *
      * @param config The configuration for this sender.
+     * @param timeoutExecutor Used to schedule timeouts on individual send operations.
      */
     @Inject
-    public EmailSender(@Assisted final Config config) {
-        this(buildMailer(config), config);
+    public EmailSender(@Assisted final Config config, @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor) {
+        this(buildMailer(config), config, timeoutExecutor);
     }
 
     /**
      * Constructor for tests, allowing dependency injection of the {@link Mailer}.
      */
-    /* package private */ EmailSender(final Mailer mailer, final Config config) {
+    /* package private */ EmailSender(final Mailer mailer, final Config config, final ScheduledExecutorService timeoutExecutor) {
         _fromAddress = config.getString("fromAddress");
         _mailer = mailer;
+        _timeoutExecutor = timeoutExecutor;
     }
 
     private static Mailer buildMailer(final Config config) {
@@ -149,6 +150,7 @@ public class EmailSender implements Sender {
 
     private final Mailer _mailer;
     private final String _fromAddress;
+    private final ScheduledExecutorService _timeoutExecutor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
 }

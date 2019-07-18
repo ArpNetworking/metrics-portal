@@ -92,6 +92,8 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -186,6 +188,14 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Features getFeatures(final Config configuration) {
         return new DefaultFeatures(configuration);
+    }
+
+    @Provides
+    @Singleton
+    @Named("report-cleanup")
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private ScheduledExecutorService getScheduledExecutorService() {
+        return new ScheduledThreadPoolExecutor(1);
     }
 
     @Provides

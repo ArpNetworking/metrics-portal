@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -62,7 +63,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config, new ScheduledThreadPoolExecutor(1));
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();
@@ -97,7 +98,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config, new ScheduledThreadPoolExecutor(1));
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();

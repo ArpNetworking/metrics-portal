@@ -27,8 +27,10 @@ import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
+import javax.inject.Named;
 import java.net.URI;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -111,10 +113,14 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param timeoutExecutor used to schedule timeouts on individual send operations
      */
     @Inject
-    /* package private */ BaseGrafanaScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    /* package private */ BaseGrafanaScreenshotRenderer(
+            @Assisted final Config config,
+            @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor
+    ) {
+        super(config, timeoutExecutor);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
