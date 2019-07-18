@@ -36,6 +36,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -90,24 +91,27 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder,
             final Duration timeout
     ) {
-        final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
+        final AtomicReference<DevToolsService> dts = new AtomicReference<>();
         LOGGER.debug()
                 .setMessage("rendering")
                 .addData("source", source)
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        final CompletableFuture<B> result = dts.navigate(getUri(source).toString())
-                .thenCompose(whatever -> {
-                    LOGGER.debug()
-                            .setMessage("page load completed")
-                            .addData("source", source)
-                            .addData("format", format)
-                            .addData("timeRange", timeRange)
-                            .log();
-                    return whenLoaded(dts, source, format, timeRange, builder);
-                })
-                .toCompletableFuture();
+        final CompletableFuture<B> result = CompletableFuture.supplyAsync(() -> {
+            dts.set(_devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs));
+            return null;
+        }).thenCompose(nothing ->
+            dts.get().navigate(getUri(source).toString())
+        ).thenCompose(nothing -> {
+            LOGGER.debug()
+                    .setMessage("page load completed")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .log();
+            return whenLoaded(dts.get(), source, format, timeRange, builder);
+        }).toCompletableFuture();
 
         result.whenComplete((x, e) -> {
             LOGGER.debug()
@@ -118,7 +122,10 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                     .addData("result", x)
                     .addData("exception", e)
                     .log();
-            dts.close();
+            final DevToolsService service = dts.get();
+            if (service != null) {
+                service.close();
+            }
         });
 
         _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
