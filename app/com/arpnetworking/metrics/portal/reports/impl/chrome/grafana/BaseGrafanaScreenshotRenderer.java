@@ -110,13 +110,13 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
-     * @param timeoutExecutor used to schedule timeouts on individual send operations
+     * @param executor used to schedule timeouts on individual send operations
      */
     /* package private */ BaseGrafanaScreenshotRenderer(
             final Config config,
-            final ScheduledExecutorService timeoutExecutor
+            final ScheduledExecutorService executor
     ) {
-        super(config, timeoutExecutor);
+        super(config, executor);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);

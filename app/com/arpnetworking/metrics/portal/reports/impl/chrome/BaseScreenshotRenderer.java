@@ -94,8 +94,9 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 .log();
 
 
-        final CompletableFuture<DevToolsService> createDts = CompletableFuture.supplyAsync(() ->
-            _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs)
+        final CompletableFuture<DevToolsService> createDts = CompletableFuture.supplyAsync(
+                () -> _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs),
+                _executor
         );
 
         final CompletableFuture<B> result = createDts.thenCompose(dts ->
@@ -128,7 +129,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             createDts.thenAccept(DevToolsService::close);
         });
 
-        _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+        _executor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
 
         return result;
     }
@@ -140,20 +141,20 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
-     * @param timeoutExecutor used to schedule timeouts on individual send operations
+     * @param executor used to schedule timeouts on individual send operations
      */
     protected BaseScreenshotRenderer(
             final Config config,
-            final ScheduledExecutorService timeoutExecutor
+            final ScheduledExecutorService executor
     ) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
-        _timeoutExecutor = timeoutExecutor;
+        _executor = executor;
     }
 
     private final DevToolsFactory _devToolsFactory;
     private final Map<String, Object> _chromeArgs;
-    private final ScheduledExecutorService _timeoutExecutor;
+    private final ScheduledExecutorService _executor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
 }

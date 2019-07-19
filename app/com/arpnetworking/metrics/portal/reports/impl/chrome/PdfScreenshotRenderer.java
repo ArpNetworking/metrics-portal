@@ -28,7 +28,6 @@ import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.inject.Named;
 
 /**
  * Uses a headless Chrome instance to render a page as PDF.
@@ -67,10 +66,13 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
-     * @param timeoutExecutor used to schedule timeouts on individual send operations
+     * @param executor used to schedule timeouts on individual send operations
      */
     @Inject
-    public PdfScreenshotRenderer(@Assisted final Config config, @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor) {
-        super(config, timeoutExecutor);
+    public PdfScreenshotRenderer(
+            @Assisted final Config config,
+            @ChromeReportRenderingExecutorService final ScheduledExecutorService executor
+    ) {
+        super(config, executor);
     }
 }

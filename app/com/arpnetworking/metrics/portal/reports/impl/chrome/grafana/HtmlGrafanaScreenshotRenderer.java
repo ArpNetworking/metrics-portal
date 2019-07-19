@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportRenderingExecutorService;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
@@ -29,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
-import javax.inject.Named;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -59,13 +59,13 @@ public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRe
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
-     * @param timeoutExecutor used to schedule timeouts on individual send operations
+     * @param executor used to schedule timeouts on individual send operations
      */
     @Inject
     public HtmlGrafanaScreenshotRenderer(
             @Assisted final Config config,
-            @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor
+            @ChromeReportRenderingExecutorService final ScheduledExecutorService executor
     ) {
-        super(config, timeoutExecutor);
+        super(config, executor);
     }
 }

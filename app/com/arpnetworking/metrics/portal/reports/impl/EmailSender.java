@@ -69,7 +69,7 @@ public class EmailSender implements Sender {
             return null;
         });
 
-        _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+        _executor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
 
         return result;
     }
@@ -123,20 +123,20 @@ public class EmailSender implements Sender {
      * Public constructor.
      *
      * @param config The configuration for this sender.
-     * @param timeoutExecutor Used to schedule timeouts on individual send operations.
+     * @param executor Used to schedule timeouts on individual send operations.
      */
     @Inject
-    public EmailSender(@Assisted final Config config, @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor) {
-        this(buildMailer(config), config, timeoutExecutor);
+    public EmailSender(@Assisted final Config config, @ChromeReportRenderingExecutorService final ScheduledExecutorService executor) {
+        this(buildMailer(config), config, executor);
     }
 
     /**
      * Constructor for tests, allowing dependency injection of the {@link Mailer}.
      */
-    /* package private */ EmailSender(final Mailer mailer, final Config config, final ScheduledExecutorService timeoutExecutor) {
+    /* package private */ EmailSender(final Mailer mailer, final Config config, final ScheduledExecutorService executor) {
         _fromAddress = config.getString("fromAddress");
         _mailer = mailer;
-        _timeoutExecutor = timeoutExecutor;
+        _executor = executor;
     }
 
     private static Mailer buildMailer(final Config config) {
@@ -150,7 +150,7 @@ public class EmailSender implements Sender {
 
     private final Mailer _mailer;
     private final String _fromAddress;
-    private final ScheduledExecutorService _timeoutExecutor;
+    private final ScheduledExecutorService _executor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
 }
