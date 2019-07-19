@@ -25,11 +25,11 @@ import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 
-import javax.inject.Named;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
+import javax.inject.Named;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.

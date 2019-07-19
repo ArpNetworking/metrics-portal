@@ -20,14 +20,11 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
-import javax.inject.Named;
 import java.net.URI;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
@@ -115,10 +112,9 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
      * </ul>
      * @param timeoutExecutor used to schedule timeouts on individual send operations
      */
-    @Inject
     /* package private */ BaseGrafanaScreenshotRenderer(
-            @Assisted final Config config,
-            @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor
+            final Config config,
+            final ScheduledExecutorService timeoutExecutor
     ) {
         super(config, timeoutExecutor);
     }

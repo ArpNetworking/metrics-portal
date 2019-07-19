@@ -20,23 +20,18 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
-import javax.inject.Named;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -147,10 +142,9 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * </ul>
      * @param timeoutExecutor used to schedule timeouts on individual send operations
      */
-    @Inject
     protected BaseScreenshotRenderer(
-            @Assisted final Config config,
-            @Named("report-cleanup") final ScheduledExecutorService timeoutExecutor
+            final Config config,
+            final ScheduledExecutorService timeoutExecutor
     ) {
         _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
