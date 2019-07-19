@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
@@ -46,9 +47,10 @@ public interface DevToolsService {
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
+     * @param executor The {@link Executor} to use to schedule the navigation and firing the load event.
      * @return A {@link CompletionStage} that completes when the page has loaded.
      */
-    CompletionStage<Void> navigate(String url);
+    CompletionStage<Void> navigate(String url, Executor executor);
 
     /**
      * Closes the dev tools. After close() is called, any further interaction is illegal.

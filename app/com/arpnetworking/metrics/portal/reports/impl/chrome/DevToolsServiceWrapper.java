@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
@@ -81,7 +82,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
-    public CompletionStage<Void> navigate(final String url) {
+    public CompletionStage<Void> navigate(final String url, final Executor executor) {
         final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
         _dts.getPage().onLoadEventFired(e -> {
@@ -91,14 +92,17 @@ public class DevToolsServiceWrapper implements DevToolsService {
                     .log();
             result.complete(null);
         });
-        return CompletableFuture.supplyAsync(() -> {
-            LOGGER.debug()
-                    .setMessage("navigating to")
-                    .addData("url", url)
-                    .log();
-            _dts.getPage().navigate(url);
-            return null;
-        }).thenCompose(nothing -> result);
+        return CompletableFuture.supplyAsync(
+                () -> {
+                    LOGGER.debug()
+                            .setMessage("navigating to")
+                            .addData("url", url)
+                            .log();
+                    _dts.getPage().navigate(url);
+                    return null;
+                },
+                executor
+        ).thenCompose(nothing -> result);
     }
 
     @Override

@@ -100,7 +100,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
         );
 
         final CompletableFuture<B> result = createDts.thenCompose(dts ->
-                dts.navigate(getUri(source).toString()).thenCompose(nothing -> {
+                dts.navigate(getUri(source).toString(), _executor).thenCompose(nothing -> {
                     LOGGER.debug()
                             .setMessage("page load completed")
                             .addData("source", source)
