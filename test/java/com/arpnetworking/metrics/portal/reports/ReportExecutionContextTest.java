@@ -81,6 +81,9 @@ public class ReportExecutionContextTest {
     private static final Instant T0 = ChronoUnit.DAYS.addTo(T1, -1);
     private static final TimeRange TIME_RANGE = new TimeRange(T0, T1);
     private static final ManualClock CLOCK = new ManualClock(T1, Duration.ofSeconds(1), ZoneId.of("UTC"));
+    public static final Duration RENDER_TIMEOUT = Duration.ofSeconds(30);
+    public static final Duration SEND_TIMEOUT = Duration.ofSeconds(10);
+
     private static final Report EXAMPLE_REPORT = new DefaultReport.Builder()
             .setId(UUID.randomUUID())
             .setName("My Name")
@@ -93,8 +96,8 @@ public class ReportExecutionContextTest {
                     .build()
             )
             .setSchedule(new OneOffSchedule.Builder().setRunAtAndAfter(T0).build())
-            .setRenderTimeout(Duration.ofSeconds(30))
-            .setSendTimeout(Duration.ofSeconds(10))
+            .setRenderTimeout(RENDER_TIMEOUT)
+            .setSendTimeout(SEND_TIMEOUT)
             .setRecipients(ImmutableSetMultimap.<ReportFormat, Recipient>builder()
                     .put(HTML, ALICE)
                     .put(HTML, BOB)
@@ -156,12 +159,12 @@ public class ReportExecutionContextTest {
         Mockito.verify(_emailSender).send(
                 ALICE,
                 ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE)),
-                Duration.ofSeconds(10)
+                SEND_TIMEOUT
         );
         Mockito.verify(_emailSender).send(
                 BOB,
                 ImmutableMap.of(HTML, mockRendered(EXAMPLE_REPORT, HTML, TIME_RANGE), PDF, mockRendered(EXAMPLE_REPORT, PDF, TIME_RANGE)),
-                Duration.ofSeconds(10)
+                SEND_TIMEOUT
         );
     }
 
