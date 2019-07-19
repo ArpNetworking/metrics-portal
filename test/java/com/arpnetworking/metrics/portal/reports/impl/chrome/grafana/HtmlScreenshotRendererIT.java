@@ -21,7 +21,6 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Util
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Test;
@@ -31,7 +30,6 @@ import org.mockito.Mockito;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -74,9 +72,9 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
-                Duration.ofSeconds(15)
+                DEFAULT_TIMEOUT
         );
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);

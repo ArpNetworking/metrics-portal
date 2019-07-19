@@ -20,12 +20,15 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.internal.TimeRange;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -43,6 +46,9 @@ public class BaseChromeIT {
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+
+    public static final TimeRange DEFAULT_TIME_RANGE = new TimeRange(Instant.EPOCH, Instant.EPOCH);
+    public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
 
     private static final ImmutableList<String> POSSIBLE_CHROME_PATHS = ImmutableList.of(
             "/usr/bin/chromium",

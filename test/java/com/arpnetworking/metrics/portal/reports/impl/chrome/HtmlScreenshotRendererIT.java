@@ -71,9 +71,9 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
-                Duration.ofSeconds(15)
+                DEFAULT_TIMEOUT
         );
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);

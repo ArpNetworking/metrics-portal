@@ -53,16 +53,16 @@ public interface Report extends Job<Report.Result> {
     ImmutableMap<ReportFormat, Collection<Recipient>> getRecipientsByFormat();
 
     /**
-     * Get the duration to wait for this report to render.
+     * Get the duration to wait for this report to render before aborting rendering.
      *
-     * @return The the source for this report.
+     * @return The timeout.
      */
     Duration getRenderTimeout();
 
     /**
-     * Get the duration to wait for this report to send.
+     * Get the duration to wait for this report to send before aborting sending.
      *
-     * @return The the source for this report.
+     * @return The timeout.
      */
     Duration getSendTimeout();
 
