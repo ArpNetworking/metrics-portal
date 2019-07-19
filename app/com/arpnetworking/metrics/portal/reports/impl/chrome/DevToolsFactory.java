@@ -48,7 +48,7 @@ public final class DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(result);
+        return new DevToolsServiceWrapper(service, tab, result);
     }
 
     /**

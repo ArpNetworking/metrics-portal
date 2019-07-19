@@ -33,14 +33,24 @@ import java.util.function.Supplier;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class DevToolsServiceWrapper implements DevToolsService {
+    private final com.github.kklisura.cdt.services.ChromeService _chromeService;
+    private final com.github.kklisura.cdt.services.types.ChromeTab _tab;
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
 
     /**
-     * Public constructor.
+     * Constructor.
      *
+     * @param chromeService The {@link com.github.kklisura.cdt.services.ChromeService} that owns the devtools.
+     * @param tab The {@link com.github.kklisura.cdt.services.types.ChromeTab} associated with the devtools.
      * @param dts The {@link com.github.kklisura.cdt.services.ChromeDevToolsService} instance to wrap.
      */
-    public DevToolsServiceWrapper(final com.github.kklisura.cdt.services.ChromeDevToolsService dts) {
+    /* package private */ DevToolsServiceWrapper(
+            final com.github.kklisura.cdt.services.ChromeService chromeService,
+            final com.github.kklisura.cdt.services.types.ChromeTab tab,
+            final com.github.kklisura.cdt.services.ChromeDevToolsService dts
+    ) {
+        _chromeService = chromeService;
+        _tab = tab;
         _dts = dts;
     }
 
@@ -121,6 +131,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public void close() {
+        _chromeService.closeTab(_tab);
         _dts.close();
     }
 
