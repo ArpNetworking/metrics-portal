@@ -49,6 +49,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportRenderingExecutorService;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -192,7 +193,7 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @Singleton
-    @Named("report-cleanup")
+    @ChromeReportRenderingExecutorService
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
     private ScheduledExecutorService getScheduledExecutorService() {
         return new ScheduledThreadPoolExecutor(1);

@@ -23,6 +23,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Guice annotation identifying the executor service that is used for all Chrome-related execution.
+ *
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
+ */
 @BindingAnnotation
 @Target({ ElementType.PARAMETER, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
