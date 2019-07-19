@@ -91,27 +91,29 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder,
             final Duration timeout
     ) {
-        final AtomicReference<DevToolsService> dts = new AtomicReference<>();
         LOGGER.debug()
                 .setMessage("rendering")
                 .addData("source", source)
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        final CompletableFuture<B> result = CompletableFuture.supplyAsync(() -> {
-            dts.set(_devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs));
-            return null;
-        }).thenCompose(nothing ->
-            dts.get().navigate(getUri(source).toString())
-        ).thenCompose(nothing -> {
-            LOGGER.debug()
-                    .setMessage("page load completed")
-                    .addData("source", source)
-                    .addData("format", format)
-                    .addData("timeRange", timeRange)
-                    .log();
-            return whenLoaded(dts.get(), source, format, timeRange, builder);
-        }).toCompletableFuture();
+
+
+        final CompletableFuture<DevToolsService> createDts = CompletableFuture.supplyAsync(() ->
+            _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs)
+        );
+
+        final CompletableFuture<B> result = createDts.thenCompose(dts ->
+                dts.navigate(getUri(source).toString()).thenCompose(nothing -> {
+                    LOGGER.debug()
+                            .setMessage("page load completed")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .log();
+                    return whenLoaded(dts, source, format, timeRange, builder);
+                })
+            ).toCompletableFuture();
 
         result.whenComplete((x, e) -> {
             LOGGER.debug()
@@ -122,10 +124,13 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                     .addData("result", x)
                     .addData("exception", e)
                     .log();
-            final DevToolsService service = dts.get();
-            if (service != null) {
-                service.close();
-            }
+
+            // `result` is guaranteed to complete eventually, because of the timeout.
+            // But that might happen before or after the devtools have been created.
+            // So, rather than trying to close the devtools directly, we need to attach a callback to `createDts`,
+            //   ensuring that when it completes, it will promptly close the tools.
+            // This callback is invoked immediately if `createDts` has already completed.
+            createDts.thenAccept(DevToolsService::close);
         });
 
         _timeoutExecutor.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
