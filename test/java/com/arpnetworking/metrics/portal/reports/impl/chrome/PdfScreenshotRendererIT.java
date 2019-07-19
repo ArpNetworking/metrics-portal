@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class PdfScreenshotRendererIT extends BaseChromeIT {
 
-    @Test
+    @Test(timeout = 20000)
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
         final Config config = CHROME_RENDERER_CONFIG;
@@ -69,7 +69,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
                 DEFAULT_TIMEOUT
         );
 
-        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
+        stage.toCompletableFuture().get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());

@@ -124,7 +124,7 @@ public class EmailSenderTest {
         }
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void testTimeout() throws Exception {
         final Mailer mailer = Mockito.mock(Mailer.class);
         Mockito.doAnswer(x -> {
@@ -140,7 +140,7 @@ public class EmailSenderTest {
 
         boolean cancelled = false;
         try {
-            send.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            send.toCompletableFuture().get();
         } catch (final CancellationException exception) {
             cancelled = true;
         }

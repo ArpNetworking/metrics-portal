@@ -50,7 +50,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class HtmlScreenshotRendererIT extends BaseChromeIT {
 
-    @Test
+    @Test(timeout = 20000)
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
         final Config config = CHROME_RENDERER_CONFIG;
@@ -76,7 +76,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
                 DEFAULT_TIMEOUT
         );
 
-        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
+        stage.toCompletableFuture().get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
@@ -84,7 +84,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         assertTrue(response.contains("here are some bytes"));
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void testTimeout() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
         final Config config = CHROME_RENDERER_CONFIG;
@@ -113,7 +113,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
 
         boolean cancelled = false;
         try {
-            stage.toCompletableFuture().get(1, TimeUnit.SECONDS);
+            stage.toCompletableFuture().get();
         } catch (final CancellationException exception) {
             cancelled = true;
         }

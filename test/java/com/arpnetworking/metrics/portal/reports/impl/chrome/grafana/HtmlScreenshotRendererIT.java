@@ -77,7 +77,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
                 DEFAULT_TIMEOUT
         );
 
-        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
+        stage.toCompletableFuture().get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
@@ -85,12 +85,12 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         assertEquals(response, "content we care about");
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testImmediateRendering() throws Exception {
         runTestWithRenderDelay(Duration.ZERO);
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testDelayedRendering() throws Exception {
         runTestWithRenderDelay(Duration.ofSeconds(2));
     }
