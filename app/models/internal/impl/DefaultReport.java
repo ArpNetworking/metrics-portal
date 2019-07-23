@@ -81,7 +81,7 @@ public final class DefaultReport implements Report {
 
     @Override
     public Duration getTimeout() {
-        return _renderTimeout.plus(_sendTimeout).plus(TIMEOUT_SLOP);
+        return ReportExecutionContext.getTimeout(this);
     }
 
     @Override
@@ -136,15 +136,6 @@ public final class DefaultReport implements Report {
     private final ReportSource _source;
 
     private final ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
-
-    /**
-     * {@link #execute}ing a report involves: rendering it; sending it; and a little bit of miscellaneous work.
-     * The render- and send-timeouts are configurable on a per-report basis.
-     * The miscellaneous work is trivial, but we still need to account for it in {@link #getTimeout()},
-     *   or else {@link #execute} might get cancelled before we've given both those stages a fair shot.
-     * The non-rendering, non-sending work done by {@link #execute} should bevirtually guaranteed to finish in less than this much time.
-     */
-    private static final Duration TIMEOUT_SLOP = Duration.ofSeconds(5);
 
     @Override
     public boolean equals(final Object o) {

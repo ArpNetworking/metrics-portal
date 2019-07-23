@@ -41,6 +41,7 @@ import models.internal.reports.ReportSource;
 import play.Environment;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
@@ -56,6 +57,16 @@ import java.util.stream.Collectors;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class ReportExecutionContext {
+
+    /**
+     * Get the maximum time that it should take to execute a {@link Report}.
+     *
+     * @param report The report.
+     * @return The timeout.
+     */
+    public static Duration getTimeout(final Report report) {
+        return report.getRenderTimeout().plus(report.getSendTimeout()).plus(TIMEOUT_SLOP);
+    }
 
     /**
      * Render and send a report.
@@ -272,6 +283,15 @@ public final class ReportExecutionContext {
     private final Clock _clock;
     private final ImmutableMap<SourceType, ImmutableMap<MediaType, Renderer<?, ?>>> _renderers;
     private final ImmutableMap<RecipientType, Sender> _senders;
+
+    /**
+     * {@link #execute}ing a report involves: rendering it; sending it; and a little bit of miscellaneous work.
+     * The render- and send-timeouts are configurable on a per-report basis.
+     * The miscellaneous work is trivial, but we still need to account for it in {@link #getTimeout},
+     *   or else {@link #execute} might get cancelled before we've given both those stages a fair shot.
+     * The non-rendering, non-sending work done by {@link #execute} should bevirtually guaranteed to finish in less than this much time.
+     */
+    private static final Duration TIMEOUT_SLOP = Duration.ofSeconds(5);
 
     private static final class TimeRangeVisitor extends Schedule.Visitor<ChronoUnit> {
         private static final TimeRangeVisitor INSTANCE = new TimeRangeVisitor();
