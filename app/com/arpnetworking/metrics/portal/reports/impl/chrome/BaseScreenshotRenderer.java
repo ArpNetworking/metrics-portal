@@ -29,7 +29,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -93,7 +95,17 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        return dts.navigate(getUri(source).toString())
+        return CompletableFuture.supplyAsync(
+                () -> {
+                    try {
+                        dts.navigate(getUri(source).toString());
+                    } catch (final InterruptedException | ExecutionException e) {
+                        throw new CompletionException(e);
+                    }
+                    return null;
+                },
+                _renderExecutor
+                )
                 .thenCompose(whatever -> {
                     LOGGER.debug()
                             .setMessage("page load completed")
