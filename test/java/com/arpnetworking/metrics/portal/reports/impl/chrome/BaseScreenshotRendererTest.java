@@ -85,44 +85,43 @@ public class BaseScreenshotRendererTest extends BaseChromeTest {
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
     }
 
-// These tests don't pass yet! They will be fixed by a stacked diff.
-//    @Test
-//    public void testClosesDevToolsOnTimeoutWhileNavigating() throws Exception {
-//        Mockito.doAnswer(args -> {
-//            Thread.sleep(9999999);
-//            return null;
-//        }).when(_dts).navigate(Mockito.anyString());
-//
-//        createMockRenderer().render(
-//                TestBeanFactory.createWebPageReportSourceBuilder().build(),
-//                new HtmlReportFormat.Builder().build(),
-//                DEFAULT_TIME_RANGE,
-//                Mockito.mock(MockRenderedReportBuilder.class),
-//                Duration.ofMillis(500)
-//        );
-//        Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
-//    }
-//
-//    @Test(timeout = 2000)
-//    public void testClosesDevToolsOnCancelWhileNavigating() throws Exception {
-//        final CompletableFuture<?> navigationStarted = new CompletableFuture<>();
-//        Mockito.doAnswer(args -> {
-//            navigationStarted.complete(null);
-//            Thread.sleep(9999999);
-//            return null;
-//        }).when(_dts).navigate(Mockito.anyString());
-//
-//        final CompletableFuture<?> future = createMockRenderer().render(
-//                TestBeanFactory.createWebPageReportSourceBuilder().build(),
-//                new HtmlReportFormat.Builder().build(),
-//                DEFAULT_TIME_RANGE,
-//                Mockito.mock(MockRenderedReportBuilder.class),
-//                Duration.ofDays(1)
-//        );
-//        navigationStarted.get();
-//        future.cancel(true);
-//        Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
-//    }
+    @Test
+    public void testClosesDevToolsOnTimeoutWhileNavigating() throws Exception {
+        Mockito.doAnswer(args -> {
+            Thread.sleep(9999999);
+            return null;
+        }).when(_dts).navigate(Mockito.anyString());
+
+        createMockRenderer().render(
+                TestBeanFactory.createWebPageReportSourceBuilder().build(),
+                new HtmlReportFormat.Builder().build(),
+                DEFAULT_TIME_RANGE,
+                Mockito.mock(MockRenderedReportBuilder.class),
+                Duration.ofMillis(500)
+        );
+        Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
+    }
+
+    @Test(timeout = 2000)
+    public void testClosesDevToolsOnCancelWhileNavigating() throws Exception {
+        final CompletableFuture<?> navigationStarted = new CompletableFuture<>();
+        Mockito.doAnswer(args -> {
+            navigationStarted.complete(null);
+            Thread.sleep(9999999);
+            return null;
+        }).when(_dts).navigate(Mockito.anyString());
+
+        final CompletableFuture<?> future = createMockRenderer().render(
+                TestBeanFactory.createWebPageReportSourceBuilder().build(),
+                new HtmlReportFormat.Builder().build(),
+                DEFAULT_TIME_RANGE,
+                Mockito.mock(MockRenderedReportBuilder.class),
+                Duration.ofDays(1)
+        );
+        navigationStarted.get();
+        future.cancel(true);
+        Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
+    }
 
     private static final class MockRenderer extends BaseScreenshotRenderer<WebPageReportSource, HtmlReportFormat> {
         @Override

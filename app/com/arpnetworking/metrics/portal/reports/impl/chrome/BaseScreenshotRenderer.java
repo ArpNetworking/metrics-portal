@@ -28,12 +28,17 @@ import models.internal.reports.ReportSource;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -88,45 +93,46 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder,
             final Duration timeout
     ) {
-        final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
         LOGGER.debug()
                 .setMessage("rendering")
                 .addData("source", source)
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        return CompletableFuture.supplyAsync(
-                () -> {
-                    try {
-                        dts.navigate(getUri(source).toString());
-                    } catch (final InterruptedException | ExecutionException e) {
-                        throw new CompletionException(e);
-                    }
-                    return null;
-                },
-                _renderExecutor
-                )
-                .thenCompose(whatever -> {
-                    LOGGER.debug()
-                            .setMessage("page load completed")
-                            .addData("source", source)
-                            .addData("format", format)
-                            .addData("timeRange", timeRange)
-                            .log();
-                    return whenLoaded(dts, source, format, timeRange, builder);
-                })
-                .whenComplete((x, e) -> {
-                    LOGGER.debug()
-                            .setMessage("rendering completed")
-                            .addData("source", source)
-                            .addData("format", format)
-                            .addData("timeRange", timeRange)
-                            .addData("result", x)
-                            .addData("exception", e)
-                            .log();
-                    dts.close();
-                })
-                .toCompletableFuture();
+
+        final CompletableFuture<B> result = new CompletableFuture<>();
+
+        final AtomicReference<DevToolsService> dts = new AtomicReference<>();
+        final Future<?> executionFuture = _renderExecutor.submit(() -> {
+            try {
+                dts.set(_devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs));
+                dts.get().navigate(getUri(source).toString());
+                whenLoaded(dts.get(), source, format, timeRange, builder)
+                        .whenComplete((x, e) -> {
+                            if (e != null) {
+                                result.completeExceptionally(e);
+                            } else {
+                                result.complete(x);
+                            }
+                            dts.get().close();
+                        });
+            } catch (final InterruptedException | ExecutionException e) {
+                throw new CompletionException(e);
+            }
+        });
+
+        result.whenComplete((x, e) -> {
+            executionFuture.cancel(true);
+            Optional.ofNullable(dts.get()).ifPresent(DevToolsService::close);
+        });
+
+        _timeoutExecutor.schedule(
+                () -> result.cancel(true),
+                timeout.toNanos(),
+                TimeUnit.NANOSECONDS
+        );
+
+        return result;
     }
 
     /**
