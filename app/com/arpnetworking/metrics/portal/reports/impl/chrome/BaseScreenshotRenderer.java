@@ -20,14 +20,12 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -84,7 +82,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
             final B builder,
             final Duration timeout
     ) {
-        final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
+        final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source));
         LOGGER.debug()
                 .setMessage("rendering")
                 .addData("source", source)
@@ -116,32 +114,17 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     }
 
     /**
-     * Public constructor.
+     * Protected constructor.
      *
-     * @param config the configuration for this renderer. Meaningful keys:
-     * <ul>
-     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
-     * </ul>
+     * @param devToolsFactory The {@link DevToolsFactory} to use to open tabs and drive them.
      */
     protected BaseScreenshotRenderer(
-            final Config config
-    ) {
-        this(
-                config,
-                new DefaultDevToolsFactory(config.getString("chromePath"))
-        );
-    }
-
-    /* package private */ BaseScreenshotRenderer(
-            final Config config,
             final DevToolsFactory devToolsFactory
     ) {
         _devToolsFactory = devToolsFactory;
-        _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }
 
     private final DevToolsFactory _devToolsFactory;
-    private final Map<String, Object> _chromeArgs;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
 }

@@ -21,11 +21,17 @@ import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
 import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import com.typesafe.config.Config;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
+import java.time.Duration;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Default implementation of {@link DevToolsFactory}.
@@ -35,8 +41,8 @@ import java.util.concurrent.ConcurrentMap;
 public final class DefaultDevToolsFactory implements DevToolsFactory {
 
     @Override
-    public DevToolsService create(final boolean ignoreCertificateErrors, final Map<String, Object> chromeArgs) {
-        final ChromeService service = CHROME_SERVICE_BY_PATH.computeIfAbsent(_chromePath, s -> createService(chromeArgs));
+    public DevToolsService create(final boolean ignoreCertificateErrors) {
+        final ChromeService service = _service.get();
         final ChromeTab tab = service.createTab();
         final com.github.kklisura.cdt.services.ChromeDevToolsService result = service.createDevToolsService(tab);
         if (ignoreCertificateErrors) {
@@ -48,13 +54,45 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     /**
      * Public constructor.
      *
-     * @param chromePath is the path to the Chrome binary to use.
+     * @param fullConfig is a config that has the following fields: <ul>
+     *   <li>{@code chrome.path} points to the Chrome executable</li>
+     *   <li>
+     *     {@code chrome.args} is a map of command-line flags passed to Chrome.
+     *     List of valid args: https://peter.sh/experiments/chromium-command-line-switches/
+     *     Keys are flags without the leading {@code --};
+     *     values are strings (for flags that take args) or {@code true} (for flags that don't).
+     *     For example, {@code foo=true, bar="baz"} would result in the Chrome invocation {@code chromium --foo --bar=baz}.
+     *   </li>
+     *   <li>{@code chrome.executor} is a sub-object with the fields: <ul>
+     *     <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
+     *       {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
+     *     <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
+     *     <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
+     *     </ul>
+     *   </ul>
+     *
+     * TODO(spencerpearson): I don't like exposing the threadpool implementation details, but I can very easily imagine the user
+     *   wanting to configure them.
      */
-    public DefaultDevToolsFactory(final String chromePath) {
-        _chromePath = chromePath;
+    @Inject
+    public DefaultDevToolsFactory(final Config fullConfig) {
+        final Config config = fullConfig.getConfig("chrome");
+        _chromePath = config.getString("path");
+        _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
+
+        final Duration executorKeepAliveTime = Duration.parse(config.getString("executor.keepAlive"));
+        _executor = new ThreadPoolExecutor(
+                config.getInt("executor.corePoolSize"),
+                config.getInt("executor.maximumPoolSize"),
+                executorKeepAliveTime.toNanos(),
+                TimeUnit.NANOSECONDS,
+                new ArrayBlockingQueue<>(config.getInt("executor.queueSize"))
+        );
+
+        _service = Suppliers.memoize(this::createService);
     }
 
-    private ChromeService createService(final Map<String, Object> chromeArgs) {
+    private ChromeService createService() {
         // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
         // This requires in our own custom "environment" (since it defaults to using System::getEnv).
         final ImmutableMap<String, String> env = ImmutableMap.of(
@@ -72,12 +110,13 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
                 new ChromeLauncherConfiguration()
         );
         return launcher.launch(ChromeArguments.defaults(true)
-                .additionalArguments(chromeArgs)
+                .additionalArguments(_chromeArgs)
                 .build());
 
     }
 
     private final String _chromePath;
-
-    private static final ConcurrentMap<String, ChromeService> CHROME_SERVICE_BY_PATH = Maps.newConcurrentMap();
+    private final ImmutableMap<String, Object> _chromeArgs;
+    private final ExecutorService _executor;
+    private final Supplier<ChromeService> _service;
 }

@@ -17,12 +17,11 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
-import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
@@ -107,14 +106,11 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     /**
      * Public constructor.
      *
-     * @param config the configuration for this renderer. Meaningful keys:
-     * <ul>
-     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
-     * </ul>
+     * @param factory The {@link DevToolsFactory} to use to open tabs and drive them.
      */
     @Inject
-    /* package private */ BaseGrafanaScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    /* package private */ BaseGrafanaScreenshotRenderer(final DevToolsFactory factory) {
+        super(factory);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
