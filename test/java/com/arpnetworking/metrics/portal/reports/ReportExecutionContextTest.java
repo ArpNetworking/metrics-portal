@@ -264,11 +264,12 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
                 final TimeRange timeRange,
-                final B builder
+                final B builder,
+                final Duration timeout
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }
@@ -276,11 +277,12 @@ public class ReportExecutionContextTest {
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+        public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,
                 final PdfReportFormat format,
                 final TimeRange timeRange,
-                final B builder
+                final B builder,
+                final Duration timeout
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }

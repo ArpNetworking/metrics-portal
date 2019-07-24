@@ -126,11 +126,17 @@ public final class ReportExecutionContext {
                 .stream()
                 .map(format ->
                         getRenderer(report.getSource(), format)
-                        .render(report.getSource(), format, timeRange, new DefaultRenderedReport.Builder()
-                                .setReport(report)
-                                .setFormat(format)
-                                .setGeneratedAt(_clock.instant())
-                                .setTimeRange(timeRange))
+                        .render(
+                                report.getSource(),
+                                format,
+                                timeRange,
+                                new DefaultRenderedReport.Builder()
+                                        .setReport(report)
+                                        .setFormat(format)
+                                        .setGeneratedAt(_clock.instant())
+                                        .setTimeRange(timeRange),
+                                report.getTimeout()
+                        )
                         .thenApply(builder -> result.put(format, builder.build()))
                         .toCompletableFuture())
                 .toArray(CompletableFuture[]::new);

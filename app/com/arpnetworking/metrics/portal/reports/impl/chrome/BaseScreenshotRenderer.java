@@ -28,7 +28,9 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -77,11 +79,12 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
-    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+    public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
             final S source,
             final F format,
             final TimeRange timeRange,
-            final B builder
+            final B builder,
+            final Duration timeout
     ) {
         final DevToolsService dts = _devToolsFactory.create(getIgnoreCertificateErrors(source), _chromeArgs);
         LOGGER.debug()
@@ -110,7 +113,8 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                             .addData("exception", e)
                             .log();
                     dts.close();
-                });
+                })
+                .toCompletableFuture();
     }
 
     /**
