@@ -20,8 +20,6 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
@@ -125,9 +123,20 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
      */
-    @Inject
-    protected BaseScreenshotRenderer(@Assisted final Config config) {
-        _devToolsFactory = new DevToolsFactory(config.getString("chromePath"));
+    protected BaseScreenshotRenderer(
+            final Config config
+    ) {
+        this(
+                config,
+                new DefaultDevToolsFactory(config.getString("chromePath"))
+        );
+    }
+
+    /* package private */ BaseScreenshotRenderer(
+            final Config config,
+            final DevToolsFactory devToolsFactory
+    ) {
+        _devToolsFactory = devToolsFactory;
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
     }
 
