@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
@@ -26,7 +25,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
