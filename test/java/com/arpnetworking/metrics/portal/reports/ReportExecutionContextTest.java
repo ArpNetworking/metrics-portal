@@ -268,7 +268,8 @@ public class ReportExecutionContextTest {
                 final WebPageReportSource source,
                 final HtmlReportFormat format,
                 final TimeRange timeRange,
-                final B builder
+                final B builder,
+                final Duration timeout
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }
@@ -280,7 +281,8 @@ public class ReportExecutionContextTest {
                 final WebPageReportSource source,
                 final PdfReportFormat format,
                 final TimeRange timeRange,
-                final B builder
+                final B builder,
+                final Duration timeout
         ) {
             return CompletableFuture.completedFuture(builder.setBytes(new byte[0]));
         }
