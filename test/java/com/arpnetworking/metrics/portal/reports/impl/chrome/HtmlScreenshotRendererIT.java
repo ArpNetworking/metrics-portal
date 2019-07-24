@@ -68,7 +68,9 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
                 source,
                 format,
                 new TimeRange(Instant.EPOCH, Instant.EPOCH),
-                builder);
+                builder,
+                DEFAULT_TIMEOUT
+        );
 
         stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
 

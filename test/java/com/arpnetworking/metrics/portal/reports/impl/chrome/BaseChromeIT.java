@@ -26,6 +26,7 @@ import org.junit.Rule;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Optional;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
@@ -43,6 +44,8 @@ public class BaseChromeIT {
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+
+    protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
 
     private static final ImmutableList<String> POSSIBLE_CHROME_PATHS = ImmutableList.of(
             "/usr/bin/chromium",
