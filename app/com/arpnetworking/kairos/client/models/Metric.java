@@ -16,15 +16,20 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -64,6 +69,11 @@ public final class Metric {
         return _order;
     }
 
+    @JsonAnyGetter
+    public ImmutableMap<String, Object> getExtraFields() {
+        return _extraFields;
+    }
+
     private Metric(final Builder builder) {
         _name = builder._name;
         _tags = builder._tags;
@@ -71,6 +81,7 @@ public final class Metric {
         _groupBy = builder._groupBy;
         _limit = Optional.ofNullable(builder._limit);
         _order = Optional.ofNullable(builder._order);
+        _extraFields = ImmutableMap.copyOf(builder._extraFields);
     }
 
     private final String _name;
@@ -79,6 +90,7 @@ public final class Metric {
     private final ImmutableList<MetricsQuery.GroupBy> _groupBy;
     private final Optional<Integer> _limit;
     private final Optional<Order> _order;
+    private final ImmutableMap<String, Object> _extraFields;
 
     /**
      * Implementation of the builder pattern for {@link Metric}.
@@ -161,6 +173,19 @@ public final class Metric {
             return this;
         }
 
+        /**
+         * Sets an extra generic field on this query. Optional. Cannot be null.
+         *
+         * @param key the extra field name
+         * @param value the extra field value
+         * @return this {@link Builder}
+         */
+        @JsonAnySetter
+        public Builder setExtraField(final String key, final Object value) {
+            _extraFields.put(key, value);
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _name;
@@ -177,6 +202,9 @@ public final class Metric {
         private Integer _limit;
 
         private Order _order;
+
+        @NotNull
+        private Map<String, Object> _extraFields = Maps.newHashMap();
     }
 
     /**
