@@ -30,6 +30,8 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -122,26 +124,38 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param renderExecutor used to run individual rendering operations
+     * @param timeoutExecutor used to schedule timeouts on individual rendering operations
      */
     protected BaseScreenshotRenderer(
-            final Config config
+            final Config config,
+            final ExecutorService renderExecutor,
+            final ScheduledExecutorService timeoutExecutor
     ) {
         this(
                 config,
+                renderExecutor,
+                timeoutExecutor,
                 new DefaultDevToolsFactory(config.getString("chromePath"))
         );
     }
 
     /* package private */ BaseScreenshotRenderer(
             final Config config,
+            final ExecutorService renderExecutor,
+            final ScheduledExecutorService timeoutExecutor,
             final DevToolsFactory devToolsFactory
     ) {
         _devToolsFactory = devToolsFactory;
         _chromeArgs = config.getObject("chromeArgs").unwrapped();
+        _renderExecutor = renderExecutor;
+        _timeoutExecutor = timeoutExecutor;
     }
 
     private final DevToolsFactory _devToolsFactory;
     private final Map<String, Object> _chromeArgs;
+    private final ExecutorService _renderExecutor;
+    private final ScheduledExecutorService _timeoutExecutor;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
 }

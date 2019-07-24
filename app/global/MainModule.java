@@ -49,6 +49,8 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportRenderingExecutorService;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportTimeoutExecutorService;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -91,7 +93,12 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -186,6 +193,29 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Features getFeatures(final Config configuration) {
         return new DefaultFeatures(configuration);
+    }
+
+    @Provides
+    @Singleton
+    @ChromeReportRenderingExecutorService
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private ExecutorService getChromeReportRenderingExecutorService() {
+        return new ThreadPoolExecutor(
+                0,
+                16,
+                1,
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(1000) // TODO(spencerpearson): make configurable, and instrument size
+        );
+
+    }
+
+    @Provides
+    @Singleton
+    @ChromeReportTimeoutExecutorService
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private ScheduledExecutorService getChromeReportTimeoutExecutorService() {
+        return new ScheduledThreadPoolExecutor(1);
     }
 
     @Provides
