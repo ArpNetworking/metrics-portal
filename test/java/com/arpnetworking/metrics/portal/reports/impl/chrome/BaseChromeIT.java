@@ -42,9 +42,6 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
  */
 public class BaseChromeIT {
 
-
-    protected static DevToolsFactory _devToolsFactory;
-
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
@@ -68,6 +65,21 @@ public class BaseChromeIT {
             .filter(BaseChromeIT::isPathExecutable)
             .findFirst();
 
+
+    protected static final DevToolsFactory DEV_TOOLS_FACTORY = new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
+            "path", CHROME_PATH.get(),
+            "args", ImmutableMap.of(
+                    "no-sandbox", "true",
+                    "headless", "true"
+            ),
+            "executor", ImmutableMap.of(
+                    "corePoolSize", 0,
+                    "maximumPoolSize", 8,
+                    "keepAlive", "PT1S",
+                    "queueSize", 1024
+            )
+    )));
+
     /**
      * Config to use to instantiate Chrome-based renderers.
      */
@@ -86,18 +98,5 @@ public class BaseChromeIT {
     @BeforeClass
     public static void setUpClass() {
         Assume.assumeTrue("could not find Chrome in any likely location", CHROME_PATH.isPresent());
-        _devToolsFactory = new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
-                "path", CHROME_PATH.get(),
-                "args", ImmutableMap.of(
-                        "no-sandbox", "true",
-                        "headless", "true"
-                ),
-                "executor", ImmutableMap.of(
-                        "corePoolSize", 0,
-                        "maximumPoolSize", 8,
-                        "keepAlive", "PT1S",
-                        "queueSize", 1024
-                )
-        )));
     }
 }

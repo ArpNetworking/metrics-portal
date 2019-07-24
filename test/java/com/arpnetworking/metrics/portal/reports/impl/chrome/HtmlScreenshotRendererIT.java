@@ -59,7 +59,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(_devToolsFactory);
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(DEV_TOOLS_FACTORY);
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();

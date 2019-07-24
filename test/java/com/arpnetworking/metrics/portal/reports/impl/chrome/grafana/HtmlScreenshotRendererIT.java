@@ -62,7 +62,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(_devToolsFactory);
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(DEV_TOOLS_FACTORY);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()
