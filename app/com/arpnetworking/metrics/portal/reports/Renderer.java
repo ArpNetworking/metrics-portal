@@ -20,6 +20,7 @@ import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -41,7 +42,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * @param <B> The type of builder provided.
      * @return A {@link CompletionStage} that completes when the report has been rendered.
      */
-    <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+    <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
             S source,
             F format,
             TimeRange timeRange,
