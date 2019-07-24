@@ -51,7 +51,8 @@ public interface DevToolsService {
     CompletionStage<Void> navigate(String url);
 
     /**
-     * Closes the dev tools. After close() is called, any further interaction is illegal.
+     * Closes the dev tools. After close() is called, any further interaction is illegal
+     * (except further calls to close(), which are no-ops).
      */
     void close();
 
