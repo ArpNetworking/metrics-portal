@@ -1,0 +1,27 @@
+{
+  "name": "metric.name",
+  "tags": {
+    "tag1": [ "tag1" ],
+    "tag2": [ "tag2" ]
+  },
+  "aggregators": [ {
+    "name": "avg",
+    "sampling": {
+      "value": 1,
+      "unit": "DAYS"
+    },
+    "align_sampling": true
+  }],
+  "group_by" : [
+    {
+      "name": "tag3",
+      "tags": ["tag3"]
+    }
+  ],
+  "limit": 1,
+  "order": "desc",
+  "einiuongiungrierniogr": "43t8943jigi",
+  "4tuyurg4!  ":   {
+    "foo": [123, 456, true]
+  }
+}
