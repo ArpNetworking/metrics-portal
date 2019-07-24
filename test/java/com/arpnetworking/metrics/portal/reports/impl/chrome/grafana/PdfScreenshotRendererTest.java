@@ -20,7 +20,6 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTest;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
 import org.junit.Test;
@@ -29,7 +28,6 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
