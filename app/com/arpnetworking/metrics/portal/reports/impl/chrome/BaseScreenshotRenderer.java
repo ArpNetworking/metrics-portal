@@ -29,6 +29,7 @@ import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -77,7 +78,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
-    public <B extends RenderedReport.Builder<B, ?>> CompletionStage<B> render(
+    public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
             final S source,
             final F format,
             final TimeRange timeRange,
@@ -110,7 +111,8 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                             .addData("exception", e)
                             .log();
                     dts.close();
-                });
+                })
+                .toCompletableFuture();
     }
 
     /**
