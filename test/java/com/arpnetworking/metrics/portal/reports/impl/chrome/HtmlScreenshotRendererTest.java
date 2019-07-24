@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
+package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeIT;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
+import com.github.tomakehurst.wiremock.common.Strings;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
-import models.internal.impl.GrafanaReportPanelReportSource;
-import models.internal.impl.PdfReportFormat;
+import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
-import java.time.Duration;
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -39,13 +36,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests class {@link PdfGrafanaScreenshotRenderer}.
+ * Tests class {@link HtmlScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTest} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class PdfScreenshotRendererIT extends BaseChromeIT {
+public class HtmlScreenshotRendererTest extends BaseChromeTest {
 
     @Test
     public void testRendering() throws Exception {
@@ -55,23 +52,20 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
                         .willReturn(aResponse()
-                                .withHeader("Content-Type", "text/html")
-                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ZERO))
+                                .withBody("here are some bytes")
                         )
         );
-        final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfGrafanaScreenshotRenderer renderer = new PdfGrafanaScreenshotRenderer(config);
-        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
-                .setWebPageReportSource(
-                        TestBeanFactory.createWebPageReportSourceBuilder()
-                                .setUri(URI.create("http://localhost:" + _wireMock.port()))
-                                .build())
+
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(config);
+        final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
+                .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();
 
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
                 DEFAULT_TIMEOUT
         );
@@ -80,6 +74,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
-        assertTrue(bytes.getValue().length > 0);
+        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
+        assertTrue(response.contains("here are some bytes"));
     }
 }
