@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -83,22 +84,22 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
-    public CompletionStage<Void> navigate(final String url) {
-        final CompletableFuture<Void> result = new CompletableFuture<>();
+    public void navigate(final String url) throws InterruptedException, ExecutionException {
+        final CompletableFuture<Void> loaded = new CompletableFuture<>();
         _dts.getPage().enable();
         _dts.getPage().onLoadEventFired(e -> {
             LOGGER.debug()
                     .setMessage("navigated to")
                     .addData("url", url)
                     .log();
-            result.complete(null);
+            loaded.complete(null);
         });
         LOGGER.debug()
                 .setMessage("navigating to")
                 .addData("url", url)
                 .log();
         _dts.getPage().navigate(url);
-        return result;
+        loaded.get();
     }
 
     @Override

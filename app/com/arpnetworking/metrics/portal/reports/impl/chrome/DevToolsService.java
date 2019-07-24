@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 /**
@@ -43,12 +44,14 @@ public interface DevToolsService {
     byte[] printToPdf(double pageWidth, double pageHeight);
 
     /**
+     *
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
-     * @return A {@link CompletionStage} that completes when the page has loaded.
+     * @throws InterruptedException If the thread is interrupted while waiting for the page to load.
+     * @throws ExecutionException If something goes wrong while navigating to the page.
      */
-    CompletionStage<Void> navigate(String url);
+    void navigate(String url) throws InterruptedException, ExecutionException;
 
     /**
      * Closes the dev tools. After close() is called, any further interaction is illegal
