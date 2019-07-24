@@ -193,8 +193,8 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
-    private DevToolsFactory provideChromeDevToolsFactory() {
-        return new DefaultDevToolsFactory()
+    private DevToolsFactory provideChromeDevToolsFactory(final Config config) {
+        return new DefaultDevToolsFactory(config.getConfig("chrome"));
     }
 
 

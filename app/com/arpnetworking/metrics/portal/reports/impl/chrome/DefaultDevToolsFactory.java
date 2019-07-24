@@ -54,16 +54,16 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     /**
      * Public constructor.
      *
-     * @param fullConfig is a config that has the following fields: <ul>
-     *   <li>{@code chrome.path} points to the Chrome executable</li>
+     * @param config is a config that has the following fields: <ul>
+     *   <li>{@code path} points to the Chrome executable</li>
      *   <li>
-     *     {@code chrome.args} is a map of command-line flags passed to Chrome.
+     *     {@code args} is a map of command-line flags passed to Chrome.
      *     List of valid args: https://peter.sh/experiments/chromium-command-line-switches/
      *     Keys are flags without the leading {@code --};
      *     values are strings (for flags that take args) or {@code true} (for flags that don't).
      *     For example, {@code foo=true, bar="baz"} would result in the Chrome invocation {@code chromium --foo --bar=baz}.
      *   </li>
-     *   <li>{@code chrome.executor} is a sub-object with the fields: <ul>
+     *   <li>{@code executor} is a sub-object with the fields: <ul>
      *     <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
      *       {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
      *     <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
@@ -75,20 +75,10 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
      *   wanting to configure them.
      */
     @Inject
-    public DefaultDevToolsFactory(final Config fullConfig) {
-        final Config config = fullConfig.getConfig("chrome");
+    public DefaultDevToolsFactory(final Config config) {
         _chromePath = config.getString("path");
         _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
-
-        final Duration executorKeepAliveTime = Duration.parse(config.getString("executor.keepAlive"));
-        _executor = new ThreadPoolExecutor(
-                config.getInt("executor.corePoolSize"),
-                config.getInt("executor.maximumPoolSize"),
-                executorKeepAliveTime.toNanos(),
-                TimeUnit.NANOSECONDS,
-                new ArrayBlockingQueue<>(config.getInt("executor.queueSize"))
-        );
-
+        _executor = createExecutorService(config.getConfig("executor"));
         _service = Suppliers.memoize(this::createService);
     }
 
@@ -114,6 +104,16 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
                 .build());
 
     }
+
+    private static ExecutorService createExecutorService(final Config config) {
+        final Duration executorKeepAliveTime = Duration.parse(config.getString("keepAlive"));
+        return new ThreadPoolExecutor(
+                config.getInt("corePoolSize"),
+                config.getInt("maximumPoolSize"),
+                executorKeepAliveTime.toNanos(),
+                TimeUnit.NANOSECONDS,
+                new ArrayBlockingQueue<>(config.getInt("queueSize"))
+        );    }
 
     private final String _chromePath;
     private final ImmutableMap<String, Object> _chromeArgs;
