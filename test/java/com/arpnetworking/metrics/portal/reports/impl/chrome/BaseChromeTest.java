@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.internal.TimeRange;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -28,6 +29,7 @@ import org.junit.Rule;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -47,11 +49,12 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class BaseChromeIT {
+public class BaseChromeTest {
 
     @Rule
     public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
 
+    protected static final TimeRange DEFAULT_TIME_RANGE = new TimeRange(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(1)));
     protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
 
     protected ExecutorService _renderService;
@@ -72,7 +75,7 @@ public class BaseChromeIT {
      * Path to the Chrome binary to use for Chrome-renderer tests.
      */
     private static final Optional<String> CHROME_PATH = POSSIBLE_CHROME_PATHS.stream()
-            .filter(BaseChromeIT::isPathExecutable)
+            .filter(BaseChromeTest::isPathExecutable)
             .findFirst();
 
     /**

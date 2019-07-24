@@ -16,11 +16,10 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeIT;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTest;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
 import org.junit.Test;
@@ -29,7 +28,6 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -41,11 +39,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests class {@link PdfGrafanaScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTest} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class PdfScreenshotRendererIT extends BaseChromeIT {
+public class PdfScreenshotRendererTest extends BaseChromeTest {
 
     @Test
     public void testRendering() throws Exception {
@@ -71,7 +69,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
                 DEFAULT_TIMEOUT
         );
