@@ -17,6 +17,8 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportRenderingExecutorService;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.ChromeReportTimeoutExecutorService;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
@@ -28,6 +30,8 @@ import models.internal.impl.PdfReportFormat;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -72,9 +76,15 @@ public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRen
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param renderExecutor used to run individual rendering operations
+     * @param timeoutExecutor used to schedule timeouts on individual rendering operations
      */
     @Inject
-    public PdfGrafanaScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    public PdfGrafanaScreenshotRenderer(
+            @Assisted final Config config,
+            @ChromeReportRenderingExecutorService final ExecutorService renderExecutor,
+            @ChromeReportTimeoutExecutorService final ScheduledExecutorService timeoutExecutor
+    ) {
+        super(config, renderExecutor, timeoutExecutor);
     }
 }

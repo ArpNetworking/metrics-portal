@@ -20,8 +20,6 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
@@ -29,6 +27,8 @@ import models.internal.reports.ReportFormat;
 
 import java.net.URI;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -111,10 +111,15 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
      * <ul>
      *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
      * </ul>
+     * @param renderExecutor used to run individual rendering operations
+     * @param timeoutExecutor used to schedule timeouts on individual rendering operations
      */
-    @Inject
-    /* package private */ BaseGrafanaScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    /* package private */ BaseGrafanaScreenshotRenderer(
+            final Config config,
+            final ExecutorService renderExecutor,
+            final ScheduledExecutorService timeoutExecutor
+    ) {
+        super(config, renderExecutor, timeoutExecutor);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
