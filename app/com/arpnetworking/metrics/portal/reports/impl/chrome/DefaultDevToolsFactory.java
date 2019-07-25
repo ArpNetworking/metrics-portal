@@ -25,6 +25,7 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -78,7 +79,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     public DefaultDevToolsFactory(final Config config) {
         _chromePath = config.getString("path");
         _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
-        _executor = createExecutorService(config.getConfig("executor"));
+        _executor = createExecutorService(config.hasPath("executor") ? config.getConfig("executor") : ConfigFactory.empty());
         _service = Suppliers.memoize(this::createService);
     }
 
@@ -106,14 +107,21 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     }
 
     private static ExecutorService createExecutorService(final Config config) {
-        final Duration executorKeepAliveTime = Duration.parse(config.getString("keepAlive"));
+        final Duration executorKeepAliveTime =
+                config.hasPath("keepAlive")
+                        ? Duration.parse(config.getString("keepAlive"))
+                        : Duration.ofSeconds(1);
+        final int corePoolSize = config.hasPath("corePoolSize") ? config.getInt("corePoolSize") : 0;
+        final int maximumPoolSize = config.hasPath("maximumPoolSize") ? config.getInt("maximumPoolSize") : 4;
+        final int queueSize = config.hasPath("queueSize") ? config.getInt("queueSize") : 1024;
         return new ThreadPoolExecutor(
-                config.getInt("corePoolSize"),
-                config.getInt("maximumPoolSize"),
+                corePoolSize,
+                maximumPoolSize,
                 executorKeepAliveTime.toNanos(),
                 TimeUnit.NANOSECONDS,
-                new ArrayBlockingQueue<>(config.getInt("queueSize"))
-        );    }
+                new ArrayBlockingQueue<>(queueSize)
+        );
+    }
 
     private final String _chromePath;
     private final ImmutableMap<String, Object> _chromeArgs;

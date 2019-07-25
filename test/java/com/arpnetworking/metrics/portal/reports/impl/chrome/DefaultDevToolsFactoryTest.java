@@ -36,19 +36,23 @@ public class DefaultDevToolsFactoryTest {
         new DefaultDevToolsFactory(VALID_CONFIG);
     }
 
-    @Test
+    @Test(timeout = 2000)
     public void testInvalidConstruction() {
         final ImmutableSet<String> requiredFields = ImmutableSet.of(
                 "path",
-                "args",
+                "args"
+        );
+        requiredFields.forEach(this::assertMissingRaises);
+        requiredFields.forEach(field -> assertInvalidates(field, null, ConfigException.Missing.class));
+
+        final ImmutableSet<String> optionalFields = ImmutableSet.of(
                 "executor",
                 "executor.corePoolSize",
                 "executor.maximumPoolSize",
                 "executor.keepAlive",
                 "executor.queueSize"
         );
-        requiredFields.forEach(this::assertMissingRaises);
-        requiredFields.forEach(field -> assertInvalidates(field, null, ConfigException.Missing.class));
+        optionalFields.forEach(field -> new DefaultDevToolsFactory(VALID_CONFIG.withoutPath(field)));
 
         final ImmutableSet<ImmutableList<Object>> invalidations = ImmutableSet.of(
                 ImmutableList.of("path", ImmutableMap.of(), ConfigException.WrongType.class),
