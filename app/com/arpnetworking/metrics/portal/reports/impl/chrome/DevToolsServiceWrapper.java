@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
@@ -36,6 +37,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeService _chromeService;
     private final com.github.kklisura.cdt.services.types.ChromeTab _tab;
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
+    private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     /**
      * Constructor.
@@ -56,11 +58,17 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public Object evaluate(final String js) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         return _dts.getRuntime().evaluate(js).getResult().getValue();
     }
 
     @Override
     public byte[] printToPdf(final double pageWidthInches, final double pageHeightInches) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         return Base64.getDecoder().decode(_dts.getPage().printToPDF(
                 false,
                 false,
@@ -82,6 +90,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public CompletionStage<Void> navigate(final String url) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
         _dts.getPage().onLoadEventFired(e -> {
@@ -101,6 +112,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public CompletionStage<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         final CompletableFuture<Void> result = new CompletableFuture<>();
         waitForEvent(eventName).thenAccept(foo -> result.complete(null));
         if (ready.get()) {
@@ -131,6 +145,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public void close() {
+        if (_closed.getAndSet(true)) {
+            return;
+        }
         _chromeService.closeTab(_tab);
         _dts.close();
     }
