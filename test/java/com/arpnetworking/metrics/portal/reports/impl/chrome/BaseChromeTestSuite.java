@@ -15,11 +15,13 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.internal.TimeRange;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -27,9 +29,8 @@ import org.junit.Rule;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
-
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 /**
  * Base class for tests for Chrome-based renderers.
@@ -40,11 +41,15 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class BaseChromeIT {
+public abstract class BaseChromeTestSuite {
 
+    /**
+     * Wiremock rule.
+     */
     @Rule
-    public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+    public WireMockRule _wireMock = new WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort());
 
+    protected static final TimeRange DEFAULT_TIME_RANGE = new TimeRange(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(1)));
     protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
 
     private static final ImmutableList<String> POSSIBLE_CHROME_PATHS = ImmutableList.of(
@@ -62,7 +67,7 @@ public class BaseChromeIT {
      * Path to the Chrome binary to use for Chrome-renderer tests.
      */
     private static final Optional<String> CHROME_PATH = POSSIBLE_CHROME_PATHS.stream()
-            .filter(BaseChromeIT::isPathExecutable)
+            .filter(BaseChromeTestSuite::isPathExecutable)
             .findFirst();
 
     /**
@@ -80,6 +85,9 @@ public class BaseChromeIT {
         return Files.isExecutable(FileSystems.getDefault().getPath(path));
     }
 
+    /**
+     * Class setup.
+     */
     @BeforeClass
     public static void setUpClass() {
         Assume.assumeTrue("could not find Chrome in any likely location", CHROME_PATH.isPresent());
