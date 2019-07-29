@@ -17,16 +17,16 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
+import com.github.tomakehurst.wiremock.common.Strings;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
-import models.internal.impl.PdfReportFormat;
+import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -36,13 +36,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests class {@link PdfScreenshotRenderer}.
+ * Tests class {@link HtmlScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTestSuite} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class PdfScreenshotRendererIT extends BaseChromeIT {
+public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test
     public void testRendering() throws Exception {
@@ -56,8 +56,8 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
                         )
         );
 
-        final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(DEV_TOOLS_FACTORY);
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(DEV_TOOLS_FACTORY);
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();
@@ -65,7 +65,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
                 DEFAULT_TIMEOUT
         );
@@ -74,6 +74,7 @@ public class PdfScreenshotRendererIT extends BaseChromeIT {
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
-        assertTrue(bytes.getValue().length > 0);
+        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
+        assertTrue(response.contains("here are some bytes"));
     }
 }

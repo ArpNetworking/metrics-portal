@@ -16,53 +16,49 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeIT;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTestSuite;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
-import com.github.tomakehurst.wiremock.common.Strings;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
-import models.internal.impl.HtmlReportFormat;
+import models.internal.impl.PdfReportFormat;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Tests class {@link HtmlGrafanaScreenshotRenderer}.
+ * Tests class {@link PdfGrafanaScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTestSuite} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class HtmlScreenshotRendererIT extends BaseChromeIT {
+public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
 
-    private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
-        final Config config = CHROME_RENDERER_CONFIG;
+    @Test
+    public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final Config config = CHROME_RENDERER_CONFIG;
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
-                                .withBody(Utils.mockGrafanaReportPanelPage(renderDelay))
+                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ZERO))
                         )
         );
-
-        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(DEV_TOOLS_FACTORY);
+        final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
+        final PdfGrafanaScreenshotRenderer renderer = new PdfGrafanaScreenshotRenderer(DEV_TOOLS_FACTORY);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()
@@ -73,7 +69,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
                 DEFAULT_TIMEOUT
         );
@@ -82,17 +78,6 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
-        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
-        assertEquals(response, "content we care about");
-    }
-
-    @Test
-    public void testImmediateRendering() throws Exception {
-        runTestWithRenderDelay(Duration.ZERO);
-    }
-
-    @Test
-    public void testDelayedRendering() throws Exception {
-        runTestWithRenderDelay(Duration.ofSeconds(2));
+        assertTrue(bytes.getValue().length > 0);
     }
 }
