@@ -30,6 +30,7 @@ public interface DevToolsService {
      * @param js A JavaScript expression. (If you need multiple statements, wrap them in an
      *   <a href="https://developer.mozilla.org/en-US/docs/Glossary/IIFE">IIFE</a>.)
      * @return The result of the evaluation. (e.g. a String, a Double, a-- I don't know about arrays/objects.)
+     * @throws IllegalStateException If the service is closed.
      */
     Object evaluate(String js);
 
@@ -39,6 +40,7 @@ public interface DevToolsService {
      * @param pageWidth How wide the PDF's pages should be, in inches.
      * @param pageHeight How tall the PDF's pages should be, in inches.
      * @return Raw bytes of the PDF, suitable for e.g. writing to a .pdf file.
+     * @throws IllegalStateException If the service is closed.
      */
     byte[] printToPdf(double pageWidth, double pageHeight);
 
@@ -47,6 +49,7 @@ public interface DevToolsService {
      *
      * @param url The URL to navigate to.
      * @return A {@link CompletionStage} that completes when the page has loaded.
+     * @throws IllegalStateException If the service is closed.
      */
     CompletionStage<Void> navigate(String url);
 
@@ -68,6 +71,7 @@ public interface DevToolsService {
      * @param eventName The name of the JavaScript event to listen for.
      * @param ready Determine whether the event has already fired.
      * @return A {@link CompletionStage} that completes when the event has fired (or immediately, if {@code ready} returns true).
+     * @throws IllegalStateException If the service is closed.
      */
     CompletionStage<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
 }
