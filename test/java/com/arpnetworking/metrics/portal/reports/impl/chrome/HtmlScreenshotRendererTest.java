@@ -19,7 +19,6 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
 import com.typesafe.config.Config;
-import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
@@ -28,7 +27,6 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -40,11 +38,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests class {@link HtmlScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeIT} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTestSuite} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class HtmlScreenshotRendererIT extends BaseChromeIT {
+public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test
     public void testRendering() throws Exception {
@@ -67,7 +65,7 @@ public class HtmlScreenshotRendererIT extends BaseChromeIT {
         final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
-                new TimeRange(Instant.EPOCH, Instant.EPOCH),
+                DEFAULT_TIME_RANGE,
                 builder,
                 DEFAULT_TIMEOUT
         );
