@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTest;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTestSuite;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
@@ -41,11 +41,11 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests class {@link HtmlGrafanaScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTest} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTestSuite} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class HtmlScreenshotRendererTest extends BaseChromeTest {
+public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
         final Config config = CHROME_RENDERER_CONFIG;

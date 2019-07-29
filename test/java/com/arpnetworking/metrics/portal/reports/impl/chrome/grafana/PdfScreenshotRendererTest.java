@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTest;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTestSuite;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.typesafe.config.Config;
@@ -39,11 +39,11 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests class {@link PdfGrafanaScreenshotRenderer}.
  *
- * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTest} for instructions for manual execution.
+ * This test is ignored on systems where it can't find Chrome -- see {@link BaseChromeTestSuite} for instructions for manual execution.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class PdfScreenshotRendererTest extends BaseChromeTest {
+public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test
     public void testRendering() throws Exception {
