@@ -18,8 +18,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
-import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -61,13 +59,10 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
     /**
      * Public constructor.
      *
-     * @param config the configuration for this renderer. Meaningful keys:
-     * <ul>
-     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
-     * </ul>
+     * @param factory The {@link DevToolsFactory} to use to open tabs and drive them.
      */
     @Inject
-    public PdfScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    public PdfScreenshotRenderer(final DevToolsFactory factory) {
+        super(factory);
     }
 }

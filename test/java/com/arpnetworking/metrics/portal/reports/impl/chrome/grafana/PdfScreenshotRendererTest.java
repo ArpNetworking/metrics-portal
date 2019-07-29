@@ -58,7 +58,7 @@ public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
                         )
         );
         final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfGrafanaScreenshotRenderer renderer = new PdfGrafanaScreenshotRenderer(config);
+        final PdfGrafanaScreenshotRenderer renderer = new PdfGrafanaScreenshotRenderer(DEV_TOOLS_FACTORY);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()

@@ -60,7 +60,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         );
 
         final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
-        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(config);
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(DEV_TOOLS_FACTORY);
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(
                         TestBeanFactory.createWebPageReportSourceBuilder()

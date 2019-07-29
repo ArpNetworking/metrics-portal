@@ -49,6 +49,8 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DefaultDevToolsFactory;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
@@ -187,6 +189,14 @@ public class MainModule extends AbstractModule {
     private Features getFeatures(final Config configuration) {
         return new DefaultFeatures(configuration);
     }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
+    private DevToolsFactory provideChromeDevToolsFactory(final Config config) {
+        return new DefaultDevToolsFactory(config.getConfig("chrome"));
+    }
+
 
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice

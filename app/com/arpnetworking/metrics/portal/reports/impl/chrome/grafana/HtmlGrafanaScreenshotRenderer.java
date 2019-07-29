@@ -17,10 +17,9 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
-import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
@@ -53,13 +52,10 @@ public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRe
     /**
      * Public constructor.
      *
-     * @param config the configuration for this renderer. Meaningful keys:
-     * <ul>
-     *   <li>{@code chromePath} -- the path to the Chrome binary to use to render pages.</li>
-     * </ul>
+     * @param factory The {@link DevToolsFactory} to use to open tabs and drive them.
      */
     @Inject
-    public HtmlGrafanaScreenshotRenderer(@Assisted final Config config) {
-        super(config);
+    public HtmlGrafanaScreenshotRenderer(final DevToolsFactory factory) {
+        super(factory);
     }
 }
