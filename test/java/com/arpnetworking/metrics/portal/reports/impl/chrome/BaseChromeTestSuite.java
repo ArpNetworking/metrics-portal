@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,8 +32,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-
 /**
  * Base class for tests for Chrome-based renderers.
  *
@@ -42,10 +41,13 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-abstract public class BaseChromeTestSuite {
+public abstract class BaseChromeTestSuite {
 
+    /**
+     * Wiremock rule.
+     */
     @Rule
-    public WireMockRule _wireMock = new WireMockRule(wireMockConfig().dynamicPort());
+    public WireMockRule _wireMock = new WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort());
 
     protected static final TimeRange DEFAULT_TIME_RANGE = new TimeRange(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(1)));
     protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
@@ -83,6 +85,9 @@ abstract public class BaseChromeTestSuite {
         return Files.isExecutable(FileSystems.getDefault().getPath(path));
     }
 
+    /**
+     * Class setup.
+     */
     @BeforeClass
     public static void setUpClass() {
         Assume.assumeTrue("could not find Chrome in any likely location", CHROME_PATH.isPresent());
