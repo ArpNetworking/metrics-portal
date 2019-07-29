@@ -70,6 +70,21 @@ public abstract class BaseChromeTestSuite {
             .filter(BaseChromeTestSuite::isPathExecutable)
             .findFirst();
 
+
+    protected static final DevToolsFactory DEV_TOOLS_FACTORY = new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
+            "path", CHROME_PATH.get(),
+            "args", ImmutableMap.of(
+                    "no-sandbox", "true",
+                    "headless", "true"
+            ),
+            "executor", ImmutableMap.of(
+                    "corePoolSize", 0,
+                    "maximumPoolSize", 8,
+                    "keepAlive", "PT1S",
+                    "queueSize", 1024
+            )
+    )));
+
     /**
      * Config to use to instantiate Chrome-based renderers.
      */
