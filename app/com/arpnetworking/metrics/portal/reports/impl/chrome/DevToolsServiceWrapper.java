@@ -58,11 +58,17 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public Object evaluate(final String js) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         return _dts.getRuntime().evaluate(js).getResult().getValue();
     }
 
     @Override
     public byte[] printToPdf(final double pageWidthInches, final double pageHeightInches) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         return Base64.getDecoder().decode(_dts.getPage().printToPDF(
                 false,
                 false,
@@ -84,6 +90,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public CompletionStage<Void> navigate(final String url) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         final CompletableFuture<Void> result = new CompletableFuture<>();
         _dts.getPage().enable();
         _dts.getPage().onLoadEventFired(e -> {
@@ -103,6 +112,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public CompletionStage<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
+        if (_closed.get()) {
+            throw new IllegalStateException("cannot interact with closed devtools");
+        }
         final CompletableFuture<Void> result = new CompletableFuture<>();
         waitForEvent(eventName).thenAccept(foo -> result.complete(null));
         if (ready.get()) {
