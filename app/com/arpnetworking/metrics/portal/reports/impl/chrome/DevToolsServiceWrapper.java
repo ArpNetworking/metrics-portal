@@ -24,8 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -62,19 +62,19 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
-    public Object evaluate(final String js) {
+    public CompletableFuture<Object> evaluate(final String js) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }
-        return _dts.getRuntime().evaluate(js).getResult().getValue();
+        return supplyInExecutor(() -> _dts.getRuntime().evaluate(js).getResult().getValue());
     }
 
     @Override
-    public byte[] printToPdf(final double pageWidthInches, final double pageHeightInches) {
+    public CompletableFuture<byte[]> printToPdf(final double pageWidthInches, final double pageHeightInches) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }
-        return Base64.getDecoder().decode(_dts.getPage().printToPDF(
+        return supplyInExecutor(() -> Base64.getDecoder().decode(_dts.getPage().printToPDF(
                 false,
                 false,
                 false,
@@ -90,46 +90,42 @@ public class DevToolsServiceWrapper implements DevToolsService {
                 "",
                 "",
                 true
-        ));
+        )));
     }
 
     @Override
-    public CompletionStage<Void> navigate(final String url) {
+    public CompletableFuture<Void> navigate(final String url) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }
         final CompletableFuture<Void> result = new CompletableFuture<>();
-        _dts.getPage().enable();
-        _dts.getPage().onLoadEventFired(e -> {
-            LOGGER.debug()
-                    .setMessage("navigated to")
-                    .addData("url", url)
-                    .log();
-            result.complete(null);
-        });
-        LOGGER.debug()
-                .setMessage("navigating to")
-                .addData("url", url)
-                .log();
-        _dts.getPage().navigate(url);
+        cascadeCancellation(
+                result,
+                _executor.submit(() -> {
+                    _dts.getPage().enable();
+                    _dts.getPage().onLoadEventFired(e -> {
+                        LOGGER.debug()
+                                .setMessage("navigated to")
+                                .addData("url", url)
+                                .log();
+                        result.complete(null);
+                    });
+                    LOGGER.debug()
+                            .setMessage("navigating to")
+                            .addData("url", url)
+                            .log();
+                    _dts.getPage().navigate(url);
+                })
+        );
         return result;
     }
 
     @Override
-    public CompletionStage<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
+    public CompletableFuture<Void> nowOrOnEvent(final String eventName, final Supplier<Boolean> ready) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }
-        final CompletableFuture<Void> result = new CompletableFuture<>();
-        waitForEvent(eventName).thenAccept(foo -> result.complete(null));
-        if (ready.get()) {
-            result.complete(null);
-        }
-        return result;
-    }
 
-    private CompletionStage<Void> waitForEvent(final String eventName) {
-        final CompletableFuture<Void> result = new CompletableFuture<>();
         final String triggerMessage = eventName + " -- " + UUID.randomUUID();
         final String jsonEventName, jsonTriggerMessage;
         try {
@@ -138,23 +134,62 @@ public class DevToolsServiceWrapper implements DevToolsService {
         } catch (final JsonProcessingException e) {
             throw new AssertionError("json-encoding a String somehow failed", e);
         }
-        _dts.getConsole().enable();
-        _dts.getConsole().onMessageAdded(e -> {
-            if (e.getMessage().getText().equals(triggerMessage)) {
-                result.complete(null);
-            }
-        });
-        evaluate("window.addEventListener(" + jsonEventName + ", () => console.log(" + jsonTriggerMessage + "))");
+
+        final CompletableFuture<Void> result = new CompletableFuture<>();
+        cascadeCancellation(
+                result,
+                _executor.submit(() -> {
+                    _dts.getConsole().enable();
+                    _dts.getConsole().onMessageAdded(e -> {
+                        if (e.getMessage().getText().equals(triggerMessage)) {
+                            result.complete(null);
+                        }
+                    });
+                    evaluate("window.addEventListener(" + jsonEventName + ", () => console.log(" + jsonTriggerMessage + "))")
+                            .thenAccept(nothing -> {
+                                if (ready.get()) {
+                                    result.complete(null);
+                                }
+                            });
+                })
+        );
+
         return result;
     }
 
     @Override
-    public void close() {
+    public CompletableFuture<Void> close() {
         if (_closed.getAndSet(true)) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
-        _chromeService.closeTab(_tab);
-        _dts.close();
+        final CompletableFuture<Void> result = new CompletableFuture<>();
+        cascadeCancellation(
+                result,
+                _executor.submit(() -> {
+                    _dts.close();
+                    _chromeService.closeTab(_tab);
+                    result.complete(null);
+                })
+        );
+        return result;
+    }
+
+    /**
+     * Cancel {@code task} if {@code result} gets cancelled.
+     */
+    private void cascadeCancellation(final CompletableFuture<?> result, final Future<?> task) {
+        result.whenComplete((x, e) -> task.cancel(true));
+    }
+
+    /**
+     * Run a supplier in a thread in the executor, and when it finishes complete a {@link CompletableFuture}.
+     */
+    private <T> CompletableFuture<T> supplyInExecutor(final Supplier<T> supplier) {
+        final CompletableFuture<T> result = new CompletableFuture<>();
+        cascadeCancellation(result, _executor.submit(() -> {
+            result.complete(supplier.get());
+        }));
+        return result;
     }
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.createInstance();
