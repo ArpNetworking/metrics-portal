@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -37,6 +38,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeService _chromeService;
     private final com.github.kklisura.cdt.services.types.ChromeTab _tab;
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
+    private final ExecutorService _executor;
     private final AtomicBoolean _closed = new AtomicBoolean(false);
 
     /**
@@ -49,11 +51,14 @@ public class DevToolsServiceWrapper implements DevToolsService {
     /* package private */ DevToolsServiceWrapper(
             final com.github.kklisura.cdt.services.ChromeService chromeService,
             final com.github.kklisura.cdt.services.types.ChromeTab tab,
-            final com.github.kklisura.cdt.services.ChromeDevToolsService dts
+            final com.github.kklisura.cdt.services.ChromeDevToolsService dts,
+            final ExecutorService executor
+
     ) {
         _chromeService = chromeService;
         _tab = tab;
         _dts = dts;
+        _executor = executor;
     }
 
     @Override

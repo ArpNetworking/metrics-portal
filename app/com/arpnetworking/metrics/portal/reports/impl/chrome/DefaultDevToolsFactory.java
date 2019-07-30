@@ -49,7 +49,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(service, tab, result);
+        return new DevToolsServiceWrapper(service, tab, result, _executor);
     }
 
     /**
