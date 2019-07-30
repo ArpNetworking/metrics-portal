@@ -51,8 +51,8 @@ public class RollupExecutor extends AbstractActorWithTimers {
         return receiveBuilder()
                 .match(RollupDefinition.class, this::executeRollup)
                 .matchEquals(FETCH_ROLLUP, work -> this.fetchRollup())
-                .match(NoMoreRollups.class, work -> this.scheduleFetch())
-                .match(FinishRollupMessage.class, work -> this.fetchRollup())
+                .match(NoMoreRollups.class, this::scheduleFetch)
+                .match(FinishRollupMessage.class, this::handleFinishRollup)
                 .build();
     }
 
@@ -66,7 +66,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         PatternsCS.pipe(
                 performRollup(rollupDefinition)
                         .handle((response, failure) -> {
-                            final String baseMetricName = "rollup/generator/perform_rollup_"
+                            final String baseMetricName = "rollup/executor/perform_rollup_"
                                     + rollupDefinition.getPeriod().name().toLowerCase(Locale.getDefault());
                             _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
                             _metrics.recordTimer(
@@ -129,9 +129,14 @@ public class RollupExecutor extends AbstractActorWithTimers {
         _rollupManager.tell(RollupFetch.getInstance(), getSelf());
     }
 
+    private void handleFinishRollup(final FinishRollupMessage message) {
+        _metrics.recordCounter("rollup/executor/finish_rollup_message/received", 1);
+        fetchRollup();
+    }
 
-    private void scheduleFetch() {
-        getTimers().startSingleTimer(FETCH_TIMER, FETCH_ROLLUP, _pollInterval);
+    private void scheduleFetch(final NoMoreRollups message) {
+        _metrics.recordCounter("rollup/executor/no_more", 1);
+        timers().startSingleTimer(FETCH_TIMER, FETCH_ROLLUP, _pollInterval);
     }
 
     /**

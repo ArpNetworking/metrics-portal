@@ -15,31 +15,26 @@
  */
 package com.arpnetworking.rollups;
 
-import scala.concurrent.duration.Deadline;
-
 import java.io.Serializable;
 
 /**
- * Message class used to signify that no more metric names are available.
+ * Message class used to signify that no more rollups are available.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class NoMoreRollups implements Serializable {
 
-    /**
-     * Creates a NoMoreMetrics instance with a specified deadline when more data is expected.
-     *
-     * @param nextRefresh point in time when the next refresh is schedule to occur.
-     */
-    public NoMoreRollups(final Deadline nextRefresh) {
-        // Protected against negative times.
-        _nextRefreshMillis = Math.max(nextRefresh.timeLeft().toMillis(), 0);
-    }
-
-    public long getNextRefreshMillis() {
-        return _nextRefreshMillis;
-    }
-
-    private final long _nextRefreshMillis;
     private static final long serialVersionUID = -3503619526731721351L;
+    private static final NoMoreRollups THE_INSTANCE = new NoMoreRollups();
+
+    /**
+     * Creates a NoMoreRollups instance.
+     */
+    private NoMoreRollups() {
+        // Protected against negative times.
+    }
+
+    public static NoMoreRollups getInstance() {
+        return THE_INSTANCE;
+    }
 }

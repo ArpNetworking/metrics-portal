@@ -74,7 +74,7 @@ public class RollupManager extends AbstractActorWithTimers {
                             if (rollupDefinition.isPresent()) {
                                 getSender().tell(rollupDefinition.get(), getSelf());
                             } else {
-                                getSender().tell(new NoMoreRollups(_refreshInterval.fromNow()), getSelf());
+                                getSender().tell(NoMoreRollups.getInstance(), getSelf());
                             }
 
                         })

@@ -42,7 +42,6 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -71,8 +70,6 @@ public class RollupExecutorTest {
     private TestKit _probe;
 
     private ActorSystem _system;
-
-    private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 
     @Before
     public void setUp() {
