@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
-import com.typesafe.config.Config;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -31,8 +30,6 @@ import org.mockito.MockitoAnnotations;
 import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Tests for {@link BaseScreenshotRenderer}.
