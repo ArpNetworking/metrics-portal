@@ -21,12 +21,15 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
+import akka.cluster.routing.ClusterRouterPool;
+import akka.cluster.routing.ClusterRouterPoolSettings;
 import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ClusterShardingSettings;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import akka.cluster.singleton.ClusterSingletonProxy;
 import akka.cluster.singleton.ClusterSingletonProxySettings;
+import akka.routing.ConsistentHashingPool;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
@@ -57,6 +60,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupGenerator;
+import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
@@ -154,6 +158,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupGenerator"))
                 .toProvider(RollupGeneratorProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupManager"))
+                .toProvider(RollupManagerProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -614,4 +622,36 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
     }
 
+    private static final class RollupManagerProvider implements Provider<ActorRef> {
+        private final Injector _injector;
+        private final ActorSystem _system;
+        static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
+
+        @Inject
+        RollupManagerProvider(final Injector injector, final ActorSystem system) {
+            _injector = injector;
+            _system = system;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            if (cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
+                final Set<String> roles = Collections.emptySet();
+                roles.add(ROLLUP_MANAGER_ROLE);
+                return _system.actorOf(new ClusterRouterPool(
+                                new ConsistentHashingPool(0),
+                                new ClusterRouterPoolSettings(
+                                        10000,
+                                        1,
+                                        true,
+                                        roles
+                                ))
+                                .props(GuiceActorCreator.props(_injector, RollupManager.class)),
+                        "rollup-manager"
+                );
+            }
+            return null;
+        }
+    }
 }
