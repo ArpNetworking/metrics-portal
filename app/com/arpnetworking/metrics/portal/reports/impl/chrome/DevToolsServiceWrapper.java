@@ -89,7 +89,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
-    public CompletionStage<Void> navigate(final String url) {
+    public CompletableFuture<Void> navigate(final String url) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }

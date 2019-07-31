@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
@@ -51,7 +52,7 @@ public interface DevToolsService {
      * @return A {@link CompletionStage} that completes when the page has loaded.
      * @throws IllegalStateException If the service is closed.
      */
-    CompletionStage<Void> navigate(String url);
+    CompletableFuture<Void> navigate(String url);
 
     /**
      * Closes the dev tools. After close() is called, any further interaction is illegal
