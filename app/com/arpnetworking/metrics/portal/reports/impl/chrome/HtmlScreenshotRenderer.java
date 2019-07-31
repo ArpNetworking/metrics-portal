@@ -24,7 +24,6 @@ import models.internal.impl.WebPageReportSource;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -52,9 +51,9 @@ public final class HtmlScreenshotRenderer extends BaseScreenshotRenderer<WebPage
             final TimeRange timeRange,
             final B builder
     ) {
-        return CompletableFuture.completedFuture(builder.setBytes(
-                ((String) devToolsService.evaluate("document.documentElement.outerHTML")).getBytes(StandardCharsets.UTF_8)
-        ));
+        return devToolsService.evaluate("document.documentElement.outerHTML").thenApply(
+                jsObject -> builder.setBytes(((String) jsObject).getBytes(StandardCharsets.UTF_8))
+        );
     }
 
     /**

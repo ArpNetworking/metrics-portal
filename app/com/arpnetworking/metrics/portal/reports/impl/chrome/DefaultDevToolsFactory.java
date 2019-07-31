@@ -49,7 +49,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(service, tab, result);
+        return new DevToolsServiceWrapper(service, tab, result, _executor);
     }
 
     /**
@@ -111,8 +111,8 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
                 config.hasPath("keepAlive")
                         ? Duration.parse(config.getString("keepAlive"))
                         : Duration.ofSeconds(1);
-        final int corePoolSize = config.hasPath("corePoolSize") ? config.getInt("corePoolSize") : 0;
-        final int maximumPoolSize = config.hasPath("maximumPoolSize") ? config.getInt("maximumPoolSize") : 4;
+        final int corePoolSize = config.hasPath("corePoolSize") ? config.getInt("corePoolSize") : 8;
+        final int maximumPoolSize = config.hasPath("maximumPoolSize") ? config.getInt("maximumPoolSize") : 8;
         final int queueSize = config.hasPath("queueSize") ? config.getInt("queueSize") : 1024;
         return new ThreadPoolExecutor(
                 corePoolSize,

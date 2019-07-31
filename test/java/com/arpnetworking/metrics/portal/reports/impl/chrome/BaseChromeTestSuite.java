@@ -74,11 +74,11 @@ public abstract class BaseChromeTestSuite {
     protected static final DevToolsFactory DEV_TOOLS_FACTORY = new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
             "path", CHROME_PATH.get(),
             "args", ImmutableMap.of(
-                    "no-sandbox", "true",
-                    "headless", "true"
+                    "no-sandbox", true,
+                    "headless", true
             ),
             "executor", ImmutableMap.of(
-                    "corePoolSize", 0,
+                    "corePoolSize", 8,
                     "maximumPoolSize", 8,
                     "keepAlive", "PT1S",
                     "queueSize", 1024
