@@ -23,7 +23,6 @@ import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
 
 import java.net.URI;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -51,9 +50,7 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
             final TimeRange timeRange,
             final B builder
     ) {
-        return CompletableFuture.completedFuture(
-                builder.setBytes(devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches()))
-        );
+        return devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches()).thenApply(builder::setBytes);
     }
 
     /**

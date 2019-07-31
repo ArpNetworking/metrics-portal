@@ -28,6 +28,9 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -89,7 +92,8 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        return dts.navigate(getUri(source).toString())
+        final CompletableFuture<Void> navigate = dts.navigate(getUri(source).toString());
+        final CompletableFuture<B> result = navigate
                 .thenCompose(whatever -> {
                     LOGGER.debug()
                             .setMessage("page load completed")
@@ -98,19 +102,24 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                             .addData("timeRange", timeRange)
                             .log();
                     return whenLoaded(dts, source, format, timeRange, builder);
-                })
-                .whenComplete((x, e) -> {
-                    LOGGER.debug()
-                            .setMessage("rendering completed")
-                            .addData("source", source)
-                            .addData("format", format)
-                            .addData("timeRange", timeRange)
-                            .addData("result", x)
-                            .addData("exception", e)
-                            .log();
-                    dts.close();
-                })
-                .toCompletableFuture();
+                });
+
+        result.whenComplete((x, e) -> {
+            LOGGER.debug()
+                    .setMessage("rendering completed")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .addData("result", x)
+                    .setThrowable(e)
+                    .log();
+            navigate.cancel(true);
+            dts.close();
+        });
+
+        TIMEOUT_SERVICE.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);
+
+        return result;
     }
 
     /**
@@ -127,4 +136,5 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     private final DevToolsFactory _devToolsFactory;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRenderer.class);
+    private static final ScheduledExecutorService TIMEOUT_SERVICE = new ScheduledThreadPoolExecutor(1);
 }

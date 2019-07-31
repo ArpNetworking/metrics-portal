@@ -53,15 +53,14 @@ public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRen
             final B builder
     ) {
         final CompletableFuture<B> result = new CompletableFuture<>();
-        devToolsService.evaluate(
+        return devToolsService.evaluate(
                 "(() => {\n"
                         + "  var body = document.getElementsByClassName('rendered-markdown-container')[0].srcdoc;\n"
                         + "  document.open(); document.write(body); document.close();\n"
                         + "})();\n"
-        );
-        final byte[] pdf = devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches());
-        result.complete(builder.setBytes(pdf));
-        return result;
+        ).thenCompose(
+                anything -> devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches())
+        ).thenApply(builder::setBytes);
     }
 
     /**

@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
-import com.typesafe.config.Config;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
@@ -27,8 +26,7 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -44,10 +42,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
-    @Test
+    @Test(timeout = 20000)
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
-        final Config config = CHROME_RENDERER_CONFIG;
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
@@ -62,7 +59,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();
 
-        final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
+        final CompletableFuture<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
                 DEFAULT_TIME_RANGE,
@@ -70,7 +67,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 DEFAULT_TIMEOUT
         );
 
-        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
+        stage.get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
