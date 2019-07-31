@@ -111,7 +111,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                     .addData("format", format)
                     .addData("timeRange", timeRange)
                     .addData("result", x)
-                    .addData("exception", e)
+                    .setThrowable(e)
                     .log();
             navigate.cancel(true);
             dts.close();
