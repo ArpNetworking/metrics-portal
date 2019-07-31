@@ -20,7 +20,6 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTestSuite;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
-import com.typesafe.config.Config;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Test;
@@ -30,8 +29,7 @@ import org.mockito.Mockito;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -48,7 +46,6 @@ import static org.junit.Assert.assertEquals;
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
-        final Config config = CHROME_RENDERER_CONFIG;
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
         _wireMock.givenThat(
@@ -68,7 +65,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                                 .build())
                 .build();
 
-        final CompletionStage<MockRenderedReportBuilder> stage = renderer.render(
+        final CompletableFuture<MockRenderedReportBuilder> stage = renderer.render(
                 source,
                 format,
                 DEFAULT_TIME_RANGE,
@@ -76,7 +73,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 DEFAULT_TIMEOUT
         );
 
-        stage.toCompletableFuture().get(20, TimeUnit.SECONDS);
+        stage.get();
 
         final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
         Mockito.verify(builder).setBytes(bytes.capture());
@@ -84,12 +81,12 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         assertEquals(response, "content we care about");
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testImmediateRendering() throws Exception {
         runTestWithRenderDelay(Duration.ZERO);
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testDelayedRendering() throws Exception {
         runTestWithRenderDelay(Duration.ofSeconds(2));
     }

@@ -27,7 +27,9 @@ import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.net.URI;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Uses a headless Chrome instance to render a page as HTML.
@@ -79,9 +81,18 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
         return devToolsService.nowOrOnEvent(
                 "reportrendered",
                 () -> {
-                    final Object html = devToolsService.evaluate(
-                            "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
-                    );
+                    final Object html;
+                    try {
+                        // TODO(spencerpearson): get rid of this .get(). It's not a big deal, since
+                        //   (a) this method is executed in a threadpool dedicated to doing Chrome stuff, and
+                        //   (b) evaluate() should be pretty quick,
+                        //   but this .get() still results in two of that pool's threads blocking instead of just one.
+                        html = devToolsService.evaluate(
+                                "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
+                        ).get();
+                    } catch (final InterruptedException | ExecutionException e) {
+                        throw new CompletionException(e);
+                    }
                     final boolean ready = (html instanceof String) && !((String) html).isEmpty();
                     LOGGER.debug()
                             .setMessage("checked for readiness")

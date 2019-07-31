@@ -25,7 +25,6 @@ import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -43,10 +42,10 @@ public final class HtmlGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRe
             final TimeRange timeRange,
             final B builder
     ) {
-        final String html = (String) devToolsService.evaluate(
-                "document.getElementsByClassName('rendered-markdown-container')[0].srcdoc"
-        );
-        return CompletableFuture.completedFuture(builder.setBytes(html.getBytes(StandardCharsets.UTF_8)));
+        return devToolsService.evaluate("document.getElementsByClassName('rendered-markdown-container')[0].srcdoc")
+                .thenApply(html -> {
+                    return builder.setBytes(((String) html).getBytes(StandardCharsets.UTF_8));
+                });
     }
 
     /**

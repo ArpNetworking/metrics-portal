@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
 /**
@@ -33,7 +32,7 @@ public interface DevToolsService {
      * @return The result of the evaluation. (e.g. a String, a Double, a-- I don't know about arrays/objects.)
      * @throws IllegalStateException If the service is closed.
      */
-    Object evaluate(String js);
+    CompletableFuture<Object> evaluate(String js);
 
     /**
      * Creates a PDF capturing how the page currently displays.
@@ -43,13 +42,13 @@ public interface DevToolsService {
      * @return Raw bytes of the PDF, suitable for e.g. writing to a .pdf file.
      * @throws IllegalStateException If the service is closed.
      */
-    byte[] printToPdf(double pageWidth, double pageHeight);
+    CompletableFuture<byte[]> printToPdf(double pageWidth, double pageHeight);
 
     /**
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
-     * @return A {@link CompletionStage} that completes when the page has loaded.
+     * @return A {@link CompletableFuture} that completes when the page has loaded.
      * @throws IllegalStateException If the service is closed.
      */
     CompletableFuture<Void> navigate(String url);
@@ -57,11 +56,12 @@ public interface DevToolsService {
     /**
      * Closes the dev tools. After close() is called, any further interaction is illegal
      * (except further calls to close(), which are no-ops).
+     * @return A {@link CompletableFuture} that completes when the devtools and their associated tab have closed.
      */
-    void close();
+    CompletableFuture<Void> close();
 
     /**
-     * Create a {@link CompletionStage} that completes when {@code eventName} fires, or immediately if the event has already fired.
+     * Create a {@link CompletableFuture} that completes when {@code eventName} fires, or immediately if the event has already fired.
      *
      * (Context: event handlers can only be registered on a page after it's finished loading.
      * This introduces the possibility that the event you want to listen for will have <i>already happened</i> by the time
@@ -71,8 +71,8 @@ public interface DevToolsService {
      *
      * @param eventName The name of the JavaScript event to listen for.
      * @param ready Determine whether the event has already fired.
-     * @return A {@link CompletionStage} that completes when the event has fired (or immediately, if {@code ready} returns true).
+     * @return A {@link CompletableFuture} that completes when the event has fired (or immediately, if {@code ready} returns true).
      * @throws IllegalStateException If the service is closed.
      */
-    CompletionStage<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
+    CompletableFuture<Void> nowOrOnEvent(String eventName, Supplier<Boolean> ready);
 }
