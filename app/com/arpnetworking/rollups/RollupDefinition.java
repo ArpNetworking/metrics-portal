@@ -17,6 +17,8 @@ package com.arpnetworking.rollups;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.collect.ImmutableSet;
+import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNull;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -94,11 +96,19 @@ public final class RollupDefinition implements Serializable {
      * {@code RollupDefinition} builder static inner class.
      */
     public static final class Builder extends OvalBuilder<RollupDefinition> {
+        @NotNull
+        @NotEmpty
         private String _sourceMetricName;
+        @NotNull
+        @NotEmpty
         private String _destinationMetricName;
+        @NotNull
         private RollupPeriod _period;
+        @NotNull
         private Instant _startTime;
+        @NotNull
         private Instant _endTime;
+        @NotNull
         private ImmutableSet<String> _groupByTags;
 
         /**

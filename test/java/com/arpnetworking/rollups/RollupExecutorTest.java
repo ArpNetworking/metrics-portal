@@ -122,6 +122,7 @@ public class RollupExecutorTest {
                                 .setPeriod(RollupPeriod.HOURLY)
                                 .setStartTime(Instant.EPOCH)
                                 .setEndTime(Instant.EPOCH.plusMillis(1))
+                                .setGroupByTags(ImmutableSet.of())
                                 .build()
                         )
                         .build(),
