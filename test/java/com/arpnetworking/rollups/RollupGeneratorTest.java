@@ -20,10 +20,8 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
@@ -46,7 +44,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
@@ -77,6 +74,7 @@ public class RollupGeneratorTest {
     @Mock
     private PeriodicMetrics _periodicMetrics;
     private TestKit _probe;
+    private ActorRef _testManager;
 
     private Clock _clock;
     private ActorSystem _system;
@@ -105,6 +103,9 @@ public class RollupGeneratorTest {
                 bind(Config.class).toInstance(_config);
                 bind(ActorRef.class)
                         .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                        .toInstance(_probe.getRef());
+                bind(ActorRef.class)
+                        .annotatedWith(Names.named("RollupManager"))
                         .toInstance(_probe.getRef());
                 bind(Clock.class).toInstance(_clock);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
@@ -312,33 +313,7 @@ public class RollupGeneratorTest {
     }
 
     @Test
-    public void testPerformRollupWithNoLastDataPoint() {
-        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
-            final CompletableFuture<MetricsQueryResponse> future = new CompletableFuture<>();
-            final Object arg0 = invocation.getArguments()[0];
-            if (arg0 instanceof MetricsQuery) {
-                final MetricsQuery query = (MetricsQuery) arg0;
-                final String metricName = query.getMetrics().get(0).getName();
-                final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
-                builder.setName(metricName);
-
-                builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
-                        .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
-                        .setValue(0.0)
-                        .build()
-                ));
-                future.complete(new MetricsQueryResponse.Builder()
-                        .setQueries(ImmutableList.of(new MetricsQueryResponse.Query.Builder()
-                                .setResults(ImmutableList.of(builder.build()))
-                                .build()))
-                        .build()
-                );
-            }
-
-            return future;
-        });
-
-        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+    public void testSendsRollupWithNoLastDataPoint() {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
@@ -351,75 +326,30 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
+        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
+
+        for (int i = 0; i < 4; i++) {
+            final RollupDefinition rollupDef = _probe.expectMsgClass(RollupDefinition.class);
+            assertEquals("metric", rollupDef.getSourceMetricName());
+            assertEquals("metric_1h", rollupDef.getDestinationMetricName());
+            assertEquals(RollupPeriod.HOURLY, rollupDef.getPeriod());
+            assertEquals(startTime, rollupDef.getStartTime());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupDef.getEndTime());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
+
         final FinishRollupMessage finishRollupMessage = _probe.expectMsgClass(FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
-
-        verify(_kairosDbClient, times(4)).queryMetrics(captor.capture());
-        final List<MetricsQuery> rollupQueries = captor.getAllValues();
-        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
-                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
-
-        for (final MetricsQuery rollupQuery : rollupQueries) {
-            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-            assertEquals(startTime, rollupQuery.getStartTime());
-            assertTrue(rollupQuery.getEndTime().isPresent());
-            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
-                    rollupQuery.getEndTime().get());
-            assertEquals(1, rollupQuery.getMetrics().size());
-            final Metric metric = rollupQuery.getMetrics().get(0);
-            assertEquals(1, metric.getGroupBy().size());
-            assertEquals("tag", metric.getGroupBy().get(0).getName());
-            assertEquals(ImmutableSet.of("tag1", "tag2"), metric.getGroupBy().get(0).getOtherArgs().get("tags"));
-            assertEquals(3, metric.getAggregators().size());
-            assertEquals("merge", metric.getAggregators().get(0).getName());
-            assertTrue(metric.getAggregators().get(0).getAlignSampling().isPresent());
-            assertTrue(metric.getAggregators().get(0).getAlignSampling().get());
-            assertTrue(metric.getAggregators().get(0).getAlignStartTime().isPresent());
-            assertTrue(metric.getAggregators().get(0).getAlignStartTime().get());
-            assertFalse(metric.getAggregators().get(0).getAlignEndTime().isPresent());
-            assertTrue(metric.getAggregators().get(0).getSampling().isPresent());
-            assertEquals(1L, metric.getAggregators().get(0).getSampling().get().getValue());
-            assertEquals(SamplingUnit.HOURS, metric.getAggregators().get(0).getSampling().get().getUnit());
-            assertEquals("save_as", metric.getAggregators().get(1).getName());
-            assertEquals("metric_1h", metric.getAggregators().get(1).getOtherArgs().get("metric_name"));
-            assertFalse(metric.getAggregators().get(1).getSampling().isPresent());
-            assertEquals("count", metric.getAggregators().get(2).getName());
-            assertFalse(metric.getAggregators().get(2).getSampling().isPresent());
-            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
-        }
 
         _probe.expectNoMessage();
     }
 
     @Test
     public void testPerformRollupWithOldLastDataPoint() {
-        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
-            final CompletableFuture<MetricsQueryResponse> future = new CompletableFuture<>();
-            final Object arg0 = invocation.getArguments()[0];
-            if (arg0 instanceof MetricsQuery) {
-                final MetricsQuery query = (MetricsQuery) arg0;
-                final String metricName = query.getMetrics().get(0).getName();
-                final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
-                builder.setName(metricName);
-
-                builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
-                        .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
-                        .setValue(0.0)
-                        .build()
-                ));
-                future.complete(new MetricsQueryResponse.Builder()
-                        .setQueries(ImmutableList.of(new MetricsQueryResponse.Query.Builder()
-                                .setResults(ImmutableList.of(builder.build()))
-                                .build()))
-                        .build()
-                );
-            }
-
-            return future;
-        });
-
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
@@ -433,54 +363,30 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
+        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
+
+        for (int i = 0; i < 4; i++) {
+            final RollupDefinition rollupDef = _probe.expectMsgClass(RollupDefinition.class);
+            assertEquals("metric", rollupDef.getSourceMetricName());
+            assertEquals("metric_1h", rollupDef.getDestinationMetricName());
+            assertEquals(RollupPeriod.HOURLY, rollupDef.getPeriod());
+            assertEquals(startTime, rollupDef.getStartTime());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupDef.getEndTime());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
+
         final FinishRollupMessage finishRollupMessage = _probe.expectMsgClass(FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
-
-        verify(_kairosDbClient, times(4)).queryMetrics(captor.capture());
-        final List<MetricsQuery> rollupQueries = captor.getAllValues();
-        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
-                .minus(RollupPeriod.HOURLY.periodCountToDuration(4));
-        for (final MetricsQuery rollupQuery : rollupQueries) {
-            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-            assertEquals(startTime, rollupQuery.getStartTime());
-            assertTrue(rollupQuery.getEndTime().isPresent());
-            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
-                    rollupQuery.getEndTime().get());
-            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
-        }
 
         _probe.expectNoMessage();
     }
 
     @Test
     public void testPerformRollupWithRecentLastDataPoint() {
-        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
-            final CompletableFuture<MetricsQueryResponse> future = new CompletableFuture<>();
-            final Object arg0 = invocation.getArguments()[0];
-            if (arg0 instanceof MetricsQuery) {
-                final MetricsQuery query = (MetricsQuery) arg0;
-                final String metricName = query.getMetrics().get(0).getName();
-                final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
-                builder.setName(metricName);
-
-                builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
-                        .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
-                        .setValue(0.0)
-                        .build()
-                ));
-                future.complete(new MetricsQueryResponse.Builder()
-                        .setQueries(ImmutableList.of(new MetricsQueryResponse.Query.Builder()
-                                .setResults(ImmutableList.of(builder.build()))
-                                .build()))
-                        .build()
-                );
-            }
-
-            return future;
-        });
-
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
@@ -498,22 +404,24 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
+        Instant startTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
+                .minus(RollupPeriod.HOURLY.periodCountToDuration(2));
+
+        for (int i = 0; i < 2; i++) {
+            final RollupDefinition rollupDef = _probe.expectMsgClass(RollupDefinition.class);
+            assertEquals("metric", rollupDef.getSourceMetricName());
+            assertEquals("metric_1h", rollupDef.getDestinationMetricName());
+            assertEquals(RollupPeriod.HOURLY, rollupDef.getPeriod());
+            assertEquals(startTime, rollupDef.getStartTime());
+            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
+                    rollupDef.getEndTime());
+            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
+        }
+
         final FinishRollupMessage finishRollupMessage = _probe.expectMsgClass(FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
-
-        verify(_kairosDbClient, times(2)).queryMetrics(captor.capture());
-        final List<MetricsQuery> rollupQueries = captor.getAllValues();
-        Instant startTime = lastDataPoint.plus(1, ChronoUnit.HOURS);
-        for (final MetricsQuery rollupQuery : rollupQueries) {
-            assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-            assertEquals(startTime, rollupQuery.getStartTime());
-            assertTrue(rollupQuery.getEndTime().isPresent());
-            assertEquals(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1)).minusMillis(1),
-                    rollupQuery.getEndTime().get());
-            startTime = startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(1));
-        }
 
         _probe.expectNoMessage();
     }
@@ -547,19 +455,6 @@ public class RollupGeneratorTest {
 
     @Test
     public void testSkipsRollupWithFailedLastDataPoint() {
-        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
-            final CompletableFuture<MetricsQueryResponse> future = new CompletableFuture<>();
-            final Object arg0 = invocation.getArguments()[0];
-            final MetricsQuery query = (MetricsQuery) arg0;
-            final String metricName = query.getMetrics().get(0).getName();
-            final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
-            builder.setName(metricName);
-
-            future.completeExceptionally(new RuntimeException("Failure"));
-
-            return future;
-        });
-
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
@@ -572,6 +467,7 @@ public class RollupGeneratorTest {
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setLastDataPointTime(lastDataPoint)
+                        .setFailure(new RuntimeException("Failure"))
                         .build(),
                 ActorRef.noSender());
 
@@ -579,13 +475,6 @@ public class RollupGeneratorTest {
         assertTrue(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
-
-        verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
-        final MetricsQuery rollupQuery = captor.getValue();
-        assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(lastDataPoint.plus(1, ChronoUnit.HOURS), rollupQuery.getStartTime());
-        assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minusMillis(1), rollupQuery.getEndTime().get());
 
         _probe.expectNoMessage();
     }
@@ -599,10 +488,11 @@ public class RollupGeneratorTest {
         public TestRollupGenerator(
                 final Config configuration,
                 @Named("RollupsMetricsDiscovery") final ActorRef testActor,
+                @Named("RollupManager") final ActorRef rollupManager,
                 final KairosDbClient kairosDbClient,
                 final Clock clock,
                 final PeriodicMetrics metrics) {
-            super(configuration, testActor, kairosDbClient, clock, metrics);
+            super(configuration, testActor, rollupManager, kairosDbClient, clock, metrics);
             _self = testActor;
         }
 

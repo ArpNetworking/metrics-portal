@@ -59,6 +59,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.utility.ConfigTypedProvider;
@@ -162,6 +163,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupManager"))
                 .toProvider(RollupManagerProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupExecutor"))
+                .toProvider(RollupExecutorProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -556,7 +561,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            final int actorCount = _configuration.getInt("rollup.worker.count");
+            final int actorCount = _configuration.getInt("rollup.generator.count");
             if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
@@ -653,5 +658,36 @@ public class MainModule extends AbstractModule {
             }
             return null;
         }
+    }
+
+    private static final class RollupExecutorProvider implements Provider<ActorRef> {
+        @Inject
+        RollupExecutorProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Config configuration,
+                final Features features) {
+            _injector = injector;
+            _system = system;
+            _configuration = configuration;
+            _enabled = features.isRollupsEnabled();
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            final int actorCount = _configuration.getInt("rollup.executor.count");
+            if (_enabled && cluster.selfRoles().contains(RollupManagerProvider.ROLLUP_MANAGER_ROLE)) {
+                for (int i = 0; i < actorCount; i++) {
+                    _system.actorOf(GuiceActorCreator.props(_injector, RollupExecutor.class));
+                }
+            }
+            return null;
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+        private final Config _configuration;
+        private final boolean _enabled;
     }
 }

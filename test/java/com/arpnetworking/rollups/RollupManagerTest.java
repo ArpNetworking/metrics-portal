@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.After;
 import org.junit.Before;
@@ -38,9 +37,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.when;
-
 /**
  * Test cases for {@link MetricsDiscovery}.
  *
@@ -48,8 +44,6 @@ import static org.mockito.Mockito.when;
  */
 public final class RollupManagerTest {
     private Injector _injector;
-    @Mock
-    private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
     private ActorSystem _system;
@@ -59,12 +53,10 @@ public final class RollupManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("1h");
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Config.class).toInstance(_config);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
@@ -157,7 +149,4 @@ public final class RollupManagerTest {
         actor.tell(RollupFetch.getInstance(), testActor);
         testKit.expectMsgClass(NoMoreRollups.class);
     }
-
-
-
 }
