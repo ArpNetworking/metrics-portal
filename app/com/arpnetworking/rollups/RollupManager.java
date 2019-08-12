@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import models.internal.Features;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
@@ -34,6 +35,7 @@ import javax.inject.Inject;
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public class RollupManager extends AbstractActorWithTimers {
+    private final boolean _enabled;
     private final PeriodicMetrics _periodicMetrics;
     private TreeSet<RollupDefinition> _rollupDefinitions;
 
@@ -44,10 +46,12 @@ public class RollupManager extends AbstractActorWithTimers {
     /**
      * Metrics discovery constructor.
      *
+     * @param features application features flags
      * @param periodicMetrics periodic metrics client
      */
     @Inject
-    public RollupManager(final PeriodicMetrics periodicMetrics) {
+    public RollupManager(final Features features, final PeriodicMetrics periodicMetrics) {
+        _enabled = features.isRollupsEnabled();
         _periodicMetrics = periodicMetrics;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
         getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
@@ -61,7 +65,11 @@ public class RollupManager extends AbstractActorWithTimers {
                         work -> _periodicMetrics.recordGauge("rollup/manager/queue_size", _rollupDefinitions.size()))
                 .match(
                         RollupDefinition.class,
-                        work -> _rollupDefinitions.add(work))
+                        work -> {
+                            if (_enabled) {
+                                _rollupDefinitions.add(work);
+                            }
+                        })
                 .match(
                         RollupFetch.class,
                         work -> {

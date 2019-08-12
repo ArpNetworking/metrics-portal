@@ -73,6 +73,7 @@ public class RollupGeneratorTest {
     private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+
     private TestKit _probe;
     private ActorRef _testManager;
 

@@ -67,6 +67,7 @@ public class RollupExecutorTest {
     private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+
     private TestKit _probe;
 
     private ActorSystem _system;

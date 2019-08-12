@@ -27,6 +27,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
+import models.internal.Features;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +38,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.mockito.Mockito.when;
+
 /**
  * Test cases for {@link MetricsDiscovery}.
  *
@@ -46,6 +49,8 @@ public final class RollupManagerTest {
     private Injector _injector;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+    @Mock
+    private Features _features;
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -53,11 +58,13 @@ public final class RollupManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        when(_features.isRollupsEnabled()).thenReturn(true);
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
+                bind(Features.class).toInstance(_features);
             }
         });
 
