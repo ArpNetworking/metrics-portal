@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
+import akka.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotEmpty;
@@ -29,7 +30,7 @@ import java.util.Objects;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public final class RollupDefinition implements Serializable {
+public final class RollupDefinition implements Serializable, ConsistentHashingRouter.ConsistentHashable {
     private static final long serialVersionUID = -1098548879115718541L;
     private final String _sourceMetricName;
     private final String _destinationMetricName;
@@ -90,6 +91,11 @@ public final class RollupDefinition implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _endTime, _groupByTags);
+    }
+
+    @Override
+    public Object consistentHashKey() {
+        return hashCode();
     }
 
     /**

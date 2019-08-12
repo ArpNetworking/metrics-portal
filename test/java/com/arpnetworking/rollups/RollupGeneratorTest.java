@@ -102,7 +102,7 @@ public class RollupGeneratorTest {
                 bind(KairosDbClient.class).toInstance(_kairosDbClient);
                 bind(Config.class).toInstance(_config);
                 bind(ActorRef.class)
-                        .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                        .annotatedWith(Names.named("RollupMetricsDiscovery"))
                         .toInstance(_probe.getRef());
                 bind(ActorRef.class)
                         .annotatedWith(Names.named("RollupManager"))
@@ -487,7 +487,7 @@ public class RollupGeneratorTest {
         @Inject
         public TestRollupGenerator(
                 final Config configuration,
-                @Named("RollupsMetricsDiscovery") final ActorRef testActor,
+                @Named("RollupMetricsDiscovery") final ActorRef testActor,
                 @Named("RollupManager") final ActorRef rollupManager,
                 final KairosDbClient kairosDbClient,
                 final Clock clock,

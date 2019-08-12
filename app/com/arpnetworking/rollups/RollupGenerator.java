@@ -80,7 +80,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     @Inject
     public RollupGenerator(
             final Config configuration,
-            @Named("RollupsMetricsDiscovery") final ActorRef metricsDiscovery,
+            @Named("RollupMetricsDiscovery") final ActorRef metricsDiscovery,
             @Named("RollupManager") final ActorRef rollupManager,
             final KairosDbClient kairosDbClient,
             final Clock clock,

@@ -69,6 +69,7 @@ import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -153,7 +154,7 @@ public class MainModule extends AbstractModule {
                 .toProvider(ReportRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
-                .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                .annotatedWith(Names.named("RollupMetricsDiscovery"))
                 .toProvider(RollupMetricsDiscoveryProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
@@ -642,8 +643,7 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                final Set<String> roles = Collections.emptySet();
-                roles.add(ROLLUP_MANAGER_ROLE);
+                final Set<String> roles = Sets.newHashSet(ROLLUP_MANAGER_ROLE);
                 return _system.actorOf(new ClusterRouterPool(
                                 new ConsistentHashingPool(0),
                                 new ClusterRouterPoolSettings(
@@ -675,9 +675,8 @@ public class MainModule extends AbstractModule {
 
         @Override
         public ActorRef get() {
-            final Cluster cluster = Cluster.get(_system);
             final int actorCount = _configuration.getInt("rollup.executor.count");
-            if (_enabled && cluster.selfRoles().contains(RollupManagerProvider.ROLLUP_MANAGER_ROLE)) {
+            if (_enabled) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupExecutor.class));
                 }
