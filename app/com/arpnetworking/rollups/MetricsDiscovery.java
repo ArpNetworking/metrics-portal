@@ -28,7 +28,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import com.typesafe.config.Config;
-import models.internal.Features;
 import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -89,18 +88,15 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     /**
      * Metrics discovery constructor.
      *
-     * @param features application features flags
      * @param configuration play configuration object
      * @param kairosDbClient client to use for fetching metric names
      * @param periodicMetrics periodic metrics client
      */
     @Inject
     public MetricsDiscovery(
-            final Features features,
             final Config configuration,
             final KairosDbClient kairosDbClient,
             final PeriodicMetrics periodicMetrics) {
-        final boolean enabled = features.isRollupsEnabled();
         _fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
         _whiteList = toPredicate(configuration.getStringList("rollup.metric.whitelist"), true);
         _blackList = toPredicate(configuration.getStringList("rollup.metric.blacklist"), false);
@@ -109,10 +105,8 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         _metricsSet = new LinkedHashSet<>();
         _setIterator = _metricsSet.iterator();
         _refreshDeadline = Deadline.now();
-        if (enabled) {
-            getSelf().tell(FETCH_MSG, ActorRef.noSender());
-            getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
-        }
+        getSelf().tell(FETCH_MSG, ActorRef.noSender());
+        getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
 
     private void fetchMetricsForRollup() {

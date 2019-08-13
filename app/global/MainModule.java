@@ -16,6 +16,7 @@
 package global;
 
 import actors.JvmMetricsCollector;
+import actors.NoopActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
@@ -583,6 +584,7 @@ public class MainModule extends AbstractModule {
                 final Injector injector,
                 final ActorSystem system,
                 final Features features) {
+            _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
         }
@@ -590,7 +592,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 final ActorRef manager = _system.actorOf(ClusterSingletonManager.props(
                         GuiceActorCreator.props(_injector, MetricsDiscovery.class),
                         PoisonPill.getInstance(),
@@ -601,9 +603,10 @@ public class MainModule extends AbstractModule {
                         manager.path().toStringWithoutAddress(),
                         ClusterSingletonProxySettings.create(_system)));
             }
-            return null;
+            return _system.actorOf(Props.create(NoopActor.class));
         }
 
+        private final boolean _enabled;
         private final Injector _injector;
         private final ActorSystem _system;
 
@@ -627,12 +630,14 @@ public class MainModule extends AbstractModule {
     }
 
     private static final class RollupManagerProvider implements Provider<ActorRef> {
+        private final boolean _enabled;
         private final Injector _injector;
         private final ActorSystem _system;
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
-        RollupManagerProvider(final Injector injector, final ActorSystem system) {
+        RollupManagerProvider(final Injector injector, final ActorSystem system, final Features features) {
+            _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
         }
@@ -640,7 +645,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
                 final Set<String> roles = Sets.newHashSet(ROLLUP_MANAGER_ROLE);
                 return _system.actorOf(new ClusterRouterPool(
                                 new ConsistentHashingPool(0),
@@ -654,7 +659,7 @@ public class MainModule extends AbstractModule {
                         "rollup-manager"
                 );
             }
-            return null;
+            return _system.actorOf(Props.create(NoopActor.class));
         }
     }
 
