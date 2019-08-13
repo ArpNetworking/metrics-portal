@@ -93,7 +93,10 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
      * @param periodicMetrics periodic metrics client
      */
     @Inject
-    public MetricsDiscovery(final Config configuration, final KairosDbClient kairosDbClient, final PeriodicMetrics periodicMetrics) {
+    public MetricsDiscovery(
+            final Config configuration,
+            final KairosDbClient kairosDbClient,
+            final PeriodicMetrics periodicMetrics) {
         _fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
         _whiteList = toPredicate(configuration.getStringList("rollup.metric.whitelist"), true);
         _blackList = toPredicate(configuration.getStringList("rollup.metric.blacklist"), false);

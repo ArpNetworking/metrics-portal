@@ -16,6 +16,7 @@
 package global;
 
 import actors.JvmMetricsCollector;
+import actors.NoopActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
@@ -59,6 +60,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.utility.ConfigTypedProvider;
@@ -68,6 +70,7 @@ import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -152,7 +155,7 @@ public class MainModule extends AbstractModule {
                 .toProvider(ReportRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
-                .annotatedWith(Names.named("RollupsMetricsDiscovery"))
+                .annotatedWith(Names.named("RollupMetricsDiscovery"))
                 .toProvider(RollupMetricsDiscoveryProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
@@ -162,6 +165,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupManager"))
                 .toProvider(RollupManagerProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupExecutor"))
+                .toProvider(RollupExecutorProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -556,7 +563,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            final int actorCount = _configuration.getInt("rollup.worker.count");
+            final int actorCount = _configuration.getInt("rollup.generator.count");
             if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
@@ -577,9 +584,9 @@ public class MainModule extends AbstractModule {
                 final Injector injector,
                 final ActorSystem system,
                 final Features features) {
+            _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
-            _enabled = features.isRollupsEnabled();
         }
 
         @Override
@@ -596,12 +603,12 @@ public class MainModule extends AbstractModule {
                         manager.path().toStringWithoutAddress(),
                         ClusterSingletonProxySettings.create(_system)));
             }
-            return null;
+            return _system.actorOf(Props.create(NoopActor.class));
         }
 
+        private final boolean _enabled;
         private final Injector _injector;
         private final ActorSystem _system;
-        private final boolean _enabled;
 
         static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
@@ -623,12 +630,14 @@ public class MainModule extends AbstractModule {
     }
 
     private static final class RollupManagerProvider implements Provider<ActorRef> {
+        private final boolean _enabled;
         private final Injector _injector;
         private final ActorSystem _system;
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
-        RollupManagerProvider(final Injector injector, final ActorSystem system) {
+        RollupManagerProvider(final Injector injector, final ActorSystem system, final Features features) {
+            _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
         }
@@ -636,9 +645,8 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                final Set<String> roles = Collections.emptySet();
-                roles.add(ROLLUP_MANAGER_ROLE);
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
+                final Set<String> roles = Sets.newHashSet(ROLLUP_MANAGER_ROLE);
                 return _system.actorOf(new ClusterRouterPool(
                                 new ConsistentHashingPool(0),
                                 new ClusterRouterPoolSettings(
@@ -651,7 +659,37 @@ public class MainModule extends AbstractModule {
                         "rollup-manager"
                 );
             }
+            return _system.actorOf(Props.create(NoopActor.class));
+        }
+    }
+
+    private static final class RollupExecutorProvider implements Provider<ActorRef> {
+        @Inject
+        RollupExecutorProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Config configuration,
+                final Features features) {
+            _injector = injector;
+            _system = system;
+            _configuration = configuration;
+            _enabled = features.isRollupsEnabled();
+        }
+
+        @Override
+        public ActorRef get() {
+            final int actorCount = _configuration.getInt("rollup.executor.count");
+            if (_enabled) {
+                for (int i = 0; i < actorCount; i++) {
+                    _system.actorOf(GuiceActorCreator.props(_injector, RollupExecutor.class));
+                }
+            }
             return null;
         }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+        private final Config _configuration;
+        private final boolean _enabled;
     }
 }

@@ -30,6 +30,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.internal.Features;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,6 +61,7 @@ public final class MetricsDiscoveryTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        when(_features.isRollupsEnabled()).thenReturn(true);
         when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("1h");
         when(_config.getStringList(eq("rollup.metric.whitelist"))).thenReturn(Collections.emptyList());
         when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(Collections.emptyList());
@@ -70,6 +72,7 @@ public final class MetricsDiscoveryTest {
                 bind(KairosDbClient.class).toInstance(_kairosDbClient);
                 bind(Config.class).toInstance(_config);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
+                bind(Features.class).toInstance(_features);
             }
         });
 
@@ -284,6 +287,9 @@ public final class MetricsDiscoveryTest {
     private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+    @Mock
+    private Features _features;
+
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);

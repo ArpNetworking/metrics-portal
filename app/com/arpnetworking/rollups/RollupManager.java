@@ -17,8 +17,6 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.typesafe.config.Config;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
@@ -38,7 +36,6 @@ import javax.inject.Inject;
 public class RollupManager extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private TreeSet<RollupDefinition> _rollupDefinitions;
-    private FiniteDuration _refreshInterval;
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
@@ -47,12 +44,10 @@ public class RollupManager extends AbstractActorWithTimers {
     /**
      * Metrics discovery constructor.
      *
-     * @param configuration play configuration object
      * @param periodicMetrics periodic metrics client
      */
     @Inject
-    public RollupManager(final Config configuration, final PeriodicMetrics periodicMetrics) {
-        _refreshInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
+    public RollupManager(final PeriodicMetrics periodicMetrics) {
         _periodicMetrics = periodicMetrics;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
         getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);

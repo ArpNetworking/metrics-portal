@@ -26,8 +26,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import models.internal.Features;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +38,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -49,9 +48,9 @@ import static org.mockito.Mockito.when;
 public final class RollupManagerTest {
     private Injector _injector;
     @Mock
-    private Config _config;
-    @Mock
     private PeriodicMetrics _periodicMetrics;
+    @Mock
+    private Features _features;
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -59,13 +58,13 @@ public final class RollupManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("1h");
+        when(_features.isRollupsEnabled()).thenReturn(true);
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Config.class).toInstance(_config);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
+                bind(Features.class).toInstance(_features);
             }
         });
 
@@ -157,7 +156,4 @@ public final class RollupManagerTest {
         actor.tell(RollupFetch.getInstance(), testActor);
         testKit.expectMsgClass(NoMoreRollups.class);
     }
-
-
-
 }
