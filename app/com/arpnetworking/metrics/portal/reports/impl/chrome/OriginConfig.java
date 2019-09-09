@@ -78,11 +78,6 @@ public final class OriginConfig {
         return _additionalHeaders;
     }
 
-//    public static OriginConfig fromConfig(final Config config) {
-//        return new Builder()
-//                .setAdditionalHeaders(config.)
-//    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) {

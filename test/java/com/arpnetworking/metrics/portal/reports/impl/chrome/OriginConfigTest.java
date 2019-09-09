@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,11 +34,11 @@ public class OriginConfigTest {
                         .setAdditionalHeaders(ImmutableMap.of("X-Extra-Header", "extra header value"))
                         .build(),
                 MAPPER.readValue(
-                        "{\n" +
-                                "  \"allowedRequestPaths\": [\"/allowed-req-.*\"],\n" +
-                                "  \"allowedNavigationPaths\": [\"/allowed-nav-.*\"],\n" +
-                                "  \"additionalHeaders\": {\"X-Extra-Header\": \"extra header value\"}\n" +
-                                "}",
+                        "{\n"
+                                + "  \"allowedRequestPaths\": [\"/allowed-req-.*\"],\n"
+                                + "  \"allowedNavigationPaths\": [\"/allowed-nav-.*\"],\n"
+                                + "  \"additionalHeaders\": {\"X-Extra-Header\": \"extra header value\"}\n"
+                                + "}",
                         OriginConfig.class
                 )
         );
