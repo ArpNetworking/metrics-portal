@@ -17,8 +17,6 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -32,7 +30,6 @@ import java.util.regex.Pattern;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-@JsonDeserialize(builder = OriginConfig.Builder.class)
 public final class OriginConfig {
 
     private OriginConfig(final Builder builder) {
@@ -111,7 +108,6 @@ public final class OriginConfig {
     /**
      * Builder implementation that constructs {@code OriginConfig}.
      */
-    @JsonPOJOBuilder(withPrefix = "set")
     public static final class Builder extends OvalBuilder<OriginConfig> {
         /**
          * Public Constructor.
