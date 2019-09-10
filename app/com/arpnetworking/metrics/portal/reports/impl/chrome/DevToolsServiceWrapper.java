@@ -69,10 +69,10 @@ public class DevToolsServiceWrapper implements DevToolsService {
         _dts = dts;
         _executor = executor;
 
-        configureNetwork();
+        configureRequestInterception();
     }
 
-    private void configureNetwork() {
+    private void configureRequestInterception() {
         final Network network = _dts.getNetwork();
         network.setRequestInterception(ImmutableList.of(new RequestPattern()));
         network.onRequestIntercepted(event -> {
