@@ -6,6 +6,7 @@ cache:
 sudo: false
 services:
 - docker
+dist: bionic
 addons:
   apt:
     packages:
@@ -23,9 +24,10 @@ install: true
 before_script:
 - sudo /etc/init.d/mysql stop
 - sudo /etc/init.d/postgresql stop
-- gpg --import arpnetworking.key
-- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then export
-  TARGET="deploy -P release --settings settings.xml"; fi;
+- if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then
+    gpg --import arpnetworking.key;
+    export TARGET="deploy -P release --settings settings.xml";
+  fi;
 script:
 - "./jdk-wrapper.sh ./mvnw clean ${TARGET} -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 deploy:
