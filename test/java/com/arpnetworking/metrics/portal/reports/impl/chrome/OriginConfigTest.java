@@ -50,14 +50,14 @@ public class OriginConfigTest {
 
         assertEquals(
                 new OriginConfig.Builder()
-                        .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-.*"))
-                        .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-.*"))
+                        .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-\\d+"))
+                        .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-\\d+"))
                         .setAdditionalHeaders(ImmutableMap.of("X-Extra-Header", "extra header value"))
                         .build(),
                 MAPPER.readValue(
                         "{\n"
-                                + "  \"allowedRequestPaths\": [\"/allowed-req-.*\"],\n"
-                                + "  \"allowedNavigationPaths\": [\"/allowed-nav-.*\"],\n"
+                                + "  \"allowedRequestPaths\": [\"/allowed-req-\\\\d+\"],\n"
+                                + "  \"allowedNavigationPaths\": [\"/allowed-nav-\\\\d+\"],\n"
                                 + "  \"additionalHeaders\": {\"X-Extra-Header\": \"extra header value\"}\n"
                                 + "}",
                         OriginConfig.class
@@ -68,27 +68,33 @@ public class OriginConfigTest {
     @Test
     public void testIsRequestAllowed() {
         final OriginConfig config = new OriginConfig.Builder()
-                .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-.*"))
-                .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-.*"))
+                .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-\\d+"))
+                .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-\\d+"))
                 .build();
 
         assertFalse(config.isRequestAllowed(""));
         assertFalse(config.isRequestAllowed("/disallowed"));
         assertTrue(config.isRequestAllowed("/allowed-req-1"));
         assertTrue(config.isRequestAllowed("/allowed-nav-1"));
+
+        assertFalse(config.isRequestAllowed("/sneaky-prefix/allowed-req-1"));
+        assertFalse(config.isRequestAllowed("/allowed-req-1/sneaky-suffix"));
     }
 
     @Test
     public void testIsNavigationAllowed() {
         final OriginConfig config = new OriginConfig.Builder()
-                .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-.*"))
-                .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-.*"))
+                .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-\\d+"))
+                .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-\\d+"))
                 .build();
 
         assertFalse(config.isNavigationAllowed(""));
         assertFalse(config.isNavigationAllowed("/disallowed"));
         assertFalse(config.isNavigationAllowed("/allowed-req-1"));
         assertTrue(config.isNavigationAllowed("/allowed-nav-1"));
+
+        assertFalse(config.isRequestAllowed("/sneaky-prefix/allowed-nav-1"));
+        assertFalse(config.isRequestAllowed("/allowed-nav-1/sneaky-suffix"));
     }
 
 
