@@ -20,7 +20,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import play.Environment;
 import scala.concurrent.duration.Duration;
