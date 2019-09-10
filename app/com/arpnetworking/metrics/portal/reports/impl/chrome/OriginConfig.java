@@ -52,6 +52,8 @@ public final class OriginConfig {
      * @return Whether a browser should be allowed to navigate to that path.
      */
     public boolean isNavigationAllowed(final String path) {
+        // We _could_ precompile all the patterns so they don't need to be re-compiled each time,
+        //   but this is in the context of making HTTP requests: compiling a regex is not our bottleneck here.
         return _allowedNavigationPaths.stream().anyMatch(pattern -> Pattern.compile(pattern).matcher(path).matches());
     }
 
