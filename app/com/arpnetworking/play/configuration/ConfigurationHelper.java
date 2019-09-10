@@ -116,12 +116,12 @@ public final class ConfigurationHelper {
     /**
      * Resolves and converts a piece of a {@link Config} to a JSON string.
      *
-     * @param config The config to be rendered as JSON.
+     * @param config The config to be rendered as JSON. Must be resolved (see {@link Config#resolve}).
      * @param path The path to the sub-object to render as JSON.
      * @return The JSON representation of that sub-object.
      */
     public static String toJson(final Config config, final String path) {
-        return config.resolve().getObject(path).render(ConfigRenderOptions.concise());
+        return config.getObject(path).render(ConfigRenderOptions.concise());
     }
 
     private ConfigurationHelper() {}
