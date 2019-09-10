@@ -121,7 +121,7 @@ public final class ConfigurationHelper {
      * @return The JSON representation of that sub-object.
      */
     public static String toJson(final Config config, final String path) {
-        return config.withFallback(ConfigFactory.systemProperties()).resolve().getObject(path).render(ConfigRenderOptions.concise());
+        return config.resolve().getObject(path).render(ConfigRenderOptions.concise());
     }
 
     private ConfigurationHelper() {}
