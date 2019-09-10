@@ -52,7 +52,7 @@ public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
         );
 
         final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();
-        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(DEV_TOOLS_FACTORY);
+        final PdfScreenshotRenderer renderer = new PdfScreenshotRenderer(getDevToolsFactory());
         final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
                 .setUri(URI.create("http://localhost:" + _wireMock.port()))
                 .build();

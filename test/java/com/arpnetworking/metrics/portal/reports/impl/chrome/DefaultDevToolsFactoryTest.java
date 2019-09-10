@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigUtil;
 import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 
@@ -47,6 +48,9 @@ public class DefaultDevToolsFactoryTest {
                     "maximumPoolSize", 8,
                     "keepAlive", "PT1S",
                     "queueSize", 1024
+            ),
+            "origins", ImmutableMap.of(
+                    ConfigUtil.quoteString("https://whitelisted.com"), ImmutableMap.of()
             )
     ));
 

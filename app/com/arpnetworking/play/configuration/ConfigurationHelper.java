@@ -20,6 +20,8 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 import play.Environment;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -109,6 +111,17 @@ public final class ConfigurationHelper {
         return injector
                 .createChildInjector(new ConfigurationOverrideModule(configuration))
                 .getInstance(clazz);
+    }
+
+    /**
+     * Resolves and converts a piece of a {@link Config} to a JSON string.
+     *
+     * @param config The config to be rendered as JSON.
+     * @param path The path to the sub-object to render as JSON.
+     * @return The JSON representation of that sub-object.
+     */
+    public static String toJson(final Config config, final String path) {
+        return config.withFallback(ConfigFactory.systemProperties()).resolve().getObject(path).render(ConfigRenderOptions.concise());
     }
 
     private ConfigurationHelper() {}
