@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
@@ -27,6 +30,7 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -49,7 +53,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(service, tab, result, _executor);
+        return new DevToolsServiceWrapper(service, _originConfigs, tab, result, _executor);
     }
 
     /**
@@ -81,6 +85,14 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
         _executor = createExecutorService(config.hasPath("executor") ? config.getConfig("executor") : ConfigFactory.empty());
         _service = Suppliers.memoize(this::createService);
+        try {
+            _originConfigs = ObjectMapperFactory.createInstance().readValue(
+                    ConfigurationHelper.toJson(config, "origins"),
+                    ORIGIN_CONFIG_MAP_TYPE
+            );
+        } catch (final IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private ChromeService createService() {
@@ -127,4 +139,8 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     private final ImmutableMap<String, Object> _chromeArgs;
     private final ExecutorService _executor;
     private final Supplier<ChromeService> _service;
+    private final ImmutableMap<String, OriginConfig> _originConfigs;
+
+    private static final TypeReference<ImmutableMap<String, OriginConfig>> ORIGIN_CONFIG_MAP_TYPE =
+            new TypeReference<ImmutableMap<String, OriginConfig>>() {};
 }

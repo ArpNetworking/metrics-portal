@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -46,7 +47,7 @@ public class DevToolsServiceWrapperTest {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(_page).when(_wrapped).getPage();
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
-        _dts = new DevToolsServiceWrapper(_service, _tab, _wrapped, new ScheduledThreadPoolExecutor(1));
+        _dts = new DevToolsServiceWrapper(_service, ImmutableMap.of(), _tab, _wrapped, new ScheduledThreadPoolExecutor(1));
     }
 
     @Test

@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigUtil;
 import models.internal.TimeRange;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -71,19 +72,27 @@ public abstract class BaseChromeTestSuite {
             .findFirst();
 
 
-    protected static final DevToolsFactory DEV_TOOLS_FACTORY = new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
-            "path", CHROME_PATH.get(),
-            "args", ImmutableMap.of(
-                    "no-sandbox", true,
-                    "headless", true
-            ),
-            "executor", ImmutableMap.of(
-                    "corePoolSize", 8,
-                    "maximumPoolSize", 8,
-                    "keepAlive", "PT1S",
-                    "queueSize", 1024
-            )
-    )));
+    protected DevToolsFactory getDevToolsFactory() {
+        return new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
+                "path", CHROME_PATH.get(),
+                "args", ImmutableMap.of(
+                        "no-sandbox", true,
+                        "headless", true
+                ),
+                "executor", ImmutableMap.of(
+                        "corePoolSize", 8,
+                        "maximumPoolSize", 8,
+                        "keepAlive", "PT1S",
+                        "queueSize", 1024
+                ),
+                "origins", ImmutableMap.of(
+                        ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
+                                "allowedNavigationPaths", ImmutableList.of(".*"),
+                                "allowedRequestPaths", ImmutableList.of(".*")
+                        )
+                )
+        )));
+    }
 
     /**
      * Config to use to instantiate Chrome-based renderers.
