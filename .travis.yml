@@ -10,7 +10,7 @@ addons:
   apt:
     packages:
     - rpm
-  chrome: stable
+  chrome: beta
 env:
   global:
   - TARGET=install
