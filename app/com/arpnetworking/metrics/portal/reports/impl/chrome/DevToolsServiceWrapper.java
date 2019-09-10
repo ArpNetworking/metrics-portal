@@ -20,8 +20,13 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.kklisura.cdt.protocol.commands.Network;
+import com.github.kklisura.cdt.protocol.types.network.ErrorReason;
+import com.github.kklisura.cdt.protocol.types.network.RequestPattern;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import java.net.URI;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -63,6 +68,39 @@ public class DevToolsServiceWrapper implements DevToolsService {
         _tab = tab;
         _dts = dts;
         _executor = executor;
+
+        configureNetwork();
+    }
+
+    private void configureNetwork() {
+        final Network network = _dts.getNetwork();
+        network.setRequestInterception(ImmutableList.of(new RequestPattern()));
+        network.onRequestIntercepted(event -> {
+            final URI uri = URI.create(event.getRequest().getUrl());
+            final String origin = uri.getScheme() + "://" + uri.getAuthority();
+            final OriginConfig originConfig = _originConfigs.get(origin);
+            if (originConfig == null || !originConfig.isRequestAllowed(uri.getPath())) {
+                System.out.println("Cancelling request to " + uri);
+                network.continueInterceptedRequest(
+                        event.getInterceptionId(), ErrorReason.ABORTED, null, null, null, null, null, null
+                );
+                return;
+            }
+            final ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
+                    .putAll(event.getRequest().getHeaders())
+                    .putAll(originConfig.getAdditionalHeaders())
+                    .build();
+            network.continueInterceptedRequest(
+                    event.getInterceptionId(),
+                    null,
+                    null,
+                    event.getRequest().getUrl(),
+                    event.getRequest().getMethod(),
+                    event.getRequest().getPostData(),
+                    headers,
+                    null
+            );
+        });
     }
 
     @Override
@@ -98,9 +136,22 @@ public class DevToolsServiceWrapper implements DevToolsService {
     }
 
     @Override
+    public boolean isNavigationAllowed(final String url) {
+        final URI uri = URI.create(url);
+        final String origin = uri.getScheme() + "://" + uri.getAuthority();
+        if (_originConfigs.containsKey(origin)) {
+            return _originConfigs.get(origin).isNavigationAllowed(uri.getPath());
+        }
+        return false;
+    }
+
+    @Override
     public CompletableFuture<Void> navigate(final String url) {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
+        }
+        if (!isNavigationAllowed(url)) {
+            throw new IllegalArgumentException("navigation is not allowed to " + url);
         }
         final CompletableFuture<Void> result = new CompletableFuture<>();
         cascadeCancellation(
