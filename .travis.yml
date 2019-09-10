@@ -6,6 +6,7 @@ cache:
 sudo: false
 services:
 - docker
+dist: bionic
 addons:
   apt:
     packages:
