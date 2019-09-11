@@ -47,7 +47,13 @@ public class DevToolsServiceWrapperTest {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(_page).when(_wrapped).getPage();
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
-        _dts = new DevToolsServiceWrapper(_service, ImmutableMap.of(), _tab, _wrapped, new ScheduledThreadPoolExecutor(1));
+        _dts = new DevToolsServiceWrapper(
+                _service,
+                new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of()).build(),
+                _tab,
+                _wrapped,
+                new ScheduledThreadPoolExecutor(1)
+        );
     }
 
     @Test

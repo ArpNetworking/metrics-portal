@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.reports;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -253,6 +254,11 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
+        public boolean canProbablySend(final Recipient recipient, final ImmutableSet<ReportFormat> formatsToSend) {
+            return true;
+        }
+
+        @Override
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
         public CompletionStage<Void> send(
                 final Recipient recipient,
@@ -263,6 +269,11 @@ public class ReportExecutionContextTest {
     }
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
+        @Override
+        public boolean canProbablyRender(final WebPageReportSource source, final HtmlReportFormat format) {
+            return true;
+        }
+
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,
@@ -276,6 +287,11 @@ public class ReportExecutionContextTest {
     }
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
+        @Override
+        public boolean canProbablyRender(final WebPageReportSource source, final PdfReportFormat format) {
+            return true;
+        }
+
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,

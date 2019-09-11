@@ -72,6 +72,11 @@ public class EmailSender implements Sender {
         });
     }
 
+    @Override
+    public boolean canProbablySend(final Recipient recipient, final ImmutableSet<ReportFormat> formatsToSend) {
+        return _allowedRecipients.stream().anyMatch(pattern -> pattern.matcher(recipient.getAddress()).matches());
+    }
+
     private void sendSync(
             final Recipient recipient,
             final ImmutableMap<ReportFormat, RenderedReport> formatsToSend

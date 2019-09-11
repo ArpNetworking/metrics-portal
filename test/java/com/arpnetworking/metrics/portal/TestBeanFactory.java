@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.arpnetworking.metrics.portal.reports.impl.chrome.PerOriginConfigs;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
@@ -172,6 +173,13 @@ public final class TestBeanFactory {
                 .setTimeRange(new TimeRange(Instant.now(), Instant.now().plus(Duration.ofSeconds((long) (100000 * RANDOM.nextDouble())))))
                 .setGeneratedAt(Instant.now().plus(Duration.ofSeconds(RANDOM.nextInt(2))))
                 .setBytes("report content".getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     *
+     */
+    public static PerOriginConfigs createPerOriginConfigs() {
+        return new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of()).build();
     }
 
     /**

@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 
@@ -38,5 +39,17 @@ public interface Sender {
     CompletionStage<Void> send(
             Recipient recipient,
             ImmutableMap<ReportFormat, RenderedReport> formatsToSend
+    );
+
+    /**
+     * Guess whether the sender can send the given report formats to a given recipient. Purely a heuristic, guarantees nothing either way.
+     *
+     * @param recipient The recipient.
+     * @param formatsToSend The rendered report formats to be sent.
+     * @return A guess at whether the sender will probably be able to send those formats to that recipient.
+     */
+    boolean canProbablySend(
+            Recipient recipient,
+            ImmutableSet<ReportFormat> formatsToSend
     );
 }

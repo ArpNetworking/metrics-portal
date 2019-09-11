@@ -78,6 +78,11 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
+    public boolean canProbablyRender(final S source, final F format) {
+        return _devToolsFactory.getOriginConfigs().isNavigationAllowed(getUri(source));
+    }
+
+    @Override
     public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
             final S source,
             final F format,

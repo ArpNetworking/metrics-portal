@@ -51,4 +51,16 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
             B builder,
             Duration timeout
     );
+
+    /**
+     * Guess whether the renderer can render a given source into a given format. Purely a heuristic, guarantees nothing either way.
+     *
+     * @param source The source to render.
+     * @param format The format to render into.
+     * @return A guess at whether the renderer will probably be able to render that source into that format.
+     */
+    boolean canProbablyRender(
+            S source,
+            F format
+    );
 }

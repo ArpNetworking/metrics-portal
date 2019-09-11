@@ -28,4 +28,10 @@ public interface DevToolsFactory {
      * @return the created service.
      */
     DevToolsService create(boolean ignoreCertificateErrors);
+
+    /**
+     * TODO(spencerpearson).
+     * @return TODO(spencerpearson).
+     */
+    PerOriginConfigs getOriginConfigs();
 }
