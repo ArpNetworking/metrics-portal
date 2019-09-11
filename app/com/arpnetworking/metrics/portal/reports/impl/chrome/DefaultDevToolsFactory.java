@@ -15,6 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
 import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
@@ -27,6 +31,7 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -49,13 +54,17 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(service, tab, result, _executor);
+        return new DevToolsServiceWrapper(service, _originConfigs, tab, result, _executor);
+    }
+
+    /* package private */ DefaultDevToolsFactory(final Config config) {
+        this(config, ObjectMapperFactory.createInstance());
     }
 
     /**
      * Public constructor.
      *
-     * @param config is a config that has the following fields: <ul>
+     * @param config is a {@link Config} that has the following fields: <ul>
      *   <li>{@code path} points to the Chrome executable</li>
      *   <li>
      *     {@code args} is a map of command-line flags passed to Chrome.
@@ -64,23 +73,36 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
      *     values are strings (for flags that take args) or {@code true} (for flags that don't).
      *     For example, {@code foo=true, bar="baz"} would result in the Chrome invocation {@code chromium --foo --bar=baz}.
      *   </li>
-     *   <li>{@code executor} is a sub-object with the fields: <ul>
-     *     <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
-     *       {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
-     *     <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
-     *     <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
+     *   <li>{@code executor} is a sub-object with the fields:
+     *     <ul>
+     *       <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
+     *         {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
+     *       <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
+     *       <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
      *     </ul>
+     *   </li>
+     *   <li>{@code origins} is a mapping from web origins (i.e. {@code scheme://authority}) to {@link OriginConfig}s,
+     *     describing each allowed origin's permissions/configuration.</li>
      *   </ul>
+     * @param objectMapper is an {@link ObjectMapper} used to deserialize parts of the config.
      *
      * TODO(spencerpearson): I don't like exposing the threadpool implementation details, but I can very easily imagine the user
      *   wanting to configure them.
      */
     @Inject
-    public DefaultDevToolsFactory(final Config config) {
+    public DefaultDevToolsFactory(final Config config, final ObjectMapper objectMapper) {
         _chromePath = config.getString("path");
         _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
         _executor = createExecutorService(config.hasPath("executor") ? config.getConfig("executor") : ConfigFactory.empty());
         _service = Suppliers.memoize(this::createService);
+        try {
+            _originConfigs = objectMapper.readValue(
+                    ConfigurationHelper.toJson(config, "origins"),
+                    ORIGIN_CONFIG_MAP_TYPE
+            );
+        } catch (final IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private ChromeService createService() {
@@ -127,4 +149,8 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     private final ImmutableMap<String, Object> _chromeArgs;
     private final ExecutorService _executor;
     private final Supplier<ChromeService> _service;
+    private final ImmutableMap<String, OriginConfig> _originConfigs;
+
+    private static final TypeReference<ImmutableMap<String, OriginConfig>> ORIGIN_CONFIG_MAP_TYPE =
+            new TypeReference<ImmutableMap<String, OriginConfig>>() {};
 }
