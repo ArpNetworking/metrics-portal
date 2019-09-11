@@ -15,10 +15,12 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
@@ -57,10 +59,15 @@ public class EmailSenderTest {
         _server = SimpleSmtpServer.start(getFreePort());
         _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
-                "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
-                "fromAddress", "me@invalid.net"
-        )));
+        _sender = new EmailSender(
+                _mailer,
+                ConfigFactory.parseMap(ImmutableMap.of(
+                        "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
+                        "fromAddress", "me@invalid.net",
+                        "allowedRecipients", ImmutableList.of(".+@example\\.com")
+                )),
+                ObjectMapperFactory.createInstance()
+        );
     }
 
     @Test
@@ -72,7 +79,7 @@ public class EmailSenderTest {
                 .setTimeRange(new TimeRange(T0, T0.plus(Duration.ofDays(1))))
                 .build();
         _sender.send(
-                TestBeanFactory.createRecipient(),
+                TestBeanFactory.createRecipientBuilder().build(),
                 ImmutableMap.of(report.getFormat(), report)
         ).toCompletableFuture().get();
 
@@ -87,7 +94,7 @@ public class EmailSenderTest {
     @Test
     public void testNoEmailIsSentWithNoFormats() throws InterruptedException, ExecutionException {
         _sender.send(
-                TestBeanFactory.createRecipient(),
+                TestBeanFactory.createRecipientBuilder().build(),
                 ImmutableMap.of()
         ).toCompletableFuture().get();
 
@@ -100,7 +107,7 @@ public class EmailSenderTest {
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         try {
             _sender.send(
-                    TestBeanFactory.createRecipient(),
+                    TestBeanFactory.createRecipientBuilder().build(),
                     ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
             ).toCompletableFuture().get();
         } catch (final ExecutionException e) {
@@ -108,6 +115,23 @@ public class EmailSenderTest {
                 throw (MailException) e.getCause();
             }
             throw e;    
+        }
+    }
+
+    @Test
+    public void testSendRejectsIllegalRecipients() {
+        final ImmutableList<String> legalAddresses = ImmutableList.of("alice@example.com", "bob@example.com");
+        for (final String address : legalAddresses) {
+            _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
+        }
+
+        final ImmutableList<String> illegalAddresses = ImmutableList.of("", "@example.com", "charlie@example.com.ru");
+        for (final String address : illegalAddresses) {
+            try {
+                _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
+                Assert.fail("should have refused to send to '" + address + "'");
+            } catch (final IllegalArgumentException e) {
+            }
         }
     }
 

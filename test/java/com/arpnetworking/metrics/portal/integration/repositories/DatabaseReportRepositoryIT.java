@@ -180,7 +180,7 @@ public class DatabaseReportRepositoryIT {
 
         // Update the recipients
         final ReportFormat format = new HtmlReportFormat.Builder().build();
-        final Recipient recipient = TestBeanFactory.createRecipient();
+        final Recipient recipient = TestBeanFactory.createRecipientBuilder().build();
         final Report updatedReport = reportBuilder
                 .setRecipients(ImmutableSetMultimap.of(format, recipient))
                 .build();

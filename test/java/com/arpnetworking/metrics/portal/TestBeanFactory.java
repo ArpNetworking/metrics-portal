@@ -37,7 +37,6 @@ import models.internal.impl.DefaultReport;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
-import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
 import models.internal.scheduling.Period;
 
@@ -154,12 +153,11 @@ public final class TestBeanFactory {
      *
      * @return a report recipient
      */
-    public static Recipient createRecipient() {
+    public static DefaultRecipient.Builder createRecipientBuilder() {
         return new DefaultRecipient.Builder()
                 .setAddress(UUID.randomUUID().toString().replace("-", "") + "@example.com")
                 .setType(RecipientType.EMAIL)
-                .setId(UUID.randomUUID())
-                .build();
+                .setId(UUID.randomUUID());
     }
 
     /**
