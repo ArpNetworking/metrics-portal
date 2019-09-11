@@ -111,8 +111,9 @@ public class EmailSenderTest {
                     ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
             ).toCompletableFuture().get();
         } catch (final ExecutionException e) {
-            if (e.getCause() instanceof MailException) {
-                throw (MailException) e.getCause();
+            final Throwable cause = e.getCause();
+            if (cause instanceof MailException) {
+                throw (MailException) cause;
             }
             throw e;    
         }
