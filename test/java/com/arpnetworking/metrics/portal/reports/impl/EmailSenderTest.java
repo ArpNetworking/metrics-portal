@@ -44,6 +44,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import static org.hamcrest.Matchers.instanceOf;
+
 /**
  * Tests class {@link EmailSender}.
  *
@@ -112,7 +114,7 @@ public class EmailSenderTest {
 
     @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
-        _thrown.expectCause(org.hamcrest.CoreMatchers.instanceOf(MailException.class));
+        _thrown.expectCause(instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         _sender.send(
