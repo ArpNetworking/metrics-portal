@@ -45,10 +45,19 @@ public interface DevToolsService {
     CompletableFuture<byte[]> printToPdf(double pageWidth, double pageHeight);
 
     /**
+     * Checks whether a given URL is legal to pass to {@link #navigate}.
+     *
+     * @param url The URL to check.
+     * @return False iff the URL will raise a {@link IllegalArgumentException} when passed to {@link #navigate}.
+     */
+    boolean isNavigationAllowed(String url);
+
+    /**
      * Forces the tab to navigate to a new URL.
      *
      * @param url The URL to navigate to.
      * @return A {@link CompletableFuture} that completes when the page has loaded.
+     * @throws IllegalArgumentException If the given URL is illegal, as given by {@link #isNavigationAllowed}.
      * @throws IllegalStateException If the service is closed.
      */
     CompletableFuture<Void> navigate(String url);
