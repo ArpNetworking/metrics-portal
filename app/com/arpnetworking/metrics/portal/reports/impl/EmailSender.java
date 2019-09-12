@@ -144,7 +144,7 @@ public class EmailSender implements Sender {
         _fromAddress = config.getString("fromAddress");
         _mailer = mailer;
         try {
-            _allowedRecipients = mapper.readValue(ConfigurationHelper.toJson(config, "allowedRecipients"), ALLOWED_RECIPIENTS_TYPE);
+            _allowedRecipients = mapper.readValue(ConfigurationHelper.toJson(config, ALLOWED_RECIPIENTS_KEY), ALLOWED_RECIPIENTS_TYPE);
         } catch (final IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -164,5 +164,6 @@ public class EmailSender implements Sender {
     private final ImmutableSet<Pattern> _allowedRecipients;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
+    private static final String ALLOWED_RECIPIENTS_KEY = "allowedRecipients";
     private static final TypeReference<ImmutableSet<Pattern>> ALLOWED_RECIPIENTS_TYPE = new TypeReference<ImmutableSet<Pattern>>() {};
 }
