@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kklisura.cdt.launch.ChromeArguments;
 import com.github.kklisura.cdt.launch.ChromeLauncher;
@@ -81,7 +80,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
      *       <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
      *     </ul>
      *   </li>
-     *   <li>{@code origins} is a mapping from web origins (i.e. {@code scheme://authority}) to {@link OriginConfig}s,
+     *   <li>{@code originConfigs} is a {@link PerOriginConfigs} object,
      *     describing each allowed origin's permissions/configuration.</li>
      *   </ul>
      * @param objectMapper is an {@link ObjectMapper} used to deserialize parts of the config.
@@ -97,8 +96,8 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         _service = Suppliers.memoize(this::createService);
         try {
             _originConfigs = objectMapper.readValue(
-                    ConfigurationHelper.toJson(config, "origins"),
-                    ORIGIN_CONFIG_MAP_TYPE
+                    ConfigurationHelper.toJson(config, "originConfigs"),
+                    PerOriginConfigs.class
             );
         } catch (final IOException e) {
             throw new IllegalArgumentException(e);
@@ -149,8 +148,5 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     private final ImmutableMap<String, Object> _chromeArgs;
     private final ExecutorService _executor;
     private final Supplier<ChromeService> _service;
-    private final ImmutableMap<String, OriginConfig> _originConfigs;
-
-    private static final TypeReference<ImmutableMap<String, OriginConfig>> ORIGIN_CONFIG_MAP_TYPE =
-            new TypeReference<ImmutableMap<String, OriginConfig>>() {};
+    private final PerOriginConfigs _originConfigs;
 }
