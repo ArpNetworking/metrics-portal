@@ -85,10 +85,12 @@ public abstract class BaseChromeTestSuite {
                         "keepAlive", "PT1S",
                         "queueSize", 1024
                 ),
-                "origins", ImmutableMap.of(
-                        ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
-                                "allowedNavigationPaths", ImmutableList.of(".*"),
-                                "allowedRequestPaths", ImmutableList.of(".*")
+                "originConfigs", ImmutableMap.of(
+                        "byOrigin", ImmutableMap.of(
+                                ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
+                                        "allowedNavigationPaths", ImmutableList.of(".*"),
+                                        "allowedRequestPaths", ImmutableList.of(".*")
+                                )
                         )
                 )
         )));
