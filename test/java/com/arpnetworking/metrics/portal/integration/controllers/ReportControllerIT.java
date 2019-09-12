@@ -18,12 +18,9 @@ package com.arpnetworking.metrics.portal.integration.controllers;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
-import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSetMultimap;
-import models.internal.impl.DefaultRecipient;
 import models.internal.impl.HtmlReportFormat;
-import models.internal.reports.Recipient;
 import models.view.reports.Report;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,7 +32,6 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 

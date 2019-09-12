@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
-import com.arpnetworking.metrics.portal.reports.impl.chrome.PerOriginConfigs;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;

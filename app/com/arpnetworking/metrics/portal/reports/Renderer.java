@@ -53,13 +53,15 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
     );
 
     /**
-     * Guess whether the renderer can render a given source into a given format. Purely a heuristic, guarantees nothing either way.
+     * Check whether the renderer can render a given source into a given format.
+     * Accepts all valid reports, rejects <i>some</i> invalid ones.
      *
      * @param source The source to render.
      * @param format The format to render into.
+     * @throws IllegalArgumentException If the source can't be rendered into that format.
      */
-    void verifyCanProbablyRender(
+    void verifyCanMaybeRender(
             S source,
             F format
-    );
+    ) throws IllegalArgumentException;
 }

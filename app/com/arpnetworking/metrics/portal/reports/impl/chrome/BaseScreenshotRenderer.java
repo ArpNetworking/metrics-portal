@@ -78,7 +78,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
-    public void verifyCanProbablyRender(final S source, final F format) {
+    public void verifyCanMaybeRender(final S source, final F format) throws IllegalArgumentException {
         final URI uri = getUri(source);
         if (!_devToolsFactory.getOriginConfigs().isNavigationAllowed(uri)) {
             throw new IllegalArgumentException("not allowed to visit uri: " + uri);

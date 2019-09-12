@@ -103,16 +103,17 @@ public final class ReportExecutionContext {
     }
 
     /**
-     * Guess whether the given report can be successfully executed. Purely a heuristic, guarantees nothing either way.
+     * Check whether the given report can be successfully executed.
+     * Accepts all valid reports, rejects <i>some</i> invalid ones.
      *
      * @param report The report to be executed.
      * @throws IllegalArgumentException If it looks like the given report will fail.
      */
-    public void verifyCanProbablyExecute(final Report report) throws IllegalArgumentException {
+    public void verifyCanMaybeExecute(final Report report) throws IllegalArgumentException {
         final List<Throwable> errors = Lists.newArrayList();
         report.getRecipientsByFormat().keySet().forEach(format -> {
             try {
-                getRenderer(report.getSource(), format).verifyCanProbablyRender(report.getSource(), format);
+                getRenderer(report.getSource(), format).verifyCanMaybeRender(report.getSource(), format);
             } catch (final IllegalArgumentException e) {
                 errors.add(e);
             }
@@ -120,7 +121,7 @@ public final class ReportExecutionContext {
         final ImmutableMultimap<Recipient, ReportFormat> formatsByRecipient = getFormatsByRecipient(report);
         formatsByRecipient.keys().forEach(recipient -> {
             try {
-                getSender(recipient).verifyCanProbablySend(recipient, formatsByRecipient.get(recipient));
+                getSender(recipient).verifyCanMaybeSend(recipient, formatsByRecipient.get(recipient));
             } catch (final IllegalArgumentException e) {
                 errors.add(e);
             }

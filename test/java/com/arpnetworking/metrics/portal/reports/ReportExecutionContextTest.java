@@ -234,7 +234,7 @@ public class ReportExecutionContextTest {
     @Test
     public void testVerifyCanProbablyExecute() {
         final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
-        context.verifyCanProbablyExecute(EXAMPLE_REPORT);
+        context.verifyCanMaybeExecute(EXAMPLE_REPORT);
 
         final ReportExecutionContext contextWithoutEmail = new ReportExecutionContext(
                 CLOCK,
@@ -243,7 +243,7 @@ public class ReportExecutionContextTest {
                 _config.withoutPath("reporting.senders.EMAIL")
         );
         try {
-            contextWithoutEmail.verifyCanProbablyExecute(EXAMPLE_REPORT);
+            contextWithoutEmail.verifyCanMaybeExecute(EXAMPLE_REPORT);
             Assert.fail("should have failed to verify report because of email dependency");
         } catch (final IllegalArgumentException e) {
         }
@@ -255,7 +255,7 @@ public class ReportExecutionContextTest {
                 _config.withoutPath("reporting.renderers.WEB_PAGE")
         );
         try {
-            contextWithoutWeb.verifyCanProbablyExecute(EXAMPLE_REPORT);
+            contextWithoutWeb.verifyCanMaybeExecute(EXAMPLE_REPORT);
             Assert.fail("should have failed to verify report because of web-page renderer dependency");
         } catch (final IllegalArgumentException e) {
         }
@@ -284,7 +284,8 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
-        public void verifyCanProbablySend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) throws IllegalArgumentException {}
+        public void verifyCanMaybeSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
+                throws IllegalArgumentException {}
 
         @Override
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
@@ -298,7 +299,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public void verifyCanProbablyRender(final WebPageReportSource source, final HtmlReportFormat format) {}
+        public void verifyCanMaybeRender(final WebPageReportSource source, final HtmlReportFormat format) throws IllegalArgumentException {}
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
@@ -314,7 +315,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public void verifyCanProbablyRender(final WebPageReportSource source, final PdfReportFormat format) {}
+        public void verifyCanMaybeRender(final WebPageReportSource source, final PdfReportFormat format) throws IllegalArgumentException {}
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(

@@ -42,13 +42,15 @@ public interface Sender {
     );
 
     /**
-     * Guess whether the sender can send the given report formats to a given recipient. Purely a heuristic, guarantees nothing either way.
+     * Check whether the sender can send the given report formats to a given recipient.
+     * Accepts all valid recipient/format inputs, rejects <i>some</i> invalid ones.
      *
      * @param recipient The recipient.
      * @param formatsToSend The rendered report formats to be sent.
+     * @throws IllegalArgumentException If the recipient can't be sent those formats.
      */
-    void verifyCanProbablySend(
+    void verifyCanMaybeSend(
             Recipient recipient,
             ImmutableCollection<ReportFormat> formatsToSend
-    );
+    ) throws IllegalArgumentException;
 }
