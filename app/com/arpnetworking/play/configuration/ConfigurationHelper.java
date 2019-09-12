@@ -120,7 +120,7 @@ public final class ConfigurationHelper {
      * @return The JSON representation of that sub-object.
      */
     public static String toJson(final Config config, final String path) {
-        return config.getObject(path).render(ConfigRenderOptions.concise());
+        return config.getValue(path).render(ConfigRenderOptions.concise());
     }
 
     private ConfigurationHelper() {}

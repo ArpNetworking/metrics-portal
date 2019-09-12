@@ -15,17 +15,22 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.dumbster.smtp.SimpleSmtpServer;
 import com.dumbster.smtp.SmtpMessage;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
+import org.junit.rules.ExpectedException;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
 import org.simplejavamail.mailer.Mailer;
@@ -39,12 +44,20 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import static org.hamcrest.Matchers.instanceOf;
+
 /**
  * Tests class {@link EmailSender}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class EmailSenderTest {
+
+    @Rule
+    public ErrorCollector _collector = new ErrorCollector();
+
+    @Rule
+    public ExpectedException _thrown = ExpectedException.none();
 
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
@@ -57,10 +70,15 @@ public class EmailSenderTest {
         _server = SimpleSmtpServer.start(getFreePort());
         _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
         MockitoAnnotations.initMocks(this);
-        _sender = new EmailSender(_mailer, ConfigFactory.parseMap(ImmutableMap.of(
-                "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
-                "fromAddress", "me@invalid.net"
-        )));
+        _sender = new EmailSender(
+                _mailer,
+                ConfigFactory.parseMap(ImmutableMap.of(
+                        "type", "com.arpnetworking.metrics.portal.reports.impl.EmailSender",
+                        "fromAddress", "me@invalid.net",
+                        "allowedRecipients", ImmutableList.of(".+@example\\.com")
+                )),
+                ObjectMapperFactory.createInstance()
+        );
     }
 
     @Test
@@ -72,7 +90,7 @@ public class EmailSenderTest {
                 .setTimeRange(new TimeRange(T0, T0.plus(Duration.ofDays(1))))
                 .build();
         _sender.send(
-                TestBeanFactory.createRecipient(),
+                TestBeanFactory.createRecipientBuilder().build(),
                 ImmutableMap.of(report.getFormat(), report)
         ).toCompletableFuture().get();
 
@@ -87,27 +105,39 @@ public class EmailSenderTest {
     @Test
     public void testNoEmailIsSentWithNoFormats() throws InterruptedException, ExecutionException {
         _sender.send(
-                TestBeanFactory.createRecipient(),
+                TestBeanFactory.createRecipientBuilder().build(),
                 ImmutableMap.of()
         ).toCompletableFuture().get();
 
         Assert.assertEquals(0, _server.getReceivedEmails().size());
     }
 
-    @Test(expected = MailException.class)
+    @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
+        _thrown.expectCause(instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
-        try {
-            _sender.send(
-                    TestBeanFactory.createRecipient(),
-                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
-            ).toCompletableFuture().get();
-        } catch (final ExecutionException e) {
-            if (e.getCause() instanceof MailException) {
-                throw (MailException) e.getCause();
+        _sender.send(
+                TestBeanFactory.createRecipientBuilder().build(),
+                ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
+        ).toCompletableFuture().get();
+    }
+
+    @Test
+    public void testSendAllowsLegalRecipients() {
+        for (final String address : ImmutableList.of("alice@example.com", "bob@example.com")) {
+            _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
+        }
+    }
+
+    @Test
+    public void testSendRejectsIllegalRecipients() {
+        for (final String address : ImmutableList.of("", "@example.com", "charlie@example.com.ru")) {
+            try {
+                _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
+                _collector.addError(new Throwable("should have refused to send to '" + address + "'"));
+            } catch (final IllegalArgumentException e) {
             }
-            throw e;    
         }
     }
 

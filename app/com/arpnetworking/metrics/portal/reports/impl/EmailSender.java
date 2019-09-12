@@ -18,9 +18,13 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Sender;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
@@ -42,6 +46,7 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.regex.Pattern;
 
 /**
  * Sends reports over email.
@@ -54,6 +59,9 @@ public class EmailSender implements Sender {
             final Recipient recipient,
             final ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     ) {
+        if (_allowedRecipients.stream().noneMatch(pattern -> pattern.matcher(recipient.getAddress()).matches())) {
+            throw new IllegalArgumentException("not allowed to send to recipient address " + recipient.getAddress());
+        }
         return CompletableFuture.supplyAsync(() -> {
             try {
                 sendSync(recipient, formatsToSend);
@@ -113,18 +121,24 @@ public class EmailSender implements Sender {
      * Public constructor.
      *
      * @param config The configuration for this sender.
+     * @param mapper The {@link ObjectMapper} to use to deserialize parts of the configuration.
      */
     @Inject
-    public EmailSender(@Assisted final Config config) {
-        this(buildMailer(config), config);
+    public EmailSender(@Assisted final Config config, final ObjectMapper mapper) {
+        this(buildMailer(config), config, mapper);
     }
 
     /**
      * Constructor for tests, allowing dependency injection of the {@link Mailer}.
      */
-    /* package private */ EmailSender(final Mailer mailer, final Config config) {
+    /* package private */ EmailSender(final Mailer mailer, final Config config, final ObjectMapper mapper) {
         _fromAddress = config.getString("fromAddress");
         _mailer = mailer;
+        try {
+            _allowedRecipients = mapper.readValue(ConfigurationHelper.toJson(config, ALLOWED_RECIPIENTS_KEY), ALLOWED_RECIPIENTS_TYPE);
+        } catch (final IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     private static Mailer buildMailer(final Config config) {
@@ -138,6 +152,9 @@ public class EmailSender implements Sender {
 
     private final Mailer _mailer;
     private final String _fromAddress;
+    private final ImmutableSet<Pattern> _allowedRecipients;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailSender.class);
+    private static final String ALLOWED_RECIPIENTS_KEY = "allowedRecipients";
+    private static final TypeReference<ImmutableSet<Pattern>> ALLOWED_RECIPIENTS_TYPE = new TypeReference<ImmutableSet<Pattern>>() {};
 }
