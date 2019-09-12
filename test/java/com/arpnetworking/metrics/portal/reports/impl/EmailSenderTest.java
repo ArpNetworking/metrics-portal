@@ -112,7 +112,7 @@ public class EmailSenderTest {
 
     @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
-        _thrown.expectCause(org.hamcrest.core.IsInstanceOf.instanceOf(MailException.class));
+        _thrown.expectCause(org.hamcrest.CoreMatchers.instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         _sender.send(
