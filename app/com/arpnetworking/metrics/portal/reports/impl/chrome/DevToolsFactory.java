@@ -30,8 +30,9 @@ public interface DevToolsFactory {
     DevToolsService create(boolean ignoreCertificateErrors);
 
     /**
-     * TODO(spencerpearson).
-     * @return TODO(spencerpearson).
+     * Get the per-origin configs that get baked into all the {@link DevToolsService} instances this factory mints.
+     *
+     * @return the {@link PerOriginConfigs}.
      */
     PerOriginConfigs getOriginConfigs();
 }
