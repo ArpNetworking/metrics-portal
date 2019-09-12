@@ -23,6 +23,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
@@ -73,7 +74,7 @@ public class EmailSender implements Sender {
     }
 
     @Override
-    public boolean canProbablySend(final Recipient recipient, final ImmutableSet<ReportFormat> formatsToSend) {
+    public void verifyCanProbablySend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) throws IllegalArgumentException {
         return _allowedRecipients.stream().anyMatch(pattern -> pattern.matcher(recipient.getAddress()).matches());
     }
 

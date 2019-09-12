@@ -57,9 +57,8 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      *
      * @param source The source to render.
      * @param format The format to render into.
-     * @return A guess at whether the renderer will probably be able to render that source into that format.
      */
-    boolean canProbablyRender(
+    void verifyCanProbablyRender(
             S source,
             F format
     );

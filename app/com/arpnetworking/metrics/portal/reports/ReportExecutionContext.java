@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -45,10 +46,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Utilities for execution of {@link Report}s.
@@ -73,19 +74,13 @@ public final class ReportExecutionContext {
                 resolution.addTo(scheduled.truncatedTo(resolution), -1),
                 scheduled.truncatedTo(resolution)
         );
-        final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
-                .entrySet()
-                .stream()
-                .collect(ImmutableSetMultimap.flatteningToImmutableSetMultimap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().stream()));
-        final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
+        final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = getFormatsByRecipient(report);
 
         return CompletableFuture.supplyAsync(() -> {
             verifyDependencies(report);
             return null;
         }).thenCompose(nothing ->
-                renderAll(formatToRecipients.keySet(), report, timeRange)
+                renderAll(report.getRecipientsByFormat().keySet(), report, timeRange)
         ).thenCompose(formatToRendered ->
                 sendAll(report, recipientToFormats, formatToRendered, timeRange)
         ).thenApply(nothing ->
@@ -102,12 +97,43 @@ public final class ReportExecutionContext {
         for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
             getRenderer(report.getSource(), format);
         }
-        final Collection<Recipient> allRecipients = report.getRecipientsByFormat().values().stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        for (final Recipient recipient : allRecipients) {
+        for (final Recipient recipient : getFormatsByRecipient(report).keySet()) {
             getSender(recipient);
         }
+    }
+
+    public void verifyCanProbablyExecute(final Report report) throws IllegalArgumentException {
+        final Set<Throwable> errors = Sets.newHashSet();
+        report.getRecipientsByFormat().keySet().forEach(format -> {
+            try {
+                getRenderer(report.getSource(), format).verifyCanProbablyRender(report.getSource(), format);
+            } catch (final IllegalArgumentException e) {
+                errors.add(e);
+            }
+        });
+        final ImmutableMultimap<Recipient, ReportFormat> formatsByRecipient = getFormatsByRecipient(report);
+        formatsByRecipient.keys().forEach(recipient -> {
+            try {
+                getSender(recipient).verifyCanProbablySend(recipient, formatsByRecipient.get(recipient));
+            } catch (final IllegalArgumentException e) {
+                errors.add(e);
+            }
+        });
+        if (!errors.isEmpty()) {
+            final IllegalArgumentException superError = new IllegalArgumentException(errors.size() + " failures");
+            errors.forEach(superError::addSuppressed);
+            throw superError;
+        }
+    }
+
+    private ImmutableMultimap<Recipient, ReportFormat> getFormatsByRecipient(final Report report) {
+        return report.getRecipientsByFormat()
+                .entrySet()
+                .stream()
+                .collect(ImmutableSetMultimap.flatteningToImmutableSetMultimap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()))
+                .inverse();
     }
 
     /**

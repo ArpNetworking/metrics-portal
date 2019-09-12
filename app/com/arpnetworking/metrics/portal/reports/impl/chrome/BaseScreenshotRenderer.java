@@ -78,7 +78,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
-    public boolean canProbablyRender(final S source, final F format) {
+    public void verifyCanProbablyRender(final S source, final F format) {
         return _devToolsFactory.getOriginConfigs().isNavigationAllowed(getUri(source));
     }
 
