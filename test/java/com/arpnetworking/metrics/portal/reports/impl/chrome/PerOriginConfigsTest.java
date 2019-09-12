@@ -94,7 +94,7 @@ public class PerOriginConfigsTest {
         assertFalse(config.isRequestAllowed("/allowed-nav-1/sneaky-suffix"));
     }
 
-    private PerOriginConfigs makeSimpleConfig(ImmutableMap<String, String> allowedPathByOrigin) {
+    private PerOriginConfigs makeSimpleConfig(final ImmutableMap<String, String> allowedPathByOrigin) {
         return new PerOriginConfigs.Builder()
                 .setByOrigin(
                         allowedPathByOrigin.entrySet().stream().collect(ImmutableMap.toImmutableMap(
