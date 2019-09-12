@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.arpnetworking.commons.java.time.ManualClock;
-import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +34,6 @@ import models.internal.TimeRange;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
-import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -247,7 +245,8 @@ public class ReportExecutionContextTest {
         try {
             contextWithoutEmail.verifyCanProbablyExecute(EXAMPLE_REPORT);
             Assert.fail("should have failed to verify report because of email dependency");
-        } catch (final IllegalArgumentException e) {}
+        } catch (final IllegalArgumentException e) {
+        }
 
         final ReportExecutionContext contextWithoutWeb = new ReportExecutionContext(
                 CLOCK,
@@ -258,7 +257,8 @@ public class ReportExecutionContextTest {
         try {
             contextWithoutWeb.verifyCanProbablyExecute(EXAMPLE_REPORT);
             Assert.fail("should have failed to verify report because of web-page renderer dependency");
-        } catch (final IllegalArgumentException e) {}
+        } catch (final IllegalArgumentException e) {
+        }
     }
 
     private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final TimeRange timeRange) {

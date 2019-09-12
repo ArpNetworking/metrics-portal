@@ -17,10 +17,13 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotNull;
 
 import java.net.URI;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Describes special actions that should be done for each of several origins (i.e. scheme+host+port).
@@ -42,11 +45,27 @@ public final class PerOriginConfigs {
      * @return Whether a browser should be allowed to navigate to that URI.
      */
     public boolean isNavigationAllowed(final URI uri) {
-        final OriginConfig config = _byOrigin.get(getOrigin(uri));
-        if (config == null) {
-            return false;
-        }
-        return config.isNavigationAllowed(uri.getPath());
+        return getOrDefault(uri, oconf -> oconf.isNavigationAllowed(uri.getPath()), false);
+    }
+
+    /**
+     * Tests whether a browser should be allowed to make a request to a URI.
+     *
+     * @param uri The URI to be requested.
+     * @return Whether a browser should be allowed to make a request to that URI.
+     */
+    public boolean isRequestAllowed(final URI uri) {
+        return getOrDefault(uri, oconf -> oconf.isRequestAllowed(uri.getPath()), false);
+    }
+
+    /**
+     * Gets any additional headers that should be added to requests to a particular URI.
+     *
+     * @param uri The URI to be requested.
+     * @return Any additional headers to add to that request.
+     */
+    public ImmutableMap<String, String> getAdditionalHeaders(final URI uri) {
+        return getOrDefault(uri, OriginConfig::getAdditionalHeaders, ImmutableMap.of());
     }
 
     /**
@@ -60,20 +79,6 @@ public final class PerOriginConfigs {
     }
 
     /**
-     * Tests whether a browser should be allowed to make a request to a URI.
-     *
-     * @param uri The URI to be requested.
-     * @return Whether a browser should be allowed to make a request to that URI.
-     */
-    public boolean isRequestAllowed(final URI uri) {
-        final OriginConfig config = _byOrigin.get(getOrigin(uri));
-        if (config == null) {
-            return false;
-        }
-        return config.isRequestAllowed(uri.getPath());
-    }
-
-    /**
      * Overload of {@link #isRequestAllowed(URI)}.
      *
      * @param uri The URI to be requested.
@@ -83,8 +88,50 @@ public final class PerOriginConfigs {
         return isRequestAllowed(URI.create(uri));
     }
 
+    /**
+     * Overload of {@link #getAdditionalHeaders(URI)}.
+     *
+     * @param uri The URI to be requested.
+     * @return Any additional headers to add to that request.
+     */
+    public ImmutableMap<String, String> getAdditionalHeaders(final String uri) {
+        return getAdditionalHeaders(URI.create(uri));
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_byOrigin", _byOrigin)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final PerOriginConfigs that = (PerOriginConfigs) o;
+        return _byOrigin.equals(that._byOrigin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_byOrigin);
+    }
+
     private String getOrigin(final URI uri) {
         return uri.getScheme() + "://" + uri.getAuthority();
+    }
+
+    private <T> T getOrDefault(final URI uri, final Function<OriginConfig, T> f, final T defaultValue) {
+        final OriginConfig config = _byOrigin.get(getOrigin(uri));
+        if (config == null) {
+            return defaultValue;
+        }
+        return f.apply(config);
     }
 
 

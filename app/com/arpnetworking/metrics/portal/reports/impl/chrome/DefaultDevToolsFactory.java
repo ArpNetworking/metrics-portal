@@ -85,7 +85,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
      *       <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
      *     </ul>
      *   </li>
-     *   <li>{@code originConfigs} is a mapping from web origins (i.e. {@code scheme://authority}) to {@link OriginConfig}s,
+     *   <li>{@code originConfigs} is a {@link PerOriginConfigs} object,
      *     describing each allowed origin's permissions/configuration.</li>
      *   </ul>
      * @param objectMapper is an {@link ObjectMapper} used to deserialize parts of the config.

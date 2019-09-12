@@ -176,13 +176,6 @@ public final class TestBeanFactory {
     }
 
     /**
-     *
-     */
-    public static PerOriginConfigs createPerOriginConfigs() {
-        return new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of()).build();
-    }
-
-    /**
      * Factory method for creating a {@link WebPageReportSource.Builder}.
      *
      * @return the builder.
