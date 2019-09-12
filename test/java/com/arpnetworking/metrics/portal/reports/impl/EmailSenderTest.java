@@ -31,7 +31,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.notification.Failure;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
 import org.simplejavamail.mailer.Mailer;
@@ -53,10 +52,10 @@ import java.util.concurrent.ExecutionException;
 public class EmailSenderTest {
 
     @Rule
-    public ErrorCollector collector = new ErrorCollector();
+    public ErrorCollector _collector = new ErrorCollector();
 
     @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    public ExpectedException _thrown = ExpectedException.none();
 
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
@@ -113,7 +112,7 @@ public class EmailSenderTest {
 
     @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
-        thrown.expectCause(org.hamcrest.core.IsInstanceOf.instanceOf(MailException.class));
+        _thrown.expectCause(org.hamcrest.core.IsInstanceOf.instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
         _sender.send(
@@ -134,7 +133,7 @@ public class EmailSenderTest {
         for (final String address : ImmutableList.of("", "@example.com", "charlie@example.com.ru")) {
             try {
                 _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
-                collector.addError(new Throwable("should have refused to send to '" + address + "'"));
+                _collector.addError(new Throwable("should have refused to send to '" + address + "'"));
             } catch (final IllegalArgumentException e) {
             }
         }
