@@ -20,7 +20,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 
 import java.util.Base64;
 import java.util.UUID;
@@ -37,7 +36,7 @@ import java.util.function.Supplier;
  */
 public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeService _chromeService;
-    private final ImmutableMap<String, OriginConfig> _originConfigs;
+    private final PerOriginConfigs _originConfigs;
     private final com.github.kklisura.cdt.services.types.ChromeTab _tab;
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
     private final ExecutorService _executor;
@@ -52,7 +51,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
      */
     /* package private */ DevToolsServiceWrapper(
             final com.github.kklisura.cdt.services.ChromeService chromeService,
-            final ImmutableMap<String, OriginConfig> originConfigs,
+            final PerOriginConfigs originConfigs,
             final com.github.kklisura.cdt.services.types.ChromeTab tab,
             final com.github.kklisura.cdt.services.ChromeDevToolsService dts,
             final ExecutorService executor
