@@ -27,7 +27,11 @@ import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.notification.Failure;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
 import org.simplejavamail.mailer.Mailer;
@@ -47,6 +51,12 @@ import java.util.concurrent.ExecutionException;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class EmailSenderTest {
+
+    @Rule
+    public ErrorCollector collector = new ErrorCollector();
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
@@ -101,36 +111,30 @@ public class EmailSenderTest {
         Assert.assertEquals(0, _server.getReceivedEmails().size());
     }
 
-    @Test(expected = MailException.class)
+    @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
+        thrown.expectCause(org.hamcrest.core.IsInstanceOf.instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
-        try {
-            _sender.send(
-                    TestBeanFactory.createRecipientBuilder().build(),
-                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
-            ).toCompletableFuture().get();
-        } catch (final ExecutionException e) {
-            final Throwable cause = e.getCause();
-            if (cause instanceof MailException) {
-                throw (MailException) cause;
-            }
-            throw e;    
+        _sender.send(
+                TestBeanFactory.createRecipientBuilder().build(),
+                ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
+        ).toCompletableFuture().get();
+    }
+
+    @Test
+    public void testSendAllowsLegalRecipients() {
+        for (final String address : ImmutableList.of("alice@example.com", "bob@example.com")) {
+            _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
         }
     }
 
     @Test
     public void testSendRejectsIllegalRecipients() {
-        final ImmutableList<String> legalAddresses = ImmutableList.of("alice@example.com", "bob@example.com");
-        for (final String address : legalAddresses) {
-            _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
-        }
-
-        final ImmutableList<String> illegalAddresses = ImmutableList.of("", "@example.com", "charlie@example.com.ru");
-        for (final String address : illegalAddresses) {
+        for (final String address : ImmutableList.of("", "@example.com", "charlie@example.com.ru")) {
             try {
                 _sender.send(TestBeanFactory.createRecipientBuilder().setAddress(address).build(), ImmutableMap.of());
-                Assert.fail("should have refused to send to '" + address + "'");
+                collector.addError(new Throwable("should have refused to send to '" + address + "'"));
             } catch (final IllegalArgumentException e) {
             }
         }
