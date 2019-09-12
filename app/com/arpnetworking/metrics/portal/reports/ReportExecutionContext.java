@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.net.MediaType;
@@ -45,6 +46,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -102,8 +104,14 @@ public final class ReportExecutionContext {
         }
     }
 
+    /**
+     * Guess whether the given report can be successfully executed. Purely a heuristic, guarantees nothing either way.
+     *
+     * @param report The report to be executed.
+     * @throws IllegalArgumentException If it looks like the given report will fail.
+     */
     public void verifyCanProbablyExecute(final Report report) throws IllegalArgumentException {
-        final Set<Throwable> errors = Sets.newHashSet();
+        final List<Throwable> errors = Lists.newArrayList();
         report.getRecipientsByFormat().keySet().forEach(format -> {
             try {
                 getRenderer(report.getSource(), format).verifyCanProbablyRender(report.getSource(), format);

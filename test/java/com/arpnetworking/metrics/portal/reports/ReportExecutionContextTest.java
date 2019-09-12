@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.arpnetworking.commons.java.time.ManualClock;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
@@ -34,6 +35,7 @@ import models.internal.TimeRange;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
+import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;
@@ -231,6 +233,34 @@ public class ReportExecutionContextTest {
         new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
+    @Test
+    public void testVerifyCanProbablyExecute() {
+        final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
+        context.verifyCanProbablyExecute(EXAMPLE_REPORT);
+
+        final ReportExecutionContext contextWithoutEmail = new ReportExecutionContext(
+                CLOCK,
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.senders.EMAIL")
+        );
+        try {
+            contextWithoutEmail.verifyCanProbablyExecute(EXAMPLE_REPORT);
+            Assert.fail("should have failed to verify report because of email dependency");
+        } catch (final IllegalArgumentException e) {}
+
+        final ReportExecutionContext contextWithoutWeb = new ReportExecutionContext(
+                CLOCK,
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.renderers.WEB_PAGE")
+        );
+        try {
+            contextWithoutWeb.verifyCanProbablyExecute(EXAMPLE_REPORT);
+            Assert.fail("should have failed to verify report because of web-page renderer dependency");
+        } catch (final IllegalArgumentException e) {}
+    }
+
     private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final TimeRange timeRange) {
         return new DefaultRenderedReport.Builder()
                 .setReport(report)
@@ -254,9 +284,7 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
-        public void verifyCanProbablySend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) throws IllegalArgumentException {
-            return true;
-        }
+        public void verifyCanProbablySend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) throws IllegalArgumentException {}
 
         @Override
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
@@ -270,9 +298,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public void verifyCanProbablyRender(final WebPageReportSource source, final HtmlReportFormat format) {
-            return true;
-        }
+        public void verifyCanProbablyRender(final WebPageReportSource source, final HtmlReportFormat format) {}
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
@@ -288,9 +314,7 @@ public class ReportExecutionContextTest {
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public void verifyCanProbablyRender(final WebPageReportSource source, final PdfReportFormat format) {
-            return true;
-        }
+        public void verifyCanProbablyRender(final WebPageReportSource source, final PdfReportFormat format) {}
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
