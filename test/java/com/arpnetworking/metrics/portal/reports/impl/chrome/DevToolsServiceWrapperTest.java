@@ -64,13 +64,13 @@ public class DevToolsServiceWrapperTest {
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
         _dts = new DevToolsServiceWrapper(
                 _service,
-                ImmutableMap.of(
+                new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of(
                         "https://whitelisted.com", new OriginConfig.Builder()
                                 .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-.*"))
                                 .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-.*"))
                                 .setAdditionalHeaders(ImmutableMap.of("X-Extra-Header", "extra header value"))
                                 .build()
-                ),
+                )).build(),
                 _tab,
                 _wrapped,
                 new ScheduledThreadPoolExecutor(1)

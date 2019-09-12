@@ -49,8 +49,10 @@ public class DefaultDevToolsFactoryTest {
                     "keepAlive", "PT1S",
                     "queueSize", 1024
             ),
-            "origins", ImmutableMap.of(
-                    ConfigUtil.quoteString("https://whitelisted.com"), ImmutableMap.of()
+            "originConfigs", ImmutableMap.of(
+                    "byOrigin", ImmutableMap.of(
+                            ConfigUtil.quoteString("https://whitelisted.com"), ImmutableMap.of()
+                    )
             )
     ));
 

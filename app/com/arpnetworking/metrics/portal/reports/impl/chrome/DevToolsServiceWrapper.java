@@ -26,7 +26,6 @@ import com.github.kklisura.cdt.protocol.types.network.RequestPattern;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import java.net.URI;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +41,7 @@ import java.util.function.Supplier;
  */
 public class DevToolsServiceWrapper implements DevToolsService {
     private final com.github.kklisura.cdt.services.ChromeService _chromeService;
-    private final ImmutableMap<String, OriginConfig> _originConfigs;
+    private final PerOriginConfigs _originConfigs;
     private final com.github.kklisura.cdt.services.types.ChromeTab _tab;
     private final com.github.kklisura.cdt.services.ChromeDevToolsService _dts;
     private final ExecutorService _executor;
@@ -57,7 +56,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
      */
     /* package private */ DevToolsServiceWrapper(
             final com.github.kklisura.cdt.services.ChromeService chromeService,
-            final ImmutableMap<String, OriginConfig> originConfigs,
+            final PerOriginConfigs originConfigs,
             final com.github.kklisura.cdt.services.types.ChromeTab tab,
             final com.github.kklisura.cdt.services.ChromeDevToolsService dts,
             final ExecutorService executor
@@ -76,11 +75,9 @@ public class DevToolsServiceWrapper implements DevToolsService {
         final Network network = _dts.getNetwork();
         network.setRequestInterception(ImmutableList.of(new RequestPattern()));
         network.onRequestIntercepted(event -> {
-            final URI uri = URI.create(event.getRequest().getUrl());
-            final String origin = uri.getScheme() + "://" + uri.getAuthority();
-            final OriginConfig originConfig = _originConfigs.get(origin);
-            if (originConfig == null || !originConfig.isRequestAllowed(uri.getPath())) {
-                System.out.println("Cancelling request to " + uri);
+            final String url = event.getRequest().getUrl();
+            if (!_originConfigs.isRequestAllowed(url)) {
+                System.out.println("Cancelling request to " + url);
                 network.continueInterceptedRequest(
                         event.getInterceptionId(), ErrorReason.ABORTED, null, null, null, null, null, null
                 );
@@ -88,13 +85,13 @@ public class DevToolsServiceWrapper implements DevToolsService {
             }
             final ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
                     .putAll(event.getRequest().getHeaders())
-                    .putAll(originConfig.getAdditionalHeaders())
+                    .putAll(_originConfigs.getAdditionalHeaders(url))
                     .build();
             network.continueInterceptedRequest(
                     event.getInterceptionId(),
                     null,
                     null,
-                    event.getRequest().getUrl(),
+                    url,
                     event.getRequest().getMethod(),
                     event.getRequest().getPostData(),
                     headers,
@@ -137,12 +134,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
 
     @Override
     public boolean isNavigationAllowed(final String url) {
-        final URI uri = URI.create(url);
-        final String origin = uri.getScheme() + "://" + uri.getAuthority();
-        if (_originConfigs.containsKey(origin)) {
-            return _originConfigs.get(origin).isNavigationAllowed(uri.getPath());
-        }
-        return false;
+        return _originConfigs.isNavigationAllowed(url);
     }
 
     @Override
