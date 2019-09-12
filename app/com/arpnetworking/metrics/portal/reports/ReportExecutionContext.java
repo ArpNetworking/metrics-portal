@@ -77,7 +77,7 @@ public final class ReportExecutionContext {
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = getFormatsByRecipient(report);
 
         return CompletableFuture.supplyAsync(() -> {
-            verifyDependencies(report);
+            verifyCanMaybeExecute(report);
             return null;
         }).thenCompose(nothing ->
                 renderAll(report.getRecipientsByFormat().keySet(), report, timeRange)
@@ -86,20 +86,6 @@ public final class ReportExecutionContext {
         ).thenApply(nothing ->
                 new DefaultReportResult()
         );
-    }
-
-    /**
-     * Verify that the given Injector has everything necessary to render the given Report.
-     *
-     * @throws IllegalArgumentException if anything is missing.
-     */
-    /* package private */ void verifyDependencies(final Report report) {
-        for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
-            getRenderer(report.getSource(), format);
-        }
-        for (final Recipient recipient : getFormatsByRecipient(report).keySet()) {
-            getSender(recipient);
-        }
     }
 
     /**
