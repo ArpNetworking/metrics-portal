@@ -15,20 +15,16 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.kklisura.cdt.launch.ChromeArguments;
-import com.github.kklisura.cdt.launch.ChromeLauncher;
-import com.github.kklisura.cdt.launch.config.ChromeLauncherConfiguration;
-import com.github.kklisura.cdt.launch.support.impl.ProcessLauncherImpl;
 import com.github.kklisura.cdt.services.ChromeService;
 import com.github.kklisura.cdt.services.types.ChromeTab;
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import net.sf.oval.constraint.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -56,52 +52,16 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         return new DevToolsServiceWrapper(service, _originConfigs, tab, result, _executor);
     }
 
-    @Override
-    public PerOriginConfigs getOriginConfigs() {
-        return _originConfigs;
-    }
-
-    /* package private */ DefaultDevToolsFactory(final Config config) {
-        this(config, ObjectMapperFactory.createInstance());
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param config is a {@link Config} that has the following fields: <ul>
-     *   <li>{@code path} points to the Chrome executable</li>
-     *   <li>
-     *     {@code args} is a map of command-line flags passed to Chrome.
-     *     List of valid args: https://peter.sh/experiments/chromium-command-line-switches/
-     *     Keys are flags without the leading {@code --};
-     *     values are strings (for flags that take args) or {@code true} (for flags that don't).
-     *     For example, {@code foo=true, bar="baz"} would result in the Chrome invocation {@code chromium --foo --bar=baz}.
-     *   </li>
-     *   <li>{@code executor} is a sub-object with the fields:
-     *     <ul>
-     *       <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
-     *         {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
-     *       <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
-     *       <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
-     *     </ul>
-     *   </li>
-     *   <li>{@code originConfigs} is a {@link PerOriginConfigs} object,
-     *     describing each allowed origin's permissions/configuration.</li>
-     *   </ul>
-     * @param objectMapper is an {@link ObjectMapper} used to deserialize parts of the config.
-     *
-     * TODO(spencerpearson): I don't like exposing the threadpool implementation details, but I can very easily imagine the user
-     *   wanting to configure them.
-     */
-    @Inject
-    public DefaultDevToolsFactory(final Config config, final ObjectMapper objectMapper) {
-        _chromePath = config.getString("path");
-        _chromeArgs = ImmutableMap.copyOf(config.getObject("args").unwrapped());
-        _executor = createExecutorService(config.hasPath("executor") ? config.getConfig("executor") : ConfigFactory.empty());
-        _service = Suppliers.memoize(this::createService);
+    private DefaultDevToolsFactory(final Builder builder) {
+        _chromePath = builder._config.getString("path");
+        _chromeArgs = ImmutableMap.copyOf(builder._config.getObject("args").unwrapped());
+        _executor = createExecutorService(builder._config.hasPath("executor")
+                ? builder._config.getConfig("executor")
+                : ConfigFactory.empty());
+        _service = () -> builder._serviceFactory.getOrCreate(_chromePath, _chromeArgs);
         try {
-            _originConfigs = objectMapper.readValue(
-                    ConfigurationHelper.toJson(config, "originConfigs"),
+            _originConfigs = builder._objectMapper.readValue(
+                    ConfigurationHelper.toJson(builder._config, "originConfigs"),
                     PerOriginConfigs.class
             );
         } catch (final IOException e) {
@@ -109,27 +69,9 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         }
     }
 
-    private ChromeService createService() {
-        // The config should be able to override the CHROME_PATH environment variable that ChromeLauncher uses.
-        // This requires in our own custom "environment" (since it defaults to using System::getEnv).
-        final ImmutableMap<String, String> env = ImmutableMap.of(
-                ChromeLauncher.ENV_CHROME_PATH, _chromePath
-        );
-        // ^^^ In order to pass this environment in, we need to use a many-argument constructor,
-        //   which doesn't have obvious default values. So I stole the arguments from the fewer-argument constructor:
-        // CHECKSTYLE.OFF: LineLength
-        //   https://github.com/kklisura/chrome-devtools-java-client/blob/master/cdt-java-client/src/main/java/com/github/kklisura/cdt/launch/ChromeLauncher.java#L105
-        // CHECKSTYLE.ON: LineLength
-        final ChromeLauncher launcher = new ChromeLauncher(
-                new ProcessLauncherImpl(),
-                env::get,
-                new ChromeLauncher.RuntimeShutdownHookRegistry(),
-                new ChromeLauncherConfiguration()
-        );
-        return launcher.launch(ChromeArguments.defaults(true)
-                .additionalArguments(_chromeArgs)
-                .build());
-
+    @Override
+    public PerOriginConfigs getOriginConfigs() {
+        return _originConfigs;
     }
 
     private static ExecutorService createExecutorService(final Config config) {
@@ -154,4 +96,80 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     private final ExecutorService _executor;
     private final Supplier<ChromeService> _service;
     private final PerOriginConfigs _originConfigs;
+
+    /**
+     * Implementation of builder pattern for {@link DefaultDevToolsFactory}.
+     *
+     * @author Spencer Pearson (spencerpearson at dropbox dot com)
+     */
+    public static final class Builder extends OvalBuilder<DefaultDevToolsFactory> {
+        @NotNull
+        private Config _config;
+        @NotNull
+        private ObjectMapper _objectMapper = ObjectMapperFactory.createInstance();
+        @NotNull
+        private CachingChromeServiceFactory _serviceFactory = new CachingChromeServiceFactory();
+
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(DefaultDevToolsFactory::new);
+        }
+
+        /**
+         * Sets config. Required. Cannot be null.
+         *
+         * @param config is a {@link Config} that has the following fields: <ul>
+         *   <li>{@code path} points to the Chrome executable</li>
+         *   <li>
+         *     {@code args} is a map of command-line flags passed to Chrome.
+         *     List of valid args: https://peter.sh/experiments/chromium-command-line-switches/
+         *     Keys are flags without the leading {@code --};
+         *     values are strings (for flags that take args) or {@code true} (for flags that don't).
+         *     For example, {@code foo=true, bar="baz"} would result in the Chrome invocation {@code chromium --foo --bar=baz}.
+         *   </li>
+         *   <li>{@code executor} is a sub-object with the fields:
+         *     <ul>
+         *       <li>{@code corePoolSize} and {@code maximumPoolSize}, which map straightforwardly to
+         *         {@link ThreadPoolExecutor#ThreadPoolExecutor} arguments;</li>
+         *       <li>{@code keepAlive} is an ISO-8601 duration that maps straightforwardly to the same constructor;</li>
+         *       <li>{@code queueSize} is how large the executor's queue should be before task-submissions start blocking.</li>
+         *     </ul>
+         *   </li>
+         *   <li>{@code originConfigs} is a {@link PerOriginConfigs} object,
+         *     describing each allowed origin's permissions/configuration.</li>
+         *   </ul>
+         * @return this builder
+         *
+         * TODO(spencerpearson): I don't like exposing the threadpool implementation details, but I can very easily imagine the user
+         *   wanting to configure them.
+         */
+        public Builder setConfig(final Config config) {
+            _config = config;
+            return this;
+        }
+
+        /**
+         * Sets object mapper. Optional. Cannot be null. Defaults to a new one.
+         *
+         * @param objectMapper is an {@link ObjectMapper} used to deserialize parts of the config.
+         * @return this builder
+         */
+        public Builder setObjectMapper(final ObjectMapper objectMapper) {
+            _objectMapper = objectMapper;
+            return this;
+        }
+
+        /**
+         * Sets service factory. Optional. Cannot be null. Defaults to a new one.
+         *
+         * @param serviceFactory is used to create Chrome service instances.
+         * @return this builder
+         */
+        public Builder setServiceFactory(final CachingChromeServiceFactory serviceFactory) {
+            _serviceFactory = serviceFactory;
+            return this;
+        }
+    }
 }

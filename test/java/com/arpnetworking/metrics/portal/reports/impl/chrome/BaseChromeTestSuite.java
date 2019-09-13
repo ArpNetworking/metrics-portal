@@ -64,6 +64,8 @@ public abstract class BaseChromeTestSuite {
             "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
     );
 
+    private static final CachingChromeServiceFactory SERVICE_FACTORY = new CachingChromeServiceFactory();
+
     /**
      * Path to the Chrome binary to use for Chrome-renderer tests.
      */
@@ -73,27 +75,44 @@ public abstract class BaseChromeTestSuite {
 
 
     protected DevToolsFactory getDevToolsFactory() {
-        return new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
-                "path", CHROME_PATH.get(),
-                "args", ImmutableMap.of(
-                        "no-sandbox", true,
-                        "headless", true
-                ),
-                "executor", ImmutableMap.of(
-                        "corePoolSize", 8,
-                        "maximumPoolSize", 8,
-                        "keepAlive", "PT1S",
-                        "queueSize", 1024
-                ),
-                "originConfigs", ImmutableMap.of(
-                        "byOrigin", ImmutableMap.of(
-                                ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
-                                        "allowedNavigationPaths", ImmutableList.of(".*"),
-                                        "allowedRequestPaths", ImmutableList.of(".*")
+        return getDevToolsFactory(".*");
+    }
+
+    /**
+     * Create a new {@link DevToolsFactory}.
+     *
+     * @param allowedPathsPattern Regex matching the localhost paths that Chrome should be allowed to access. Default {@code .*}.
+     * @return A new {@link DevToolsFactory}.
+     */
+    protected DevToolsFactory getDevToolsFactory(final String allowedPathsPattern) {
+        return new DefaultDevToolsFactory.Builder()
+                .setConfig(
+                        ConfigFactory.parseMap(ImmutableMap.of(
+                                "path", CHROME_PATH.get(),
+                                "args", ImmutableMap.of(
+                                        "no-sandbox", true,
+                                        "headless", true,
+                                        "remote-debugging-port", 48928
+                                ),
+                                "executor", ImmutableMap.of(
+                                        "corePoolSize", 8,
+                                        "maximumPoolSize", 8,
+                                        "keepAlive", "PT1S",
+                                        "queueSize", 1024
+                                ),
+                                "originConfigs", ImmutableMap.of(
+                                        "byOrigin", ImmutableMap.of(
+                                                ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
+                                                        "allowedNavigationPaths", ImmutableList.of(allowedPathsPattern),
+                                                        "allowedRequestPaths", ImmutableList.of(allowedPathsPattern),
+                                                        "additionalHeaders", ImmutableMap.of("X-Extra-Header", "extra header value")
+                                                )
+                                        )
                                 )
-                        )
+                        ))
                 )
-        )));
+                .setServiceFactory(SERVICE_FACTORY)
+                .build();
     }
 
     /**

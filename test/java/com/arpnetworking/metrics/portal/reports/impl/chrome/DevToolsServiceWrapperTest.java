@@ -137,6 +137,7 @@ public class DevToolsServiceWrapperTest {
             _dts.navigate("https://whitelisted.com/disallowed-path");
             Assert.fail("navigate() to illegal path should have raised an exception");
         } catch (final IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("navigation is not allowed"));
         }
     }
 

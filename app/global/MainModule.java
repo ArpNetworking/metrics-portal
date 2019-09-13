@@ -209,7 +209,10 @@ public class MainModule extends AbstractModule {
     @Singleton
     @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Invoked reflectively by Guice")
     private DevToolsFactory provideChromeDevToolsFactory(final Config config, final ObjectMapper mapper) {
-        return new DefaultDevToolsFactory(config.getConfig("chrome"), mapper);
+        return new DefaultDevToolsFactory.Builder()
+                .setConfig(config.getConfig("chrome"))
+                .setObjectMapper(mapper)
+                .build();
     }
 
 

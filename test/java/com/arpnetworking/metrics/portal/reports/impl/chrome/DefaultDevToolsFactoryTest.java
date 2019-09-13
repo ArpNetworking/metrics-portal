@@ -58,7 +58,7 @@ public class DefaultDevToolsFactoryTest {
 
     @Test
     public void testValidConstruction() {
-        new DefaultDevToolsFactory(VALID_CONFIG);
+        new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG).build();
     }
 
     @Test(timeout = 2000)
@@ -77,7 +77,7 @@ public class DefaultDevToolsFactoryTest {
                 "executor.keepAlive",
                 "executor.queueSize"
         );
-        optionalFields.forEach(field -> new DefaultDevToolsFactory(VALID_CONFIG.withoutPath(field)));
+        optionalFields.forEach(field -> new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG.withoutPath(field)).build());
 
         final ImmutableSet<ImmutableList<Object>> invalidations = ImmutableSet.of(
                 ImmutableList.of("path", ImmutableMap.of(), ConfigException.WrongType.class),
@@ -127,7 +127,7 @@ public class DefaultDevToolsFactoryTest {
 
     private void assertMissingRaises(final String field) {
         try {
-            new DefaultDevToolsFactory(VALID_CONFIG.withoutPath(field));
+            new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG.withoutPath(field)).build();
             fail("missing field '" + field + "' should have made constructor fail");
         } catch (final ConfigException.Missing e) {
         }
@@ -135,7 +135,7 @@ public class DefaultDevToolsFactoryTest {
 
     private <E extends Exception> void assertInvalidates(final String field, @Nullable final Object badValue, final Class<E> clazz) {
         try {
-            new DefaultDevToolsFactory(VALID_CONFIG.withValue(field, ConfigValueFactory.fromAnyRef(badValue)));
+            new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG.withValue(field, ConfigValueFactory.fromAnyRef(badValue))).build();
             fail("setting " + field + "=" + badValue + " should have made constructor throw " + clazz.getName());
             // CHECKSTYLE.OFF: IllegalCatch
         } catch (final Exception e) {
