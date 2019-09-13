@@ -72,11 +72,11 @@ public abstract class BaseChromeTestSuite {
             .findFirst();
 
 
-    protected DevToolsFactory getDevToolsFactory() {
+    /* package private */ DevToolsFactory getDevToolsFactory() {
         return getDevToolsFactory(".*");
     }
 
-    protected DevToolsFactory getDevToolsFactory(final String allowedPathsPattern) {
+    /* package private */ DevToolsFactory getDevToolsFactory(final String allowedPathsPattern) {
         return new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
                 "path", CHROME_PATH.get(),
                 "args", ImmutableMap.of(
