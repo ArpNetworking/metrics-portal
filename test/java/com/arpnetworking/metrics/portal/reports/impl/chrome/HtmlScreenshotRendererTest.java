@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
+import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
@@ -26,12 +27,16 @@ import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests class {@link HtmlScreenshotRenderer}.
@@ -73,5 +78,68 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         Mockito.verify(builder).setBytes(bytes.capture());
         final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
         assertTrue(response.contains("here are some bytes"));
+    }
+
+    @Test(timeout = 20000)
+    public void testObeysOriginConfig() throws Exception {
+        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+
+        _wireMock.givenThat(
+                get(urlEqualTo("/allowed-page"))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "text/html")
+                                .withBody("<img src=\"/disallowed-img\" /> <img src=\"/allowed-img\" />")
+                        )
+        );
+        _wireMock.givenThat(
+                get(urlEqualTo("/allowed-img"))
+                        .willReturn(aResponse()
+                                .withBody("")
+                        )
+        );
+
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlScreenshotRenderer renderer = new HtmlScreenshotRenderer(getDevToolsFactory("/allowed-.*"));
+        final WebPageReportSource source = TestBeanFactory.createWebPageReportSourceBuilder()
+                .setUri(URI.create("http://localhost:" + _wireMock.port() + "/allowed-page"))
+                .build();
+
+        final CompletableFuture<MockRenderedReportBuilder> stage = renderer.render(
+                source,
+                format,
+                DEFAULT_TIME_RANGE,
+                builder,
+                DEFAULT_TIMEOUT.multipliedBy(1000)
+        );
+
+        stage.get();
+
+        // ensure configured additionalHeaders are added:
+        assertEquals(
+                "extra header value",
+                _wireMock.findAll(new RequestPatternBuilder().withUrl("/allowed-img")).get(0).getHeader("X-Extra-Header")
+        );
+
+        // ensure disallowed resource is blocked
+        assertEquals(0, _wireMock.findAll(new RequestPatternBuilder().withUrl("/disallowed-img")).size());
+        // (control group: ensure allowed resource wasn't blocked)
+        assertEquals(1, _wireMock.findAll(new RequestPatternBuilder().withUrl("/allowed-img")).size());
+
+        // ensure navigation to non-whitelisted pages is blocked
+        try {
+            final WebPageReportSource sourceWithDisallowedUri = TestBeanFactory.createWebPageReportSourceBuilder()
+                    .setUri(URI.create("http://disallowed"))
+                    .build();
+            renderer.render(
+                    sourceWithDisallowedUri,
+                    format,
+                    DEFAULT_TIME_RANGE,
+                    builder,
+                    DEFAULT_TIMEOUT
+            ).get();
+            fail("should have rejected navigation to " + sourceWithDisallowedUri);
+        } catch (final IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("navigation is not allowed"));
+        }
     }
 }

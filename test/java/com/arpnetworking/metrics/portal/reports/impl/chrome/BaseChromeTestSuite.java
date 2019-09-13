@@ -73,11 +73,16 @@ public abstract class BaseChromeTestSuite {
 
 
     protected DevToolsFactory getDevToolsFactory() {
+        return getDevToolsFactory(".*");
+    }
+
+    protected DevToolsFactory getDevToolsFactory(final String allowedPathsPattern) {
         return new DefaultDevToolsFactory(ConfigFactory.parseMap(ImmutableMap.of(
                 "path", CHROME_PATH.get(),
                 "args", ImmutableMap.of(
                         "no-sandbox", true,
-                        "headless", true
+                        "headless", true,
+                        "remote-debugging-port", 48928
                 ),
                 "executor", ImmutableMap.of(
                         "corePoolSize", 8,
@@ -88,8 +93,9 @@ public abstract class BaseChromeTestSuite {
                 "originConfigs", ImmutableMap.of(
                         "byOrigin", ImmutableMap.of(
                                 ConfigUtil.quoteString("http://localhost:" + _wireMock.port()), ImmutableMap.of(
-                                        "allowedNavigationPaths", ImmutableList.of(".*"),
-                                        "allowedRequestPaths", ImmutableList.of(".*")
+                                        "allowedNavigationPaths", ImmutableList.of(allowedPathsPattern),
+                                        "allowedRequestPaths", ImmutableList.of(allowedPathsPattern),
+                                        "additionalHeaders", ImmutableMap.of("X-Extra-Header", "extra header value")
                                 )
                         )
                 )
