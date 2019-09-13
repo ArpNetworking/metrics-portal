@@ -102,7 +102,7 @@ public class EmailSender implements Sender {
 
     private String getSubject(final Report report, final TimeRange timeRange) {
         final String formattedTime = ZonedDateTime.ofInstant(timeRange.getStart(), ZoneOffset.UTC).toString();
-        return "[Report] " + report.getName() + " for " + formattedTime; // TODO(spencerpearson): make format configurable
+        return String.format("[Report] %s for %s", report.getName(), formattedTime); // TODO(spencerpearson): make format configurable
     }
 
     private EmailPopulatingBuilder addFormat(
