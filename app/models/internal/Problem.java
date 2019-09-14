@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.metrics.portal.query;
+package models.internal;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.base.MoreObjects;
@@ -24,11 +24,11 @@ import net.sf.oval.constraint.NotNull;
 import java.io.Serializable;
 
 /**
- * Represents a problem with a query. Severity and recovery are left up to consumers.
+ * Represents a problem with a report. Severity and recovery are left up to consumers.
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public final class QueryProblem implements Serializable {
+public final class Problem implements Serializable {
     public String getProblemCode() {
         return _problemCode;
     }
@@ -45,7 +45,7 @@ public final class QueryProblem implements Serializable {
                 .toString();
     }
 
-    private QueryProblem(final Builder builder) {
+    private Problem(final Builder builder) {
         _problemCode = builder._problemCode;
         _args = builder._args;
     }
@@ -56,16 +56,16 @@ public final class QueryProblem implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Implementation of the builder pattern for {@link QueryProblem}.
+     * Implementation of the builder pattern for {@link Problem}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<QueryProblem> {
+    public static final class Builder extends OvalBuilder<Problem> {
         /**
          * Public constructor.
          */
         public Builder() {
-            super(QueryProblem::new);
+            super(Problem::new);
         }
 
         /**

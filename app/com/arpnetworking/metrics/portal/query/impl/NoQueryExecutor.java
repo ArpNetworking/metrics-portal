@@ -17,10 +17,10 @@ package com.arpnetworking.metrics.portal.query.impl;
 
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
-import com.arpnetworking.metrics.portal.query.QueryProblem;
 import com.google.common.collect.ImmutableList;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
+import models.internal.Problem;
 
 import java.util.concurrent.CompletionStage;
 import javax.inject.Singleton;
@@ -34,7 +34,7 @@ import javax.inject.Singleton;
 public class NoQueryExecutor implements QueryExecutor {
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) throws QueryExecutionException {
-        final QueryProblem notEnabledProblem = new QueryProblem.Builder().setProblemCode("NOT_ENABLED").build();
+        final Problem notEnabledProblem = new Problem.Builder().setProblemCode("NOT_ENABLED").build();
         throw new QueryExecutionException("Queries are not enabled", ImmutableList.of(notEnabledProblem));
     }
 }
