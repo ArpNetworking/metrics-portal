@@ -20,6 +20,8 @@ import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.Renderer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableList;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
@@ -78,11 +80,16 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
-    public void validateRender(final S source, final F format) throws IllegalArgumentException {
+    public ImmutableList<Problem> validateRender(final S source, final F format) {
         final URI uri = getUri(source);
         if (!_devToolsFactory.getOriginConfigs().isNavigationAllowed(uri)) {
-            throw new IllegalArgumentException("not allowed to visit uri: " + uri);
+            return ImmutableList.of(new Problem.Builder()
+                    .setProblemCode("report_problem.DISALLOWED_URI")
+                    .setArgs(ImmutableList.of(uri)) // Don't add the origin-configs here! It may contain secrets!
+                    .build()
+            );
         }
+        return ImmutableList.of();
     }
 
     @Override

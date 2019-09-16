@@ -24,6 +24,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
@@ -31,6 +32,7 @@ import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
@@ -74,11 +76,15 @@ public class EmailSender implements Sender {
     }
 
     @Override
-    public void validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
-            throws IllegalArgumentException {
+    public ImmutableList<Problem> validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) {
         if (_allowedRecipients.stream().noneMatch(pattern -> pattern.matcher(recipient.getAddress()).matches())) {
-            throw new IllegalArgumentException(String.format("%s  does not match any allowed address %s", recipient.getAddress(), _allowedRecipients));
+            return ImmutableList.of(new Problem.Builder()
+                    .setProblemCode("report_problem.DISALLOWED_EMAIL_ADDRESS")
+                    .setArgs(ImmutableList.of(recipient.getAddress(), _allowedRecipients.toString()))
+                    .build()
+            );
         }
+        return ImmutableList.of();
     }
 
     private void sendSync(
