@@ -98,7 +98,13 @@ class EditReportViewModel {
     }
 
     save(): void {
-        const request = this.toRequest();
+        let request: any;
+        try {
+            request = this.toRequest();
+        } catch (e) {
+            this.alertMessages([e]);
+            return;
+        }
 
         $.ajax({
             type: "PUT",
