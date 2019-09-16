@@ -26,7 +26,7 @@ import play.mvc.Http;
 import java.util.List;
 
 /**
- * TODO(spencerpearson).
+ * Utilities for sending {@link Problem}-related information to clients.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
