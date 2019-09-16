@@ -18,26 +18,21 @@ package controllers;
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
-import com.arpnetworking.metrics.portal.query.QueryProblem;
+import com.arpnetworking.play.metrics.ProblemHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
 import models.internal.MetricsQueryResult;
+import models.internal.Problem;
 import models.view.MetricsQuery;
 import play.Environment;
-import play.libs.Json;
 import play.mvc.Controller;
-import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
@@ -74,7 +69,8 @@ public class MetricsController extends Controller {
         final JsonNode body = request().body().asJson();
         if (body == null) {
             return CompletableFuture.completedFuture(
-                    Results.badRequest(createErrorJson("request.UNEXPECTED_EMPTY_BODY", Collections.emptyList())));
+                    Results.badRequest(ProblemHelper.createErrorJson(
+                            new Problem.Builder().setProblemCode("request.UNEXPECTED_EMPTY_BODY").build())));
         }
 
         try {
@@ -84,7 +80,7 @@ public class MetricsController extends Controller {
                 throw new QueryExecutionException(
                         "Unknown query executor",
                         ImmutableList.of(
-                                new QueryProblem.Builder()
+                                new Problem.Builder()
                                         .setProblemCode("query_problem.UNKNOWN_EXECUTOR")
                                         .build()));
             }
@@ -97,42 +93,15 @@ public class MetricsController extends Controller {
             // CHECKSTYLE.OFF: IllegalCatch - Translate any failure to bad input.
         } catch (final RuntimeException ex) {
             // CHECKSTYLE.ON: IllegalCatch
-            return CompletableFuture.completedFuture(Results.internalServerError(createErrorJson(ex, "request.UNKNOWN_ERROR")));
+            return CompletableFuture.completedFuture(Results.internalServerError(
+                    ProblemHelper.createErrorJson(_environment, ex, "request.UNKNOWN_ERROR")));
         } catch (final QueryExecutionException ex) {
-            return CompletableFuture.completedFuture(Results.badRequest(createErrorJson(ex.getProblems())));
+            return CompletableFuture.completedFuture(Results.badRequest(
+                    ProblemHelper.createErrorJson(ex.getProblems())));
         } catch (final JsonProcessingException ex) {
-            return CompletableFuture.completedFuture(Results.badRequest(createErrorJson(ex, "request.BAD_REQUEST")));
+            return CompletableFuture.completedFuture(Results.badRequest(
+                    ProblemHelper.createErrorJson(_environment, ex, "request.BAD_REQUEST")));
         }
-    }
-
-    private ObjectNode createErrorJson(final Exception ex, final String errorCode) {
-        final ObjectNode errorNode = createErrorJson(errorCode, Collections.emptyList());
-        if (_environment.isDev()) {
-            if (ex.getMessage() != null) {
-                errorNode.put("details", ex.getMessage());
-            } else {
-                errorNode.put("details", ex.toString());
-            }
-        }
-        return errorNode;
-    }
-
-    private ObjectNode createErrorJson(final String errorCode, final List<Object> args) {
-        final ObjectNode errorJson = Json.newObject();
-        final ArrayNode errors = errorJson.putArray("errors");
-        errors.add(translateProblem(errorCode, args));
-        return errorJson;
-    }
-
-    private ObjectNode createErrorJson(final List<QueryProblem> problems) {
-        final ObjectNode errorJson = Json.newObject();
-        final ArrayNode errors = errorJson.putArray("errors");
-        problems.forEach(problem -> errors.add(translateProblem(String.format("query_problem.%s", problem), problem.getArgs())));
-        return errorJson;
-    }
-
-    private String translateProblem(final String problemCode, final List<Object> args) {
-        return Http.Context.current().messages().at("query_problem." + problemCode, args.toArray());
     }
 
     private final ObjectMapper _mapper;

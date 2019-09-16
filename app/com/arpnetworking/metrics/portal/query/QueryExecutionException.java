@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.query;
 
 import com.google.common.collect.ImmutableList;
+import models.internal.Problem;
 
 /**
  * Represents an error executing a query.
@@ -29,15 +30,15 @@ public class QueryExecutionException extends Exception {
      * @param message The detail message. The detail message is saved for later retrieval by the {@link #getMessage()} method.
      * @param problems List of errors encountered
      */
-    public QueryExecutionException(final String message, final ImmutableList<QueryProblem> problems) {
+    public QueryExecutionException(final String message, final ImmutableList<Problem> problems) {
         super(message);
         _problems = problems;
     }
 
-    public ImmutableList<QueryProblem> getProblems() {
+    public ImmutableList<Problem> getProblems() {
         return _problems;
     }
 
-    private final ImmutableList<QueryProblem> _problems;
+    private final ImmutableList<Problem> _problems;
     private static final long serialVersionUID = 1L;
 }
