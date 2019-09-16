@@ -51,7 +51,7 @@ class EditReportViewModel {
     alertMessage = ko.observable<string>('');
     alertHidden = ko.pureComputed<boolean>(() => this.alertMessage().length == 0);
 
-    private static readonly ERROR_MESSAGE = "There was an error when saving this report.";
+    private static readonly UNKNOWN_ERROR_MESSAGE = "Could not parse response from server.";
 
     activate(id: String) {
         if (id != null) {
@@ -111,7 +111,13 @@ class EditReportViewModel {
             data: JSON.stringify(request),
         })
         .fail((data) => {
-            this.alertMessage(`${EditReportViewModel.ERROR_MESSAGE} Code ${data.status}. Details: ${data.responseText}`);
+            let problems: string[];
+            try {
+                problems = JSON.parse(data.responseText).errors;
+            } catch (err) {
+                problems = [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
+            }
+            this.alertMessage(problems.join("; "));
         })
         .done(() => window.location.href = "/#reports");
     }
