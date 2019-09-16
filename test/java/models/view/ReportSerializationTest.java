@@ -23,15 +23,10 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.Lists;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultReport;
 import models.internal.reports.ReportFormat;
-import models.internal.scheduling.Period;
 import models.view.impl.HtmlReportFormat;
-import models.view.impl.OneOffSchedule;
-import models.view.impl.PeriodicSchedule;
-import models.view.impl.WebPageReportSource;
 import models.view.reports.Recipient;
 import models.view.reports.Report;
 import models.view.scheduling.Schedule;
@@ -99,13 +94,14 @@ public final class ReportSerializationTest {
 
     @Test
     public void testValidPeriodicSchedule() throws IOException {
-        final com.arpnetworking.metrics.portal.scheduling.Schedule expected = new com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule.Builder()
-                .setRunAtAndAfter(Instant.parse("2019-01-01T00:00:00Z"))
-                .setRunUntil(Instant.parse("2020-01-01T00:00:00Z"))
-                .setPeriod(ChronoUnit.DAYS)
-                .setZone(ZoneId.of("America/Los_Angeles"))
-                .setOffset(Duration.parse("PT4H"))
-                .build();
+        final com.arpnetworking.metrics.portal.scheduling.Schedule expected =
+                new com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule.Builder()
+                        .setRunAtAndAfter(Instant.parse("2019-01-01T00:00:00Z"))
+                        .setRunUntil(Instant.parse("2020-01-01T00:00:00Z"))
+                        .setPeriod(ChronoUnit.DAYS)
+                        .setZone(ZoneId.of("America/Los_Angeles"))
+                        .setOffset(Duration.parse("PT4H"))
+                        .build();
 
         final Schedule actual = loadResourceAs("testValidPeriodicSchedule", Schedule.class);
         assertEquals(expected, actual.toInternal());
