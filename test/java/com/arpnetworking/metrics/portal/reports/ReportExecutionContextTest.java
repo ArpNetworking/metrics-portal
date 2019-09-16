@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.arpnetworking.commons.java.time.ManualClock;
-import com.arpnetworking.metrics.portal.query.ReportExecutionException;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;

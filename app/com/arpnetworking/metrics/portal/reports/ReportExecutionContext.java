@@ -16,7 +16,6 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
-import com.arpnetworking.metrics.portal.query.ReportExecutionException;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
