@@ -17,9 +17,9 @@
 package com.arpnetworking.metrics.portal.reports;
 
 import com.google.common.collect.ImmutableList;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
-import models.internal.Problem;
 import models.internal.reports.ReportSource;
 
 import java.time.Duration;
