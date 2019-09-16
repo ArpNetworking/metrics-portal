@@ -60,7 +60,7 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      * @param format The format to render into.
      * @throws IllegalArgumentException If the source can't be rendered into that format.
      */
-    void verifyCanMaybeRender(
+    void validateRender(
             S source,
             F format
     ) throws IllegalArgumentException;

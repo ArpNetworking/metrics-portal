@@ -74,7 +74,7 @@ public class EmailSender implements Sender {
     }
 
     @Override
-    public void verifyCanMaybeSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
+    public void validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
             throws IllegalArgumentException {
         if (_allowedRecipients.stream().noneMatch(pattern -> pattern.matcher(recipient.getAddress()).matches())) {
             throw new IllegalArgumentException(recipient.getAddress() + " does not match any allowed address " + _allowedRecipients);

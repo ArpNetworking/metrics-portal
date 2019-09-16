@@ -77,7 +77,7 @@ public final class ReportExecutionContext {
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = getFormatsByRecipient(report);
 
         return CompletableFuture.supplyAsync(() -> {
-            verifyCanMaybeExecute(report);
+            validateExecute(report);
             return null;
         }).thenCompose(nothing ->
                 renderAll(report.getRecipientsByFormat().keySet(), report, timeRange)
@@ -95,11 +95,11 @@ public final class ReportExecutionContext {
      * @param report The report to be executed.
      * @throws IllegalArgumentException If it looks like the given report will fail.
      */
-    public void verifyCanMaybeExecute(final Report report) throws IllegalArgumentException {
+    public void validateExecute(final Report report) throws IllegalArgumentException {
         final List<Throwable> errors = Lists.newArrayList();
         report.getRecipientsByFormat().keySet().forEach(format -> {
             try {
-                getRenderer(report.getSource(), format).verifyCanMaybeRender(report.getSource(), format);
+                getRenderer(report.getSource(), format).validateRender(report.getSource(), format);
             } catch (final IllegalArgumentException e) {
                 errors.add(e);
             }
@@ -107,7 +107,7 @@ public final class ReportExecutionContext {
         final ImmutableMultimap<Recipient, ReportFormat> formatsByRecipient = getFormatsByRecipient(report);
         formatsByRecipient.keys().forEach(recipient -> {
             try {
-                getSender(recipient).verifyCanMaybeSend(recipient, formatsByRecipient.get(recipient));
+                getSender(recipient).validateSend(recipient, formatsByRecipient.get(recipient));
             } catch (final IllegalArgumentException e) {
                 errors.add(e);
             }

@@ -100,7 +100,7 @@ public class ReportController extends Controller {
         }
 
         try {
-            _reportExecutionContext.verifyCanMaybeExecute(report);
+            _reportExecutionContext.validateExecute(report);
         } catch (final IllegalArgumentException error) {
             return badRequest(
                     error.getMessage()

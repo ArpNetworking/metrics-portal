@@ -49,7 +49,7 @@ public interface Sender {
      * @param formatsToSend The rendered report formats to be sent.
      * @throws IllegalArgumentException If the recipient can't be sent those formats.
      */
-    void verifyCanMaybeSend(
+    void validateSend(
             Recipient recipient,
             ImmutableCollection<ReportFormat> formatsToSend
     ) throws IllegalArgumentException;
