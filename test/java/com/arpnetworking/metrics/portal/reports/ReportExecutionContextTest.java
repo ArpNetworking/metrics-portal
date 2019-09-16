@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports;
 
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
@@ -230,6 +231,36 @@ public class ReportExecutionContextTest {
         new ReportExecutionContext(CLOCK, _injector, _environment, ConfigFactory.parseMap(ImmutableMap.of()));
     }
 
+    @Test
+    public void testVerifyCanProbablyExecute() {
+        final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
+        context.validateExecute(EXAMPLE_REPORT);
+
+        final ReportExecutionContext contextWithoutEmail = new ReportExecutionContext(
+                CLOCK,
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.senders.EMAIL")
+        );
+        try {
+            contextWithoutEmail.validateExecute(EXAMPLE_REPORT);
+            Assert.fail("should have failed to verify report because of email dependency");
+        } catch (final IllegalArgumentException e) {
+        }
+
+        final ReportExecutionContext contextWithoutWeb = new ReportExecutionContext(
+                CLOCK,
+                _injector,
+                _environment,
+                _config.withoutPath("reporting.renderers.WEB_PAGE")
+        );
+        try {
+            contextWithoutWeb.validateExecute(EXAMPLE_REPORT);
+            Assert.fail("should have failed to verify report because of web-page renderer dependency");
+        } catch (final IllegalArgumentException e) {
+        }
+    }
+
     private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final TimeRange timeRange) {
         return new DefaultRenderedReport.Builder()
                 .setReport(report)
@@ -253,6 +284,10 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
+        public void validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
+                throws IllegalArgumentException {}
+
+        @Override
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
         public CompletionStage<Void> send(
                 final Recipient recipient,
@@ -263,6 +298,9 @@ public class ReportExecutionContextTest {
     }
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
+        @Override
+        public void validateRender(final WebPageReportSource source, final HtmlReportFormat format) throws IllegalArgumentException {}
+
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,
@@ -276,6 +314,9 @@ public class ReportExecutionContextTest {
     }
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
+        @Override
+        public void validateRender(final WebPageReportSource source, final PdfReportFormat format) throws IllegalArgumentException {}
+
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
                 final WebPageReportSource source,

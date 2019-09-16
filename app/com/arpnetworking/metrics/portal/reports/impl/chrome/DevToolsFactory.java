@@ -28,4 +28,11 @@ public interface DevToolsFactory {
      * @return the created service.
      */
     DevToolsService create(boolean ignoreCertificateErrors);
+
+    /**
+     * Get the per-origin configs that get baked into all the {@link DevToolsService} instances this factory mints.
+     *
+     * @return the {@link PerOriginConfigs}.
+     */
+    PerOriginConfigs getOriginConfigs();
 }

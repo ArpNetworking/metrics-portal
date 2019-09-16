@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
@@ -44,11 +45,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Utilities for execution of {@link Report}s.
@@ -73,19 +74,13 @@ public final class ReportExecutionContext {
                 resolution.addTo(scheduled.truncatedTo(resolution), -1),
                 scheduled.truncatedTo(resolution)
         );
-        final ImmutableMultimap<ReportFormat, Recipient> formatToRecipients = report.getRecipientsByFormat()
-                .entrySet()
-                .stream()
-                .collect(ImmutableSetMultimap.flatteningToImmutableSetMultimap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().stream()));
-        final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = formatToRecipients.inverse();
+        final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = getFormatsByRecipient(report);
 
         return CompletableFuture.supplyAsync(() -> {
-            verifyDependencies(report);
+            validateExecute(report);
             return null;
         }).thenCompose(nothing ->
-                renderAll(formatToRecipients.keySet(), report, timeRange)
+                renderAll(report.getRecipientsByFormat().keySet(), report, timeRange)
         ).thenCompose(formatToRendered ->
                 sendAll(report, recipientToFormats, formatToRendered, timeRange)
         ).thenApply(nothing ->
@@ -94,20 +89,44 @@ public final class ReportExecutionContext {
     }
 
     /**
-     * Verify that the given Injector has everything necessary to render the given Report.
+     * Check whether the given report can be successfully executed.
+     * Accepts all valid reports, rejects <i>some</i> invalid ones.
      *
-     * @throws IllegalArgumentException if anything is missing.
+     * @param report The report to be executed.
+     * @throws IllegalArgumentException If it looks like the given report will fail.
      */
-    /* package private */ void verifyDependencies(final Report report) {
-        for (final ReportFormat format : report.getRecipientsByFormat().keySet()) {
-            getRenderer(report.getSource(), format);
+    public void validateExecute(final Report report) throws IllegalArgumentException {
+        final List<Throwable> errors = Lists.newArrayList();
+        report.getRecipientsByFormat().keySet().forEach(format -> {
+            try {
+                getRenderer(report.getSource(), format).validateRender(report.getSource(), format);
+            } catch (final IllegalArgumentException e) {
+                errors.add(e);
+            }
+        });
+        final ImmutableMultimap<Recipient, ReportFormat> formatsByRecipient = getFormatsByRecipient(report);
+        formatsByRecipient.keys().forEach(recipient -> {
+            try {
+                getSender(recipient).validateSend(recipient, formatsByRecipient.get(recipient));
+            } catch (final IllegalArgumentException e) {
+                errors.add(e);
+            }
+        });
+        if (!errors.isEmpty()) {
+            final IllegalArgumentException superError = new IllegalArgumentException(errors.size() + " failures");
+            errors.forEach(superError::addSuppressed);
+            throw superError;
         }
-        final Collection<Recipient> allRecipients = report.getRecipientsByFormat().values().stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
-        for (final Recipient recipient : allRecipients) {
-            getSender(recipient);
-        }
+    }
+
+    private ImmutableMultimap<Recipient, ReportFormat> getFormatsByRecipient(final Report report) {
+        return report.getRecipientsByFormat()
+                .entrySet()
+                .stream()
+                .collect(ImmutableSetMultimap.flatteningToImmutableSetMultimap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().stream()))
+                .inverse();
     }
 
     /**

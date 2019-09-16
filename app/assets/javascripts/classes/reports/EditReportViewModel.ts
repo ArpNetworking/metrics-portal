@@ -110,8 +110,8 @@ class EditReportViewModel {
             dataType: "json",
             data: JSON.stringify(request),
         })
-        .fail(() => {
-            this.alertMessage(EditReportViewModel.ERROR_MESSAGE);
+        .fail((data) => {
+            this.alertMessage(`${EditReportViewModel.ERROR_MESSAGE} Code ${data.status}. Details: ${data.responseText}`);
         })
         .done(() => window.location.href = "/#reports");
     }

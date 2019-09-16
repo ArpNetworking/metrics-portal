@@ -51,4 +51,17 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
             B builder,
             Duration timeout
     );
+
+    /**
+     * Check whether the renderer can render a given source into a given format.
+     * Accepts all valid reports, rejects <i>some</i> invalid ones.
+     *
+     * @param source The source to render.
+     * @param format The format to render into.
+     * @throws IllegalArgumentException If the source can't be rendered into that format.
+     */
+    void validateRender(
+            S source,
+            F format
+    ) throws IllegalArgumentException;
 }

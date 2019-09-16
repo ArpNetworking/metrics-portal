@@ -18,7 +18,10 @@ package com.arpnetworking.metrics.portal.integration.controllers;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
+import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSetMultimap;
+import models.internal.impl.HtmlReportFormat;
 import models.view.reports.Report;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -30,6 +33,7 @@ import org.junit.Test;
 import play.mvc.Http;
 
 import java.io.IOException;
+import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,7 +46,14 @@ public final class ReportControllerIT {
 
     @Test
     public void testCreateValid() throws IOException {
-        final Report report = Report.fromInternal(TestBeanFactory.createReportBuilder().build());
+        final Report report = Report.fromInternal(TestBeanFactory.createReportBuilder()
+                .setReportSource(TestBeanFactory.createWebPageReportSourceBuilder().setUri(URI.create("https://example.com/")).build())
+                .setRecipients(ImmutableSetMultimap.of(
+                        new HtmlReportFormat.Builder().build(),
+                        TestBeanFactory.createRecipientBuilder().setType(RecipientType.EMAIL).setAddress("alice@example.com").build()
+                ))
+                .build()
+        );
         final HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
         putRequest.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
         putRequest.setEntity(new StringEntity(OBJECT_MAPPER.writeValueAsString(report)));
@@ -57,7 +68,29 @@ public final class ReportControllerIT {
             final Report returnedReport = WebServerHelper.readContentAs(response, models.view.reports.Report.class);
             assertEquals(report, returnedReport);
         }
+    }
 
+    @Test
+    public void testCreateInvalid() throws IOException {
+        final Report invalidReport = Report.fromInternal(
+                TestBeanFactory.createReportBuilder()
+                        .setRecipients(ImmutableSetMultimap.of(
+                                new HtmlReportFormat.Builder().build(),
+                                TestBeanFactory.createRecipientBuilder().setAddress("not a valid email address").build()
+                        ))
+                        .build());
+        final HttpPut putRequest = new HttpPut(WebServerHelper.getUri("/v1/reports"));
+        putRequest.setHeader(new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"));
+        putRequest.setEntity(new StringEntity(OBJECT_MAPPER.writeValueAsString(invalidReport)));
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(putRequest)) {
+            assertEquals(Http.Status.BAD_REQUEST, response.getStatusLine().getStatusCode());
+        }
+
+        final String reportId = invalidReport.getId().toString();
+        final HttpGet getRequest = new HttpGet(WebServerHelper.getUri("/v1/reports/" + reportId));
+        try (CloseableHttpResponse response = WebServerHelper.getClient().execute(getRequest)) {
+            assertEquals(Http.Status.NOT_FOUND, response.getStatusLine().getStatusCode());
+        }
     }
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

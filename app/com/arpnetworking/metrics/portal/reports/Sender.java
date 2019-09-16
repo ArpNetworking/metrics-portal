@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
@@ -39,4 +40,17 @@ public interface Sender {
             Recipient recipient,
             ImmutableMap<ReportFormat, RenderedReport> formatsToSend
     );
+
+    /**
+     * Check whether the sender can send the given report formats to a given recipient.
+     * Accepts all valid recipient/format inputs, rejects <i>some</i> invalid ones.
+     *
+     * @param recipient The recipient.
+     * @param formatsToSend The rendered report formats to be sent.
+     * @throws IllegalArgumentException If the recipient can't be sent those formats.
+     */
+    void validateSend(
+            Recipient recipient,
+            ImmutableCollection<ReportFormat> formatsToSend
+    ) throws IllegalArgumentException;
 }

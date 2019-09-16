@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import akka.cluster.sharding.ClusterSharding;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
@@ -42,6 +43,7 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -65,6 +67,7 @@ public class ReportController extends Controller {
      * @param reportRepository Instance of {@link ReportRepository}.
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      * @param jobExecutorRegion {@link ClusterSharding} actor balancing the execution of {@link models.internal.scheduling.Job}s.
+     * @param reportExecutionContext {@link ReportExecutionContext} to use to validate new reports.
      */
     @Inject
     public ReportController(
@@ -72,9 +75,10 @@ public class ReportController extends Controller {
             final ReportRepository reportRepository,
             final OrganizationRepository organizationRepository,
             @Named("job-execution-shard-region")
-            final ActorRef jobExecutorRegion
-    ) {
-        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository, jobExecutorRegion);
+            final ActorRef jobExecutorRegion,
+            final ReportExecutionContext reportExecutionContext
+            ) {
+        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository, jobExecutorRegion, reportExecutionContext);
     }
 
     /**
@@ -93,6 +97,18 @@ public class ReportController extends Controller {
                     .setThrowable(e)
                     .log();
             return badRequest("Invalid request body.");
+        }
+
+        try {
+            _reportExecutionContext.validateExecute(report);
+        } catch (final IllegalArgumentException error) {
+            return badRequest(
+                    error.getMessage()
+                            + ":\n"
+                            + Arrays.stream(error.getSuppressed())
+                                    .map(Throwable::getMessage)
+                                    .collect(Collectors.joining(";\n"))
+            );
         }
 
         final Organization organization = _organizationRepository.get(request());
@@ -216,12 +232,14 @@ public class ReportController extends Controller {
             final int maxLimit,
             final ReportRepository reportRepository,
             final OrganizationRepository organizationRepository,
-            final ActorRef jobExecutorRegion
+            final ActorRef jobExecutorRegion,
+            final ReportExecutionContext reportExecutionContext
     ) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
         _organizationRepository = organizationRepository;
         _jobExecutorRegion = jobExecutorRegion;
+        _reportExecutionContext = reportExecutionContext;
     }
 
     private void kickJobExecutor(final UUID reportId) {
@@ -240,6 +258,7 @@ public class ReportController extends Controller {
     private final ReportRepository _reportRepository;
     private final OrganizationRepository _organizationRepository;
     private final ActorRef _jobExecutorRegion;
+    private final ReportExecutionContext _reportExecutionContext;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

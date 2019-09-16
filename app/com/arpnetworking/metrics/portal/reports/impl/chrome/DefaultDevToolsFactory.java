@@ -69,6 +69,11 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         }
     }
 
+    @Override
+    public PerOriginConfigs getOriginConfigs() {
+        return _originConfigs;
+    }
+
     private static ExecutorService createExecutorService(final Config config) {
         final Duration executorKeepAliveTime =
                 config.hasPath("keepAlive")

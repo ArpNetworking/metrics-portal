@@ -78,6 +78,14 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
     );
 
     @Override
+    public void validateRender(final S source, final F format) throws IllegalArgumentException {
+        final URI uri = getUri(source);
+        if (!_devToolsFactory.getOriginConfigs().isNavigationAllowed(uri)) {
+            throw new IllegalArgumentException("not allowed to visit uri: " + uri);
+        }
+    }
+
+    @Override
     public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
             final S source,
             final F format,

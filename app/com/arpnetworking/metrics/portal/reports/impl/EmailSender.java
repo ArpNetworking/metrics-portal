@@ -23,6 +23,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteSource;
@@ -70,6 +71,18 @@ public class EmailSender implements Sender {
             }
             return null;
         });
+    }
+
+    @Override
+    public void validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
+            throws IllegalArgumentException {
+        if (_allowedRecipients.stream().noneMatch(pattern -> pattern.matcher(recipient.getAddress()).matches())) {
+            throw new IllegalArgumentException(String.format(
+                    "%s does not match any allowed address %s",
+                    recipient.getAddress(),
+                    _allowedRecipients
+            ));
+        }
     }
 
     private void sendSync(
