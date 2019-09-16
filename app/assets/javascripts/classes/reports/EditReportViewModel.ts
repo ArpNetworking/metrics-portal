@@ -48,8 +48,8 @@ class EditReportViewModel {
     existingReport = ko.observable<boolean>(false);
 
     // Alert for showing error messages on save
-    alertMessage = ko.observable<string>('');
-    alertHidden = ko.pureComputed<boolean>(() => this.alertMessage().length == 0);
+    alertMessages = ko.observable<string[]>([]);
+    alertHidden = ko.pureComputed<boolean>(() => this.alertMessages().length == 0);
 
     private static readonly UNKNOWN_ERROR_MESSAGE = "Could not parse response from server.";
 
@@ -77,7 +77,7 @@ class EditReportViewModel {
                 this.recipients.push(model);
             });
         }).fail(() => {
-            this.alertMessage("Report not found");
+            this.alertMessages(["Report not found"]);
             this.enabled = false;
         });
     }
@@ -117,7 +117,7 @@ class EditReportViewModel {
             } catch (err) {
                 problems = [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
             }
-            this.alertMessage(problems.join("; "));
+            this.alertMessages(problems);
         })
         .done(() => window.location.href = "/#reports");
     }
