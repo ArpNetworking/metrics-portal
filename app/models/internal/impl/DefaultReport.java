@@ -31,6 +31,7 @@ import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -245,11 +246,17 @@ public final class DefaultReport implements Report {
         @NotNull
         private ReportSource _source;
         @NotNull
+        @ValidateWithMethod(methodName = "validateRecipientsPresent", parameterType = ImmutableSetMultimap.class)
         private ImmutableSetMultimap<ReportFormat, Recipient> _recipients;
         @NotNull
         private Schedule _schedule;
         @NotNull
         private Duration _timeout;
+
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
+        private boolean validateRecipientsPresent(final ImmutableSetMultimap<ReportFormat, Recipient> result) {
+            return !_recipients.isEmpty();
+        }
     }
 
 }
