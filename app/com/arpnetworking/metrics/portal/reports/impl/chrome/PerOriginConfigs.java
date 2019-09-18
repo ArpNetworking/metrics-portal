@@ -34,9 +34,11 @@ public final class PerOriginConfigs {
 
     private PerOriginConfigs(final Builder builder) {
         _byOrigin = builder._byOrigin;
+        _allowEverything = builder._allowEverything;
     }
 
     private final ImmutableMap<String, OriginConfig> _byOrigin;
+    private final boolean _allowEverything;
 
     /**
      * Tests whether a browser should be allowed to navigate to a URI.
@@ -47,7 +49,7 @@ public final class PerOriginConfigs {
     public boolean isNavigationAllowed(final URI uri) {
         // TODO(spencerpearson): this should really return an ImmutableList<Problem> to describe _why_
         //   the URI is rejected (non-whitelisted domain, vs non-whitelisted path within domain, vs maybe others someday)
-        return getOrDefault(uri, oconf -> oconf.isNavigationAllowed(uri.getPath()), false);
+        return _allowEverything || getOrDefault(uri, oconf -> oconf.isNavigationAllowed(uri.getPath()), false);
     }
 
     /**
@@ -57,7 +59,7 @@ public final class PerOriginConfigs {
      * @return Whether a browser should be allowed to make a request to that URI.
      */
     public boolean isRequestAllowed(final URI uri) {
-        return getOrDefault(uri, oconf -> oconf.isRequestAllowed(uri.getPath()), false);
+        return _allowEverything || getOrDefault(uri, oconf -> oconf.isRequestAllowed(uri.getPath()), false);
     }
 
     /**
@@ -104,6 +106,7 @@ public final class PerOriginConfigs {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("_byOrigin", _byOrigin)
+                .add("_allowEverything", _allowEverything)
                 .toString();
     }
 
@@ -116,12 +119,13 @@ public final class PerOriginConfigs {
             return false;
         }
         final PerOriginConfigs that = (PerOriginConfigs) o;
-        return _byOrigin.equals(that._byOrigin);
+        return _allowEverything == that._allowEverything
+                && _byOrigin.equals(that._byOrigin);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_byOrigin);
+        return Objects.hash(_byOrigin, _allowEverything);
     }
 
     private String getOrigin(final URI uri) {
@@ -149,6 +153,17 @@ public final class PerOriginConfigs {
         }
 
         /**
+         * Set whether all requests/navigation will be globally allowed. Optional. Defaults to false.
+         *
+         * @param allowEverything Whether to allow everything by default.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setAllowEverything(final boolean allowEverything) {
+            _allowEverything = allowEverything;
+            return this;
+        }
+
+        /**
          * Set the configurations for all origins. Required. Cannot be null.
          *
          * @param byOrigin The configs for all origins.
@@ -160,6 +175,7 @@ public final class PerOriginConfigs {
         }
 
         @NotNull
-        private ImmutableMap<String, OriginConfig> _byOrigin = null;
+        private ImmutableMap<String, OriginConfig> _byOrigin;
+        private boolean _allowEverything = false;
     }
 }
