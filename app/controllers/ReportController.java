@@ -216,7 +216,10 @@ public class ReportController extends Controller {
         final Optional<Report> report = _reportRepository.getReport(id, organization);
         return report
                 .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElseGet(ReportController::notFound);
+                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                        .setProblemCode("report_problem.NOT_FOUND")
+                        .build()
+                )));
     }
 
     /**

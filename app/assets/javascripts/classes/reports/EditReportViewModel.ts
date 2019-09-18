@@ -76,8 +76,8 @@ class EditReportViewModel {
                 model.load(raw);
                 this.recipients.push(model);
             });
-        }).fail(() => {
-            this.alertMessages(["Report not found"]);
+        }).fail((data) => {
+            this.alertMessages(EditReportViewModel.parseProblems(data.responseText));
             this.enabled = false;
         });
     }
@@ -117,13 +117,7 @@ class EditReportViewModel {
             data: JSON.stringify(request),
         })
         .fail((data) => {
-            let problems: string[];
-            try {
-                problems = JSON.parse(data.responseText).errors;
-            } catch (err) {
-                problems = [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
-            }
-            this.alertMessages(problems);
+            this.alertMessages(EditReportViewModel.parseProblems(data.responseText));
         })
         .done(() => window.location.href = "/#reports");
     }
@@ -149,6 +143,14 @@ class EditReportViewModel {
 
     readonly helpMessages = {
         timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
+    }
+
+    private static parseProblems(responseJson: string): string[] {
+        try {
+            return JSON.parse(responseJson).errors;
+        } catch (err) {
+            return [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
+        }
     }
 }
 
