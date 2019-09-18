@@ -52,6 +52,8 @@ class EditReportViewModel {
     alertHidden = ko.pureComputed<boolean>(() => this.alertMessages().length == 0);
 
     private static readonly UNKNOWN_ERROR_MESSAGE = "Could not parse response from server.";
+    // ^ TODO(anyone): i18n: Ideally this wouldn't be hardcoded, but would be templated into
+    //    some early page-load by the server, once it knows the appropriate language.
 
     activate(id: String) {
         if (id != null) {
