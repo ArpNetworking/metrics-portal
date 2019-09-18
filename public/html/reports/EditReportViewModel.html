@@ -21,9 +21,12 @@
             <h2 data-bind="ifnot: existingReport">Create Report</h2>
             <form id="editReportForm" role="form" class="container-fluid col-md-8 col-sm-12 col-lg-6">
                 <div id="editReportAlert" class="alert alert-danger"
-                     data-bind="attr: {'hidden': alertHidden},
-                                text: alertMessage"
-                     role="alert"></div>
+                     data-bind="attr: {'hidden': alertHidden}"
+                     role="alert">
+                    <ul data-bind="foreach: alertMessages">
+                        <li data-bind="text: $data"></li>
+                    </ul>
+                </div>
                 <div class="form-group">
                     <label for="nameInput">Name</label>
                     <input class="form-control" data-bind="value: name" type="text" id="nameInput" placeholder="Name">

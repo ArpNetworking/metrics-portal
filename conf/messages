@@ -1,6 +1,10 @@
 query_problem.NOT_ENABLED=Queries are disabled.
 query_problem.UNKNOWN_EXECUTOR=Unknown query executor.
+report_problem.DISALLOWED_EMAIL_ADDRESS=Email address {0} is not whitelisted for reporting (valid patterns: {1}).
+report_problem.DISALLOWED_URI=URI {0} is not whitelisted for reporting.
+report_problem.NO_SUCH_RENDERER=No renderer is configured to render source type {0} into format {1}.
+report_problem.NO_SUCH_SENDER=No sender is configured for recipient type {0}.
+report_problem.NOT_FOUND=Report not found.
 request.UNKNOWN_ERROR=An error has occurred.
 request.BAD_REQUEST=Bad request.
 request.UNEXPECTED_EMPTY_BODY=Expected request body but found none.
-

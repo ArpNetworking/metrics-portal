@@ -18,9 +18,14 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -43,6 +48,14 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
     @Mock
     private DevToolsService _dts;
 
+    private static final String SECRET_TOKEN = "SECRET TOKEN";
+    private static final PerOriginConfigs ORIGIN_CONFIGS = new PerOriginConfigs.Builder()
+            .setByOrigin(ImmutableMap.of("http://allowed.com", new OriginConfig.Builder()
+                    .setAllowedNavigationPaths(ImmutableSet.of("/?"))
+                    .setAdditionalHeaders(ImmutableMap.of("X-Auth-Token", SECRET_TOKEN))
+                    .build()))
+            .build();
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -51,6 +64,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
 
         _factory = Mockito.mock(DevToolsFactory.class);
         Mockito.doReturn(_dts).when(_factory).create(Mockito.anyBoolean());
+        Mockito.doReturn(ORIGIN_CONFIGS).when(_factory).getOriginConfigs();
     }
 
     private MockRenderer createMockRenderer() {
@@ -140,6 +154,18 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
         navigationStarted.get();
         future.cancel(true);
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
+    }
+
+    @Test
+    public void testDoesNotIncludeHeadersInProblemMessage() {
+        final URI uri = URI.create("http://disallowed.com");
+        Mockito.doReturn(false).when(_dts).isNavigationAllowed(Mockito.anyString());
+        final ImmutableList<Problem> problems = createMockRenderer().validateRender(
+                TestBeanFactory.createWebPageReportSourceBuilder().setUri(uri).build(),
+                new HtmlReportFormat.Builder().build()
+        );
+        Assert.assertTrue(problems.toString().contains(uri.toString()));
+        Assert.assertFalse(problems.toString().contains(SECRET_TOKEN));
     }
 
     private static final class MockRenderer extends BaseScreenshotRenderer<WebPageReportSource, HtmlReportFormat> {

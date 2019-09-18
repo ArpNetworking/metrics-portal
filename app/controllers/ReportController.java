@@ -24,26 +24,30 @@ import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobRef;
+import com.arpnetworking.play.metrics.ProblemHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import models.internal.Organization;
+import models.internal.Problem;
 import models.internal.QueryResult;
 import models.internal.reports.Report;
 import models.view.PagedContainer;
 import models.view.Pagination;
+import net.sf.oval.exception.ConstraintsViolatedException;
+import play.Environment;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -68,6 +72,7 @@ public class ReportController extends Controller {
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      * @param jobExecutorRegion {@link ClusterSharding} actor balancing the execution of {@link models.internal.scheduling.Job}s.
      * @param reportExecutionContext {@link ReportExecutionContext} to use to validate new reports.
+     * @param environment environment we're executing in
      */
     @Inject
     public ReportController(
@@ -76,9 +81,17 @@ public class ReportController extends Controller {
             final OrganizationRepository organizationRepository,
             @Named("job-execution-shard-region")
             final ActorRef jobExecutorRegion,
-            final ReportExecutionContext reportExecutionContext
+            final ReportExecutionContext reportExecutionContext,
+            final Environment environment
             ) {
-        this(configuration.getInt("reports.limit"), reportRepository, organizationRepository, jobExecutorRegion, reportExecutionContext);
+        this(
+                configuration.getInt("reports.limit"),
+                reportRepository,
+                organizationRepository,
+                jobExecutorRegion,
+                reportExecutionContext,
+                environment
+        );
     }
 
     /**
@@ -91,24 +104,18 @@ public class ReportController extends Controller {
         try {
             final JsonNode body = request().body().asJson();
             report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
-        } catch (final JsonProcessingException e) {
+        } catch (final JsonProcessingException | ConstraintsViolatedException e) {
             LOGGER.error()
                     .setMessage("Failed to build a report.")
                     .setThrowable(e)
                     .log();
-            return badRequest("Invalid request body.");
+            return badRequest(ProblemHelper.createErrorJson(_environment, e, "request.BAD_REQUEST"));
         }
 
-        try {
-            _reportExecutionContext.validateExecute(report);
-        } catch (final IllegalArgumentException error) {
-            return badRequest(
-                    error.getMessage()
-                            + ":\n"
-                            + Arrays.stream(error.getSuppressed())
-                                    .map(Throwable::getMessage)
-                                    .collect(Collectors.joining(";\n"))
-            );
+
+        final ImmutableList<Problem> problems = _reportExecutionContext.validateExecute(report);
+        if (!problems.isEmpty()) {
+            return badRequest(ProblemHelper.createErrorJson(problems));
         }
 
         final Organization organization = _organizationRepository.get(request());
@@ -209,7 +216,10 @@ public class ReportController extends Controller {
         final Optional<Report> report = _reportRepository.getReport(id, organization);
         return report
                 .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElseGet(ReportController::notFound);
+                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                        .setProblemCode("report_problem.NOT_FOUND")
+                        .build()
+                )));
     }
 
     /**
@@ -233,13 +243,15 @@ public class ReportController extends Controller {
             final ReportRepository reportRepository,
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
-            final ReportExecutionContext reportExecutionContext
+            final ReportExecutionContext reportExecutionContext,
+            final Environment environment
     ) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
         _organizationRepository = organizationRepository;
         _jobExecutorRegion = jobExecutorRegion;
         _reportExecutionContext = reportExecutionContext;
+        _environment = environment;
     }
 
     private void kickJobExecutor(final UUID reportId) {
@@ -259,6 +271,7 @@ public class ReportController extends Controller {
     private final OrganizationRepository _organizationRepository;
     private final ActorRef _jobExecutorRegion;
     private final ReportExecutionContext _reportExecutionContext;
+    private final Environment _environment;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

@@ -47,6 +47,8 @@ public final class PerOriginConfigs {
      * @return Whether a browser should be allowed to navigate to that URI.
      */
     public boolean isNavigationAllowed(final URI uri) {
+        // TODO(spencerpearson): this should really return an ImmutableList<Problem> to describe _why_
+        //   the URI is rejected (non-whitelisted domain, vs non-whitelisted path within domain, vs maybe others someday)
         return _allowEverything || getOrDefault(uri, oconf -> oconf.isNavigationAllowed(uri.getPath()), false);
     }
 

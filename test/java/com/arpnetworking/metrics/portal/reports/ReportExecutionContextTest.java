@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.reports;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
@@ -30,6 +31,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
@@ -119,6 +121,7 @@ public class ReportExecutionContextTest {
                 Mockito.any()
         );
 
+        Mockito.doReturn(ImmutableList.of()).when(_emailSender).validateSend(Mockito.any(), Mockito.any());
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {}
@@ -162,26 +165,26 @@ public class ReportExecutionContextTest {
         );
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testExecuteThrowsIfNoRendererFound() throws InterruptedException {
+    @Test(expected = ReportExecutionException.class)
+    public void testExecuteThrowsIfNoRendererFound() throws InterruptedException, ReportExecutionException {
         final ReportExecutionContext context = new ReportExecutionContext(
                 CLOCK,
                 _injector,
                 _environment,
                 _config.withoutPath("reporting.renderers.WEB_PAGE.\"text/html; charset=utf-8\"")
         );
-        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), IllegalArgumentException.class);
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), ReportExecutionException.class);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testExecuteThrowsIfNoSenderFound() throws InterruptedException {
+    @Test(expected = ReportExecutionException.class)
+    public void testExecuteThrowsIfNoSenderFound() throws InterruptedException, ReportExecutionException {
         final ReportExecutionContext context = new ReportExecutionContext(
                 CLOCK,
                 _injector,
                 _environment,
                 _config.withoutPath("reporting.senders.EMAIL")
         );
-        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), IllegalArgumentException.class);
+        unwrapAsyncThrow(context.execute(EXAMPLE_REPORT, T1), ReportExecutionException.class);
     }
 
     @Test(expected = Exception.class)
@@ -242,11 +245,10 @@ public class ReportExecutionContextTest {
                 _environment,
                 _config.withoutPath("reporting.senders.EMAIL")
         );
-        try {
-            contextWithoutEmail.validateExecute(EXAMPLE_REPORT);
-            Assert.fail("should have failed to verify report because of email dependency");
-        } catch (final IllegalArgumentException e) {
-        }
+        Assert.assertTrue(
+                contextWithoutEmail.validateExecute(EXAMPLE_REPORT).stream()
+                        .anyMatch(problem -> problem.getProblemCode().equals("report_problem.NO_SUCH_SENDER"))
+        );
 
         final ReportExecutionContext contextWithoutWeb = new ReportExecutionContext(
                 CLOCK,
@@ -254,11 +256,10 @@ public class ReportExecutionContextTest {
                 _environment,
                 _config.withoutPath("reporting.renderers.WEB_PAGE")
         );
-        try {
-            contextWithoutWeb.validateExecute(EXAMPLE_REPORT);
-            Assert.fail("should have failed to verify report because of web-page renderer dependency");
-        } catch (final IllegalArgumentException e) {
-        }
+        Assert.assertTrue(
+                contextWithoutWeb.validateExecute(EXAMPLE_REPORT).stream()
+                        .anyMatch(problem -> problem.getProblemCode().equals("report_problem.NO_SUCH_RENDERER"))
+        );
     }
 
     private static DefaultRenderedReport mockRendered(final Report report, final ReportFormat format, final TimeRange timeRange) {
@@ -284,8 +285,9 @@ public class ReportExecutionContextTest {
 
     private static class MockEmailSender implements Sender {
         @Override
-        public void validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend)
-                throws IllegalArgumentException {}
+        public ImmutableList<Problem> validateSend(final Recipient recipient, final ImmutableCollection<ReportFormat> formatsToSend) {
+            return ImmutableList.of();
+        }
 
         @Override
         @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
@@ -299,7 +301,9 @@ public class ReportExecutionContextTest {
 
     private static final class MockHtmlRenderer implements Renderer<WebPageReportSource, HtmlReportFormat> {
         @Override
-        public void validateRender(final WebPageReportSource source, final HtmlReportFormat format) throws IllegalArgumentException {}
+        public ImmutableList<Problem> validateRender(final WebPageReportSource source, final HtmlReportFormat format) {
+            return ImmutableList.of();
+        }
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(
@@ -315,7 +319,9 @@ public class ReportExecutionContextTest {
 
     private static final class MockPdfRenderer implements Renderer<WebPageReportSource, PdfReportFormat> {
         @Override
-        public void validateRender(final WebPageReportSource source, final PdfReportFormat format) throws IllegalArgumentException {}
+        public ImmutableList<Problem> validateRender(final WebPageReportSource source, final PdfReportFormat format) {
+            return ImmutableList.of();
+        }
 
         @Override
         public <B extends RenderedReport.Builder<B, ?>> CompletableFuture<B> render(

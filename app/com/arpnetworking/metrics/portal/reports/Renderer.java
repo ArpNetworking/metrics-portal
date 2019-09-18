@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.reports;
 
+import com.google.common.collect.ImmutableList;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.reports.ReportFormat;
 import models.internal.reports.ReportSource;
@@ -58,10 +60,10 @@ public interface Renderer<S extends ReportSource, F extends ReportFormat> {
      *
      * @param source The source to render.
      * @param format The format to render into.
-     * @throws IllegalArgumentException If the source can't be rendered into that format.
+     * @return A list of errors that are sure to occur if we try to render that source into that format.
      */
-    void validateRender(
+    ImmutableList<Problem> validateRender(
             S source,
             F format
-    ) throws IllegalArgumentException;
+    );
 }

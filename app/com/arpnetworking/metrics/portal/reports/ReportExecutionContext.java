@@ -21,6 +21,8 @@ import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -32,6 +34,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReportResult;
@@ -48,6 +51,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -77,7 +81,10 @@ public final class ReportExecutionContext {
         final ImmutableMultimap<Recipient, ReportFormat> recipientToFormats = getFormatsByRecipient(report);
 
         return CompletableFuture.supplyAsync(() -> {
-            validateExecute(report);
+            final ImmutableList<Problem> problems = validateExecute(report);
+            if (!problems.isEmpty()) {
+                throw new CompletionException(new ReportExecutionException("validation failed", problems));
+            }
             return null;
         }).thenCompose(nothing ->
                 renderAll(report.getRecipientsByFormat().keySet(), report, timeRange)
@@ -93,30 +100,41 @@ public final class ReportExecutionContext {
      * Accepts all valid reports, rejects <i>some</i> invalid ones.
      *
      * @param report The report to be executed.
-     * @throws IllegalArgumentException If it looks like the given report will fail.
+     * @return A list of issues that the report is sure to encounter if it execution is attempted.
      */
-    public void validateExecute(final Report report) throws IllegalArgumentException {
-        final List<Throwable> errors = Lists.newArrayList();
-        report.getRecipientsByFormat().keySet().forEach(format -> {
-            try {
-                getRenderer(report.getSource(), format).validateRender(report.getSource(), format);
-            } catch (final IllegalArgumentException e) {
-                errors.add(e);
-            }
-        });
+    public ImmutableList<Problem> validateExecute(final Report report) {
+        final List<Problem> problems = Lists.newArrayList();
         final ImmutableMultimap<Recipient, ReportFormat> formatsByRecipient = getFormatsByRecipient(report);
-        formatsByRecipient.keys().forEach(recipient -> {
-            try {
-                getSender(recipient).validateSend(recipient, formatsByRecipient.get(recipient));
-            } catch (final IllegalArgumentException e) {
-                errors.add(e);
-            }
-        });
-        if (!errors.isEmpty()) {
-            final IllegalArgumentException superError = new IllegalArgumentException(errors.size() + " failures");
-            errors.forEach(superError::addSuppressed);
-            throw superError;
+        report.getRecipientsByFormat().keySet().forEach(format -> problems.addAll(validateRenderer(report.getSource(), format)));
+        formatsByRecipient.keys().forEach(recipient -> problems.addAll(validateSender(recipient, formatsByRecipient.get(recipient))));
+        return ImmutableList.copyOf(problems);
+    }
+
+    private <S extends ReportSource, F extends ReportFormat> ImmutableList<Problem> validateRenderer(final S source, final F format) {
+        final Renderer<S, F> renderer;
+        try {
+            renderer = getRenderer(source, format);
+        } catch (final IllegalArgumentException e) {
+            return ImmutableList.of(new Problem.Builder()
+                    .setProblemCode("report_problem.NO_SUCH_RENDERER")
+                    .setArgs(ImmutableList.of(source.getType(), format.getMimeType()))
+                    .build()
+            );
         }
+        return renderer.validateRender(source, format);
+    }
+    private ImmutableList<Problem> validateSender(final Recipient recipient, final ImmutableCollection<ReportFormat> formats) {
+        final Sender sender;
+        try {
+            sender = getSender(recipient);
+        } catch (final IllegalArgumentException e) {
+            return ImmutableList.of(new Problem.Builder()
+                    .setProblemCode("report_problem.NO_SUCH_SENDER")
+                    .setArgs(ImmutableList.of(recipient.getType()))
+                    .build()
+            );
+        }
+        return sender.validateSend(recipient, formats);
     }
 
     private ImmutableMultimap<Recipient, ReportFormat> getFormatsByRecipient(final Report report) {

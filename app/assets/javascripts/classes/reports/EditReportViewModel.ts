@@ -48,10 +48,12 @@ class EditReportViewModel {
     existingReport = ko.observable<boolean>(false);
 
     // Alert for showing error messages on save
-    alertMessage = ko.observable<string>('');
-    alertHidden = ko.pureComputed<boolean>(() => this.alertMessage().length == 0);
+    alertMessages = ko.observable<string[]>([]);
+    alertHidden = ko.pureComputed<boolean>(() => this.alertMessages().length == 0);
 
-    private static readonly ERROR_MESSAGE = "There was an error when saving this report.";
+    private static readonly UNKNOWN_ERROR_MESSAGE = "Could not parse response from server.";
+    // ^ TODO(anyone): i18n: Ideally this wouldn't be hardcoded, but would be templated into
+    //    some early page-load by the server, once it knows the appropriate language.
 
     activate(id: String) {
         if (id != null) {
@@ -76,8 +78,8 @@ class EditReportViewModel {
                 model.load(raw);
                 this.recipients.push(model);
             });
-        }).fail(() => {
-            this.alertMessage("Report not found");
+        }).fail((data) => {
+            this.alertMessages(EditReportViewModel.parseProblems(data.responseText));
             this.enabled = false;
         });
     }
@@ -98,7 +100,13 @@ class EditReportViewModel {
     }
 
     save(): void {
-        const request = this.toRequest();
+        let request: any;
+        try {
+            request = this.toRequest();
+        } catch (e) {
+            this.alertMessages([e]);
+            return;
+        }
 
         $.ajax({
             type: "PUT",
@@ -111,7 +119,7 @@ class EditReportViewModel {
             data: JSON.stringify(request),
         })
         .fail((data) => {
-            this.alertMessage(`${EditReportViewModel.ERROR_MESSAGE} Code ${data.status}. Details: ${data.responseText}`);
+            this.alertMessages(EditReportViewModel.parseProblems(data.responseText));
         })
         .done(() => window.location.href = "/#reports");
     }
@@ -137,6 +145,14 @@ class EditReportViewModel {
 
     readonly helpMessages = {
         timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
+    }
+
+    private static parseProblems(responseJson: string): string[] {
+        try {
+            return JSON.parse(responseJson).errors;
+        } catch (err) {
+            return [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
+        }
     }
 }
 
