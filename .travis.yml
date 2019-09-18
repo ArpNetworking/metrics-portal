@@ -25,7 +25,7 @@ before_script:
 - sudo /etc/init.d/mysql stop
 - sudo /etc/init.d/postgresql stop
 - if [ \( -n "${TRAVIS_TAG}" \) -a  "${TRAVIS_PULL_REQUEST}" = "false" ]; then
-    gpg --import arpnetworking.key;
+    gpg --import --batch arpnetworking.key;
     export TARGET="deploy -P release --settings settings.xml";
   fi;
 script:
