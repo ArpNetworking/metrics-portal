@@ -52,12 +52,20 @@ public class PerOriginConfigsTest {
         );
     }
 
+
     @Test
     public void testDefaults() {
-        final PerOriginConfigs emptyConfig = makeSimpleConfig(ImmutableMap.of());
+        final PerOriginConfigs emptyConfig = makeSimpleConfig(ImmutableMap.of()).build();
         assertFalse(emptyConfig.isNavigationAllowed("http://example.com"));
         assertFalse(emptyConfig.isRequestAllowed("http://example.com"));
         assertEquals(ImmutableMap.of(), emptyConfig.getAdditionalHeaders("http://example.com"));
+    }
+
+    @Test
+    public void testAllowEverything() {
+        final PerOriginConfigs permissiveConfig = makeSimpleConfig(ImmutableMap.of()).setAllowEverything(true).build();
+        assertTrue(permissiveConfig.isNavigationAllowed("http://nonwhitelisted.com/whatever"));
+        assertTrue(permissiveConfig.isRequestAllowed("http://nonwhitelisted.com/whatever"));
     }
 
     @Test
@@ -65,7 +73,7 @@ public class PerOriginConfigsTest {
         final PerOriginConfigs config = makeSimpleConfig(ImmutableMap.of(
                 "https://example.com", "/",
                 "https://google.com", "/search"
-        ));
+        )).build();
         assertTrue(config.isNavigationAllowed("https://example.com/"));
         assertFalse(config.isNavigationAllowed("http://example.com/"));
         assertFalse(config.isNavigationAllowed("https://example.com"));
@@ -78,31 +86,14 @@ public class PerOriginConfigsTest {
         assertFalse(config.isNavigationAllowed("https://other.com/"));
     }
 
-    @Test
-    public void testIsNavigationAllowed() {
-        final OriginConfig config = new OriginConfig.Builder()
-                .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-\\d+"))
-                .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-\\d+"))
-                .build();
-
-        assertFalse(config.isNavigationAllowed(""));
-        assertFalse(config.isNavigationAllowed("/disallowed"));
-        assertFalse(config.isNavigationAllowed("/allowed-req-1"));
-        assertTrue(config.isNavigationAllowed("/allowed-nav-1"));
-
-        assertFalse(config.isRequestAllowed("/sneaky-prefix/allowed-nav-1"));
-        assertFalse(config.isRequestAllowed("/allowed-nav-1/sneaky-suffix"));
-    }
-
-    private PerOriginConfigs makeSimpleConfig(final ImmutableMap<String, String> allowedPathByOrigin) {
+    private PerOriginConfigs.Builder makeSimpleConfig(final ImmutableMap<String, String> allowedPathByOrigin) {
         return new PerOriginConfigs.Builder()
                 .setByOrigin(
                         allowedPathByOrigin.entrySet().stream().collect(ImmutableMap.toImmutableMap(
                                 Map.Entry::getKey,
                                 entry -> new OriginConfig.Builder().setAllowedNavigationPaths(ImmutableSet.of(entry.getValue())).build()
                         ))
-                )
-                .build();
+                );
     }
 
     private static final ObjectMapper MAPPER = ObjectMapperFactory.createInstance();
