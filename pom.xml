@@ -206,6 +206,32 @@
       </testResource>
     </testResources>
 
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${maven.gpg.plugin.version}</version>
+          <executions>
+            <execution>
+              <id>sign-artifacts</id>
+              <configuration>
+                <gpgArguments combine.children="append">
+                  <!-- This is closely tied to the fact that Travis is configured to use Ubuntu 18.04:
+                    by default, Travis uses Ubuntu 16.04, which has GPG 1; but 18.04 has GPG 2,
+                    which does... something fancy to try to read the passphrase, resulting in an error
+                    "inappropriate ioctl for device". Googling suggested that `- -pinentry-mode loopback`
+                    would fix it. We'll see. -->
+                  <arg>--pinentry-mode</arg>
+                  <arg>loopback</arg>
+                </gpgArguments>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <!-- Enable Inherited Plugins -->
       <plugin>
@@ -1319,34 +1345,6 @@
       <properties>
         <docker.skip.metrics-portal>true</docker.skip.metrics-portal>
       </properties>
-    </profile>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>${maven.gpg.plugin.version}</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <configuration>
-                  <gpgArguments combine.children="append">
-                    <!-- This is closely tied to the fact that Travis is configured to use Ubuntu 18.04:
-                      by default, Travis uses Ubuntu 16.04, which has GPG 1; but 18.04 has GPG 2,
-                      which does... something fancy to try to read the passphrase, resulting in an error
-                      "inappropriate ioctl for device". Googling suggested that `- -pinentry-mode loopback`
-                      would fix it. We'll see. -->
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                  </gpgArguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 </project>
