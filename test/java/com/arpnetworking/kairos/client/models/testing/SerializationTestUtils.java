@@ -42,15 +42,20 @@ public final class SerializationTestUtils {
     public static void assertDeserializationLosesNothing(final ObjectNode node, final Class<?> clazz) {
         final Object complete = OBJECT_MAPPER.convertValue(node, clazz);
         for (final String field : ImmutableList.copyOf(node.fieldNames())) {
+            final Object diminished;
             try {
-                final Object diminished = OBJECT_MAPPER.convertValue(node.deepCopy().without(field), clazz);
-                Assert.assertNotEquals(
-                        String.format("removing field %s did not change deserialized representation", field),
-                        complete,
-                        diminished
-                );
+                diminished = OBJECT_MAPPER.convertValue(node.deepCopy().without(field), clazz);
             } catch (final IllegalArgumentException e) {
+                // Thrown by ObjectMapper.convertValue if the value can't be converted.
+                // Removing the field must have made the JSON object stop being a valid representation of an instance of clazz.
+                // It must have been a required field.
+                continue;
             }
+            Assert.assertNotEquals(
+                    String.format("removing field %s did not change deserialized representation", field),
+                    complete,
+                    diminished
+            );
         }
     }
 
