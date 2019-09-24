@@ -95,10 +95,10 @@ public final class MetricsQuery {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_startTime", _startTime)
-                .add("_endTime", _endTime)
-                .add("_metrics", _metrics)
-                .add("_extraFields", _extraFields)
+                .add("startTime", _startTime)
+                .add("endTime", _endTime)
+                .add("metrics", _metrics)
+                .add("extraFields", _extraFields)
                 .toString();
     }
 
@@ -246,8 +246,8 @@ public final class MetricsQuery {
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
-                    .add("_otherArgs", _otherArgs)
-                    .add("_name", _name)
+                    .add("otherArgs", _otherArgs)
+                    .add("name", _name)
                     .toString();
         }
 

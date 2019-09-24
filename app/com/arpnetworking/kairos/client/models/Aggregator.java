@@ -83,12 +83,12 @@ public final class Aggregator {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_name", _name)
-                .add("_alignSampling", _alignSampling)
-                .add("_alignStartTime", _alignStartTime)
-                .add("_alignEndTime", _alignEndTime)
-                .add("_sampling", _sampling)
-                .add("_otherArgs", _otherArgs)
+                .add("name", _name)
+                .add("alignSampling", _alignSampling)
+                .add("alignStartTime", _alignStartTime)
+                .add("alignEndTime", _alignEndTime)
+                .add("sampling", _sampling)
+                .add("otherArgs", _otherArgs)
                 .toString();
     }
 

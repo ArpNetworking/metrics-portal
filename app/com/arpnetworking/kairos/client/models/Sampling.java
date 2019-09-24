@@ -79,9 +79,9 @@ public final class Sampling {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_unit", _unit)
-                .add("_value", _value)
-                .add("_extraFields", _extraFields)
+                .add("unit", _unit)
+                .add("value", _value)
+                .add("extraFields", _extraFields)
                 .toString();
     }
 

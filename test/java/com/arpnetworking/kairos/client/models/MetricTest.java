@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class MetricTest {
+public final class MetricTest {
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String CLASS_NAME = MetricTest.class.getSimpleName();

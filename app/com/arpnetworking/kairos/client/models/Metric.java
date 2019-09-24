@@ -89,13 +89,13 @@ public final class Metric {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("_name", _name)
-                .add("_tags", _tags)
-                .add("_aggregators", _aggregators)
-                .add("_groupBy", _groupBy)
-                .add("_limit", _limit)
-                .add("_order", _order)
-                .add("_extraFields", _extraFields)
+                .add("name", _name)
+                .add("tags", _tags)
+                .add("aggregators", _aggregators)
+                .add("groupBy", _groupBy)
+                .add("limit", _limit)
+                .add("order", _order)
+                .add("extraFields", _extraFields)
                 .toString();
     }
 

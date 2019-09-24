@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class AggregatorTest {
+public final class AggregatorTest {
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final String CLASS_NAME = AggregatorTest.class.getSimpleName();
