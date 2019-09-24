@@ -27,7 +27,7 @@ import java.io.IOException;
 import static org.junit.Assert.fail;
 
 /**
- * Tests for {@link Metric}.
+ * Tests for {@link Sampling}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */

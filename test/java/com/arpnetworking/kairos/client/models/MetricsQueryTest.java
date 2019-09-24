@@ -24,12 +24,10 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 /**
- * Tests for {@link Metric}.
+ * Tests for {@link MetricsQuery}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
