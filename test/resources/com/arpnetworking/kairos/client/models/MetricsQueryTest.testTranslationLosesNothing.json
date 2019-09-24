@@ -1,0 +1,40 @@
+{
+  "cache_time": 0,
+  "start_absolute": 1566688446000,
+  "end_absolute": 1569280446000,
+  "metrics": [
+    {
+      "limit": 0,
+      "name": "web_perf/time_to_interactive",
+      "tags": {
+        "browser_name": [
+          "Chrome",
+          "ChromeiOS"
+        ],
+        "product": [
+          "Sharing"
+        ],
+        "region": [
+          "Africa",
+          "Asia"
+        ],
+        "source_type": [
+          "mobile",
+          "web"
+        ]
+      },
+      "aggregators": [
+        {
+          "name": "count",
+          "align_sampling": true,
+          "sampling": {
+            "value": "1",
+            "unit": "DAYS"
+          }
+        }
+      ],
+      "group_by": []
+    }
+  ],
+  "arn48894": ["4949g", 3, {"foo":  "bar"}]
+}

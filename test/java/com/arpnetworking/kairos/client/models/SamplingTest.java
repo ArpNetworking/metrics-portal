@@ -24,7 +24,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -32,15 +31,15 @@ import static org.junit.Assert.fail;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class MetricTest {
+public class SamplingTest {
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = MetricTest.class.getSimpleName();
+    private static final String CLASS_NAME = SamplingTest.class.getSimpleName();
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         final ObjectNode node = OBJECT_MAPPER.readValue(readResource("testTranslationLosesNothing"), ObjectNode.class);
-        SerializationTestUtils.assertTranslationLosesNothing(node, Metric.class);
+        SerializationTestUtils.assertTranslationLosesNothing(node, Sampling.class);
     }
 
 
