@@ -21,8 +21,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -30,6 +32,7 @@ import net.sf.oval.constraint.NotNull;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -77,15 +80,52 @@ public final class MetricsQuery {
         return _metrics;
     }
 
+    @JsonAnyGetter
+    public ImmutableMap<String, Object> getExtraFields() {
+        return _extraFields;
+    }
+
     private MetricsQuery(final Builder builder) {
         _startTime = builder._startTime;
         _endTime = Optional.ofNullable(builder._endTime);
         _metrics = builder._metrics;
+        _extraFields = ImmutableMap.copyOf(builder._extraFields);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_startTime", _startTime)
+                .add("_endTime", _endTime)
+                .add("_metrics", _metrics)
+                .add("_extraFields", _extraFields)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final MetricsQuery that = (MetricsQuery) o;
+        return Objects.equals(_startTime, that._startTime)
+                && Objects.equals(_endTime, that._endTime)
+                && Objects.equals(_metrics, that._metrics)
+                && Objects.equals(_extraFields, that._extraFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_startTime, _endTime, _metrics, _extraFields);
     }
 
     private final Instant _startTime;
     private final Optional<Instant> _endTime;
     private final ImmutableList<Metric> _metrics;
+    private final ImmutableMap<String, Object> _extraFields;
 
     /**
      * Implementation of the builder pattern for MetricsQuery.
@@ -159,12 +199,28 @@ public final class MetricsQuery {
             return _metrics;
         }
 
+        /**
+         * Sets an extra generic field on this query. Optional. Cannot be null.
+         *
+         * @param key the extra field name
+         * @param value the extra field value
+         * @return this {@link Builder}
+         */
+        @JsonAnySetter
+        public Builder setExtraField(final String key, final Object value) {
+            _extraFields.put(key, value);
+            return this;
+        }
+
+
         @NotNull
         private Instant _startTime;
         private Instant _endTime;
         @NotNull
         @NotEmpty
         private ImmutableList<Metric> _metrics = ImmutableList.of();
+        @NotNull
+        private Map<String, Object> _extraFields = Maps.newHashMap();
     }
 
     /**
@@ -185,6 +241,32 @@ public final class MetricsQuery {
         private GroupBy(final Builder builder) {
             _otherArgs = builder._otherArgs;
             _name = builder._name;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_otherArgs", _otherArgs)
+                    .add("_name", _name)
+                    .toString();
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final GroupBy groupBy = (GroupBy) o;
+            return Objects.equals(_otherArgs, groupBy._otherArgs)
+                    && Objects.equals(_name, groupBy._name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_otherArgs, _name);
         }
 
         private final Map<String, Object> _otherArgs;

@@ -16,9 +16,17 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
+
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Model class to represent the sampling field of an aggregator.
@@ -34,13 +42,48 @@ public final class Sampling {
         return _value;
     }
 
+    @JsonAnyGetter
+    public ImmutableMap<String, Object> getExtraFields() {
+        return _extraFields;
+    }
+
     private Sampling(final Builder builder) {
         _unit = builder._unit;
         _value = builder._value;
+        _extraFields = ImmutableMap.copyOf(builder._extraFields);
     }
 
     private final SamplingUnit _unit;
     private final int _value;
+    private final ImmutableMap<String, Object> _extraFields;
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final Sampling sampling = (Sampling) o;
+        return _value == sampling._value
+                && _unit == sampling._unit
+                && Objects.equals(_extraFields, sampling._extraFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_unit, _value, _extraFields);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_unit", _unit)
+                .add("_value", _value)
+                .add("_extraFields", _extraFields)
+                .toString();
+    }
 
     /**
      * Implementation of the builder pattern for a {@link Sampling}.
@@ -77,6 +120,19 @@ public final class Sampling {
             return this;
         }
 
+        /**
+         * Sets an extra generic field on this query. Optional. Cannot be null.
+         *
+         * @param key the extra field name
+         * @param value the extra field value
+         * @return this {@link Metric.Builder}
+         */
+        @JsonAnySetter
+        public Builder setExtraField(final String key, final Object value) {
+            _extraFields.put(key, value);
+            return this;
+        }
+
         @JsonProperty("value")
         @Min(1)
         @NotNull
@@ -85,5 +141,8 @@ public final class Sampling {
         @JsonProperty("unit")
         @NotNull
         private SamplingUnit _unit = SamplingUnit.MINUTES;
+
+        @NotNull
+        private Map<String, Object> _extraFields = Maps.newHashMap();
     }
 }
