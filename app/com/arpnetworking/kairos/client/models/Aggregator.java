@@ -20,10 +20,12 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -76,6 +78,40 @@ public final class Aggregator {
     @JsonAnyGetter
     public ImmutableMap<String, Object> getOtherArgs() {
         return _otherArgs;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("name", _name)
+                .add("alignSampling", _alignSampling)
+                .add("alignStartTime", _alignStartTime)
+                .add("alignEndTime", _alignEndTime)
+                .add("sampling", _sampling)
+                .add("otherArgs", _otherArgs)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final Aggregator that = (Aggregator) o;
+        return Objects.equals(_name, that._name)
+                && Objects.equals(_alignSampling, that._alignSampling)
+                && Objects.equals(_alignStartTime, that._alignStartTime)
+                && Objects.equals(_alignEndTime, that._alignEndTime)
+                && Objects.equals(_sampling, that._sampling)
+                && Objects.equals(_otherArgs, that._otherArgs);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_name, _alignSampling, _alignStartTime, _alignEndTime, _sampling, _otherArgs);
     }
 
     private final String _name;

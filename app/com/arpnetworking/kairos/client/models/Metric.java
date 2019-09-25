@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -30,6 +31,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
@@ -82,6 +84,42 @@ public final class Metric {
         _limit = Optional.ofNullable(builder._limit);
         _order = Optional.ofNullable(builder._order);
         _extraFields = ImmutableMap.copyOf(builder._extraFields);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("name", _name)
+                .add("tags", _tags)
+                .add("aggregators", _aggregators)
+                .add("groupBy", _groupBy)
+                .add("limit", _limit)
+                .add("order", _order)
+                .add("extraFields", _extraFields)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final Metric metric = (Metric) o;
+        return Objects.equals(_name, metric._name)
+                && Objects.equals(_tags, metric._tags)
+                && Objects.equals(_aggregators, metric._aggregators)
+                && Objects.equals(_groupBy, metric._groupBy)
+                && Objects.equals(_limit, metric._limit)
+                && Objects.equals(_order, metric._order)
+                && Objects.equals(_extraFields, metric._extraFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_name, _tags, _aggregators, _groupBy, _limit, _order, _extraFields);
     }
 
     private final String _name;

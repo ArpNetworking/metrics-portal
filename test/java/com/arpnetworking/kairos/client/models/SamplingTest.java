@@ -20,17 +20,17 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import org.junit.Test;
 
 /**
- * Tests for {@link Metric}.
+ * Tests for {@link Sampling}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class MetricTest {
+public final class SamplingTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                Metric.class
+                Sampling.class
         );
     }
 }
