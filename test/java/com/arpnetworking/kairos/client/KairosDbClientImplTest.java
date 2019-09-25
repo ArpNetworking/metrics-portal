@@ -17,6 +17,7 @@ package com.arpnetworking.kairos.client;
 
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.SerializationTestUtils;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
@@ -29,7 +30,6 @@ import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
-import com.arpnetworking.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;

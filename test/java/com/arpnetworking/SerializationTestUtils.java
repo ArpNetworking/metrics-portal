@@ -49,7 +49,7 @@ public final class SerializationTestUtils {
      * @param clazz The class to deserialize it into.
      * @throws IOException If something goes wrong during deserialization.
      */
-    public static void assertTranslationLosesNothing(final String json, final Class<?> clazz) throws Exception {
+    public static void assertTranslationLosesNothing(final String json, final Class<?> clazz) throws IOException {
         assertJsonEquals(json, OBJECT_MAPPER.writeValueAsString(OBJECT_MAPPER.readValue(json, clazz)));
     }
 
