@@ -40,9 +40,11 @@
               "cmf/web_perf/time_to_interactive"
             ]
           },
-          "values": []
+          "values": [],
+          "group_by": []
         }
-      ]
+      ],
+      "sample_size": 0
     }
   ]
 }

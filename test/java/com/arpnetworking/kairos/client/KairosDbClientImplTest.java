@@ -29,23 +29,21 @@ import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.testing.SerializationTestUtils;
+import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import io.ebeaninternal.util.IOUtils;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
-import org.skyscreamer.jsonassert.JSONCompareMode;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -114,10 +112,10 @@ public class KairosDbClientImplTest {
     public void testQueryMetric() throws Exception {
         _wireMock.givenThat(
                 post(urlEqualTo(KairosDbClientImpl.METRICS_QUERY_PATH.toString()))
-                        .withRequestBody(equalToJson(readResource("testQueryMetric"), true, true))
+                        .withRequestBody(equalToJson(ResourceHelper.loadResource(getClass(), "testQueryMetric"), true, true))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
-                                .withBody(readResource("testQueryMetric.response"))
+                                .withBody(ResourceHelper.loadResource(getClass(), "testQueryMetric.response"))
                         )
         );
 
@@ -142,18 +140,20 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testQueryMetric.response"),
-                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testQueryMetric.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
     }
 
     @Test
     public void testQueryMetricTags() throws Exception {
         _wireMock.givenThat(
                 post(urlEqualTo(KairosDbClientImpl.METRICS_TAGS_PATH.toString()))
-                        .withRequestBody(equalToJson(readResource("testQueryMetricTags"), true, true))
+                        .withRequestBody(equalToJson(ResourceHelper.loadResource(getClass(), "testQueryMetricTags"), true, true))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
-                                .withBody(readResource("testQueryMetricTags.response"))
+                                .withBody(ResourceHelper.loadResource(getClass(), "testQueryMetricTags.response"))
                         )
         );
 
@@ -168,8 +168,10 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testQueryMetricTags.response"),
-                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testQueryMetricTags.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
     }
 
     @Test
@@ -178,23 +180,25 @@ public class KairosDbClientImplTest {
                 get(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString()))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
-                                .withBody(readResource("testRollupsList.response"))
+                                .withBody(ResourceHelper.loadResource(getClass(), "testRollupsList.response"))
                         )
         );
 
         final List<RollupTask> response = _kairosDbClient.queryRollups().toCompletableFuture().get();
-        JSONAssert.assertEquals(readResource("testRollupsList.response"),
-                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.LENIENT);
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testRollupsList.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
     }
 
     @Test
     public void testCreateRollup() throws Exception {
         _wireMock.givenThat(
                 post(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString()))
-                        .withRequestBody(equalToJson(readResource("testCreateRollup"), true, false))
+                        .withRequestBody(equalToJson(ResourceHelper.loadResource(getClass(), "testCreateRollup"), true, false))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
-                                .withBody(readResource("testCreateRollup.response"))
+                                .withBody(ResourceHelper.loadResource(getClass(), "testCreateRollup.response"))
                         )
         );
 
@@ -241,8 +245,10 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testCreateRollup.response"),
-                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testCreateRollup.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
     }
 
     @Test
@@ -250,10 +256,10 @@ public class KairosDbClientImplTest {
         final String id = "rollup_id";
         _wireMock.givenThat(
                 put(urlEqualTo(KairosDbClientImpl.ROLLUPS_PATH.toString() + "/" + id))
-                        .withRequestBody(equalToJson(readResource("testUpdateRollup"), true, false))
+                        .withRequestBody(equalToJson(ResourceHelper.loadResource(getClass(), "testUpdateRollup"), true, false))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
-                                .withBody(readResource("testUpdateRollup.response"))
+                                .withBody(ResourceHelper.loadResource(getClass(), "testUpdateRollup.response"))
                         )
         );
 
@@ -301,8 +307,10 @@ public class KairosDbClientImplTest {
                 .build()
         ).toCompletableFuture().get();
 
-        JSONAssert.assertEquals(readResource("testUpdateRollup.response"),
-                OBJECT_MAPPER.writeValueAsString(response), JSONCompareMode.STRICT);
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testUpdateRollup.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
     }
 
     @Test
@@ -335,14 +343,4 @@ public class KairosDbClientImplTest {
         assertNull(response);
     }
 
-    private String readResource(final String resourceSuffix) {
-        try {
-            return IOUtils.readUtf8(getClass()
-                    .getClassLoader()
-                    .getResourceAsStream("com/arpnetworking/kairos/client/" + CLASS_NAME + "." + resourceSuffix + ".json"));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
-    }
 }
