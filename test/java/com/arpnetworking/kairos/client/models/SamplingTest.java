@@ -15,16 +15,9 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.arpnetworking.kairos.client.models.testing.SerializationTestUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.ebeaninternal.util.IOUtils;
+import com.arpnetworking.testing.SerializationTestUtils;
+import com.arpnetworking.utility.test.ResourceHelper;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.junit.Assert.fail;
 
 /**
  * Tests for {@link Sampling}.
@@ -33,24 +26,11 @@ import static org.junit.Assert.fail;
  */
 public final class SamplingTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = SamplingTest.class.getSimpleName();
-
     @Test
     public void testTranslationLosesNothing() throws Exception {
-        final ObjectNode node = OBJECT_MAPPER.readValue(readResource("testTranslationLosesNothing"), ObjectNode.class);
-        SerializationTestUtils.assertTranslationLosesNothing(node, Sampling.class);
-    }
-
-
-    private String readResource(final String resourceSuffix) {
-        try {
-            return IOUtils.readUtf8(getClass()
-                    .getClassLoader()
-                    .getResourceAsStream("com/arpnetworking/kairos/client/models/" + CLASS_NAME + "." + resourceSuffix + ".json"));
-        } catch (final IOException e) {
-            fail("Failed with exception: " + e);
-            return null;
-        }
+        SerializationTestUtils.assertTranslationLosesNothing(
+                ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
+                Sampling.class
+        );
     }
 }

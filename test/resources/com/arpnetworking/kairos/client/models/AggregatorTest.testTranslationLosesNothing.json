@@ -2,7 +2,7 @@
   "name": "count",
   "align_sampling": true,
   "sampling": {
-    "value": "1",
+    "value": 1,
     "unit": "DAYS"
   },
   "arn48894": ["4949g", 3, {"foo":  "bar"}]

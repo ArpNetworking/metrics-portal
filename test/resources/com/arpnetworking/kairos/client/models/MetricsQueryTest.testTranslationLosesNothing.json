@@ -28,12 +28,12 @@
           "name": "count",
           "align_sampling": true,
           "sampling": {
-            "value": "1",
+            "value": 1,
             "unit": "DAYS"
           }
         }
       ],
-      "group_by": []
+      "group_by": [{"name": "tag", "tags": ["source_type"]}]
     }
   ],
   "arn48894": ["4949g", 3, {"foo":  "bar"}]
