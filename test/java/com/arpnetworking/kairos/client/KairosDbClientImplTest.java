@@ -17,7 +17,7 @@ package com.arpnetworking.kairos.client;
 
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.arpnetworking.SerializationTestUtils;
+import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
