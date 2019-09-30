@@ -26,6 +26,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
@@ -78,8 +79,15 @@ public class KairosDbProxyController extends Controller {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
-        _filterRollups = configuration.getBoolean("proxy.filterRollups");
-        _kairosService = new KairosDbServiceImpl(kairosDbClient, metricsFactory);
+        _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
+
+        final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
+                configuration.getStringList("kairosdb.proxy.excludedTagNames"));
+        _kairosService = new KairosDbServiceImpl.Builder()
+                .setKairosDbClient(kairosDbClient)
+                .setMetricsFactory(metricsFactory)
+                .setExcludedTagNames(excludedTagNames)
+                .build();
     }
 
     /**
@@ -106,7 +114,9 @@ public class KairosDbProxyController extends Controller {
      * @return Proxied tagNames response.
      */
     public CompletionStage<Result> tagNames() {
-        return proxy();
+        return _kairosService.listTagNames()
+                .<JsonNode>thenApply(_mapper::valueToTree)
+                .thenApply(Results::ok);
     }
 
     /**
@@ -149,8 +159,6 @@ public class KairosDbProxyController extends Controller {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
     }
-
-
 
     /**
      * Proxied version call.

@@ -33,6 +33,7 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
+import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -103,6 +104,12 @@ public final class KairosDbClientImpl implements KairosDbClient {
     public CompletionStage<Void> deleteRollup(final String id) {
         final HttpRequest request = HttpRequest.DELETE(createUri(ROLLUPS_PATH).toString() + "/" + id);
         return fireRequest(request, Void.class);
+    }
+
+    @Override
+    public CompletionStage<TagNamesResponse> listTagNames() {
+        final HttpRequest request = HttpRequest.GET(createUri(LIST_TAG_NAMES_PATH).toString());
+        return fireRequest(request, TagNamesResponse.class);
     }
 
     private CompletionStage<MetricsQueryResponse> performMetricsQuery(final URI uri, final MetricsQuery query) {
@@ -182,6 +189,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
     static final URI METRICS_TAGS_PATH = URI.create("/api/v1/datapoints/query/tags");
     static final URI ROLLUPS_PATH = URI.create("/api/v1/rollups");
+    static final URI LIST_TAG_NAMES_PATH = URI.create("/api/v1/tagnames");
     private static final TypeReference<List<RollupTask>> ROLLUP_LIST_TYPEREF = new TypeReference<List<RollupTask>>() { };
 
     /**

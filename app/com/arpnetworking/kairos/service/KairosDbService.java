@@ -21,6 +21,7 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
+import com.arpnetworking.kairos.client.models.TagNamesResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -98,4 +99,11 @@ public interface KairosDbService {
      * @return the response
      */
     CompletionStage<Void> deleteRollup(String id);
+
+    /**
+     * Query tag names in KairosDb.
+     *
+     * @return the response
+     */
+    CompletionStage<TagNamesResponse> listTagNames();
 }

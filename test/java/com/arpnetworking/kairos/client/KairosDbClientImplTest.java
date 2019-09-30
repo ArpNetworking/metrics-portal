@@ -29,6 +29,7 @@ import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -343,4 +344,21 @@ public class KairosDbClientImplTest {
         assertNull(response);
     }
 
+    @Test
+    public void testListTagNames() throws Exception {
+        _wireMock.givenThat(
+                get(urlEqualTo(KairosDbClientImpl.LIST_TAG_NAMES_PATH.toString()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(ResourceHelper.loadResource(getClass(), "testListTagNames.response"))
+                                .withStatus(200))
+        );
+
+        final TagNamesResponse response = _kairosDbClient.listTagNames().toCompletableFuture().get();
+
+        SerializationTestUtils.assertJsonEquals(
+                ResourceHelper.loadResource(getClass(), "testListTagNames.response"),
+                OBJECT_MAPPER.writeValueAsString(response)
+        );
+    }
 }
