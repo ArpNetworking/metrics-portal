@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
-import com.github.kklisura.cdt.protocol.events.network.RequestIntercepted;
+import com.github.kklisura.cdt.protocol.events.fetch.RequestPaused;
 import com.github.kklisura.cdt.protocol.support.types.EventHandler;
 import com.github.kklisura.cdt.protocol.types.network.ErrorReason;
 import com.github.kklisura.cdt.protocol.types.network.Request;
@@ -47,10 +47,10 @@ public class DevToolsServiceWrapperTest {
     @Mock
     private com.github.kklisura.cdt.protocol.commands.Page _page;
     @Mock
-    private com.github.kklisura.cdt.protocol.commands.Network _network;
+    private com.github.kklisura.cdt.protocol.commands.Fetch _fetch;
     @Captor
-    private ArgumentCaptor<EventHandler<RequestIntercepted>> _requestInterceptorCaptor;
-    private EventHandler<RequestIntercepted> _requestInterceptor;
+    private ArgumentCaptor<EventHandler<RequestPaused>> _requestInterceptorCaptor;
+    private EventHandler<RequestPaused> _requestInterceptor;
     @Mock
     private com.github.kklisura.cdt.services.ChromeDevToolsService _wrapped;
 
@@ -60,7 +60,7 @@ public class DevToolsServiceWrapperTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         Mockito.doReturn(_page).when(_wrapped).getPage();
-        Mockito.doReturn(_network).when(_wrapped).getNetwork();
+        Mockito.doReturn(_fetch).when(_wrapped).getFetch();
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
         _dts = new DevToolsServiceWrapper(
                 _service,
@@ -75,7 +75,7 @@ public class DevToolsServiceWrapperTest {
                 _wrapped,
                 new ScheduledThreadPoolExecutor(1)
         );
-        Mockito.verify(_network).onRequestIntercepted(_requestInterceptorCaptor.capture());
+        Mockito.verify(_fetch).onRequestPaused(_requestInterceptorCaptor.capture());
         _requestInterceptor = _requestInterceptorCaptor.getValue();
     }
 
@@ -114,7 +114,8 @@ public class DevToolsServiceWrapperTest {
                 Mockito.anyBoolean(),
                 Mockito.anyString(),
                 Mockito.anyString(),
-                Mockito.anyBoolean()
+                Mockito.anyBoolean(),
+                Mockito.any()
         );
 
         final CompletableFuture<byte[]> print = _dts.printToPdf(1d, 2d);
@@ -148,48 +149,33 @@ public class DevToolsServiceWrapperTest {
         request.setUrl("https://whitelisted.com/allowed-req-1");
         request.setPostData("data");
         request.setHeaders(ImmutableMap.of());
-        final RequestIntercepted event = new RequestIntercepted();
-        event.setInterceptionId(UUID.randomUUID().toString());
+        final RequestPaused event = new RequestPaused();
+        event.setRequestId(UUID.randomUUID().toString());
         event.setRequest(request);
 
         _requestInterceptor.onEvent(event);
-        Mockito.verify(_network).continueInterceptedRequest(
-                Mockito.eq(event.getInterceptionId()),
-                Mockito.isNull(),
-                Mockito.isNull(),
+        Mockito.verify(_fetch).continueRequest(
+                Mockito.eq(event.getRequestId()),
                 Mockito.eq("https://whitelisted.com/allowed-req-1"),
                 Mockito.eq("POST"),
                 Mockito.eq("data"),
-                Mockito.any(),
-                Mockito.isNull()
+                Mockito.any()
         );
 
         request.setUrl("https://whitelisted.com/disallowed-path");
-        Mockito.reset(_network);
+        Mockito.reset(_fetch);
         _requestInterceptor.onEvent(event);
-        Mockito.verify(_network).continueInterceptedRequest(
-                event.getInterceptionId(),
-                ErrorReason.ABORTED,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+        Mockito.verify(_fetch).failRequest(
+                event.getRequestId(),
+                ErrorReason.ABORTED
         );
 
         request.setUrl("https://not-whitelisted.com/allowed-req-1");
-        Mockito.reset(_network);
+        Mockito.reset(_fetch);
         _requestInterceptor.onEvent(event);
-        Mockito.verify(_network).continueInterceptedRequest(
-                event.getInterceptionId(),
-                ErrorReason.ABORTED,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+        Mockito.verify(_fetch).failRequest(
+                event.getRequestId(),
+                ErrorReason.ABORTED
         );
     }
 
@@ -200,23 +186,21 @@ public class DevToolsServiceWrapperTest {
         request.setUrl("https://whitelisted.com/allowed-req-1");
         request.setPostData("data");
         request.setHeaders(ImmutableMap.of("Original-Header", "original header value"));
-        final RequestIntercepted event = new RequestIntercepted();
+        final RequestPaused event = new RequestPaused();
         event.setRequest(request);
-        event.setInterceptionId(UUID.randomUUID().toString());
+        event.setRequestId(UUID.randomUUID().toString());
 
         _requestInterceptor.onEvent(event);
-        Mockito.verify(_network).continueInterceptedRequest(
-                event.getInterceptionId(),
-                null,
-                null,
-                "https://whitelisted.com/allowed-req-1",
-                "POST",
-                "data",
-                ImmutableMap.of(
+        Mockito.verify(_fetch).continueRequest(
+                Mockito.eq(event.getRequestId()),
+                Mockito.eq("https://whitelisted.com/allowed-req-1"),
+                Mockito.eq("POST"),
+                Mockito.eq("data"),
+                Mockito.argThat(headers -> DevToolsServiceWrapper.headerListToMap(headers).equals(ImmutableMap.of(
                         "Original-Header", "original header value",
                         "X-Extra-Header", "extra header value"
-                ),
-                null
+                        ))
+                )
         );
     }
 
