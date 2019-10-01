@@ -1,0 +1,9 @@
+{
+  "results": [
+    "os_name",
+    "os_version",
+    "app_version",
+    "country"
+  ],
+  "arn48894": ["4949g", 3, {"foo":  "bar"}]
+}

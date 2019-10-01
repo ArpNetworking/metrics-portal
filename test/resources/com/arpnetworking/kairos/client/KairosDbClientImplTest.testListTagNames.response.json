@@ -1,0 +1,8 @@
+{
+  "results": [
+    "os_name",
+    "os_version",
+    "app_version",
+    "country"
+  ]
+}

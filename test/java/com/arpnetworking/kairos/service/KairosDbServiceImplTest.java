@@ -21,11 +21,13 @@ import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import io.ebeaninternal.util.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,7 +70,11 @@ public class KairosDbServiceImplTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        _service = new KairosDbServiceImpl(_mockClient, _mockMetricsFactory);
+        _service = new KairosDbServiceImpl.Builder()
+                .setKairosDbClient(_mockClient)
+                .setMetricsFactory(_mockMetricsFactory)
+                .setExcludedTagNames(ImmutableSet.of("host"))
+                .build();
         when(_mockClient.queryMetricNames())
                 .thenReturn(CompletableFuture.completedFuture(new KairosMetricNamesQueryResponse.Builder()
                         .setResults(ImmutableList.<String>builder().add("foo", "foo_1h", "foo_1d", "bar").build())
@@ -214,6 +220,29 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
+    }
+
+    @Test
+    public void testFilterTagNamesOnListTagNames() throws Exception {
+        when(_mockClient.listTagNames()).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testFilterTagNamesOnListTagNames.backend_response"),
+                                TagNamesResponse.class
+                        )
+                )
+        );
+
+        final TagNamesResponse response = _service.listTagNames().toCompletableFuture().get();
+
+        verify(_mockClient).listTagNames();
+        assertEquals(
+                ImmutableSet.of(
+                        "os_name",
+                        "os_version",
+                        "app_version",
+                        "country"),
+                response.getResults());
     }
 
     private String readResource(final String resourceSuffix) {

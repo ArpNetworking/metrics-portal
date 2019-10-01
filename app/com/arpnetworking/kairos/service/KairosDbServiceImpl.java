@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.kairos.service;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
@@ -25,12 +27,15 @@ import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import net.sf.oval.constraint.NotNull;
 
 import java.util.List;
 import java.util.Locale;
@@ -53,19 +58,7 @@ import java.util.stream.Collectors;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class KairosDbServiceImpl implements KairosDbService {
-
-
-    /**
-     * Public constructor.
-     *
-     * @param kairosDbClient Client to use to make requests to backend kairosdb
-     * @param metricsFactory MetricsFactory instance for recording service metrics
-     */
-    public KairosDbServiceImpl(final KairosDbClient kairosDbClient, final MetricsFactory metricsFactory) {
-        this._kairosDbClient = kairosDbClient;
-        this._metricsFactory = metricsFactory;
-    }
+public final class KairosDbServiceImpl implements KairosDbService {
 
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetricTags(final MetricsQuery query) {
@@ -115,12 +108,6 @@ public class KairosDbServiceImpl implements KairosDbService {
                 });
     }
 
-    /**
-     * Caching metricNames call.
-     *
-     * @param containing simple string match filter for metric names
-     * @return Cached metric names, filtered by the query string.
-     */
     @Override
     public CompletionStage<KairosMetricNamesQueryResponse> queryMetricNames(
             final Optional<String> containing,
@@ -137,6 +124,29 @@ public class KairosDbServiceImpl implements KairosDbService {
                     metrics.addAnnotation("containing", containing.isPresent() ? "true" : "false");
                     if (result != null) {
                         metrics.incrementCounter("kairosService/queryMetricNames/count", result.getResults().size());
+                    }
+                    metrics.close();
+                });
+    }
+
+    @Override
+    public CompletionStage<TagNamesResponse> listTagNames() {
+        final Metrics metrics = _metricsFactory.create();
+        final Timer timer = metrics.createTimer("kairosService/listTagNames/request");
+
+        return _kairosDbClient.listTagNames()
+                .thenApply(response -> ThreadLocalBuilder.<TagNamesResponse, TagNamesResponse.Builder>clone(response)
+                        .setResults(
+                                response.getResults()
+                                        .stream()
+                                        .filter(e -> !_excludedTagNames.contains(e))
+                                        .collect(ImmutableSet.toImmutableSet()))
+                        .build())
+                .whenComplete((result, error) -> {
+                    timer.stop();
+                    metrics.incrementCounter("kairosService/listTagNames/success", error == null ? 1 : 0);
+                    if (result != null) {
+                        metrics.incrementCounter("kairosService/listTagNames/count", result.getResults().size());
                     }
                     metrics.close();
                 });
@@ -320,12 +330,74 @@ public class KairosDbServiceImpl implements KairosDbService {
         }
     }
 
+    private KairosDbServiceImpl(final Builder builder) {
+        this._kairosDbClient = builder._kairosDbClient;
+        this._metricsFactory = builder._metricsFactory;
+        this._excludedTagNames = builder._excludedTagNames;
+    }
+
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
+    private final ImmutableSet<String> _excludedTagNames;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
     private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
+
+    /**
+     * Implementation of the builder pattern for {@link KairosDbServiceImpl}.
+     *
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
+     */
+    public static final class Builder extends OvalBuilder<KairosDbServiceImpl> {
+        /**
+         * Public constructor.
+         */
+        public Builder() {
+            super(KairosDbServiceImpl::new);
+        }
+
+        /**
+         * Sets the {@link KairosDbClient} to use. Cannot be null.
+         *
+         * @param value the {@link KairosDbClient} to use
+         * @return this {@link Builder}
+         */
+        public Builder setKairosDbClient(final KairosDbClient value) {
+            _kairosDbClient = value;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MetricsFactory} to use. Cannot be null.
+         *
+         * @param value the {@link MetricsFactory} to use
+         * @return this {@link Builder}
+         */
+        public Builder setMetricsFactory(final MetricsFactory value) {
+            _metricsFactory = value;
+            return this;
+        }
+
+        /**
+         * Sets the tag names to exclude. Cannot be null. Optional. Default is
+         * an empty set (no tag names are excluded).
+         *
+         * @param value the tag names to exclude
+         * @return this {@link Builder}
+         */
+        public Builder setExcludedTagNames(final ImmutableSet<String> value) {
+            _excludedTagNames = value;
+            return this;
+        }
+
+        @NotNull
+        private KairosDbClient _kairosDbClient;
+        @NotNull
+        private MetricsFactory _metricsFactory;
+        @NotNull
+        private ImmutableSet<String> _excludedTagNames = ImmutableSet.of();
+    }
 }
