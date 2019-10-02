@@ -15,9 +15,14 @@
  */
 package com.arpnetworking.kairos.client.models;
 
+import com.arpnetworking.commons.test.BuildableTestHelper;
+import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Tests for {@link Sampling}.
@@ -32,5 +37,29 @@ public final class SamplingTest {
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
                 Sampling.class
         );
+    }
+
+    @Test
+    public void testBuilder() throws InvocationTargetException, IllegalAccessException {
+        BuildableTestHelper.testBuild(
+                new Sampling.Builder()
+                        .setValue(1)
+                        .setUnit(SamplingUnit.HOURS)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                Sampling.class);
+    }
+
+    @Test
+    public void testEquality() throws InvocationTargetException, IllegalAccessException {
+        EqualityTestHelper.testEquality(
+                new Sampling.Builder()
+                        .setValue(1)
+                        .setUnit(SamplingUnit.HOURS)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                new Sampling.Builder()
+                        .setValue(2)
+                        .setUnit(SamplingUnit.DAYS)
+                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
+                Sampling.class);
     }
 }

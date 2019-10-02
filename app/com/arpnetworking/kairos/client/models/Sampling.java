@@ -18,6 +18,7 @@ package com.arpnetworking.kairos.client.models;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
@@ -38,24 +39,14 @@ public final class Sampling {
         return _unit;
     }
 
-    public long getValue() {
+    public int getValue() {
         return _value;
     }
 
     @JsonAnyGetter
-    public ImmutableMap<String, Object> getExtraFields() {
-        return _extraFields;
+    public ImmutableMap<String, Object> getOtherArgs() {
+        return _otherArgs;
     }
-
-    private Sampling(final Builder builder) {
-        _unit = builder._unit;
-        _value = builder._value;
-        _extraFields = ImmutableMap.copyOf(builder._extraFields);
-    }
-
-    private final SamplingUnit _unit;
-    private final int _value;
-    private final ImmutableMap<String, Object> _extraFields;
 
     @Override
     public boolean equals(final Object o) {
@@ -68,12 +59,12 @@ public final class Sampling {
         final Sampling sampling = (Sampling) o;
         return _value == sampling._value
                 && _unit == sampling._unit
-                && Objects.equals(_extraFields, sampling._extraFields);
+                && Objects.equals(_otherArgs, sampling._otherArgs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_unit, _value, _extraFields);
+        return Objects.hash(_unit, _value, _otherArgs);
     }
 
     @Override
@@ -81,9 +72,19 @@ public final class Sampling {
         return MoreObjects.toStringHelper(this)
                 .add("unit", _unit)
                 .add("value", _value)
-                .add("extraFields", _extraFields)
+                .add("otherArgs", _otherArgs)
                 .toString();
     }
+
+    private Sampling(final Builder builder) {
+        _unit = builder._unit;
+        _value = builder._value;
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+    }
+
+    private final SamplingUnit _unit;
+    private final int _value;
+    private final ImmutableMap<String, Object> _otherArgs;
 
     /**
      * Implementation of the builder pattern for a {@link Sampling}.
@@ -121,15 +122,27 @@ public final class Sampling {
         }
 
         /**
-         * Sets an extra generic field on this query. Optional. Cannot be null.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key the extra field name
-         * @param value the extra field value
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Metric.Builder}
          */
         @JsonAnySetter
-        public Builder setExtraField(final String key, final Object value) {
-            _extraFields.put(key, value);
+        public Builder addOtherArg(final String key, final Object value) {
+            _otherArgs.put(key, value);
+            return this;
+        }
+
+        /**
+         * Sets the attributes not explicitly modeled by this class. Optional.
+         *
+         * @param value the other attributes
+         * @return this {@link Builder}
+         */
+        @JsonIgnore
+        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+            _otherArgs = value;
             return this;
         }
 
@@ -137,12 +150,10 @@ public final class Sampling {
         @Min(1)
         @NotNull
         private Integer _value = 1;
-
         @JsonProperty("unit")
         @NotNull
         private SamplingUnit _unit = SamplingUnit.MINUTES;
-
         @NotNull
-        private Map<String, Object> _extraFields = Maps.newHashMap();
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 }

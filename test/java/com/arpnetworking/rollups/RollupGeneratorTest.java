@@ -295,7 +295,7 @@ public class RollupGeneratorTest {
         final MetricsQuery hourlyQuery = captor.getAllValues().get(0);
         assertEquals("metric_1h", hourlyQuery.getMetrics().get(0).getName());
         assertEquals(
-                RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
+                Optional.of(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4))),
                 hourlyQuery.getStartTime());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), hourlyQuery.getEndTime().get());
 

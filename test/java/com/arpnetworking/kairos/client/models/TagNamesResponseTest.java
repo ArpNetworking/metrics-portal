@@ -15,9 +15,15 @@
  */
 package com.arpnetworking.kairos.client.models;
 
+import com.arpnetworking.commons.test.BuildableTestHelper;
+import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Tests for {@link TagNamesResponse}.
@@ -32,5 +38,26 @@ public final class TagNamesResponseTest {
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
                 TagNamesResponse.class
         );
+    }
+
+    @Test
+    public void testBuilder() throws InvocationTargetException, IllegalAccessException {
+        BuildableTestHelper.testBuild(
+                new TagNamesResponse.Builder()
+                        .setResults(ImmutableSet.of("tag1"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                TagNamesResponse.class);
+    }
+
+    @Test
+    public void testEquality() throws InvocationTargetException, IllegalAccessException {
+        EqualityTestHelper.testEquality(
+                new TagNamesResponse.Builder()
+                        .setResults(ImmutableSet.of("tag1"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                new TagNamesResponse.Builder()
+                        .setResults(ImmutableSet.of("tag2"))
+                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
+                TagNamesResponse.class);
     }
 }

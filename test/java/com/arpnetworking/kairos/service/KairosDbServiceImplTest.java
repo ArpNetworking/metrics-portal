@@ -141,7 +141,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
@@ -167,7 +167,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
@@ -193,7 +193,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
@@ -219,7 +219,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());

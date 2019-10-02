@@ -18,6 +18,7 @@ package com.arpnetworking.kairos.client.models;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.sf.oval.constraint.NotNull;
@@ -73,15 +74,27 @@ public final class KairosMetricNamesQueryResponse {
         }
 
         /**
-         * Adds an "unknown" parameter. Optional.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key key for the entry
-         * @param value value for the entry
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Builder}
          */
         @JsonAnySetter
         public Builder addOtherArg(final String key, final Object value) {
             _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+            return this;
+        }
+
+        /**
+         * Sets the attributes not explicitly modeled by this class. Optional.
+         *
+         * @param value the other attributes
+         * @return this {@link Builder}
+         */
+        @JsonIgnore
+        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+            _otherArgs = value;
             return this;
         }
 

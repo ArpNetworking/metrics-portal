@@ -30,31 +30,27 @@ public final class TagsQueryTest {
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                TagsQuery.class
-        );
+                TagsQuery.class);
     }
 
     @Test
     public void testStartRelative() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testStartRelative"),
-                TagsQuery.class
-        );
+                TagsQuery.class);
     }
 
     @Test
     public void tesEndRelative() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testEndRelative"),
-                TagsQuery.class
-        );
+                TagsQuery.class);
     }
 
     @Test
     public void testNoEndTime() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testNoEndTime"),
-                TagsQuery.class
-        );
+                TagsQuery.class);
     }
 }

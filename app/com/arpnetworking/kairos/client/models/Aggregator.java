@@ -18,6 +18,7 @@ package com.arpnetworking.kairos.client.models;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -35,6 +36,7 @@ import javax.annotation.Nullable;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class Aggregator {
+
     private Aggregator(final Builder builder) {
         _name = builder._name;
         _sampling = Optional.ofNullable(builder._sampling);
@@ -193,10 +195,10 @@ public final class Aggregator {
         }
 
         /**
-         * Adds an "unknown" arg. Optional.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key key for the entry
-         * @param value value for the entry
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Builder}
          */
         @JsonAnySetter
@@ -206,11 +208,12 @@ public final class Aggregator {
         }
 
         /**
-         * Sets the "unknown" args. Optional.
+         * Sets the attributes not explicitly modeled by this class. Optional.
          *
-         * @param value the args map
+         * @param value the other attributes
          * @return this {@link Builder}
          */
+        @JsonIgnore
         public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
             _otherArgs = value;
             return this;
