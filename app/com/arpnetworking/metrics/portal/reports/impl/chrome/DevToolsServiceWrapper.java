@@ -142,22 +142,22 @@ public class DevToolsServiceWrapper implements DevToolsService {
         }
         return supplyInExecutor(() -> Base64.getDecoder().decode(
                 _dts.getPage().printToPDF(
-                    false,
-                    false,
-                    false,
-                    1.0,
-                    pageWidthInches,
-                    pageHeightInches,
-                    0.4,
-                    0.4,
-                    0.4,
-                    0.4,
-                    "",
-                    true,
-                    "",
-                    "",
-                    true,
-                    PrintToPDFTransferMode.RETURN_AS_BASE_64
+                    false, // landscape
+                    false, // displayHeaderFooter
+                    false, // printBackground
+                    1.0, // scale
+                    pageWidthInches, // paperWidth
+                    pageHeightInches, // paperHeight
+                    0.4, // marginTop
+                    0.4, // marginBottom
+                    0.4, // marginLeft
+                    0.4, // marginRight
+                    "", // pageRanges
+                    true, // ignoreInvalidPageRanges
+                    "", // headerTemplate
+                    "", // footerTemplate
+                    true, // preferCSSPageSize
+                    PrintToPDFTransferMode.RETURN_AS_BASE_64 // transferMode
                 ).getData()
         ));
     }
