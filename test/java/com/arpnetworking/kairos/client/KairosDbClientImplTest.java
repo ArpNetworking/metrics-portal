@@ -21,6 +21,7 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Rollup;
@@ -30,6 +31,7 @@ import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,7 +79,6 @@ public class KairosDbClientImplTest {
     private KairosDbClientImpl _kairosDbClient;
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
-    private static final String CLASS_NAME = KairosDbClientImplTest.class.getSimpleName();
 
     @Before
     public void setUp() throws Exception {
@@ -150,7 +151,7 @@ public class KairosDbClientImplTest {
     @Test
     public void testQueryMetricTags() throws Exception {
         _wireMock.givenThat(
-                post(urlEqualTo(KairosDbClientImpl.METRICS_TAGS_PATH.toString()))
+                post(urlEqualTo(KairosDbClientImpl.TAGS_QUERY_PATH.toString()))
                         .withRequestBody(equalToJson(ResourceHelper.loadResource(getClass(), "testQueryMetricTags"), true, true))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
@@ -158,10 +159,10 @@ public class KairosDbClientImplTest {
                         )
         );
 
-        final MetricsQueryResponse response = _kairosDbClient.queryMetricTags(new MetricsQuery.Builder()
+        final MetricsQueryResponse response = _kairosDbClient.queryMetricTags(new TagsQuery.Builder()
                 .setStartTime(Instant.ofEpochSecond(0))
                 .setMetrics(
-                        ImmutableList.of(new Metric.Builder()
+                        ImmutableList.of(new MetricTags.Builder()
                                 .setName("metric.name")
                                 .build()
                         )

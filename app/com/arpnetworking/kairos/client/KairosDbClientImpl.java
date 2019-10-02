@@ -34,6 +34,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -58,7 +59,13 @@ import java.util.concurrent.TimeUnit;
 public final class KairosDbClientImpl implements KairosDbClient {
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
-        return performMetricsQuery(createUri(METRICS_QUERY_PATH), query);
+        try {
+            final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
+                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
+            return fireRequest(request, MetricsQueryResponse.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -68,8 +75,22 @@ public final class KairosDbClientImpl implements KairosDbClient {
     }
 
     @Override
-    public CompletionStage<MetricsQueryResponse> queryMetricTags(final MetricsQuery query) {
-        return performMetricsQuery(createUri(METRICS_TAGS_PATH), query);
+    public CompletionStage<MetricsQueryResponse> queryMetricTags(final TagsQuery query) {
+        // The documentation for KairosDb incorrectly shows the response for
+        // querying metric tags as differing from the response for querying
+        // metrics. However, adhoc testing against KairosDb shows that the
+        // responses for the two endpoints are indeed the same.
+        //
+        // Ref:
+        // https://kairosdb.github.io/docs/build/html/restapi/QueryMetricTags.html
+        // https://kairosdb.github.io/docs/build/html/restapi/QueryMetrics.html
+        try {
+            final HttpRequest request = HttpRequest.POST(createUri(TAGS_QUERY_PATH).toString())
+                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
+            return fireRequest(request, MetricsQueryResponse.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -110,16 +131,6 @@ public final class KairosDbClientImpl implements KairosDbClient {
     public CompletionStage<TagNamesResponse> listTagNames() {
         final HttpRequest request = HttpRequest.GET(createUri(LIST_TAG_NAMES_PATH).toString());
         return fireRequest(request, TagNamesResponse.class);
-    }
-
-    private CompletionStage<MetricsQueryResponse> performMetricsQuery(final URI uri, final MetricsQuery query) {
-        try {
-            final HttpRequest request = HttpRequest.POST(uri.toString())
-                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
-            return fireRequest(request, MetricsQueryResponse.class);
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final Class<T> responseType) {
@@ -187,7 +198,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
 
     static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
-    static final URI METRICS_TAGS_PATH = URI.create("/api/v1/datapoints/query/tags");
+    static final URI TAGS_QUERY_PATH = URI.create("/api/v1/datapoints/query/tags");
     static final URI ROLLUPS_PATH = URI.create("/api/v1/rollups");
     static final URI LIST_TAG_NAMES_PATH = URI.create("/api/v1/tagnames");
     private static final TypeReference<List<RollupTask>> ROLLUP_LIST_TYPEREF = new TypeReference<List<RollupTask>>() { };

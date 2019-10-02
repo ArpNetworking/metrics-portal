@@ -15,10 +15,11 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -77,7 +78,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<MetricsQueryResponse> {
+    public static final class Builder extends ThreadLocalBuilder<MetricsQueryResponse> {
         /**
          * Public constructor.
          */
@@ -86,10 +87,10 @@ public final class MetricsQueryResponse {
         }
 
         /**
-         * Adds an "unknown" parameter. Optional.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key key for the entry
-         * @param value value for the entry
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Builder}
          */
         @JsonAnySetter
@@ -99,11 +100,12 @@ public final class MetricsQueryResponse {
         }
 
         /**
-         * Set other args. Optional.
+         * Sets the attributes not explicitly modeled by this class. Optional.
          *
-         * @param value value for the other args
+         * @param value the other attributes
          * @return this {@link Builder}
          */
+        @JsonIgnore
         public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
             _otherArgs = value;
             return this;
@@ -118,6 +120,12 @@ public final class MetricsQueryResponse {
         public Builder setQueries(final ImmutableList<Query> value) {
             _queries = value;
             return this;
+        }
+
+        @Override
+        protected void reset() {
+            _queries = null;
+            _otherArgs = ImmutableMap.of();
         }
 
         @NotNull
@@ -173,7 +181,7 @@ public final class MetricsQueryResponse {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<Query> {
+        public static final class Builder extends ThreadLocalBuilder<Query> {
             /**
              * Public constructor.
              */
@@ -182,15 +190,27 @@ public final class MetricsQueryResponse {
             }
 
             /**
-             * Adds an "unknown" parameter. Optional.
+             * Adds an attribute not explicitly modeled by this class. Optional.
              *
-             * @param key key for the entry
-             * @param value value for the entry
+             * @param key the attribute name
+             * @param value the attribute value
              * @return this {@link Builder}
              */
             @JsonAnySetter
             public Builder addOtherArg(final String key, final Object value) {
                 _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
                 return this;
             }
 
@@ -215,6 +235,13 @@ public final class MetricsQueryResponse {
             public Builder setResults(final ImmutableList<QueryResult> value) {
                 _results = value;
                 return this;
+            }
+
+            @Override
+            protected void reset() {
+                _results = null;
+                _sampleSize = 0L;
+                _otherArgs = ImmutableMap.of();
             }
 
             @NotNull
@@ -290,7 +317,7 @@ public final class MetricsQueryResponse {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<QueryResult> {
+        public static final class Builder extends ThreadLocalBuilder<QueryResult> {
             /**
              * Public constructor.
              */
@@ -299,10 +326,10 @@ public final class MetricsQueryResponse {
             }
 
             /**
-             * Adds an "unknown" parameter. Optional.
+             * Adds an attribute not explicitly modeled by this class. Optional.
              *
-             * @param key key for the entry
-             * @param value value for the entry
+             * @param key the attribute name
+             * @param value the attribute value
              * @return this {@link Builder}
              */
             @JsonAnySetter
@@ -312,12 +339,12 @@ public final class MetricsQueryResponse {
             }
 
             /**
-             * Set other args. Optional.
+             * Sets the attributes not explicitly modeled by this class. Optional.
              *
-             * @param value value for the other args
+             * @param value the other attributes
              * @return this {@link Builder}
              */
-            @JsonAnySetter
+            @JsonIgnore
             public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
                 _otherArgs = value;
                 return this;
@@ -368,6 +395,15 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            @Override
+            public void reset() {
+                _name = null;
+                _values = ImmutableList.of();
+                _otherArgs = ImmutableMap.of();
+                _tags = ImmutableMultimap.of();
+                _groupBy = ImmutableList.of();
+            }
+
             @NotNull
             @NotEmpty
             private String _name;
@@ -409,7 +445,7 @@ public final class MetricsQueryResponse {
          * @param <T> type of the thing to be built
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public abstract static class Builder<B extends Builder<B, T>, T extends QueryGroupBy> extends OvalBuilder<T> {
+        public abstract static class Builder<B extends Builder<B, T>, T extends QueryGroupBy> extends ThreadLocalBuilder<T> {
 
             /**
              * Protected constructor.
@@ -514,6 +550,12 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            @Override
+            public void reset() {
+                _tags = null;
+                _group = null;
+            }
+
             @NotNull
             @NotEmpty
             private ImmutableList<String> _tags;
@@ -584,6 +626,11 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            @Override
+            protected void reset() {
+                _type = null;
+            }
+
             @NotNull
             @NotEmpty
             private String _type;
@@ -635,7 +682,7 @@ public final class MetricsQueryResponse {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<DataPoint> {
+        public static final class Builder extends ThreadLocalBuilder<DataPoint> {
             /**
              * Public constructor.
              */
@@ -643,17 +690,12 @@ public final class MetricsQueryResponse {
                 super(DataPoint::new);
             }
 
-            /**
-             * Public constructor.
-             *
-             * @param arr a 2-element {@link List} containing the time and value at that time.
-             */
+            @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
             @JsonCreator
-            public Builder(final List<Object> arr) {
-                super(DataPoint::new);
-                final long timestamp = (long) arr.get(0);
-                _time = Instant.ofEpochMilli(timestamp);
-                _value = arr.get(1);
+            private static DataPoint.Builder createFromJsonArray(final List<Object> jsonArray) {
+                return new Builder()
+                        .setTime(Instant.ofEpochMilli((long) jsonArray.get(0)))
+                        .setValue(jsonArray.get(1));
             }
 
             /**
@@ -676,6 +718,12 @@ public final class MetricsQueryResponse {
             public Builder setValue(final Object value) {
                 _value = value;
                 return this;
+            }
+
+            @Override
+            protected void reset() {
+                _time = null;
+                _value = null;
             }
 
             @NotNull

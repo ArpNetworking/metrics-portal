@@ -21,6 +21,7 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RollupResponse;
@@ -28,12 +29,14 @@ import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotNull;
 
@@ -61,12 +64,13 @@ import java.util.stream.Collectors;
 public final class KairosDbServiceImpl implements KairosDbService {
 
     @Override
-    public CompletionStage<MetricsQueryResponse> queryMetricTags(final MetricsQuery query) {
+    public CompletionStage<MetricsQueryResponse> queryMetricTags(final TagsQuery query) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer("kairosService/queryMetricTags/request");
         // Filter out rollup metric overrides and forward the query
         return filterRollupOverrides(query)
                 .thenCompose(_kairosDbClient::queryMetricTags)
+                .thenApply(this::filterExcludedTags)
                 .whenComplete((result, error) -> {
                     timer.stop();
                     metrics.incrementCounter("kairosService/queryMetricTags/success", error == null ? 1 : 0);
@@ -288,29 +292,57 @@ public final class KairosDbServiceImpl implements KairosDbService {
         return newQueryBuilder.build();
     }
 
-    private CompletionStage<MetricsQuery> filterRollupOverrides(final MetricsQuery originalQuery) {
-        final MetricsQuery.Builder newQueryBuilder = new MetricsQuery.Builder()
-                .setStartTime(originalQuery.getStartTime());
-
-        originalQuery.getEndTime().ifPresent(newQueryBuilder::setEndTime);
-
-        newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
-            // Check to see if there are any rollups for this metrics
-            final String metricName = metric.getName();
-            if (metricName.endsWith(ROLLUP_OVERRIDE)) {
-                // Special case a _! suffix to not apply rollup selection
-                // Drop the suffix and forward the request
-                return Metric.Builder.<Metric, Metric.Builder>clone(metric)
-                        .setName(metricName.substring(0, metricName.length() - 2))
-                        .build();
-            } else {
-                return metric;
-            }
-        }).collect(ImmutableList.toImmutableList()));
-
-        return CompletableFuture.completedFuture(newQueryBuilder.build());
+    private CompletionStage<TagsQuery> filterRollupOverrides(final TagsQuery originalQuery) {
+        return CompletableFuture.completedFuture(
+                ThreadLocalBuilder.clone(
+                        originalQuery,
+                        TagsQuery.Builder.class,
+                        newQueryBuilder -> newQueryBuilder.setMetrics(originalQuery.getMetrics().stream().map(metric -> {
+                                // Check to see if there are any rollups for this metrics
+                                final String metricName = metric.getName();
+                                if (metricName.endsWith(ROLLUP_OVERRIDE)) {
+                                    // Special case a _! suffix to not apply rollup selection
+                                    // Drop the suffix and forward the request
+                                    return ThreadLocalBuilder.clone(
+                                    metric,
+                                    MetricTags.Builder.class, b -> b.setName(metricName.substring(0, metricName.length() - 2)));
+                                } else {
+                                    return metric;
+                                }
+                            }).collect(ImmutableList.toImmutableList()))));
     }
 
+    private MetricsQueryResponse filterExcludedTags(final MetricsQueryResponse originalResponse) {
+        return ThreadLocalBuilder.clone(
+                originalResponse,
+                MetricsQueryResponse.Builder.class,
+                responseBuilder -> responseBuilder.setQueries(
+                        originalResponse.getQueries()
+                                .stream()
+                                .map(originalQuery -> ThreadLocalBuilder.clone(
+                                        originalQuery,
+                                        MetricsQueryResponse.Query.Builder.class,
+                                        queryBuilder -> queryBuilder.setResults(
+                                                originalQuery.getResults()
+                                                        .stream()
+                                                        .map(this::filterQueryResultTags)
+                                                        .collect(ImmutableList.toImmutableList()))))
+                                .collect(ImmutableList.toImmutableList())));
+    }
+
+    private MetricsQueryResponse.QueryResult filterQueryResultTags(final MetricsQueryResponse.QueryResult originalResult) {
+        return ThreadLocalBuilder.clone(
+                originalResult,
+                MetricsQueryResponse.QueryResult.Builder.class,
+                resultBuilder -> resultBuilder.setTags(
+                        originalResult.getTags()
+                                .entries()
+                                .stream()
+                                .filter(e -> !_excludedTagNames.contains(e.getKey()))
+                                .collect(ImmutableListMultimap.toImmutableListMultimap(
+                                        e -> e.getKey(),
+                                        e -> e.getValue()))));
+    }
 
     private static Optional<SamplingUnit> rollupSuffixToSamplingUnit(final String suffix) {
         // Assuming we only rollup to a single sampling unit (e.g. 1 hour or 1 day) and not multiples

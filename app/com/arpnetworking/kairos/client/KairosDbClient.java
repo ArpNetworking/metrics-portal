@@ -21,6 +21,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RollupResponse;
 import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -52,7 +53,7 @@ public interface KairosDbClient {
      * @param query simplified metrics query to retrieve tags for
      * @return a query response only containing tags with values for each metric
      */
-    CompletionStage<MetricsQueryResponse> queryMetricTags(MetricsQuery query);
+    CompletionStage<MetricsQueryResponse> queryMetricTags(TagsQuery query);
 
     /**
      * Queries KairosDB for list of rollups.

@@ -22,8 +22,10 @@ import akka.pattern.PatternsCS;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -109,10 +111,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
         _metrics.recordCounter("rollup/generator/metric_names_message/received", 1);
         final long startTime = System.nanoTime();
         PatternsCS.pipe(_kairosDbClient.queryMetricTags(
-                new MetricsQuery.Builder()
+                new TagsQuery.Builder()
                         .setStartTime(Instant.ofEpochMilli(0))
                         .setMetrics(ImmutableList.of(
-                                new Metric.Builder()
+                                new MetricTags.Builder()
                                         .setName(metricName)
                                         .build()
                         ))
