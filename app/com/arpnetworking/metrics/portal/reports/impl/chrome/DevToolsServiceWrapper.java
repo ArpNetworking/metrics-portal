@@ -20,13 +20,17 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.kklisura.cdt.protocol.commands.Network;
+import com.github.kklisura.cdt.protocol.commands.Fetch;
+import com.github.kklisura.cdt.protocol.types.fetch.HeaderEntry;
 import com.github.kklisura.cdt.protocol.types.network.ErrorReason;
-import com.github.kklisura.cdt.protocol.types.network.RequestPattern;
+import com.github.kklisura.cdt.protocol.types.network.Request;
+import com.github.kklisura.cdt.protocol.types.page.PrintToPDFTransferMode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -71,31 +75,54 @@ public class DevToolsServiceWrapper implements DevToolsService {
         configureRequestInterception();
     }
 
+    private static ImmutableMap<String, String> getRequestHeaders(final Request request) {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        for (final Map.Entry<String, Object> entry : request.getHeaders().entrySet()) {
+            if (entry.getValue() instanceof String) {
+                builder = builder.put(entry.getKey(), (String) entry.getValue());
+            }
+        }
+        return builder.build();
+    }
+
+    /* package private */ static ImmutableList<HeaderEntry> headerMapToList(final ImmutableMap<String, String> headers) {
+        return headers.entrySet().stream()
+                .map(entry -> {
+                    final HeaderEntry headerEntry = new HeaderEntry();
+                    headerEntry.setName(entry.getKey());
+                    headerEntry.setValue(entry.getValue());
+                    return headerEntry;
+                })
+                .collect(ImmutableList.toImmutableList());
+    }
+
+    /* package private */ static ImmutableMap<String, String> headerListToMap(final Collection<HeaderEntry> headers) {
+            return headers.stream().collect(ImmutableMap.toImmutableMap(HeaderEntry::getName, HeaderEntry::getValue));
+    }
+
     private void configureRequestInterception() {
-        final Network network = _dts.getNetwork();
-        network.setRequestInterception(ImmutableList.of(new RequestPattern()));
-        network.onRequestIntercepted(event -> {
+        final Fetch fetch = _dts.getFetch();
+        fetch.enable();
+        fetch.onRequestPaused(event -> {
             final String url = event.getRequest().getUrl();
             if (!_originConfigs.isRequestAllowed(url)) {
-                System.out.println("Cancelling request to " + url);
-                network.continueInterceptedRequest(
-                        event.getInterceptionId(), ErrorReason.ABORTED, null, null, null, null, null, null
-                );
+                LOGGER.warn()
+                        .setMessage("rejecting request")
+                        .addData("url", url)
+                        .log();
+                fetch.failRequest(event.getRequestId(), ErrorReason.ABORTED);
                 return;
             }
-            final ImmutableMap<String, Object> headers = ImmutableMap.<String, Object>builder()
-                    .putAll(event.getRequest().getHeaders())
+            final ImmutableMap<String, String> headers = ImmutableMap.<String, String>builder()
+                    .putAll(getRequestHeaders(event.getRequest()))
                     .putAll(_originConfigs.getAdditionalHeaders(url))
                     .build();
-            network.continueInterceptedRequest(
-                    event.getInterceptionId(),
-                    null,
-                    null,
+            fetch.continueRequest(
+                    event.getRequestId(),
                     url,
                     event.getRequest().getMethod(),
                     event.getRequest().getPostData(),
-                    headers,
-                    null
+                    headerMapToList(headers)
             );
         });
     }
@@ -113,23 +140,26 @@ public class DevToolsServiceWrapper implements DevToolsService {
         if (_closed.get()) {
             throw new IllegalStateException("cannot interact with closed devtools");
         }
-        return supplyInExecutor(() -> Base64.getDecoder().decode(_dts.getPage().printToPDF(
-                false,
-                false,
-                false,
-                1.0,
-                pageWidthInches,
-                pageHeightInches,
-                0.4,
-                0.4,
-                0.4,
-                0.4,
-                "",
-                true,
-                "",
-                "",
-                true
-        )));
+        return supplyInExecutor(() -> Base64.getDecoder().decode(
+                _dts.getPage().printToPDF(
+                    false, // landscape
+                    false, // displayHeaderFooter
+                    false, // printBackground
+                    1.0, // scale
+                    pageWidthInches, // paperWidth
+                    pageHeightInches, // paperHeight
+                    0.4, // marginTop
+                    0.4, // marginBottom
+                    0.4, // marginLeft
+                    0.4, // marginRight
+                    "", // pageRanges
+                    true, // ignoreInvalidPageRanges
+                    "", // headerTemplate
+                    "", // footerTemplate
+                    true, // preferCSSPageSize
+                    PrintToPDFTransferMode.RETURN_AS_BASE_64 // transferMode
+                ).getData()
+        ));
     }
 
     @Override
