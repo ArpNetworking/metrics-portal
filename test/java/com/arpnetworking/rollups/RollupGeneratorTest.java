@@ -22,6 +22,7 @@ import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
@@ -44,6 +45,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
@@ -144,7 +146,7 @@ public class RollupGeneratorTest {
                                         .build()))
                         .build()));
 
-        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        final ArgumentCaptor<TagsQuery> captor = ArgumentCaptor.forClass(TagsQuery.class);
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
@@ -155,9 +157,9 @@ public class RollupGeneratorTest {
         assertEquals(2, tagNamesMessage.getTagNames().size());
 
         verify(_kairosDbClient, times(1)).queryMetricTags(captor.capture());
-        final MetricsQuery tagQuery = captor.getValue();
+        final TagsQuery tagQuery = captor.getValue();
         assertEquals("metric", tagQuery.getMetrics().get(0).getName());
-        assertEquals(Instant.ofEpochSecond(0), tagQuery.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochSecond(0)), tagQuery.getStartTime());
     }
 
     @Test
@@ -292,7 +294,8 @@ public class RollupGeneratorTest {
                 verify(_kairosDbClient, times(2)).queryMetrics(captor.capture()));
         final MetricsQuery hourlyQuery = captor.getAllValues().get(0);
         assertEquals("metric_1h", hourlyQuery.getMetrics().get(0).getName());
-        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
+        assertEquals(
+                RollupPeriod.HOURLY.recentEndTime(_clock.instant()).minus(RollupPeriod.HOURLY.periodCountToDuration(4)),
                 hourlyQuery.getStartTime());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), hourlyQuery.getEndTime().get());
 

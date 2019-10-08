@@ -18,6 +18,7 @@ package controllers;
 import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -135,7 +136,7 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryTags() {
         try {
-            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            final TagsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), TagsQuery.class);
             return _kairosService.queryMetricTags(metricsQuery)
                     .<JsonNode>thenApply(_mapper::valueToTree)
                     .thenApply(Results::ok);

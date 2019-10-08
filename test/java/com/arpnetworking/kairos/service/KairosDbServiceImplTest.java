@@ -19,9 +19,12 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.RelativeDateTime;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
@@ -98,15 +101,15 @@ public class KairosDbServiceImplTest {
         _service.queryMetricTags(
                 OBJECT_MAPPER.readValue(
                         readResource("testFiltersRollupOverrideForTagsQueries.request"),
-                        MetricsQuery.class)
+                        TagsQuery.class)
         );
 
-        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        final ArgumentCaptor<TagsQuery> captor = ArgumentCaptor.forClass(TagsQuery.class);
         verify(_mockClient, times(1)).queryMetricTags(captor.capture());
-        final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(0), request.getStartTime());
+        final TagsQuery request = captor.getValue();
+        assertEquals(Optional.of(Instant.ofEpochMilli(0)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
-        final Metric metric = request.getMetrics().get(0);
+        final MetricTags metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
     }
 
@@ -243,6 +246,45 @@ public class KairosDbServiceImplTest {
                         "app_version",
                         "country"),
                 response.getResults());
+    }
+
+    @Test
+    public void testFilterTagNamesOnTagQuery() throws Exception {
+        when(_mockClient.queryMetricTags(Mockito.any(TagsQuery.class))).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testFilterTagNamesOnTagQuery.backend_response"),
+                                MetricsQueryResponse.class
+                        )
+                )
+        );
+
+        final MetricsQueryResponse response = _service.queryMetricTags(
+                new TagsQuery.Builder()
+                        .setStartTimeRelative(
+                                new RelativeDateTime.Builder()
+                                        .setUnit("hours")
+                                        .setValue(1)
+                                        .build())
+                        .setMetrics(
+                                ImmutableList.of(
+                                        new MetricTags.Builder()
+                                                .setName("kairosdb.protocol.http_request_count")
+                                                .build()
+                                ))
+                        .build()
+        ).toCompletableFuture().get();
+
+        verify(_mockClient).queryMetricTags(Mockito.any(TagsQuery.class));
+        assertEquals(1, response.getQueries().size());
+        assertEquals(1, response.getQueries().get(0).getResults().size());
+        assertEquals(2, response.getQueries().get(0).getResults().get(0).getTags().size());
+        assertEquals(
+                ImmutableList.of(
+                    "query",
+                    "tags"
+                ),
+                response.getQueries().get(0).getResults().get(0).getTags().get("method"));
     }
 
     private String readResource(final String resourceSuffix) {

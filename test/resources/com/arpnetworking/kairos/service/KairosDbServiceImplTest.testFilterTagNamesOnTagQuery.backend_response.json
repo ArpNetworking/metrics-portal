@@ -1,0 +1,21 @@
+{
+  "queries": [
+    {
+      "results": [
+        {
+          "name": "kairosdb.protocol.http_request_count",
+          "tags": {
+            "host": [
+              "7f479b7773cd"
+            ],
+            "method": [
+              "query",
+              "tags"
+            ]
+          },
+          "values": []
+        }
+      ]
+    }
+  ]
+}
