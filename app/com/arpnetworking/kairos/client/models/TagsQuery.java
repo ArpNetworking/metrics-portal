@@ -50,7 +50,7 @@ public final class TagsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("start_relative")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private Optional<RelativeDateTime> getStartTimeRelative() {
         return _startTimeRelative;
     }
@@ -62,7 +62,7 @@ public final class TagsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("start_absolute")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private Optional<Long> getStartTimeMillis() {
         return _startTime.map(Instant::toEpochMilli);
     }
@@ -74,7 +74,7 @@ public final class TagsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("end_absolute")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private Optional<Long> getEndTimeMillis() {
         return _endTime.map(Instant::toEpochMilli);
     }
@@ -89,7 +89,7 @@ public final class TagsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("end_relative")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private Optional<RelativeDateTime> getEndTimeRelative() {
         return _endTimeRelative;
     }
