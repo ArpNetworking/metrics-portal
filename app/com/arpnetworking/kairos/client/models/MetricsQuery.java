@@ -52,7 +52,7 @@ public final class MetricsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("start_relative")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Optional<RelativeDateTime> getStartTimeRelative() {
         return _startTimeRelative;
     }
@@ -64,7 +64,7 @@ public final class MetricsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("start_absolute")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Optional<Long> getStartTimeMillis() {
         return _startTime.map(Instant::toEpochMilli);
     }
@@ -76,7 +76,7 @@ public final class MetricsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("end_absolute")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Optional<Long> getEndTimeMillis() {
         return _endTime.map(Instant::toEpochMilli);
     }
@@ -91,7 +91,7 @@ public final class MetricsQuery {
      */
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
     @JsonProperty("end_relative")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private Optional<RelativeDateTime> getEndTimeRelative() {
         return _endTimeRelative;
     }
@@ -378,11 +378,6 @@ public final class MetricsQuery {
             return _name;
         }
 
-        private GroupBy(final Builder builder) {
-            _otherArgs = builder._otherArgs;
-            _name = builder._name;
-        }
-
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
@@ -407,6 +402,11 @@ public final class MetricsQuery {
         @Override
         public int hashCode() {
             return Objects.hash(_otherArgs, _name);
+        }
+
+        private GroupBy(final Builder builder) {
+            _name = builder._name;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
         }
 
         private final Map<String, Object> _otherArgs;
@@ -445,7 +445,7 @@ public final class MetricsQuery {
              */
             @JsonAnySetter
             public Builder addOtherArg(final String key, final Object value) {
-                _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+                _otherArgs.put(key, value);
                 return this;
             }
 
@@ -465,7 +465,7 @@ public final class MetricsQuery {
             @NotEmpty
             private String _name;
             @NotNull
-            private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
     }
 }

@@ -21,7 +21,7 @@ import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
@@ -98,7 +98,7 @@ public final class MetricsDiscoveryTest {
     public void testEmptyMetrics() {
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
-                        .completedFuture(new KairosMetricNamesQueryResponse.Builder().build()));
+                        .completedFuture(new MetricNamesResponse.Builder().build()));
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
@@ -115,7 +115,7 @@ public final class MetricsDiscoveryTest {
         when(_config.getStringList(eq("rollup.metric.blacklist"))).thenReturn(ImmutableList.of("^cmf/foo/.*$"));
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
-                        .completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                        .completedFuture(new MetricNamesResponse.Builder()
                                 .setResults(ImmutableList.of(
                                         "metric1",
                                         "cmf/web_perf/time_to_interactive",
@@ -152,7 +152,7 @@ public final class MetricsDiscoveryTest {
     public void testMetricsFiltering() {
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
-                        .completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                        .completedFuture(new MetricNamesResponse.Builder()
                                 .setResults(ImmutableList.of("metric1"))
                                 .build()));
         new TestKit(_system) {{
@@ -173,11 +173,11 @@ public final class MetricsDiscoveryTest {
         when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("3s");
         when(_kairosDbClient.queryMetricNames())
                 .thenReturn(CompletableFuture
-                        .completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                        .completedFuture(new MetricNamesResponse.Builder()
                                 .setResults(ImmutableList.of("metric1", "metric1_1h", "metric1_1d"))
                                 .build()))
                 .thenReturn(CompletableFuture
-                        .completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                        .completedFuture(new MetricNamesResponse.Builder()
                                 .setResults(ImmutableList.of("metric2"))
                                 .build()
                         ));

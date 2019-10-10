@@ -21,9 +21,10 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
-import net.sf.oval.constraint.MemberOf;
+import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -33,17 +34,17 @@ import java.util.Objects;
  */
 public final class RelativeDateTime {
 
-    @JsonAnyGetter
-    public ImmutableMap<String, Object> getOtherArgs() {
-        return _otherArgs;
-    }
-
-    public String getUnit() {
+    public TimeUnit getUnit() {
         return _unit;
     }
 
     public Number getValue() {
         return _value;
+    }
+
+    @JsonAnyGetter
+    public ImmutableMap<String, Object> getOtherArgs() {
+        return _otherArgs;
     }
 
     @Override
@@ -75,14 +76,14 @@ public final class RelativeDateTime {
     }
 
     private RelativeDateTime(final Builder builder) {
-        _otherArgs = builder._otherArgs;
         _unit = builder._unit;
         _value = builder._value;
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
     }
 
-    private final ImmutableMap<String, Object> _otherArgs;
-    private final String _unit;
+    private final TimeUnit _unit;
     private final Number _value;
+    private final ImmutableMap<String, Object> _otherArgs;
 
     /**
      * Implementation of the builder pattern for {@link RelativeDateTime}.
@@ -96,49 +97,13 @@ public final class RelativeDateTime {
         }
 
         /**
-         * Adds an attribute not explicitly modeled by this class. Optional.
-         *
-         * @param key the attribute name
-         * @param value the attribute value
-         * @return this {@link MetricsQueryResponse.Builder}
-         */
-        @JsonAnySetter
-        public Builder addOtherArg(final String key, final Object value) {
-            _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
-            return this;
-        }
-
-        /**
-         * Sets the attributes not explicitly modeled by this class. Optional.
-         *
-         * @param value the other attributes
-         * @return this {@link Builder}
-         */
-        @JsonIgnore
-        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
-            _otherArgs = value;
-            return this;
-        }
-
-        /**
          * Sets the unit for the relative date-time value. Required. Cannot be
-         * null. Must be one of:
-         *
-         * <ul>
-         *     <li>milliseconds</li>
-         *     <li>seconds</li>
-         *     <li>minutes</li>
-         *     <li>hours</li>
-         *     <li>days</li>
-         *     <li>weeks</li>
-         *     <li>months</li>
-         *     <li>years</li>
-         * </ul>
+         * null.
          *
          * @param value the unit of the value
          * @return this {@link Builder}
          */
-        public Builder setUnit(final String value) {
+        public Builder setUnit(final TimeUnit value) {
             _unit = value;
             return this;
         }
@@ -155,19 +120,43 @@ public final class RelativeDateTime {
             return this;
         }
 
+        /**
+         * Adds an attribute not explicitly modeled by this class. Optional.
+         *
+         * @param key the attribute name
+         * @param value the attribute value
+         * @return this {@link MetricsQueryResponse.Builder}
+         */
+        @JsonAnySetter
+        public Builder addOtherArg(final String key, final Object value) {
+            _otherArgs.put(key, value);
+            return this;
+        }
+
+        /**
+         * Sets the attributes not explicitly modeled by this class. Optional.
+         *
+         * @param value the other attributes
+         * @return this {@link Builder}
+         */
+        @JsonIgnore
+        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+            _otherArgs = value;
+            return this;
+        }
+
         @Override
         protected void reset() {
-            _otherArgs = ImmutableMap.of();
             _unit = null;
             _value = null;
+            _otherArgs = Maps.newHashMap();
         }
 
         @NotNull
-        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
-        @NotNull
-        @MemberOf(value = {"milliseconds", "seconds", "minutes", "hours", "days", "weeks", "months", "years"})
-        private String _unit;
+        private TimeUnit _unit;
         @NotNull
         private Number _value;
+        @NotNull
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 }

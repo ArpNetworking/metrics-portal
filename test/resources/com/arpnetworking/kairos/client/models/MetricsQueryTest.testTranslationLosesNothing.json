@@ -29,7 +29,7 @@
           "align_sampling": true,
           "sampling": {
             "value": 1,
-            "unit": "DAYS"
+            "unit": "days"
           }
         }
       ],

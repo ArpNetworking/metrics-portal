@@ -24,9 +24,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.TimeSeriesResult;
 import models.internal.impl.DefaultTimeSeriesResult;
@@ -36,6 +38,8 @@ import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -44,13 +48,14 @@ import java.util.function.Function;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class MetricsQueryResponse {
-    @JsonAnyGetter
-    public ImmutableMap<String, Object> getOtherArgs() {
-        return _otherArgs;
-    }
 
     public ImmutableList<Query> getQueries() {
         return _queries;
+    }
+
+    @JsonAnyGetter
+    public ImmutableMap<String, Object> getOtherArgs() {
+        return _otherArgs;
     }
 
     /**
@@ -65,13 +70,39 @@ public final class MetricsQueryResponse {
                 .build();
     }
 
-    private MetricsQueryResponse(final Builder builder) {
-        _otherArgs = builder._otherArgs;
-        _queries = builder._queries;
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final MetricsQueryResponse otherMetricsQueryResponse = (MetricsQueryResponse) o;
+        return Objects.equals(_queries, otherMetricsQueryResponse._queries)
+                && Objects.equals(_otherArgs, otherMetricsQueryResponse._otherArgs);
     }
 
-    private final ImmutableMap<String, Object> _otherArgs;
+    @Override
+    public int hashCode() {
+        return Objects.hash(_queries, _otherArgs);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("queries", _queries)
+                .add("otherArgs", _otherArgs)
+                .toString();
+    }
+
+    private MetricsQueryResponse(final Builder builder) {
+        _queries = builder._queries;
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+    }
+
     private final ImmutableList<Query> _queries;
+    private final ImmutableMap<String, Object> _otherArgs;
 
     /**
      * Implementation of the builder pattern for {@link MetricsQueryResponse}.
@@ -87,6 +118,17 @@ public final class MetricsQueryResponse {
         }
 
         /**
+         * Sets the queries. Cannot be null.
+         *
+         * @param value the name
+         * @return this {@link Builder}
+         */
+        public Builder setQueries(final ImmutableList<Query> value) {
+            _queries = value;
+            return this;
+        }
+
+        /**
          * Adds an attribute not explicitly modeled by this class. Optional.
          *
          * @param key the attribute name
@@ -95,7 +137,7 @@ public final class MetricsQueryResponse {
          */
         @JsonAnySetter
         public Builder addOtherArg(final String key, final Object value) {
-            _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+            _otherArgs.put(key, value);
             return this;
         }
 
@@ -111,27 +153,16 @@ public final class MetricsQueryResponse {
             return this;
         }
 
-        /**
-         * Sets the queries. Cannot be null.
-         *
-         * @param value the name
-         * @return this {@link Builder}
-         */
-        public Builder setQueries(final ImmutableList<Query> value) {
-            _queries = value;
-            return this;
-        }
-
         @Override
         protected void reset() {
             _queries = null;
-            _otherArgs = ImmutableMap.of();
+            _otherArgs = Maps.newHashMap();
         }
 
         @NotNull
         private ImmutableList<Query> _queries;
         @NotNull
-        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 
     /**
@@ -140,12 +171,6 @@ public final class MetricsQueryResponse {
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
     public static final class Query {
-        private Query(final Builder builder) {
-            _otherArgs = builder._otherArgs;
-            _sampleSize = builder._sampleSize;
-            _results = builder._results;
-        }
-
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
             return _otherArgs;
@@ -172,9 +197,44 @@ public final class MetricsQueryResponse {
                     .setResults(_results.stream().map(QueryResult::toInternal).collect(ImmutableList.toImmutableList()))
                     .build();
         }
-        private final ImmutableMap<String, Object> _otherArgs;
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Query otherQuery = (Query) o;
+            return Objects.equals(_sampleSize, otherQuery._sampleSize)
+                    && Objects.equals(_results, otherQuery._results)
+                    && Objects.equals(_otherArgs, otherQuery._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_sampleSize, _results, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("sampleSize", _sampleSize)
+                    .add("results", _results)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
+        private Query(final Builder builder) {
+            _sampleSize = builder._sampleSize;
+            _results = builder._results;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+        }
+
         private final long _sampleSize;
         private final ImmutableList<QueryResult> _results;
+        private final ImmutableMap<String, Object> _otherArgs;
 
         /**
          * Implementation of the builder pattern for {@link Query}.
@@ -187,31 +247,6 @@ public final class MetricsQueryResponse {
              */
             public Builder() {
                 super(Query::new);
-            }
-
-            /**
-             * Adds an attribute not explicitly modeled by this class. Optional.
-             *
-             * @param key the attribute name
-             * @param value the attribute value
-             * @return this {@link Builder}
-             */
-            @JsonAnySetter
-            public Builder addOtherArg(final String key, final Object value) {
-                _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
-                return this;
-            }
-
-            /**
-             * Sets the attributes not explicitly modeled by this class. Optional.
-             *
-             * @param value the other attributes
-             * @return this {@link Builder}
-             */
-            @JsonIgnore
-            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
-                _otherArgs = value;
-                return this;
             }
 
             /**
@@ -237,11 +272,36 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
             @Override
             protected void reset() {
                 _results = null;
                 _sampleSize = 0L;
-                _otherArgs = ImmutableMap.of();
+                _otherArgs = Maps.newHashMap();
             }
 
             @NotNull
@@ -250,7 +310,7 @@ public final class MetricsQueryResponse {
             @NotNull
             private Long _sampleSize = 0L;
             @NotNull
-            private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
     }
 
@@ -298,19 +358,51 @@ public final class MetricsQueryResponse {
                     .build();
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryResult otherQueryResult = (QueryResult) o;
+            return Objects.equals(_values, otherQueryResult._values)
+                    && Objects.equals(_name, otherQueryResult._name)
+                    && Objects.equals(_tags, otherQueryResult._tags)
+                    && Objects.equals(_groupBy, otherQueryResult._groupBy)
+                    && Objects.equals(_otherArgs, otherQueryResult._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_values, _name, _tags, _groupBy, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("values", _values)
+                    .add("name", _name)
+                    .add("tags", _tags)
+                    .add("groupBy", _groupBy)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
         private QueryResult(final Builder builder) {
-            _otherArgs = builder._otherArgs;
             _values = builder._values;
             _name = builder._name;
             _tags = builder._tags;
             _groupBy = builder._groupBy;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
         }
 
-        private final ImmutableMap<String, Object> _otherArgs;
         private final ImmutableList<DataPoint> _values;
         private final String _name;
         private final ImmutableMultimap<String, String> _tags;
         private final ImmutableList<QueryGroupBy> _groupBy;
+        private final ImmutableMap<String, Object> _otherArgs;
 
         /**
          * Implementation of the builder pattern for a {@link QueryResult}.
@@ -323,31 +415,6 @@ public final class MetricsQueryResponse {
              */
             public Builder() {
                 super(QueryResult::new);
-            }
-
-            /**
-             * Adds an attribute not explicitly modeled by this class. Optional.
-             *
-             * @param key the attribute name
-             * @param value the attribute value
-             * @return this {@link Builder}
-             */
-            @JsonAnySetter
-            public Builder addOtherArg(final String key, final Object value) {
-                _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
-                return this;
-            }
-
-            /**
-             * Sets the attributes not explicitly modeled by this class. Optional.
-             *
-             * @param value the other attributes
-             * @return this {@link Builder}
-             */
-            @JsonIgnore
-            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
-                _otherArgs = value;
-                return this;
             }
 
             /**
@@ -395,13 +462,38 @@ public final class MetricsQueryResponse {
                 return this;
             }
 
+            /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
             @Override
             public void reset() {
                 _name = null;
                 _values = ImmutableList.of();
-                _otherArgs = ImmutableMap.of();
                 _tags = ImmutableMultimap.of();
                 _groupBy = ImmutableList.of();
+                _otherArgs = Maps.newHashMap();
             }
 
             @NotNull
@@ -410,11 +502,11 @@ public final class MetricsQueryResponse {
             @NotNull
             private ImmutableList<DataPoint> _values = ImmutableList.of();
             @NotNull
-            private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
-            @NotNull
             private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
             @NotNull
             private ImmutableList<QueryGroupBy> _groupBy = ImmutableList.of();
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
     }
 
@@ -480,6 +572,11 @@ public final class MetricsQueryResponse {
             return _group;
         }
 
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
         /**
          * Converts this model to an internal model.
          *
@@ -492,19 +589,44 @@ public final class MetricsQueryResponse {
                     .build();
         }
 
-        /**
-         * Converts this to an internal model.
-         *
-         * @return a new internal model
-         */
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryTagGroupBy otherQueryTagGroupBy = (QueryTagGroupBy) o;
+            return Objects.equals(_tags, otherQueryTagGroupBy._tags)
+                    && Objects.equals(_group, otherQueryTagGroupBy._group)
+                    && Objects.equals(_otherArgs, otherQueryTagGroupBy._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_tags, _group, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("type", _tags)
+                    .add("group", _group)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
         private QueryTagGroupBy(final Builder builder) {
             super(builder);
             _tags = builder._tags;
             _group = builder._group;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
         }
 
         private final ImmutableList<String> _tags;
         private final ImmutableMap<String, String> _group;
+        private final ImmutableMap<String, Object> _otherArgs;
 
         /**
          * Implementation of the builder pattern for a {@link QueryTagGroupBy}.
@@ -542,6 +664,31 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
              * Gets the instance of the {@link Builder} with the proper type.
              *
              * @return this {@link Builder}
@@ -562,6 +709,8 @@ public final class MetricsQueryResponse {
             @NotNull
             @NotEmpty
             private ImmutableMap<String, String> _group;
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
     }
 
@@ -575,6 +724,11 @@ public final class MetricsQueryResponse {
             return _type;
         }
 
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
         /**
          * Converts this to an internal model.
          *
@@ -586,12 +740,40 @@ public final class MetricsQueryResponse {
                     .build();
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryTypeGroupBy otherQueryTypeGroupBy = (QueryTypeGroupBy) o;
+            return Objects.equals(_type, otherQueryTypeGroupBy._type)
+                    && Objects.equals(_otherArgs, otherQueryTypeGroupBy._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_type, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("type", _type)
+                    .add("value", _otherArgs)
+                    .toString();
+        }
+
         private QueryTypeGroupBy(final Builder builder) {
             super(builder);
             _type = builder._type;
+            _otherArgs =  ImmutableMap.copyOf(builder._otherArgs);
         }
 
         private final String _type;
+        private final ImmutableMap<String, Object> _otherArgs;
 
         /**
          * Implementation of the builder pattern for a {@link QueryTypeGroupBy}.
@@ -618,6 +800,31 @@ public final class MetricsQueryResponse {
             }
 
             /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
              * Gets the instance of the {@link Builder} with the proper type.
              *
              * @return this {@link Builder}
@@ -629,11 +836,14 @@ public final class MetricsQueryResponse {
             @Override
             protected void reset() {
                 _type = null;
+                _otherArgs = Maps.newHashMap();
             }
 
             @NotNull
             @NotEmpty
             private String _type;
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
     }
 
@@ -669,6 +879,32 @@ public final class MetricsQueryResponse {
             return ImmutableList.of(_time.toEpochMilli(), _value);
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final DataPoint otherDataPoint = (DataPoint) o;
+            return Objects.equals(_time, otherDataPoint._time)
+                    && Objects.equals(_value, otherDataPoint._value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_time, _value);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("time", _time)
+                    .add("value", _value)
+                    .toString();
+        }
+
         private DataPoint(final Builder builder) {
             _time = builder._time;
             _value = builder._value;
@@ -694,7 +930,7 @@ public final class MetricsQueryResponse {
             @JsonCreator
             private static DataPoint.Builder createFromJsonArray(final List<Object> jsonArray) {
                 return new Builder()
-                        .setTime(Instant.ofEpochMilli((long) jsonArray.get(0)))
+                        .setTime(Instant.ofEpochMilli(((Number) jsonArray.get(0)).longValue()))
                         .setValue(jsonArray.get(1));
             }
 

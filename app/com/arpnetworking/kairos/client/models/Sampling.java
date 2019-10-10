@@ -35,6 +35,7 @@ import java.util.Objects;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class Sampling {
+
     public SamplingUnit getUnit() {
         return _unit;
     }

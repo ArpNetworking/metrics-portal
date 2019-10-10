@@ -23,9 +23,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -36,19 +38,6 @@ import javax.annotation.Nullable;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class Aggregator {
-
-    private Aggregator(final Builder builder) {
-        _name = builder._name;
-        _sampling = Optional.ofNullable(builder._sampling);
-        if (!_sampling.isPresent()) {
-            _alignSampling = Optional.empty();
-        } else {
-            _alignSampling = Optional.ofNullable(builder._alignSampling);
-        }
-        _otherArgs = builder._otherArgs;
-        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
-        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
-    }
 
     public String getName() {
         return _name;
@@ -114,6 +103,19 @@ public final class Aggregator {
     @Override
     public int hashCode() {
         return Objects.hash(_name, _alignSampling, _alignStartTime, _alignEndTime, _sampling, _otherArgs);
+    }
+
+    private Aggregator(final Builder builder) {
+        _name = builder._name;
+        _sampling = Optional.ofNullable(builder._sampling);
+        if (!_sampling.isPresent()) {
+            _alignSampling = Optional.empty();
+        } else {
+            _alignSampling = Optional.ofNullable(builder._alignSampling);
+        }
+        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
+        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
     }
 
     private final String _name;
@@ -203,7 +205,7 @@ public final class Aggregator {
          */
         @JsonAnySetter
         public Builder addOtherArg(final String key, final Object value) {
-            _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+            _otherArgs.put(key, value);
             return this;
         }
 
@@ -227,6 +229,6 @@ public final class Aggregator {
         private Boolean _alignEndTime;
         private Boolean _alignStartTime;
         @NotNull
-        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 }

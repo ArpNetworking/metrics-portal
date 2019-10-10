@@ -25,41 +25,38 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link RelativeDateTime}.
+ * Tests for {@link MetricsQuery.GroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class RelativeDateTimeTest {
+public final class MetricsQueryGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                RelativeDateTime.class
+                MetricsQuery.GroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
-                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                RelativeDateTime.class);
+                new MetricsQuery.GroupBy.Builder()
+                    .setName("host")
+                    .setOtherArgs(ImmutableMap.of("other", "arg")),
+                MetricsQuery.GroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
-                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new RelativeDateTime.Builder()
-                        .setValue(2)
-                        .setUnit(TimeUnit.SECONDS)
-                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                RelativeDateTime.class);
+                new MetricsQuery.GroupBy.Builder()
+                        .setName("host")
+                        .setOtherArgs(ImmutableMap.of("other", "arg")),
+                new MetricsQuery.GroupBy.Builder()
+                        .setName("country")
+                        .setOtherArgs(ImmutableMap.of("other2", "arg2")),
+                MetricsQuery.GroupBy.class);
     }
 }

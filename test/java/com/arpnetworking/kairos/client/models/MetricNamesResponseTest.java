@@ -19,47 +19,45 @@ import com.arpnetworking.commons.test.BuildableTestHelper;
 import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link RelativeDateTime}.
+ * Tests for {@link MetricNamesResponse}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class RelativeDateTimeTest {
+public final class MetricNamesResponseTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                RelativeDateTime.class
+                TagNamesResponse.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                RelativeDateTime.class);
+                MetricNamesResponse.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new RelativeDateTime.Builder()
-                        .setValue(2)
-                        .setUnit(TimeUnit.SECONDS)
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag2"))
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                RelativeDateTime.class);
+                MetricNamesResponse.class);
     }
 }

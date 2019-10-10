@@ -31,6 +31,7 @@ import com.google.common.collect.Multimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -259,22 +260,24 @@ public final class Metric {
         /**
          * Ascending sort order.
          */
-        ASC("asc"),
+        ASC,
         /**
          * Descending sort order.
          */
-        DESC("desc");
+        DESC;
 
-        Order(final String strValue) {
-            _strValue = strValue;
-        }
-
+        /**
+         * Encode the enumeration value as lower case.
+         *
+         * NOTE: KairosDb accepts either upper or lower case representation. This
+         * model is otherwise a pass-through but converts all enumeration values
+         * to lower case.
+         *
+         * @return json encoded value
+         */
         @JsonValue
-        @Override
-        public String toString() {
-            return _strValue;
+        public String toJson() {
+            return name().toLowerCase(Locale.getDefault());
         }
-
-        private final String _strValue;
     }
 }

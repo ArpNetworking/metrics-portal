@@ -25,41 +25,38 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link RelativeDateTime}.
+ * Tests for {@link MetricsQueryResponse.QueryTypeGroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class RelativeDateTimeTest {
+public final class MetricsQueryResponseQueryTypeGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                RelativeDateTime.class
+                MetricsQueryResponse.QueryTypeGroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("foo")
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                RelativeDateTime.class);
+                MetricsQueryResponse.QueryTypeGroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("foo")
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new RelativeDateTime.Builder()
-                        .setValue(2)
-                        .setUnit(TimeUnit.SECONDS)
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("bar")
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                RelativeDateTime.class);
+                MetricsQueryResponse.QueryTypeGroupBy.class);
     }
 }

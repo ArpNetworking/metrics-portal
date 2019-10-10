@@ -33,10 +33,14 @@ import akka.cluster.singleton.ClusterSingletonProxySettings;
 import akka.routing.ConsistentHashingPool;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
+import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
+import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -70,6 +74,7 @@ import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
@@ -275,9 +280,26 @@ public class MainModule extends AbstractModule {
     private ObjectMapper provideObjectMapper(
             final ApplicationLifecycle lifecycle,
             final ActorSystem actorSystem) {
+        final SimpleModule customModule = new SimpleModule();
+        customModule.addDeserializer(
+                TimeUnit.class,
+                EnumerationDeserializer.newInstance(
+                        TimeUnit.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
+        customModule.addDeserializer(
+                SamplingUnit.class,
+                EnumerationDeserializer.newInstance(
+                        SamplingUnit.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
+        customModule.addDeserializer(
+                Metric.Order.class,
+                EnumerationDeserializer.newInstance(
+                        Metric.Order.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
+        objectMapper.registerModule(customModule);
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);

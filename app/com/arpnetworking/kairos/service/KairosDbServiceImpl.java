@@ -19,13 +19,11 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.client.models.RollupResponse;
-import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
@@ -79,26 +77,6 @@ public final class KairosDbServiceImpl implements KairosDbService {
     }
 
     @Override
-    public CompletionStage<List<RollupTask>> queryRollups() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CompletionStage<RollupResponse> createRollup(final RollupTask rollupTask) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CompletionStage<RollupResponse> updateRollup(final String id, final RollupTask rollupTask) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CompletionStage<Void> deleteRollup(final String id) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery metricsQuery) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer("kairosService/queryMetrics/request");
@@ -113,7 +91,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     }
 
     @Override
-    public CompletionStage<KairosMetricNamesQueryResponse> queryMetricNames(
+    public CompletionStage<MetricNamesResponse> queryMetricNames(
             final Optional<String> containing,
             final boolean filterRollups) {
         final Metrics metrics = _metricsFactory.create();
@@ -121,7 +99,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
         return getMetricNames(metrics)
                 .thenApply(list -> filterMetricNames(list, containing, filterRollups))
-                .thenApply(list -> new KairosMetricNamesQueryResponse.Builder().setResults(list).build())
+                .thenApply(list -> new MetricNamesResponse.Builder().setResults(list).build())
                 .whenComplete((result, error) -> {
                     timer.stop();
                     metrics.incrementCounter("kairosService/queryMetricNames/success", error == null ? 1 : 0);
@@ -202,7 +180,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         timer.stop();
                         metrics.incrementCounter("kairosService/metricNames/success", error == null ? 1 : 0);
                     })
-                    .thenApply(KairosMetricNamesQueryResponse::getResults)
+                    .thenApply(MetricNamesResponse::getResults)
                     .thenApply(list -> {
                         _cache.put(METRICS_KEY, list);
                         _metricsList.set(list);

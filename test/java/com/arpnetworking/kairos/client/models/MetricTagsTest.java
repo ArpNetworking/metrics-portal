@@ -20,46 +20,47 @@ import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link RelativeDateTime}.
+ * Tests for {@link MetricTags}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class RelativeDateTimeTest {
+public final class MetricTagsTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                RelativeDateTime.class
+                MetricTags.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricTags.Builder()
+                        .setName("metricName")
+                        .setTags(ImmutableMultimap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                RelativeDateTime.class);
+                MetricTags.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new RelativeDateTime.Builder()
-                        .setValue(1)
-                        .setUnit(TimeUnit.HOURS)
+                new MetricTags.Builder()
+                        .setName("metricName")
+                        .setTags(ImmutableMultimap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new RelativeDateTime.Builder()
-                        .setValue(2)
-                        .setUnit(TimeUnit.SECONDS)
+                new MetricTags.Builder()
+                        .setName("metricName2")
+                        .setTags(ImmutableMultimap.of("tag2", "value2"))
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                RelativeDateTime.class);
+                MetricTags.class);
     }
 }
