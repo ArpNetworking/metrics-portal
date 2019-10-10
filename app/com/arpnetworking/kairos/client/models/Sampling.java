@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -92,7 +92,7 @@ public final class Sampling {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<Sampling> {
+    public static final class Builder extends ThreadLocalBuilder<Sampling> {
         /**
          * Public constructor.
          */
@@ -147,13 +147,20 @@ public final class Sampling {
             return this;
         }
 
+        @Override
+        public void reset() {
+            _value = null;
+            _unit = null;
+            _otherArgs = Maps.newHashMap();
+        }
+
         @JsonProperty("value")
         @Min(1)
         @NotNull
-        private Integer _value = 1;
+        private Integer _value;
         @JsonProperty("unit")
         @NotNull
-        private SamplingUnit _unit = SamplingUnit.MINUTES;
+        private SamplingUnit _unit;
         @NotNull
         private Map<String, Object> _otherArgs = Maps.newHashMap();
     }

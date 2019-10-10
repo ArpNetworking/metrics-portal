@@ -90,6 +90,17 @@ public final class TagNamesResponse {
         }
 
         /**
+         * Sets the tag names result of the response. Required. Cannot be null.
+         *
+         * @param value the resulting tag name list
+         * @return this {@link Builder}
+         */
+        public Builder setResults(final ImmutableSet<String> value) {
+            _results = value;
+            return this;
+        }
+
+        /**
          * Adds an attribute not explicitly modeled by this class. Optional.
          *
          * @param key the attribute name
@@ -114,26 +125,15 @@ public final class TagNamesResponse {
             return this;
         }
 
-        /**
-         * Sets the tag names result of the response. Required. Cannot be null.
-         *
-         * @param value the resulting tag name list
-         * @return this {@link Builder}
-         */
-        public Builder setResults(final ImmutableSet<String> value) {
-            _results = value;
-            return this;
-        }
-
         @Override
         protected void reset() {
-            _otherArgs = ImmutableMap.of();
             _results = null;
+            _otherArgs = ImmutableMap.of();
         }
 
         @NotNull
-        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
-        @NotNull
         private ImmutableSet<String> _results;
+        @NotNull
+        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
     }
 }

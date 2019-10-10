@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -417,7 +416,7 @@ public final class MetricsQuery {
          *
          * @author Brandon Arp (brandon dot arp at smartsheet dot com)
          */
-        public static final class Builder extends OvalBuilder<GroupBy> {
+        public static final class Builder extends ThreadLocalBuilder<GroupBy> {
             /**
              * Public constructor.
              */
@@ -459,6 +458,12 @@ public final class MetricsQuery {
             public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
                 _otherArgs = value;
                 return this;
+            }
+
+            @Override
+            public void reset() {
+                _name = null;
+                _otherArgs = Maps.newHashMap();
             }
 
             @NotNull
