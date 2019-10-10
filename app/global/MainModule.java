@@ -61,6 +61,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupExecutor;
+import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.utility.ConfigTypedProvider;
@@ -169,6 +170,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupManagerPool"))
+                .toProvider(RollupManagerPoolProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -649,6 +654,29 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
+                return _system.actorOf(GuiceActorCreator.props(_injector, RollupManager.class));
+            }
+            return _system.actorOf(Props.create(NoopActor.class));
+        }
+    }
+
+    private static final class RollupManagerPoolProvider implements Provider<ActorRef> {
+        private final boolean _enabled;
+        private final Injector _injector;
+        private final ActorSystem _system;
+        static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
+
+        @Inject
+        RollupManagerPoolProvider(final Injector injector, final ActorSystem system, final Features features) {
+            _enabled = features.isRollupsEnabled();
+            _injector = injector;
+            _system = system;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
                 final Set<String> roles = Sets.newHashSet(ROLLUP_MANAGER_ROLE);
                 return _system.actorOf(new ClusterRouterPool(
                                 new ConsistentHashingPool(0),
@@ -658,7 +686,7 @@ public class MainModule extends AbstractModule {
                                         true,
                                         roles
                                 ))
-                                .props(GuiceActorCreator.props(_injector, RollupManager.class)),
+                                .props(GuiceActorCreator.props(_injector, RollupForwarder.class)),
                         "rollup-manager"
                 );
             }

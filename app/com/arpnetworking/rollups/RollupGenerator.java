@@ -74,7 +74,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
      *
      * @param configuration play configuration
      * @param metricsDiscovery actor ref to metrics discovery actor
-     * @param rollupManager actor ref for rollup manager actor
+     * @param rollupManagerPool actor ref for rollup manager pool actor
      * @param kairosDbClient kairosdb client
      * @param clock clock to use for time calculations
      * @param metrics periodic metrics instance
@@ -83,12 +83,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     public RollupGenerator(
             final Config configuration,
             @Named("RollupMetricsDiscovery") final ActorRef metricsDiscovery,
-            @Named("RollupManager") final ActorRef rollupManager,
+            @Named("RollupManagerPool") final ActorRef rollupManagerPool,
             final KairosDbClient kairosDbClient,
             final Clock clock,
             final PeriodicMetrics metrics) {
         _metricsDiscovery = metricsDiscovery;
-        _rollupManager = rollupManager;
+        _rollupManagerPool = rollupManagerPool;
         _kairosDbClient = kairosDbClient;
         _clock = clock;
         _metrics = metrics;
@@ -240,7 +240,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
                     rollupBuilder.setStartTime(startTime)
                             .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
-                    _rollupManager.tell(rollupBuilder.build(), self());
+                    _rollupManagerPool.tell(rollupBuilder.build(), self());
                 }
             }
 
@@ -313,7 +313,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private final ActorRef _metricsDiscovery;
-    private final ActorRef _rollupManager;
+    private final ActorRef _rollupManagerPool;
     private final KairosDbClient _kairosDbClient;
     private final int _maxBackFillPeriods;
     private final FiniteDuration _fetchBackoff;
