@@ -20,6 +20,7 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.models.DataPoint;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
@@ -144,7 +145,7 @@ public class RollupExecutorTest {
                 final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
                 builder.setName(metricName);
 
-                builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
+                builder.setValues(ImmutableList.of(new DataPoint.Builder()
                         .setTime(Instant.EPOCH)
                         .setValue(0.0)
                         .build()

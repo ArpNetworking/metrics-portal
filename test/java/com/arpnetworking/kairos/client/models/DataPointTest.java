@@ -25,17 +25,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 
 /**
- * Tests for {@link MetricsQueryResponse.DataPoint}.
+ * Tests for {@link DataPoint}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class MetricsQueryResponseDataPointTest {
+public final class DataPointTest {
 
     @Test
     public void testTranslationLosesNothingFromArrayValueNumber() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueNumber"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
@@ -43,7 +43,7 @@ public final class MetricsQueryResponseDataPointTest {
     public void testTranslationLosesNothingFromArrayValueString() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueString"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
@@ -51,7 +51,7 @@ public final class MetricsQueryResponseDataPointTest {
     public void testTranslationLosesNothingFromArrayValueObject() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueObject"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
@@ -60,7 +60,7 @@ public final class MetricsQueryResponseDataPointTest {
         SerializationTestUtils.assertTranslationEquivalent(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueNumber"),
                 ResourceHelper.loadResource(getClass(), "testTranslationEquivalencyFromObjectValueNumber"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
@@ -69,7 +69,7 @@ public final class MetricsQueryResponseDataPointTest {
         SerializationTestUtils.assertTranslationEquivalent(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueNumber"),
                 ResourceHelper.loadResource(getClass(), "testTranslationEquivalencyFromObjectValueNumber"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
@@ -78,28 +78,28 @@ public final class MetricsQueryResponseDataPointTest {
         SerializationTestUtils.assertTranslationEquivalent(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothingFromArrayValueNumber"),
                 ResourceHelper.loadResource(getClass(), "testTranslationEquivalencyFromObjectValueNumber"),
-                MetricsQueryResponse.DataPoint.class
+                DataPoint.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new MetricsQueryResponse.DataPoint.Builder()
+                new DataPoint.Builder()
                         .setTime(Instant.now())
                         .setValue(new Object()),
-                MetricsQueryResponse.DataPoint.class);
+                DataPoint.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new MetricsQueryResponse.DataPoint.Builder()
+                new DataPoint.Builder()
                         .setTime(Instant.now())
                         .setValue(new Object()),
-                new MetricsQueryResponse.DataPoint.Builder()
+                new DataPoint.Builder()
                         .setTime(Instant.now().plusSeconds(60))
                         .setValue(new Object()),
-                MetricsQueryResponse.DataPoint.class);
+                DataPoint.class);
     }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "metricName",
+  "datapoints": [
+    [
+      1570643795000,
+      123
+    ]
+  ],
+  "tags": {
+    "foo": "bar"
+  },
+  "ttl": 300,
+  "arn48894": ["4949g", 3, {"foo":  "bar"}]
+}

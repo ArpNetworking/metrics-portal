@@ -20,7 +20,6 @@ import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
@@ -28,71 +27,59 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 
 /**
- * Tests for {@link MetricsQueryResponse.QueryResult}.
+ * Tests for {@link MetricDataPoints}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class MetricsQueryResponseQueryResultTest {
+public final class MetricDataPointsTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                MetricsQueryResponse.QueryResult.class
+                MetricDataPoints.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new MetricsQueryResponse.QueryResult.Builder()
-                        .setTags(ImmutableListMultimap.of("browser", "Chrome"))
-                        .setName("name")
-                        .setValues(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName("metricName")
+                        .setTtl(60)
+                        .setDatapoints(ImmutableList.of(
                                 new DataPoint.Builder()
-                                        .setValue(1.23)
                                         .setTime(Instant.now())
+                                        .setValue(123)
                                         .build()))
-                        .setGroupBy(ImmutableList.of(
-                                new MetricsQueryResponse.QueryTagGroupBy.Builder()
-                                        .setTags(ImmutableList.of("operating_system"))
-                                        .setGroup(ImmutableMap.of("operating_system", "windows"))
-                                        .build()))
+                        .setTags(ImmutableMap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                MetricsQueryResponse.QueryResult.class);
+                MetricDataPoints.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new MetricsQueryResponse.QueryResult.Builder()
-                        .setTags(ImmutableListMultimap.of("browser", "Chrome"))
-                        .setName("name")
-                        .setValues(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName("metricName")
+                        .setTtl(60)
+                        .setDatapoints(ImmutableList.of(
                                 new DataPoint.Builder()
-                                        .setValue(1.23)
                                         .setTime(Instant.now())
+                                        .setValue(123)
                                         .build()))
-                        .setGroupBy(ImmutableList.of(
-                                new MetricsQueryResponse.QueryTagGroupBy.Builder()
-                                        .setTags(ImmutableList.of("operating_system"))
-                                        .setGroup(ImmutableMap.of("operating_system", "windows"))
-                                        .build()))
+                        .setTags(ImmutableMap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new MetricsQueryResponse.QueryResult.Builder()
-                        .setTags(ImmutableListMultimap.of("country", "Canada"))
-                        .setName("other_name")
-                        .setValues(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName("metricName2")
+                        .setTtl(120)
+                        .setDatapoints(ImmutableList.of(
                                 new DataPoint.Builder()
-                                        .setValue(2.46)
                                         .setTime(Instant.now().plusSeconds(60))
+                                        .setValue(456)
                                         .build()))
-                        .setGroupBy(ImmutableList.of(
-                                new MetricsQueryResponse.QueryTagGroupBy.Builder()
-                                        .setTags(ImmutableList.of("operating_system"))
-                                        .setGroup(ImmutableMap.of("operating_system", "linux"))
-                                        .build()))
+                        .setTags(ImmutableMap.of("tag2", "value2"))
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                MetricsQueryResponse.QueryResult.class);
+                MetricDataPoints.class);
     }
 }

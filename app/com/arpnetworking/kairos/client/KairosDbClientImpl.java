@@ -28,6 +28,7 @@ import akka.http.scaladsl.coding.Gzip$;
 import akka.http.scaladsl.coding.NoCoding$;
 import akka.stream.ActorMaterializer;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.kairos.client.models.MetricDataPoints;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
@@ -38,6 +39,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotNull;
 import scala.compat.java8.FutureConverters;
 import scala.concurrent.duration.FiniteDuration;
@@ -95,6 +97,17 @@ public final class KairosDbClientImpl implements KairosDbClient {
         return fireRequest(request, TagNamesResponse.class);
     }
 
+    @Override
+    public CompletionStage<Void> addDataPoints(final ImmutableList<MetricDataPoints> metricDataPoints) {
+        try {
+            final HttpRequest request = HttpRequest.POST(createUri(ADD_DATA_POINTS_PATH).toString())
+                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(metricDataPoints));
+            return fireRequest(request, Void.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final Class<T> responseType) {
         return fireRequest(request, TypeFactory.defaultInstance().constructType(responseType));
     }
@@ -112,10 +125,22 @@ public final class KairosDbClientImpl implements KairosDbClient {
                         flow = NoCoding$.MODULE$;
                     }
                     if (!httpResponse.status().isSuccess()) {
-                        throw new KairosDbRequestException(
-                                httpResponse.status().intValue(),
-                                httpResponse.status().reason(),
-                                URI.create(request.getUri().toString()));
+                        return httpResponse.entity().toStrict(_readTimeout.toMillis(), _materializer)
+                                .thenCompose(strict -> FutureConverters.toJava(flow.decode(strict.getData(), _materializer)))
+                                .thenApply(materializedBody -> {
+                                    final String responseBody = materializedBody.utf8String();
+                                    if (responseBody.isEmpty()) {
+                                        throw new KairosDbRequestException(
+                                                httpResponse.status().intValue(),
+                                                httpResponse.status().reason(),
+                                                URI.create(request.getUri().toString()));
+                                    }
+                                    throw new KairosDbRequestException(
+                                            responseBody,
+                                            httpResponse.status().intValue(),
+                                            httpResponse.status().reason(),
+                                            URI.create(request.getUri().toString()));
+                                });
                     }
                     return httpResponse.entity()
                             .toStrict(_readTimeout.toMillis(), _materializer)
@@ -158,6 +183,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
     static final URI TAGS_QUERY_PATH = URI.create("/api/v1/datapoints/query/tags");
     static final URI LIST_TAG_NAMES_PATH = URI.create("/api/v1/tagnames");
+    static final URI ADD_DATA_POINTS_PATH = URI.create("/api/v1/datapoints");
 
     /**
      * Implementation of the builder pattern for {@link KairosDbClientImpl}.
