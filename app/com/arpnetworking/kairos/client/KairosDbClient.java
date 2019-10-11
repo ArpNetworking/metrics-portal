@@ -15,15 +15,12 @@
  */
 package com.arpnetworking.kairos.client;
 
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.client.models.RollupResponse;
-import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -45,7 +42,7 @@ public interface KairosDbClient {
      *
      * @return the response
      */
-    CompletionStage<KairosMetricNamesQueryResponse> queryMetricNames();
+    CompletionStage<MetricNamesResponse> queryMetricNames();
 
     /**
      * Queries KairosDB for a list of tags associated with a metric.
@@ -54,40 +51,6 @@ public interface KairosDbClient {
      * @return a query response only containing tags with values for each metric
      */
     CompletionStage<MetricsQueryResponse> queryMetricTags(TagsQuery query);
-
-    /**
-     * Queries KairosDB for list of rollups.
-     *
-     * @return the response
-     */
-    CompletionStage<List<RollupTask>> queryRollups();
-
-    /**
-     * Creates a rollup task in KairosDB.
-     *
-     * @param rollupTask the task to create
-     * @return the response
-     */
-    CompletionStage<RollupResponse> createRollup(RollupTask rollupTask);
-
-    /**
-     * Updates an existing rollup task in KairosDB.
-     * The id passed in the function arguments is used as the id of the RollupTask to update.  Any
-     * id present in the RollupTask object will be ignored by KairosDB.
-     *
-     * @param id the id of the rollup task to update
-     * @param rollupTask the task to update
-     * @return the response
-     */
-    CompletionStage<RollupResponse> updateRollup(String id, RollupTask rollupTask);
-
-    /**
-     * Deletes an existing rollup task in KairosDB.
-     *
-     * @param id the id of task to delete
-     * @return the response
-     */
-    CompletionStage<Void> deleteRollup(String id);
 
     /**
      * Query tag names in KairosDb.

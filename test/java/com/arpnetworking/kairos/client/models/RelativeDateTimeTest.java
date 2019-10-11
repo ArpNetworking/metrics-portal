@@ -44,7 +44,7 @@ public final class RelativeDateTimeTest {
         BuildableTestHelper.testBuild(
                 new RelativeDateTime.Builder()
                         .setValue(1)
-                        .setUnit("hours")
+                        .setUnit(TimeUnit.HOURS)
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
                 RelativeDateTime.class);
     }
@@ -54,11 +54,11 @@ public final class RelativeDateTimeTest {
         EqualityTestHelper.testEquality(
                 new RelativeDateTime.Builder()
                         .setValue(1)
-                        .setUnit("hours")
+                        .setUnit(TimeUnit.HOURS)
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
                 new RelativeDateTime.Builder()
                         .setValue(2)
-                        .setUnit("seconds")
+                        .setUnit(TimeUnit.SECONDS)
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
                 RelativeDateTime.class);
     }

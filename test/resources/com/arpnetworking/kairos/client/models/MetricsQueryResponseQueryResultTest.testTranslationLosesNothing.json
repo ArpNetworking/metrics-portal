@@ -1,0 +1,25 @@
+{
+  "name": "metric.name",
+  "tags": {
+    "tag1": [ "value1" ],
+    "tag2": [ "value2" ]
+  },
+  "values": [
+    [1570643795, 1.23]
+  ],
+  "group_by": [
+    {
+      "name": "tag",
+      "tags": [
+        "tag1"
+      ],
+      "group": {
+        "tag1": "value1"
+      }
+    }
+  ],
+  "einiuongiungrierniogr": "43t8943jigi",
+  "4tuyurg4!  ":   {
+    "foo": [123, 456, true]
+  }
+}

@@ -41,6 +41,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -183,7 +184,7 @@ public class RollupExecutorTest {
         verify(_kairosDbClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery rollupQuery = captor.getValue();
         assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
-        assertEquals(Instant.EPOCH, rollupQuery.getStartTime());
+        assertEquals(Optional.of(Instant.EPOCH), rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
         assertEquals(Instant.EPOCH.plus(1, ChronoUnit.HOURS), rollupQuery.getEndTime().get());
         assertEquals(1, rollupQuery.getMetrics().size());

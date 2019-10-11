@@ -9,7 +9,7 @@
       "name": "avg",
       "sampling": {
         "value": 1,
-        "unit": "DAYS"
+        "unit": "days"
       },
       "align_sampling": true
     }],

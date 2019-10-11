@@ -19,45 +19,48 @@ import com.arpnetworking.commons.test.BuildableTestHelper;
 import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link TagNamesResponse}.
+ * Tests for {@link MetricsQueryResponse.QueryTagGroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class TagNamesResponseTest {
+public final class MetricsQueryResponseQueryTagGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                TagNamesResponse.class
+                MetricsQueryResponse.QueryTagGroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricsQueryResponse.QueryTagGroupBy.Builder()
+                        .setGroup(ImmutableMap.of("bar", "foo"))
+                        .setTags(ImmutableList.of("foobar"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                TagNamesResponse.class);
+                MetricsQueryResponse.QueryTagGroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricsQueryResponse.QueryTagGroupBy.Builder()
+                        .setGroup(ImmutableMap.of("bar", "foo"))
+                        .setTags(ImmutableList.of("foobar"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag2"))
+                new MetricsQueryResponse.QueryTagGroupBy.Builder()
+                        .setGroup(ImmutableMap.of("bar2", "foo2"))
+                        .setTags(ImmutableList.of("foobar2"))
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                TagNamesResponse.class);
+                MetricsQueryResponse.QueryTagGroupBy.class);
     }
 }

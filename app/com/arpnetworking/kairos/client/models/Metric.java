@@ -15,9 +15,10 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -30,13 +31,14 @@ import com.google.common.collect.Multimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
 /**
- * Holds the data for a Metric element of the query.
+ * Holds the data for a Metric element of the metrics query.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
@@ -72,8 +74,8 @@ public final class Metric {
     }
 
     @JsonAnyGetter
-    public ImmutableMap<String, Object> getExtraFields() {
-        return _extraFields;
+    public ImmutableMap<String, Object> getOtherArgs() {
+        return _otherArgs;
     }
 
     private Metric(final Builder builder) {
@@ -83,7 +85,7 @@ public final class Metric {
         _groupBy = builder._groupBy;
         _limit = Optional.ofNullable(builder._limit);
         _order = Optional.ofNullable(builder._order);
-        _extraFields = ImmutableMap.copyOf(builder._extraFields);
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
     }
 
     @Override
@@ -95,7 +97,7 @@ public final class Metric {
                 .add("groupBy", _groupBy)
                 .add("limit", _limit)
                 .add("order", _order)
-                .add("extraFields", _extraFields)
+                .add("otherArgs", _otherArgs)
                 .toString();
     }
 
@@ -114,12 +116,12 @@ public final class Metric {
                 && Objects.equals(_groupBy, metric._groupBy)
                 && Objects.equals(_limit, metric._limit)
                 && Objects.equals(_order, metric._order)
-                && Objects.equals(_extraFields, metric._extraFields);
+                && Objects.equals(_otherArgs, metric._otherArgs);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_name, _tags, _aggregators, _groupBy, _limit, _order, _extraFields);
+        return Objects.hash(_name, _tags, _aggregators, _groupBy, _limit, _order, _otherArgs);
     }
 
     private final String _name;
@@ -128,14 +130,14 @@ public final class Metric {
     private final ImmutableList<MetricsQuery.GroupBy> _groupBy;
     private final Optional<Integer> _limit;
     private final Optional<Order> _order;
-    private final ImmutableMap<String, Object> _extraFields;
+    private final ImmutableMap<String, Object> _otherArgs;
 
     /**
      * Implementation of the builder pattern for {@link Metric}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<Metric> {
+    public static final class Builder extends ThreadLocalBuilder<Metric> {
 
         /**
          * Public constructor.
@@ -212,37 +214,54 @@ public final class Metric {
         }
 
         /**
-         * Sets an extra generic field on this query. Optional. Cannot be null.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key the extra field name
-         * @param value the extra field value
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Builder}
          */
         @JsonAnySetter
-        public Builder setExtraField(final String key, final Object value) {
-            _extraFields.put(key, value);
+        public Builder addOtherArg(final String key, final Object value) {
+            _otherArgs.put(key, value);
             return this;
+        }
+
+        /**
+         * Sets the attributes not explicitly modeled by this class. Optional.
+         *
+         * @param value the other attributes
+         * @return this {@link Builder}
+         */
+        @JsonIgnore
+        public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+            _otherArgs = value;
+            return this;
+        }
+
+        @Override
+        protected void reset() {
+            _name = null;
+            _aggregators = ImmutableList.of();
+            _groupBy = ImmutableList.of();
+            _tags = ImmutableMultimap.of();
+            _limit = null;
+            _order = null;
+            _otherArgs = Maps.newHashMap();
         }
 
         @NotNull
         @NotEmpty
         private String _name;
-
         @NotNull
         private ImmutableList<Aggregator> _aggregators = ImmutableList.of();
-
         @NotNull
         private ImmutableList<MetricsQuery.GroupBy> _groupBy = ImmutableList.of();
-
         @NotNull
         private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
-
         private Integer _limit;
-
         private Order _order;
-
         @NotNull
-        private Map<String, Object> _extraFields = Maps.newHashMap();
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 
     /**
@@ -252,22 +271,24 @@ public final class Metric {
         /**
          * Ascending sort order.
          */
-        ASC("asc"),
+        ASC,
         /**
          * Descending sort order.
          */
-        DESC("desc");
+        DESC;
 
-        Order(final String strValue) {
-            _strValue = strValue;
-        }
-
+        /**
+         * Encode the enumeration value as lower case.
+         *
+         * NOTE: KairosDb accepts either upper or lower case representation. This
+         * model is otherwise a pass-through but converts all enumeration values
+         * to lower case.
+         *
+         * @return json encoded value
+         */
         @JsonValue
-        @Override
-        public String toString() {
-            return _strValue;
+        public String toJson() {
+            return name().toLowerCase(Locale.getDefault());
         }
-
-        private final String _strValue;
     }
 }

@@ -15,19 +15,20 @@
  */
 package com.arpnetworking.kairos.service;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RelativeDateTime;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.client.models.TimeUnit;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -58,7 +59,7 @@ import static org.mockito.Mockito.when;
 public class KairosDbServiceImplTest {
     private static final String CLASS_NAME = KairosDbServiceImplTest.class.getSimpleName();
 
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
+    private static final ObjectMapper OBJECT_MAPPER = SerializationTestUtils.getApiObjectMapper();
 
     @Mock
     private KairosDbClient _mockClient;
@@ -79,7 +80,7 @@ public class KairosDbServiceImplTest {
                 .setExcludedTagNames(ImmutableSet.of("host"))
                 .build();
         when(_mockClient.queryMetricNames())
-                .thenReturn(CompletableFuture.completedFuture(new KairosMetricNamesQueryResponse.Builder()
+                .thenReturn(CompletableFuture.completedFuture(new MetricNamesResponse.Builder()
                         .setResults(ImmutableList.<String>builder().add("foo", "foo_1h", "foo_1d", "bar").build())
                         .build())
                 );
@@ -116,8 +117,8 @@ public class KairosDbServiceImplTest {
 
     @Test
     public void testFiltersRollupMetrics() throws Exception {
-        final CompletionStage<KairosMetricNamesQueryResponse> future = _service.queryMetricNames(Optional.empty(), true);
-        final KairosMetricNamesQueryResponse response = future.toCompletableFuture().get();
+        final CompletionStage<MetricNamesResponse> future = _service.queryMetricNames(Optional.empty(), true);
+        final MetricNamesResponse response = future.toCompletableFuture().get();
         assertEquals(ImmutableList.builder().add("foo", "bar").build(), response.getResults());
     }
 
@@ -141,7 +142,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
@@ -167,7 +168,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
@@ -193,7 +194,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
@@ -219,7 +220,7 @@ public class KairosDbServiceImplTest {
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_mockClient, times(1)).queryMetrics(captor.capture());
         final MetricsQuery request = captor.getValue();
-        assertEquals(Instant.ofEpochMilli(1), request.getStartTime());
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
@@ -263,7 +264,7 @@ public class KairosDbServiceImplTest {
                 new TagsQuery.Builder()
                         .setStartTimeRelative(
                                 new RelativeDateTime.Builder()
-                                        .setUnit("hours")
+                                        .setUnit(TimeUnit.HOURS)
                                         .setValue(1)
                                         .build())
                         .setMetrics(

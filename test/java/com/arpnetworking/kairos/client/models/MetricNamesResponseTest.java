@@ -19,18 +19,18 @@ import com.arpnetworking.commons.test.BuildableTestHelper;
 import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link TagNamesResponse}.
+ * Tests for {@link MetricNamesResponse}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class TagNamesResponseTest {
+public final class MetricNamesResponseTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
@@ -43,21 +43,21 @@ public final class TagNamesResponseTest {
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                TagNamesResponse.class);
+                MetricNamesResponse.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag2"))
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag2"))
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                TagNamesResponse.class);
+                MetricNamesResponse.class);
     }
 }

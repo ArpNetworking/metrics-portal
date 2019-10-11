@@ -20,41 +20,41 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Locale;
 
 /**
- * Enumeration representing the possible values for a Kairos sampling unit.
+ * Enumeration representing the possible values for a Kairos relative time unit.
  *
- * @author Gilligan Markham (gmarkham at dropbox dot com)
+ * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public enum SamplingUnit {
+public enum TimeUnit {
     /**
-     * Sampling is count represents milliseconds.
+     * Time represents milliseconds.
      */
     MILLISECONDS,
     /**
-     * Sampling is count represents seconds.
+     * Time represents seconds.
      */
     SECONDS,
     /**
-     * Sampling is count represents minutes.
+     * Time represents minutes.
      */
     MINUTES,
     /**
-     * Sampling is count represents hours.
+     * Time represents hours.
      */
     HOURS,
     /**
-     * Sampling is count represents days.
+     * Time represents days.
      */
     DAYS,
     /**
-     * Sampling is count represents weeks.
+     * Time represents weeks.
      */
     WEEKS,
     /**
-     * Sampling is count represents months.
+     * Time represents months.
      */
     MONTHS,
     /**
-     * Sampling is count represents years.
+     * Time represents years.
      */
     YEARS;
 

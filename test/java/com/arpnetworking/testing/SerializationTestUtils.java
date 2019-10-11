@@ -15,9 +15,17 @@
  */
 package com.arpnetworking.testing;
 
+import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
+import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.client.models.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Assert;
+import play.api.libs.json.JsonParserSettings;
+import play.api.libs.json.jackson.PlayJsonModule;
 
 import java.io.IOException;
 
@@ -29,7 +37,40 @@ import java.io.IOException;
 public final class SerializationTestUtils {
 
     // TODO(spencerpearson): allow the ObjectMapper to get passed in, if ever necessary
-    private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
+    // IMPORTANT: The configuration here must match that in MainModule for testing REST APIs
+    private static final ObjectMapper OBJECT_MAPPER;
+
+    static {
+        final SimpleModule customModule = new SimpleModule();
+        customModule.addDeserializer(
+                TimeUnit.class,
+                EnumerationDeserializer.newInstance(
+                        TimeUnit.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
+        customModule.addDeserializer(
+                SamplingUnit.class,
+                EnumerationDeserializer.newInstance(
+                        SamplingUnit.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
+        customModule.addDeserializer(
+                Metric.Order.class,
+                EnumerationDeserializer.newInstance(
+                        Metric.Order.class,
+                        EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
+        OBJECT_MAPPER = ObjectMapperFactory.createInstance();
+        OBJECT_MAPPER.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
+        OBJECT_MAPPER.registerModule(customModule);
+        // NOTE: AkkaModule not registered since it requires an actor system
+    }
+
+    /**
+     * The {@link ObjectMapper} configured for serializing/deserializing API requests.
+     *
+     * @return the {@link ObjectMapper} configured for serializing/deserializing API requests
+     */
+    public static ObjectMapper getApiObjectMapper() {
+        return OBJECT_MAPPER;
+    }
 
     /**
      * Assert that two JSON values are semantically equivalent. (Map order doesn't matter, array order does.)
@@ -50,7 +91,23 @@ public final class SerializationTestUtils {
      * @throws IOException If something goes wrong during deserialization.
      */
     public static void assertTranslationLosesNothing(final String json, final Class<?> clazz) throws IOException {
-        assertJsonEquals(json, OBJECT_MAPPER.writeValueAsString(OBJECT_MAPPER.readValue(json, clazz)));
+        assertTranslationEquivalent(json, json, clazz);
+    }
+
+    /**
+     * Assert that deserializing some JSON and re-serializing it results in the expected JSON (semantically).
+     *
+     * @param expectedJson The expected JSON representation of an object.
+     * @param inputJson The given JSON representation of an object.
+     * @param clazz The class to deserialize it into.
+     * @throws IOException If something goes wrong during deserialization.
+     */
+    public static void assertTranslationEquivalent(
+            final String expectedJson,
+            final String inputJson,
+            final Class<?> clazz)
+            throws IOException {
+        assertJsonEquals(expectedJson, OBJECT_MAPPER.writeValueAsString(OBJECT_MAPPER.readValue(inputJson, clazz)));
     }
 
     private SerializationTestUtils() {}

@@ -20,44 +20,43 @@ import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link TagNamesResponse}.
+ * Tests for {@link MetricsQueryResponse.QueryTypeGroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class TagNamesResponseTest {
+public final class MetricsQueryResponseQueryTypeGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                TagNamesResponse.class
+                MetricsQueryResponse.QueryTypeGroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("foo")
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                TagNamesResponse.class);
+                MetricsQueryResponse.QueryTypeGroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("foo")
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag2"))
+                new MetricsQueryResponse.QueryTypeGroupBy.Builder()
+                        .setType("bar")
                         .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                TagNamesResponse.class);
+                MetricsQueryResponse.QueryTypeGroupBy.class);
     }
 }

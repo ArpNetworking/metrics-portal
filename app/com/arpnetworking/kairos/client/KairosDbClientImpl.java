@@ -28,16 +28,13 @@ import akka.http.scaladsl.coding.Gzip$;
 import akka.http.scaladsl.coding.NoCoding$;
 import akka.stream.ActorMaterializer;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.client.models.RollupResponse;
-import com.arpnetworking.kairos.client.models.RollupTask;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -47,7 +44,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -69,9 +65,9 @@ public final class KairosDbClientImpl implements KairosDbClient {
     }
 
     @Override
-    public CompletionStage<KairosMetricNamesQueryResponse> queryMetricNames() {
+    public CompletionStage<MetricNamesResponse> queryMetricNames() {
         final HttpRequest request = HttpRequest.GET(createUri(METRICS_NAMES_PATH).toString());
-        return fireRequest(request, KairosMetricNamesQueryResponse.class);
+        return fireRequest(request, MetricNamesResponse.class);
     }
 
     @Override
@@ -94,50 +90,12 @@ public final class KairosDbClientImpl implements KairosDbClient {
     }
 
     @Override
-    public CompletionStage<List<RollupTask>> queryRollups() {
-        final HttpRequest request = HttpRequest.GET(createUri(ROLLUPS_PATH).toString());
-        return fireRequest(request, ROLLUP_LIST_TYPEREF);
-    }
-
-    @Override
-    public CompletionStage<RollupResponse> createRollup(final RollupTask rollupTask) {
-        try {
-            final HttpRequest request = HttpRequest.POST(createUri(ROLLUPS_PATH).toString())
-                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(rollupTask));
-            return fireRequest(request, RollupResponse.class);
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public CompletionStage<RollupResponse> updateRollup(final String id, final RollupTask rollupTask) {
-        try {
-            final HttpRequest request = HttpRequest.PUT(createUri(ROLLUPS_PATH).toString() + "/" + id)
-                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(rollupTask));
-            return fireRequest(request, RollupResponse.class);
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public CompletionStage<Void> deleteRollup(final String id) {
-        final HttpRequest request = HttpRequest.DELETE(createUri(ROLLUPS_PATH).toString() + "/" + id);
-        return fireRequest(request, Void.class);
-    }
-
-    @Override
     public CompletionStage<TagNamesResponse> listTagNames() {
         final HttpRequest request = HttpRequest.GET(createUri(LIST_TAG_NAMES_PATH).toString());
         return fireRequest(request, TagNamesResponse.class);
     }
 
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final Class<T> responseType) {
-        return fireRequest(request, TypeFactory.defaultInstance().constructType(responseType));
-    }
-
-    private <T> CompletionStage<T> fireRequest(final HttpRequest request, final TypeReference<T> responseType) {
         return fireRequest(request, TypeFactory.defaultInstance().constructType(responseType));
     }
 
@@ -199,9 +157,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
     static final URI TAGS_QUERY_PATH = URI.create("/api/v1/datapoints/query/tags");
-    static final URI ROLLUPS_PATH = URI.create("/api/v1/rollups");
     static final URI LIST_TAG_NAMES_PATH = URI.create("/api/v1/tagnames");
-    private static final TypeReference<List<RollupTask>> ROLLUP_LIST_TYPEREF = new TypeReference<List<RollupTask>>() { };
 
     /**
      * Implementation of the builder pattern for {@link KairosDbClientImpl}.

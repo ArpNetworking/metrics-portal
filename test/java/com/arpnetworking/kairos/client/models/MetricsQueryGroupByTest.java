@@ -20,44 +20,43 @@ import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link TagNamesResponse}.
+ * Tests for {@link MetricsQuery.GroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class TagNamesResponseTest {
+public final class MetricsQueryGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                TagNamesResponse.class
+                MetricsQuery.GroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
-                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                TagNamesResponse.class);
+                new MetricsQuery.GroupBy.Builder()
+                    .setName("host")
+                    .setOtherArgs(ImmutableMap.of("other", "arg")),
+                MetricsQuery.GroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag1"))
-                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
-                new TagNamesResponse.Builder()
-                        .setResults(ImmutableSet.of("tag2"))
-                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
-                TagNamesResponse.class);
+                new MetricsQuery.GroupBy.Builder()
+                        .setName("host")
+                        .setOtherArgs(ImmutableMap.of("other", "arg")),
+                new MetricsQuery.GroupBy.Builder()
+                        .setName("country")
+                        .setOtherArgs(ImmutableMap.of("other2", "arg2")),
+                MetricsQuery.GroupBy.class);
     }
 }

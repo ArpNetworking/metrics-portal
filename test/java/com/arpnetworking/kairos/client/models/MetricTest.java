@@ -15,9 +15,16 @@
  */
 package com.arpnetworking.kairos.client.models;
 
+import com.arpnetworking.commons.test.BuildableTestHelper;
+import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Tests for {@link Metric}.
@@ -32,5 +39,77 @@ public final class MetricTest {
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
                 Metric.class
         );
+    }
+
+    @Test
+    public void testBuilder() throws InvocationTargetException, IllegalAccessException {
+        BuildableTestHelper.testBuild(
+                new Metric.Builder()
+                        .setName("metricName")
+                        .setAggregators(ImmutableList.of(
+                                new Aggregator.Builder()
+                                        .setName("sum")
+                                        .setAlignSampling(true)
+                                        .setSampling(
+                                                new Sampling.Builder()
+                                                        .setValue(1)
+                                                        .setUnit(SamplingUnit.HOURS)
+                                                        .build())
+                                        .build()))
+                        .setGroupBy(ImmutableList.of(
+                                new MetricsQuery.GroupBy.Builder()
+                                        .setName("host")
+                                        .build()))
+                        .setLimit(1)
+                        .setOrder(Metric.Order.DESC)
+                        .setTags(ImmutableMultimap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                Metric.class);
+    }
+
+    @Test
+    public void testEquality() throws InvocationTargetException, IllegalAccessException {
+        EqualityTestHelper.testEquality(
+                new Metric.Builder()
+                        .setName("metricName")
+                        .setAggregators(ImmutableList.of(
+                                new Aggregator.Builder()
+                                        .setName("sum")
+                                        .setAlignSampling(true)
+                                        .setSampling(
+                                                new Sampling.Builder()
+                                                        .setValue(1)
+                                                        .setUnit(SamplingUnit.HOURS)
+                                                        .build())
+                                        .build()))
+                        .setGroupBy(ImmutableList.of(
+                                new MetricsQuery.GroupBy.Builder()
+                                        .setName("host")
+                                        .build()))
+                        .setLimit(1)
+                        .setOrder(Metric.Order.DESC)
+                        .setTags(ImmutableMultimap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                new Metric.Builder()
+                        .setName("metricName2")
+                        .setAggregators(ImmutableList.of(
+                                new Aggregator.Builder()
+                                        .setName("count")
+                                        .setAlignSampling(true)
+                                        .setSampling(
+                                                new Sampling.Builder()
+                                                        .setValue(1)
+                                                        .setUnit(SamplingUnit.HOURS)
+                                                        .build())
+                                        .build()))
+                        .setGroupBy(ImmutableList.of(
+                                new MetricsQuery.GroupBy.Builder()
+                                        .setName("country")
+                                        .build()))
+                        .setLimit(99)
+                        .setOrder(Metric.Order.ASC)
+                        .setTags(ImmutableMultimap.of("tag2", "value2"))
+                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
+                Metric.class);
     }
 }

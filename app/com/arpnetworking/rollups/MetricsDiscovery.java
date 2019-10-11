@@ -20,7 +20,7 @@ import akka.actor.ActorRef;
 import akka.actor.Status;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.KairosMetricNamesQueryResponse;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -68,7 +68,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                         RECORD_METRICS_MSG,
                         work -> _periodicMetrics.recordGauge("rollup/discovery/queue_size", _metricsSet.size())
                 )
-                .match(KairosMetricNamesQueryResponse.class, this::updateMetricsSet)
+                .match(MetricNamesResponse.class, this::updateMetricsSet)
                 .match(
                         Status.Failure.class,
                         failure -> LOGGER.warn("Failed to get metrics from Kairos", failure.cause()))
@@ -125,7 +125,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                 .to(getSelf());
     }
 
-    private void updateMetricsSet(final KairosMetricNamesQueryResponse response) {
+    private void updateMetricsSet(final MetricNamesResponse response) {
         final Set<String> newMetricsSet = Sets.newLinkedHashSet();
         filterMetricNames(response.getResults(), _whiteList, _blackList).forEach(newMetricsSet::add);
         _periodicMetrics.recordCounter("rollup/discovery/discovered", newMetricsSet.size());

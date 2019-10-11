@@ -15,9 +15,14 @@
  */
 package com.arpnetworking.kairos.client.models;
 
+import com.arpnetworking.commons.test.BuildableTestHelper;
+import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Tests for {@link Aggregator}.
@@ -32,5 +37,53 @@ public final class AggregatorTest {
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
                 Aggregator.class
         );
+    }
+
+    @Test
+    public void testBuilder() throws InvocationTargetException, IllegalAccessException {
+        BuildableTestHelper.testBuild(
+                new Aggregator.Builder()
+                        .setName("name1")
+                        .setAlignSampling(false)
+                        .setSampling(
+                                new Sampling.Builder()
+                                        .setValue(1)
+                                        .setUnit(SamplingUnit.HOURS)
+                                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+                                        .build())
+                        .setAlignStartTime(false)
+                        .setAlignEndTime(false)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                Aggregator.class);
+    }
+
+    @Test
+    public void testEquality() throws InvocationTargetException, IllegalAccessException {
+        EqualityTestHelper.testEquality(
+                new Aggregator.Builder()
+                        .setName("name1")
+                        .setAlignSampling(false)
+                        .setSampling(
+                                new Sampling.Builder()
+                                        .setValue(1)
+                                        .setUnit(SamplingUnit.HOURS)
+                                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+                                        .build())
+                        .setAlignStartTime(false)
+                        .setAlignEndTime(false)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar")),
+                new Aggregator.Builder()
+                        .setName("name2")
+                        .setAlignSampling(true)
+                        .setSampling(
+                                new Sampling.Builder()
+                                        .setValue(2)
+                                        .setUnit(SamplingUnit.HOURS)
+                                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+                                        .build())
+                        .setAlignStartTime(true)
+                        .setAlignEndTime(true)
+                        .setOtherArgs(ImmutableMap.of("foo2", "bar2")),
+                Aggregator.class);
     }
 }

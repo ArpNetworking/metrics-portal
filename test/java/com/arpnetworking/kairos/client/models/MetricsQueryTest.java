@@ -33,4 +33,28 @@ public final class MetricsQueryTest {
                 MetricsQuery.class
         );
     }
+
+    @Test
+    public void testStartRelative() throws Exception {
+        SerializationTestUtils.assertTranslationLosesNothing(
+                ResourceHelper.loadResource(getClass(), "testStartRelative"),
+                MetricsQuery.class
+        );
+    }
+
+    @Test
+    public void testEndRelative() throws Exception {
+        SerializationTestUtils.assertTranslationLosesNothing(
+                ResourceHelper.loadResource(getClass(), "testEndRelative"),
+                MetricsQuery.class
+        );
+    }
+
+    @Test
+    public void testNoEndTime() throws Exception {
+        SerializationTestUtils.assertTranslationLosesNothing(
+                ResourceHelper.loadResource(getClass(), "testNoEndTime"),
+                MetricsQuery.class
+        );
+    }
 }

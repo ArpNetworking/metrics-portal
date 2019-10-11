@@ -15,16 +15,19 @@
  */
 package com.arpnetworking.kairos.client.models;
 
-import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -35,18 +38,6 @@ import javax.annotation.Nullable;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public final class Aggregator {
-    private Aggregator(final Builder builder) {
-        _name = builder._name;
-        _sampling = Optional.ofNullable(builder._sampling);
-        if (!_sampling.isPresent()) {
-            _alignSampling = Optional.empty();
-        } else {
-            _alignSampling = Optional.ofNullable(builder._alignSampling);
-        }
-        _otherArgs = builder._otherArgs;
-        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
-        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
-    }
 
     public String getName() {
         return _name;
@@ -114,6 +105,19 @@ public final class Aggregator {
         return Objects.hash(_name, _alignSampling, _alignStartTime, _alignEndTime, _sampling, _otherArgs);
     }
 
+    private Aggregator(final Builder builder) {
+        _name = builder._name;
+        _sampling = Optional.ofNullable(builder._sampling);
+        if (!_sampling.isPresent()) {
+            _alignSampling = Optional.empty();
+        } else {
+            _alignSampling = Optional.ofNullable(builder._alignSampling);
+        }
+        _alignEndTime = Optional.ofNullable(builder._alignEndTime);
+        _alignStartTime = Optional.ofNullable(builder._alignStartTime);
+        _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+    }
+
     private final String _name;
     private final Optional<Boolean> _alignSampling;
     private final Optional<Boolean> _alignStartTime;
@@ -126,7 +130,7 @@ public final class Aggregator {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    public static final class Builder extends OvalBuilder<Aggregator> {
+    public static final class Builder extends ThreadLocalBuilder<Aggregator> {
         /**
          * Public constructor.
          */
@@ -193,27 +197,38 @@ public final class Aggregator {
         }
 
         /**
-         * Adds an "unknown" arg. Optional.
+         * Adds an attribute not explicitly modeled by this class. Optional.
          *
-         * @param key key for the entry
-         * @param value value for the entry
+         * @param key the attribute name
+         * @param value the attribute value
          * @return this {@link Builder}
          */
         @JsonAnySetter
         public Builder addOtherArg(final String key, final Object value) {
-            _otherArgs = new ImmutableMap.Builder<String, Object>().putAll(_otherArgs).put(key, value).build();
+            _otherArgs.put(key, value);
             return this;
         }
 
         /**
-         * Sets the "unknown" args. Optional.
+         * Sets the attributes not explicitly modeled by this class. Optional.
          *
-         * @param value the args map
+         * @param value the other attributes
          * @return this {@link Builder}
          */
+        @JsonIgnore
         public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
             _otherArgs = value;
             return this;
+        }
+
+        @Override
+        protected void reset() {
+            _name = null;
+            _alignSampling = null;
+            _sampling = null;
+            _alignEndTime = null;
+            _alignStartTime = null;
+            _otherArgs = Maps.newHashMap();
         }
 
         @NotNull
@@ -224,6 +239,6 @@ public final class Aggregator {
         private Boolean _alignEndTime;
         private Boolean _alignStartTime;
         @NotNull
-        private ImmutableMap<String, Object> _otherArgs = ImmutableMap.of();
+        private Map<String, Object> _otherArgs = Maps.newHashMap();
     }
 }
