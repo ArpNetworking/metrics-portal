@@ -203,7 +203,6 @@ public class KairosDbProxyController extends Controller {
         return promise;
     }
 
-
     private final ProxyClient _client;
     private final ObjectMapper _mapper;
     private final boolean _filterRollups;

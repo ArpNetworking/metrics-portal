@@ -15,11 +15,13 @@
  */
 package com.arpnetworking.kairos.client;
 
+import com.arpnetworking.kairos.client.models.MetricDataPoints;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.google.common.collect.ImmutableList;
 
 import java.util.concurrent.CompletionStage;
 
@@ -58,4 +60,12 @@ public interface KairosDbClient {
      * @return the response
      */
     CompletionStage<TagNamesResponse> listTagNames();
+
+    /**
+     * Persist metric data points.
+     *
+     * @param metricDataPoints the metric data points to persist
+     * @return completion stage indicating success or failure of operation
+     */
+    CompletionStage<Void> addDataPoints(ImmutableList<MetricDataPoints> metricDataPoints);
 }

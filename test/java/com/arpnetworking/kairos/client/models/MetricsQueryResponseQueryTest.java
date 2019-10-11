@@ -52,7 +52,7 @@ public final class MetricsQueryResponseQueryTest {
                                         .setTags(ImmutableListMultimap.of("browser", "Chrome"))
                                         .setName("name")
                                         .setValues(ImmutableList.of(
-                                                new MetricsQueryResponse.DataPoint.Builder()
+                                                new DataPoint.Builder()
                                                         .setValue(1.23)
                                                         .setTime(Instant.now())
                                                         .build()))
@@ -77,7 +77,7 @@ public final class MetricsQueryResponseQueryTest {
                                         .setTags(ImmutableListMultimap.of("browser", "Chrome"))
                                         .setName("name")
                                         .setValues(ImmutableList.of(
-                                                new MetricsQueryResponse.DataPoint.Builder()
+                                                new DataPoint.Builder()
                                                         .setValue(1.23)
                                                         .setTime(Instant.now())
                                                         .build()))
@@ -96,7 +96,7 @@ public final class MetricsQueryResponseQueryTest {
                                         .setTags(ImmutableListMultimap.of("browser", "Chrome"))
                                         .setName("other_name")
                                         .setValues(ImmutableList.of(
-                                                new MetricsQueryResponse.DataPoint.Builder()
+                                                new DataPoint.Builder()
                                                         .setValue(1.23)
                                                         .setTime(Instant.now())
                                                         .build()))

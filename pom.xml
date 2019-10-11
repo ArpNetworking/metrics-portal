@@ -649,7 +649,7 @@
               <run>
                 <skip>${docker.skip.metrics-portal}</skip>
                 <env>
-                  <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf</METRICS_PORTAL_CONFIG>
+                  <METRICS_PORTAL_CONFIG>-Dconfig.resource=postgresql.application.conf -Dkairosdb.proxy.excludedTagNames.0=ignored</METRICS_PORTAL_CONFIG>
                   <ADDITIONAL_JAVA_OPTS>${dockerJavaOptions}</ADDITIONAL_JAVA_OPTS>
                   <KAIROSDB_HOST>kairosdb</KAIROSDB_HOST>
                   <KAIROSDB_PORT>8080</KAIROSDB_PORT>

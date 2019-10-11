@@ -20,6 +20,7 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.models.DataPoint;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
@@ -189,13 +190,13 @@ public class RollupGeneratorTest {
                 builder.setName(metricName);
 
                 if (metricName.equals("metric_1h")) {
-                    builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
+                    builder.setValues(ImmutableList.of(new DataPoint.Builder()
                             .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
                             .setValue(0.0)
                             .build()
                     ));
                 } else if (metricName.equals("metric_1d")) {
-                    builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
+                    builder.setValues(ImmutableList.of(new DataPoint.Builder()
                             .setTime(RollupPeriod.DAILY.recentEndTime(_clock.instant()))
                             .setValue(0.0)
                             .build()
@@ -261,7 +262,7 @@ public class RollupGeneratorTest {
                 if (metricName.equals("metric_1h")) {
                     future.completeExceptionally(new RuntimeException("Failure"));
                 } else if (metricName.equals("metric_1d")) {
-                    builder.setValues(ImmutableList.of(new MetricsQueryResponse.DataPoint.Builder()
+                    builder.setValues(ImmutableList.of(new DataPoint.Builder()
                             .setTime(RollupPeriod.DAILY.recentEndTime(_clock.instant()))
                             .setValue(0.0)
                             .build()
