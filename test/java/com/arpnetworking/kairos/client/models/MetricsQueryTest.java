@@ -43,7 +43,7 @@ public final class MetricsQueryTest {
     }
 
     @Test
-    public void tesEndRelative() throws Exception {
+    public void testEndRelative() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testEndRelative"),
                 MetricsQuery.class
