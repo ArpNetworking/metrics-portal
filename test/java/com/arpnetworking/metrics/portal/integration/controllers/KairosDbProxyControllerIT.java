@@ -33,6 +33,7 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -167,8 +168,74 @@ public final class KairosDbProxyControllerIT {
         assertTrue(result.getValues().isEmpty());
     }
 
+    @Test
+    public void testQueryMetricsExcludeFilterTagInResponse() throws ExecutionException, InterruptedException {
+        _kairosDbClientDirect.addDataPoints(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName(_metricName)
+                        // NOTE: KDB requires every metric to have at least one tag!
+                        .setTags(ImmutableMap.of(
+                                "host", "host.example.com",
+                                "ignored", "foo"))
+                        .setDatapoints(ImmutableList.of(
+                                new DataPoint.Builder()
+                                        .setValue(10)
+                                        .setTime(_start)
+                                        .build()))
+                        .build())).toCompletableFuture().get();
+
+        assertMetricsQuery("count", 1, 1);
+    }
+
+    @Test
+    public void testQueryMetricsExcludedFilterTagRetainedInResponse() throws ExecutionException, InterruptedException {
+        _kairosDbClientDirect.addDataPoints(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName(_metricName)
+                        // NOTE: KDB requires every metric to have at least one tag!
+                        .setTags(ImmutableMap.of(
+                                "host", "host.example.com",
+                                "ignored", "foo"))
+                        .setDatapoints(ImmutableList.of(
+                                new DataPoint.Builder()
+                                        .setValue(10)
+                                        .setTime(_start)
+                                        .build()))
+                        .build())).toCompletableFuture().get();
+
+        final MetricsQuery query = new MetricsQuery.Builder()
+                .setStartTime(_start)
+                .setEndTime(_start.plusSeconds(61))
+                .setMetrics(ImmutableList.of(new Metric.Builder()
+                        .setName(_metricName)
+                        .setTags(ImmutableMultimap.of("ignored", "foo"))
+                        .setAggregators(ImmutableList.of(new Aggregator.Builder()
+                                .setName("count")
+                                .setSampling(new Sampling.Builder()
+                                        .setUnit(SamplingUnit.SECONDS)
+                                        .setValue(120)
+                                        .build())
+                                .build()))
+                        .build()))
+                .build();
+
+        final MetricsQueryResponse response = queryMetrics(query);
+
+        assertEquals(1, response.getQueries().size());
+        assertEquals(1, response.getQueries().get(0).getResults().size());
+
+        final MetricsQueryResponse.QueryResult result = response.getQueries().get(0).getResults().get(0);
+        assertEquals(_metricName, result.getName());
+        assertEquals(1, result.getGroupBy().size());
+        assertEquals(2, result.getTags().size());
+        assertEquals(ImmutableList.of("host.example.com"), result.getTags().get("host"));
+        assertEquals(ImmutableList.of("foo"), result.getTags().get("ignored"));
+        assertEquals(1, result.getValues().size());
+        assertEquals(1, result.getValues().get(0).getValue());
+    }
+
     private void assertMetricsQuery(final String aggregator, final Number expectedValue, final int minutes) {
-        final MetricsQueryResponse response = queryMetrics(aggregator, minutes);
+        final MetricsQueryResponse response = queryMetrics(createMetricsQuery(aggregator, minutes));
 
         assertEquals(1, response.getQueries().size());
         assertEquals(1, response.getQueries().get(0).getResults().size());
@@ -182,9 +249,17 @@ public final class KairosDbProxyControllerIT {
         assertEquals(createError("Wrong value for " + aggregator), expectedValue, result.getValues().get(0).getValue());
     }
 
-    private MetricsQueryResponse queryMetrics(final String aggregator, final int minutes) {
+    private MetricsQueryResponse queryMetrics(final MetricsQuery query) {
         try {
-            return _kairosDbClientProxied.queryMetrics(new MetricsQuery.Builder()
+            return _kairosDbClientProxied.queryMetrics(query)
+                    .toCompletableFuture().get();
+        } catch (final ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private MetricsQuery createMetricsQuery(final String aggregator, final int minutes) {
+            return new MetricsQuery.Builder()
                     .setStartTime(_start)
                     .setEndTime(_start.plusSeconds(60 * minutes + 1))
                     .setMetrics(ImmutableList.of(new Metric.Builder()
@@ -197,10 +272,7 @@ public final class KairosDbProxyControllerIT {
                                             .build())
                                     .build()))
                             .build()))
-                    .build()).toCompletableFuture().get();
-        } catch (final ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+                    .build();
     }
 
     private String createError(final String message) {

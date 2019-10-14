@@ -62,13 +62,17 @@ import java.util.stream.Collectors;
 public final class KairosDbServiceImpl implements KairosDbService {
 
     @Override
-    public CompletionStage<MetricsQueryResponse> queryMetricTags(final TagsQuery query) {
+    public CompletionStage<MetricsQueryResponse> queryMetricTags(final TagsQuery tagsQuery) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer("kairosService/queryMetricTags/request");
+        final ImmutableSet<String> requestedTags = tagsQuery.getMetrics()
+                .stream()
+                .flatMap(m -> m.getTags().keySet().stream())
+                .collect(ImmutableSet.toImmutableSet());
         // Filter out rollup metric overrides and forward the query
-        return filterRollupOverrides(query)
+        return filterRollupOverrides(tagsQuery)
                 .thenCompose(_kairosDbClient::queryMetricTags)
-                .thenApply(this::filterExcludedTags)
+                .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
                     timer.stop();
                     metrics.incrementCounter("kairosService/queryMetricTags/success", error == null ? 1 : 0);
@@ -80,9 +84,14 @@ public final class KairosDbServiceImpl implements KairosDbService {
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery metricsQuery) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer("kairosService/queryMetrics/request");
+        final ImmutableSet<String> requestedTags = metricsQuery.getMetrics()
+                .stream()
+                .flatMap(m -> m.getTags().keySet().stream())
+                .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
                 .thenApply(list -> useAvailableRollups(list, metricsQuery, metrics))
                 .thenCompose(_kairosDbClient::queryMetrics)
+                .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
                     timer.stop();
                     metrics.incrementCounter("kairosService/queryMetrics/success", error == null ? 1 : 0);
@@ -284,7 +293,9 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             }).collect(ImmutableList.toImmutableList()))));
     }
 
-    private MetricsQueryResponse filterExcludedTags(final MetricsQueryResponse originalResponse) {
+    private MetricsQueryResponse filterExcludedTags(
+            final MetricsQueryResponse originalResponse,
+            final ImmutableSet<String> retainedTags) {
         return ThreadLocalBuilder.clone(
                 originalResponse,
                 MetricsQueryResponse.Builder.class,
@@ -297,12 +308,14 @@ public final class KairosDbServiceImpl implements KairosDbService {
                                         queryBuilder -> queryBuilder.setResults(
                                                 originalQuery.getResults()
                                                         .stream()
-                                                        .map(this::filterQueryResultTags)
+                                                        .map(result -> filterQueryResultTags(result, retainedTags))
                                                         .collect(ImmutableList.toImmutableList()))))
                                 .collect(ImmutableList.toImmutableList())));
     }
 
-    private MetricsQueryResponse.QueryResult filterQueryResultTags(final MetricsQueryResponse.QueryResult originalResult) {
+    private MetricsQueryResponse.QueryResult filterQueryResultTags(
+            final MetricsQueryResponse.QueryResult originalResult,
+            final ImmutableSet<String> retainedTags) {
         return ThreadLocalBuilder.clone(
                 originalResult,
                 MetricsQueryResponse.QueryResult.Builder.class,
@@ -310,7 +323,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         originalResult.getTags()
                                 .entries()
                                 .stream()
-                                .filter(e -> !_excludedTagNames.contains(e.getKey()))
+                                .filter(e -> !_excludedTagNames.contains(e.getKey()) || retainedTags.contains(e.getKey()))
                                 .collect(ImmutableListMultimap.toImmutableListMultimap(
                                         e -> e.getKey(),
                                         e -> e.getValue()))));
