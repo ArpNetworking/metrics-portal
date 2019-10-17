@@ -59,7 +59,7 @@ public final class Metric {
 
     @JsonProperty("group_by")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ImmutableList<MetricsQuery.GroupBy> getGroupBy() {
+    public ImmutableList<MetricsQuery.QueryGroupBy> getGroupBy() {
         return _groupBy;
     }
 
@@ -127,7 +127,7 @@ public final class Metric {
     private final String _name;
     private final ImmutableMultimap<String, String> _tags;
     private final ImmutableList<Aggregator> _aggregators;
-    private final ImmutableList<MetricsQuery.GroupBy> _groupBy;
+    private final ImmutableList<MetricsQuery.QueryGroupBy> _groupBy;
     private final Optional<Integer> _limit;
     private final Optional<Order> _order;
     private final ImmutableMap<String, Object> _otherArgs;
@@ -175,7 +175,7 @@ public final class Metric {
          * @return this {@link Builder}
          */
         @JsonProperty("group_by")
-        public Builder setGroupBy(final ImmutableList<MetricsQuery.GroupBy> value) {
+        public Builder setGroupBy(final ImmutableList<MetricsQuery.QueryGroupBy> value) {
             _groupBy = value;
             return this;
         }
@@ -255,7 +255,7 @@ public final class Metric {
         @NotNull
         private ImmutableList<Aggregator> _aggregators = ImmutableList.of();
         @NotNull
-        private ImmutableList<MetricsQuery.GroupBy> _groupBy = ImmutableList.of();
+        private ImmutableList<MetricsQuery.QueryGroupBy> _groupBy = ImmutableList.of();
         @NotNull
         private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
         private Integer _limit;

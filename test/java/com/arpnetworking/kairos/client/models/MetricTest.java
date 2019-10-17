@@ -22,6 +22,7 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -57,8 +58,8 @@ public final class MetricTest {
                                                         .build())
                                         .build()))
                         .setGroupBy(ImmutableList.of(
-                                new MetricsQuery.GroupBy.Builder()
-                                        .setName("host")
+                                new MetricsQuery.QueryTagGroupBy.Builder()
+                                        .setTags(ImmutableSet.of("host"))
                                         .build()))
                         .setLimit(1)
                         .setOrder(Metric.Order.DESC)
@@ -83,8 +84,8 @@ public final class MetricTest {
                                                         .build())
                                         .build()))
                         .setGroupBy(ImmutableList.of(
-                                new MetricsQuery.GroupBy.Builder()
-                                        .setName("host")
+                                new MetricsQuery.QueryTagGroupBy.Builder()
+                                        .setTags(ImmutableSet.of("host"))
                                         .build()))
                         .setLimit(1)
                         .setOrder(Metric.Order.DESC)
@@ -103,8 +104,8 @@ public final class MetricTest {
                                                         .build())
                                         .build()))
                         .setGroupBy(ImmutableList.of(
-                                new MetricsQuery.GroupBy.Builder()
-                                        .setName("country")
+                                new MetricsQuery.QueryTagGroupBy.Builder()
+                                        .setTags(ImmutableSet.of("country"))
                                         .build()))
                         .setLimit(99)
                         .setOrder(Metric.Order.ASC)

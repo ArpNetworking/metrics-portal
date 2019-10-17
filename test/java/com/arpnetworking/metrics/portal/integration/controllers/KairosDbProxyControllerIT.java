@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -230,6 +231,61 @@ public final class KairosDbProxyControllerIT {
         assertEquals(2, result.getTags().size());
         assertEquals(ImmutableList.of("host.example.com"), result.getTags().get("host"));
         assertEquals(ImmutableList.of("foo"), result.getTags().get("ignored"));
+        assertEquals(1, result.getValues().size());
+        assertEquals(1, result.getValues().get(0).getValue());
+    }
+
+    @Test
+    public void testQueryMetricsExcludedGroupByTagRetainedInResponse() throws ExecutionException, InterruptedException {
+        _kairosDbClientDirect.addDataPoints(ImmutableList.of(
+                new MetricDataPoints.Builder()
+                        .setName(_metricName)
+                        // NOTE: KDB requires every metric to have at least one tag!
+                        .setTags(ImmutableMap.of(
+                                "host", "host.example.com",
+                                "ignored", "foo"))
+                        .setDatapoints(ImmutableList.of(
+                                new DataPoint.Builder()
+                                        .setValue(10)
+                                        .setTime(_start)
+                                        .build()))
+                        .build())).toCompletableFuture().get();
+
+        final MetricsQuery query = new MetricsQuery.Builder()
+                .setStartTime(_start)
+                .setEndTime(_start.plusSeconds(61))
+                .setMetrics(ImmutableList.of(new Metric.Builder()
+                        .setName(_metricName)
+                        .setGroupBy(ImmutableList.of(
+                                new MetricsQuery.QueryTagGroupBy.Builder()
+                                        .setTags(ImmutableSet.of("ignored"))
+                                        .build()))
+                        .setAggregators(ImmutableList.of(new Aggregator.Builder()
+                                .setName("count")
+                                .setSampling(new Sampling.Builder()
+                                        .setUnit(SamplingUnit.SECONDS)
+                                        .setValue(120)
+                                        .build())
+                                .build()))
+                        .build()))
+                .build();
+
+        final MetricsQueryResponse response = queryMetrics(query);
+
+        assertEquals(1, response.getQueries().size());
+        assertEquals(1, response.getQueries().get(0).getResults().size());
+
+        final MetricsQueryResponse.QueryResult result = response.getQueries().get(0).getResults().get(0);
+        assertEquals(_metricName, result.getName());
+        assertEquals(2, result.getGroupBy().size());
+        assertTrue(result.getGroupBy().get(0) instanceof MetricsQueryResponse.QueryTagGroupBy);
+        final MetricsQueryResponse.QueryTagGroupBy groupBy = (MetricsQueryResponse.QueryTagGroupBy) result.getGroupBy().get(0);
+        assertEquals(1, groupBy.getGroup().size());
+        assertEquals("foo", groupBy.getGroup().get("ignored"));
+        assertEquals(1, groupBy.getTags().size());
+        assertEquals("ignored", groupBy.getTags().get(0));
+        assertEquals(1, result.getTags().size());
+        assertEquals(ImmutableList.of("host.example.com"), result.getTags().get("host"));
         assertEquals(1, result.getValues().size());
         assertEquals(1, result.getValues().get(0).getValue());
     }

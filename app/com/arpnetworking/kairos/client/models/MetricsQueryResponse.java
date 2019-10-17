@@ -512,8 +512,11 @@ public final class MetricsQueryResponse {
      */
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
     @JsonSubTypes({
+            @JsonSubTypes.Type(name = "bin", value = QueryBinGroupBy.class),
             @JsonSubTypes.Type(name = "tag", value = QueryTagGroupBy.class),
-            @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class)})
+            @JsonSubTypes.Type(name = "time", value = QueryTimeGroupBy.class),
+            @JsonSubTypes.Type(name = "type", value = QueryTypeGroupBy.class),
+            @JsonSubTypes.Type(name = "value", value = QueryValueGroupBy.class)})
     public abstract static class QueryGroupBy {
         /**
          * Converts this model to an internal model.
@@ -554,6 +557,156 @@ public final class MetricsQueryResponse {
     }
 
     /**
+     * Model for the group_by fields of type "bin" in the {@link QueryResult}.
+     *
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
+     */
+    public static final class QueryBinGroupBy extends QueryGroupBy {
+        public ImmutableList<Number> getBins() {
+            return _bins;
+        }
+
+        public ImmutableMap<String, Integer> getGroup() {
+            return _group;
+        }
+
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
+        @Override
+        public TimeSeriesResult.QueryTagGroupBy toInternal() {
+            throw new UnsupportedOperationException("Internal model does not support this group by");
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryBinGroupBy otherQueryBinGroupBy = (QueryBinGroupBy) o;
+            return Objects.equals(_bins, otherQueryBinGroupBy._bins)
+                    && Objects.equals(_group, otherQueryBinGroupBy._group)
+                    && Objects.equals(_otherArgs, otherQueryBinGroupBy._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_bins, _group, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("bins", _bins)
+                    .add("group", _group)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
+        private QueryBinGroupBy(final Builder builder) {
+            super(builder);
+            _bins = builder._bins;
+            _group = builder._group;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+        }
+
+        private final ImmutableList<Number> _bins;
+        private final ImmutableMap<String, Integer> _group;
+        private final ImmutableMap<String, Object> _otherArgs;
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryBinGroupBy}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryBinGroupBy> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(QueryBinGroupBy::new);
+            }
+
+            /**
+             * Sets the bins. Required. Cannot be null or empty.
+             *
+             * @param value the bins
+             * @return this {@link Builder}
+             */
+            public Builder setBins(final ImmutableList<Number> value) {
+                _bins = value;
+                return self();
+            }
+
+            /**
+             * Sets the group. Required. Cannot be null or empty.
+             *
+             * @param value the group
+             * @return this {@link Builder}
+             */
+            public Builder setGroup(final ImmutableMap<String, Integer> value) {
+                _group = value;
+                return self();
+            }
+
+            /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected Builder self() {
+                return this;
+            }
+
+            @Override
+            public void reset() {
+                _bins = null;
+                _group = null;
+                _otherArgs = Maps.newHashMap();
+            }
+
+            @NotNull
+            @NotEmpty
+            private ImmutableList<Number> _bins;
+            @NotNull
+            @NotEmpty
+            private ImmutableMap<String, Integer> _group;
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
+        }
+    }
+
+    /**
      * Model for the group_by fields of type "tag" in the {@link QueryResult}.
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
@@ -572,11 +725,7 @@ public final class MetricsQueryResponse {
             return _otherArgs;
         }
 
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
+        @Override
         public TimeSeriesResult.QueryTagGroupBy toInternal() {
             return new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
                     .setGroup(_group)
@@ -606,7 +755,7 @@ public final class MetricsQueryResponse {
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
-                    .add("type", _tags)
+                    .add("tags", _tags)
                     .add("group", _group)
                     .add("otherArgs", _otherArgs)
                     .toString();
@@ -696,6 +845,7 @@ public final class MetricsQueryResponse {
             public void reset() {
                 _tags = null;
                 _group = null;
+                _otherArgs = Maps.newHashMap();
             }
 
             @NotNull
@@ -704,6 +854,181 @@ public final class MetricsQueryResponse {
             @NotNull
             @NotEmpty
             private ImmutableMap<String, String> _group;
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
+        }
+    }
+
+    /**
+     * Model for the group_by fields of type "time" in the {@link QueryResult}.
+     *
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
+     */
+    public static final class QueryTimeGroupBy extends QueryGroupBy {
+        @JsonProperty("group_count")
+        public int getGroupCount() {
+            return _groupCount;
+        }
+
+        @JsonProperty("range_size")
+        public RelativeDateTime getRangeSize() {
+            return _rangeSize;
+        }
+
+        public ImmutableMap<String, Integer> getGroup() {
+            return _group;
+        }
+
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
+        @Override
+        public TimeSeriesResult.QueryTagGroupBy toInternal() {
+            throw new UnsupportedOperationException("Internal model does not support this group by");
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryTimeGroupBy otherQueryTimeGroupBy = (QueryTimeGroupBy) o;
+            return _groupCount == otherQueryTimeGroupBy._groupCount
+                    && Objects.equals(_rangeSize, otherQueryTimeGroupBy._rangeSize)
+                    && Objects.equals(_group, otherQueryTimeGroupBy._group)
+                    && Objects.equals(_otherArgs, otherQueryTimeGroupBy._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_groupCount, _rangeSize, _group, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("groupCount", _groupCount)
+                    .add("rangeSize", _rangeSize)
+                    .add("group", _group)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
+        private QueryTimeGroupBy(final Builder builder) {
+            super(builder);
+            _groupCount = builder._groupCount;
+            _rangeSize = builder._rangeSize;
+            _group = builder._group;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+        }
+
+        private final int _groupCount;
+        private final RelativeDateTime _rangeSize;
+        private final ImmutableMap<String, Integer> _group;
+        private final ImmutableMap<String, Object> _otherArgs;
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryTimeGroupBy}.
+         *
+         * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
+         */
+        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryTimeGroupBy> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(QueryTimeGroupBy::new);
+            }
+
+            /**
+             * Sets the group count. Required. Cannot be null.
+             *
+             * @param value the group count
+             * @return this {@link Builder}
+             */
+            @JsonProperty("group_count")
+            public Builder setGroupCount(final Integer value) {
+                _groupCount = value;
+                return self();
+            }
+
+            /**
+             * Sets the range size. Required. Cannot be null.
+             *
+             * @param value the range size
+             * @return this {@link Builder}
+             */
+            @JsonProperty("range_size")
+            public Builder setRangeSize(final RelativeDateTime value) {
+                _rangeSize = value;
+                return self();
+            }
+
+            /**
+             * Sets the group. Required. Cannot be null or empty.
+             *
+             * @param value the group
+             * @return this {@link Builder}
+             */
+            public Builder setGroup(final ImmutableMap<String, Integer> value) {
+                _group = value;
+                return self();
+            }
+
+            /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected Builder self() {
+                return this;
+            }
+
+            @Override
+            public void reset() {
+                _groupCount = null;
+                _rangeSize = null;
+                _group = null;
+                _otherArgs = Maps.newHashMap();
+            }
+
+            @NotNull
+            private Integer _groupCount;
+            @NotNull
+            private RelativeDateTime _rangeSize;
+            @NotNull
+            @NotEmpty
+            private ImmutableMap<String, Integer> _group;
             @NotNull
             private Map<String, Object> _otherArgs = Maps.newHashMap();
         }
@@ -724,11 +1049,7 @@ public final class MetricsQueryResponse {
             return _otherArgs;
         }
 
-        /**
-         * Converts this to an internal model.
-         *
-         * @return a new internal model
-         */
+        @Override
         public TimeSeriesResult.QueryTypeGroupBy toInternal() {
             return new DefaultTimeSeriesResult.QueryTypeGroupBy.Builder()
                     .setType(_type)
@@ -842,4 +1163,154 @@ public final class MetricsQueryResponse {
         }
     }
 
+    /**
+     * Model for the group_by fields of type "value" in the {@link QueryResult}.
+     *
+     * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
+     */
+    public static final class QueryValueGroupBy extends QueryGroupBy {
+        @JsonProperty("range_size")
+        public Number getRangeSize() {
+            return _rangeSize;
+        }
+
+        public ImmutableMap<String, Integer> getGroup() {
+            return _group;
+        }
+
+        @JsonAnyGetter
+        public ImmutableMap<String, Object> getOtherArgs() {
+            return _otherArgs;
+        }
+
+        @Override
+        public TimeSeriesResult.QueryTagGroupBy toInternal() {
+            throw new UnsupportedOperationException("Internal model does not support this group by");
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final QueryValueGroupBy otherQueryValueGroupBy = (QueryValueGroupBy) o;
+            return Objects.equals(_rangeSize, otherQueryValueGroupBy._rangeSize)
+                    && Objects.equals(_group, otherQueryValueGroupBy._group)
+                    && Objects.equals(_otherArgs, otherQueryValueGroupBy._otherArgs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_rangeSize, _group, _otherArgs);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("rangeSize", _rangeSize)
+                    .add("group", _group)
+                    .add("otherArgs", _otherArgs)
+                    .toString();
+        }
+
+        private QueryValueGroupBy(final Builder builder) {
+            super(builder);
+            _rangeSize = builder._rangeSize;
+            _group = builder._group;
+            _otherArgs = ImmutableMap.copyOf(builder._otherArgs);
+        }
+
+        private final Number _rangeSize;
+        private final ImmutableMap<String, Integer> _group;
+        private final ImmutableMap<String, Object> _otherArgs;
+
+        /**
+         * Implementation of the builder pattern for a {@link QueryValueGroupBy}.
+         *
+         * @author Brandon Arp (brandon dot arp at smartsheet dot com)
+         */
+        public static final class Builder extends QueryGroupBy.Builder<Builder, QueryValueGroupBy> {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
+                super(QueryValueGroupBy::new);
+            }
+
+            /**
+             * Sets the range size. Required. Cannot be null.
+             *
+             * @param value the range size
+             * @return this {@link Builder}
+             */
+            @JsonProperty("range_size")
+            public Builder setRangeSize(final Number value) {
+                _rangeSize = value;
+                return self();
+            }
+
+            /**
+             * Sets the group. Required. Cannot be null or empty.
+             *
+             * @param value the group
+             * @return this {@link Builder}
+             */
+            public Builder setGroup(final ImmutableMap<String, Integer> value) {
+                _group = value;
+                return self();
+            }
+
+            /**
+             * Adds an attribute not explicitly modeled by this class. Optional.
+             *
+             * @param key the attribute name
+             * @param value the attribute value
+             * @return this {@link Builder}
+             */
+            @JsonAnySetter
+            public Builder addOtherArg(final String key, final Object value) {
+                _otherArgs.put(key, value);
+                return this;
+            }
+
+            /**
+             * Sets the attributes not explicitly modeled by this class. Optional.
+             *
+             * @param value the other attributes
+             * @return this {@link Builder}
+             */
+            @JsonIgnore
+            public Builder setOtherArgs(final ImmutableMap<String, Object> value) {
+                _otherArgs = value;
+                return this;
+            }
+
+            /**
+             * Gets the instance of the {@link Builder} with the proper type.
+             *
+             * @return this {@link Builder}
+             */
+            protected Builder self() {
+                return this;
+            }
+
+            @Override
+            public void reset() {
+                _rangeSize = null;
+                _group = null;
+                _otherArgs = Maps.newHashMap();
+            }
+
+            @NotNull
+            private Number _rangeSize;
+            @NotNull
+            @NotEmpty
+            private ImmutableMap<String, Integer> _group;
+            @NotNull
+            private Map<String, Object> _otherArgs = Maps.newHashMap();
+        }
+    }
 }

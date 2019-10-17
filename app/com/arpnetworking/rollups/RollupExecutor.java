@@ -95,9 +95,8 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
         if (!rollupDefinition.getGroupByTags().isEmpty()) {
             metricBuilder.setGroupBy(ImmutableList.of(
-                    new MetricsQuery.GroupBy.Builder()
-                            .setName("tag")
-                            .addOtherArg("tags", rollupDefinition.getGroupByTags())
+                    new MetricsQuery.QueryTagGroupBy.Builder()
+                            .setTags(rollupDefinition.getGroupByTags())
                             .build()
             ));
         }

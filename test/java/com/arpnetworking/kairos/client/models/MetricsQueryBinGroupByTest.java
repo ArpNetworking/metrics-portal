@@ -19,44 +19,45 @@ import com.arpnetworking.commons.test.BuildableTestHelper;
 import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * Tests for {@link MetricsQuery.GroupBy}.
+ * Tests for {@link MetricsQuery.QueryBinGroupBy}.
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public final class MetricsQueryGroupByTest {
+public final class MetricsQueryBinGroupByTest {
 
     @Test
     public void testTranslationLosesNothing() throws Exception {
         SerializationTestUtils.assertTranslationLosesNothing(
                 ResourceHelper.loadResource(getClass(), "testTranslationLosesNothing"),
-                MetricsQuery.GroupBy.class
+                MetricsQuery.QueryBinGroupBy.class
         );
     }
 
     @Test
     public void testBuilder() throws InvocationTargetException, IllegalAccessException {
         BuildableTestHelper.testBuild(
-                new MetricsQuery.GroupBy.Builder()
-                    .setName("host")
+                new MetricsQuery.QueryBinGroupBy.Builder()
+                    .setBins(ImmutableList.of(10, 20, 30))
                     .setOtherArgs(ImmutableMap.of("other", "arg")),
-                MetricsQuery.GroupBy.class);
+                MetricsQuery.QueryBinGroupBy.class);
     }
 
     @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
-                new MetricsQuery.GroupBy.Builder()
-                        .setName("host")
+                new MetricsQuery.QueryBinGroupBy.Builder()
+                        .setBins(ImmutableList.of(10, 20, 30))
                         .setOtherArgs(ImmutableMap.of("other", "arg")),
-                new MetricsQuery.GroupBy.Builder()
-                        .setName("country")
+                new MetricsQuery.QueryBinGroupBy.Builder()
+                        .setBins(ImmutableList.of(100, 200, 300))
                         .setOtherArgs(ImmutableMap.of("other2", "arg2")),
-                MetricsQuery.GroupBy.class);
+                MetricsQuery.QueryBinGroupBy.class);
     }
 }
