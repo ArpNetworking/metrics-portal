@@ -274,6 +274,17 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <configuration>
+          <!-- TODO(ville): There is an issue where certain paths are excluded from coverage.
+
+            These include at least:
+            - controllers/*
+            - global/*
+            - models/ebean/*
+            - models/cassandra/*
+
+            The exclusions below are not responsible and they successfully filter out classes
+            which we do want excluded from coverage (e.g. code generated classe).
+          -->
           <excludes>
             <exclude>portal/*</exclude>
             <exclude>controllers/routes.class</exclude>
