@@ -163,8 +163,8 @@
     <spotbugs.exclude>${project.basedir}/spotbugs.exclude.xml</spotbugs.exclude>
 
     <!-- Code Coverage -->
-    <jacoco.check.line.coverage>0.85</jacoco.check.line.coverage>
-    <jacoco.check.branch.coverage>0.30</jacoco.check.branch.coverage>
+    <jacoco.check.line.coverage>0.60</jacoco.check.line.coverage>
+    <jacoco.check.branch.coverage>0.60</jacoco.check.branch.coverage>
 
     <!-- JVM -->
     <dockerJavaOptions />
