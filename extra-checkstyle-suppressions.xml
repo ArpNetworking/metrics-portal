@@ -21,4 +21,8 @@
 <suppressions>
     <!-- Exclude auto-generated code -->
     <suppress checks=".*" files="target/routes/main/controllers/routes.java"/>
+
+    <!-- Exclude large nested external data models -->
+    <suppress checks="FileLength" files="app/com/arpnetworking/kairos/client/models/MetricsQuery.java"/>
+    <suppress checks="FileLength" files="app/com/arpnetworking/kairos/client/models/MetricsQueryResponse.java"/>
 </suppressions>

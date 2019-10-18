@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.build</groupId>
     <artifactId>arpnetworking-parent-pom</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
     <relativePath />
   </parent>
 
@@ -163,8 +163,8 @@
     <spotbugs.exclude>${project.basedir}/spotbugs.exclude.xml</spotbugs.exclude>
 
     <!-- Code Coverage -->
-    <jacoco.check.line.coverage>0.15</jacoco.check.line.coverage>
-    <jacoco.check.branch.coverage>0.05</jacoco.check.branch.coverage>
+    <jacoco.check.line.coverage>0.60</jacoco.check.line.coverage>
+    <jacoco.check.branch.coverage>0.60</jacoco.check.branch.coverage>
 
     <!-- JVM -->
     <dockerJavaOptions />
@@ -273,6 +273,27 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+        <configuration>
+          <!-- TODO(ville): There is an issue where certain paths are excluded from coverage.
+
+            These include at least:
+            - controllers/*
+            - global/*
+            - models/ebean/*
+            - models/cassandra/*
+
+            The exclusions below are not responsible and they successfully filter out classes
+            which we do want excluded from coverage (e.g. code generated classe).
+          -->
+          <excludes>
+            <exclude>portal/*</exclude>
+            <exclude>controllers/routes.class</exclude>
+            <exclude>controllers/routes?javascript.class</exclude>
+            <exclude>controllers/Reverse*.class</exclude>
+            <exclude>controllers/javascript/*</exclude>
+            <exclude>views/html/*</exclude>
+          </excludes>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

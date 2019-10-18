@@ -14,7 +14,7 @@
   }],
   "group_by" : [
     {
-      "name": "tag3",
+      "name": "tag",
       "tags": ["tag3"]
     }
   ],

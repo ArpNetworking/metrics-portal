@@ -191,8 +191,8 @@ public class RollupExecutorTest {
         assertEquals(1, rollupQuery.getMetrics().size());
         final Metric metric = rollupQuery.getMetrics().get(0);
         assertEquals(1, metric.getGroupBy().size());
-        assertEquals("tag", metric.getGroupBy().get(0).getName());
-        assertEquals(ImmutableSet.of("tag1", "tag2"), metric.getGroupBy().get(0).getOtherArgs().get("tags"));
+        assertTrue(metric.getGroupBy().get(0) instanceof MetricsQuery.QueryTagGroupBy);
+        assertEquals(ImmutableSet.of("tag1", "tag2"), ((MetricsQuery.QueryTagGroupBy) metric.getGroupBy().get(0)).getTags());
         assertEquals(3, metric.getAggregators().size());
         assertEquals("merge", metric.getAggregators().get(0).getName());
         assertTrue(metric.getAggregators().get(0).getAlignSampling().isPresent());
