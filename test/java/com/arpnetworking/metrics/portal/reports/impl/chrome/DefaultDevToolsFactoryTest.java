@@ -70,6 +70,8 @@ public class DefaultDevToolsFactoryTest {
         requiredFields.forEach(this::assertMissingRaises);
         requiredFields.forEach(field -> assertInvalidates(field, null, ConfigException.Missing.class));
 
+        assertStillValid("networkConfigurationProtocol", "NETWORK");
+
         final ImmutableSet<String> optionalFields = ImmutableSet.of(
                 "executor",
                 "executor.corePoolSize",
@@ -83,6 +85,7 @@ public class DefaultDevToolsFactoryTest {
                 ImmutableList.of("path", ImmutableMap.of(), ConfigException.WrongType.class),
                 ImmutableList.of("args", 1, ConfigException.WrongType.class),
                 ImmutableList.of("executor", 1, ConfigException.WrongType.class),
+                ImmutableList.of("networkConfigurationProtocol", "SOME_RANDOM_NON_ENUM_NAME", IllegalArgumentException.class),
 
                 ImmutableList.of("executor.corePoolSize", "", ConfigException.WrongType.class),
                 ImmutableList.of("executor.corePoolSize", -1, IllegalArgumentException.class),
@@ -131,6 +134,10 @@ public class DefaultDevToolsFactoryTest {
             fail("missing field '" + field + "' should have made constructor fail");
         } catch (final ConfigException.Missing e) {
         }
+    }
+
+    private <E extends Exception> void assertStillValid(final String field, @Nullable final Object value) {
+        new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG.withValue(field, ConfigValueFactory.fromAnyRef(value))).build();
     }
 
     private <E extends Exception> void assertInvalidates(final String field, @Nullable final Object badValue, final Class<E> clazz) {
