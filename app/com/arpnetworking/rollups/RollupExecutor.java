@@ -125,6 +125,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     }
 
     private void fetchRollup() {
+        _metrics.recordCounter("rollup/executor/fetch_rollup_message/received", 1);
         _rollupManager.tell(RollupFetch.getInstance(), getSelf());
     }
 
