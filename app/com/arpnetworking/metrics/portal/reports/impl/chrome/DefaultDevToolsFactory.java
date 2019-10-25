@@ -49,7 +49,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         if (ignoreCertificateErrors) {
             result.getSecurity().setIgnoreCertificateErrors(true);
         }
-        return new DevToolsServiceWrapper(service, _originConfigs, tab, result, _executor);
+        return new DevToolsServiceWrapper(service, _originConfigs, tab, result, _executor, _networkConfigurationProtocol);
     }
 
     private DefaultDevToolsFactory(final Builder builder) {
@@ -67,6 +67,9 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
         } catch (final IOException e) {
             throw new IllegalArgumentException(e);
         }
+        _networkConfigurationProtocol = builder._config.hasPath("networkConfigurationProtocol")
+                ? DevToolsNetworkConfigurationProtocol.valueOf(builder._config.getString("networkConfigurationProtocol"))
+                : DevToolsNetworkConfigurationProtocol.FETCH;
     }
 
     @Override
@@ -96,6 +99,7 @@ public final class DefaultDevToolsFactory implements DevToolsFactory {
     private final ExecutorService _executor;
     private final Supplier<ChromeService> _service;
     private final PerOriginConfigs _originConfigs;
+    private final DevToolsNetworkConfigurationProtocol _networkConfigurationProtocol;
 
     /**
      * Implementation of builder pattern for {@link DefaultDevToolsFactory}.
