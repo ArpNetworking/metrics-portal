@@ -26,11 +26,13 @@ import com.github.kklisura.cdt.protocol.types.network.RequestPattern;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+@SuppressFBWarnings("SE_BAD_FIELD") // False positive: https://github.com/spotbugs/spotbugs/issues/740
 /* package private */ enum DevToolsNetworkConfigurationProtocol {
 
     @Deprecated
