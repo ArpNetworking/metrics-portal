@@ -27,6 +27,8 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
@@ -66,6 +68,14 @@ public class RollupExecutor extends AbstractActorWithTimers {
         PatternsCS.pipe(
                 performRollup(rollupDefinition)
                         .handle((response, failure) -> {
+                            if (failure != null) {
+                                LOGGER.warn()
+                                        .setMessage("Failed to execute rollup query.")
+                                        .addData("rollupMetricName", rollupDefinition.getDestinationMetricName())
+                                        .addData("periodStartTime", rollupDefinition.getStartTime())
+                                        .setThrowable(failure)
+                                        .log();
+                            }
                             final String baseMetricName = "rollup/executor/perform_rollup_"
                                     + rollupDefinition.getPeriod().name().toLowerCase(Locale.getDefault());
                             _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
@@ -156,7 +166,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
         _metrics = metrics;
-        _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.worker.pollInterval");
+        _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.executor.pollInterval");
     }
 
     private final KairosDbClient _kairosDbClient;
@@ -165,6 +175,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     private final FiniteDuration _pollInterval;
     private static final String FETCH_TIMER = "rollupFetchTimer";
     static final Object FETCH_ROLLUP = new Object();
+    private static final Logger LOGGER = LoggerFactory.getLogger(RollupExecutor.class);
 
     static final class FinishRollupMessage extends FailableMessage {
         private static final long serialVersionUID = -5696789105734902279L;
