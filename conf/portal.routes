@@ -56,7 +56,7 @@ GET        /api/v1/health/check                 controllers.KairosDbProxyControl
 GET        /api/v1/health/status                controllers.KairosDbProxyController.status()
 GET        /api/v1/tagnames                     controllers.KairosDbProxyController.tagNames()
 GET        /api/v1/tagvalues                    controllers.KairosDbProxyController.tagValues()
-POST       /api/v1/version                      controllers.KairosDbProxyController.version()
+GET        /api/v1/version                      controllers.KairosDbProxyController.version()
 POST       /api/v1/datapoints/query/tags        controllers.KairosDbProxyController.queryTags()
 POST       /api/v1/datapoints/query             controllers.KairosDbProxyController.queryMetrics()
 
