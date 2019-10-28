@@ -20,17 +20,9 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.kklisura.cdt.protocol.commands.Fetch;
-import com.github.kklisura.cdt.protocol.types.fetch.HeaderEntry;
-import com.github.kklisura.cdt.protocol.types.network.ErrorReason;
-import com.github.kklisura.cdt.protocol.types.network.Request;
 import com.github.kklisura.cdt.protocol.types.page.PrintToPDFTransferMode;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import java.util.Base64;
-import java.util.Collection;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -63,8 +55,8 @@ public class DevToolsServiceWrapper implements DevToolsService {
             final PerOriginConfigs originConfigs,
             final com.github.kklisura.cdt.services.types.ChromeTab tab,
             final com.github.kklisura.cdt.services.ChromeDevToolsService dts,
-            final ExecutorService executor
-
+            final ExecutorService executor,
+            final DevToolsNetworkConfigurationProtocol configProtocol
     ) {
         _chromeService = chromeService;
         _originConfigs = originConfigs;
@@ -72,59 +64,7 @@ public class DevToolsServiceWrapper implements DevToolsService {
         _dts = dts;
         _executor = executor;
 
-        configureRequestInterception();
-    }
-
-    private static ImmutableMap<String, String> getRequestHeaders(final Request request) {
-        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-        for (final Map.Entry<String, Object> entry : request.getHeaders().entrySet()) {
-            if (entry.getValue() instanceof String) {
-                builder = builder.put(entry.getKey(), (String) entry.getValue());
-            }
-        }
-        return builder.build();
-    }
-
-    /* package private */ static ImmutableList<HeaderEntry> headerMapToList(final ImmutableMap<String, String> headers) {
-        return headers.entrySet().stream()
-                .map(entry -> {
-                    final HeaderEntry headerEntry = new HeaderEntry();
-                    headerEntry.setName(entry.getKey());
-                    headerEntry.setValue(entry.getValue());
-                    return headerEntry;
-                })
-                .collect(ImmutableList.toImmutableList());
-    }
-
-    /* package private */ static ImmutableMap<String, String> headerListToMap(final Collection<HeaderEntry> headers) {
-            return headers.stream().collect(ImmutableMap.toImmutableMap(HeaderEntry::getName, HeaderEntry::getValue));
-    }
-
-    private void configureRequestInterception() {
-        final Fetch fetch = _dts.getFetch();
-        fetch.enable();
-        fetch.onRequestPaused(event -> {
-            final String url = event.getRequest().getUrl();
-            if (!_originConfigs.isRequestAllowed(url)) {
-                LOGGER.warn()
-                        .setMessage("rejecting request")
-                        .addData("url", url)
-                        .log();
-                fetch.failRequest(event.getRequestId(), ErrorReason.ABORTED);
-                return;
-            }
-            final ImmutableMap<String, String> headers = ImmutableMap.<String, String>builder()
-                    .putAll(getRequestHeaders(event.getRequest()))
-                    .putAll(_originConfigs.getAdditionalHeaders(url))
-                    .build();
-            fetch.continueRequest(
-                    event.getRequestId(),
-                    url,
-                    event.getRequest().getMethod(),
-                    event.getRequest().getPostData(),
-                    headerMapToList(headers)
-            );
-        });
+        configProtocol.configure(_dts, _originConfigs);
     }
 
     @Override

@@ -15,22 +15,15 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
-import com.github.kklisura.cdt.protocol.events.fetch.RequestPaused;
-import com.github.kklisura.cdt.protocol.support.types.EventHandler;
-import com.github.kklisura.cdt.protocol.types.network.ErrorReason;
-import com.github.kklisura.cdt.protocol.types.network.Request;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -48,9 +41,6 @@ public class DevToolsServiceWrapperTest {
     private com.github.kklisura.cdt.protocol.commands.Page _page;
     @Mock
     private com.github.kklisura.cdt.protocol.commands.Fetch _fetch;
-    @Captor
-    private ArgumentCaptor<EventHandler<RequestPaused>> _requestInterceptorCaptor;
-    private EventHandler<RequestPaused> _requestInterceptor;
     @Mock
     private com.github.kklisura.cdt.services.ChromeDevToolsService _wrapped;
 
@@ -73,10 +63,10 @@ public class DevToolsServiceWrapperTest {
                 )).build(),
                 _tab,
                 _wrapped,
-                new ScheduledThreadPoolExecutor(1)
+                new ScheduledThreadPoolExecutor(1),
+                DevToolsNetworkConfigurationProtocol.FETCH
         );
-        Mockito.verify(_fetch).onRequestPaused(_requestInterceptorCaptor.capture());
-        _requestInterceptor = _requestInterceptorCaptor.getValue();
+        Mockito.verify(_fetch).onRequestPaused(Mockito.any());
     }
 
     @Test
@@ -140,68 +130,6 @@ public class DevToolsServiceWrapperTest {
         } catch (final IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("navigation is not allowed"));
         }
-    }
-
-    @Test
-    public void testFiltersRequests() {
-        final Request request = new Request();
-        request.setMethod("POST");
-        request.setUrl("https://whitelisted.com/allowed-req-1");
-        request.setPostData("data");
-        request.setHeaders(ImmutableMap.of());
-        final RequestPaused event = new RequestPaused();
-        event.setRequestId(UUID.randomUUID().toString());
-        event.setRequest(request);
-
-        _requestInterceptor.onEvent(event);
-        Mockito.verify(_fetch).continueRequest(
-                Mockito.eq(event.getRequestId()),
-                Mockito.eq("https://whitelisted.com/allowed-req-1"),
-                Mockito.eq("POST"),
-                Mockito.eq("data"),
-                Mockito.any()
-        );
-
-        request.setUrl("https://whitelisted.com/disallowed-path");
-        Mockito.reset(_fetch);
-        _requestInterceptor.onEvent(event);
-        Mockito.verify(_fetch).failRequest(
-                event.getRequestId(),
-                ErrorReason.ABORTED
-        );
-
-        request.setUrl("https://not-whitelisted.com/allowed-req-1");
-        Mockito.reset(_fetch);
-        _requestInterceptor.onEvent(event);
-        Mockito.verify(_fetch).failRequest(
-                event.getRequestId(),
-                ErrorReason.ABORTED
-        );
-    }
-
-    @Test
-    public void testAddsHeaders() {
-        final Request request = new Request();
-        request.setMethod("POST");
-        request.setUrl("https://whitelisted.com/allowed-req-1");
-        request.setPostData("data");
-        request.setHeaders(ImmutableMap.of("Original-Header", "original header value"));
-        final RequestPaused event = new RequestPaused();
-        event.setRequest(request);
-        event.setRequestId(UUID.randomUUID().toString());
-
-        _requestInterceptor.onEvent(event);
-        Mockito.verify(_fetch).continueRequest(
-                Mockito.eq(event.getRequestId()),
-                Mockito.eq("https://whitelisted.com/allowed-req-1"),
-                Mockito.eq("POST"),
-                Mockito.eq("data"),
-                Mockito.argThat(headers -> DevToolsServiceWrapper.headerListToMap(headers).equals(ImmutableMap.of(
-                        "Original-Header", "original header value",
-                        "X-Extra-Header", "extra header value"
-                        ))
-                )
-        );
     }
 
 }

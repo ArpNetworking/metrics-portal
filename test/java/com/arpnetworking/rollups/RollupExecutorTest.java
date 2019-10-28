@@ -77,7 +77,7 @@ public class RollupExecutorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(_config.getString(eq("rollup.worker.pollInterval"))).thenReturn("3sec");
+        when(_config.getString(eq("rollup.executor.pollInterval"))).thenReturn("3sec");
 
         _system = ActorSystem.create();
 
