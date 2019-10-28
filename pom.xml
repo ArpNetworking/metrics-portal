@@ -702,7 +702,7 @@
                     <method>GET</method>
                     <status>200</status>
                   </http>
-                  <time>30000</time>
+                  <time>120000</time>
                   <kill>1000</kill>
                 </wait>
               </run>

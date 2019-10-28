@@ -282,9 +282,9 @@ public class MainModule extends AbstractModule {
             final ActorSystem actorSystem) {
         final SimpleModule customModule = new SimpleModule();
         customModule.addDeserializer(
-                TimeUnit.class,
+                com.arpnetworking.kairos.client.models.TimeUnit.class,
                 EnumerationDeserializer.newInstance(
-                        TimeUnit.class,
+                        com.arpnetworking.kairos.client.models.TimeUnit.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         customModule.addDeserializer(
                 SamplingUnit.class,
