@@ -72,7 +72,6 @@ public final class ReportSerializationTest {
                         .setUri(URI.create("https://example.com"))
                         .setTitle("My Report Title")
                         .setIgnoreCertificateErrors(false)
-                        .setTriggeringEventName("myTriggeringEventName")
                         .build())
                 .setSchedule(new com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule.Builder()
                         .setRunAtAndAfter(Instant.parse("2019-01-01T00:00:00Z"))

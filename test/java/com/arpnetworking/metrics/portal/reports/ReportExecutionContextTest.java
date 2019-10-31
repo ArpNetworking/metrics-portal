@@ -90,7 +90,6 @@ public class ReportExecutionContextTest {
             .setReportSource(new WebPageReportSource.Builder()
                     .setId(UUID.randomUUID())
                     .setTitle("My Report Title")
-                    .setTriggeringEventName("myTriggeringEventName")
                     .setUri(URI.create("https://example.com"))
                     .setIgnoreCertificateErrors(true)
                     .build()

@@ -41,14 +41,12 @@ public final class WebPageReportSource implements ReportSource {
     private final URI _uri;
     private final String _title;
     private final boolean _ignoreCertificateErrors;
-    private final String _triggeringEventName;
 
     private WebPageReportSource(final Builder builder) {
         _id = builder._id;
         _uri = builder._uri;
         _title = builder._title;
         _ignoreCertificateErrors = builder._ignoreCertificateErrors;
-        _triggeringEventName = builder._triggeringEventName;
     }
 
     @Override
@@ -58,7 +56,6 @@ public final class WebPageReportSource implements ReportSource {
                 .add("url", _uri)
                 .add("title", _title)
                 .add("ignoreCertificateErrors", _ignoreCertificateErrors)
-                .add("triggeringEventName", _triggeringEventName)
                 .toString();
     }
 
@@ -94,18 +91,6 @@ public final class WebPageReportSource implements ReportSource {
         return _ignoreCertificateErrors;
     }
 
-    /**
-     * Get the browser event name used to trigger this report source.
-     *
-     * The report will be considered generated once an event with this name is registered
-     * with the browser.
-     *
-     * @return the name of the triggering event.
-     */
-    public String getTriggeringEventName() {
-        return _triggeringEventName;
-    }
-
     @Override
     public SourceType getType() {
         return SourceType.WEB_PAGE;
@@ -128,13 +113,12 @@ public final class WebPageReportSource implements ReportSource {
         return _ignoreCertificateErrors == that._ignoreCertificateErrors
                 && Objects.equals(_id, that._id)
                 && Objects.equals(_uri, that._uri)
-                && Objects.equals(_title, that._title)
-                && Objects.equals(_triggeringEventName, that._triggeringEventName);
+                && Objects.equals(_title, that._title);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors, _triggeringEventName);
+        return Objects.hash(_id, _uri, _title, _ignoreCertificateErrors);
     }
 
     /**
@@ -182,17 +166,6 @@ public final class WebPageReportSource implements ReportSource {
         }
 
         /**
-         * The triggering event name for the source. Required. Cannot be null or empty.
-         *
-         * @param triggeringEventName The event name.
-         * @return This instance of {@code Builder}
-         */
-        public Builder setTriggeringEventName(final String triggeringEventName) {
-            _triggeringEventName = triggeringEventName;
-            return this;
-        }
-
-        /**
          * Determine if the source should ignore certificate errors. Cannot be null. Defaults to false.
          *
          * @param ignoreCertificateErrors Whether this source should ignore certificate errors.
@@ -211,9 +184,6 @@ public final class WebPageReportSource implements ReportSource {
         @NotNull
         @NotEmpty
         private String _title;
-        @NotNull
-        @NotEmpty
-        private String _triggeringEventName;
         @NotNull
         private Boolean _ignoreCertificateErrors = false;
 

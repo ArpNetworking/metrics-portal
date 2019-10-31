@@ -213,7 +213,6 @@ class EditSourceViewModel extends BaseSourceViewModel {
                     uri: this.url(),
                     title: this.title(),
                     ignoreCertificateErrors: this.ignoreCertificateErrors(),
-                    triggeringEventName: this.eventName(),
                 };
             case SourceType.GRAFANA:
                 return {
@@ -224,7 +223,6 @@ class EditSourceViewModel extends BaseSourceViewModel {
                         uri: this.url(),
                         title: this.title(),
                         ignoreCertificateErrors: this.ignoreCertificateErrors(),
-                        triggeringEventName: this.eventName(),
                     },
                 };
             default:
