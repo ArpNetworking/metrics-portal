@@ -238,7 +238,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
         [SourceType.GRAFANA]: "Grafana",
     };
     readonly availableSourceTypes: {value: SourceType, text: string}[] = availableSourceTypes.map(
-        type => ({value: type, text: EditSourceViewModel.sourceTypeDisplayNames[type]})
+        sourceType => ({value: sourceType, text: EditSourceViewModel.sourceTypeDisplayNames[sourceType]})
     );
 
     readonly helpMessages = {
