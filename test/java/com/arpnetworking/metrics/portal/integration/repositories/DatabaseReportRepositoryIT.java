@@ -288,7 +288,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getError(), nullValue());
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
     }
 
@@ -319,7 +319,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(retrievedError, notNullValue());
         assertThat(retrievedError, containsString(throwable.getMessage()));
         assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
-        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
     }
 
@@ -336,7 +336,10 @@ public class DatabaseReportRepositoryIT {
         _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(2)), new DefaultReportResult());
         _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(3)), new DefaultReportResult());
 
-        assertEquals(t0.plus(dt.multipliedBy(3)), _repository.getJobLastExecutionScheduled(report.getId(), _organization).get());
+        assertEquals(
+                t0.plus(dt.multipliedBy(3)),
+                _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization).get()
+        );
     }
 
     @Test
@@ -363,7 +366,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.empty()));
     }
 

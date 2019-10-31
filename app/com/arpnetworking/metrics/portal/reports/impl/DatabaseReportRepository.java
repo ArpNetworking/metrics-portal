@@ -147,7 +147,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getJobLastExecutionScheduled(
+    public Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(
             final UUID reportId,
             final Organization organization
     ) throws NoSuchElementException {
