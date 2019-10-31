@@ -16,6 +16,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
 import models.internal.Features;
@@ -68,6 +69,11 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
+    public ImmutableList<String> getSourceTypes() {
+        return _sourceTypes.stream().map(SourceType::name).collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
     public String toString() {
         return new StringBuilder()
                 .append("{telemetryEnabled=").append(_telemetryEnabled)
@@ -97,6 +103,10 @@ public final class DefaultFeatures implements Features {
         _reportsEnabled = configuration.getBoolean("portal.features.reports.enabled");
         _metricsAggregatorDaemonPorts = ImmutableList.copyOf(
                 configuration.getIntList("portal.features.metricsAggregatorDaemonPorts"));
+        _sourceTypes = configuration.getStringList("portal.features.reports.sourceTypes")
+                .stream()
+                .map(SourceType::valueOf)
+                .collect(ImmutableList.toImmutableList());
     }
 
     private final boolean _telemetryEnabled;
@@ -107,4 +117,5 @@ public final class DefaultFeatures implements Features {
     private final boolean _rollupsEnabled;
     private final boolean _reportsEnabled;
     private final ImmutableList<Integer> _metricsAggregatorDaemonPorts;
+    private final ImmutableList<SourceType> _sourceTypes;
 }

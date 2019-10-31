@@ -2,6 +2,7 @@ import uuid = require('../Uuid');
 import ko = require('knockout');
 // @ts-ignore: import is valid
 import moment = require('moment-timezone/moment-timezone');
+import features = require('configure');
 
 export enum RecipientType {
     EMAIL,
@@ -25,6 +26,8 @@ export enum ScheduleRepetition {
     MONTHLY,
 }
 
+export const availableSourceTypes: SourceType[] = features.sourceTypes.map((s: keyof typeof SourceType) => SourceType[s]);
+
 export class ZoneInfo {
     value: string;
     display: string;
@@ -41,7 +44,7 @@ export class ZoneInfo {
 
 export class BaseSourceViewModel {
     id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.WEB_PAGE);
+    type = ko.observable<SourceType>(availableSourceTypes[0]);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");

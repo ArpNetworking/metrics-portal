@@ -15,6 +15,7 @@
  */
 package models.internal;
 
+import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -79,4 +80,11 @@ public interface Features {
      * @return list of ports for metrics aggregator daemon (or its proxies).
      */
     ImmutableList<Integer> getMetricsAggregatorDaemonPorts();
+
+    /**
+     * Names of {@link SourceType}s to display in the UI.
+     *
+     * @return list of names of {@link SourceType} enum values.
+     */
+    ImmutableList<String> getSourceTypes();
 }
