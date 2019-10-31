@@ -30,7 +30,6 @@ import com.typesafe.config.Config;
 import io.ebean.EbeanServer;
 import io.ebean.PagedList;
 import io.ebean.Transaction;
-import io.jsonwebtoken.lang.Collections;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
 import models.ebean.PeriodicReportSchedule;
@@ -54,14 +53,12 @@ import play.Environment;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -150,7 +147,10 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getJobLastExecutionScheduled(final UUID reportId, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastExecutionScheduled(
+            final UUID reportId,
+            final Organization organization
+    ) throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()
