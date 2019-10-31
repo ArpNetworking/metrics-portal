@@ -53,14 +53,16 @@ public interface JobRepository<T> {
     Optional<Job<T>> getJob(UUID id, Organization organization);
 
     /**
-     * Get the last time that a job with a given UUID was run.
+     * Get the last time that any completed execution for a given job was scheduled for.
+     *
+     * More precisely, in pseudocode, {@code job.executions().filter(hasCompleted).map(scheduledFor).max()}.
      *
      * @param id The id assigned to the Job by a previous call to {@code add}.
      * @param organization The organization owning the job.
-     * @return The last time that that job was executed.
+     * @return The last time that any completed execution for the job was scheduled for.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<Instant> getJobLastRun(UUID id, Organization organization) throws NoSuchElementException;
+    Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(UUID id, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.

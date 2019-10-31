@@ -147,7 +147,10 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getJobLastRun(final UUID reportId, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(
+            final UUID reportId,
+            final Organization organization
+    ) throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()
@@ -156,8 +159,9 @@ public final class DatabaseReportRepository implements ReportRepository {
                 .eq("report.uuid", reportId)
                 .eq("report.organization.uuid", organization.getId())
                 .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
+                .setMaxRows(1)
                 .findOneOrEmpty()
-                .map(ReportExecution::getCompletedAt);
+                .map(ReportExecution::getScheduled);
     }
 
     @Override
