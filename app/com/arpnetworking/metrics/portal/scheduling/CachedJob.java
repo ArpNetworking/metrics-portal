@@ -102,7 +102,7 @@ public final class CachedJob<T> implements Job<T> {
         }
         _periodicMetrics.recordCounter("cached_job_reload_success", 1);
         _cached = loaded.get();
-        _lastRun = _ref.getRepository(injector).getJobLastRun(_ref.getJobId(), _ref.getOrganization());
+        _lastRun = _ref.getRepository(injector).getJobLastExecutionScheduled(_ref.getJobId(), _ref.getOrganization());
     }
 
     /**

@@ -102,7 +102,7 @@ public final class NoReportRepository implements ReportRepository {
     }
 
     @Override
-    public Optional<Instant> getJobLastRun(final UUID id, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastExecutionScheduled(final UUID id, final Organization organization) throws NoSuchElementException {
         assertIsOpen();
         return Optional.empty();
     }

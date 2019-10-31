@@ -87,7 +87,7 @@ public class MapJobRepository<T> implements JobRepository<T> {
     }
 
     @Override
-    public Optional<Instant> getJobLastRun(final UUID id, final Organization organization) throws NoSuchElementException {
+    public Optional<Instant> getJobLastExecutionScheduled(final UUID id, final Organization organization) throws NoSuchElementException {
         assertIsOpen();
         return Optional.ofNullable(_lastRuns.getOrDefault(organization, Maps.newHashMap()).get(id));
     }

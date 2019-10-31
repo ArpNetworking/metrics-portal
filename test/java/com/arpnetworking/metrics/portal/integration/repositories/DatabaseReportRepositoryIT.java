@@ -63,6 +63,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -287,8 +288,8 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getError(), nullValue());
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
-        assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
+        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
+        assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
     }
 
     @Test
@@ -318,8 +319,24 @@ public class DatabaseReportRepositoryIT {
         assertThat(retrievedError, notNullValue());
         assertThat(retrievedError, containsString(throwable.getMessage()));
         assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
-        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
-        assertThat(lastRun, equalTo(Optional.ofNullable(execution.getCompletedAt())));
+        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
+        assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
+    }
+
+    @Test
+    public void testJobMultipleRuns() {
+        final Report report = TestBeanFactory.createReportBuilder().build();
+        _repository.addOrUpdateReport(report, _organization);
+
+        final Instant t0 = Instant.now();
+        final Duration dt = Duration.ofDays(1);
+
+        _repository.jobFailed(report.getId(), _organization, t0.plus(dt.multipliedBy(0)), new IllegalStateException());
+        _repository.jobFailed(report.getId(), _organization, t0.plus(dt.multipliedBy(1)), new IllegalStateException());
+        _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(2)), new DefaultReportResult());
+        _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(3)), new DefaultReportResult());
+
+        assertEquals(t0.plus(dt.multipliedBy(3)), _repository.getJobLastExecutionScheduled(report.getId(), _organization).get());
     }
 
     @Test
@@ -346,7 +363,7 @@ public class DatabaseReportRepositoryIT {
         assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        final Optional<Instant> lastRun = _repository.getJobLastRun(report.getId(), _organization);
+        final Optional<Instant> lastRun = _repository.getJobLastExecutionScheduled(report.getId(), _organization);
         assertThat(lastRun, equalTo(Optional.empty()));
     }
 
