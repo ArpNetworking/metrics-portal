@@ -41,7 +41,7 @@ export class ZoneInfo {
 
 export class BaseSourceViewModel {
     id = ko.observable(uuid.v4());
-    type = ko.observable<SourceType>(SourceType.WEB_PAGE);
+    type = ko.observable<SourceType>(SourceType.GRAFANA);
     title = ko.observable<string>("");
     url = ko.observable<string>("");
     eventName = ko.observable<string>("");
