@@ -22,6 +22,7 @@ import moment = require('moment-timezone/moment-timezone');
 import csrf from '../Csrf';
 
 import {
+    availableSourceTypes,
     BaseRecipientViewModel,
     BaseScheduleViewModel,
     BaseSourceViewModel,
@@ -212,7 +213,6 @@ class EditSourceViewModel extends BaseSourceViewModel {
                     uri: this.url(),
                     title: this.title(),
                     ignoreCertificateErrors: this.ignoreCertificateErrors(),
-                    triggeringEventName: this.eventName(),
                 };
             case SourceType.GRAFANA:
                 return {
@@ -223,7 +223,6 @@ class EditSourceViewModel extends BaseSourceViewModel {
                         uri: this.url(),
                         title: this.title(),
                         ignoreCertificateErrors: this.ignoreCertificateErrors(),
-                        triggeringEventName: this.eventName(),
                     },
                 };
             default:
@@ -232,10 +231,13 @@ class EditSourceViewModel extends BaseSourceViewModel {
     }
 
     // Used by KO data-bind.
-    readonly availableSourceTypes = [
-        {value: SourceType.WEB_PAGE,  text: "Web page"},
-        {value: SourceType.GRAFANA,  text: "Grafana"},
-    ];
+    private static readonly sourceTypeDisplayNames = {
+        [SourceType.WEB_PAGE]: "Web page",
+        [SourceType.GRAFANA]: "Grafana",
+    };
+    readonly availableSourceTypes: {value: SourceType, text: string}[] = availableSourceTypes.map(
+        sourceType => ({value: sourceType, text: EditSourceViewModel.sourceTypeDisplayNames[sourceType]})
+    );
 
     readonly helpMessages = {
         type: "The source type determines how a report is generated.<br>" +

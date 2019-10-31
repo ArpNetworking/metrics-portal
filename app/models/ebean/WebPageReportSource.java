@@ -46,9 +46,6 @@ public class WebPageReportSource extends ReportSource {
     @Column(name = "ignore_certificate_errors")
     private boolean ignoreCertificateErrors;
 
-    @Column(name = "triggering_event_name")
-    private String triggeringEventName;
-
     public URI getUri() {
         return uri;
     }
@@ -73,14 +70,6 @@ public class WebPageReportSource extends ReportSource {
         ignoreCertificateErrors = value;
     }
 
-    public String getTriggeringEventName() {
-        return triggeringEventName;
-    }
-
-    public void setTriggeringEventName(final String value) {
-        triggeringEventName = value;
-    }
-
     @Override
     public models.internal.reports.ReportSource toInternal() {
         return new models.internal.impl.WebPageReportSource.Builder()
@@ -88,7 +77,6 @@ public class WebPageReportSource extends ReportSource {
                 .setUri(uri)
                 .setTitle(title)
                 .setIgnoreCertificateErrors(ignoreCertificateErrors)
-                .setTriggeringEventName(triggeringEventName)
                 .build();
     }
 }
