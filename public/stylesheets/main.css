@@ -137,6 +137,10 @@ body {
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1.414px 0 #000, 0 1.414px 0 #000, -1.414px 0 0 #000, 1.414px 0 0 #000;
 }
 
+.bottom-navbar-spacer {
+    height: 5em;
+}
+
 @keyframes pulseanim {
     0% {
         opacity: 1.0;
