@@ -18,6 +18,7 @@ package models.internal.impl;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.MediaType;
 import com.typesafe.config.Config;
 import models.internal.Features;
 
@@ -74,6 +75,11 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
+    public ImmutableList<String> getReportFormatTypes() {
+        return _reportFormatTypes.stream().map(MediaType::toString).collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
     public String toString() {
         return new StringBuilder()
                 .append("{telemetryEnabled=").append(_telemetryEnabled)
@@ -84,6 +90,8 @@ public final class DefaultFeatures implements Features {
                 .append(", rollupsEnabled=").append(_rollupsEnabled)
                 .append(", reportsEnabled=").append(_reportsEnabled)
                 .append(", metricsAggregatorDaemonPorts=").append(_metricsAggregatorDaemonPorts)
+                .append(", sourceTypes=").append(_sourceTypes)
+                .append(", reportFormatTypes=").append(_reportFormatTypes)
                 .append("}")
                 .toString();
     }
@@ -107,6 +115,10 @@ public final class DefaultFeatures implements Features {
                 .stream()
                 .map(SourceType::valueOf)
                 .collect(ImmutableList.toImmutableList());
+        _reportFormatTypes = configuration.getStringList("portal.features.reports.formatTypes")
+                .stream()
+                .map(MediaType::parse)
+                .collect(ImmutableList.toImmutableList());
     }
 
     private final boolean _telemetryEnabled;
@@ -118,4 +130,5 @@ public final class DefaultFeatures implements Features {
     private final boolean _reportsEnabled;
     private final ImmutableList<Integer> _metricsAggregatorDaemonPorts;
     private final ImmutableList<SourceType> _sourceTypes;
+    private final ImmutableList<MediaType> _reportFormatTypes;
 }

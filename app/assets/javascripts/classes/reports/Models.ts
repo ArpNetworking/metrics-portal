@@ -26,7 +26,18 @@ export enum ScheduleRepetition {
     MONTHLY,
 }
 
+function mimeTypeToReportFormat(mimeType: string): ReportFormat | undefined {
+    if (/^application\/pdf\b/.test(mimeType)) {
+        return ReportFormat.HTML;
+    } else if (/^text\/html\b/.test(mimeType)) {
+        return ReportFormat.HTML;
+    }
+    return undefined;
+}
 export const availableSourceTypes: SourceType[] = features.sourceTypes.map((s: keyof typeof SourceType) => SourceType[s]);
+export const availableReportFormatTypes: ReportFormat[] = features.reportFormatTypes
+    .map((s: string) => mimeTypeToReportFormat(s))
+    .filter(fmt => (fmt !== undefined));
 
 export class ZoneInfo {
     value: string;

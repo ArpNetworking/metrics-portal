@@ -22,6 +22,7 @@ import moment = require('moment-timezone/moment-timezone');
 import csrf from '../Csrf';
 
 import {
+    availableReportFormatTypes,
     availableSourceTypes,
     BaseRecipientViewModel,
     BaseScheduleViewModel,
@@ -189,10 +190,16 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
         }
     }
 
-    readonly availableFormats = [
-        {value: ReportFormat.PDF,  text: "PDF"},
-        {value: ReportFormat.HTML,  text: "HTML"},
-    ];
+    private static readonly formatDisplayNames = {
+        [ReportFormat.PDF]: "PDF",
+        [ReportFormat.HTML]: "HTML",
+    };
+    readonly availableFormats: {value: ReportFormat, text: string}[] = availableReportFormatTypes.map(
+        reportFormatType => ({
+            value: reportFormatType,
+            text: EditRecipientViewModel.formatDisplayNames[reportFormatType],
+        })
+    );
 
     readonly helpMessages = {
         format: "The format that will be delivered to this recipient. For example, a PDF attached to an email or " +
