@@ -51,7 +51,7 @@ public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
                 get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
-                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ZERO))
+                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ZERO, true))
                         )
         );
         final PdfReportFormat format = new PdfReportFormat.Builder().setWidthInches(8.5f).setHeightInches(11f).build();

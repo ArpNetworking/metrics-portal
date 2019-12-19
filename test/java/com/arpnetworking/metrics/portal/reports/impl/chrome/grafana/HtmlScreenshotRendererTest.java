@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportB
 import com.github.tomakehurst.wiremock.common.Strings;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -30,11 +31,14 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests class {@link HtmlGrafanaScreenshotRenderer}.
@@ -52,7 +56,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
-                                .withBody(Utils.mockGrafanaReportPanelPage(renderDelay))
+                                .withBody(Utils.mockGrafanaReportPanelPage(renderDelay, true))
                         )
         );
 
@@ -89,5 +93,42 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
     @Test(timeout = 20000)
     public void testDelayedRendering() throws Exception {
         runTestWithRenderDelay(Duration.ofSeconds(2));
+    }
+
+    @Test(timeout = 20000)
+    public void testDelayedRenderingFailure() throws Exception {
+        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+
+        _wireMock.givenThat(
+                get(urlEqualTo("/"))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "text/html")
+                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ofSeconds(2), false))
+                        )
+        );
+
+        final HtmlReportFormat format = new HtmlReportFormat.Builder().build();
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(getDevToolsFactory());
+        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
+                .setWebPageReportSource(
+                        TestBeanFactory.createWebPageReportSourceBuilder()
+                                .setUri(URI.create("http://localhost:" + _wireMock.port()))
+                                .build())
+                .build();
+
+        final CompletableFuture<MockRenderedReportBuilder> stage = renderer.render(
+                source,
+                format,
+                DEFAULT_TIME_RANGE,
+                builder,
+                DEFAULT_TIMEOUT
+        );
+
+        try {
+            stage.get();
+            Assert.fail("rendering should not have completed successfully");
+        } catch (final ExecutionException exc) {
+            assertTrue(exc.getCause() instanceof BaseGrafanaScreenshotRenderer.BrowserReportedFailure);
+        }
     }
 }
