@@ -28,6 +28,7 @@ public final class Utils {
      * HTML for a page that acts like a Grafana page with a report panel on it.
      *
      * @param renderDelay how long to wait between page-load and when the report "finishes rendering"
+     * @param succeed whether the report should succeed or fail
      * @return the HTML.
      */
     public static String mockGrafanaReportPanelPage(final Duration renderDelay, final boolean succeed) {

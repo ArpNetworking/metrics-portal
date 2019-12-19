@@ -152,8 +152,11 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
 
+    /**
+     * Indicates that a report failed to render because of something in JavaScript-land.
+     */
     public static final class BrowserReportedFailure extends Exception {
-        private final static long serialVersionUID = 3176627859502569121L;
+        private static final long serialVersionUID = 3176627859502569121L;
     }
 
 }
