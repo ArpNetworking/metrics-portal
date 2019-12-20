@@ -27,6 +27,7 @@ import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -78,7 +79,9 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
             final TimeRange timeRange,
             final B builder
     ) {
-        return devToolsService.nowOrOnEvent(
+        final CompletableFuture<B> result = new CompletableFuture<>();
+
+        final CompletableFuture<?> successFuture = devToolsService.nowOrOnEvent(
                 "reportrendered",
                 () -> {
                     final Object html;
@@ -111,7 +114,31 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
                     .addData("timeRange", timeRange)
                     .log();
             return whenReportRendered(devToolsService, source, format, timeRange, builder);
+        }).thenApply(result::complete);
+
+        final CompletableFuture<?> failureFuture = devToolsService.nowOrOnEvent(
+                "reportrenderfailed",
+                () -> false
+                // TODO(spencerpearson): ^ this might miss a very fast failure.
+                //   How can we avoid this race condition?
+        ).thenApply(whatever -> {
+            LOGGER.debug()
+                    .setMessage("browser fired reportrenderfailed event")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .log();
+            result.completeExceptionally(new BrowserReportedFailure());
+            return null;
         });
+
+        // Ensure that if the result gets cancelled, so do the event-listener futures
+        result.whenComplete((x, e) -> {
+            successFuture.cancel(true);
+            failureFuture.cancel(true);
+        });
+
+        return result;
     }
 
     /**
@@ -125,5 +152,12 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseGrafanaScreenshotRenderer.class);
+
+    /**
+     * Indicates that a report failed to render because of something in JavaScript-land.
+     */
+    public static final class BrowserReportedFailure extends Exception {
+        private static final long serialVersionUID = 3176627859502569121L;
+    }
 
 }

@@ -28,9 +28,10 @@ public final class Utils {
      * HTML for a page that acts like a Grafana page with a report panel on it.
      *
      * @param renderDelay how long to wait between page-load and when the report "finishes rendering"
+     * @param succeed whether the report should succeed or fail
      * @return the HTML.
      */
-    public static String mockGrafanaReportPanelPage(final Duration renderDelay) {
+    public static String mockGrafanaReportPanelPage(final Duration renderDelay, final boolean succeed) {
         return ""
                 + "<html>\n"
                 + "<head><script>\n"
@@ -38,7 +39,7 @@ public final class Utils {
                 + "    document.body.innerHTML = `\n"
                 + "      <iframe class=\"rendered-markdown-container\" srcdoc=\"content we care about\"></iframe>\n"
                 + "    `;\n"
-                + "    window.dispatchEvent(new Event('reportrendered'));\n"
+                + "    window.dispatchEvent(new Event('" + (succeed ? "reportrendered" : "reportrenderfailed") + "'));\n"
                 + "  }\n"
                 + "  window.addEventListener('load', () => setTimeout(mockRenderCompletion, " + renderDelay.toMillis() + "));\n"
                 + "</script></head>\n"
