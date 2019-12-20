@@ -132,6 +132,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
             return null;
         });
 
+        // Ensure that if the result gets cancelled, so do the event-listener futures
         result.whenComplete((x, e) -> {
             successFuture.cancel(true);
             failureFuture.cancel(true);
