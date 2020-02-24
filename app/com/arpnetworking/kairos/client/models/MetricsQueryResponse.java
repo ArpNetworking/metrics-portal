@@ -53,18 +53,6 @@ public final class MetricsQueryResponse {
         return _otherArgs;
     }
 
-    /**
-     * Converts this KairosDB model to an internal TimeSeriesResult model.
-     *
-     * @return a new {@link TimeSeriesResult} model
-     */
-    public TimeSeriesResult toTimeSeriesResult() {
-        return new DefaultTimeSeriesResult.Builder()
-                .setQueries(_queries.stream().map(Query::toInternal).collect(ImmutableList.toImmutableList()))
-                .setOtherArgs(_otherArgs)
-                .build();
-    }
-
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -178,19 +166,6 @@ public final class MetricsQueryResponse {
 
         public ImmutableList<QueryResult> getResults() {
             return _results;
-        }
-
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.Query toInternal() {
-            return new DefaultTimeSeriesResult.Query.Builder()
-                    .setSampleSize(_sampleSize)
-                    .setOtherArgs(_otherArgs)
-                    .setResults(_results.stream().map(QueryResult::toInternal).collect(ImmutableList.toImmutableList()))
-                    .build();
         }
 
         @Override
@@ -335,22 +310,6 @@ public final class MetricsQueryResponse {
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
             return _otherArgs;
-        }
-
-        /**
-         * Converts this model to an internal model.
-         *
-         * @return a new internal model
-         */
-        public TimeSeriesResult.Result toInternal() {
-            return new DefaultTimeSeriesResult.Result.Builder()
-                    .setAlerts(ImmutableList.of())
-                    .setGroupBy(_groupBy.stream().map(QueryGroupBy::toInternal).collect(ImmutableList.toImmutableList()))
-                    .setName(_name)
-                    .setValues(_values.stream().map(DataPoint::toInternal).collect(ImmutableList.toImmutableList()))
-                    .setTags(_tags)
-                    .setOtherArgs(_otherArgs)
-                    .build();
         }
 
         @Override
