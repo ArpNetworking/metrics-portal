@@ -236,7 +236,12 @@ public final class KairosDbServiceImpl implements KairosDbService {
                                 .build();
                     } else {
                         metrics.incrementCounter("kairosService/useRollups/bypass", 0);
-                        final ImmutableList<String> filteredMetrics = filterMetricNames(metricNames, Optional.of(metricName), Optional.empty(), false);
+                        final ImmutableList<String> filteredMetrics = filterMetricNames(
+                                metricNames,
+                                Optional.of(metricName),
+                                Optional.empty(),
+                                false
+                        );
                         final List<String> rollupMetrics = filteredMetrics
                                 .stream()
                                 .filter(IS_ROLLUP)
