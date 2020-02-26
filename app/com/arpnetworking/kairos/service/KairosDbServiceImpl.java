@@ -102,12 +102,13 @@ public final class KairosDbServiceImpl implements KairosDbService {
     @Override
     public CompletionStage<MetricNamesResponse> queryMetricNames(
             final Optional<String> containing,
+            final Optional<String> prefix,
             final boolean filterRollups) {
         final Metrics metrics = _metricsFactory.create();
         final Timer timer = metrics.createTimer("kairosService/queryMetricNames/request");
 
         return getMetricNames(metrics)
-                .thenApply(list -> filterMetricNames(list, containing, filterRollups))
+                .thenApply(list -> filterMetricNames(list, containing, prefix, filterRollups))
                 .thenApply(list -> new MetricNamesResponse.Builder().setResults(list).build())
                 .whenComplete((result, error) -> {
                     timer.stop();
@@ -146,6 +147,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static ImmutableList<String> filterMetricNames(
             final List<String> metricNames,
             final Optional<String> containing,
+            final Optional<String> prefix,
             final boolean filterRollups) {
 
         final Predicate<String> baseFilter;
@@ -156,7 +158,6 @@ public final class KairosDbServiceImpl implements KairosDbService {
         }
 
         final Predicate<String> containsFilter;
-
         if (containing.isPresent() && !containing.get().isEmpty()) {
             final String lowerContaining = containing.get().toLowerCase(Locale.getDefault());
             containsFilter = s -> s.toLowerCase(Locale.getDefault()).contains(lowerContaining);
@@ -164,10 +165,19 @@ public final class KairosDbServiceImpl implements KairosDbService {
             containsFilter = s -> true;
         }
 
+        final Predicate<String> prefixFilter;
+        if (prefix.isPresent() && !prefix.get().isEmpty()) {
+            final String lowerPrefix = prefix.get().toLowerCase(Locale.getDefault());
+            prefixFilter = s -> s.toLowerCase(Locale.getDefault()).startsWith(lowerPrefix);
+        } else {
+            prefixFilter = s -> true;
+        }
+
         return metricNames.stream()
                 .filter(baseFilter)
                 .filter(IS_PT1M.negate())
                 .filter(containsFilter)
+                .filter(prefixFilter)
                 .collect(ImmutableList.toImmutableList());
     }
 
