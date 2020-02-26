@@ -52,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /**
@@ -174,10 +175,11 @@ public class KairosDbProxyController extends Controller {
      * Caching metricNames call.
      *
      * @param containing simple string match filter for metric names
+     * @param prefix prefix that returned metric names must have (case-insensitive)
      * @return Cached metric names, filtered by the query string.
      */
-    public CompletionStage<Result> metricNames(final String containing) {
-        return _kairosService.queryMetricNames(Optional.ofNullable(containing), _filterRollups)
+    public CompletionStage<Result> metricNames(@Nullable final String containing, @Nullable final String prefix) {
+        return _kairosService.queryMetricNames(Optional.ofNullable(containing), Optional.ofNullable(prefix), _filterRollups)
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
     }
