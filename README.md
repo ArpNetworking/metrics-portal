@@ -290,6 +290,11 @@ the command line to enhance the Ebean classes.
 
 * _Debugging Chrome-based reports._ With the default options in `portal.application.conf`, Chrome offers a remote debugger on port 48928, which you can access by visiting <chrome://inspect> in another Chrome instance and adding `localhost:48928` under "Discover network targets".
 
+### Releasing
+
+If you have write-access to this repository, you should just be able to cut a release by running `git checkout master && git pull && mvn release:prepare`, and accepting the default version-names it proposes.
+
+
 ### IntelliJ
 
 The project can be imported normally using "File / New / Project From Existing Sources..." using the Maven aspect.
