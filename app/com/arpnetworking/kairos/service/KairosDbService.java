@@ -51,10 +51,11 @@ public interface KairosDbService {
      * Queries KairosDB for metric names.
      *
      * @param containing - metric names filter
+     * @param prefix prefix that returned metric names must have (case-insensitive)
      * @param filterRollups - controls if rollup metrics are filtered from the response
      * @return the response
      */
-    CompletionStage<MetricNamesResponse> queryMetricNames(Optional<String> containing, boolean filterRollups);
+    CompletionStage<MetricNamesResponse> queryMetricNames(Optional<String> containing, Optional<String> prefix, boolean filterRollups);
 
     /**
      * Queries KairosDB for a list of tags associated with a metric.

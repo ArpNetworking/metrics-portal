@@ -51,7 +51,7 @@ GET        /assets/lib/configure.js             controllers.ApplicationControlle
 GET        /assets/html/HeaderViewModel.html    controllers.ApplicationController.getHeaderViewModel
 
 # Kairosdb proxy
-GET        /api/v1/metricnames                  controllers.KairosDbProxyController.metricNames(containing: String ?= null)
+GET        /api/v1/metricnames                  controllers.KairosDbProxyController.metricNames(containing: String ?= null, prefix: String ?= null)
 GET        /api/v1/health/check                 controllers.KairosDbProxyController.healthCheck()
 GET        /api/v1/health/status                controllers.KairosDbProxyController.status()
 GET        /api/v1/tagnames                     controllers.KairosDbProxyController.tagNames()

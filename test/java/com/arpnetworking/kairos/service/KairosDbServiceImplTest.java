@@ -117,7 +117,7 @@ public class KairosDbServiceImplTest {
 
     @Test
     public void testFiltersRollupMetrics() throws Exception {
-        final CompletionStage<MetricNamesResponse> future = _service.queryMetricNames(Optional.empty(), true);
+        final CompletionStage<MetricNamesResponse> future = _service.queryMetricNames(Optional.empty(), Optional.empty(), true);
         final MetricNamesResponse response = future.toCompletableFuture().get();
         assertEquals(ImmutableList.builder().add("foo", "bar").build(), response.getResults());
     }
