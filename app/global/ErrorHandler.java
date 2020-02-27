@@ -37,6 +37,7 @@ public class ErrorHandler implements HttpErrorHandler {
                 .setMessage("error on client request")
                 .addData("request", requestHeader)
                 .addData("reason", message)
+                .addData("httpStatus", status)
                 .log();
         return CompletableFuture.completedFuture(Results.status(status));
     }
@@ -46,6 +47,8 @@ public class ErrorHandler implements HttpErrorHandler {
         LOGGER.error()
                 .setMessage("error processing request")
                 .addData("request", requestHeader)
+                .addData("method", requestHeader.method())
+                .addData("path", requestHeader.path())
                 .setThrowable(throwable)
                 .log();
         return CompletableFuture.completedFuture(Results.status(500));
