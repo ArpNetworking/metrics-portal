@@ -21,13 +21,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import models.internal.TimeSeriesResult;
-import models.internal.impl.DefaultTimeSeriesResult;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Model class for a data point in a kairosdb metrics query.
@@ -39,20 +38,8 @@ public final class DataPoint {
         return _time;
     }
 
-    public Object getValue() {
+    public Optional<Object> getValue() {
         return _value;
-    }
-
-    /**
-     * Converts this to an internal model.
-     *
-     * @return a new internal model
-     */
-    public TimeSeriesResult.DataPoint toInternal() {
-        return new DefaultTimeSeriesResult.DataPoint.Builder()
-                .setTime(_time)
-                .setValue(_value)
-                .build();
     }
 
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Jackson
@@ -89,11 +76,11 @@ public final class DataPoint {
 
     private DataPoint(final Builder builder) {
         _time = builder._time;
-        _value = builder._value;
+        _value = Optional.ofNullable(builder._value);
     }
 
     private final Instant _time;
-    private final Object _value;
+    private final Optional<Object> _value;
 
     /**
      * Implementation of the builder pattern for a {@link DataPoint}.
@@ -128,7 +115,7 @@ public final class DataPoint {
         }
 
         /**
-         * Sets the value. Required. Cannot be null.
+         * Sets the value. Optional. Defaults to null.
          *
          * @param value the value
          * @return this {@link Builder}
@@ -146,7 +133,6 @@ public final class DataPoint {
 
         @NotNull
         private Instant _time;
-        @NotNull
         private Object _value;
     }
 }

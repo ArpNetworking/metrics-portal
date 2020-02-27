@@ -232,7 +232,7 @@ public final class KairosDbProxyControllerIT {
         assertEquals(ImmutableList.of("host.example.com"), result.getTags().get("host"));
         assertEquals(ImmutableList.of("foo"), result.getTags().get("ignored"));
         assertEquals(1, result.getValues().size());
-        assertEquals(1, result.getValues().get(0).getValue());
+        assertEquals(1, result.getValues().get(0).getValue().get());
     }
 
     @Test
@@ -287,7 +287,7 @@ public final class KairosDbProxyControllerIT {
         assertEquals(1, result.getTags().size());
         assertEquals(ImmutableList.of("host.example.com"), result.getTags().get("host"));
         assertEquals(1, result.getValues().size());
-        assertEquals(1, result.getValues().get(0).getValue());
+        assertEquals(1, result.getValues().get(0).getValue().get());
     }
 
     private void assertMetricsQuery(final String aggregator, final Number expectedValue, final int minutes) {
@@ -302,7 +302,7 @@ public final class KairosDbProxyControllerIT {
         assertEquals(createError("Unexpected tags"), 1, result.getTags().size());
         assertEquals(createError("Unexpected tag"), ImmutableList.of("host.example.com"), result.getTags().get("host"));
         assertEquals(createError("Unexpected values for " + aggregator), 1, result.getValues().size());
-        assertEquals(createError("Wrong value for " + aggregator), expectedValue, result.getValues().get(0).getValue());
+        assertEquals(createError("Wrong value for " + aggregator), expectedValue, result.getValues().get(0).getValue().get());
     }
 
     private MetricsQueryResponse queryMetrics(final MetricsQuery query) {
