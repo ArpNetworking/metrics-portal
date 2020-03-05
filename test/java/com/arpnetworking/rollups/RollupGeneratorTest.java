@@ -88,7 +88,7 @@ public class RollupGeneratorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(_config.getInt(eq("rollup.maxBackFill.periods"))).thenReturn(4);
+        when(_config.getInt(eq("rollup.maxBackFill.periods.default"))).thenReturn(4);
         when(_config.getString(eq("rollup.fetch.backoff"))).thenReturn("5min");
 
 

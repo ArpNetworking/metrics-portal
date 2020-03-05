@@ -17,7 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
-import akka.pattern.PatternsCS;
+import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -65,7 +65,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
     private void executeRollup(final RollupDefinition rollupDefinition) {
         final long startTime = System.nanoTime();
-        PatternsCS.pipe(
+        Patterns.pipe(
                 performRollup(rollupDefinition)
                         .handle((response, failure) -> {
                             if (failure != null) {

@@ -32,17 +32,21 @@ import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigUtil;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletionStage;
@@ -92,8 +96,17 @@ public class RollupGenerator extends AbstractActorWithTimers {
         _kairosDbClient = kairosDbClient;
         _clock = clock;
         _metrics = metrics;
-        _maxBackFillPeriods = configuration.getInt("rollup.maxBackFill.periods");
         _fetchBackoff = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.backoff");
+
+        final int defaultBackFill = configuration.getInt("rollup.maxBackFill.periods.default");
+        _maxBackFillPeriods = Arrays.stream(RollupPeriod.values())
+                .collect(ImmutableMap.toImmutableMap(
+                        p -> p,
+                        p -> {
+                            final String key = ConfigUtil.joinPath("rollup.maxBackFill.periods", p.name().toLowerCase());
+                            return configuration.hasPath(key) ? configuration.getInt(key) : defaultBackFill;
+                        }
+                ));
     }
 
     @Override
@@ -213,8 +226,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
                 // The last datapoint contains data for the period that follows it
                 final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
+                final int maxBackFillPeriods = _maxBackFillPeriods.get(period);
                 final Instant oldestBackfillPoint = period.recentEndTime(
-                        _clock.instant()).minus(period.periodCountToDuration(_maxBackFillPeriods));
+                        _clock.instant()).minus(period.periodCountToDuration(maxBackFillPeriods));
                 final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
 
                 // We either want to start at the oldest backfill point or the start of the period after the last datapoint.
@@ -294,9 +308,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(final String metricName, final RollupPeriod period) {
+        final int maxBackFillPeriods = _maxBackFillPeriods.get(period);
         return _kairosDbClient.queryMetrics(
                 new MetricsQuery.Builder()
-                        .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(_maxBackFillPeriods)))
+                        .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(maxBackFillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
                                 new Metric.Builder()
@@ -315,7 +330,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private final ActorRef _metricsDiscovery;
     private final ActorRef _rollupManagerPool;
     private final KairosDbClient _kairosDbClient;
-    private final int _maxBackFillPeriods;
+    private final Map<RollupPeriod, Integer> _maxBackFillPeriods;
     private final FiniteDuration _fetchBackoff;
     private final Clock _clock;
     private final PeriodicMetrics _metrics;
