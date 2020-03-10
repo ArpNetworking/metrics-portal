@@ -18,7 +18,6 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
-import akka.parboiled2.RuleTrace;
 import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
@@ -122,7 +121,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         final ImmutableMap.Builder<RollupPeriod, Integer> maxBackFillByPeriod = ImmutableMap.builder();
         for (RollupPeriod period : RollupPeriod.values()) {
-            final String key = ConfigUtil.joinPath("rollup", "maxBackFill", "periods", period.name().toLowerCase());
+            final String periodName = period.name().toLowerCase(Locale.ENGLISH);
+            final String key = ConfigUtil.joinPath("rollup", "maxBackFill", "periods", periodName);
             if (configuration.hasPath(key)) {
                 maxBackFillByPeriod.put(period, configuration.getInt(key));
             }
@@ -344,7 +344,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return builder.build();
     }
 
-    private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(final String metricName, final RollupPeriod period, final int backfillPeriods) {
+    private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(
+            final String metricName,
+            final RollupPeriod period,
+            final int backfillPeriods
+    ) {
         return _kairosDbClient.queryMetrics(
                 new MetricsQuery.Builder()
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
