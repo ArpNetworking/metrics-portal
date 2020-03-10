@@ -260,7 +260,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 // We either want to start at the oldest backfill point or the start of the period
                 // after the last datapoint since it contains data for the period that follows it.
                 Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
-                        ? oldestBackfillPoint : lastDataPoint.plus(period.periodCountToDuration(1));
+                        ? oldestBackfillPoint : period.recentEndTime(lastDataPoint).plus(period.periodCountToDuration(1));
 
                 final Queue<Instant> startTimes = new LinkedList<>();
 

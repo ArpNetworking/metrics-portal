@@ -399,9 +399,9 @@ public class RollupGeneratorTest {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
-        final Instant lastDataPoint = RollupPeriod.HOURLY
-                .recentEndTime(_clock.instant())
-                .minus(RollupPeriod.HOURLY.periodCountToDuration(3));
+        final Instant lastDataPoint =
+                _clock.instant()
+                    .minus(RollupPeriod.HOURLY.periodCountToDuration(3));
 
         actor.tell(
                 new LastDataPointMessage.Builder()
