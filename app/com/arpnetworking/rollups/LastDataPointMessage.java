@@ -48,25 +48,18 @@ public final class LastDataPointMessage extends FailableMessage {
         return _period;
     }
 
-    public int getMaxBackfillPeriods() {
-        return _maxBackfillPeriods;
-    }
-
     private LastDataPointMessage(final Builder builder) {
         super(builder);
         _metricName = builder._metricName;
         _tags = builder._tags;
         _lastDataPointTime = builder._lastDataPointTime;
         _period = builder._period;
-        _maxBackfillPeriods = builder._maxBackfillPeriods;
     }
 
     private final String _metricName;
     private final RollupPeriod _period;
     private final ImmutableSet<String> _tags;
     private final Instant _lastDataPointTime;
-    private final int _maxBackfillPeriods;
-    // TODO(cbriones): Generate a new serialVersionUID
     private static final long serialVersionUID = 5745882770658263619L;
 
 
@@ -126,17 +119,6 @@ public final class LastDataPointMessage extends FailableMessage {
             return this;
         }
 
-        /**
-         * Sets the {@code _maxBackfillPeriods} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param value the {@code _maxBackfillPeriods} to set
-         * @return a reference to this Builder
-         */
-        public Builder setMaxBackfillPeriods(final int value) {
-            _maxBackfillPeriods = value;
-            return this;
-        }
-
         @Override
         protected void reset() {
             _metricName = null;
@@ -159,6 +141,5 @@ public final class LastDataPointMessage extends FailableMessage {
         private ImmutableSet<String> _tags = ImmutableSet.of();
 
         private Instant _lastDataPointTime;
-        private int _maxBackfillPeriods;
     }
 }

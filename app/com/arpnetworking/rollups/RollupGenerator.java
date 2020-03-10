@@ -63,26 +63,25 @@ import javax.inject.Named;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  *
- * @implNote
- *
- * The Generator flow is as follows:
- * <p>
- * While there is no work, we periodically request metric names from {@link MetricsDiscovery}.
- *
- * For each metric name received, perform the following:
- *     <ol>
- *         <li>Retrieve the tag names for this metric (ref. {@link TagNamesMessage})</li>
- *         <li>Query for the last data point given the maximum lookback and set of tags (ref. {@link LastDataPointMessage})</li>
- *         <li>If this datapoint is in the past, generate a backfill job for the period
- *         furthest in the past, and enqueue it by sending to the {@link RollupManager}. (ref. {@link FinishRollupMessage})
- *         </li>
- *     </ol>
- * <p>
- * In particular [2] leaves open the possibility of chunking rollups by tags as a future optimization in order
- * to break down the unit of work. At the moment we forward all tags within a {@code LastDataPointMessage}, meaning that
- * rollups operate on a metric as a whole.
  */
 public class RollupGenerator extends AbstractActorWithTimers {
+
+    /*
+     * The Generator flow is as follows:
+     *
+     * While there is no work, we periodically request metric names from {@link MetricsDiscovery}.
+     *
+     * For each metric name received, perform the following:
+     *
+     *     1. Retrieve the tag names for this metric (TagNamesMessage)
+     *     2. Query for the last data point given the maximum backfill and set of tags (LastDataPointMessage)
+     *     3. If this datapoint is in the past, generate a backfill job for the period
+     *     furthest in the past, and enqueue it by sending to the RollupManager. (FinishRollupMessage)
+     *
+     * In particular [2] leaves open the possibility of chunking rollups by tags as a future
+     * optimization in order to break down the unit of work. At the moment we forward all tags
+     * within a LastDataPointMessage, meaning that rollups operate on a metric as a whole.
+     */
 
     @Override
     public Receive createReceive() {
@@ -223,32 +222,35 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
+        final RollupPeriod period = message.getPeriod();
+        final String metricName = message.getMetricName();
+
         _metrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
         if (message.isFailure()) {
             _metrics.recordCounter("rollup/generator/last_data_point_message/success", 0);
             LOGGER.warn()
                     .setMessage("Failed to get last data point for metric.")
-                    .addData("metricName", message.getMetricName())
+                    .addData("metricName", metricName)
                     .setThrowable(message.getFailure().get())
                     .log();
 
             getSelf().tell(
                     new FinishRollupMessage.Builder()
-                            .setMetricName(message.getMetricName())
-                            .setPeriod(message.getPeriod())
+                            .setMetricName(metricName)
+                            .setPeriod(period)
                             .setFailure(message.getFailure().orElse(new RuntimeException("Received Failure")))
                             .build(),
                     ActorRef.noSender());
         } else {
             _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
-            final Instant recentPeriodStartTime = message.getPeriod().recentStartTime(_clock.instant());
+            final Instant recentPeriodStartTime = period.recentStartTime(_clock.instant());
 
             // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
+            // TODO(cbriones): try disabling it here instead after receiving the last datapoint message.
             if (recentPeriodStartTime.isAfter(message.getLastDataPointTime().orElse(Instant.EPOCH))) {
-                final String rollupMetricName = message.getMetricName() + message.getPeriod().getSuffix();
-                final RollupPeriod period = message.getPeriod();
-                final int maxBackFillPeriods = message.getMaxBackfillPeriods();
+                final String rollupMetricName = metricName + period.getSuffix();
+                final int maxBackFillPeriods = _maxBackFillPeriodsByUnit.getOrDefault(period, 0);
 
                 // The last datapoint contains data for the period that follows it
                 final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
@@ -268,7 +270,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
                 }
 
-                final RollupDefinition.Builder rollupBuilder = new RollupDefinition.Builder()
+                final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
                         .setSourceMetricName(message.getMetricName())
                         .setDestinationMetricName(rollupMetricName)
                         .setPeriod(period)
@@ -277,9 +279,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 while (!startTimes.isEmpty()) {
                     final Instant startTime = startTimes.poll();
 
-                    rollupBuilder.setStartTime(startTime)
+                    rollupDefBuilder.setStartTime(startTime)
                             .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
-                    _rollupManagerPool.tell(rollupBuilder.build(), self());
+                    _rollupManagerPool.tell(rollupDefBuilder.build(), self());
                 }
             }
 
