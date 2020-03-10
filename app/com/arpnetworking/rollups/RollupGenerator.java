@@ -18,7 +18,7 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
-import akka.pattern.PatternsCS;
+import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -41,7 +41,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,16 +49,41 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Actor for performing rollups for individual source metrics.
+ * Actor for generating rollup jobs for individual source metrics.
+ * <p>
+ * The {@code RollupGenerator} will periodically retrieve metrics eligible for rollup and enqueue jobs up
+ * to the maximum number of backfill periods, if any are configured.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
+ *
+ * @implNote
+ *
+ * The Generator flow is as follows:
+ * <p>
+ * While there is no work, we periodically request metric names from {@link MetricsDiscovery}.
+ *
+ * For each metric name received, perform the following:
+ *     <ol>
+ *         <li>Retrieve the tag names for this metric (ref. {@link TagNamesMessage})</li>
+ *         <li>Query for the last data point given the maximum lookback and set of tags (ref. {@link LastDataPointMessage})</li>
+ *         <li>If this datapoint is in the past, generate a backfill job for the period
+ *         furthest in the past, and enqueue it by sending to the {@link RollupManager}. (ref. {@link FinishRollupMessage})
+ *         </li>
+ *     </ol>
+ * <p>
+ * In particular [2] leaves open the possibility of chunking rollups by tags as a future optimization in order
+ * to break down the unit of work. At the moment we forward all tags within a {@code LastDataPointMessage}, meaning that
+ * rollups operate on a metric as a whole.
  */
 public class RollupGenerator extends AbstractActorWithTimers {
+
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
@@ -71,7 +95,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
                 .build();
     }
-
 
     /**
      * RollupGenerator actor constructor.
@@ -98,15 +121,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
         _metrics = metrics;
         _fetchBackoff = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.backoff");
 
-        final int defaultBackFill = configuration.getInt("rollup.maxBackFill.periods.default");
-        _maxBackFillPeriods = Arrays.stream(RollupPeriod.values())
-                .collect(ImmutableMap.toImmutableMap(
-                        p -> p,
-                        p -> {
-                            final String key = ConfigUtil.joinPath("rollup.maxBackFill.periods", p.name().toLowerCase());
-                            return configuration.hasPath(key) ? configuration.getInt(key) : defaultBackFill;
-                        }
-                ));
+        final ImmutableMap.Builder<RollupPeriod, Integer> maxBackFillPeriodsByUnit = ImmutableMap.builder();
+        for (RollupPeriod period : RollupPeriod.values()) {
+            final String key = ConfigUtil.joinPath("rollup", "maxBackFill", "periods", period.name().toLowerCase());
+            if (configuration.hasPath(key)) {
+                maxBackFillPeriodsByUnit.put(period, configuration.getInt(key));
+            }
+        }
+        _maxBackFillPeriodsByUnit = maxBackFillPeriodsByUnit.build();
     }
 
     @Override
@@ -123,7 +145,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void fetchMetricTags(final String metricName) {
         _metrics.recordCounter("rollup/generator/metric_names_message/received", 1);
         final long startTime = System.nanoTime();
-        PatternsCS.pipe(_kairosDbClient.queryMetricTags(
+        Patterns.pipe(_kairosDbClient.queryMetricTags(
                 new TagsQuery.Builder()
                         .setStartTime(Instant.ofEpochMilli(0))
                         .setMetrics(ImmutableList.of(
@@ -174,14 +196,17 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
             // Get the next metric
             getSelf().tell(FETCH_METRIC, ActorRef.noSender());
-        } else {
-            _metrics.recordCounter("rollup/generator/tag_names_message/success", 1);
-            _periodsInFlight = Lists.newArrayList(RollupPeriod.values());
-            final String metricName = message.getMetricName();
-            final long startTime = System.nanoTime();
-            for (final RollupPeriod period : RollupPeriod.values()) {
-                PatternsCS.pipe(
-                        fetchLastDataPoint(metricName + period.getSuffix(), period)
+            return;
+        }
+        _metrics.recordCounter("rollup/generator/tag_names_message/success", 1);
+        _periodsInFlight = Lists.newArrayList(RollupPeriod.values());
+        final String metricName = message.getMetricName();
+        final long startTime = System.nanoTime();
+        for (final RollupPeriod period : RollupPeriod.values()) {
+            final int backfillPeriods = _maxBackFillPeriodsByUnit.getOrDefault(period, 0);
+            if (backfillPeriods > 0) {
+                Patterns.pipe(
+                        fetchLastDataPoint(metricName + period.getSuffix(), period, backfillPeriods)
                                 .handle((response, failure) -> {
                                     final String baseMetricName = "rollup/generator/last_data_point_"
                                             + period.name().toLowerCase(Locale.getDefault());
@@ -223,10 +248,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
             if (recentPeriodStartTime.isAfter(message.getLastDataPointTime().orElse(Instant.EPOCH))) {
                 final String rollupMetricName = message.getMetricName() + message.getPeriod().getSuffix();
                 final RollupPeriod period = message.getPeriod();
+                final int maxBackFillPeriods = message.getMaxBackfillPeriods();
 
                 // The last datapoint contains data for the period that follows it
                 final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
-                final int maxBackFillPeriods = _maxBackFillPeriods.get(period);
                 final Instant oldestBackfillPoint = period.recentEndTime(
                         _clock.instant()).minus(period.periodCountToDuration(maxBackFillPeriods));
                 final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
@@ -307,11 +332,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return builder.build();
     }
 
-    private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(final String metricName, final RollupPeriod period) {
-        final int maxBackFillPeriods = _maxBackFillPeriods.get(period);
+    private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(final String metricName, final RollupPeriod period, final int backfillPeriods) {
         return _kairosDbClient.queryMetrics(
                 new MetricsQuery.Builder()
-                        .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(maxBackFillPeriods)))
+                        .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
                                 new Metric.Builder()
@@ -330,7 +354,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private final ActorRef _metricsDiscovery;
     private final ActorRef _rollupManagerPool;
     private final KairosDbClient _kairosDbClient;
-    private final Map<RollupPeriod, Integer> _maxBackFillPeriods;
+    private final Map<RollupPeriod, Integer> _maxBackFillPeriodsByUnit;
     private final FiniteDuration _fetchBackoff;
     private final Clock _clock;
     private final PeriodicMetrics _metrics;

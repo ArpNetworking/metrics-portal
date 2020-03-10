@@ -88,8 +88,11 @@ public class RollupGeneratorTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(_config.getInt(eq("rollup.maxBackFill.periods.default"))).thenReturn(4);
         when(_config.getString(eq("rollup.fetch.backoff"))).thenReturn("5min");
+        when(_config.getInt(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(4);
+        when(_config.getInt(eq("rollup.maxBackFill.periods.daily"))).thenReturn(4);
+        when(_config.hasPath(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(true);
+        when(_config.hasPath(eq("rollup.maxBackFill.periods.daily"))).thenReturn(true);
 
 
         _system = ActorSystem.create(
@@ -328,6 +331,7 @@ public class RollupGeneratorTest {
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setLastDataPointTime(null)
+                        .setMaxBackfillPeriods(4)
                         .build(),
                 ActorRef.noSender());
 
@@ -365,6 +369,7 @@ public class RollupGeneratorTest {
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setLastDataPointTime(Instant.EPOCH)
+                        .setMaxBackfillPeriods(4)
                         .build(),
                 ActorRef.noSender());
 
@@ -406,6 +411,7 @@ public class RollupGeneratorTest {
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setLastDataPointTime(lastDataPoint)
+                        .setMaxBackfillPeriods(4)
                         .build(),
                 ActorRef.noSender());
 
@@ -482,6 +488,54 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());
 
         _probe.expectNoMessage();
+    }
+
+    @Test
+    public void testUnsetConfigDisablesRollups() {
+        when(_config.hasPath(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(false);
+        when(_config.hasPath(eq("rollup.maxBackFill.periods.daily"))).thenReturn(false);
+
+    }
+
+    @Test
+    public void testPerPeriodBackfillConfiguration() {
+        when(_config.getInt(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(7);
+        when(_config.getInt(eq("rollup.maxBackFill.periods.daily"))).thenReturn(24);
+
+        final ActorRef actor = createActor();
+        _probe.expectMsg(RollupGenerator.FETCH_METRIC);
+
+        actor.tell(
+                new TagNamesMessage.Builder()
+                        .setMetricName("metric")
+                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .build(),
+                ActorRef.noSender());
+
+        final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
+        assertFalse(lastDataPointMessage1.isFailure());
+        assertEquals("metric", lastDataPointMessage1.getMetricName());
+        assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
+        assertTrue(lastDataPointMessage1.getLastDataPointTime().isPresent());
+        assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()),
+                lastDataPointMessage1.getLastDataPointTime().get());
+        assertEquals(2, lastDataPointMessage1.getTags().size());
+
+        final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
+        assertFalse(lastDataPointMessage2.isFailure());
+        assertEquals("metric", lastDataPointMessage2.getMetricName());
+        assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
+        assertTrue(lastDataPointMessage2.getLastDataPointTime().isPresent());
+        assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
+                lastDataPointMessage2.getLastDataPointTime().get());
+
+        _probe.expectNoMessage();
+
+        actor.tell(new FinishRollupMessage.Builder().setMetricName("metric").setPeriod(RollupPeriod.HOURLY).build(), ActorRef.noSender());
+        _probe.expectNoMessage();
+
+        actor.tell(new FinishRollupMessage.Builder().setMetricName("metric").setPeriod(RollupPeriod.DAILY).build(), ActorRef.noSender());
+        _probe.expectMsg(RollupGenerator.FETCH_METRIC);
     }
 
     /**
