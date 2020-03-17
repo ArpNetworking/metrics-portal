@@ -253,17 +253,20 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         // No rollups so execute what we received
                         return metric;
                     }
-                    // There are rollups, now determine the appropriate one based on the max sampling period in the
-                    // aggregators
+
+                    // FIXME(cbriones): This should work.
+                    // if (rollupQueriesDisabled(metric)) {
+                    //    return metric;
+                    // }
+                    // There are rollups and queries are enabled, now determine the appropriate one
+                    // based on the max sampling period in the aggregators.
                     final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
                             .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
                             .map(Aggregator::getSampling)
                             .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
                             .min(SamplingUnit::compareTo);
 
-                    // No aggregators are sampling aligned so skip as rollups are always aligned
-                    if (maxUnit.isPresent()) {
-
+                    return maxUnit.map(unit -> {
                         final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
                         rollupMetrics.forEach(name -> {
                             final Optional<SamplingUnit> rollupUnit =
@@ -271,17 +274,18 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             rollupUnit.ifPresent(samplingUnit -> orderedRollups.put(samplingUnit, name));
                         });
 
-                        final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(maxUnit.get());
+                        final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(unit);
                         metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", floorEntry != null ? 1 : 0);
                         final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
                         final Metric.Builder metricBuilder = Metric.Builder.<Metric, Metric.Builder>clone(metric)
                                 .setName(rollupName);
 
                         return metricBuilder.build();
-                    }
-                    metrics.incrementCounter("kairosService/useRollups/notEligible", 1);
-
-                    return metric;
+                    }).orElseGet(() -> {
+                        // No aggregators are sampling aligned so skip as rollups are always aligned
+                        metrics.incrementCounter("kairosService/useRollups/notEligible", 1);
+                        return metric;
+                    });
                 }).collect(ImmutableList.toImmutableList())));
     }
 

@@ -24,6 +24,7 @@ import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.config.RollupConfig;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
@@ -91,15 +92,16 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
      * @param configuration play configuration object
      * @param kairosDbClient client to use for fetching metric names
      * @param periodicMetrics periodic metrics client
+     * @param rollupConfig periodic metrics client
      */
     @Inject
     public MetricsDiscovery(
             final Config configuration,
             final KairosDbClient kairosDbClient,
-            final PeriodicMetrics periodicMetrics) {
+            final PeriodicMetrics periodicMetrics,
+            final RollupConfig rollupConfig) {
         _fetchInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.interval");
-        _whiteList = toPredicate(configuration.getStringList("rollup.metric.whitelist"), true);
-        _blackList = toPredicate(configuration.getStringList("rollup.metric.blacklist"), false);
+        _rollupConfig = rollupConfig;
         _kairosDbClient = kairosDbClient;
         _periodicMetrics = periodicMetrics;
         _metricsSet = new LinkedHashSet<>();
@@ -127,7 +129,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
 
     private void updateMetricsSet(final MetricNamesResponse response) {
         final Set<String> newMetricsSet = Sets.newLinkedHashSet();
-        filterMetricNames(response.getResults(), _whiteList, _blackList).forEach(newMetricsSet::add);
+        filterMetricNames(response.getResults(), _rollupConfig).forEach(newMetricsSet::add);
         _periodicMetrics.recordCounter("rollup/discovery/discovered", newMetricsSet.size());
         _metricsSet.addAll(newMetricsSet);
         _setIterator = _metricsSet.iterator();
@@ -147,20 +149,10 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
 
     static Stream<String> filterMetricNames(
             final Collection<String> metricNames,
-            final Predicate<String> whiteList,
-            final Predicate<String> blackList) {
+            final RollupConfig rollupConfig) {
         return metricNames.stream()
                 .filter(ROLLUP_METRIC_PREDICATE.negate())
-                .filter(whiteList)
-                .filter(blackList.negate());
-    }
-
-    static Predicate<String> toPredicate(final List<String> regexList, final boolean defaultResult) {
-        return regexList
-                .stream()
-                .map(Pattern::compile)
-                .map(Pattern::asPredicate)
-                .reduce(Predicate::or).orElse(t -> defaultResult);
+                .filter(rollupConfig::isGenerationEnabled);
     }
 
     private final FiniteDuration _fetchInterval;
@@ -169,8 +161,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
     private final Set<String> _metricsSet;
     private Iterator<String> _setIterator;
     private Deadline _refreshDeadline;
-    private final Predicate<String> _whiteList;
-    private final Predicate<String> _blackList;
+    private final RollupConfig _rollupConfig;
 
     private static final String RECORD_METRICS_MSG = "record_metrics";
     private static final String METRICS_TIMER = "metrics_timer";
