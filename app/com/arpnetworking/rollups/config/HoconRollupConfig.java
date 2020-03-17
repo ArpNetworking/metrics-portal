@@ -16,7 +16,7 @@
 
 package com.arpnetworking.rollups.config;
 
-import com.arpnetworking.rollups.RollupPeriod;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -27,32 +27,24 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-public class HoconRollupConfig implements RollupConfig {
+public class HoconRollupConfig implements QueryRollupBlacklist {
     @Inject
     public HoconRollupConfig(final Config configuration) {
         _queryBlacklist = configuration.getConfigList("rollups.metric.query.blacklist")
                 .stream()
-                .map(HoconRollupConfig::buildConfigEntry)
+                .map(HoconRollupConfig::buildBlacklistEntry)
                 .collect(ImmutableList.toImmutableList());
-
-        _generateWhitelist = toPredicate(configuration.getStringList("rollups.metric.whitelist"), true);
-        _generateBlacklist = toPredicate(configuration.getStringList("rollups.metric.blacklist"), false);
     }
 
     @Override
-    public boolean isGenerationEnabled(final String metricName) {
-        return _generateWhitelist.test(metricName) && !_generateBlacklist.test(metricName);
-    }
-
-    @Override
-    public boolean isQueryEnabled(final String metricName, final RollupPeriod period) {
+    public boolean isRollupUseEnabled(final String metricName, final SamplingUnit samplingUnit) {
         return queryBlacklistEntry(metricName)
-                .map(ConfigEntry::getPeriods)
-                .map(periods -> periods.contains(period))
+                .map(QueryBlacklistEntry::getPeriods)
+                .map(periods -> periods.contains(samplingUnit))
                 .orElse(true);
     }
 
-    private Optional<ConfigEntry> queryBlacklistEntry(final String metricName) {
+    private Optional<QueryBlacklistEntry> queryBlacklistEntry(final String metricName) {
         return _queryBlacklist.stream()
                 .filter(
                     e -> e.getPattern().matcher(metricName).matches()
@@ -60,19 +52,16 @@ public class HoconRollupConfig implements RollupConfig {
                 .findFirst();
     }
 
-    private final Predicate<String> _generateWhitelist;
-    private final Predicate<String> _generateBlacklist;
+    private final List<QueryBlacklistEntry> _queryBlacklist;
 
-    private final List<ConfigEntry> _queryBlacklist;
-
-    static ConfigEntry buildConfigEntry(final Config config) {
-        final List<RollupPeriod> periods =
+    static QueryBlacklistEntry buildBlacklistEntry(final Config config) {
+        final List<SamplingUnit> periods =
             config.getStringList("periods")
                     .stream()
-                    .map(name -> RollupPeriod.valueOf(name.toUpperCase(Locale.ENGLISH)))
+                    .map(name -> SamplingUnit.valueOf(name.toUpperCase(Locale.ENGLISH)))
                     .collect(ImmutableList.toImmutableList());
 
-        return new ConfigEntry.Builder()
+        return new QueryBlacklistEntry.Builder()
                 .setPattern(Pattern.compile(config.getString("pattern")))
                 .setPeriods(periods)
                 .build();

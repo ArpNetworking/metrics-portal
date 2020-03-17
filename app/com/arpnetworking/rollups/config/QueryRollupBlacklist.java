@@ -15,34 +15,20 @@
  */
 package com.arpnetworking.rollups.config;
 
-import com.arpnetworking.rollups.RollupPeriod;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 
 /**
  * RollupConfig determines if rollups should be used or generated for the given metric.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface RollupConfig {
-
+public interface QueryRollupBlacklist {
     /**
-     * Determine if rollup generation is enabled for this particular metric + period combination.
+     * Determine if rollup usage is enabled for this particular metric + sampling combination.
      *
      * @param metricName - the name of the metric
-     * @return true if the rollup is enabled
+     * @param period - the sampling unit in this query
+     * @return true if rollup usage is enabled
      */
-    default boolean isGenerationEnabled(String metricName) {
-        return false;
-    }
-
-    /**
-     * Determine if rollup usage is enabled for this particular metric + period combination.
-     *
-     * @param metricName - the name of the metric
-     * @param period - the rollup period
-     * @return true if the rollup usage is enabled
-     */
-    default boolean isQueryEnabled(String metricName, RollupPeriod period) {
-        // Allow queries for all metrics that have rollups enabled
-        return isGenerationEnabled(metricName);
-    }
+    boolean isRollupUseEnabled(String metricName, SamplingUnit period);
 }

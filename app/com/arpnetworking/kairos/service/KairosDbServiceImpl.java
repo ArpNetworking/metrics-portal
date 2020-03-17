@@ -32,6 +32,7 @@ import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.google.common.cache.Cache;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -89,7 +91,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .flatMap(m -> m.getTags().keySet().stream())
                 .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
-                .thenApply(list -> useAvailableRollups(list, metricsQuery, metrics))
+                .thenApply(list -> useAvailableRollups(list, metricsQuery, ImmutableSet.of(), metrics))
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
@@ -220,6 +222,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static MetricsQuery useAvailableRollups(
             final List<String> metricNames,
             final MetricsQuery originalQuery,
+            final Set<SamplingUnit> disabledSamplingUnits,
             final Metrics metrics) {
         return ThreadLocalBuilder.clone(
                 originalQuery,
@@ -254,16 +257,13 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         return metric;
                     }
 
-                    // FIXME(cbriones): This should work.
-                    // if (rollupQueriesDisabled(metric)) {
-                    //    return metric;
-                    // }
                     // There are rollups and queries are enabled, now determine the appropriate one
                     // based on the max sampling period in the aggregators.
                     final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
                             .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
                             .map(Aggregator::getSampling)
                             .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
+                            .filter(samplingUnit -> !disabledSamplingUnits.contains(samplingUnit))
                             .min(SamplingUnit::compareTo);
 
                     return maxUnit.map(unit -> {

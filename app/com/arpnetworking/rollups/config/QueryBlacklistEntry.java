@@ -16,7 +16,7 @@
 package com.arpnetworking.rollups.config;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.rollups.RollupPeriod;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotNull;
 
@@ -25,13 +25,14 @@ import java.util.regex.Pattern;
 
 /**
  * ConfigEntry represents a query blacklist entry.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class ConfigEntry {
+public final class QueryBlacklistEntry {
     private final Pattern _pattern;
-    private final List<RollupPeriod> _periods;
+    private final List<SamplingUnit> _periods;
 
-    private ConfigEntry(final Builder builder) {
+    private QueryBlacklistEntry(final Builder builder) {
         this._pattern = builder._pattern;
         this._periods = builder._periods;
     }
@@ -40,16 +41,16 @@ public final class ConfigEntry {
         return _pattern;
     }
 
-    public List<RollupPeriod> getPeriods() {
+    public List<SamplingUnit> getPeriods() {
         return _periods;
     }
 
-    public static class Builder extends OvalBuilder<ConfigEntry> {
+    public static class Builder extends OvalBuilder<QueryBlacklistEntry> {
         /**
-         * Creates a new {@link ConfigEntry} builder.
+         * Creates a new {@link QueryBlacklistEntry} builder.
          */
         public Builder() {
-            super(ConfigEntry::new);
+            super(QueryBlacklistEntry::new);
         }
 
         /**
@@ -57,7 +58,7 @@ public final class ConfigEntry {
          * @param periods - the periods
          * @return This instance of Builder
          */
-        public Builder setPeriods(final List<RollupPeriod> periods) {
+        public Builder setPeriods(final List<SamplingUnit> periods) {
             this._periods = ImmutableList.copyOf(periods);
             return this;
         }
@@ -72,7 +73,7 @@ public final class ConfigEntry {
             return this;
         }
 
-        private List<RollupPeriod> _periods = ImmutableList.of();
+        private List<SamplingUnit> _periods = ImmutableList.of();
 
         @NotNull
         private Pattern _pattern = null;
