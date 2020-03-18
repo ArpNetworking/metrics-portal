@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.rollups.config;
+package com.arpnetworking.kairos.config;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * ConfigEntry represents a query blacklist entry.
+ * An entry in a {@link RollupQueryBlacklist}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class QueryBlacklistEntry {
+public final class RollupQueryBlacklistEntry {
     private final Pattern _pattern;
-    private final List<SamplingUnit> _periods;
+    private final Set<SamplingUnit> _periods;
 
-    private QueryBlacklistEntry(final Builder builder) {
+    private RollupQueryBlacklistEntry(final Builder builder) {
         this._pattern = builder._pattern;
         this._periods = builder._periods;
     }
@@ -41,16 +41,21 @@ public final class QueryBlacklistEntry {
         return _pattern;
     }
 
-    public List<SamplingUnit> getPeriods() {
+    public Set<SamplingUnit> getPeriods() {
         return _periods;
     }
 
-    public static class Builder extends OvalBuilder<QueryBlacklistEntry> {
+    /**
+     * A builder for instances of {@link RollupQueryBlacklistEntry}.
+     *
+     * @author Christian Briones (cbriones at dropbox dot com)
+     */
+    public static class Builder extends OvalBuilder<RollupQueryBlacklistEntry> {
         /**
-         * Creates a new {@link QueryBlacklistEntry} builder.
+         * Creates a new {@link RollupQueryBlacklistEntry} builder.
          */
         public Builder() {
-            super(QueryBlacklistEntry::new);
+            super(RollupQueryBlacklistEntry::new);
         }
 
         /**
@@ -58,8 +63,8 @@ public final class QueryBlacklistEntry {
          * @param periods - the periods
          * @return This instance of Builder
          */
-        public Builder setPeriods(final List<SamplingUnit> periods) {
-            this._periods = ImmutableList.copyOf(periods);
+        public Builder setPeriods(final Set<SamplingUnit> periods) {
+            this._periods = ImmutableSet.copyOf(periods);
             return this;
         }
 
@@ -73,7 +78,7 @@ public final class QueryBlacklistEntry {
             return this;
         }
 
-        private List<SamplingUnit> _periods = ImmutableList.of();
+        private Set<SamplingUnit> _periods = ImmutableSet.of();
 
         @NotNull
         private Pattern _pattern = null;

@@ -22,9 +22,11 @@ import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RelativeDateTime;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.client.models.TimeUnit;
+import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
@@ -67,6 +69,8 @@ public class KairosDbServiceImplTest {
     private MetricsFactory _mockMetricsFactory;
     @Mock
     private Metrics _mockMetrics;
+    @Mock
+    private MetricsQueryConfig _mockQueryConfig;
 
     private KairosDbServiceImpl _service;
 
@@ -78,6 +82,7 @@ public class KairosDbServiceImplTest {
                 .setKairosDbClient(_mockClient)
                 .setMetricsFactory(_mockMetricsFactory)
                 .setExcludedTagNames(ImmutableSet.of("host"))
+                .setMetricsQueryConfig(_mockQueryConfig)
                 .build();
         when(_mockClient.queryMetricNames())
                 .thenReturn(CompletableFuture.completedFuture(new MetricNamesResponse.Builder()
@@ -87,6 +92,8 @@ public class KairosDbServiceImplTest {
 
         when(_mockMetricsFactory.create()).thenReturn(_mockMetrics);
         when(_mockMetrics.createTimer(any())).thenReturn(Mockito.mock(Timer.class));
+
+        when(_mockQueryConfig.getQueryEnabledRollups(any())).thenReturn(ImmutableSet.copyOf(SamplingUnit.values()));
     }
 
     @Test
@@ -188,6 +195,35 @@ public class KairosDbServiceImplTest {
         _service.queryMetrics(
                 OBJECT_MAPPER.readValue(
                         readResource("testSelectsSmallestRollupBasedOnAggregate.request"),
+                        MetricsQuery.class)
+        );
+
+        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        verify(_mockClient, times(1)).queryMetrics(captor.capture());
+        final MetricsQuery request = captor.getValue();
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
+        assertEquals(1, request.getMetrics().size());
+        final Metric metric = request.getMetrics().get(0);
+        assertEquals("foo_1h", metric.getName());
+    }
+
+    @Test
+    public void testIgnoresBlacklistedRollups() throws Exception {
+        when(_mockClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testIgnoresBlacklistedRollups.backend_response"),
+                                MetricsQueryResponse.class
+                        )
+                )
+        );
+
+        // The request is for DAYS but those are disabled, and so we should use the hourly.
+        when(_mockQueryConfig.getQueryEnabledRollups(any())).thenReturn(ImmutableSet.of(SamplingUnit.HOURS));
+
+        _service.queryMetrics(
+                OBJECT_MAPPER.readValue(
+                        readResource("testIgnoresBlacklistedRollups.request"),
                         MetricsQuery.class)
         );
 

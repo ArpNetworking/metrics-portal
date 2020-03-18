@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.rollups.config;
+package com.arpnetworking.kairos.config;
 
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 
+import java.util.Set;
+
 /**
- * RollupConfig determines if rollups should be used or generated for the given metric.
+ * RollupConfig determines if rollups should be used for the given metric.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface QueryRollupBlacklist {
+public interface MetricsQueryConfig {
     /**
-     * Determine if rollup usage is enabled for this particular metric + sampling combination.
+     * Get a set of enabled rollup units for a particular metric.
      *
-     * @param metricName - the name of the metric
-     * @param period - the sampling unit in this query
-     * @return true if rollup usage is enabled
+     * If a {@link SamplingUnit} is contained within this set, then it should be eligible for
+     * promotion to a rollup query for the given metric.
+     *
+     * @param metricName the name of the metric
+     * @return A set of sampling units for which rollups are enabled
      */
-    boolean isRollupUseEnabled(String metricName, SamplingUnit period);
+    Set<SamplingUnit> getQueryEnabledRollups(String metricName);
 }

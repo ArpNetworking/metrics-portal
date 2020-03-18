@@ -1,0 +1,18 @@
+{
+  "start_absolute": 1,
+  "metrics": [
+    {
+      "name": "foo",
+      "aggregators": [
+        {
+          "name": "count",
+          "align_sampling": true,
+          "sampling": {
+            "value": 7,
+            "unit": "DAYS"
+          }
+        }
+      ]
+    }
+  ]
+}

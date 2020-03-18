@@ -15,7 +15,7 @@
  */
 @ParametersAreNonnullByDefault
 @ReturnValuesAreNonnullByDefault
-package com.arpnetworking.rollups.config;
+package com.arpnetworking.kairos.config;
 
 import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 

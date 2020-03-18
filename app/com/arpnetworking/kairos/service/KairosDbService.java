@@ -40,7 +40,7 @@ import java.util.concurrent.CompletionStage;
  */
 public interface KairosDbService {
     /**
-     * Executes a query for datapoints from  KairosDB.
+     * Executes a query for datapoints from KairosDB.
      *
      * @param query the metrics query
      * @return the response

@@ -28,11 +28,11 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.google.common.cache.Cache;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -91,7 +91,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .flatMap(m -> m.getTags().keySet().stream())
                 .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
-                .thenApply(list -> useAvailableRollups(list, metricsQuery, ImmutableSet.of(), metrics))
+                .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
@@ -222,7 +222,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static MetricsQuery useAvailableRollups(
             final List<String> metricNames,
             final MetricsQuery originalQuery,
-            final Set<SamplingUnit> disabledSamplingUnits,
+            final MetricsQueryConfig queryConfig,
             final Metrics metrics) {
         return ThreadLocalBuilder.clone(
                 originalQuery,
@@ -259,19 +259,29 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
                     // There are rollups and queries are enabled, now determine the appropriate one
                     // based on the max sampling period in the aggregators.
+                    //
+                    // For any given query, we can at best use the rollup based on the smallest
+                    // sampling unit, if any.
                     final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
                             .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
                             .map(Aggregator::getSampling)
                             .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
-                            .filter(samplingUnit -> !disabledSamplingUnits.contains(samplingUnit))
                             .min(SamplingUnit::compareTo);
 
-                    return maxUnit.map(unit -> {
+
+                    if (maxUnit.isPresent()) {
+                        final SamplingUnit unit = maxUnit.get();
+                        final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
+
                         final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
                         rollupMetrics.forEach(name -> {
                             final Optional<SamplingUnit> rollupUnit =
                                     rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
-                            rollupUnit.ifPresent(samplingUnit -> orderedRollups.put(samplingUnit, name));
+                            rollupUnit.ifPresent(samplingUnit -> {
+                                if (enabledRollups.contains(samplingUnit)) {
+                                    orderedRollups.put(samplingUnit, name);
+                                }
+                            });
                         });
 
                         final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(unit);
@@ -281,11 +291,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
                                 .setName(rollupName);
 
                         return metricBuilder.build();
-                    }).orElseGet(() -> {
+                    } else {
                         // No aggregators are sampling aligned so skip as rollups are always aligned
                         metrics.incrementCounter("kairosService/useRollups/notEligible", 1);
                         return metric;
-                    });
+                    }
                 }).collect(ImmutableList.toImmutableList())));
     }
 
@@ -367,11 +377,13 @@ public final class KairosDbServiceImpl implements KairosDbService {
         this._kairosDbClient = builder._kairosDbClient;
         this._metricsFactory = builder._metricsFactory;
         this._excludedTagNames = builder._excludedTagNames;
+        this._metricsQueryConfig = builder._metricsQueryConfig;
     }
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
     private final ImmutableSet<String> _excludedTagNames;
+    private final MetricsQueryConfig _metricsQueryConfig;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
@@ -426,11 +438,25 @@ public final class KairosDbServiceImpl implements KairosDbService {
             return this;
         }
 
+        /**
+         * Sets the tag names to exclude. Cannot be null. Optional. Default is
+         * an empty set (no tag names are excluded).
+         *
+         * @param value the query config
+         * @return this {@link Builder}
+         */
+        public Builder setMetricsQueryConfig(final MetricsQueryConfig value) {
+            _metricsQueryConfig = value;
+            return this;
+        }
+
         @NotNull
         private KairosDbClient _kairosDbClient;
         @NotNull
         private MetricsFactory _metricsFactory;
         @NotNull
         private ImmutableSet<String> _excludedTagNames = ImmutableSet.of();
+        @NotNull
+        private MetricsQueryConfig _metricsQueryConfig;
     }
 }

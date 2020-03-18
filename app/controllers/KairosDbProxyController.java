@@ -19,6 +19,8 @@ import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.config.MetricsQueryConfig;
+import com.arpnetworking.kairos.config.RollupQueryBlacklist;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -83,12 +85,15 @@ public class KairosDbProxyController extends Controller {
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
 
+        final MetricsQueryConfig metricsQueryConfig = new RollupQueryBlacklist(configuration);
+
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
         _kairosService = new KairosDbServiceImpl.Builder()
                 .setKairosDbClient(kairosDbClient)
                 .setMetricsFactory(metricsFactory)
                 .setExcludedTagNames(excludedTagNames)
+                .setMetricsQueryConfig(metricsQueryConfig)
                 .build();
     }
 
