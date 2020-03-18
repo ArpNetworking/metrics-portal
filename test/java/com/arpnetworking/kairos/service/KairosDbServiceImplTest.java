@@ -218,7 +218,6 @@ public class KairosDbServiceImplTest {
                 )
         );
 
-        // The request is for DAYS but those are disabled, and so we should use the hourly.
         when(_mockQueryConfig.getQueryEnabledRollups(any())).thenReturn(ImmutableSet.of(SamplingUnit.HOURS));
 
         _service.queryMetrics(
@@ -233,7 +232,7 @@ public class KairosDbServiceImplTest {
         assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
-        assertEquals("foo_1h", metric.getName());
+        assertEquals("expect to use hourly rollup when daily is disabled", "foo_1h", metric.getName());
     }
 
     @Test
