@@ -24,11 +24,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * An entry in a {@link RollupQueryBlacklist}.
+ * An entry in a {@link MetricsQueryConfigImpl}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class RollupQueryBlacklistEntry {
+final class RollupQueryBlacklistEntry {
     private final Pattern _pattern;
     private final Set<SamplingUnit> _periods;
 

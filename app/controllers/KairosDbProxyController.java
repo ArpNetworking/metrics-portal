@@ -20,7 +20,6 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
-import com.arpnetworking.kairos.config.RollupQueryBlacklist;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -79,13 +78,12 @@ public class KairosDbProxyController extends Controller {
             final WSClient client,
             final KairosDbClient kairosDbClient,
             final ObjectMapper mapper,
-            final MetricsFactory metricsFactory) {
+            final MetricsFactory metricsFactory,
+            final MetricsQueryConfig metricsQueryConfig) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
-
-        final MetricsQueryConfig metricsQueryConfig = new RollupQueryBlacklist(configuration);
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
