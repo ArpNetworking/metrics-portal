@@ -34,6 +34,12 @@ import java.util.regex.Pattern;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class MetricsQueryConfigImpl implements MetricsQueryConfig {
+
+    /**
+     * Construct a new {@code MetricsQueryImpl} by parsing a {@link Config}.
+     *
+     * @param configuration Play configuration to load from
+     */
     @Inject
     public MetricsQueryConfigImpl(final Config configuration) {
         _rollupQueryBlacklist = configuration.getConfigList("kairosdb.proxy.rollups.blacklist")

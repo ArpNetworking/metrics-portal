@@ -71,6 +71,7 @@ public class KairosDbProxyController extends Controller {
      * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
      * @param metricsFactory MetricsFactory for recording request metrics
+     * @param metricsQueryConfig Configuration for proxied metrics queries
      */
     @Inject
     public KairosDbProxyController(

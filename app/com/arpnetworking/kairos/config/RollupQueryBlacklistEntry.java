@@ -54,7 +54,7 @@ final class RollupQueryBlacklistEntry {
         /**
          * Creates a new {@link RollupQueryBlacklistEntry} builder.
          */
-        public Builder() {
+        Builder() {
             super(RollupQueryBlacklistEntry::new);
         }
 

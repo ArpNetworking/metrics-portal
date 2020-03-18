@@ -439,8 +439,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         }
 
         /**
-         * Sets the tag names to exclude. Cannot be null. Optional. Default is
-         * an empty set (no tag names are excluded).
+         * Sets the MetricsQueryConfig. Cannot be null.
          *
          * @param value the query config
          * @return this {@link Builder}
