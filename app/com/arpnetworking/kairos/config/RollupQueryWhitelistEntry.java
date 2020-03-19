@@ -28,11 +28,11 @@ import java.util.regex.Pattern;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-final class RollupQueryBlacklistEntry {
+final class RollupQueryWhitelistEntry {
     private final Pattern _pattern;
     private final Set<SamplingUnit> _periods;
 
-    private RollupQueryBlacklistEntry(final Builder builder) {
+    private RollupQueryWhitelistEntry(final Builder builder) {
         this._pattern = builder._pattern;
         this._periods = builder._periods;
     }
@@ -46,16 +46,16 @@ final class RollupQueryBlacklistEntry {
     }
 
     /**
-     * A builder for instances of {@link RollupQueryBlacklistEntry}.
+     * A builder for instances of {@link RollupQueryWhitelistEntry}.
      *
      * @author Christian Briones (cbriones at dropbox dot com)
      */
-    public static class Builder extends OvalBuilder<RollupQueryBlacklistEntry> {
+    public static class Builder extends OvalBuilder<RollupQueryWhitelistEntry> {
         /**
-         * Creates a new {@link RollupQueryBlacklistEntry} builder.
+         * Creates a new {@link RollupQueryWhitelistEntry} builder.
          */
         Builder() {
-            super(RollupQueryBlacklistEntry::new);
+            super(RollupQueryWhitelistEntry::new);
         }
 
         /**

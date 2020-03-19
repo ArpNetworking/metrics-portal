@@ -27,8 +27,8 @@ import org.junit.Test;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -37,17 +37,18 @@ import static org.junit.Assert.assertThat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class MetricsQueryConfigImplTest {
+    private static final String CONFIG_KEY = "kairosdb.proxy.rollups.whitelist";
     private static final Config INVALID_PERIODS = ConfigFactory.parseMap(ImmutableMap.of(
-            "kairosdb.proxy.rollups.blacklist", ImmutableList.of(
+            CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
-                            "pattern", "blacklisted_hourly_.*",
+                            "pattern", "whitelisted_hourly_.*",
                             "periods", ImmutableList.of("bad value")
                     )
             )
     ));
 
     private static final Config INVALID_PATTERN = ConfigFactory.parseMap(ImmutableMap.of(
-            "kairosdb.proxy.rollups.blacklist", ImmutableList.of(
+            CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
                             "pattern", "[",
                             "periods", ImmutableList.of("hours")
@@ -56,18 +57,21 @@ public class MetricsQueryConfigImplTest {
     ));
 
     private static final Config VALID_CONFIG = ConfigFactory.parseMap(ImmutableMap.of(
-            "kairosdb.proxy.rollups.blacklist", ImmutableList.of(
+            CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
-                            "pattern", "blacklisted_hourly_.*",
+                            "pattern", "whitelisted_hourly_.*",
                             "periods", ImmutableList.of("hours")
                     ),
                     ImmutableMap.of(
-                            "pattern", "blacklisted_daily_.*",
+                            "pattern", "whitelisted_daily_.*",
                             "periods", ImmutableList.of("days")
                     ),
                     ImmutableMap.of(
-                            "pattern", "blacklisted_all_.*",
-                            "periods", ImmutableList.of("hours", "days")
+                            "pattern", "whitelisted_all.*"
+                    ),
+                    ImmutableMap.of(
+                            "pattern", "whitelisted_none.*",
+                            "periods", ImmutableList.of()
                     )
             )
     ));
@@ -93,10 +97,10 @@ public class MetricsQueryConfigImplTest {
     public void testRollupPeriodBlacklisting() {
         final MetricsQueryConfig queryConfig = new MetricsQueryConfigImpl(VALID_CONFIG);
 
-        assertThat(queryConfig.getQueryEnabledRollups("blacklisted_hourly_foo"), not(contains(SamplingUnit.HOURS)));
-        assertThat(queryConfig.getQueryEnabledRollups("blacklisted_daily_foo"), not(contains(SamplingUnit.DAYS)));
-        assertThat(queryConfig.getQueryEnabledRollups("blacklisted_all_foo"), not(contains(SamplingUnit.HOURS)));
-        assertThat(queryConfig.getQueryEnabledRollups("blacklisted_all_foo"), not(contains(SamplingUnit.DAYS)));
-        assertThat(queryConfig.getQueryEnabledRollups("not_blacklisted"), equalTo(ALL_SAMPLING_UNITS));
+        assertThat(queryConfig.getQueryEnabledRollups("whitelisted_hourly_foo"), contains(SamplingUnit.HOURS));
+        assertThat(queryConfig.getQueryEnabledRollups("whitelisted_daily_foo"), contains(SamplingUnit.DAYS));
+        assertThat(queryConfig.getQueryEnabledRollups("whitelisted_all_foo"), equalTo(ALL_SAMPLING_UNITS));
+        assertThat(queryConfig.getQueryEnabledRollups("whitelisted_none_foo"), empty());
+        assertThat(queryConfig.getQueryEnabledRollups("no_matches"), empty());
     }
 }

@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * A {@link MetricsQueryConfig} that supports rollup blacklisting.
+ * A {@link MetricsQueryConfig} that supports rollup whitelistingo
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -42,45 +42,42 @@ public class MetricsQueryConfigImpl implements MetricsQueryConfig {
      */
     @Inject
     public MetricsQueryConfigImpl(final Config configuration) {
-        _rollupQueryBlacklist = configuration.getConfigList("kairosdb.proxy.rollups.blacklist")
+        _rollupQueryWhitelist = configuration.getConfigList("kairosdb.proxy.rollups.whitelist")
                 .stream()
-                .map(MetricsQueryConfigImpl::buildBlacklistEntry)
+                .map(MetricsQueryConfigImpl::buildWhitelistEntry)
                 .collect(ImmutableList.toImmutableList());
     }
 
     @Override
     public Set<SamplingUnit> getQueryEnabledRollups(final String metricName) {
-        final Set<SamplingUnit> disabledUnits = queryBlacklistEntry(metricName)
-                .map(RollupQueryBlacklistEntry::getPeriods)
-                .orElse(ImmutableSet.of());
-        if (disabledUnits.isEmpty()) {
-            return ALL_SAMPLING_UNITS;
-        }
-        return ALL_SAMPLING_UNITS
-                .stream()
-                .filter(unit -> !disabledUnits.contains(unit))
-                .collect(ImmutableSet.toImmutableSet());
+        return queryWhitelistEntry(metricName)
+            .map(RollupQueryWhitelistEntry::getPeriods)
+            .orElse(ImmutableSet.of());
     }
 
-    private Optional<RollupQueryBlacklistEntry> queryBlacklistEntry(final String metricName) {
-        return _rollupQueryBlacklist.stream()
+    private Optional<RollupQueryWhitelistEntry> queryWhitelistEntry(final String metricName) {
+        return _rollupQueryWhitelist.stream()
                 .filter(
                     e -> e.getPattern().matcher(metricName).matches()
                 )
                 .findFirst();
     }
 
-    private final List<RollupQueryBlacklistEntry> _rollupQueryBlacklist;
+    private final List<RollupQueryWhitelistEntry> _rollupQueryWhitelist;
     private static final Set<SamplingUnit> ALL_SAMPLING_UNITS = ImmutableSet.copyOf(SamplingUnit.values());
 
-    private static RollupQueryBlacklistEntry buildBlacklistEntry(final Config config) {
-        final Set<SamplingUnit> periods =
-            config.getStringList("periods")
+    private static RollupQueryWhitelistEntry buildWhitelistEntry(final Config config) {
+        final Set<SamplingUnit> periods;
+        if (config.hasPath("periods")) {
+            periods = config.getStringList("periods")
                     .stream()
                     .map(name -> SamplingUnit.valueOf(name.toUpperCase(Locale.ENGLISH)))
                     .collect(ImmutableSet.toImmutableSet());
+        } else {
+            periods = ALL_SAMPLING_UNITS;
+        }
 
-        return new RollupQueryBlacklistEntry.Builder()
+        return new RollupQueryWhitelistEntry.Builder()
                 .setPattern(Pattern.compile(config.getString("pattern")))
                 .setPeriods(periods)
                 .build();
