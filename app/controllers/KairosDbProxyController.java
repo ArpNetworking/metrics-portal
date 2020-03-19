@@ -19,6 +19,7 @@ import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -70,6 +71,7 @@ public class KairosDbProxyController extends Controller {
      * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
      * @param metricsFactory MetricsFactory for recording request metrics
+     * @param metricsQueryConfig Configuration for proxied metrics queries
      */
     @Inject
     public KairosDbProxyController(
@@ -77,7 +79,8 @@ public class KairosDbProxyController extends Controller {
             final WSClient client,
             final KairosDbClient kairosDbClient,
             final ObjectMapper mapper,
-            final MetricsFactory metricsFactory) {
+            final MetricsFactory metricsFactory,
+            final MetricsQueryConfig metricsQueryConfig) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
@@ -89,6 +92,7 @@ public class KairosDbProxyController extends Controller {
                 .setKairosDbClient(kairosDbClient)
                 .setMetricsFactory(metricsFactory)
                 .setExcludedTagNames(excludedTagNames)
+                .setMetricsQueryConfig(metricsQueryConfig)
                 .build();
     }
 

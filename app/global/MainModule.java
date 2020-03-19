@@ -41,6 +41,8 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.config.MetricsQueryConfig;
+import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -183,6 +185,9 @@ public class MainModule extends AbstractModule {
 
         // Reporting
         bind(ReportExecutionContext.class).asEagerSingleton();
+
+        // Rollups
+        bind(MetricsQueryConfig.class).to(MetricsQueryConfigImpl.class).asEagerSingleton();
     }
 
     @Singleton

@@ -1,0 +1,23 @@
+{
+  "queries": [
+    {
+      "results": [
+        {
+          "name": "foo",
+          "values": [],
+          "tags": {}
+        },
+        {
+          "name": "foo_1d",
+          "values": [],
+          "tags": {}
+        },
+        {
+          "name": "foo_1h",
+          "values": [],
+          "tags": {}
+        }
+      ]
+    }
+  ]
+}
