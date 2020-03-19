@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * A {@link MetricsQueryConfig} that supports rollup whitelistingo
+ * A {@link MetricsQueryConfig} that supports rollup whitelisting.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
