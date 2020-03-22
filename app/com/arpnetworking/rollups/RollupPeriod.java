@@ -17,9 +17,12 @@ package com.arpnetworking.rollups;
 
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 
+import com.google.common.collect.ImmutableList;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Enumeration representing rollup periods.
@@ -91,6 +94,23 @@ public enum RollupPeriod {
         _truncationUnit = truncationUnit;
         _samplingUnit = samplingUnit;
     }
+
+    /**
+     * Get the next smallest rollup period, if any.
+     *
+     * @return An {@code Optional} containing the next smallest RollupPeriod, or {@link Optional#empty()}
+     * if this is already the smallest.
+     */
+    public Optional<RollupPeriod> previous() {
+        final int i = this.ordinal();
+        if (i == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(VALUES.get((i - 1) % VALUES.size()));
+    }
+
+    // values() will create a new array on every call to previous without this.
+    private static final List<RollupPeriod> VALUES = ImmutableList.copyOf(values());
 
     private final String _suffix;
     private final ChronoUnit _truncationUnit;

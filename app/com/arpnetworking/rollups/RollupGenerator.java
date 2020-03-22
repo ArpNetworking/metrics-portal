@@ -73,9 +73,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
      * For each metric name received, perform the following:
      *
      *     1. Retrieve the tag names for this metric (TagNamesMessage)
-     *     2. Query for the last data point given the maximum backfill and set of tags (LastDataPointMessage)
-     *     3. If this datapoint is in the past, generate a backfill job for the period
-     *     furthest in the past, and enqueue it by sending to the RollupManager. (FinishRollupMessage)
+     *     2. For each period size:
+     *         2a. Query for the last data point given the maximum backfill and set of tags (LastDataPointMessage)
+     *         2b. If this datapoint is in the past, generate a backfill job for the period
+     *         furthest in the past, and enqueue it by sending to the RollupManager. (FinishRollupMessage)
      *
      * In particular [2] leaves open the possibility of chunking rollups by tags as a future
      * optimization in order to break down the unit of work. At the moment we forward all tags
@@ -205,7 +206,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final int backfillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
             if (backfillPeriods > 0) {
                 Patterns.pipe(
-                        fetchLastDataPoint(metricName + period.getSuffix(), period, backfillPeriods)
+                        fetchLastDataPoint(metricName, period, backfillPeriods)
                                 .handle((response, failure) -> {
                                     final String baseMetricName = "rollup/generator/last_data_point_"
                                             + period.name().toLowerCase(Locale.getDefault());
@@ -224,6 +225,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
         final RollupPeriod period = message.getPeriod();
         final String metricName = message.getMetricName();
+        // Get the source of the rollup data, which is either the smaller rollup metric or
+        // the original metric, if this is the smallest rollup.
+        final String srcMetricName = period.previous()
+                .map(RollupPeriod::getSuffix)
+                .map(suffix -> metricName + suffix)
+                .orElse(metricName);
 
         _metrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
         if (message.isFailure()) {
@@ -243,56 +250,56 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             .setFailure(throwable)
                             .build(),
                     ActorRef.noSender());
-        } else {
-            _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
-            final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
-            final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
+            return;
+        }
+        _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
+        final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
+        final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
 
-            // If the most recent period aligned start time is after the most recent datapoint then
-            // we need to run the rollup, otherwise we can skip this and just send a finish message.
-            if (startOfRecentClosedPeriod.isAfter(lastDataPoint)) {
-                final String rollupMetricName = metricName + period.getSuffix();
-                final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
+        // If the most recent period aligned start time is after the most recent datapoint then
+        // we need to run the rollup, otherwise we can skip this and just send a finish message.
+        if (startOfRecentClosedPeriod.isAfter(lastDataPoint)) {
+            final String rollupMetricName = metricName + period.getSuffix();
+            final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
 
-                final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
-                        .minus(period.periodCountToDuration(maxBackFillPeriods));
+            final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
+                    .minus(period.periodCountToDuration(maxBackFillPeriods));
 
-                // We either want to start at the oldest backfill point or the start of the period
-                // after the last datapoint since it contains data for the period that follows it.
-                Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
-                        ? oldestBackfillPoint : period.recentEndTime(lastDataPoint).plus(period.periodCountToDuration(1));
+            // We either want to start at the oldest backfill point or the start of the period
+            // after the last datapoint since it contains data for the period that follows it.
+            Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
+                    ? oldestBackfillPoint : period.recentEndTime(lastDataPoint).plus(period.periodCountToDuration(1));
 
-                final Queue<Instant> startTimes = new LinkedList<>();
+            final Queue<Instant> startTimes = new LinkedList<>();
 
-                // We need to rollup every period up to and including the most recent period.
-                while (rollupPeriodStart.isBefore(startOfRecentClosedPeriod) || rollupPeriodStart.equals(startOfRecentClosedPeriod)) {
-                    startTimes.add(rollupPeriodStart);
-                    rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
-                }
-
-                final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
-                        .setSourceMetricName(message.getMetricName())
-                        .setDestinationMetricName(rollupMetricName)
-                        .setPeriod(period)
-                        .setGroupByTags(message.getTags());
-
-                while (!startTimes.isEmpty()) {
-                    final Instant startTime = startTimes.poll();
-
-                    rollupDefBuilder.setStartTime(startTime)
-                            .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
-                    _rollupManagerPool.tell(rollupDefBuilder.build(), self());
-                }
+            // We need to rollup every period up to and including the most recent period.
+            while (rollupPeriodStart.isBefore(startOfRecentClosedPeriod) || rollupPeriodStart.equals(startOfRecentClosedPeriod)) {
+                startTimes.add(rollupPeriodStart);
+                rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
             }
 
-            getSelf().tell(
-                    new FinishRollupMessage.Builder()
-                            .setMetricName(message.getMetricName())
-                            .setPeriod(message.getPeriod())
-                            .build(),
-                    ActorRef.noSender()
-            );
+            final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+                    .setSourceMetricName(srcMetricName)
+                    .setDestinationMetricName(rollupMetricName)
+                    .setPeriod(period)
+                    .setGroupByTags(message.getTags());
+
+            while (!startTimes.isEmpty()) {
+                final Instant startTime = startTimes.poll();
+
+                rollupDefBuilder.setStartTime(startTime)
+                        .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
+                _rollupManagerPool.tell(rollupDefBuilder.build(), self());
+            }
         }
+
+        getSelf().tell(
+                new FinishRollupMessage.Builder()
+                        .setMetricName(message.getMetricName())
+                        .setPeriod(message.getPeriod())
+                        .build(),
+                ActorRef.noSender()
+        );
     }
 
     private void handleFinishRollupMessage(final FinishRollupMessage message) {
@@ -320,30 +327,31 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .setPeriod(period)
                 .setTags(tags);
         if (failure != null) {
-            builder.setFailure(failure);
-        } else {
-            final Optional<MetricsQueryResponse.QueryResult> queryResult =
-                    response.getQueries()
-                        .stream()
-                        .flatMap(query -> query.getResults().stream())
-                        .findFirst();
-
-            // If there are no queries or query results, something has gone wrong, but an empty
-            // result itself does not indicate failure.
-            if (!queryResult.isPresent()) {
-                builder.setFailure(new Exception("Unexpected query results."));
-            } else {
-                final Instant lastDataPointTime =
-                        queryResult
-                        .flatMap(qr -> qr.getValues().stream().findFirst())
-                        .map(DataPoint::getTime)
-                        .orElse(null);
-                builder.setLastDataPointTime(lastDataPointTime);
-            }
+            return builder.setFailure(failure).build();
         }
-        return builder.build();
+        final Optional<MetricsQueryResponse.QueryResult> queryResult =
+                response.getQueries()
+                    .stream()
+                    .flatMap(query -> query.getResults().stream())
+                    .collect(ImmutableMap.toImmutableMap(
+                            k
+                    ))
+                    .findFirst();
+
+        // If there are no queries or query results, something has gone wrong, but an empty
+        // result itself does not indicate failure.
+        if (!queryResult.isPresent()) {
+            return builder.setFailure(new Exception("Unexpected query results.")).build();
+        }
+        final Instant lastDataPointTime =
+                queryResult
+                .flatMap(qr -> qr.getValues().stream().findFirst())
+                .map(DataPoint::getTime)
+                .orElse(null);
+        return builder.setLastDataPointTime(lastDataPointTime).build();
     }
 
+    // Fetch the last data point of the *destination metric* to determine how far behind we are.
     private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(
             final String metricName,
             final RollupPeriod period,
