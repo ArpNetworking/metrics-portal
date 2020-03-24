@@ -355,6 +355,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(null)
@@ -392,6 +393,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(Instant.EPOCH)
@@ -433,6 +435,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(lastDataPoint)
@@ -472,6 +475,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(lastDataPoint)
@@ -499,6 +503,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(lastDataPoint)
@@ -551,6 +556,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1d")
                         .setPeriod(RollupPeriod.DAILY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(lastDataPointTime)
@@ -576,6 +582,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new LastDataPointMessage.Builder()
                         .setSourceMetricName("metric")
+                        .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
                         .setRollupLastDataPointTime(lastDataPointTime)

@@ -36,9 +36,9 @@ public final class LastDataPointMessage extends FailableMessage {
         return _sourceMetricName;
     }
 
-//    public String getRollupMetricName() {
-//        return _rollupMetricName;
-//    }
+    public String getRollupMetricName() {
+        return _rollupMetricName;
+    }
 
     public ImmutableSet<String> getTags() {
         return _tags;
@@ -59,7 +59,7 @@ public final class LastDataPointMessage extends FailableMessage {
     private LastDataPointMessage(final Builder builder) {
         super(builder);
         _sourceMetricName = builder._sourceMetricName;
-        // _rollupMetricName = builder._rollupMetricName;
+        _rollupMetricName = builder._rollupMetricName;
         _tags = builder._tags;
         _sourceLastDataPointTime = builder._sourceLastDataPointTime;
         _rollupLastDataPointTime = builder._rollupLastDataPointTime;
@@ -67,7 +67,7 @@ public final class LastDataPointMessage extends FailableMessage {
     }
 
     private final String _sourceMetricName;
-    // private final String _rollupMetricName;
+    private final String _rollupMetricName;
     private final RollupPeriod _period;
     private final ImmutableSet<String> _tags;
     private final Instant _sourceLastDataPointTime;
@@ -87,21 +87,21 @@ public final class LastDataPointMessage extends FailableMessage {
             super(LastDataPointMessage::new);
         }
 
-//        /**
-//         * Sets the {@code _sourceMetricName} and returns a reference to this Builder so that the methods can be chained together.
-//         *
-//         * @param value the {@code _metricName} to set
-//         * @return a reference to this Builder
-//         */
-//        public Builder setRollupMetricName(final String value) {
-//            _rollupMetricName = value;
-//            return this;
-//        }
-
         /**
          * Sets the {@code _rollupMetricName} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _metricName} to set
+         * @param value the {@code _rollupMetricName} to set
+         * @return a reference to this Builder
+         */
+        public Builder setRollupMetricName(final String value) {
+            _rollupMetricName = value;
+            return this;
+        }
+
+        /**
+         * Sets the {@code _sourceMetricName} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param value the {@code _sourceMetricName} to set
          * @return a reference to this Builder
          */
         public Builder setSourceMetricName(final String value) {
@@ -156,7 +156,7 @@ public final class LastDataPointMessage extends FailableMessage {
         @Override
         protected void reset() {
             _sourceMetricName = null;
-            // _rollupMetricName = null;
+             _rollupMetricName = null;
             _period = null;
             _tags = ImmutableSet.of();
             _sourceLastDataPointTime = null;
@@ -171,9 +171,9 @@ public final class LastDataPointMessage extends FailableMessage {
         @NotNull
         @NotEmpty
         private String _sourceMetricName;
-        // @NotNull
-        // @NotEmpty
-        // private String _rollupMetricName;
+        @NotNull
+        @NotEmpty
+        private String _rollupMetricName;
         @NotNull
         private RollupPeriod _period;
         @NotNull
