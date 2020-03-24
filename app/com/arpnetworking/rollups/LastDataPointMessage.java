@@ -123,6 +123,17 @@ public final class LastDataPointMessage extends FailableMessage {
         /**
          * Sets the {@code _lastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
          *
+                 * @param value the {@code _lastDataPointTime} to set
+         * @return a reference to this Builder
+         */
+        public Builder setSourceLastDataPointTime(@Nullable final Instant value) {
+            _sourceLastDataPointTime = value;
+            return this;
+        }
+
+        /**
+         * Sets the {@code _lastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
+         *
          * @param value the {@code _lastDataPointTime} to set
          * @return a reference to this Builder
          */

@@ -323,32 +323,41 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final ImmutableSet<String> tags,
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
+        final String rollupMetricName = metricName + period.getSuffix();
         final LastDataPointMessage.Builder builder = new LastDataPointMessage.Builder()
                 .setSourceMetricName(metricName)
+//                .setRollupMetricName(metricName)
                 .setPeriod(period)
                 .setTags(tags);
         if (failure != null) {
-            builder.setFailure(failure);
-        } else {
-            final Optional<MetricsQueryResponse.QueryResult> queryResult =
-                    response.getQueries()
+            return builder.setFailure(failure).build();
+        }
+        final Map<String, MetricsQueryResponse.QueryResult> queryResults =
+                response.getQueries()
                         .stream()
                         .flatMap(query -> query.getResults().stream())
-                        .findFirst();
+                        .collect(ImmutableMap.toImmutableMap(
+                                MetricsQueryResponse.QueryResult::getName,
+                                Function.identity()
+                        ));
 
-            // If there are no queries or query results, something has gone wrong, but an empty
-            // result itself does not indicate failure.
-            if (!queryResult.isPresent()) {
-                builder.setFailure(new Exception("Unexpected query results."));
-            } else {
-                final Instant lastDataPointTime =
-                        queryResult
-                        .flatMap(qr -> qr.getValues().stream().findFirst())
-                        .map(DataPoint::getTime)
-                        .orElse(null);
-                builder.setRollupLastDataPointTime(lastDataPointTime);
-            }
+        // Query results should *only* contain the source and destination metric.
+        if (queryResults.size() != 2 || !queryResults.containsKey(metricName) || !queryResults.containsKey(rollupMetricName)) {
+            return builder.setFailure(new Exception("Unexpected query results.")).build();
         }
+
+        // Set source time
+        Optional.ofNullable(queryResults.get(metricName))
+                .flatMap(qr -> qr.getValues().stream().findFirst())
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setSourceLastDataPointTime);
+
+        // Set rollup time
+        Optional.ofNullable(queryResults.get(rollupMetricName))
+                .flatMap(qr -> qr.getValues().stream().findFirst())
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setRollupLastDataPointTime);
+
         return builder.build();
     }
 
@@ -359,7 +368,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final int backfillPeriods
     ) {
         final Metric.Builder metricBuilder = new Metric.Builder()
-                .setName(metricName + period.getSuffix())
                 .setAggregators(ImmutableList.of(
                         new Aggregator.Builder()
                                 .setName("count")
@@ -373,8 +381,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
-                            // metricBuilder.setName(metricName).build()
-                               metricBuilder.setName(metricName + period.getSuffix()).build()
+                             metricBuilder.setName(metricName).build(),
+                             metricBuilder.setName(metricName + period.getSuffix()).build()
                         )).build());
     }
 
