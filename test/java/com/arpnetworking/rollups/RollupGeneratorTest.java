@@ -192,7 +192,13 @@ public class RollupGeneratorTest {
                 final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
                 builder.setName(metricName);
 
-                if (metricName.equals("metric_1h")) {
+                if (metricName.equals("metric")) {
+                    builder.setValues(ImmutableList.of(new DataPoint.Builder()
+                            .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
+                            .setValue(0.0)
+                            .build()
+                    ));
+                } else if (metricName.equals("metric_1h")) {
                     builder.setValues(ImmutableList.of(new DataPoint.Builder()
                             .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
                             .setValue(0.0)
@@ -227,20 +233,20 @@ public class RollupGeneratorTest {
 
         final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertFalse(lastDataPointMessage1.isFailure());
-        assertEquals("metric", lastDataPointMessage1.getMetricName());
+        assertEquals("metric", lastDataPointMessage1.getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
-        assertTrue(lastDataPointMessage1.getLastDataPointTime().isPresent());
+        assertTrue(lastDataPointMessage1.getRollupLastDataPointTime().isPresent());
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()),
-                lastDataPointMessage1.getLastDataPointTime().get());
+                lastDataPointMessage1.getRollupLastDataPointTime().get());
         assertEquals(2, lastDataPointMessage1.getTags().size());
 
         final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertFalse(lastDataPointMessage2.isFailure());
-        assertEquals("metric", lastDataPointMessage2.getMetricName());
+        assertEquals("metric", lastDataPointMessage2.getSourceMetricName());
         assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
-        assertTrue(lastDataPointMessage2.getLastDataPointTime().isPresent());
+        assertTrue(lastDataPointMessage2.getRollupLastDataPointTime().isPresent());
         assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
-                lastDataPointMessage2.getLastDataPointTime().get());
+                lastDataPointMessage2.getRollupLastDataPointTime().get());
 
         _probe.expectNoMessage();
 
@@ -305,17 +311,17 @@ public class RollupGeneratorTest {
 
         final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertTrue(lastDataPointMessage1.isFailure());
-        assertEquals("metric", lastDataPointMessage1.getMetricName());
+        assertEquals("metric", lastDataPointMessage1.getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
         assertEquals("Failure", lastDataPointMessage1.getFailure().orElse(null).getMessage());
 
         final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
         assertFalse(lastDataPointMessage2.isFailure());
-        assertEquals("metric", lastDataPointMessage2.getMetricName());
+        assertEquals("metric", lastDataPointMessage2.getSourceMetricName());
         assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
-        assertTrue(lastDataPointMessage2.getLastDataPointTime().isPresent());
+        assertTrue(lastDataPointMessage2.getRollupLastDataPointTime().isPresent());
         assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
-                lastDataPointMessage2.getLastDataPointTime().get());
+                lastDataPointMessage2.getRollupLastDataPointTime().get());
 
         _probe.expectNoMessage();
     }
@@ -327,10 +333,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(null)
+                        .setRollupLastDataPointTime(null)
                         .build(),
                 ActorRef.noSender());
 
@@ -364,10 +370,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(Instant.EPOCH)
+                        .setRollupLastDataPointTime(Instant.EPOCH)
                         .build(),
                 ActorRef.noSender());
 
@@ -405,10 +411,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(lastDataPoint)
+                        .setRollupLastDataPointTime(lastDataPoint)
                         .build(),
                 ActorRef.noSender());
 
@@ -444,10 +450,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(lastDataPoint)
+                        .setRollupLastDataPointTime(lastDataPoint)
                         .build(),
                 ActorRef.noSender());
 
@@ -471,10 +477,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(lastDataPoint)
+                        .setRollupLastDataPointTime(lastDataPoint)
                         .setFailure(new RuntimeException("Failure"))
                         .build(),
                 ActorRef.noSender());
@@ -523,10 +529,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.DAILY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(lastDataPointTime)
+                        .setRollupLastDataPointTime(lastDataPointTime)
                         .build(),
                 ActorRef.noSender());
 
@@ -548,10 +554,10 @@ public class RollupGeneratorTest {
 
         actor.tell(
                 new LastDataPointMessage.Builder()
-                        .setMetricName("metric")
+                        .setSourceMetricName("metric")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableSet.of("tag1", "tag2"))
-                        .setLastDataPointTime(lastDataPointTime)
+                        .setRollupLastDataPointTime(lastDataPointTime)
                         .build(),
                 ActorRef.noSender());
 

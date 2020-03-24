@@ -1,0 +1,37 @@
+      final String rollupMetricName = metricName + period.getSuffix();
+        final LastDataPointMessage.Builder builder = new LastDataPointMessage.Builder()
+//                .setRollupMetricName(metricName)
+                .setSourceMetricName(rollupMetricName)
+                .setPeriod(period)
+                .setTags(tags);
+        if (failure != null) {
+            return builder.setFailure(failure).build();
+        }
+        final Map<String, MetricsQueryResponse.QueryResult> queryResults =
+                response.getQueries()
+                        .stream()
+                        .flatMap(query -> query.getResults().stream())
+                        .collect(ImmutableMap.toImmutableMap(
+                                MetricsQueryResponse.QueryResult::getName,
+                                Function.identity()
+                        ));
+
+        // Query results should *only* contain the source and destination metric.
+        if (queryResults.size() != 2 || !queryResults.containsKey(metricName) || !queryResults.containsKey(rollupMetricName)) {
+            return builder.setFailure(new Exception("Unexpected query results.")).build();
+        }
+
+        // Set source time
+        // FIXME(cbriones)
+//        Optional.ofNullable(queryResults.get(metricName))
+//                .flatMap(qr -> qr.getValues().stream().findFirst())
+//                .map(DataPoint::getTime)
+//                .ifPresent(builder::setSourceLastDataPointTime);
+
+        // Set rollup time
+        Optional.ofNullable(queryResults.get(rollupMetricName))
+                .flatMap(qr -> qr.getValues().stream().findFirst())
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setRollupLastDataPointTime);
+
+        return builder.build();

@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -61,7 +62,6 @@ import javax.inject.Named;
  * to the maximum number of backfill periods, if any are configured.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
- *
  */
 public class RollupGenerator extends AbstractActorWithTimers {
 
@@ -83,17 +83,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
      * within a LastDataPointMessage, meaning that rollups operate on a metric as a whole.
      */
 
-    @Override
-    public Receive createReceive() {
-        return new ReceiveBuilder()
-                .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
-                .match(String.class, this::fetchMetricTags)
-                .match(TagNamesMessage.class, this::handleTagNamesMessage)
-                .match(LastDataPointMessage.class, this::handleLastDataPointMessage)
-                .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
-                .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
-                .build();
-    }
 
     /**
      * RollupGenerator actor constructor.
@@ -132,10 +121,21 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     @Override
+    public Receive createReceive() {
+        return new ReceiveBuilder()
+                .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
+                .match(String.class, this::fetchMetricTags)
+                .match(TagNamesMessage.class, this::handleTagNamesMessage)
+                .match(LastDataPointMessage.class, this::handleLastDataPointMessage)
+                .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
+                .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
+                .build();
+    }
+
+    @Override
     public void preStart() {
         getSelf().tell(FETCH_METRIC, ActorRef.noSender());
     }
-
 
     private void requestMetricsFromDiscovery(final Object fetch) {
         _metrics.recordCounter("rollup/generator/metric_names/requested", 1);
@@ -223,14 +223,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
+        final String metricName = message.getSourceMetricName();
         final RollupPeriod period = message.getPeriod();
-        final String metricName = message.getMetricName();
         // Get the source of the rollup data, which is either the smaller rollup metric or
         // the original metric, if this is the smallest rollup.
-        final String srcMetricName = period.previous()
-                .map(RollupPeriod::getSuffix)
-                .map(suffix -> metricName + suffix)
-                .orElse(metricName);
+        // final String srcMetricName = period.previous()
+                // .map(RollupPeriod::getSuffix)
+                // .map(suffix -> metricName + suffix)
+                // .orElse(metricName);
+//        final String metricName = message.getRollupMetricName();
 
         _metrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
         if (message.isFailure()) {
@@ -250,56 +251,56 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             .setFailure(throwable)
                             .build(),
                     ActorRef.noSender());
-            return;
-        }
-        _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
-        final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
-        final Instant lastDataPoint = message.getLastDataPointTime().orElse(Instant.EPOCH);
+        } else {
+            _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
+            final Instant startOfRecentClosedPeriod = period.recentStartTime(_clock.instant());
+            final Instant lastDataPoint = message.getRollupLastDataPointTime().orElse(Instant.EPOCH);
 
-        // If the most recent period aligned start time is after the most recent datapoint then
-        // we need to run the rollup, otherwise we can skip this and just send a finish message.
-        if (startOfRecentClosedPeriod.isAfter(lastDataPoint)) {
-            final String rollupMetricName = metricName + period.getSuffix();
-            final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
+            // If the most recent period aligned start time is after the most recent datapoint then
+            // we need to run the rollup, otherwise we can skip this and just send a finish message.
+            if (startOfRecentClosedPeriod.isAfter(lastDataPoint)) {
+                final String rollupMetricName = metricName + period.getSuffix();
+                final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
 
-            final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
-                    .minus(period.periodCountToDuration(maxBackFillPeriods));
+                final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
+                        .minus(period.periodCountToDuration(maxBackFillPeriods));
 
-            // We either want to start at the oldest backfill point or the start of the period
-            // after the last datapoint since it contains data for the period that follows it.
-            Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
-                    ? oldestBackfillPoint : period.recentEndTime(lastDataPoint).plus(period.periodCountToDuration(1));
+                // We either want to start at the oldest backfill point or the start of the period
+                // after the last datapoint since it contains data for the period that follows it.
+                Instant rollupPeriodStart = lastDataPoint.isBefore(oldestBackfillPoint)
+                        ? oldestBackfillPoint : period.recentEndTime(lastDataPoint).plus(period.periodCountToDuration(1));
 
-            final Queue<Instant> startTimes = new LinkedList<>();
+                final Queue<Instant> startTimes = new LinkedList<>();
 
-            // We need to rollup every period up to and including the most recent period.
-            while (rollupPeriodStart.isBefore(startOfRecentClosedPeriod) || rollupPeriodStart.equals(startOfRecentClosedPeriod)) {
-                startTimes.add(rollupPeriodStart);
-                rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
+                // We need to rollup every period up to and including the most recent period.
+                while (rollupPeriodStart.isBefore(startOfRecentClosedPeriod) || rollupPeriodStart.equals(startOfRecentClosedPeriod)) {
+                    startTimes.add(rollupPeriodStart);
+                    rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
+                }
+
+                final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+                        .setSourceMetricName(message.getSourceMetricName())
+                        .setDestinationMetricName(rollupMetricName)
+                        .setPeriod(period)
+                        .setGroupByTags(message.getTags());
+
+                while (!startTimes.isEmpty()) {
+                    final Instant startTime = startTimes.poll();
+
+                    rollupDefBuilder.setStartTime(startTime)
+                            .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
+                    _rollupManagerPool.tell(rollupDefBuilder.build(), self());
+                }
             }
 
-            final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
-                    .setSourceMetricName(srcMetricName)
-                    .setDestinationMetricName(rollupMetricName)
-                    .setPeriod(period)
-                    .setGroupByTags(message.getTags());
-
-            while (!startTimes.isEmpty()) {
-                final Instant startTime = startTimes.poll();
-
-                rollupDefBuilder.setStartTime(startTime)
-                        .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
-                _rollupManagerPool.tell(rollupDefBuilder.build(), self());
-            }
+            getSelf().tell(
+                    new FinishRollupMessage.Builder()
+                            .setMetricName(message.getSourceMetricName())
+                            .setPeriod(message.getPeriod())
+                            .build(),
+                    ActorRef.noSender()
+            );
         }
-
-        getSelf().tell(
-                new FinishRollupMessage.Builder()
-                        .setMetricName(message.getMetricName())
-                        .setPeriod(message.getPeriod())
-                        .build(),
-                ActorRef.noSender()
-        );
     }
 
     private void handleFinishRollupMessage(final FinishRollupMessage message) {
@@ -323,32 +324,32 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
         final LastDataPointMessage.Builder builder = new LastDataPointMessage.Builder()
-                .setMetricName(metricName)
+                .setSourceMetricName(metricName)
                 .setPeriod(period)
                 .setTags(tags);
         if (failure != null) {
-            return builder.setFailure(failure).build();
-        }
-        final Optional<MetricsQueryResponse.QueryResult> queryResult =
-                response.getQueries()
-                    .stream()
-                    .flatMap(query -> query.getResults().stream())
-                    .collect(ImmutableMap.toImmutableMap(
-                            k
-                    ))
-                    .findFirst();
+            builder.setFailure(failure);
+        } else {
+            final Optional<MetricsQueryResponse.QueryResult> queryResult =
+                    response.getQueries()
+                        .stream()
+                        .flatMap(query -> query.getResults().stream())
+                        .findFirst();
 
-        // If there are no queries or query results, something has gone wrong, but an empty
-        // result itself does not indicate failure.
-        if (!queryResult.isPresent()) {
-            return builder.setFailure(new Exception("Unexpected query results.")).build();
+            // If there are no queries or query results, something has gone wrong, but an empty
+            // result itself does not indicate failure.
+            if (!queryResult.isPresent()) {
+                builder.setFailure(new Exception("Unexpected query results."));
+            } else {
+                final Instant lastDataPointTime =
+                        queryResult
+                        .flatMap(qr -> qr.getValues().stream().findFirst())
+                        .map(DataPoint::getTime)
+                        .orElse(null);
+                builder.setRollupLastDataPointTime(lastDataPointTime);
+            }
         }
-        final Instant lastDataPointTime =
-                queryResult
-                .flatMap(qr -> qr.getValues().stream().findFirst())
-                .map(DataPoint::getTime)
-                .orElse(null);
-        return builder.setLastDataPointTime(lastDataPointTime).build();
+        return builder.build();
     }
 
     // Fetch the last data point of the *destination metric* to determine how far behind we are.
@@ -357,21 +358,23 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final RollupPeriod period,
             final int backfillPeriods
     ) {
+        final Metric.Builder metricBuilder = new Metric.Builder()
+                .setName(metricName + period.getSuffix())
+                .setAggregators(ImmutableList.of(
+                        new Aggregator.Builder()
+                                .setName("count")
+                                .build())
+                )
+                .setLimit(1)
+                .setOrder(Metric.Order.DESC);
+
         return _kairosDbClient.queryMetrics(
                 new MetricsQuery.Builder()
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
-                                new Metric.Builder()
-                                        .setName(metricName)
-                                        .setAggregators(ImmutableList.of(
-                                                new Aggregator.Builder()
-                                                        .setName("count")
-                                                        .build())
-                                        )
-                                        .setLimit(1)
-                                        .setOrder(Metric.Order.DESC)
-                                        .build()
+                            // metricBuilder.setName(metricName).build()
+                               metricBuilder.setName(metricName + period.getSuffix()).build()
                         )).build());
     }
 
