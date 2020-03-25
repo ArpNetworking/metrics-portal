@@ -38,6 +38,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigUtil;
+import scala.concurrent.duration.FiniteDuration;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
@@ -52,7 +54,6 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
-import scala.concurrent.duration.FiniteDuration;
 
 /**
  * Actor for generating rollup jobs for individual source metrics.

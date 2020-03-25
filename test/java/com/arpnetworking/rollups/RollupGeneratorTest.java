@@ -36,6 +36,13 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -45,12 +52,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
 import javax.inject.Named;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -208,6 +209,8 @@ public class RollupGeneratorTest {
                                     .setValue(0.0)
                                     .build()
                             ));
+                            break;
+                        default:
                             break;
                     }
                     return new MetricsQueryResponse.Query.Builder()
@@ -528,7 +531,7 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
-        FinishRollupMessage finishRollupMessage = _probe.expectMsgClass(FinishRollupMessage.class);
+        final FinishRollupMessage finishRollupMessage = _probe.expectMsgClass(FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getPeriod());

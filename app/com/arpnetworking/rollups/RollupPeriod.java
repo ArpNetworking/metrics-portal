@@ -16,8 +16,8 @@
 package com.arpnetworking.rollups;
 
 import com.arpnetworking.kairos.client.models.SamplingUnit;
-
 import com.google.common.collect.ImmutableList;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
