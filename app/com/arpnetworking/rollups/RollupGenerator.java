@@ -222,7 +222,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                           System.nanoTime() - startTime,
                             Optional.of(Units.NANOSECOND)
                         );
-                        return buildLastDataPointResponse(metricName, rollupMetricName, period, message.getTagNames(), response, failure);
+                        return buildLastDataPointResponse(sourceMetricName, rollupMetricName, period, message.getTagNames(), response, failure);
                     }),
                     getContext().dispatcher()
                 ).to(getSelf());
