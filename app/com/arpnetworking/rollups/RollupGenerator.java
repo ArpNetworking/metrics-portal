@@ -38,8 +38,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigUtil;
-import scala.concurrent.duration.FiniteDuration;
-
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
@@ -54,6 +52,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import scala.concurrent.duration.FiniteDuration;
 
 /**
  * Actor for generating rollup jobs for individual source metrics.
@@ -62,6 +61,7 @@ import javax.inject.Named;
  * to the maximum number of backfill periods, if any are configured.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
+ *
  */
 public class RollupGenerator extends AbstractActorWithTimers {
 
@@ -83,6 +83,17 @@ public class RollupGenerator extends AbstractActorWithTimers {
      * within a LastDataPointMessage, meaning that rollups operate on a metric as a whole.
      */
 
+    @Override
+    public Receive createReceive() {
+        return new ReceiveBuilder()
+                .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
+                .match(String.class, this::fetchMetricTags)
+                .match(TagNamesMessage.class, this::handleTagNamesMessage)
+                .match(LastDataPointMessage.class, this::handleLastDataPointMessage)
+                .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
+                .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
+                .build();
+    }
 
     /**
      * RollupGenerator actor constructor.
@@ -118,18 +129,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
             }
         }
         _maxBackFillByPeriod = maxBackFillByPeriod.build();
-    }
-
-    @Override
-    public Receive createReceive() {
-        return new ReceiveBuilder()
-                .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
-                .match(String.class, this::fetchMetricTags)
-                .match(TagNamesMessage.class, this::handleTagNamesMessage)
-                .match(LastDataPointMessage.class, this::handleLastDataPointMessage)
-                .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
-                .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
-                .build();
     }
 
     @Override
@@ -205,25 +204,33 @@ public class RollupGenerator extends AbstractActorWithTimers {
         for (final RollupPeriod period : RollupPeriod.values()) {
             final int backfillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
             final String rollupMetricName = metricName + period.getSuffix();
-            // Get the source of the rollup data, which is either the smaller rollup metric or
-            // the original metric, if this is the smallest rollup.
-             final String sourceMetricName = period.previous()
-                 .map(RollupPeriod::getSuffix)
-                 .map(suffix -> metricName + suffix)
-                 .orElse(metricName);
+            // Get the source of the rollup data, which is either the next smallest rollup metric or
+            // the original metric, if this is the smallest possible rollup.
+            final String sourceMetricName = period.previous()
+                    .map(RollupPeriod::getSuffix)
+                    .map(suffix -> metricName + suffix)
+                    .orElse(metricName);
             if (backfillPeriods > 0) {
                 Patterns.pipe(
-                    fetchLastDataPoint(sourceMetricName, rollupMetricName, period, backfillPeriods).handle((response, failure) -> {
-                        final String baseMetricName = "rollup/generator/last_data_point_"
-                            + period.name().toLowerCase(Locale.getDefault());
-                        _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
-                        _metrics.recordTimer(
-                          baseMetricName + "/latency",
-                          System.nanoTime() - startTime,
-                            Optional.of(Units.NANOSECOND)
-                        );
-                        return buildLastDataPointResponse(sourceMetricName, rollupMetricName, period, message.getTagNames(), response, failure);
-                    }),
+                    fetchLastDataPoint(sourceMetricName, rollupMetricName, period, backfillPeriods)
+                        .handle((response, failure) -> {
+                            final String baseMetricName = "rollup/generator/last_data_point_"
+                                    + period.name().toLowerCase(Locale.getDefault());
+                            _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
+                            _metrics.recordTimer(
+                                 baseMetricName + "/latency",
+                                 System.nanoTime() - startTime,
+                                Optional.of(Units.NANOSECOND)
+                            );
+                            return buildLastDataPointResponse(
+                                sourceMetricName,
+                                rollupMetricName,
+                                period,
+                                message.getTagNames(),
+                                response,
+                                failure
+                            );
+                        }),
                     getContext().dispatcher()
                 ).to(getSelf());
             }
@@ -370,9 +377,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         // Set source time
         Optional.ofNullable(queryResults.get(sourceMetricName))
-                .flatMap(qr -> qr.getValues().stream().findFirst())
-                .map(DataPoint::getTime)
-                .ifPresent(builder::setSourceLastDataPointTime);
+            .flatMap(qr -> qr.getValues().stream().findFirst())
+            .map(DataPoint::getTime)
+            .ifPresent(builder::setSourceLastDataPointTime);
 
         // Set rollup time
         Optional.ofNullable(queryResults.get(rollupMetricName))

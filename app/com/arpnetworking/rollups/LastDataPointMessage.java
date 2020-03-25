@@ -72,7 +72,7 @@ public final class LastDataPointMessage extends FailableMessage {
     private final ImmutableSet<String> _tags;
     private final Instant _sourceLastDataPointTime;
     private final Instant _rollupLastDataPointTime;
-    private static final long serialVersionUID = 5745882770658263619L;
+    private static final long serialVersionUID = 2800761302248621189L;
 
 
     /**
@@ -121,9 +121,9 @@ public final class LastDataPointMessage extends FailableMessage {
         }
 
         /**
-         * Sets the {@code _lastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _sourceLastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
          *
-                 * @param value the {@code _lastDataPointTime} to set
+         * @param value the {@code _sourceLastDataPointTime} to set
          * @return a reference to this Builder
          */
         public Builder setSourceLastDataPointTime(@Nullable final Instant value) {
@@ -132,9 +132,9 @@ public final class LastDataPointMessage extends FailableMessage {
         }
 
         /**
-         * Sets the {@code _lastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _rollupLastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _lastDataPointTime} to set
+         * @param value the {@code _rollupLastDataPointTime} to set
          * @return a reference to this Builder
          */
         public Builder setRollupLastDataPointTime(@Nullable final Instant value) {
