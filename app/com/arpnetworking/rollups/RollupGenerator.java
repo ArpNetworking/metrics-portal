@@ -266,19 +266,19 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
             // Example:
             //
-            // Consider a minutely metric that has just hit 00:00 UTC
+            // Consider a minutely metric that has just hit 00:00 UTC 3 Jan
+            //
+            //                 22:00         23:00         00:00      startOfLastEligiblePeriod
+            //                   |             |             |
+            // minutely  x x x x x x x x x x x x x x x x x x x                  N/A
+            //   hourly          x             x             |        23:00 2 Jan (1 period  ago)
+            //    daily          |             |             |        00:00 1 Jan (2 periods ago)
             //
             // Hourly pulls from the minutely, and sees that the most recently closed period
             // is before the most recent datapoint in minutely, and so we can roll up.
             //
             // Daily pulls from hourly, but the latest hourly datapoint is at 23:00 < 00:00, the end
             // of the most recent period. Therefore we cannot roll-up just yet.
-            //
-            //                 22:00         23:00         00:00      startOfLastEligiblePeriod
-            //                   |             |             |
-            // minutely  m m m m m m m m m m m m m m m m m m m                  N/A
-            // hourly            H             H             |                 23:00
-            // daily             |             |             |                 00:00 2 days ago
 
             final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.EPOCH);
 
@@ -375,13 +375,13 @@ public class RollupGenerator extends AbstractActorWithTimers {
             return builder.setFailure(new Exception("Unexpected query results.")).build();
         }
 
-        // Set source time
+        // Set source time, if any.
         Optional.ofNullable(queryResults.get(sourceMetricName))
             .flatMap(qr -> qr.getValues().stream().findFirst())
             .map(DataPoint::getTime)
             .ifPresent(builder::setSourceLastDataPointTime);
 
-        // Set rollup time
+        // Set rollup time, if any.
         Optional.ofNullable(queryResults.get(rollupMetricName))
                 .flatMap(qr -> qr.getValues().stream().findFirst())
                 .map(DataPoint::getTime)
