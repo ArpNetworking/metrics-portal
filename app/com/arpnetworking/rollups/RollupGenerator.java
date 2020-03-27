@@ -207,7 +207,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final String rollupMetricName = metricName + period.getSuffix();
             // Get the source of the rollup data, which is either the next smallest rollup metric or
             // the original metric, if this is the smallest possible rollup.
-            final String sourceMetricName = period.previous()
+            final String sourceMetricName = period.nextSmallest()
                     .map(RollupPeriod::getSuffix)
                     .map(suffix -> metricName + suffix)
                     .orElse(metricName);

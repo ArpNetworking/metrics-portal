@@ -101,7 +101,7 @@ public enum RollupPeriod {
      * @return An {@code Optional} containing the next smallest RollupPeriod, or {@link Optional#empty()}
      * if this is already the smallest.
      */
-    public Optional<RollupPeriod> previous() {
+    public Optional<RollupPeriod> nextSmallest() {
         final int i = this.ordinal();
         if (i == 0) {
             return Optional.empty();
@@ -109,7 +109,7 @@ public enum RollupPeriod {
         return Optional.of(VALUES.get((i - 1) % VALUES.size()));
     }
 
-    // values() will create a new array on every call to previous without this.
+    // values() will create a new array on every call to nextSmallest without this.
     private static final List<RollupPeriod> VALUES = ImmutableList.copyOf(values());
 
     private final String _suffix;
