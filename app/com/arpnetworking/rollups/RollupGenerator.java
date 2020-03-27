@@ -204,14 +204,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
         final long startTime = System.nanoTime();
         for (final RollupPeriod period : RollupPeriod.values()) {
             final int backfillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
-            final String rollupMetricName = metricName + period.getSuffix();
-            // Get the source of the rollup data, which is either the next smallest rollup metric or
-            // the original metric, if this is the smallest possible rollup.
-            final String sourceMetricName = period.nextSmallest()
-                    .map(RollupPeriod::getSuffix)
-                    .map(suffix -> metricName + suffix)
-                    .orElse(metricName);
             if (backfillPeriods > 0) {
+                final String sourceMetricName = getSourceMetricName(metricName, period);
+                final String rollupMetricName = getDestinationMetricName(metricName, period);
                 Patterns.pipe(
                     fetchLastDataPoint(sourceMetricName, rollupMetricName, period, backfillPeriods)
                         .handle((response, failure) -> {
@@ -236,6 +231,20 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 ).to(getSelf());
             }
         }
+    }
+
+    private String getSourceMetricName(final String metricName, final RollupPeriod period) {
+        Optional<RollupPeriod> sourcePeriod = period.nextSmallest();
+        while (sourcePeriod.isPresent() && !sourcePeriod.map(p -> _maxBackFillByPeriod.getOrDefault(p, 0) > 0).orElse(true)) {
+            sourcePeriod = sourcePeriod.flatMap(RollupPeriod::nextSmallest);
+        }
+        // Get the source of the rollup data, which is either the next smallest rollup metric that's enabled or
+        // the original metric, if this is the smallest possible rollup.
+        return sourcePeriod.map(p -> getDestinationMetricName(metricName, p)).orElse(metricName);
+    }
+
+    private String getDestinationMetricName(final String metricName, final RollupPeriod period) {
+        return metricName + period.getSuffix();
     }
 
     private void handleLastDataPointMessage(final LastDataPointMessage message) {
