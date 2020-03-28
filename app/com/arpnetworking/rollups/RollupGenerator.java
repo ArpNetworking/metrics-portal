@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -169,7 +168,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         if (response.getQueries().isEmpty() || response.getQueries().get(0).getResults().isEmpty()) {
                             return new TagNamesMessage.Builder()
                                     .setMetricName(metricName)
-                                    .setFailure(new Exception("Unexpected query result."))
+                                    .setFailure(new UnexpectedQueryResponseException("Empty queries or query results", response))
                                     .build();
                         } else {
                             return new TagNamesMessage.Builder()
@@ -371,29 +370,28 @@ public class RollupGenerator extends AbstractActorWithTimers {
         if (failure != null) {
             return builder.setFailure(failure).build();
         }
-        final Map<String, MetricsQueryResponse.QueryResult> queryResults =
+        final Map<String, Optional<DataPoint>> queryResults =
                 response.getQueries()
                         .stream()
                         .flatMap(query -> query.getResults().stream())
                         .collect(ImmutableMap.toImmutableMap(
                                 MetricsQueryResponse.QueryResult::getName,
-                                Function.identity()
+                                // The query limits to 1 data point so it's either the last or empty.
+                                queryResult -> queryResult.getValues().stream().findFirst()
                         ));
 
         // Query results should *only* contain the source and destination metric.
         if (queryResults.size() != 2 || !queryResults.containsKey(sourceMetricName) || !queryResults.containsKey(rollupMetricName)) {
-            return builder.setFailure(new Exception("Unexpected query results.")).build();
+            return builder.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)).build();
         }
 
         // Set source time, if any.
-        Optional.ofNullable(queryResults.get(sourceMetricName))
-            .flatMap(qr -> qr.getValues().stream().findFirst())
-            .map(DataPoint::getTime)
-            .ifPresent(builder::setSourceLastDataPointTime);
+        queryResults.get(sourceMetricName)
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setSourceLastDataPointTime);
 
         // Set rollup time, if any.
-        Optional.ofNullable(queryResults.get(rollupMetricName))
-                .flatMap(qr -> qr.getValues().stream().findFirst())
+        queryResults.get(rollupMetricName)
                 .map(DataPoint::getTime)
                 .ifPresent(builder::setRollupLastDataPointTime);
 
