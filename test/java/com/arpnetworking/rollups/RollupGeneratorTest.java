@@ -28,6 +28,7 @@ import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -36,6 +37,7 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -186,44 +188,11 @@ public class RollupGeneratorTest {
 
     @Test
     public void testFetchesLastDataPoints() {
-        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
-            final Object arg0 = invocation.getArguments()[0];
-            if (arg0 instanceof MetricsQuery) {
-                final MetricsQuery query = (MetricsQuery) arg0;
-                final ImmutableList<MetricsQueryResponse.Query> queries = query.getMetrics().stream().map(metric -> {
-                    final String metricName = metric.getName();
-                    final MetricsQueryResponse.QueryResult.Builder builder = new MetricsQueryResponse.QueryResult.Builder();
-                    builder.setName(metricName);
-                    switch (metricName) {
-                        case "metric":
-                        case "metric_1h":
-                            builder.setValues(ImmutableList.of(new DataPoint.Builder()
-                                    .setTime(RollupPeriod.HOURLY.recentEndTime(_clock.instant()))
-                                    .setValue(0.0)
-                                    .build()
-                            ));
-                            break;
-                        case "metric_1d":
-                            builder.setValues(ImmutableList.of(new DataPoint.Builder()
-                                    .setTime(RollupPeriod.DAILY.recentEndTime(_clock.instant()))
-                                    .setValue(0.0)
-                                    .build()
-                            ));
-                            break;
-                        default:
-                            break;
-                    }
-                    return new MetricsQueryResponse.Query.Builder()
-                            .setResults(ImmutableList.of(builder.build()))
-                            .build();
-                }).collect(ImmutableList.toImmutableList());
-                return CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
-                        .setQueries(queries)
-                        .build()
-                );
-            }
-            return null;
-        });
+        mockKairosDbLastDatapoints(ImmutableMap.of(
+            "metric", _clock.instant(),
+            "metric_1h", RollupPeriod.HOURLY.recentEndTime(_clock.instant()),
+            "metric_1d", RollupPeriod.DAILY.recentEndTime(_clock.instant())
+        ));
 
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
@@ -259,6 +228,38 @@ public class RollupGeneratorTest {
 
         actor.tell(new FinishRollupMessage.Builder().setMetricName("metric").setPeriod(RollupPeriod.DAILY).build(), ActorRef.noSender());
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
+    }
+
+    @Test
+    public void testOnlyUsesAvailableRollupsAsSources() {
+        // Disable hourlys
+        when(_config.hasPath(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(false);
+
+        mockKairosDbLastDatapoints(ImmutableMap.of(
+                "metric", _clock.instant(),
+                "metric_1h", RollupPeriod.HOURLY.recentEndTime(_clock.instant()),
+                "metric_1d", RollupPeriod.DAILY.recentEndTime(_clock.instant())
+        ));
+
+        final ActorRef actor = createActor();
+        _probe.expectMsg(RollupGenerator.FETCH_METRIC);
+
+        actor.tell(
+                new TagNamesMessage.Builder()
+                        .setMetricName("metric")
+                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .build(),
+                ActorRef.noSender());
+
+        final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
+        assertEquals(lastDataPointMessage2.getFailure(), Optional.empty());
+        assertEquals("metric", lastDataPointMessage2.getSourceMetricName());
+        assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
+        assertTrue(lastDataPointMessage2.getRollupLastDataPointTime().isPresent());
+        assertEquals(RollupPeriod.DAILY.recentEndTime(_clock.instant()),
+                lastDataPointMessage2.getRollupLastDataPointTime().get());
+
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -665,6 +666,33 @@ public class RollupGeneratorTest {
         }
 
         _probe.expectMsgClass(FinishRollupMessage.class);
+    }
+
+    private void mockKairosDbLastDatapoints(final Map<String, Instant> metricToLastTime) {
+        when(_kairosDbClient.queryMetrics(any())).thenAnswer(invocation -> {
+            final Object arg0 = invocation.getArguments()[0];
+            if (arg0 instanceof MetricsQuery) {
+                final MetricsQuery query = (MetricsQuery) arg0;
+                final ImmutableList<MetricsQueryResponse.Query> queries = query.getMetrics().stream().map(metric -> {
+                    final String metricName = metric.getName();
+                    final MetricsQueryResponse.QueryResult queryResult = new MetricsQueryResponse.QueryResult.Builder()
+                            .setName(metricName)
+                            .setValues(ImmutableList.of(new DataPoint.Builder()
+                                    .setTime(metricToLastTime.get(metricName))
+                                    .setValue(0.0)
+                                    .build()
+                            )).build();
+                    return new MetricsQueryResponse.Query.Builder()
+                            .setResults(ImmutableList.of(queryResult))
+                            .build();
+                }).collect(ImmutableList.toImmutableList());
+                return CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
+                        .setQueries(queries)
+                        .build()
+                );
+            }
+            return null;
+        });
     }
 
     /**
