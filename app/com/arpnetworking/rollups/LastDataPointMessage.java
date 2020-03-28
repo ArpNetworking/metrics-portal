@@ -29,27 +29,21 @@ import javax.annotation.Nullable;
  * empty.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
+ * @deprecated Use {@link LastDataPointsMessage} instead.
  */
+@Deprecated
 public final class LastDataPointMessage extends FailableMessage {
 
-    public String getSourceMetricName() {
-        return _sourceMetricName;
-    }
-
-    public String getRollupMetricName() {
-        return _rollupMetricName;
+    public String getMetricName() {
+        return _metricName;
     }
 
     public ImmutableSet<String> getTags() {
         return _tags;
     }
 
-    public Optional<Instant> getSourceLastDataPointTime() {
-        return Optional.ofNullable(_sourceLastDataPointTime);
-    }
-
-    public Optional<Instant> getRollupLastDataPointTime() {
-        return Optional.ofNullable(_rollupLastDataPointTime);
+    public Optional<Instant> getLastDataPointTime() {
+        return Optional.ofNullable(_lastDataPointTime);
     }
 
     public RollupPeriod getPeriod() {
@@ -58,21 +52,17 @@ public final class LastDataPointMessage extends FailableMessage {
 
     private LastDataPointMessage(final Builder builder) {
         super(builder);
-        _sourceMetricName = builder._sourceMetricName;
-        _rollupMetricName = builder._rollupMetricName;
+        _metricName = builder._metricName;
         _tags = builder._tags;
-        _sourceLastDataPointTime = builder._sourceLastDataPointTime;
-        _rollupLastDataPointTime = builder._rollupLastDataPointTime;
+        _lastDataPointTime = builder._lastDataPointTime;
         _period = builder._period;
     }
 
-    private final String _sourceMetricName;
-    private final String _rollupMetricName;
+    private final String _metricName;
     private final RollupPeriod _period;
     private final ImmutableSet<String> _tags;
-    private final Instant _sourceLastDataPointTime;
-    private final Instant _rollupLastDataPointTime;
-    private static final long serialVersionUID = 2800761302248621189L;
+    private final Instant _lastDataPointTime;
+    private static final long serialVersionUID = 5745882770658263619L;
 
 
     /**
@@ -88,24 +78,13 @@ public final class LastDataPointMessage extends FailableMessage {
         }
 
         /**
-         * Sets the {@code _rollupMetricName} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _metricName} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _rollupMetricName} to set
+         * @param value the {@code _metricName} to set
          * @return a reference to this Builder
          */
-        public Builder setRollupMetricName(final String value) {
-            _rollupMetricName = value;
-            return this;
-        }
-
-        /**
-         * Sets the {@code _sourceMetricName} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param value the {@code _sourceMetricName} to set
-         * @return a reference to this Builder
-         */
-        public Builder setSourceMetricName(final String value) {
-            _sourceMetricName = value;
+        public Builder setMetricName(final String value) {
+            _metricName = value;
             return this;
         }
 
@@ -121,24 +100,13 @@ public final class LastDataPointMessage extends FailableMessage {
         }
 
         /**
-         * Sets the {@code _sourceLastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _lastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _sourceLastDataPointTime} to set
+         * @param value the {@code _lastDataPointTime} to set
          * @return a reference to this Builder
          */
-        public Builder setSourceLastDataPointTime(@Nullable final Instant value) {
-            _sourceLastDataPointTime = value;
-            return this;
-        }
-
-        /**
-         * Sets the {@code _rollupLastDataPointTime} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param value the {@code _rollupLastDataPointTime} to set
-         * @return a reference to this Builder
-         */
-        public Builder setRollupLastDataPointTime(@Nullable final Instant value) {
-            _rollupLastDataPointTime = value;
+        public Builder setLastDataPointTime(@Nullable final Instant value) {
+            _lastDataPointTime = value;
             return this;
         }
 
@@ -155,12 +123,10 @@ public final class LastDataPointMessage extends FailableMessage {
 
         @Override
         protected void reset() {
-            _sourceMetricName = null;
-             _rollupMetricName = null;
+            _metricName = null;
             _period = null;
             _tags = ImmutableSet.of();
-            _sourceLastDataPointTime = null;
-            _rollupLastDataPointTime = null;
+            _lastDataPointTime = null;
         }
 
         @Override
@@ -170,16 +136,12 @@ public final class LastDataPointMessage extends FailableMessage {
 
         @NotNull
         @NotEmpty
-        private String _sourceMetricName;
-        @NotNull
-        @NotEmpty
-        private String _rollupMetricName;
+        private String _metricName;
         @NotNull
         private RollupPeriod _period;
         @NotNull
         private ImmutableSet<String> _tags = ImmutableSet.of();
 
-        private Instant _rollupLastDataPointTime;
-        private Instant _sourceLastDataPointTime;
+        private Instant _lastDataPointTime;
     }
 }

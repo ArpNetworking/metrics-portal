@@ -90,7 +90,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
                 .match(String.class, this::fetchMetricTags)
                 .match(TagNamesMessage.class, this::handleTagNamesMessage)
-                .match(LastDataPointMessage.class, this::handleLastDataPointMessage)
+                .match(LastDataPointsMessage.class, this::handleLastDataPointMessage)
                 .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
                 .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
                 .build();
@@ -247,7 +247,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return metricName + period.getSuffix();
     }
 
-    private void handleLastDataPointMessage(final LastDataPointMessage message) {
+    private void handleLastDataPointMessage(final LastDataPointsMessage message) {
         final String sourceMetricName = message.getSourceMetricName();
         final String rollupMetricName = message.getRollupMetricName();
         final RollupPeriod period = message.getPeriod();
@@ -356,14 +356,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
         timers().startSingleTimer("sleepTimer", FETCH_METRIC, _fetchBackoff);
     }
 
-    private LastDataPointMessage buildLastDataPointResponse(
+    private LastDataPointsMessage buildLastDataPointResponse(
             final String sourceMetricName,
             final String rollupMetricName,
             final RollupPeriod period,
             final ImmutableSet<String> tags,
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
-        final LastDataPointMessage.Builder builder = new LastDataPointMessage.Builder()
+        final LastDataPointsMessage.Builder builder = new LastDataPointsMessage.Builder()
                 .setSourceMetricName(sourceMetricName)
                 .setRollupMetricName(rollupMetricName)
                 .setPeriod(period)

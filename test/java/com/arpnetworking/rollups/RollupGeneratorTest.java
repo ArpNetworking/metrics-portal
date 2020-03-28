@@ -204,7 +204,7 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
-        final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
+        final LastDataPointsMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointsMessage.class);
         assertEquals(lastDataPointMessage1.getFailure(), Optional.empty());
         assertEquals("metric", lastDataPointMessage1.getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
@@ -213,7 +213,7 @@ public class RollupGeneratorTest {
                 lastDataPointMessage1.getRollupLastDataPointTime().get());
         assertEquals(2, lastDataPointMessage1.getTags().size());
 
-        final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
+        final LastDataPointsMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointsMessage.class);
         assertEquals(lastDataPointMessage2.getFailure(), Optional.empty());
         assertEquals("metric_1h", lastDataPointMessage2.getSourceMetricName());
         assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
@@ -251,7 +251,7 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
-        final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
+        final LastDataPointsMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointsMessage.class);
         assertEquals(lastDataPointMessage2.getFailure(), Optional.empty());
         assertEquals("metric", lastDataPointMessage2.getSourceMetricName());
         assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
@@ -328,7 +328,7 @@ public class RollupGeneratorTest {
         assertEquals(RollupPeriod.HOURLY.recentEndTime(_clock.instant()), hourlyQuery.getEndTime().get());
 
         // Hourly should be unaffected
-        final LastDataPointMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointMessage.class);
+        final LastDataPointsMessage lastDataPointMessage1 = _probe.expectMsgClass(LastDataPointsMessage.class);
         assertEquals(Optional.empty(), lastDataPointMessage1.getFailure());
         assertEquals("metric", lastDataPointMessage1.getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, lastDataPointMessage1.getPeriod());
@@ -337,7 +337,7 @@ public class RollupGeneratorTest {
                 lastDataPointMessage1.getRollupLastDataPointTime().get());
 
         // Daily should be marked as failure
-        final LastDataPointMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointMessage.class);
+        final LastDataPointsMessage lastDataPointMessage2 = _probe.expectMsgClass(LastDataPointsMessage.class);
         assertTrue(lastDataPointMessage2.isFailure());
         assertEquals("metric_1h", lastDataPointMessage2.getSourceMetricName());
         assertEquals(RollupPeriod.DAILY, lastDataPointMessage2.getPeriod());
@@ -352,7 +352,7 @@ public class RollupGeneratorTest {
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -390,7 +390,7 @@ public class RollupGeneratorTest {
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -432,7 +432,7 @@ public class RollupGeneratorTest {
                     .minus(RollupPeriod.HOURLY.periodCountToDuration(3));
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -473,7 +473,7 @@ public class RollupGeneratorTest {
                 .minus(RollupPeriod.HOURLY.periodCountToDuration(1));
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -499,7 +499,7 @@ public class RollupGeneratorTest {
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -522,7 +522,7 @@ public class RollupGeneratorTest {
         _probe.expectMsg(RollupGenerator.FETCH_METRIC);
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -549,7 +549,7 @@ public class RollupGeneratorTest {
                 .minus(RollupPeriod.HOURLY.periodCountToDuration(MAX_BACKFILL_PERIODS));
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -614,7 +614,7 @@ public class RollupGeneratorTest {
                 .minus(RollupPeriod.DAILY.periodCountToDuration(dailyBackfill * 2));
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1d")
                         .setPeriod(RollupPeriod.DAILY)
@@ -641,7 +641,7 @@ public class RollupGeneratorTest {
         _probe.expectMsgClass(FinishRollupMessage.class);
 
         actor.tell(
-                new LastDataPointMessage.Builder()
+                new LastDataPointsMessage.Builder()
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
