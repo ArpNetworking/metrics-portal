@@ -233,12 +233,17 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private String getSourceMetricName(final String metricName, final RollupPeriod period) {
+        // Walk backwards in decreasing period size to find the next smallest rollup metric that's enabled,
+        // or the original metric if no smaller rollups are available.
+        //
+        // XXX(cbriones): This code assumes that all smaller periods evenly divide larger ones, but it may not
+        // necessarily choose the optimal rollup source if this is not the case.
+        //
+        // e.g. 30m 15m 10m 5m rollups with 15m disabled. We rollup 30m and this would choose 5m, while 10m is optimal.
         Optional<RollupPeriod> sourcePeriod = period.nextSmallest();
-        while (sourcePeriod.isPresent() && !sourcePeriod.map(p -> _maxBackFillByPeriod.getOrDefault(p, 0) > 0).orElse(true)) {
+        while (sourcePeriod.isPresent() && _maxBackFillByPeriod.getOrDefault(sourcePeriod.get(), 0) == 0) {
             sourcePeriod = sourcePeriod.flatMap(RollupPeriod::nextSmallest);
         }
-        // Get the source of the rollup data, which is either the next smallest rollup metric that's enabled or
-        // the original metric, if this is the smallest possible rollup.
         return sourcePeriod.map(p -> getDestinationMetricName(metricName, p)).orElse(metricName);
     }
 
@@ -288,6 +293,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
             //
             // Daily pulls from hourly, but the latest hourly datapoint is at 23:00 < 00:00, the end
             // of the most recent period. Therefore we cannot roll-up just yet.
+            //
+            // Note that this is in a situation where everything behaves as expected. Due to issues with partial success during
+            // the save-as operation, a rollup may see an (incorrect) partial result which this code would then interpret as an OK
+            // to execute the next larger rollup, thus propagating the error.
 
             final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.EPOCH);
 

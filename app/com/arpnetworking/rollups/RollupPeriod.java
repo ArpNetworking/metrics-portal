@@ -98,8 +98,16 @@ public enum RollupPeriod {
     /**
      * Get the next smallest rollup period, if any.
      *
-     * @return An {@code Optional} containing the next smallest RollupPeriod, or {@link Optional#empty()}
+     * @return An {@code Optional} containing the next smallest {@code RollupPeriod}, or {@link Optional#empty()}
      * if this is already the smallest.
+     *
+     * @implNote
+     *
+     * Currently it is the case that all {@code RollupPeriod} values are divisible by all smaller rollup periods,
+     * which means that this method will always return the {@code RollupPeriod} with ordinal value n - 1.
+     * <p>
+     * In general this may not always be the case, as we do not exclude the possibility of intermediate RollupPeriod
+     * values that do not divide larger ones (e.g. a 45m interval would not divide 1h).
      */
     public Optional<RollupPeriod> nextSmallest() {
         final int i = this.ordinal();
