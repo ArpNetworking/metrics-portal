@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -55,5 +56,12 @@ public class RollupPeriodTest {
 
         assertEquals(Duration.ofDays(4),
                 RollupPeriod.DAILY.periodCountToDuration(4));
+    }
+
+    @Test
+    public void testNextSmallest() {
+        assertEquals(Optional.empty(), RollupPeriod.HOURLY.nextSmallest());
+        assertEquals(Optional.of(RollupPeriod.HOURLY), RollupPeriod.DAILY.nextSmallest());
+
     }
 }

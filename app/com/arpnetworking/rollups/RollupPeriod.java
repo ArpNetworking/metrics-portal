@@ -16,10 +16,13 @@
 package com.arpnetworking.rollups;
 
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.google.common.collect.ImmutableList;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Enumeration representing rollup periods.
@@ -91,6 +94,31 @@ public enum RollupPeriod {
         _truncationUnit = truncationUnit;
         _samplingUnit = samplingUnit;
     }
+
+    /**
+     * Get the next smallest rollup period, if any.
+     *
+     * @return An {@code Optional} containing the next smallest {@code RollupPeriod}, or {@link Optional#empty()}
+     * if this is already the smallest.
+     *
+     * @implNote
+     *
+     * Currently it is the case that all {@code RollupPeriod} values are divisible by all smaller rollup periods,
+     * which means that this method will always return the {@code RollupPeriod} with ordinal value n - 1.
+     * <p>
+     * In general this may not always be the case, as we do not exclude the possibility of intermediate RollupPeriod
+     * values that do not divide larger ones (e.g. a 45m interval would not divide 1h).
+     */
+    public Optional<RollupPeriod> nextSmallest() {
+        final int i = this.ordinal();
+        if (i == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(VALUES.get((i - 1) % VALUES.size()));
+    }
+
+    // values() will create a new array on every call to nextSmallest without this.
+    private static final List<RollupPeriod> VALUES = ImmutableList.copyOf(values());
 
     private final String _suffix;
     private final ChronoUnit _truncationUnit;

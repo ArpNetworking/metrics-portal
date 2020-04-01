@@ -29,7 +29,9 @@ import javax.annotation.Nullable;
  * empty.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
+ * @deprecated Use {@link LastDataPointsMessage} instead.
  */
+@Deprecated
 public final class LastDataPointMessage extends FailableMessage {
 
     public String getMetricName() {
