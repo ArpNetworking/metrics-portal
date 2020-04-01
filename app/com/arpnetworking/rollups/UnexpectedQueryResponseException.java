@@ -43,5 +43,7 @@ public class UnexpectedQueryResponseException extends Exception {
         return _queryResponse;
     }
 
-    private final MetricsQueryResponse _queryResponse;
+    // We actually want this serialized for logging, but we use Jackson and do not propagate transient markers.
+    private final transient MetricsQueryResponse _queryResponse;
+    private static final long serialVersionUID = -822201063053378595L;
 }
