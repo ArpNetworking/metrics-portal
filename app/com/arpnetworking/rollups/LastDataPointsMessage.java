@@ -27,8 +27,8 @@ import javax.annotation.Nullable;
  * Message containing the last datapoint timestamp for a metric series.
  * If no datapoints exist in the queried timerange then the lastDataPointTime will be
  * empty.
- *
- * @implNote This class is a duplicate of {@link LastDataPointMessage} in order to avoid a deserialization problem
+ * <p>
+ * This class is a duplicate of {@link LastDataPointMessage} in order to avoid a deserialization problem
  * that can occur if received by existing clusters.
  *
  * @author Christian Briones (cbriones at dropbox dot com)

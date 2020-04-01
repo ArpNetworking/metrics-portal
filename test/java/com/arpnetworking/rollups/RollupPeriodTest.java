@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.rollups;
 
-import java.util.Optional;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,8 +60,8 @@ public class RollupPeriodTest {
 
     @Test
     public void testNextSmallest() {
-        assertEquals(Optional.empty() , RollupPeriod.HOURLY.nextSmallest());
-        assertEquals(Optional.of(RollupPeriod.HOURLY) , RollupPeriod.DAILY.nextSmallest());
+        assertEquals(Optional.empty(), RollupPeriod.HOURLY.nextSmallest());
+        assertEquals(Optional.of(RollupPeriod.HOURLY), RollupPeriod.DAILY.nextSmallest());
 
     }
 }
