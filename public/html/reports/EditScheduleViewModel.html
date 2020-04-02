@@ -46,9 +46,14 @@
 </div>
 <div class="form-group" data-bind="if: isPeriodic">
     <label for="scheduleOffset">Repeat offset (Optional)</label>
-    <span class="glyphicon glyphicon-question-sign"
-          data-bind="popover: helpMessages['offset']"
-          data-trigger="hover"></span>
+    <a tabindex="0"
+       role="button"
+       class="btn"
+       data-html="true"
+       data-bind="popover: helpMessages['offset']"
+       data-trigger="focus">
+        <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+    </a>
     <input class="form-control" type="text" id="scheduleOffset"
            value=""
            placeholder="HH:MM:SS, or an ISO 8601 duration."
