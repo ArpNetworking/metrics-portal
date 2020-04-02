@@ -28,7 +28,7 @@
   <packaging>play2</packaging>
   <name>Metrics Portal</name>
   <description>Web user interface for managing the metrics stack.</description>
-  <version>0.9.26-SNAPSHOT</version>
+  <version>0.9.27-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -288,10 +288,13 @@
           <excludes>
             <exclude>portal/*</exclude>
             <exclude>controllers/routes.class</exclude>
+            <exclude>controllers/routes.class</exclude>
             <exclude>controllers/routes?javascript.class</exclude>
             <exclude>controllers/Reverse*.class</exclude>
             <exclude>controllers/javascript/*</exclude>
             <exclude>views/html/*</exclude>
+            <!-- LastDataPointMessage will be removed in the next release.-->
+            <exclude>app/com/arpnetworking/rollups/LastDataPointMessage.java</exclude>
           </excludes>
         </configuration>
       </plugin>
