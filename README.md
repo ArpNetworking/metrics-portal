@@ -246,7 +246,7 @@ container and avoids name conflicts on restart:
 
 To run the server on port 8080 _without_ dependencies via Play; you need to configure/provide/launch dependencies manually (see below):
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=postgresql.application.conf
+    metrics-portal> ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=postgresql.application.conf -Dpostgres.port=6432
 
 To debug on port 9002 with the server on port 8080 and its dependencies launched via Docker:
 
@@ -254,11 +254,11 @@ To debug on port 9002 with the server on port 8080 and its dependencies launched
 
 To debug on port 9002 with the server on port 8080 via Play; you need to configure/provide/launch dependencies manually (see below):
 
-    metrics-portal> MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9002" ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=postgresql.application.conf
+    metrics-portal> MAVEN_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9002" ./jdk-wrapper.sh ./mvnw play2:run -Dconfig.resource=postgresql.application.conf -Dpostgres.port=6432
 
 To launch dependencies only via Docker:
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -PdependenciesOnly
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -PdependenciesOnly -Dpostgres.port=6432
 
 To execute unit performance tests:
 

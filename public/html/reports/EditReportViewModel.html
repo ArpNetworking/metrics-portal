@@ -33,9 +33,14 @@
                 </div>
                 <div class="form-group">
                     <label for="timeoutString">Timeout</label>
-                    <span class="glyphicon glyphicon-question-sign"
-                          data-bind="popover: helpMessages['timeout']"
-                          data-trigger="hover"></span>
+                    <a tabindex="0"
+                       role="button"
+                       class="btn"
+                       data-html="true"
+                       data-bind="popover: helpMessages['timeout']"
+                       data-trigger="focus">
+                        <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+                    </a>
                     <input class="form-control" type="text" id="timeoutString"
                            value=""
                            placeholder="HH:MM:SS, or an ISO 8601 duration."
@@ -83,9 +88,14 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="recipientFormat">Report Format</label>
-                                    <span class="glyphicon glyphicon-question-sign"
-                                          data-bind="popover: helpMessages['format']"
-                                          data-trigger="hover"></span>
+                                    <a tabindex="0"
+                                       role="button"
+                                       class="btn"
+                                       data-html="true"
+                                       data-bind="popover: helpMessages['format']"
+                                       data-trigger="focus">
+                                        <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+                                    </a>
                                     <select id="recipientFormat"
                                            class="form-control"
                                            data-bind="options: availableFormats,

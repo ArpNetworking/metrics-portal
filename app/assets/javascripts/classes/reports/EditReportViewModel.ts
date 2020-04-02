@@ -235,6 +235,12 @@ class EditSourceViewModel extends BaseSourceViewModel {
         [SourceType.WEB_PAGE]: "Web page",
         [SourceType.GRAFANA]: "Grafana",
     };
+    private static readonly sourceTypeHelp = {
+        [SourceType.WEB_PAGE]: "<li class='list-group-item'><b>Browser rendered</b> - A URL is loaded in the browser and the rendered " +
+                "contents of the page are taken as the generated report.</li>",
+        [SourceType.GRAFANA]: "<li class='list-group-item'><b>Grafana</b> - Like browser-rendered, but tweaked to pull data from a Grafana Report panel" +
+                " (which are loaded asynchronously after page-load, hence needing the specialization).</li>",
+    };
     readonly availableSourceTypes: {value: SourceType, text: string}[] = availableSourceTypes.map(
         sourceType => ({value: sourceType, text: EditSourceViewModel.sourceTypeDisplayNames[sourceType]})
     );
@@ -242,10 +248,9 @@ class EditSourceViewModel extends BaseSourceViewModel {
     readonly helpMessages = {
         type: "The source type determines how a report is generated.<br>" +
               "<ul class='list-group'>"+
-              "<li class='list-group-item'><b>Browser rendered</b> - A URL is loaded in the browser and the rendered " +
-              "contents of the page are taken as the generated report.</li>" +
-              "<li class='list-group-item'><b>Grafana</b> - Like browser-rendered, but tweaked to pull data from a Grafana Report panel" +
-              " (which are loaded asynchronously after page-load, hence needing the specialization).</li>" +
+              availableSourceTypes.map(
+                      sourceType => EditSourceViewModel.sourceTypeHelp[sourceType]
+                  )+
               "</ul>",
         eventName: "When an event with this name is triggered, the report is considered fully rendered.",
     };

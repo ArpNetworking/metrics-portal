@@ -312,7 +312,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 if (typedMessage.getResult() == null) {
                     throw new IllegalArgumentException(String.format("JobCompleted message for %s has null error *and* result", ref));
                 }
-                LOGGER.debug()
+                LOGGER.info()
                         .setMessage("marking job as successful")
                         .addData("ref", ref)
                         .addData("scheduled", message.getScheduled())
@@ -323,11 +323,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         message.getScheduled(),
                         typedMessage.getResult());
             } else {
-                LOGGER.debug()
+                LOGGER.error()
                         .setMessage("marking job as failed")
                         .addData("ref", ref)
                         .addData("scheduled", message.getScheduled())
-                        .addData("error", message.getError())
+                        .setThrowable(message.getError())
                         .log();
                 repo.jobFailed(
                         ref.getJobId(),

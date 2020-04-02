@@ -13,19 +13,23 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+
 <div class="form-group">
     <label for="sourceType">Type</label>
-    <span class="glyphicon glyphicon-question-sign"
+    <a tabindex="0"
+          role="button"
+          class="btn"
           data-html="true"
           data-bind="popover: helpMessages['type']"
-          data-trigger="hover"></span>
+          data-trigger="focus">
+        <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+    </a>
     <select class="form-control"
             id="sourceType"
             data-bind="options: availableSourceTypes,
                        optionsValue: 'value',
                        optionsText: 'text',
-                       value: type"
-            >
+                       value: type">
     </select>
 </div>
 <div class="form-group">
