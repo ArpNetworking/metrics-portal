@@ -298,12 +298,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
             // the save-as operation, a rollup may see an (incorrect) partial result which this code would then interpret as an OK
             // to execute the next larger rollup, thus propagating the error.
 
-            final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.EPOCH);
+            final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.MIN);
 
             final Instant startOfLastEligiblePeriod =
                 message.getSourceLastDataPointTime()
                         .map(period::recentStartTime)
-                        .orElse(Instant.EPOCH);
+                        .orElse(Instant.MIN);
 
             // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
