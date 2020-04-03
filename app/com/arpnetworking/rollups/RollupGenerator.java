@@ -185,8 +185,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
     private void handleTagNamesMessage(final TagNamesMessage message) {
         _metrics.recordCounter("rollup/generator/tag_names_message/received", 1);
+        _metrics.recordCounter("rollup/generator/tag_names_message/success", message.isFailure() ? 0 : 1);
         if (message.isFailure()) {
-            _metrics.recordCounter("rollup/generator/tag_names_message/success", 0);
             LOGGER.warn()
                     .setMessage("Failed to get tag names for metric.")
                     .addData("metricName", message.getMetricName())
@@ -197,7 +197,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
             getSelf().tell(FETCH_METRIC, ActorRef.noSender());
             return;
         }
-        _metrics.recordCounter("rollup/generator/tag_names_message/success", 1);
         _periodsInFlight = Lists.newArrayList(RollupPeriod.values());
         final String metricName = message.getMetricName();
         final long startTime = System.nanoTime();
@@ -257,10 +256,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
         final RollupPeriod period = message.getPeriod();
 
         _metrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
+        _metrics.recordCounter("rollup/generator/last_data_point_message/success", message.isFailure() ? 0 : 1);
         if (message.isFailure()) {
             final Throwable throwable = message.getFailure().orElse(new RuntimeException("Received Failure"));
 
-            _metrics.recordCounter("rollup/generator/last_data_point_message/success", 0);
             LOGGER.warn()
                     .setMessage("Failed to get last data point for metric.")
                     .addData("sourceMetricName", sourceMetricName)
@@ -276,8 +275,6 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             .build(),
                     ActorRef.noSender());
         } else {
-            _metrics.recordCounter("rollup/generator/last_data_point_message/success", 1);
-
             // Example:
             //
             // Consider a minutely metric that has just hit 00:00 UTC 3 Jan
