@@ -150,7 +150,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     }
 
     /**
-     * RollupGenerator actor constructor.
+     * {@link RollupExecutor} actor constructor.
      *
      * @param configuration play configuration
      * @param rollupManager actor ref to RollupManager actor

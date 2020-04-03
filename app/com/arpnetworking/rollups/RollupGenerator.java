@@ -96,7 +96,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     /**
-     * RollupGenerator actor constructor.
+     * {@link RollupGenerator} actor constructor.
      *
      * @param configuration play configuration
      * @param metricsDiscovery actor ref to metrics discovery actor
