@@ -28,7 +28,7 @@ public class RollupForwarder extends AbstractActor {
     private final ActorRef _rollupManager;
 
     /**
-     * RollupForwarder actor constructor.
+     * {@link RollupForwarder} actor constructor.
      *
      * @param rollupManager actor ref to RollupManager actor
      */
