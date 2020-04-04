@@ -17,6 +17,8 @@ package models.internal;
 
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
+import com.google.common.net.MediaType;
+import models.internal.reports.ReportFormat;
 
 /**
  * Internal model interface for metrics portal feature state.
@@ -87,4 +89,11 @@ public interface Features {
      * @return list of names of {@link SourceType} enum values.
      */
     ImmutableList<String> getSourceTypes();
+
+    /**
+     * {@link MediaType}s of {@link ReportFormat}s to display in the UI.
+     *
+     * @return list of names of {@link MediaType}s.
+     */
+    ImmutableList<String> getReportFormatTypes();
 }
