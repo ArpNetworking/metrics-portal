@@ -264,8 +264,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
                 "the browser and the page content is taken as the rendered report. This <i>only</i> supports static " +
                 "content.</li>",
         [SourceType.GRAFANA]: "<li class='list-group-item'><b>Grafana</b> - Specialization of the Web Page source " +
-                "for capturing page content from Grafana based reports which may contain dynamic content. Additionally, " +
-                "these sources pass the scheduled date as the </li>",
+                "for capturing page content from a Grafana based report which may contain dynamic content.</li>",
     };
     readonly availableSourceTypes: {value: SourceType, text: string}[] = availableSourceTypes.map(
         sourceType => ({value: sourceType, text: EditSourceViewModel.sourceTypeDisplayNames[sourceType]})
