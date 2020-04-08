@@ -26,7 +26,10 @@ export enum ScheduleRepetition {
     MONTHLY,
 }
 
-export const availableSourceTypes: SourceType[] = features.sourceTypes.map((s: keyof typeof SourceType) => SourceType[s]);
+export const availableSourceTypes: SourceType[] = features.reportingSourceTypes.map((s: keyof typeof SourceType) => SourceType[s]);
+export const availableReportFormats: ReportFormat[] = features.reportingReportFormats.map((s: keyof typeof ReportFormat) => ReportFormat[s]);
+export const availableRecipientTypes: RecipientType[] = features.reportingRecipientTypes.map((s: keyof typeof RecipientType) => RecipientType[s]);
+export const availableReportIntervals: ScheduleRepetition[] = features.reportingIntervals.map((s: keyof typeof ScheduleRepetition) => ScheduleRepetition[s]);
 
 export class ZoneInfo {
     value: string;
@@ -81,7 +84,7 @@ export class BaseScheduleViewModel {
     offset = ko.pureComputed<moment.Duration>(() => moment.duration(this.offsetString()));
     zone = ko.observable<ZoneInfo>(new ZoneInfo(moment.tz.guess()));
 
-    offsetString = ko.observable<string>("");
+    offsetString = ko.observable<string>("PT10M");
 
     public load(raw: any): this {
         this.start(moment(raw.runAtAndAfter));
