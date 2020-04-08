@@ -16,6 +16,9 @@
 package models.internal.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.arpnetworking.metrics.portal.reports.ReportFormat;
+import com.arpnetworking.metrics.portal.reports.ReportInterval;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
@@ -69,8 +72,23 @@ public final class DefaultFeatures implements Features {
     }
 
     @Override
-    public ImmutableList<String> getSourceTypes() {
-        return _sourceTypes.stream().map(SourceType::name).collect(ImmutableList.toImmutableList());
+    public ImmutableList<SourceType> getReportingSourceTypes() {
+        return _reportingSourceTypes;
+    }
+
+    @Override
+    public ImmutableList<ReportFormat> getReportingReportFormats() {
+        return _reportingReportFormats;
+    }
+
+    @Override
+    public ImmutableList<RecipientType> getReportingRecipientTypes() {
+        return _reportingRecipientTypes;
+    }
+
+    @Override
+    public ImmutableList<ReportInterval> getReportingIntervals() {
+        return _reportingIntervals;
     }
 
     @Override
@@ -83,6 +101,10 @@ public final class DefaultFeatures implements Features {
                 .append(", alertsEnabled=").append(_alertsEnabled)
                 .append(", rollupsEnabled=").append(_rollupsEnabled)
                 .append(", reportsEnabled=").append(_reportsEnabled)
+                .append(", reportingSourceTypes=").append(_reportingSourceTypes)
+                .append(", reportingReportFormats=").append(_reportingReportFormats)
+                .append(", reportingRecipientTypes=").append(_reportingRecipientTypes)
+                .append(", reportingIntervals=").append(_reportingIntervals)
                 .append(", metricsAggregatorDaemonPorts=").append(_metricsAggregatorDaemonPorts)
                 .append("}")
                 .toString();
@@ -103,9 +125,21 @@ public final class DefaultFeatures implements Features {
         _reportsEnabled = configuration.getBoolean("portal.features.reports.enabled");
         _metricsAggregatorDaemonPorts = ImmutableList.copyOf(
                 configuration.getIntList("portal.features.metricsAggregatorDaemonPorts"));
-        _sourceTypes = configuration.getStringList("portal.features.reports.sourceTypes")
+        _reportingSourceTypes = configuration.getStringList("portal.features.reports.sourceTypes")
                 .stream()
                 .map(SourceType::valueOf)
+                .collect(ImmutableList.toImmutableList());
+        _reportingReportFormats = configuration.getStringList("portal.features.reports.reportFormats")
+                .stream()
+                .map(ReportFormat::valueOf)
+                .collect(ImmutableList.toImmutableList());
+        _reportingRecipientTypes = configuration.getStringList("portal.features.reports.recipientTypes")
+                .stream()
+                .map(RecipientType::valueOf)
+                .collect(ImmutableList.toImmutableList());
+        _reportingIntervals = configuration.getStringList("portal.features.reports.intervals")
+                .stream()
+                .map(ReportInterval::valueOf)
                 .collect(ImmutableList.toImmutableList());
     }
 
@@ -117,5 +151,8 @@ public final class DefaultFeatures implements Features {
     private final boolean _rollupsEnabled;
     private final boolean _reportsEnabled;
     private final ImmutableList<Integer> _metricsAggregatorDaemonPorts;
-    private final ImmutableList<SourceType> _sourceTypes;
+    private final ImmutableList<SourceType> _reportingSourceTypes;
+    private final ImmutableList<ReportFormat> _reportingReportFormats;
+    private final ImmutableList<RecipientType> _reportingRecipientTypes;
+    private final ImmutableList<ReportInterval> _reportingIntervals;
 }

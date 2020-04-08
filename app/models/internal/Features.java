@@ -15,6 +15,9 @@
  */
 package models.internal;
 
+import com.arpnetworking.metrics.portal.reports.RecipientType;
+import com.arpnetworking.metrics.portal.reports.ReportFormat;
+import com.arpnetworking.metrics.portal.reports.ReportInterval;
 import com.arpnetworking.metrics.portal.reports.SourceType;
 import com.google.common.collect.ImmutableList;
 
@@ -82,9 +85,30 @@ public interface Features {
     ImmutableList<Integer> getMetricsAggregatorDaemonPorts();
 
     /**
-     * Names of {@link SourceType}s to display in the UI.
+     * Reporting {@link SourceType}s that are enabled.
      *
-     * @return list of names of {@link SourceType} enum values.
+     * @return list of enabled {@link SourceType} values.
      */
-    ImmutableList<String> getSourceTypes();
+    ImmutableList<SourceType> getReportingSourceTypes();
+
+    /**
+     * Reporting {@link ReportFormat}s that are enabled.
+     *
+     * @return list of {@link ReportFormat} values.
+     */
+    ImmutableList<ReportFormat> getReportingReportFormats();
+
+    /**
+     * Reporting {@link RecipientType}s that are enabled.
+     *
+     * @return list of {@link RecipientType} values.
+     */
+    ImmutableList<RecipientType> getReportingRecipientTypes();
+
+    /**
+     * Names of reporting {@link RecipientType}s that are enabled.
+     *
+     * @return list of {@link RecipientType} values.
+     */
+    ImmutableList<ReportInterval> getReportingIntervals();
 }

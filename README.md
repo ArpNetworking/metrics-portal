@@ -258,7 +258,7 @@ To debug on port 9002 with the server on port 8080 via Play; you need to configu
 
 To launch dependencies only via Docker:
 
-    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -PdependenciesOnly -Dpostgres.port=6432
+    metrics-portal> ./jdk-wrapper.sh ./mvnw docker:start -PdependenciesOnly
 
 To execute unit performance tests:
 
