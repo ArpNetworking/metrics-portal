@@ -122,7 +122,10 @@ public class RollupExecutor extends AbstractActorWithTimers {
                         .build(),
                 new Aggregator.Builder()
                         .setName("save_as")
-                        .setOtherArgs(ImmutableMap.of("metric_name", rollupMetricName))
+                        .setOtherArgs(ImmutableMap.of(
+                                "metric_name", rollupMetricName,
+                                "add_saved_from", false
+                        ))
                         .build(),
                 new Aggregator.Builder()
                         .setName("count")
