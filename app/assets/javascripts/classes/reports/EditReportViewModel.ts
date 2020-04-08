@@ -23,6 +23,9 @@ import csrf from '../Csrf';
 
 import {
     availableSourceTypes,
+    availableReportFormats,
+    availableRecipientTypes,
+    availableReportIntervals,
     BaseRecipientViewModel,
     BaseScheduleViewModel,
     BaseSourceViewModel,
@@ -140,14 +143,6 @@ class EditReportViewModel {
         }
     }
 
-    readonly availableRecipientTypes = [
-        {value: RecipientType.EMAIL,  text: "Email"},
-    ];
-
-    readonly helpMessages = {
-        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
-    }
-
     private static parseProblems(responseJson: string): string[] {
         try {
             return JSON.parse(responseJson).errors;
@@ -155,6 +150,18 @@ class EditReportViewModel {
             return [EditReportViewModel.UNKNOWN_ERROR_MESSAGE];
         }
     }
+
+    private static readonly recipientTypeDisplayNames = {
+        [RecipientType.EMAIL]: "Email",
+    };
+
+    readonly availableRecipientTypes: {value: RecipientType, text: string}[] = availableRecipientTypes.map(
+        recipientType => ({value: recipientType, text: EditReportViewModel.recipientTypeDisplayNames[recipientType]})
+    );
+
+    readonly helpMessages = {
+        timeout: "Time that can be spent rendering/sending the report before forcibly halting execution. HH:MM:SS or ISO-8601.",
+    };
 }
 
 class EditRecipientViewModel extends BaseRecipientViewModel {
@@ -189,14 +196,31 @@ class EditRecipientViewModel extends BaseRecipientViewModel {
         }
     }
 
-    readonly availableFormats = [
-        {value: ReportFormat.PDF,  text: "PDF"},
-        {value: ReportFormat.HTML,  text: "HTML"},
-    ];
+    private static readonly reportFormatDisplayNames = {
+        [ReportFormat.HTML]: "HTML",
+        [ReportFormat.PDF]: "PDF",
+    };
+
+    private static readonly reportFormatHelp = {
+        [ReportFormat.HTML]: "<li class='list-group-item'><b>HTML</b> - Hyper Text Markup Language (HTML) tells a " +
+                "web browser how to display text, images and other forms of multimedia. Graphical content within " +
+                "reports is currently <b>not</b> supported when rendered as HTML.</li>",
+        [ReportFormat.PDF]: "<li class='list-group-item'><b>PDF</b> - Portable Document Format (PDF) is a file format " +
+                "that has captured all the elements of a document as an electronic image. Graphical content within " +
+                "reports is currently supported when rendered as PDF.</li>",
+    };
+
+    readonly availableFormats: {value: ReportFormat, text: string}[] = availableReportFormats.map(
+        reportFormat => ({value: reportFormat, text: EditRecipientViewModel.reportFormatDisplayNames[reportFormat]})
+    );
 
     readonly helpMessages = {
-        format: "The format that will be delivered to this recipient. For example, a PDF attached to an email or " +
-            "some HTML rendered inline.",
+        format: "The format that the report will be delivered in to the recipient.<br>" +
+              "<ul class='list-group'>"+
+              availableReportFormats.map(
+                      reportFormat => EditRecipientViewModel.reportFormatHelp[reportFormat]
+                  )+
+              "</ul>",
     };
 }
 
@@ -232,14 +256,15 @@ class EditSourceViewModel extends BaseSourceViewModel {
 
     // Used by KO data-bind.
     private static readonly sourceTypeDisplayNames = {
-        [SourceType.WEB_PAGE]: "Web page",
+        [SourceType.WEB_PAGE]: "Web Page",
         [SourceType.GRAFANA]: "Grafana",
     };
     private static readonly sourceTypeHelp = {
-        [SourceType.WEB_PAGE]: "<li class='list-group-item'><b>Browser rendered</b> - A URL is loaded in the browser and the rendered " +
-                "contents of the page are taken as the generated report.</li>",
-        [SourceType.GRAFANA]: "<li class='list-group-item'><b>Grafana</b> - Like browser-rendered, but tweaked to pull data from a Grafana Report panel" +
-                " (which are loaded asynchronously after page-load, hence needing the specialization).</li>",
+        [SourceType.WEB_PAGE]: "<li class='list-group-item'><b>Browser rendered</b> - The specified URL is loaded in " +
+                "the browser and the page content is taken as the rendered report. This <i>only</i> supports static " +
+                "content.</li>",
+        [SourceType.GRAFANA]: "<li class='list-group-item'><b>Grafana</b> - Specialization of the Web Page source " +
+                "for capturing page content from a Grafana based report which may contain dynamic content.</li>",
     };
     readonly availableSourceTypes: {value: SourceType, text: string}[] = availableSourceTypes.map(
         sourceType => ({value: sourceType, text: EditSourceViewModel.sourceTypeDisplayNames[sourceType]})
@@ -252,7 +277,6 @@ class EditSourceViewModel extends BaseSourceViewModel {
                       sourceType => EditSourceViewModel.sourceTypeHelp[sourceType]
                   )+
               "</ul>",
-        eventName: "When an event with this name is triggered, the report is considered fully rendered.",
     };
 }
 
@@ -317,16 +341,21 @@ class EditScheduleViewModel extends BaseScheduleViewModel {
         }
     }
 
-    readonly availableRepeatTypes = [
-        {value: ScheduleRepetition.ONE_OFF, text: "Does not repeat"},
-        {value: ScheduleRepetition.HOURLY,  text: "Hourly"},
-        {value: ScheduleRepetition.DAILY,   text: "Daily"},
-        {value: ScheduleRepetition.WEEKLY,  text: "Weekly"},
-        {value: ScheduleRepetition.MONTHLY, text: "Monthly"},
-    ];
+    private static readonly repeatTypeDisplayNames = {
+        [ScheduleRepetition.ONE_OFF]: "Does not repeat",
+        [ScheduleRepetition.HOURLY]: "Hourly",
+        [ScheduleRepetition.DAILY]: "Daily",
+        [ScheduleRepetition.WEEKLY]: "Weekly",
+        [ScheduleRepetition.MONTHLY]: "Monthly",
+    };
+
+    readonly availableRepeatTypes: {value: ScheduleRepetition, text: string}[] = availableReportIntervals.map(
+        repeatType => ({value: repeatType, text: EditScheduleViewModel.repeatTypeDisplayNames[repeatType]})
+    );
 
     readonly helpMessages = {
-        offset: "This is the smallest amount of time to wait after the start of a period before generating the report.",
+        offset: "The minimum time to wait after the scheduled time before generating the report. This is commonly " +
+                "used to adjust report generation to account for delays from ingestion, aggregation or eventual consistency.",
     };
 }
 
