@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.reports.impl.chrome.grafana;
 
+import com.arpnetworking.metrics.apachehttpsinkextra.shaded.org.apache.http.client.utils.URIBuilder;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
@@ -27,6 +28,7 @@ import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -67,8 +69,15 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     }
 
     @Override
-    public URI getUri(final GrafanaReportPanelReportSource source) {
-        return source.getWebPageReportSource().getUri();
+    public URI getUri(final GrafanaReportPanelReportSource source, final TimeRange timeRange) {
+        try {
+            return new URIBuilder(source.getWebPageReportSource().getUri())
+                    .addParameter("from", Long.toString(timeRange.getStart().getEpochSecond()))
+                    .addParameter("to", Long.toString(timeRange.getEnd().getEpochSecond()))
+                    .build();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("should be impossible", e);
+        }
     }
 
     @Override

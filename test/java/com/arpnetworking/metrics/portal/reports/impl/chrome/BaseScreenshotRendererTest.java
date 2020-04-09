@@ -175,7 +175,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
         }
 
         @Override
-        protected URI getUri(final WebPageReportSource source) {
+        protected URI getUri(final WebPageReportSource source, final TimeRange timeRange) {
             return source.getUri();
         }
 
