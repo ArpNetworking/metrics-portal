@@ -60,7 +60,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * @param timeRange the time range we're rendering for
      * @return the URI to visit
      */
-    protected abstract URI getUri(S source, final TimeRange timeRange);
+    protected abstract URI getUri(S source, TimeRange timeRange);
 
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.

@@ -75,7 +75,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
                     .addParameter("from", Long.toString(timeRange.getStart().getEpochSecond()))
                     .addParameter("to", Long.toString(timeRange.getEnd().getEpochSecond()))
                     .build();
-        } catch (URISyntaxException e) {
+        } catch (final URISyntaxException e) {
             throw new RuntimeException("should be impossible", e);
         }
     }
