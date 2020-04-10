@@ -138,7 +138,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(getDevToolsFactory());
         final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
                 .setWebPageReportSource(TestBeanFactory.createWebPageReportSourceBuilder()
-                    .setUri(URI.create("http://example.com/grafana-page?foo=bar"))
+                    .setUri(URI.create("http://example.com/grafana-page?foo=bar&from=override-this"))
                     .build())
                 .build();
         final URI uri = renderer.getUri(source, new TimeRange(Instant.ofEpochSecond(1234567890L), Instant.ofEpochSecond(9876543210L)));

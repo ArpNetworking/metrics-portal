@@ -72,8 +72,8 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
     public URI getUri(final GrafanaReportPanelReportSource source, final TimeRange timeRange) {
         try {
             return new URIBuilder(source.getWebPageReportSource().getUri())
-                    .addParameter("from", Long.toString(timeRange.getStart().getEpochSecond()))
-                    .addParameter("to", Long.toString(timeRange.getEnd().getEpochSecond()))
+                    .setParameter("from", Long.toString(timeRange.getStart().getEpochSecond()))
+                    .setParameter("to", Long.toString(timeRange.getEnd().getEpochSecond()))
                     .build();
         } catch (final URISyntaxException e) {
             throw new RuntimeException("should be impossible", e);
