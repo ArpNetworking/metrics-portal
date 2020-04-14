@@ -258,19 +258,19 @@ public final class KairosDbServiceImpl implements KairosDbService {
                     }
 
                     // There are rollups and queries are enabled, now determine the appropriate one
-                    // based on the max sampling period in the aggregators.
+                    // based on the min sampling period in the aggregators.
                     //
                     // For any given query, we can at best use the rollup based on the smallest
                     // sampling unit, if any.
-                    final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
+                    final Optional<SamplingUnit> minUnit = metric.getAggregators().stream()
                             .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
                             .map(Aggregator::getSampling)
                             .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
                             .min(SamplingUnit::compareTo);
 
 
-                    if (maxUnit.isPresent()) {
-                        final SamplingUnit unit = maxUnit.get();
+                    if (minUnit.isPresent()) {
+                        final SamplingUnit unit = minUnit.get();
                         final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
 
                         final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
