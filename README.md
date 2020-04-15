@@ -96,6 +96,11 @@ In addition to `METRICS_PORTAL_CONFIG`, you can specify:
 
 ### Execution
 
+#### Prerequisites
+
+##### Postgres
+If you are going to be connecting your Metrics Portal instance to a Postgres instance, see `./main/postgres/initdb.d/README.markdown` for instructions on how to configure your Postgres instance prior to first running MPortal.
+
 #### Non-Docker
 
 Regardless of your installation method, in the installation's `bin` sub-directory there is a script to start the Metrics
