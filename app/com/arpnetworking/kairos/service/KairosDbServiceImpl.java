@@ -24,7 +24,6 @@ import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
@@ -262,15 +261,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
                     //
                     // For any given query, we can at best use the rollup based on the smallest
                     // sampling unit, if any.
-                    final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
-                            .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
-                            .map(Aggregator::getSampling)
-                            .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
-                            .min(SamplingUnit::compareTo);
+                    final Optional<SamplingUnit> maxUsableRollupUnit = getMaxUsableRollupUnit(metric);
 
 
-                    if (maxUnit.isPresent()) {
-                        final SamplingUnit unit = maxUnit.get();
+                    if (maxUsableRollupUnit.isPresent()) {
+                        final SamplingUnit unit = maxUsableRollupUnit.get();
                         final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
 
                         final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
@@ -297,6 +292,20 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         return metric;
                     }
                 }).collect(ImmutableList.toImmutableList())));
+    }
+
+    /* package private */ static Optional<SamplingUnit> getMaxUsableRollupUnit(Metric metric) {
+        if (metric.getAggregators().isEmpty()) {
+            return Optional.empty();
+        }
+        final Aggregator aggregator = metric.getAggregators().get(0);
+        if (!aggregator.getAlignSampling().orElse(false)) {
+            return Optional.empty();
+        }
+        if (!aggregator.getSampling().isPresent()) {
+            return Optional.empty();
+        }
+        return Optional.of(aggregator.getSampling().get().getUnit());
     }
 
     private CompletionStage<TagsQuery> filterRollupOverrides(final TagsQuery originalQuery) {
