@@ -294,18 +294,31 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 }).collect(ImmutableList.toImmutableList())));
     }
 
-    /* package private */ static Optional<SamplingUnit> getMaxUsableRollupUnit(Metric metric) {
-        if (metric.getAggregators().isEmpty()) {
+    /**
+     * Get the coarsest rollup time period that could be used to rewrite a query without affecting its results.
+     *
+     * @param metric The metric-query that we might want to rewrite to make use of rollups.
+     * @return The largest {@link SamplingUnit} that the query is insensitive to aggregation over
+     *     (or {@code empty}, if the query is sensitive to all pre-aggregation).
+     */
+    /* package private */ static Optional<SamplingUnit> getMaxUsableRollupUnit(final Metric metric) {
+        /* By querying a rollup (say, the hourly rollup), we're effectively putting a sampling-aligned `merge(1h)`
+         *   in front of the metric's aggregators.
+         * For this to not affect the results, the first aggregator must be sampling-aligned, and must aggregate over
+         *   some integer number of hours.
+         * (Empirically, non-sampling aggregators (e.g. `div`, `filter`) commute with `merge`, so we can ignore them.)
+         * If the query has no sampling aggregators, adding a `merge` aggregator clearly changes the results.
+         */
+        final Optional<Aggregator> firstSamplingAggregator = metric.getAggregators().stream()
+            .filter(agg -> agg.getSampling().isPresent())
+            .findFirst();
+        if (!firstSamplingAggregator.isPresent()) {
             return Optional.empty();
         }
-        final Aggregator aggregator = metric.getAggregators().get(0);
-        if (!aggregator.getAlignSampling().orElse(false)) {
+        if (!firstSamplingAggregator.get().getAlignSampling().orElse(false)) {
             return Optional.empty();
         }
-        if (!aggregator.getSampling().isPresent()) {
-            return Optional.empty();
-        }
-        return Optional.of(aggregator.getSampling().get().getUnit());
+        return Optional.of(firstSamplingAggregator.get().getSampling().get().getUnit());
     }
 
     private CompletionStage<TagsQuery> filterRollupOverrides(final TagsQuery originalQuery) {

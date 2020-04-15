@@ -16,8 +16,6 @@
 package com.arpnetworking.metrics.portal;
 
 import com.arpnetworking.kairos.client.models.Aggregator;
-import com.arpnetworking.kairos.client.models.Metric;
-import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
@@ -25,7 +23,6 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
@@ -192,10 +189,20 @@ public final class TestBeanFactory {
                 .setIgnoreCertificateErrors(false);
     }
 
+    /**
+     * Factory method for creating a {@link Sampling.Builder}.
+     *
+     * @return the builder.
+     */
     public static Sampling.Builder createSamplingBuilder() {
         return new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS);
     }
 
+    /**
+     * Factory method for creating a {@link Aggregator.Builder}.
+     *
+     * @return the builder.
+     */
     public static Aggregator.Builder createAggregatorBuilder() {
         return new Aggregator.Builder()
                 .setName("count")

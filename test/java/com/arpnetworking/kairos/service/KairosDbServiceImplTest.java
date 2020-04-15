@@ -328,7 +328,7 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
-    public void testRollupQueryRewriting_BasicRewrite() {
+    public void testRollupQueryRewritingBasicRewrite() {
         final ImmutableList<Aggregator> aggregators = ImmutableList.of(
                 TestBeanFactory.createAggregatorBuilder()
                         .setSampling(simpleSampling(3, SamplingUnit.HOURS))
@@ -339,7 +339,7 @@ public class KairosDbServiceImplTest {
         final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
                 ImmutableList.of("my_metric_1h"),
                 original,
-                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                s -> ImmutableSet.of(SamplingUnit.HOURS),
                 new NoOpMetrics()
         );
         final MetricsQuery expected = simpleMetricsQuery("my_metric_1h", aggregators);
@@ -347,7 +347,7 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
-    public void testRollupQueryRewriting_OddInterval() {
+    public void testRollupQueryRewritingDoesNotRewriteOddInterval() {
         final MetricsQuery original = simpleMetricsQuery(
                 "my_metric",
                 ImmutableList.of(
@@ -360,14 +360,14 @@ public class KairosDbServiceImplTest {
         final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
                 ImmutableList.of("my_metric_1h"),
                 original,
-                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                s -> ImmutableSet.of(SamplingUnit.HOURS),
                 new NoOpMetrics()
         );
         assertEquals(original, rewritten);
     }
 
     @Test
-    public void testRollupQueryRewriting_NotAligned() {
+    public void testRollupQueryRewritingDoesNotRewriteUnaligned() {
         final MetricsQuery original = simpleMetricsQuery(
                 "my_metric",
                 ImmutableList.of(
@@ -380,14 +380,14 @@ public class KairosDbServiceImplTest {
         final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
                 ImmutableList.of("my_metric_1h"),
                 original,
-                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                s -> ImmutableSet.of(SamplingUnit.HOURS),
                 new NoOpMetrics()
         );
         assertEquals(original, rewritten);
     }
 
     @Test
-    public void testRollupQueryRewriting_RegressionTest() {
+    public void testRollupQueryRewritingDoesNotIgnoreUnaligned() {
         final MetricsQuery original = simpleMetricsQuery(
                 "my_metric",
                 ImmutableList.of(
@@ -404,7 +404,7 @@ public class KairosDbServiceImplTest {
         final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
                 ImmutableList.of("my_metric_1h"),
                 original,
-                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                s -> ImmutableSet.of(SamplingUnit.HOURS),
                 new NoOpMetrics()
         );
         assertEquals(original, rewritten);
