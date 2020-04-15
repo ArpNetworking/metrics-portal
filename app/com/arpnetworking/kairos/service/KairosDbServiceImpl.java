@@ -219,7 +219,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         return response;
     }
 
-    private static MetricsQuery useAvailableRollups(
+    /* package private */ static MetricsQuery useAvailableRollups(
             final List<String> metricNames,
             final MetricsQuery originalQuery,
             final MetricsQueryConfig queryConfig,

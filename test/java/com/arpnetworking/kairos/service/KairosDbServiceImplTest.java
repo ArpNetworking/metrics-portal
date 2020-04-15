@@ -16,12 +16,14 @@
 package com.arpnetworking.kairos.service;
 
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.RelativeDateTime;
+import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
@@ -30,6 +32,8 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.metrics.impl.NoOpMetrics;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -321,6 +325,105 @@ public class KairosDbServiceImplTest {
                     "tags"
                 ),
                 response.getQueries().get(0).getResults().get(0).getTags().get("method"));
+    }
+
+    @Test
+    public void testRollupQueryRewriting_BasicRewrite() {
+        final ImmutableList<Aggregator> aggregators = ImmutableList.of(
+                TestBeanFactory.createAggregatorBuilder()
+                        .setSampling(simpleSampling(3, SamplingUnit.HOURS))
+                        .setAlignSampling(true)
+                        .build()
+        );
+        final MetricsQuery original = simpleMetricsQuery("my_metric", aggregators);
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_1h"),
+                original,
+                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                new NoOpMetrics()
+        );
+        final MetricsQuery expected = simpleMetricsQuery("my_metric_1h", aggregators);
+        assertEquals(expected, rewritten);
+    }
+
+    @Test
+    public void testRollupQueryRewriting_OddInterval() {
+        final MetricsQuery original = simpleMetricsQuery(
+                "my_metric",
+                ImmutableList.of(
+                        TestBeanFactory.createAggregatorBuilder()
+                            .setSampling(simpleSampling(90, SamplingUnit.MINUTES))
+                            .setAlignSampling(true)
+                            .build()
+                )
+        );
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_1h"),
+                original,
+                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                new NoOpMetrics()
+        );
+        assertEquals(original, rewritten);
+    }
+
+    @Test
+    public void testRollupQueryRewriting_NotAligned() {
+        final MetricsQuery original = simpleMetricsQuery(
+                "my_metric",
+                ImmutableList.of(
+                        TestBeanFactory.createAggregatorBuilder()
+                                .setSampling(simpleSampling(1, SamplingUnit.HOURS))
+                                .setAlignSampling(false)
+                                .build()
+                )
+        );
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_1h"),
+                original,
+                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                new NoOpMetrics()
+        );
+        assertEquals(original, rewritten);
+    }
+
+    @Test
+    public void testRollupQueryRewriting_RegressionTest() {
+        final MetricsQuery original = simpleMetricsQuery(
+                "my_metric",
+                ImmutableList.of(
+                        TestBeanFactory.createAggregatorBuilder()
+                            .setSampling(simpleSampling(1, SamplingUnit.MILLISECONDS))
+                            .setAlignSampling(false)
+                            .build(),
+                        TestBeanFactory.createAggregatorBuilder()
+                            .setSampling(simpleSampling(1, SamplingUnit.HOURS))
+                            .setAlignSampling(true)
+                            .build()
+                )
+        );
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_1h"),
+                original,
+                (s) -> ImmutableSet.of(SamplingUnit.HOURS),
+                new NoOpMetrics()
+        );
+        assertEquals(original, rewritten);
+    }
+
+    private Sampling simpleSampling(final int value, final SamplingUnit unit) {
+        return new Sampling.Builder().setValue(value).setUnit(unit).build();
+    }
+
+    private MetricsQuery simpleMetricsQuery(final String metricName, final ImmutableList<Aggregator> aggregators) {
+        return new MetricsQuery.Builder()
+                .setMetrics(ImmutableList.of(
+                        new Metric.Builder()
+                                .setName(metricName)
+                                .setAggregators(aggregators)
+                                .build()
+                ))
+                .setStartTime(Instant.EPOCH)
+                .build();
     }
 
     private String readResource(final String resourceSuffix) {
