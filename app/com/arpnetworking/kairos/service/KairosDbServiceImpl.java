@@ -24,6 +24,7 @@ import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
@@ -31,6 +32,8 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -309,16 +312,27 @@ public final class KairosDbServiceImpl implements KairosDbService {
          * (Empirically, non-sampling aggregators (e.g. `div`, `filter`) commute with `merge`, so we can ignore them.)
          * If the query has no sampling aggregators, adding a `merge` aggregator clearly changes the results.
          */
-        final Optional<Aggregator> firstSamplingAggregator = metric.getAggregators().stream()
-            .filter(agg -> agg.getSampling().isPresent())
-            .findFirst();
-        if (!firstSamplingAggregator.isPresent()) {
-            return Optional.empty();
+        for (final Aggregator aggregator : metric.getAggregators()) {
+            final Optional<Sampling> sampling = aggregator.getSampling();
+            if (!sampling.isPresent()) {
+                // Empirically, non-sampling aggregators commute with `merge`, so we can ignore them
+                continue;
+            }
+            if (!aggregator.getAlignSampling().orElse(false)) {
+                // The first sampling aggregator is not aligned; inserting any aligned aggregator before it will change semantics
+                return Optional.empty();
+            }
+            // The first sampling aggregator is aligned -- we can insert a merge aggregator with that coarseness without changing semantics
+            return Optional.of(sampling.get().getUnit());
         }
-        if (!firstSamplingAggregator.get().getAlignSampling().orElse(false)) {
-            return Optional.empty();
+        if (metric.getAggregators().stream().anyMatch(agg -> agg.getSampling().isPresent())) {
+            LOGGER.error()
+                .setMessage("assertion failed: metric has sampling aggregators when we thought we'd ruled that out")
+                .addData("metric", metric)
+                .log();
         }
-        return Optional.of(firstSamplingAggregator.get().getSampling().get().getUnit());
+        // There are no sampling aggregators -- inserting one will change semantics
+        return Optional.empty();
     }
 
     private CompletionStage<TagsQuery> filterRollupOverrides(final TagsQuery originalQuery) {
@@ -412,6 +426,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
     private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbServiceImpl.class);
 
     /**
      * Implementation of the builder pattern for {@link KairosDbServiceImpl}.
