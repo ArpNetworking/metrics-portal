@@ -410,6 +410,37 @@ public class KairosDbServiceImplTest {
         assertEquals(original, rewritten);
     }
 
+    @Test
+    public void testGetCoarsestUsableRollupMetric() {
+        assertEquals(
+                Optional.of("my_metric_1h"),
+                KairosDbServiceImpl.getCoarsestUsableRollupMetric(
+                        "my_metric",
+                        ImmutableList.of("my_metric_1h", "my_metric_1d"),
+                        s -> ImmutableSet.of(SamplingUnit.HOURS),
+                        SamplingUnit.HOURS
+                )
+        );
+        assertEquals(
+                Optional.empty(),
+                KairosDbServiceImpl.getCoarsestUsableRollupMetric(
+                        "my_metric",
+                        ImmutableList.of("my_metric_1d"),
+                        s -> ImmutableSet.of(SamplingUnit.HOURS),
+                        SamplingUnit.HOURS
+                )
+        );
+        assertEquals(
+                Optional.empty(),
+                KairosDbServiceImpl.getCoarsestUsableRollupMetric(
+                        "my_metric",
+                        ImmutableList.of("my_metric_1h"),
+                        s -> ImmutableSet.of(),
+                        SamplingUnit.HOURS
+                )
+        );
+    }
+
     private Sampling simpleSampling(final int value, final SamplingUnit unit) {
         return new Sampling.Builder().setValue(value).setUnit(unit).build();
     }
