@@ -284,6 +284,15 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 }).collect(ImmutableList.toImmutableList())));
     }
 
+    /**
+     * For a metric, find the corresponding rollup metric with the longest period not exceeding some threshold.
+     *
+     * @param metricName The metric we want to find a rollup for.
+     * @param rollupMetrics A list of all rollup metrics corresponding to the given metric.
+     * @param queryConfig Used to tell which rollup metrics are enabled when querying this metric.
+     * @param maxUsableRollupUnit The longest rollup-period we're willing to accept (for fear of changing the query's results).
+     * @return The given enabled {@code rollupMetric} with the greatest period not exceeding the threshold (if any).
+     */
     /* package private */ static Optional<String> getCoarsestUsableRollupMetric(
             final String metricName,
             final List<String> rollupMetrics,
