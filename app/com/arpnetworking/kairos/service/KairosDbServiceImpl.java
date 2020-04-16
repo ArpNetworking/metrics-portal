@@ -259,11 +259,8 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         return metric;
                     }
 
-                    // There are rollups and queries are enabled, now determine the appropriate one
-                    // based on the max sampling period in the aggregators.
-                    //
-                    // For any given query, we can at best use the rollup based on the smallest
-                    // sampling unit, if any.
+                    // There are rollups and queries are enabled, now determine the coarsest rollup-period
+                    //   that we might be able to use without changing the query's meaning.
                     final Optional<SamplingUnit> maxUsableRollupUnit = getMaxUsableRollupUnit(metric);
 
 
@@ -309,29 +306,31 @@ public final class KairosDbServiceImpl implements KairosDbService {
          *   in front of the metric's aggregators.
          * For this to not affect the results, the first aggregator must be sampling-aligned, and must aggregate over
          *   some integer number of hours.
-         * (Empirically, non-sampling aggregators (e.g. `div`, `filter`) commute with `merge`, so we can ignore them.)
-         * If the query has no sampling aggregators, adding a `merge` aggregator clearly changes the results.
+         * (Empirically, non-range aggregators (e.g. `div`, `filter`) commute with `merge`, so we can ignore them.)
+         * If the query has no range aggregators, adding a `merge` aggregator clearly changes the results.
          */
         for (final Aggregator aggregator : metric.getAggregators()) {
             final Optional<Sampling> sampling = aggregator.getSampling();
             if (!sampling.isPresent()) {
-                // Empirically, non-sampling aggregators commute with `merge`, so we can ignore them
+                // Empirically, non-range aggregators commute with `merge`, so we can ignore them
                 continue;
             }
             if (!aggregator.getAlignSampling().orElse(false)) {
-                // The first sampling aggregator is not aligned; inserting any aligned aggregator before it will change semantics
+                // The first range aggregator is not sampling-aligned; inserting any sampling-aligned range aggregator before it
+                // will change its semantics
                 return Optional.empty();
             }
-            // The first sampling aggregator is aligned -- we can insert a merge aggregator with that coarseness without changing semantics
+            // The first range aggregator is sampling-aligned, so inserting a sampling-aligned merge aggregator with the same period
+            //   should be a behavioral no-op
             return Optional.of(sampling.get().getUnit());
         }
         if (metric.getAggregators().stream().anyMatch(agg -> agg.getSampling().isPresent())) {
             LOGGER.error()
-                .setMessage("assertion failed: metric has sampling aggregators when we thought we'd ruled that out")
+                .setMessage("assertion failed: metric has range aggregators when we thought we'd ruled that out")
                 .addData("metric", metric)
                 .log();
         }
-        // There are no sampling aggregators -- inserting one will change semantics
+        // There are no range aggregators -- inserting one will change semantics
         return Optional.empty();
     }
 
