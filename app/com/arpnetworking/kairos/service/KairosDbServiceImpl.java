@@ -265,7 +265,12 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
 
                     if (maxUsableRollupUnit.isPresent()) {
-                        final Optional<String> rollupName = getCoarsestUsableRollupMetric(metricName, rollupMetrics, queryConfig, maxUsableRollupUnit.get());
+                        final Optional<String> rollupName = getCoarsestUsableRollupMetric(
+                                metricName,
+                                rollupMetrics,
+                                queryConfig,
+                                maxUsableRollupUnit.get()
+                        );
                         metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", rollupName.isPresent() ? 0 : 1);
                         final String rewrittenMetricName = rollupName.orElse(metricName);
                         return Metric.Builder.<Metric, Metric.Builder>clone(metric)
