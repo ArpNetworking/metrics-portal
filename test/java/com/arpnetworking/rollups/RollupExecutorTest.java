@@ -124,7 +124,6 @@ public class RollupExecutorTest {
                                 .setDestinationMetricName("metric_1h")
                                 .setPeriod(RollupPeriod.HOURLY)
                                 .setStartTime(Instant.EPOCH)
-                                .setEndTime(Instant.EPOCH.plusMillis(1))
                                 .setGroupByTags(ImmutableSet.of())
                                 .build()
                         )
@@ -172,7 +171,6 @@ public class RollupExecutorTest {
                         .setPeriod(RollupPeriod.HOURLY)
                         .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
                         .setStartTime(Instant.EPOCH)
-                        .setEndTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS))
                         .build(),
                 ActorRef.noSender());
 
@@ -187,7 +185,7 @@ public class RollupExecutorTest {
         assertEquals("metric", rollupQuery.getMetrics().get(0).getName());
         assertEquals(Optional.of(Instant.EPOCH), rollupQuery.getStartTime());
         assertTrue(rollupQuery.getEndTime().isPresent());
-        assertEquals(Instant.EPOCH.plus(1, ChronoUnit.HOURS), rollupQuery.getEndTime().get());
+        assertEquals(Instant.EPOCH.plus(1, ChronoUnit.HOURS).minusMillis(1), rollupQuery.getEndTime().get());
         assertEquals(1, rollupQuery.getMetrics().size());
         final Metric metric = rollupQuery.getMetrics().get(0);
         assertEquals(1, metric.getGroupBy().size());
