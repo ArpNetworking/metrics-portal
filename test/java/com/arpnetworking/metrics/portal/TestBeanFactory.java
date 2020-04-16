@@ -15,6 +15,9 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.kairos.client.models.Aggregator;
+import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.portal.reports.RecipientType;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
@@ -184,6 +187,26 @@ public final class TestBeanFactory {
                 .setId(UUID.randomUUID())
                 .setUri(URI.create("http://" + UUID.randomUUID().toString().replace("-", "") + ".example.com"))
                 .setIgnoreCertificateErrors(false);
+    }
+
+    /**
+     * Factory method for creating a {@link Sampling.Builder}.
+     *
+     * @return the builder.
+     */
+    public static Sampling.Builder createSamplingBuilder() {
+        return new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS);
+    }
+
+    /**
+     * Factory method for creating a {@link Aggregator.Builder}.
+     *
+     * @return the builder.
+     */
+    public static Aggregator.Builder createAggregatorBuilder() {
+        return new Aggregator.Builder()
+                .setName("count")
+                .setSampling(createSamplingBuilder().build());
     }
 
     /**

@@ -32,6 +32,8 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -219,7 +221,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         return response;
     }
 
-    private static MetricsQuery useAvailableRollups(
+    /* package private */ static MetricsQuery useAvailableRollups(
             final List<String> metricNames,
             final MetricsQuery originalQuery,
             final MetricsQueryConfig queryConfig,
@@ -257,20 +259,13 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         return metric;
                     }
 
-                    // There are rollups and queries are enabled, now determine the appropriate one
-                    // based on the max sampling period in the aggregators.
-                    //
-                    // For any given query, we can at best use the rollup based on the smallest
-                    // sampling unit, if any.
-                    final Optional<SamplingUnit> maxUnit = metric.getAggregators().stream()
-                            .filter(agg -> agg.getAlignSampling().orElse(Boolean.FALSE)) // Filter out non-sampling aligned
-                            .map(Aggregator::getSampling)
-                            .map(sampling -> sampling.map(Sampling::getUnit).orElse(SamplingUnit.MILLISECONDS))
-                            .min(SamplingUnit::compareTo);
+                    // There are rollups and queries are enabled, now determine the coarsest rollup-period
+                    //   that we might be able to use without changing the query's meaning.
+                    final Optional<SamplingUnit> maxUsableRollupUnit = getMaxUsableRollupUnit(metric);
 
 
-                    if (maxUnit.isPresent()) {
-                        final SamplingUnit unit = maxUnit.get();
+                    if (maxUsableRollupUnit.isPresent()) {
+                        final SamplingUnit unit = maxUsableRollupUnit.get();
                         final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
 
                         final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
@@ -297,6 +292,46 @@ public final class KairosDbServiceImpl implements KairosDbService {
                         return metric;
                     }
                 }).collect(ImmutableList.toImmutableList())));
+    }
+
+    /**
+     * Get the coarsest rollup time period that could be used to rewrite a query without affecting its results.
+     *
+     * @param metric The metric-query that we might want to rewrite to make use of rollups.
+     * @return The largest {@link SamplingUnit} that the query is insensitive to aggregation over
+     *     (or {@code empty}, if the query is sensitive to all pre-aggregation).
+     */
+    /* package private */ static Optional<SamplingUnit> getMaxUsableRollupUnit(final Metric metric) {
+        /* By querying a rollup (say, the hourly rollup), we're effectively putting a sampling-aligned `merge(1h)`
+         *   in front of the metric's aggregators.
+         * For this to not affect the results, the first aggregator must be sampling-aligned, and must aggregate over
+         *   some integer number of hours.
+         * (Empirically, non-range aggregators (e.g. `div`, `filter`) commute with `merge`, so we can ignore them.)
+         * If the query has no range aggregators, adding a `merge` aggregator clearly changes the results.
+         */
+        for (final Aggregator aggregator : metric.getAggregators()) {
+            final Optional<Sampling> sampling = aggregator.getSampling();
+            if (!sampling.isPresent()) {
+                // Empirically, non-range aggregators commute with `merge`, so we can ignore them
+                continue;
+            }
+            if (!aggregator.getAlignSampling().orElse(false)) {
+                // The first range aggregator is not sampling-aligned; inserting any sampling-aligned range aggregator before it
+                // will change its semantics
+                return Optional.empty();
+            }
+            // The first range aggregator is sampling-aligned, so inserting a sampling-aligned merge aggregator with the same period
+            //   should be a behavioral no-op
+            return Optional.of(sampling.get().getUnit());
+        }
+        if (metric.getAggregators().stream().anyMatch(agg -> agg.getSampling().isPresent())) {
+            LOGGER.error()
+                .setMessage("assertion failed: metric has range aggregators when we thought we'd ruled that out")
+                .addData("metric", metric)
+                .log();
+        }
+        // There are no range aggregators -- inserting one will change semantics
+        return Optional.empty();
     }
 
     private CompletionStage<TagsQuery> filterRollupOverrides(final TagsQuery originalQuery) {
@@ -390,6 +425,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
     private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbServiceImpl.class);
 
     /**
      * Implementation of the builder pattern for {@link KairosDbServiceImpl}.
