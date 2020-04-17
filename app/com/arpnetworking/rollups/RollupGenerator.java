@@ -304,15 +304,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
             if (startOfLastEligiblePeriod.isAfter(lastRollupDataPoint)) {
-                final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
-
-                final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
-                        .minus(period.periodCountToDuration(maxBackFillPeriods));
-
-                // We either want to start at the oldest backfill point or the start of the period
-                // after the last datapoint since it contains data for the period that follows it.
-                final Instant rollupPeriodStart = lastRollupDataPoint.isBefore(oldestBackfillPoint)
-                        ? oldestBackfillPoint : period.recentEndTime(lastRollupDataPoint).plus(period.periodCountToDuration(1));
+                final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);
 
                 final Set<Instant> startTimes = getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
 
@@ -336,6 +328,18 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     ActorRef.noSender()
             );
         }
+    }
+
+    private Instant getFirstEligibleBackfillTime(final RollupPeriod period, final Instant lastRollupDataPoint) {
+        final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
+
+        final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
+                .minus(period.periodCountToDuration(maxBackFillPeriods));
+
+        // We either want to start at the oldest backfill point or the start of the period
+        // after the last datapoint since it contains data for the period that follows it.
+        return lastRollupDataPoint.isBefore(oldestBackfillPoint)
+                ? oldestBackfillPoint : period.recentEndTime(lastRollupDataPoint).plus(period.periodCountToDuration(1));
     }
 
     private Set<Instant> getRollupableTimes(final RollupPeriod period, final Instant startInclusive, final Instant stopInclusive) {
