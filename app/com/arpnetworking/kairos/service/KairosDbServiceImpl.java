@@ -265,33 +265,54 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
 
                     if (maxUsableRollupUnit.isPresent()) {
-                        final SamplingUnit unit = maxUsableRollupUnit.get();
-                        final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
-
-                        final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
-                        rollupMetrics.forEach(name -> {
-                            final Optional<SamplingUnit> rollupUnit =
-                                    rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
-                            rollupUnit.ifPresent(samplingUnit -> {
-                                if (enabledRollups.contains(samplingUnit)) {
-                                    orderedRollups.put(samplingUnit, name);
-                                }
-                            });
-                        });
-
-                        final Map.Entry<SamplingUnit, String> floorEntry = orderedRollups.floorEntry(unit);
-                        metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", floorEntry != null ? 1 : 0);
-                        final String rollupName = floorEntry != null ? floorEntry.getValue() : metricName;
-                        final Metric.Builder metricBuilder = Metric.Builder.<Metric, Metric.Builder>clone(metric)
-                                .setName(rollupName);
-
-                        return metricBuilder.build();
+                        final Optional<String> rollupName = getCoarsestUsableRollupMetric(
+                                metricName,
+                                rollupMetrics,
+                                queryConfig,
+                                maxUsableRollupUnit.get()
+                        );
+                        metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", rollupName.isPresent() ? 0 : 1);
+                        final String rewrittenMetricName = rollupName.orElse(metricName);
+                        return Metric.Builder.<Metric, Metric.Builder>clone(metric)
+                                .setName(rewrittenMetricName)
+                                .build();
                     } else {
                         // No aggregators are sampling aligned so skip as rollups are always aligned
                         metrics.incrementCounter("kairosService/useRollups/notEligible", 1);
                         return metric;
                     }
                 }).collect(ImmutableList.toImmutableList())));
+    }
+
+    /**
+     * For a metric, find the corresponding rollup metric with the longest period not exceeding some threshold.
+     *
+     * @param metricName The metric we want to find a rollup for.
+     * @param rollupMetrics A list of all rollup metrics corresponding to the given metric.
+     * @param queryConfig Used to tell which rollup metrics are enabled when querying this metric.
+     * @param maxUsableRollupUnit The longest rollup-period we're willing to accept (for fear of changing the query's results).
+     * @return The given enabled {@code rollupMetric} with the greatest period not exceeding the threshold (if any).
+     */
+    /* package private */ static Optional<String> getCoarsestUsableRollupMetric(
+            final String metricName,
+            final List<String> rollupMetrics,
+            final MetricsQueryConfig queryConfig,
+            final SamplingUnit maxUsableRollupUnit
+        ) {
+        final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
+
+        final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
+        rollupMetrics.forEach(name -> {
+            final Optional<SamplingUnit> rollupUnit =
+                    rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
+            rollupUnit.ifPresent(samplingUnit -> {
+                if (enabledRollups.contains(samplingUnit)) {
+                    orderedRollups.put(samplingUnit, name);
+                }
+            });
+        });
+
+        return Optional.ofNullable(orderedRollups.floorEntry(maxUsableRollupUnit)).map(Map.Entry::getValue);
     }
 
     /**
