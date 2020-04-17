@@ -36,7 +36,6 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     private final String _destinationMetricName;
     private final RollupPeriod _period;
     private final Instant _startTime;
-    private final Instant _endTime;
     private final ImmutableSet<String> _groupByTags;
 
     private RollupDefinition(final Builder builder) {
@@ -44,7 +43,6 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         _destinationMetricName = builder._destinationMetricName;
         _period = builder._period;
         _startTime = builder._startTime;
-        _endTime = builder._endTime;
         _groupByTags = builder._groupByTags;
     }
 
@@ -64,10 +62,6 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         return _startTime;
     }
 
-    public Instant getEndTime() {
-        return _endTime;
-    }
-
     public ImmutableSet<String> getGroupByTags() {
         return _groupByTags;
     }
@@ -84,18 +78,21 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         return _sourceMetricName.equals(that._sourceMetricName)
                 && _destinationMetricName.equals(that._destinationMetricName)
                 && _period == that._period
-                && _startTime.equals(that._startTime)
-                && _endTime.equals(that._endTime);
+                && _startTime.equals(that._startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _endTime, _groupByTags);
+        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _groupByTags);
     }
 
     @Override
     public Object consistentHashKey() {
         return hashCode();
+    }
+
+    public Instant getEndTime() {
+        return _startTime.plus(_period.periodCountToDuration(1)).minusMillis(1);
     }
 
     /**
@@ -112,8 +109,6 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         private RollupPeriod _period;
         @NotNull
         private Instant _startTime;
-        @NotNull
-        private Instant _endTime;
         @NotNull
         private ImmutableSet<String> _groupByTags;
 
@@ -165,17 +160,6 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
          */
         public Builder setStartTime(final Instant value) {
             _startTime = value;
-            return this;
-        }
-
-        /**
-         * Sets the {@code _endTime} and returns a reference to this Builder so that the methods can be chained together.
-         *
-         * @param value the {@code _endTime} to set
-         * @return a reference to this Builder
-         */
-        public Builder setEndTime(final Instant value) {
-            _endTime = value;
             return this;
         }
 

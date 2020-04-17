@@ -331,8 +331,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
                 while (!startTimes.isEmpty()) {
                     final Instant startTime = startTimes.poll();
-                    rollupDefBuilder.setStartTime(startTime)
-                            .setEndTime(startTime.plus(period.periodCountToDuration(1)).minusMillis(1));
+                    rollupDefBuilder.setStartTime(startTime);
                     _rollupManagerPool.tell(rollupDefBuilder.build(), self());
                 }
             }
