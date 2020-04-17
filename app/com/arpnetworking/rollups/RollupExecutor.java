@@ -194,7 +194,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         }
 
         /**
-         * {@link com.arpnetworking.rollups.FinishRollupMessage} builder static inner class.
+         * {@link FinishRollupMessage} builder static inner class.
          */
         public static final class Builder extends FailableMessage.Builder<Builder, FinishRollupMessage> {
 
