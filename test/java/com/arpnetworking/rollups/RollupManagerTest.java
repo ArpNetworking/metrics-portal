@@ -94,8 +94,7 @@ public final class RollupManagerTest {
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
-                .setStartTime(Instant.EPOCH)
-                .setEndTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS));
+                .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder
                 .setDestinationMetricName("foo_1d")
@@ -121,8 +120,7 @@ public final class RollupManagerTest {
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
-                .setStartTime(Instant.EPOCH)
-                .setEndTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS));
+                .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder.build();
         actor.tell(rollupDef, testActor);
@@ -143,8 +141,7 @@ public final class RollupManagerTest {
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
-                .setStartTime(Instant.EPOCH)
-                .setEndTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS));
+                .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder.setStartTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS)).build();
         actor.tell(rollupDef2, testActor);
