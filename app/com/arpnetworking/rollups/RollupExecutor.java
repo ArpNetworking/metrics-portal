@@ -149,6 +149,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
     private void handleFinishRollup(final FinishRollupMessage message) {
         _metrics.recordCounter("rollup/executor/finish_rollup_message/received", 1);
+        _rollupManager.tell(message, getSelf());
         fetchRollup();
     }
 

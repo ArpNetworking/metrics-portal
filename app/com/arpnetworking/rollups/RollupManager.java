@@ -63,6 +63,10 @@ public class RollupManager extends AbstractActorWithTimers {
                         RollupDefinition.class,
                         work -> _rollupDefinitions.add(work))
                 .match(
+                        RollupExecutor.FinishRollupMessage.class,
+                        this::rollupFinished
+                )
+                .match(
                         RollupFetch.class,
                         work -> {
                             _periodicMetrics.recordCounter("rollup/manager/fetch", 1);
@@ -75,6 +79,9 @@ public class RollupManager extends AbstractActorWithTimers {
 
                         })
                 .build();
+    }
+
+    private void rollupFinished(final RollupExecutor.FinishRollupMessage message) {
     }
 
     private Optional<RollupDefinition> getNextRollup() {
