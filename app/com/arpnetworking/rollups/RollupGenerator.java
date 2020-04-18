@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -306,7 +306,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             if (startOfLastEligiblePeriod.isAfter(lastRollupDataPoint)) {
                 final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);
 
-                final Set<Instant> startTimes = getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
+                final SortedSet<Instant> startTimes = getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
 
                 final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
                         .setSourceMetricName(message.getSourceMetricName())
@@ -342,8 +342,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 ? oldestBackfillPoint : period.recentEndTime(lastRollupDataPoint).plus(period.periodCountToDuration(1));
     }
 
-    private Set<Instant> getRollupableTimes(final RollupPeriod period, final Instant startInclusive, final Instant stopInclusive) {
-        final TreeSet<Instant> times = new TreeSet<>();
+    private SortedSet<Instant> getRollupableTimes(final RollupPeriod period, final Instant startInclusive, final Instant stopInclusive) {
+        final SortedSet<Instant> times = new TreeSet<>(); // Docs say "guaranteed log(n) time cost for the basic operations"
 
         Instant nextTime = startInclusive;
 
