@@ -1,7 +1,26 @@
+/*
+ * Copyright 2020 Dropbox Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package controllers;
 
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.*;
+import com.arpnetworking.kairos.client.models.Aggregator;
+import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricNamesResponse;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -29,10 +48,11 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
-import static play.mvc.Http.Status.BAD_REQUEST;
-import static play.mvc.Http.Status.OK;
-import static play.test.Helpers.POST;
 
+/**
+ * Test class for the KairosDbProxyController.
+ * @author Gil Markham (gmarkham at dropbox dot com)
+ */
 public class KairosDbProxyControllerTest {
     private static final ObjectMapper OBJECT_MAPPER = SerializationTestUtils.getApiObjectMapper();
 
@@ -51,7 +71,7 @@ public class KairosDbProxyControllerTest {
     @Mock
     private MetricsQueryConfig _mockMetricsqueryConfig;
 
-    private KairosDbProxyController controller;
+    private KairosDbProxyController _controller;
 
     @Before
     public void setUp() {
@@ -65,7 +85,7 @@ public class KairosDbProxyControllerTest {
                         .build()
         ));
 
-        controller = new KairosDbProxyController(
+        _controller = new KairosDbProxyController(
                 _mockConfig,
                 _mockWSClient,
                 _mockKairosDbClient,
@@ -77,17 +97,17 @@ public class KairosDbProxyControllerTest {
 
     @Test
     public void testQueryRequiresAggregator() {
-        Metric.Builder metric1Builder = new Metric.Builder()
+        final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count").build()));
-        Metric.Builder metric2Builder = new Metric.Builder()
+        final Metric.Builder metric2Builder = new Metric.Builder()
                 .setName("metric2");
-        MetricsQuery.Builder builder = new MetricsQuery.Builder()
+        final MetricsQuery.Builder builder = new MetricsQuery.Builder()
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
         Http.RequestBuilder request = Helpers.fakeRequest()
-                .method(POST)
+                .method(Helpers.POST)
                 .uri("/api/v1/datapoints/query")
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
@@ -96,11 +116,11 @@ public class KairosDbProxyControllerTest {
         // Test failure case where one metric doesn't have an aggregator
         // ***
         Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            CompletionStage<Result> completionStage = controller.queryMetrics();
+            final CompletionStage<Result> completionStage = _controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         });
 
-        assertEquals(BAD_REQUEST, result.status());
+        assertEquals(Http.Status.BAD_REQUEST, result.status());
         assertEquals("All queried metrics must have at least one aggregator",
                 Helpers.contentAsString(result));
 
@@ -111,7 +131,7 @@ public class KairosDbProxyControllerTest {
         builder.setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
         request = Helpers.fakeRequest()
-                .method(POST)
+                .method(Helpers.POST)
                 .uri("/api/v1/datapoints/query")
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
@@ -121,11 +141,11 @@ public class KairosDbProxyControllerTest {
                         .setQueries(ImmutableList.of()).build())
         );
         result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            CompletionStage<Result> completionStage = controller.queryMetrics();
+            final CompletionStage<Result> completionStage = _controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         });
 
-        assertEquals(OK, result.status());
+        assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
     }
 }
