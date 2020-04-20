@@ -157,10 +157,15 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryMetrics() {
         try {
-        final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
-        return _kairosService.queryMetrics(metricsQuery)
-                .<JsonNode>thenApply(_mapper::valueToTree)
-                .thenApply(Results::ok);
+            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            if (! metricsQuery.getMetrics().stream().allMatch(metric -> metric.getAggregators().size() >= 1)) {
+                return CompletableFuture.completedFuture(
+                        Results.badRequest("All queried metrics must have at least one aggregator"));
+            }
+
+            return _kairosService.queryMetrics(metricsQuery)
+                    .<JsonNode>thenApply(_mapper::valueToTree)
+                    .thenApply(Results::ok);
         } catch (final IOException e) {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
