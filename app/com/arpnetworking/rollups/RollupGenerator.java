@@ -43,13 +43,12 @@ import scala.concurrent.duration.FiniteDuration;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.CompletionStage;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -206,7 +205,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 final String sourceMetricName = getSourceMetricName(metricName, period);
                 final String rollupMetricName = getDestinationMetricName(metricName, period);
                 Patterns.pipe(
-                    fetchLastDataPoint(sourceMetricName, rollupMetricName, period, backfillPeriods)
+                    _kairosDbClient.queryMetrics(buildLastDataPointQuery(sourceMetricName, rollupMetricName, period, backfillPeriods))
                         .handle((response, failure) -> {
                             final String baseMetricName = "rollup/generator/last_data_point_"
                                     + period.name().toLowerCase(Locale.getDefault());
@@ -305,23 +304,9 @@ public class RollupGenerator extends AbstractActorWithTimers {
             // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
             if (startOfLastEligiblePeriod.isAfter(lastRollupDataPoint)) {
-                final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
+                final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);
 
-                final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
-                        .minus(period.periodCountToDuration(maxBackFillPeriods));
-
-                // We either want to start at the oldest backfill point or the start of the period
-                // after the last datapoint since it contains data for the period that follows it.
-                Instant rollupPeriodStart = lastRollupDataPoint.isBefore(oldestBackfillPoint)
-                        ? oldestBackfillPoint : period.recentEndTime(lastRollupDataPoint).plus(period.periodCountToDuration(1));
-
-                final Queue<Instant> startTimes = new LinkedList<>();
-
-                // We need to rollup every period up to and including the most recent eligible period.
-                while (rollupPeriodStart.isBefore(startOfLastEligiblePeriod) || rollupPeriodStart.equals(startOfLastEligiblePeriod)) {
-                    startTimes.add(rollupPeriodStart);
-                    rollupPeriodStart = rollupPeriodStart.plus(period.periodCountToDuration(1));
-                }
+                final SortedSet<Instant> startTimes = getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
 
                 final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
                         .setSourceMetricName(message.getSourceMetricName())
@@ -329,8 +314,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setPeriod(period)
                         .setGroupByTags(message.getTags());
 
-                while (!startTimes.isEmpty()) {
-                    final Instant startTime = startTimes.poll();
+                for (final Instant startTime : startTimes) {
                     rollupDefBuilder.setStartTime(startTime);
                     _rollupManagerPool.tell(rollupDefBuilder.build(), self());
                 }
@@ -344,6 +328,31 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     ActorRef.noSender()
             );
         }
+    }
+
+    private Instant getFirstEligibleBackfillTime(final RollupPeriod period, final Instant lastRollupDataPoint) {
+        final int maxBackFillPeriods = _maxBackFillByPeriod.getOrDefault(period, 0);
+
+        final Instant oldestBackfillPoint = period.recentEndTime(_clock.instant())
+                .minus(period.periodCountToDuration(maxBackFillPeriods));
+
+        // We either want to start at the oldest backfill point or the start of the period
+        // after the last datapoint since it contains data for the period that follows it.
+        return lastRollupDataPoint.isBefore(oldestBackfillPoint)
+                ? oldestBackfillPoint : period.recentEndTime(lastRollupDataPoint).plus(period.periodCountToDuration(1));
+    }
+
+    private SortedSet<Instant> getRollupableTimes(final RollupPeriod period, final Instant startInclusive, final Instant stopInclusive) {
+        final SortedSet<Instant> times = new TreeSet<>(); // Docs say "guaranteed log(n) time cost for the basic operations"
+
+        Instant nextTime = startInclusive;
+
+        // We need to rollup every period up to and including the most recent eligible period.
+        while (nextTime.isBefore(stopInclusive) || nextTime.equals(stopInclusive)) {
+            times.add(nextTime);
+            nextTime = nextTime.plus(period.periodCountToDuration(1));
+        }
+        return times;
     }
 
     private void handleFinishRollupMessage(final FinishRollupMessage message) {
@@ -403,8 +412,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return builder.build();
     }
 
-    // Fetch the last data point of the rollup and its source to determine how far behind we are.
-    private CompletionStage<MetricsQueryResponse> fetchLastDataPoint(
+    private MetricsQuery buildLastDataPointQuery(
             final String sourceMetricName,
             final String rollupMetricName,
             final RollupPeriod period,
@@ -419,14 +427,13 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .setLimit(1)
                 .setOrder(Metric.Order.DESC);
 
-        return _kairosDbClient.queryMetrics(
-                new MetricsQuery.Builder()
+        return new MetricsQuery.Builder()
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
                              metricBuilder.setName(sourceMetricName).build(),
                              metricBuilder.setName(rollupMetricName).build()
-                        )).build());
+                        )).build();
     }
 
     private final ActorRef _metricsDiscovery;

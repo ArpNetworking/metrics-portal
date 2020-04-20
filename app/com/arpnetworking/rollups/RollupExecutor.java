@@ -93,6 +93,11 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
 
     private CompletionStage<MetricsQueryResponse> performRollup(final RollupDefinition rollupDefinition) {
+        final MetricsQuery queryBuilder = buildQueryRollup(rollupDefinition);
+        return _kairosDbClient.queryMetrics(queryBuilder);
+    }
+
+    /* package private */ static MetricsQuery buildQueryRollup(final RollupDefinition rollupDefinition) {
         final MetricsQuery.Builder queryBuilder = new MetricsQuery.Builder();
         final Metric.Builder metricBuilder = new Metric.Builder();
         final String rollupMetricName = rollupDefinition.getDestinationMetricName();
@@ -133,8 +138,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         ));
 
         queryBuilder.setMetrics(ImmutableList.of(metricBuilder.build()));
-
-        return _kairosDbClient.queryMetrics(queryBuilder.build());
+        return queryBuilder.build();
     }
 
     private void fetchRollup() {

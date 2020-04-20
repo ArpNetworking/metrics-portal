@@ -20,13 +20,16 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.DataPoint;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -40,6 +43,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -208,6 +212,83 @@ public class RollupExecutorTest {
         assertFalse(metric.getAggregators().get(2).getSampling().isPresent());
 
         _probe.expectNoMessage();
+    }
+
+    @Test
+    public void testBuildRollupQuery() {
+        RollupDefinition definition = new RollupDefinition.Builder()
+                .setSourceMetricName("my_metric")
+                .setDestinationMetricName("my_metric_1h")
+                .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
+                .setPeriod(RollupPeriod.HOURLY)
+                .setStartTime(Instant.EPOCH)
+                .build();
+        assertEquals(
+                new MetricsQuery.Builder()
+                        .setMetrics(ImmutableList.of(new Metric.Builder()
+                                .setName("my_metric")
+                                .setGroupBy(ImmutableList.of(
+                                        new MetricsQuery.QueryTagGroupBy.Builder().setTags(ImmutableSet.of("tag1", "tag2")).build()))
+                                .setAggregators(ImmutableList.of(
+                                        new Aggregator.Builder()
+                                            .setName("merge")
+                                            .setAlignStartTime(true)
+                                            .setAlignSampling(true)
+                                            .setSampling(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build())
+                                            .build(),
+                                        new Aggregator.Builder()
+                                            .setName("save_as")
+                                                .setOtherArgs(ImmutableMap.of(
+                                                        "metric_name", "my_metric_1h",
+                                                        "add_saved_from", false
+                                                ))
+                                            .build(),
+                                        new Aggregator.Builder()
+                                            .setName("count")
+                                            .build()))
+                                .build()))
+                        .setStartTime(Instant.EPOCH)
+                        .setEndTime(Instant.EPOCH.plus(Duration.ofHours(1)).minusMillis(1))
+                        .build(),
+                RollupExecutor.buildQueryRollup(definition)
+        );
+
+        definition = new RollupDefinition.Builder()
+                .setSourceMetricName("my_metric_1h")
+                .setDestinationMetricName("my_metric_1d")
+                .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
+                .setPeriod(RollupPeriod.DAILY)
+                .setStartTime(Instant.EPOCH)
+                .build();
+        assertEquals(
+                new MetricsQuery.Builder()
+                        .setMetrics(ImmutableList.of(new Metric.Builder()
+                                .setName("my_metric_1h")
+                                .setGroupBy(ImmutableList.of(
+                                        new MetricsQuery.QueryTagGroupBy.Builder().setTags(ImmutableSet.of("tag1", "tag2")).build()))
+                                .setAggregators(ImmutableList.of(
+                                        new Aggregator.Builder()
+                                                .setName("merge")
+                                                .setAlignStartTime(true)
+                                                .setAlignSampling(true)
+                                                .setSampling(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.DAYS).build())
+                                                .build(),
+                                        new Aggregator.Builder()
+                                                .setName("save_as")
+                                                .setOtherArgs(ImmutableMap.of(
+                                                        "metric_name", "my_metric_1d",
+                                                        "add_saved_from", false
+                                                ))
+                                                .build(),
+                                        new Aggregator.Builder()
+                                                .setName("count")
+                                                .build()))
+                                .build()))
+                        .setStartTime(Instant.EPOCH)
+                        .setEndTime(Instant.EPOCH.plus(Duration.ofDays(1)).minusMillis(1))
+                        .build(),
+                RollupExecutor.buildQueryRollup(definition)
+        );
     }
 
     /**
