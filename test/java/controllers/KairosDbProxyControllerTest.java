@@ -154,7 +154,7 @@ public class KairosDbProxyControllerTest {
     public void testQueryRequiresAggregatorOff() {
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(false);
 
-        KairosDbProxyController controller = new KairosDbProxyController(
+        final KairosDbProxyController controller = new KairosDbProxyController(
                 _mockConfig,
                 _mockWSClient,
                 _mockKairosDbClient,
@@ -172,7 +172,7 @@ public class KairosDbProxyControllerTest {
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
-        Http.RequestBuilder request = Helpers.fakeRequest()
+        final Http.RequestBuilder request = Helpers.fakeRequest()
                 .method(Helpers.POST)
                 .uri("/api/v1/datapoints/query")
                 .header("Content-Type", "application/json")
@@ -186,7 +186,7 @@ public class KairosDbProxyControllerTest {
         // ***
         // Test failure case where one metric doesn't have an aggregator
         // ***
-        Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
             final CompletionStage<Result> completionStage = controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         });
