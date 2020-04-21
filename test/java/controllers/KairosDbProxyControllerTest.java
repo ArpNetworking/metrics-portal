@@ -77,6 +77,7 @@ public class KairosDbProxyControllerTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
+        when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
         when(_mockMetricsFactory.create()).thenReturn(_mockMetrics);
         when(_mockMetrics.createTimer(any())).thenReturn(_mockTimer);
         when(_mockKairosDbClient.queryMetricNames()).thenReturn(CompletableFuture.completedFuture(
@@ -142,6 +143,51 @@ public class KairosDbProxyControllerTest {
         );
         result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
             final CompletionStage<Result> completionStage = _controller.queryMetrics();
+            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
+        });
+
+        assertEquals(Http.Status.OK, result.status());
+        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+    }
+
+    @Test
+    public void testQueryRequiresAggregatorOff() {
+        when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(false);
+
+        KairosDbProxyController controller = new KairosDbProxyController(
+                _mockConfig,
+                _mockWSClient,
+                _mockKairosDbClient,
+                OBJECT_MAPPER,
+                _mockMetricsFactory,
+                _mockMetricsqueryConfig
+        );
+
+        final Metric.Builder metric1Builder = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count").build()));
+        final Metric.Builder metric2Builder = new Metric.Builder()
+                .setName("metric2");
+        final MetricsQuery.Builder builder = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
+
+        Http.RequestBuilder request = Helpers.fakeRequest()
+                .method(Helpers.POST)
+                .uri("/api/v1/datapoints/query")
+                .header("Content-Type", "application/json")
+                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
+
+        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
+                        .setQueries(ImmutableList.of()).build())
+        );
+
+        // ***
+        // Test failure case where one metric doesn't have an aggregator
+        // ***
+        Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+            final CompletionStage<Result> completionStage = controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         });
 

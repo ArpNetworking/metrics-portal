@@ -85,6 +85,7 @@ public class KairosDbProxyController extends Controller {
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
+        _requireAggregators = configuration.getBoolean("kairosdb.proxy.requireAggregators");
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
@@ -158,7 +159,8 @@ public class KairosDbProxyController extends Controller {
     public CompletionStage<Result> queryMetrics() {
         try {
             final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
-            if (!metricsQuery.getMetrics().stream().allMatch(metric -> metric.getAggregators().size() >= 1)) {
+            if (_requireAggregators
+                    && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().size() < 1)) {
                 return CompletableFuture.completedFuture(
                         Results.badRequest("All queried metrics must have at least one aggregator"));
             }
@@ -217,6 +219,7 @@ public class KairosDbProxyController extends Controller {
     private final ProxyClient _client;
     private final ObjectMapper _mapper;
     private final boolean _filterRollups;
+    private final boolean _requireAggregators;
     private final KairosDbService _kairosService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
