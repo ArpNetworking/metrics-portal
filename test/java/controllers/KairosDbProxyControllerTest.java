@@ -184,7 +184,7 @@ public class KairosDbProxyControllerTest {
         );
 
         // ***
-        // Test failure case where one metric doesn't have an aggregator
+        // Test case where one metric doesn't have an aggregator and requiredAggregators is disabled
         // ***
         final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
             final CompletionStage<Result> completionStage = controller.queryMetrics();
