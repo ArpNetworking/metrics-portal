@@ -160,7 +160,7 @@ public class KairosDbProxyController extends Controller {
         try {
             final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
             if (_requireAggregators
-                    && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().size() < 1)) {
+                    && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().isEmpty())) {
                 return CompletableFuture.completedFuture(
                         Results.badRequest("All queried metrics must have at least one aggregator"));
             }
