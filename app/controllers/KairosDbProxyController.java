@@ -85,6 +85,7 @@ public class KairosDbProxyController extends Controller {
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
+        _requireAggregators = configuration.getBoolean("kairosdb.proxy.requireAggregators");
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
@@ -157,10 +158,16 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryMetrics() {
         try {
-        final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
-        return _kairosService.queryMetrics(metricsQuery)
-                .<JsonNode>thenApply(_mapper::valueToTree)
-                .thenApply(Results::ok);
+            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            if (_requireAggregators
+                    && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().isEmpty())) {
+                return CompletableFuture.completedFuture(
+                        Results.badRequest("All queried metrics must have at least one aggregator"));
+            }
+
+            return _kairosService.queryMetrics(metricsQuery)
+                    .<JsonNode>thenApply(_mapper::valueToTree)
+                    .thenApply(Results::ok);
         } catch (final IOException e) {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
@@ -212,6 +219,7 @@ public class KairosDbProxyController extends Controller {
     private final ProxyClient _client;
     private final ObjectMapper _mapper;
     private final boolean _filterRollups;
+    private final boolean _requireAggregators;
     private final KairosDbService _kairosService;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
