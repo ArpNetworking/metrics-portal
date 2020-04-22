@@ -34,6 +34,8 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
@@ -46,6 +48,7 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
@@ -57,10 +60,24 @@ import java.util.concurrent.TimeUnit;
 public final class KairosDbClientImpl implements KairosDbClient {
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
+        final UUID queryUuid = UUID.randomUUID();
+        LOGGER.debug()
+                .setMessage("starting queryMetrics")
+                .addData("queryUuid", queryUuid)
+                .addData("query", query)
+                .log();
         try {
             final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
                     .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
-            return fireRequest(request, MetricsQueryResponse.class);
+            return fireRequest(request, MetricsQueryResponse.class)
+                    .whenComplete((response, error) -> {
+                        LOGGER.debug()
+                                .setMessage("finished queryMetrics")
+                                .addData("queryUuid", queryUuid)
+                                .addData("query", query)
+                                .addData("success", error == null)
+                                .log();
+                    });
         } catch (final JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -184,6 +201,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     static final URI TAGS_QUERY_PATH = URI.create("/api/v1/datapoints/query/tags");
     static final URI LIST_TAG_NAMES_PATH = URI.create("/api/v1/tagnames");
     static final URI ADD_DATA_POINTS_PATH = URI.create("/api/v1/datapoints");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbClientImpl.class);
 
     /**
      * Implementation of the builder pattern for {@link KairosDbClientImpl}.
