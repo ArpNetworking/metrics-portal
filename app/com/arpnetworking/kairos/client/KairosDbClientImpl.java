@@ -62,7 +62,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
         final UUID queryUuid = UUID.randomUUID();
         LOGGER.debug()
-                .setMessage("finished queryMetrics")
+                .setMessage("starting queryMetrics")
                 .addData("queryUuid", queryUuid)
                 .addData("query", query)
                 .log();
