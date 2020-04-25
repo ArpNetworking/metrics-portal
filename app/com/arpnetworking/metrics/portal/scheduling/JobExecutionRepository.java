@@ -19,7 +19,6 @@ import models.internal.Organization;
 import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -49,10 +48,9 @@ public interface JobExecutionRepository<T> {
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
      * @throws NoSuchElementException if no job has the given UUID.
-     * @throws IOException if deserializing the job result fails.
      * @return The last successful execution.
      */
-    Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException, IOException;
+    Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException;
 
     /**
      * Get the last completed execution, regardless of if it succeeded.
@@ -60,10 +58,9 @@ public interface JobExecutionRepository<T> {
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
      * @throws NoSuchElementException if no job has the given UUID.
-     * @throws IOException if deserializing a job result fails.
      * @return The last completed execution.
      */
-    Optional<JobExecution<T>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException, IOException;
+    Optional<JobExecution<T>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.
