@@ -59,6 +59,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
+import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DefaultDevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
@@ -565,7 +566,12 @@ public class MainModule extends AbstractModule {
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
-                        JobCoordinator.props(_injector, ReportRepository.class, _organizationRepository, _executorRegion, _periodicMetrics),
+                        JobCoordinator.props(_injector,
+                                ReportRepository.class,
+                                DatabaseReportExecutionRepository.class,
+                                _organizationRepository,
+                                _executorRegion,
+                                _periodicMetrics),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
                         "ReportJobCoordinator");

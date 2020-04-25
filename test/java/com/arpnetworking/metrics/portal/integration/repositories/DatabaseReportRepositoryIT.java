@@ -28,7 +28,6 @@ import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultReport;
-import models.internal.impl.DefaultReportResult;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
@@ -52,18 +51,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -101,7 +95,7 @@ public class DatabaseReportRepositoryIT {
     }
 
     @Test
-    public void testGetForNonexistentAlertAndOrganizationId() {
+    public void testGetForNonexistentReportAndOrganizationId() {
         final UUID uuid = UUID.randomUUID();
         assertFalse(_repository.getReport(uuid, TestBeanFactory.organizationFrom(UUID.randomUUID())).isPresent());
     }
@@ -254,156 +248,6 @@ public class DatabaseReportRepositoryIT {
 
         final Report retrievedReport = result.get();
         assertThat(retrievedReport.getSource(), equalTo(updatedSource));
-    }
-
-    @Test(expected = PersistenceException.class)
-    public void testUnknownJobCompletionFails() {
-        final Instant scheduled = Instant.now();
-        final Report.Result result = new DefaultReportResult();
-        _repository.jobSucceeded(UUID.randomUUID(), _organization, scheduled, result);
-    }
-
-    @Test
-    public void testJobSucceeded() {
-        final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, _organization);
-        final Instant scheduled = Instant.now();
-
-        final Report.Result result = new DefaultReportResult();
-        _repository.jobSucceeded(report.getId(), _organization, scheduled, result);
-
-        final Optional<ReportExecution> getExecutionResult = getExecution(
-                report.getId(),
-                _organization,
-                scheduled);
-        assertTrue(getExecutionResult.isPresent());
-
-        final ReportExecution execution = getExecutionResult.get();
-        assertThat(execution.getState(), equalTo(ReportExecution.State.SUCCESS));
-        assertThat(execution.getCompletedAt(), not(nullValue()));
-        assertThat(execution.getReport(), not(nullValue()));
-        assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
-        assertThat(execution.getResult(), not(nullValue()));
-        assertThat(execution.getError(), nullValue());
-        assertThat(execution.getScheduled(), equalTo(scheduled));
-
-        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
-        assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
-    }
-
-    @Test
-    public void testJobFailed() {
-        final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, _organization);
-        final Instant scheduled = Instant.now();
-
-        final Throwable throwable = new IllegalStateException("Whoops!", new RuntimeException("the cause"));
-        _repository.jobFailed(report.getId(), _organization, scheduled, throwable);
-
-        final Optional<ReportExecution> getExecutionResult = getExecution(
-                report.getId(),
-                _organization,
-                scheduled);
-        assertTrue(getExecutionResult.isPresent());
-
-        final ReportExecution execution = getExecutionResult.get();
-        assertThat(execution.getState(), equalTo(ReportExecution.State.FAILURE));
-        assertThat(execution.getCompletedAt(), not(nullValue()));
-        assertThat(execution.getReport(), not(nullValue()));
-        assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
-        assertThat(execution.getResult(), nullValue());
-        assertThat(execution.getScheduled(), equalTo(scheduled));
-
-        final String retrievedError = execution.getError();
-        assertThat(retrievedError, notNullValue());
-        assertThat(retrievedError, containsString(throwable.getMessage()));
-        assertThat(retrievedError, containsString(throwable.getCause().getMessage()));
-        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
-        assertThat(lastRun, equalTo(Optional.of(execution.getScheduled())));
-    }
-
-    @Test
-    public void testJobMultipleRuns() {
-        final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, _organization);
-
-        final Instant t0 = Instant.now();
-        final Duration dt = Duration.ofDays(1);
-
-        _repository.jobFailed(report.getId(), _organization, t0.plus(dt.multipliedBy(0)), new IllegalStateException());
-        _repository.jobFailed(report.getId(), _organization, t0.plus(dt.multipliedBy(1)), new IllegalStateException());
-        _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(2)), new DefaultReportResult());
-        _repository.jobSucceeded(report.getId(), _organization, t0.plus(dt.multipliedBy(3)), new DefaultReportResult());
-
-        assertEquals(
-                t0.plus(dt.multipliedBy(3)),
-                _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization).get()
-        );
-    }
-
-    @Test
-    public void testJobStarted() {
-        final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, _organization);
-        final Instant scheduled = Instant.now();
-
-        _repository.jobStarted(report.getId(), _organization, scheduled);
-
-        final Optional<ReportExecution> getExecutionResult = getExecution(
-                report.getId(),
-                _organization,
-                scheduled);
-        assertTrue(getExecutionResult.isPresent());
-
-        final ReportExecution execution = getExecutionResult.get();
-        assertThat(execution.getState(), equalTo(ReportExecution.State.STARTED));
-        assertThat(execution.getCompletedAt(), nullValue());
-        assertThat(execution.getStartedAt(), not(nullValue()));
-        assertThat(execution.getResult(), nullValue());
-        assertThat(execution.getError(), nullValue());
-        assertThat(execution.getReport(), not(nullValue()));
-        assertThat(execution.getReport().getUuid(), equalTo(report.getId()));
-        assertThat(execution.getScheduled(), equalTo(scheduled));
-
-        final Optional<Instant> lastRun = _repository.getLastScheduledTimeWhereExecutionCompleted(report.getId(), _organization);
-        assertThat(lastRun, equalTo(Optional.empty()));
-    }
-
-    @Test
-    public void testStateChangeClearsFields() {
-        final Report report = TestBeanFactory.createReportBuilder().build();
-        _repository.addOrUpdateReport(report, _organization);
-        final Instant scheduled = Instant.now();
-
-        _repository.jobStarted(report.getId(), _organization, scheduled);
-        _repository.jobSucceeded(report.getId(), _organization, scheduled, new DefaultReportResult());
-
-        // A succeeded updated should *not* clear the start time
-        final Optional<ReportExecution> getExecutionResult = getExecution(
-                report.getId(),
-                _organization,
-                scheduled);
-        assertTrue(getExecutionResult.isPresent());
-
-        final ReportExecution execution = getExecutionResult.get();
-        assertThat(execution.getStartedAt(), notNullValue());
-        assertThat(execution.getResult(), notNullValue());
-        assertThat(execution.getCompletedAt(), notNullValue());
-        assertThat(execution.getError(), nullValue());
-
-        // A failed updated should *not* clear the start time but it should clear the result
-        _repository.jobFailed(report.getId(), _organization, scheduled, new IllegalStateException("whoops!"));
-        final Optional<ReportExecution> getUpdatedExecutionResult = getExecution(
-                report.getId(),
-                _organization,
-                scheduled);
-        assertTrue(getUpdatedExecutionResult.isPresent());
-
-        final ReportExecution updatedExecution = getUpdatedExecutionResult.get();
-        assertThat(updatedExecution.getStartedAt(), notNullValue());
-        assertThat(updatedExecution.getResult(), nullValue());
-        assertThat(updatedExecution.getCompletedAt(), notNullValue());
-        assertThat(updatedExecution.getError(), notNullValue());
     }
 
     @Test

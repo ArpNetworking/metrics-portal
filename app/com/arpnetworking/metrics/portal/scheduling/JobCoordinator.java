@@ -49,6 +49,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final Class<? extends JobRepository<T>> _repositoryType;
+    private final Class<? extends JobExecutionRepository<T>> _execRepositoryType;
     private final OrganizationRepository _organizationRepository;
     private final ActorRef _jobExecutorRegion;
     private final PeriodicMetrics _periodicMetrics;
@@ -61,6 +62,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param <T> The type of result produced by the {@link JobRepository}'s jobs.
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param repositoryType The type of the repository to load.
+     * @param execRepositoryType The type of the execution repository to load.
      * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
      * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
@@ -69,10 +71,17 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     public static <T> Props props(
             final Injector injector,
             final Class<? extends JobRepository<T>> repositoryType,
+            final Class<? extends JobExecutionRepository<T>> execRepositoryType,
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
-        return props(injector, Clock.systemUTC(), repositoryType, organizationRepository, jobExecutorRegion, periodicMetrics);
+        return props(injector,
+                Clock.systemUTC(),
+                repositoryType,
+                execRepositoryType,
+                organizationRepository,
+                jobExecutorRegion,
+                periodicMetrics);
     }
 
     /**
@@ -82,33 +91,44 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param injector The Guice injector to load the {@link JobRepository} from.
      * @param clock The clock the actor will use to determine when the anti-entropy process should run.
      * @param repositoryType The type of the repository to load.
+     * @param execRepositoryType The type of the execution repository to load.
      * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
      * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
-    /* package-private */ static <T> Props props(
+    /* package-private */
+    static <T> Props props(
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
+            final Class<? extends JobExecutionRepository<T>> execRepositoryType,
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         return Props.create(
                 JobCoordinator.class,
-                () -> new JobCoordinator<>(injector, clock, repositoryType, organizationRepository, jobExecutorRegion, periodicMetrics));
+                () -> new JobCoordinator<>(injector,
+                        clock,
+                        repositoryType,
+                        execRepositoryType,
+                        organizationRepository,
+                        jobExecutorRegion,
+                        periodicMetrics));
     }
 
     private JobCoordinator(
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
+            final Class<? extends JobExecutionRepository<T>> execRepositoryType,
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics) {
         _injector = injector;
         _clock = clock;
         _repositoryType = repositoryType;
+        _execRepositoryType = execRepositoryType;
         _organizationRepository = organizationRepository;
         _jobExecutorRegion = jobExecutorRegion;
         _periodicMetrics = periodicMetrics;
@@ -137,6 +157,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             final Injector injector,
             final Clock clock,
             final Class<? extends JobRepository<T>> repositoryType,
+            final Class<? extends JobExecutionRepository<T>> execRepositoryType,
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final PeriodicMetrics periodicMetrics,
@@ -146,6 +167,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             LOGGER.debug()
                     .setMessage("starting anti-entropy")
                     .addData("repositoryType", repositoryType)
+                    .addData("execRepositoryType", execRepositoryType)
                     .log();
 
             final Instant startTime = clock.instant();
@@ -156,6 +178,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 allJobs.forEachRemaining(job -> {
                     final JobRef<T> ref = new JobRef.Builder<T>()
                             .setRepositoryType(repositoryType)
+                            .setExecutionRepositoryType(execRepositoryType)
                             .setOrganization(organization)
                             .setId(job.getId())
                             .build();
@@ -200,6 +223,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         final Injector injector = _injector;
         final Clock clock = _clock;
         final Class<? extends JobRepository<T>> repositoryType = _repositoryType;
+        final Class<? extends JobExecutionRepository<T>> execRepositoryType = _execRepositoryType;
         final OrganizationRepository organizationRepository = _organizationRepository;
         final ActorRef jobExecutorRegion = _jobExecutorRegion;
         final PeriodicMetrics periodicMetrics = _periodicMetrics;
@@ -208,6 +232,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 injector,
                 clock,
                 repositoryType,
+                execRepositoryType,
                 organizationRepository,
                 jobExecutorRegion,
                 periodicMetrics,
