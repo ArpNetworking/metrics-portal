@@ -76,13 +76,9 @@ public abstract class JobExecution<T> {
          * @param state The state to visit.
          * @return The result produced by this visitor.
          */
-        default U visit(final JobExecution<T> state) {
-            return state.accept(this);
-        }
-
         @Override
         default U apply(final JobExecution<T> state) {
-            return visit(state);
+            return state.accept(this);
         }
 
         /**

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2020 Dropbox, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
@@ -19,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@code JobExecutionRepository} backed by a {@link Map}.
- *
+ * <p>
  * This repository only holds the most recent execution for a given Job, overwriting one if it exists.
  *
  * @param <T> The result type of the underlying {@link Job}s.
@@ -46,7 +61,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
 
 
     @Override
-    public Optional<JobExecution.Success<T>> getLastSuccess(final UUID jobId, final Organization organization) throws NoSuchElementException {
+    public Optional<JobExecution.Success<T>> getLastSuccess(final UUID jobId, final Organization organization) {
         return getLastCompleted(jobId, organization).flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
             @Override
             public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
@@ -66,7 +81,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public Optional<JobExecution<T>> getLastCompleted(final UUID jobId, final Organization organization) throws NoSuchElementException {
+    public Optional<JobExecution<T>> getLastCompleted(final UUID jobId, final Organization organization) {
         @Nullable final JobExecution<T> execution = _lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId);
         if (execution == null) {
             return Optional.empty();
@@ -86,7 +101,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
             public Optional<JobExecution<T>> visit(final JobExecution.Failure<T> state) {
                 return Optional.of(state);
             }
-        }).visit(execution);
+        }).apply(execution);
     }
 
     @Override
