@@ -47,23 +47,21 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
 
     @Override
     public Optional<JobExecution.Success<T>> getLastSuccess(final UUID jobId, final Organization organization) throws NoSuchElementException {
-        return getLastCompleted(jobId, organization).flatMap(execution -> {
-            return (new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
-                @Override
-                public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
-                    return Optional.empty();
-                }
+        return getLastCompleted(jobId, organization).flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
+            @Override
+            public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
+                return Optional.empty();
+            }
 
-                @Override
-                public Optional<JobExecution.Success<T>> visit(final JobExecution.Success<T> state) {
-                    return Optional.of(state);
-                }
+            @Override
+            public Optional<JobExecution.Success<T>> visit(final JobExecution.Success<T> state) {
+                return Optional.of(state);
+            }
 
-                @Override
-                public Optional<JobExecution.Success<T>> visit(final JobExecution.Failure<T> state) {
-                    return Optional.empty();
-                }
-            }).visit(execution);
+            @Override
+            public Optional<JobExecution.Success<T>> visit(final JobExecution.Failure<T> state) {
+                return Optional.empty();
+            }
         });
     }
 

@@ -69,7 +69,7 @@ public abstract class JobExecution<T> {
      * @param <T> The result produced by this {@code JobExecution}.
      * @param <U> The result produced by this visitor.
      */
-    public interface Visitor<T, U> {
+    public interface Visitor<T, U> extends Function<JobExecution<T>, U> {
         /**
          * Convenience wrapper around {@code state.accept(visitor)}.
          *
@@ -78,6 +78,11 @@ public abstract class JobExecution<T> {
          */
         default U visit(final JobExecution<T> state) {
             return state.accept(this);
+        }
+
+        @Override
+        default U apply(final JobExecution<T> state) {
+            return visit(state);
         }
 
         /**
