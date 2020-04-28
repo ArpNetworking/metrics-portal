@@ -34,7 +34,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigUtil;
@@ -172,7 +172,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         } else {
                             return new TagNamesMessage.Builder()
                                     .setMetricName(metricName)
-                                    .setTagNames(response.getQueries().get(0).getResults().get(0).getTags().keySet())
+                                    .setTags(response.getQueries().get(0).getResults().get(0).getTags())
                                     .build();
                         }
                     }
@@ -219,7 +219,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                 sourceMetricName,
                                 rollupMetricName,
                                 period,
-                                message.getTagNames(),
+                                message.getTags(),
                                 response,
                                 failure
                             );
@@ -312,7 +312,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setSourceMetricName(message.getSourceMetricName())
                         .setDestinationMetricName(rollupMetricName)
                         .setPeriod(period)
-                        .setGroupByTags(message.getTags());
+                        .setAllMetricTags(message.getTags());
 
                 for (final Instant startTime : startTimes) {
                     rollupDefBuilder.setStartTime(startTime);
@@ -373,7 +373,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final String sourceMetricName,
             final String rollupMetricName,
             final RollupPeriod period,
-            final ImmutableSet<String> tags,
+            final ImmutableMultimap<String, String> tags,
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
         final LastDataPointsMessage.Builder builder = new LastDataPointsMessage.Builder()

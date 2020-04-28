@@ -22,6 +22,7 @@ import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -93,7 +94,7 @@ public final class RollupManagerTest {
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
-                .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
+                .setAllMetricTags(ImmutableMultimap.of("bar", "val"))
                 .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder
@@ -119,7 +120,7 @@ public final class RollupManagerTest {
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
-                .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
+                .setAllMetricTags(ImmutableMultimap.of("bar", "val"))
                 .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder.build();
@@ -140,7 +141,7 @@ public final class RollupManagerTest {
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
-                .setGroupByTags(ImmutableSet.<String>builder().add("bar").build())
+                .setAllMetricTags(ImmutableMultimap.of("bar", "val"))
                 .setStartTime(Instant.EPOCH);
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder.setStartTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS)).build();

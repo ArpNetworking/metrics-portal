@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -30,18 +31,18 @@ public final class TagNamesMessage extends FailableMessage {
         return _metricName;
     }
 
-    public ImmutableSet<String> getTagNames() {
-        return _tagNames;
+    public ImmutableMultimap<String, String> getTags() {
+        return _tags;
     }
 
     private TagNamesMessage(final Builder builder) {
         super(builder);
         _metricName = builder._metricName;
-        _tagNames = builder._tagNames;
+        _tags = builder._tags;
     }
 
     private final String _metricName;
-    private final ImmutableSet<String> _tagNames;
+    private final ImmutableMultimap<String, String> _tags;
     private static final long serialVersionUID = 7474007527385332990L;
 
     /**
@@ -73,15 +74,15 @@ public final class TagNamesMessage extends FailableMessage {
          * @param value tag names set
          * @return this builder
          */
-        public Builder setTagNames(final ImmutableSet<String> value) {
-            _tagNames = value;
+        public Builder setTags(final ImmutableMultimap<String, String> value) {
+            _tags = value;
             return this;
         }
 
         @Override
         protected void reset() {
             super.reset();;
-            _tagNames = ImmutableSet.of();
+            _tags = ImmutableMultimap.of();
             _metricName = null;
         }
 
@@ -94,6 +95,6 @@ public final class TagNamesMessage extends FailableMessage {
         @NotEmpty
         private String _metricName;
         @NotNull
-        private ImmutableSet<String> _tagNames = ImmutableSet.of();
+        private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
     }
 }
