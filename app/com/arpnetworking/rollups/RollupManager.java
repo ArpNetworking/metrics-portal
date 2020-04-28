@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.google.common.collect.ImmutableSet;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
@@ -82,6 +83,24 @@ public class RollupManager extends AbstractActorWithTimers {
     }
 
     private void rollupFinished(final RollupExecutor.FinishRollupMessage message) {
+        if (!message.getFailure().isPresent()) {
+            return;
+        }
+
+        if (!RollupPartitioningUtils.mightSplittingFixFailure(message.getFailure().get())) {
+            // TODO(spencerpearson): log?
+            return;
+        }
+
+        final ImmutableSet<RollupDefinition> subjobs;
+        try {
+            subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
+        } catch (final RollupPartitioningUtils.CannotSplitException e) {
+            // TODO(spencerpearson): log?
+            return;
+        }
+
+        subjobs.forEach(subjob -> getSelf().tell(subjob, getSelf()));
     }
 
     private Optional<RollupDefinition> getNextRollup() {
