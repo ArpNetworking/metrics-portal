@@ -65,7 +65,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
         final UUID queryUuid = UUID.randomUUID();
         final JsonNode queryJson = _mapper.valueToTree(query);
-        LOGGER.debug()
+        LOGGER.trace()
                 .setMessage("starting queryMetrics")
                 .addData("queryUuid", queryUuid)
                 .addData("query", queryJson)
@@ -75,7 +75,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
         final Instant startTime = Instant.now();
         return fireRequest(request, MetricsQueryResponse.class)
                 .whenComplete((response, error) -> {
-                    LOGGER.debug()
+                    LOGGER.trace()
                             .setMessage("finished queryMetrics")
                             .addData("queryUuid", queryUuid)
                             .addData("query", queryJson)
