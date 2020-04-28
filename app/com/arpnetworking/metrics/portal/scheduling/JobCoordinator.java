@@ -153,6 +153,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 .build();
     }
 
+    // CHECKSTYLE.OFF: ParameterNumber - This is only called in one location.
     private static <T> void runAntiEntropy(
             final Injector injector,
             final Clock clock,
@@ -217,6 +218,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         }
 
     }
+    // CHECKSTYLE.ON: ParameterNumber
 
     private Runnable createAntiEntropyRunnable() {
         // Explicitly capture all instance variables for good practice, even though they're final

@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.reports.impl;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.Throwables;
 import io.ebean.EbeanServer;
 import io.ebean.Transaction;
 import models.ebean.ReportExecution;
@@ -75,15 +76,16 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
 
     /**
      * Get the most recently scheduled execution, if any.
-     *
+     * <p>
      * This could possibly return an execution that's pending completion.
      *
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
-     * @throws NoSuchElementException if no job has the given UUID.
      * @return The last successful execution.
+     * @throws NoSuchElementException if no job has the given UUID.
      */
-    public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization) throws NoSuchElementException {
+    public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization)
+            throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()
@@ -97,7 +99,8 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
     }
 
     @Override
-    public Optional<JobExecution.Success<Report.Result>> getLastSuccess(final UUID jobId, final Organization organization) throws NoSuchElementException {
+    public Optional<JobExecution.Success<Report.Result>> getLastSuccess(final UUID jobId, final Organization organization)
+            throws NoSuchElementException {
         assertIsOpen();
         final Optional<ReportExecution> row = _ebeanServer.find(ReportExecution.class)
                 .orderBy()
@@ -119,7 +122,8 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
     }
 
     @Override
-    public Optional<JobExecution<Report.Result>> getLastCompleted(final UUID jobId, final Organization organization) throws NoSuchElementException {
+    public Optional<JobExecution<Report.Result>> getLastCompleted(final UUID jobId, final Organization organization)
+            throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(ReportExecution.class)
                 .orderBy()
@@ -209,9 +213,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                             .eq("scheduled", scheduled)
                             .findOneOrEmpty();
             final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
-            newOrUpdatedExecution.setError(error);
             newOrUpdatedExecution.setReport(report.get());
-            newOrUpdatedExecution.setResult(result);
             newOrUpdatedExecution.setScheduled(scheduled);
             newOrUpdatedExecution.setState(state);
 
@@ -221,7 +223,17 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                     newOrUpdatedExecution.setCompletedAt(null);
                     break;
                 case FAILURE:
+                    if (error == null) {
+                        throw new IllegalArgumentException("Error is null for a failed execution.");
+                    }
+                    newOrUpdatedExecution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
+                    newOrUpdatedExecution.setCompletedAt(Instant.now());
+                    break;
                 case SUCCESS:
+                    if (result == null) {
+                        throw new IllegalArgumentException("Result is null for a successful execution.");
+                    }
+                    newOrUpdatedExecution.setResult(result);
                     newOrUpdatedExecution.setCompletedAt(Instant.now());
                     break;
                 default:
@@ -265,12 +277,13 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                         .setStartedAt(beanModel.getStartedAt())
                         .build();
             case FAILURE:
+                @Nullable final Throwable throwable = beanModel.getError() == null ? null : beanModel.getError().getThrowable();
                 return new JobExecution.Failure.Builder<Report.Result>()
                         .setJobId(beanModel.getReport().getUuid())
                         .setScheduled(beanModel.getScheduled())
                         .setStartedAt(beanModel.getStartedAt())
                         .setCompletedAt(beanModel.getCompletedAt())
-                        .setError(new Throwable(beanModel.getError())) // TODO(cbriones): should not create a fresh error.
+                        .setError(throwable)
                         .build();
             case SUCCESS:
                 return new JobExecution.Success.Builder<Report.Result>()
@@ -291,7 +304,8 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("DatabaseReportExecutionRepository is not %s", expectedState ? "open" : "closed"));
+            throw new IllegalStateException(String.format("DatabaseReportExecutionRepository is not %s",
+                    expectedState ? "open" : "closed"));
         }
     }
 }

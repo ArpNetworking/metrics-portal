@@ -1,10 +1,29 @@
+/*
+ * Copyright 2020 Dropbox, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
+import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
@@ -15,15 +34,23 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Integration tests for {@link DatabaseReportExecutionRepository}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 public class DatabaseReportExecutionRepositoryIT {
     private DatabaseReportExecutionRepository _repository;
     private Organization _organization;
@@ -31,20 +58,20 @@ public class DatabaseReportExecutionRepositoryIT {
 
     @Before
     public void setUp() {
-        final EbeanServer _server = EbeanServerHelper.getMetricsDatabase();
-        _repository = new DatabaseReportExecutionRepository(_server);
+        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        _repository = new DatabaseReportExecutionRepository(server);
         _repository.open();
 
-        final models.ebean.Organization _ebeanOrganization = TestBeanFactory.createEbeanOrganization();
-        _server.save(_ebeanOrganization);
-        _organization = TestBeanFactory.organizationFrom(_ebeanOrganization);
+        final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
+        server.save(ebeanOrganization);
+        _organization = TestBeanFactory.organizationFrom(ebeanOrganization);
 
-        final models.ebean.Report ebeanReport = TestBeanFactory.createEbeanReport(_ebeanOrganization);
+        final models.ebean.Report ebeanReport = TestBeanFactory.createEbeanReport(ebeanOrganization);
         _reportId = ebeanReport.getUuid();
         // TODO(cbriones): I'm not sure why schedule / source need to be explicitly saved; I would expect a cascade to occur.
-        _server.save(ebeanReport.getSchedule());
-        _server.save(ebeanReport.getReportSource());
-        _server.save(ebeanReport);
+        server.save(ebeanReport.getSchedule());
+        server.save(ebeanReport.getReportSource());
+        server.save(ebeanReport);
     }
 
     @After
@@ -86,7 +113,7 @@ public class DatabaseReportExecutionRepositoryIT {
                 assertThat(state.getStartedAt(), not(nullValue()));
                 return null;
             }
-        }).visit(execution);
+        }).apply(execution);
     }
 
     @Test
@@ -135,7 +162,7 @@ public class DatabaseReportExecutionRepositoryIT {
                 fail("Got a started state when expecting success.");
                 return null;
             }
-        }).visit(lastRun.get());
+        }).apply(lastRun.get());
     }
 
     @Test
@@ -172,7 +199,7 @@ public class DatabaseReportExecutionRepositoryIT {
                 fail("Got a started state when expecting failure.");
                 return null;
             }
-        }).visit(lastRun.get());
+        }).apply(lastRun.get());
     }
 
     @Test
@@ -180,8 +207,8 @@ public class DatabaseReportExecutionRepositoryIT {
         final Instant t0 = Instant.now();
         final Duration dt = Duration.ofDays(1);
 
-        final int NUM_JOBS = 4;
-        for (int i = 0; i < NUM_JOBS; i++) {
+        final int numJobs = 4;
+        for (int i = 0; i < numJobs; i++) {
             _repository.jobStarted(_reportId, _organization, t0.plus(dt.multipliedBy(i)));
         }
 
@@ -235,7 +262,19 @@ public class DatabaseReportExecutionRepositoryIT {
                 fail("Got a started state when expecting failure.");
                 return null;
             }
-        }).visit(updatedExecution);
+        }).apply(updatedExecution);
+    }
+
+    @Test
+    public void testErrorSerializationIsBackwardsCompatible() throws Exception {
+        final String errorMessage = "boom";
+        final Map<String, String> oldErrorMap = ImmutableMap.of("exception", errorMessage);
+
+        final ObjectMapper mapper = new ObjectMapper();
+        final String serialized = mapper.writeValueAsString(oldErrorMap);
+        final ReportExecution.Error newError = mapper.readValue(serialized, ReportExecution.Error.class);
+
+        assertThat(newError.getThrowable().getMessage(), equalTo(errorMessage));
     }
 
     private Report.Result newResult() {

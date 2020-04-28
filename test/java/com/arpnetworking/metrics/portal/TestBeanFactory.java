@@ -151,6 +151,12 @@ public final class TestBeanFactory {
                 .setSchedule(schedule);
     }
 
+    /**
+     * Factory method for creating a test bean report.
+     *
+     * @param organization The parent organization of the report.
+     * @return a report
+     */
     public static models.ebean.Report createEbeanReport(final models.ebean.Organization organization) {
         final models.ebean.NeverReportSchedule schedule = new models.ebean.NeverReportSchedule();
         schedule.setRunAt(Instant.EPOCH); // This can't be empty but will never run.
