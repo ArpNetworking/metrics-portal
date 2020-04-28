@@ -39,6 +39,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
@@ -48,6 +49,8 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -61,26 +64,25 @@ public final class KairosDbClientImpl implements KairosDbClient {
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
         final UUID queryUuid = UUID.randomUUID();
+        final JsonNode queryJson = _mapper.valueToTree(query);
         LOGGER.debug()
                 .setMessage("starting queryMetrics")
                 .addData("queryUuid", queryUuid)
-                .addData("query", query)
+                .addData("query", queryJson)
                 .log();
-        try {
-            final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
-                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
-            return fireRequest(request, MetricsQueryResponse.class)
-                    .whenComplete((response, error) -> {
-                        LOGGER.debug()
-                                .setMessage("finished queryMetrics")
-                                .addData("queryUuid", queryUuid)
-                                .addData("query", query)
-                                .addData("success", error == null)
-                                .log();
-                    });
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
+                .withEntity(ContentTypes.APPLICATION_JSON, queryJson.toString());
+        final Instant startTime = Instant.now();
+        return fireRequest(request, MetricsQueryResponse.class)
+                .whenComplete((response, error) -> {
+                    LOGGER.debug()
+                            .setMessage("finished queryMetrics")
+                            .addData("queryUuid", queryUuid)
+                            .addData("query", queryJson)
+                            .addData("duration", Duration.between(startTime, Instant.now()))
+                            .addData("success", error == null)
+                            .log();
+                });
     }
 
     @Override
