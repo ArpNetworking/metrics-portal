@@ -16,6 +16,7 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,6 +43,7 @@ import java.util.function.Function;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Loggable
 public final class MetricsQueryResponse {
 
     public ImmutableList<Query> getQueries() {
@@ -153,6 +155,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
+    @Loggable
     public static final class Query {
         @JsonAnyGetter
         public ImmutableMap<String, Object> getOtherArgs() {
@@ -289,6 +292,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
+    @Loggable
     public static final class QueryResult {
         public String getName() {
             return _name;
@@ -520,6 +524,7 @@ public final class MetricsQueryResponse {
      *
      * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
+    @Loggable
     public static final class QueryBinGroupBy extends QueryGroupBy {
         public ImmutableList<Number> getBins() {
             return _bins;
@@ -670,6 +675,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
+    @Loggable
     public static final class QueryTagGroupBy extends QueryGroupBy {
         public ImmutableList<String> getTags() {
             return _tags;
@@ -823,6 +829,7 @@ public final class MetricsQueryResponse {
      *
      * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
+    @Loggable
     public static final class QueryTimeGroupBy extends QueryGroupBy {
         @JsonProperty("group_count")
         public int getGroupCount() {
@@ -998,6 +1005,7 @@ public final class MetricsQueryResponse {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
+    @Loggable
     public static final class QueryTypeGroupBy extends QueryGroupBy {
         public String getType() {
             return _type;
@@ -1127,6 +1135,7 @@ public final class MetricsQueryResponse {
      *
      * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
      */
+    @Loggable
     public static final class QueryValueGroupBy extends QueryGroupBy {
         @JsonProperty("range_size")
         public Number getRangeSize() {
