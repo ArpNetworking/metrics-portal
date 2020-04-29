@@ -134,7 +134,7 @@ public class RollupExecutorTest {
                         .setAllMetricTags(ImmutableMultimap.of())
                         .build()
                 )
-                .build();
+        );
         actor.tell(finished, ActorRef.noSender());
         _probe.expectMsg(RollupFetch.getInstance());
     }

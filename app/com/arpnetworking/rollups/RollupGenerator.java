@@ -399,21 +399,24 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         // Query results should *only* contain the source and destination metric.
         if (queryResults.size() != 2 || !queryResults.containsKey(sourceMetricName) || !queryResults.containsKey(rollupMetricName)) {
-            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)));
+            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
+                b -> b.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)));
         }
 
         // Set source time, if any.
         final Optional<Instant> lastSourceTime = queryResults.get(sourceMetricName)
                 .map(DataPoint::getTime);
         if (lastSourceTime.isPresent()) {
-            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setSourceLastDataPointTime(lastSourceTime.get()));
+            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
+                    b -> b.setSourceLastDataPointTime(lastSourceTime.get()));
         }
 
         // Set rollup time, if any.
         final Optional<Instant> lastRollupTime = queryResults.get(rollupMetricName)
                 .map(DataPoint::getTime);
         if (lastRollupTime.isPresent()) {
-            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setRollupLastDataPointTime(lastRollupTime.get()));
+            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
+                    b -> b.setRollupLastDataPointTime(lastRollupTime.get()));
         }
 
         return result;
@@ -438,8 +441,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
-                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {setCommonFields.accept(b); b.setName(sourceMetricName);}),
-                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {setCommonFields.accept(b); b.setName(rollupMetricName);})
+                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {
+                                 setCommonFields.accept(b);
+                                 b.setName(sourceMetricName);
+                             }),
+                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {
+                                 setCommonFields.accept(b);
+                                 b.setName(rollupMetricName);
+                             })
                         )).build();
     }
 
