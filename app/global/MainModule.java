@@ -247,12 +247,15 @@ public class MainModule extends AbstractModule {
     private KairosDbClient provideKairosDbClient(
             final ActorSystem actorSystem,
             final ObjectMapper mapper,
-            final Config configuration) {
+            final Config configuration,
+            final MetricsFactory metricsFactory
+    ) {
         return new KairosDbClientImpl.Builder()
                 .setActorSystem(actorSystem)
                 .setMapper(mapper)
                 .setUri(URI.create(configuration.getString("kairosdb.uri")))
                 .setReadTimeout(ConfigurationHelper.getFiniteDuration(configuration, "kairosdb.timeout"))
+                .setMetricsFactory(metricsFactory)
                 .build();
     }
 

@@ -28,6 +28,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -75,6 +76,7 @@ public final class KairosDbProxyControllerIT {
                 .setMapper(SerializationTestUtils.getApiObjectMapper())
                 .setReadTimeout(FiniteDuration.apply(10, TimeUnit.SECONDS))
                 .setUri(URI.create(urlBuilder.toString()))
+                .setMetricsFactory(new NoOpMetricsFactory())
                 .build();
 
         _kairosDbClientProxied = new KairosDbClientImpl.Builder()
@@ -82,6 +84,7 @@ public final class KairosDbProxyControllerIT {
                 .setMapper(SerializationTestUtils.getApiObjectMapper())
                 .setReadTimeout(FiniteDuration.apply(10, TimeUnit.SECONDS))
                 .setUri(URI.create(WebServerHelper.getUri("")))
+                .setMetricsFactory(new NoOpMetricsFactory())
                 .build();
 
         // Record data on the minute, 30 minutes back to make it easy to fetch via the KDB UI
