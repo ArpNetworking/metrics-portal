@@ -17,6 +17,8 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -41,6 +43,7 @@ public class RollupManager extends AbstractActorWithTimers {
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
     private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RollupManager.class);
 
     /**
      * Metrics discovery constructor.
@@ -92,6 +95,11 @@ public class RollupManager extends AbstractActorWithTimers {
         final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
         _periodicMetrics.recordCounter("rollup/manager/executor_completed/retriable", isRetryable ? 1 : 0);
         if (!isRetryable) {
+            LOGGER.warn()
+                    .setMessage("giving up after non-retryable error")
+                    .addData("rollupDefinition", message.getRollupDefinition())
+                    .setThrowable(failure.get())
+                    .log();
             return;
         }
 
@@ -100,6 +108,11 @@ public class RollupManager extends AbstractActorWithTimers {
             subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
         } catch (final RollupPartitioningUtils.CannotSplitException e) {
             _periodicMetrics.recordCounter("rollup/manager/executor_completed/unsplittable", 1);
+            LOGGER.error()
+                    .setMessage("giving up on job that can't be split any more")
+                    .addData("rollupDefinition", message.getRollupDefinition())
+                    .setThrowable(failure.get())
+                    .log();
             return;
         }
 
