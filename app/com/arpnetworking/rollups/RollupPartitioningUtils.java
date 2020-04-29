@@ -64,8 +64,8 @@ public final class RollupPartitioningUtils {
             return false;
         }
 
-        // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it dies
-        //   halfway through a rollup is _also_ ad-hoc: it seems to 502/503/504 arbitrarily.
+        // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it barfs
+        //   halfway through a rollup is _also_ ad-hoc: it sometimes 500s, sometimes 502s.
 
         final KairosDbRequestException kdbFailure = ((KairosDbRequestException) failure);
 
