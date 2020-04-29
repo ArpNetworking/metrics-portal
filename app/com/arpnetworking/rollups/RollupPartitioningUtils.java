@@ -26,14 +26,24 @@ import java.util.Comparator;
 import java.util.Optional;
 
 /**
- * TODO(spencerpearson)
+ * Utility class to help split {@link RollupDefinition}s into pieces.
  *
  * @author Spencer Pearson (spencerpearson@dropbox.com)
  */
 public final class RollupPartitioningUtils {
 
-    public static final Duration TIMEOUT_HEURISTIC_THRESHOLD = Duration.ofSeconds(30);
+    private static final Duration TIMEOUT_HEURISTIC_THRESHOLD = Duration.ofSeconds(30);
 
+    private RollupPartitioningUtils() {}
+
+    /**
+     * Split a {@link RollupDefinition} into a family of cheaper-to-execute {@link RollupDefinition}s which,
+     * run independently, will have an effect equivalent the the input's.
+     *
+     * @param job the {@link RollupDefinition} to split up
+     * @return a set of cheaper jobs which partition the parent's work among them
+     * @throws CannotSplitException if there is no way to split the given job into multiple cheaper ones
+     */
     public static ImmutableSet<RollupDefinition> splitJob(final RollupDefinition job) throws CannotSplitException {
         final ImmutableMap<String, String> filterTags = job.getFilterTags();
         final ImmutableMultimap<String, String> allTags = job.getAllMetricTags();
@@ -59,6 +69,14 @@ public final class RollupPartitioningUtils {
                 .collect(ImmutableSet.toImmutableSet());
     }
 
+    /**
+     * Given a failure from a {@link RollupDefinition}-execution, guess whether splitting the job into smaller pieces might help.
+     *
+     * Merely a heuristic: false positives and false negatives are entirely possible.
+     *
+     * @param failure the failure that occurred when executing the {@link RollupDefinition}
+     * @return a guess at whether splitting the job into smaller pieces might help
+     */
     public static boolean mightSplittingFixFailure(final Throwable failure) {
         if (!(failure instanceof KairosDbRequestException)) {
             return false;
@@ -67,7 +85,7 @@ public final class RollupPartitioningUtils {
         // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it barfs
         //   halfway through a rollup is _also_ ad-hoc: it sometimes 500s, sometimes 502s.
 
-        final KairosDbRequestException kdbFailure = ((KairosDbRequestException) failure);
+        final KairosDbRequestException kdbFailure = (KairosDbRequestException) failure;
 
         final boolean wasLong = !kdbFailure.getRequestDuration().minus(TIMEOUT_HEURISTIC_THRESHOLD).isNegative();
         final int statusGroup = kdbFailure.getHttpStatus() / 100 * 100;
@@ -75,12 +93,20 @@ public final class RollupPartitioningUtils {
         return wasLong && statusGroup == 500;
     }
 
+    /**
+     * Exception to indicate that a job cannot be split into sub-jobs.
+     */
     public static final class CannotSplitException extends Exception implements Serializable {
         private static final long serialVersionUID = 7426023317765009608L;
-        public final RollupDefinition job;
-        public CannotSplitException(final RollupDefinition job) {
+        private final RollupDefinition _job;
+
+        public RollupDefinition getJob() {
+            return _job;
+        }
+
+        CannotSplitException(final RollupDefinition job) {
             super(job.toString());
-            this.job = job;
+            _job = job;
         }
     }
 }

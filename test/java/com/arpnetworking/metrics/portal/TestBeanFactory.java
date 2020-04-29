@@ -213,8 +213,7 @@ public final class TestBeanFactory {
                 .setDestinationMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setAllMetricTags(ImmutableMultimap.of("tag", "val"))
-                .setFilterTags(ImmutableMap.of())
-                ;
+                .setFilterTags(ImmutableMap.of());
     }
 
     /**
