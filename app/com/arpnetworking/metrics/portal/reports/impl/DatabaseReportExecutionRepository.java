@@ -185,7 +185,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             @Nullable final Throwable error
     ) {
         LOGGER.debug()
-                .setMessage("Updating report executions")
+                .setMessage("Upserting report execution")
                 .addData("report.uuid", reportId)
                 .addData("scheduled", scheduled)
                 .addData("state", state)
@@ -200,45 +200,24 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             if (!report.isPresent()) {
                 final String message = String.format(
                         "Could not find report with uuid=%s, organization.uuid=%s",
-                        reportId.toString(),
+                        reportId,
                         organization.getId()
                 );
                 throw new EntityNotFoundException(message);
             }
 
-            final Optional<ReportExecution> existingExecution =
+            final Optional<ReportExecution> existingExecution = report.flatMap(r ->
                     _ebeanServer.createQuery(ReportExecution.class)
                             .where()
-                            .eq("report.uuid", reportId)
+                            .eq("report", r)
                             .eq("scheduled", scheduled)
-                            .findOneOrEmpty();
+                            .findOneOrEmpty()
+            );
             final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
             newOrUpdatedExecution.setReport(report.get());
             newOrUpdatedExecution.setScheduled(scheduled);
-            newOrUpdatedExecution.setState(state);
 
-            switch (state) {
-                case STARTED:
-                    newOrUpdatedExecution.setStartedAt(Instant.now());
-                    newOrUpdatedExecution.setCompletedAt(null);
-                    break;
-                case FAILURE:
-                    if (error == null) {
-                        throw new IllegalArgumentException("Error is null for a failed execution.");
-                    }
-                    newOrUpdatedExecution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
-                    newOrUpdatedExecution.setCompletedAt(Instant.now());
-                    break;
-                case SUCCESS:
-                    if (result == null) {
-                        throw new IllegalArgumentException("Result is null for a successful execution.");
-                    }
-                    newOrUpdatedExecution.setResult(result);
-                    newOrUpdatedExecution.setCompletedAt(Instant.now());
-                    break;
-                default:
-                    throw new AssertionError("unexpected state: " + state);
-            }
+            applyExecutionState(newOrUpdatedExecution, state, result, error);
 
             if (existingExecution.isPresent()) {
                 _ebeanServer.update(newOrUpdatedExecution);
@@ -247,7 +226,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             }
 
             LOGGER.debug()
-                    .setMessage("Updated report execution")
+                    .setMessage("Upserted report execution")
                     .addData("report.uuid", reportId)
                     .addData("scheduled", scheduled)
                     .addData("state", state)
@@ -257,14 +236,57 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatchCheck
             LOGGER.error()
-                    .setMessage("Failed to update report executions")
+                    .setMessage("Failed to upsert report executions")
                     .addData("report.uuid", reportId)
                     .addData("scheduled", scheduled)
                     .addData("state", state)
                     .setThrowable(e)
                     .log();
-            throw new PersistenceException("Failed to update report executions", e);
+            throw new PersistenceException("Failed to upsert report executions", e);
         }
+    }
+
+    private void applyExecutionState(
+            final ReportExecution execution,
+            final ReportExecution.State state,
+            @Nullable final Report.Result result,
+            @Nullable final Throwable error
+    ) {
+        switch (state) {
+            case STARTED:
+                if (result != null) {
+                    throw new IllegalArgumentException("Result is not null for a started execution.");
+                }
+                if (error != null) {
+                    throw new IllegalArgumentException("Error is not null for a started execution.");
+                }
+                execution.setStartedAt(Instant.now());
+                execution.setCompletedAt(null);
+                break;
+            case FAILURE:
+                if (result != null) {
+                    throw new IllegalArgumentException("Result is not null for a failed execution.");
+                }
+                if (error == null) {
+                    throw new IllegalArgumentException("Error is null for a failed execution.");
+                }
+                execution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
+                execution.setCompletedAt(Instant.now());
+                break;
+            case SUCCESS:
+                if (result == null) {
+                    throw new IllegalArgumentException("Result is null for a successful execution.");
+                }
+                if (error != null) {
+                    throw new IllegalArgumentException("Error is not null for a successful execution.");
+                }
+                execution.setResult(result);
+                execution.setCompletedAt(Instant.now());
+                break;
+            default:
+                throw new AssertionError("unexpected state: " + state);
+        }
+        execution.setState(state);
     }
 
     private JobExecution<Report.Result> toInternalModel(final ReportExecution beanModel) {
