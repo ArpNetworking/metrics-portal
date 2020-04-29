@@ -16,6 +16,7 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -32,6 +33,7 @@ import java.util.Objects;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
+@Loggable
 public final class RelativeDateTime {
 
     public TimeUnit getUnit() {

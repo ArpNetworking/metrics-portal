@@ -16,6 +16,7 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.MoreObjects;
@@ -33,6 +34,7 @@ import java.util.Optional;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Loggable
 public final class DataPoint {
     public Instant getTime() {
         return _time;

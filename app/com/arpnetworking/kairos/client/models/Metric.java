@@ -16,6 +16,7 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,6 +43,7 @@ import javax.annotation.Nullable;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Loggable
 public final class Metric {
     public String getName() {
         return _name;
