@@ -123,18 +123,18 @@ public class RollupExecutorTest {
     public void testFetchesNextRollup() {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
-        actor.tell(new RollupExecutor.FinishRollupMessage.Builder()
-                        .setRollupDefinition(new RollupDefinition.Builder()
-                                .setSourceMetricName("metric")
-                                .setDestinationMetricName("metric_1h")
-                                .setPeriod(RollupPeriod.HOURLY)
-                                .setStartTime(Instant.EPOCH)
-                                .setAllMetricTags(ImmutableMultimap.of())
-                                .build()
-                        )
-                        .build(),
-                ActorRef.noSender()
-        );
+        final RollupExecutor.FinishRollupMessage finished = new RollupExecutor.FinishRollupMessage.Builder()
+                .setRollupDefinition(new RollupDefinition.Builder()
+                        .setSourceMetricName("metric")
+                        .setDestinationMetricName("metric_1h")
+                        .setPeriod(RollupPeriod.HOURLY)
+                        .setStartTime(Instant.EPOCH)
+                        .setAllMetricTags(ImmutableMultimap.of())
+                        .build()
+                )
+                .build();
+        actor.tell(finished, ActorRef.noSender());
+        _probe.expectMsg(finished);
         _probe.expectMsg(RollupFetch.getInstance());
     }
 
