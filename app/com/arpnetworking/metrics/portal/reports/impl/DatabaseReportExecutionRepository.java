@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -145,8 +146,9 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                 organization,
                 scheduled,
                 ReportExecution.State.STARTED,
-                null,
-                null
+                execution -> {
+                    execution.setStartedAt(Instant.now());
+                }
         );
     }
 
@@ -158,8 +160,10 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                 organization,
                 scheduled,
                 ReportExecution.State.SUCCESS,
-                result,
-                null
+                execution -> {
+                    execution.setResult(result);
+                    execution.setCompletedAt(Instant.now());
+                }
         );
     }
 
@@ -171,8 +175,10 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                 organization,
                 scheduled,
                 ReportExecution.State.FAILURE,
-                null,
-                error
+                execution -> {
+                    execution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
+                    execution.setCompletedAt(Instant.now());
+                }
         );
     }
 
@@ -181,8 +187,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             final Organization organization,
             final Instant scheduled,
             final ReportExecution.State state,
-            @Nullable final Report.Result result,
-            @Nullable final Throwable error
+            final Consumer<ReportExecution> update
     ) {
         LOGGER.debug()
                 .setMessage("Upserting report execution")
@@ -217,7 +222,8 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             newOrUpdatedExecution.setReport(report.get());
             newOrUpdatedExecution.setScheduled(scheduled);
 
-            applyExecutionState(newOrUpdatedExecution, state, result, error);
+            update.accept(newOrUpdatedExecution);
+            newOrUpdatedExecution.setState(state);
 
             if (existingExecution.isPresent()) {
                 _ebeanServer.update(newOrUpdatedExecution);
@@ -244,49 +250,6 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                     .log();
             throw new PersistenceException("Failed to upsert report executions", e);
         }
-    }
-
-    private void applyExecutionState(
-            final ReportExecution execution,
-            final ReportExecution.State state,
-            @Nullable final Report.Result result,
-            @Nullable final Throwable error
-    ) {
-        switch (state) {
-            case STARTED:
-                if (result != null) {
-                    throw new IllegalArgumentException("Result is not null for a started execution.");
-                }
-                if (error != null) {
-                    throw new IllegalArgumentException("Error is not null for a started execution.");
-                }
-                execution.setStartedAt(Instant.now());
-                execution.setCompletedAt(null);
-                break;
-            case FAILURE:
-                if (result != null) {
-                    throw new IllegalArgumentException("Result is not null for a failed execution.");
-                }
-                if (error == null) {
-                    throw new IllegalArgumentException("Error is null for a failed execution.");
-                }
-                execution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
-                execution.setCompletedAt(Instant.now());
-                break;
-            case SUCCESS:
-                if (result == null) {
-                    throw new IllegalArgumentException("Result is null for a successful execution.");
-                }
-                if (error != null) {
-                    throw new IllegalArgumentException("Error is not null for a successful execution.");
-                }
-                execution.setResult(result);
-                execution.setCompletedAt(Instant.now());
-                break;
-            default:
-                throw new AssertionError("unexpected state: " + state);
-        }
-        execution.setState(state);
     }
 
     private JobExecution<Report.Result> toInternalModel(final ReportExecution beanModel) {
