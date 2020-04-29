@@ -87,13 +87,13 @@ public class RollupManager extends AbstractActorWithTimers {
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
         final Optional<Throwable> failure = message.getFailure();
-        _periodicMetrics.recordCounter("rollup/manager/executor_completed/success", failure.isPresent() ? 0 : 1);
+        _periodicMetrics.recordCounter("rollup/manager/executor_finished/success", failure.isPresent() ? 0 : 1);
         if (!failure.isPresent()) {
             return;
         }
 
         final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
-        _periodicMetrics.recordCounter("rollup/manager/executor_completed/retriable", isRetryable ? 1 : 0);
+        _periodicMetrics.recordCounter("rollup/manager/executor_finished/retriable", isRetryable ? 1 : 0);
         if (!isRetryable) {
             LOGGER.warn()
                     .setMessage("giving up after non-retryable error")
@@ -107,7 +107,7 @@ public class RollupManager extends AbstractActorWithTimers {
         try {
             subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
         } catch (final RollupPartitioningUtils.CannotSplitException e) {
-            _periodicMetrics.recordCounter("rollup/manager/executor_completed/unsplittable", 1);
+            _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 1);
             LOGGER.error()
                     .setMessage("giving up on job that can't be split any more")
                     .addData("rollupDefinition", message.getRollupDefinition())
