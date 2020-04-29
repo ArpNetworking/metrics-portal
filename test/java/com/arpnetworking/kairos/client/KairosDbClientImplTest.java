@@ -27,7 +27,6 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
-import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
