@@ -93,7 +93,7 @@ public class RollupManager extends AbstractActorWithTimers {
         }
 
         final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
-        _periodicMetrics.recordCounter("rollup/manager/executor_finished/retriable", isRetryable ? 1 : 0);
+        _periodicMetrics.recordCounter("rollup/manager/executor_finished/unretriable", isRetryable ? 0 : 1);
         if (!isRetryable) {
             LOGGER.warn()
                     .setMessage("giving up after non-retryable error")
@@ -106,6 +106,7 @@ public class RollupManager extends AbstractActorWithTimers {
         final ImmutableSet<RollupDefinition> subjobs;
         try {
             subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
+            _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 0);
         } catch (final RollupPartitioningUtils.CannotSplitException e) {
             _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 1);
             LOGGER.error()

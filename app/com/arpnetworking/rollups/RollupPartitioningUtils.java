@@ -31,6 +31,9 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson@dropbox.com)
  */
 public final class RollupPartitioningUtils {
+
+    public static final Duration TIMEOUT_HEURISTIC_THRESHOLD = Duration.ofSeconds(30);
+
     public static ImmutableSet<RollupDefinition> splitJob(final RollupDefinition job) throws CannotSplitException {
         final ImmutableMap<String, String> filterTags = job.getFilterTags();
         final ImmutableMultimap<String, String> allTags = job.getAllMetricTags();
@@ -57,16 +60,16 @@ public final class RollupPartitioningUtils {
     }
 
     public static boolean mightSplittingFixFailure(final Throwable failure) {
-        // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it dies
-        //   halfway through a rollup is _also_ ad-hoc: it seems to 502/503/504 arbitrarily.
-
         if (!(failure instanceof KairosDbRequestException)) {
             return false;
         }
 
+        // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it dies
+        //   halfway through a rollup is _also_ ad-hoc: it seems to 502/503/504 arbitrarily.
+
         final KairosDbRequestException kdbFailure = ((KairosDbRequestException) failure);
 
-        final boolean wasLong = !kdbFailure.getRequestDuration().minus(Duration.ofSeconds(30)).isNegative();
+        final boolean wasLong = !kdbFailure.getRequestDuration().minus(TIMEOUT_HEURISTIC_THRESHOLD).isNegative();
         final int statusGroup = kdbFailure.getHttpStatus() / 100 * 100;
 
         return wasLong && statusGroup == 500;
