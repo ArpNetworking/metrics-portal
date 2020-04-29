@@ -19,7 +19,6 @@ import akka.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
