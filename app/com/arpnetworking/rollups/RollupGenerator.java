@@ -19,6 +19,7 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.DataPoint;
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -147,9 +149,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 new TagsQuery.Builder()
                         .setStartTime(Instant.ofEpochMilli(0))
                         .setMetrics(ImmutableList.of(
-                                new MetricTags.Builder()
-                                        .setName(metricName)
-                                        .build()
+                                ThreadLocalBuilder.build(MetricTags.Builder.class, builder -> builder.setName(metricName))
                         ))
                         .build()).handle((response, failure) -> {
                     final String baseMetricName = "rollup/generator/tag_names";
@@ -159,21 +159,21 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             System.nanoTime() - startTime,
                             Optional.of(Units.NANOSECOND));
                     if (failure != null) {
-                        return new TagNamesMessage.Builder()
+                        return ThreadLocalBuilder.build(TagNamesMessage.Builder.class, b -> b
                                 .setMetricName(metricName)
                                 .setFailure(failure)
-                                .build();
+                        );
                     } else {
                         if (response.getQueries().isEmpty() || response.getQueries().get(0).getResults().isEmpty()) {
-                            return new TagNamesMessage.Builder()
+                            return ThreadLocalBuilder.build(TagNamesMessage.Builder.class, b -> b
                                     .setMetricName(metricName)
                                     .setFailure(new UnexpectedQueryResponseException("Empty queries or query results", response))
-                                    .build();
+                            );
                         } else {
-                            return new TagNamesMessage.Builder()
+                            return ThreadLocalBuilder.build(TagNamesMessage.Builder.class, b -> b
                                     .setMetricName(metricName)
                                     .setTags(response.getQueries().get(0).getResults().get(0).getTags())
-                                    .build();
+                            );
                         }
                     }
                 }),
@@ -267,11 +267,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     .log();
 
             getSelf().tell(
-                    new FinishRollupMessage.Builder()
+                    ThreadLocalBuilder.build(FinishRollupMessage.Builder.class, b -> b
                             .setMetricName(sourceMetricName)
                             .setPeriod(period)
                             .setFailure(throwable)
-                            .build(),
+                    ),
                     ActorRef.noSender());
         } else {
             // Example:
@@ -321,10 +321,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
             }
 
             getSelf().tell(
-                    new FinishRollupMessage.Builder()
+                    ThreadLocalBuilder.build(FinishRollupMessage.Builder.class, b -> b
                             .setMetricName(message.getSourceMetricName())
                             .setPeriod(message.getPeriod())
-                            .build(),
+                    ),
                     ActorRef.noSender()
             );
         }
@@ -376,13 +376,16 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final ImmutableMultimap<String, String> tags,
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
-        final LastDataPointsMessage.Builder builder = new LastDataPointsMessage.Builder()
-                .setSourceMetricName(sourceMetricName)
-                .setRollupMetricName(rollupMetricName)
-                .setPeriod(period)
-                .setTags(tags);
+        LastDataPointsMessage result = ThreadLocalBuilder.build(
+                LastDataPointsMessage.Builder.class,
+                builder -> builder
+                        .setSourceMetricName(sourceMetricName)
+                        .setRollupMetricName(rollupMetricName)
+                        .setPeriod(period)
+                        .setTags(tags)
+        );
         if (failure != null) {
-            return builder.setFailure(failure).build();
+            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setFailure(failure));
         }
         final Map<String, Optional<DataPoint>> queryResults =
                 response.getQueries()
@@ -396,20 +399,24 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         // Query results should *only* contain the source and destination metric.
         if (queryResults.size() != 2 || !queryResults.containsKey(sourceMetricName) || !queryResults.containsKey(rollupMetricName)) {
-            return builder.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)).build();
+            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)));
         }
 
         // Set source time, if any.
-        queryResults.get(sourceMetricName)
-                .map(DataPoint::getTime)
-                .ifPresent(builder::setSourceLastDataPointTime);
+        final Optional<Instant> lastSourceTime = queryResults.get(sourceMetricName)
+                .map(DataPoint::getTime);
+        if (lastSourceTime.isPresent()) {
+            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setSourceLastDataPointTime(lastSourceTime.get()));
+        }
 
         // Set rollup time, if any.
-        queryResults.get(rollupMetricName)
-                .map(DataPoint::getTime)
-                .ifPresent(builder::setRollupLastDataPointTime);
+        final Optional<Instant> lastRollupTime = queryResults.get(rollupMetricName)
+                .map(DataPoint::getTime);
+        if (lastRollupTime.isPresent()) {
+            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setRollupLastDataPointTime(lastRollupTime.get()));
+        }
 
-        return builder.build();
+        return result;
     }
 
     private MetricsQuery buildLastDataPointQuery(
@@ -418,7 +425,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final RollupPeriod period,
             final int backfillPeriods
     ) {
-        final Metric.Builder metricBuilder = new Metric.Builder()
+        final Consumer<Metric.Builder> setCommonFields = builder -> builder
                 .setAggregators(ImmutableList.of(
                         new Aggregator.Builder()
                                 .setName("count")
@@ -431,8 +438,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setStartTime(period.recentEndTime(_clock.instant()).minus(period.periodCountToDuration(backfillPeriods)))
                         .setEndTime(period.recentEndTime(_clock.instant()))
                         .setMetrics(ImmutableList.of(
-                             metricBuilder.setName(sourceMetricName).build(),
-                             metricBuilder.setName(rollupMetricName).build()
+                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {setCommonFields.accept(b); b.setName(sourceMetricName);}),
+                             ThreadLocalBuilder.build(Metric.Builder.class, b -> {setCommonFields.accept(b); b.setName(rollupMetricName);})
                         )).build();
     }
 

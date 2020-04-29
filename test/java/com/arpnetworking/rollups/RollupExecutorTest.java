@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.DataPoint;
@@ -123,18 +124,18 @@ public class RollupExecutorTest {
     public void testFetchesNextRollup() {
         final ActorRef actor = createActor();
         _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
-        actor.tell(new RollupExecutor.FinishRollupMessage.Builder()
-                        .setRollupDefinition(new RollupDefinition.Builder()
-                                .setSourceMetricName("metric")
-                                .setDestinationMetricName("metric_1h")
-                                .setPeriod(RollupPeriod.HOURLY)
-                                .setStartTime(Instant.EPOCH)
-                                .setAllMetricTags(ImmutableMultimap.of())
-                                .build()
-                        )
-                        .build(),
-                ActorRef.noSender()
-        );
+        final RollupExecutor.FinishRollupMessage finished = ThreadLocalBuilder.build(
+                RollupExecutor.FinishRollupMessage.Builder.class,
+                b -> b.setRollupDefinition(new RollupDefinition.Builder()
+                        .setSourceMetricName("metric")
+                        .setDestinationMetricName("metric_1h")
+                        .setPeriod(RollupPeriod.HOURLY)
+                        .setStartTime(Instant.EPOCH)
+                        .setAllMetricTags(ImmutableMultimap.of())
+                        .build()
+                )
+                .build();
+        actor.tell(finished, ActorRef.noSender());
         _probe.expectMsg(RollupFetch.getInstance());
     }
 
