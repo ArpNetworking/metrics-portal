@@ -65,7 +65,7 @@ public class RollupManager extends AbstractActorWithTimers {
                         work -> _rollupDefinitions.add(work))
                 .match(
                         RollupExecutor.FinishRollupMessage.class,
-                        this::rollupFinished
+                        this::executorFinished
                 )
                 .match(
                         RollupFetch.class,
@@ -82,13 +82,16 @@ public class RollupManager extends AbstractActorWithTimers {
                 .build();
     }
 
-    private void rollupFinished(final RollupExecutor.FinishRollupMessage message) {
-        if (!message.getFailure().isPresent()) {
+    private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
+        final Optional<Throwable> failure = message.getFailure();
+        _periodicMetrics.recordCounter("rollup/manager/executor_completed/success", failure.isPresent() ? 0 : 1);
+        if (!failure.isPresent()) {
             return;
         }
 
-        if (!RollupPartitioningUtils.mightSplittingFixFailure(message.getFailure().get())) {
-            // TODO(spencerpearson): log?
+        final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
+        _periodicMetrics.recordCounter("rollup/manager/executor_completed/retriable", isRetryable ? 1 : 0);
+        if (!isRetryable) {
             return;
         }
 
@@ -96,7 +99,7 @@ public class RollupManager extends AbstractActorWithTimers {
         try {
             subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
         } catch (final RollupPartitioningUtils.CannotSplitException e) {
-            // TODO(spencerpearson): log?
+            _periodicMetrics.recordCounter("rollup/manager/executor_completed/unsplittable", 1);
             return;
         }
 

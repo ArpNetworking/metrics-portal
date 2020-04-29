@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.mockito.Mockito.when;
 
 /**
- * Test cases for {@link MetricsDiscovery}.
+ * Test cases for {@link RollupManager}.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */

@@ -126,7 +126,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         /**
          * Creates a builder for a RollupDefinition.
          */
-        protected Builder() {
+        public Builder() {
             super(RollupDefinition::new);
         }
 

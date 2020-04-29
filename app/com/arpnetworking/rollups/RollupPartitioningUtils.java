@@ -16,11 +16,12 @@
 package com.arpnetworking.rollups;
 
 import com.arpnetworking.kairos.client.KairosDbRequestException;
-import com.arpnetworking.metrics.apachehttpsinkextra.shaded.org.apache.http.HttpStatus;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 
+import java.io.Serializable;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 
@@ -56,16 +57,23 @@ public final class RollupPartitioningUtils {
     }
 
     public static boolean mightSplittingFixFailure(final Throwable failure) {
-        if (failure instanceof KairosDbRequestException) {
-            final int status = ((KairosDbRequestException) failure).getHttpStatus();
-            return (status == HttpStatus.SC_BAD_GATEWAY
-                    || status == HttpStatus.SC_SERVICE_UNAVAILABLE ||
-                    status == HttpStatus.SC_GATEWAY_TIMEOUT);
+        // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it dies
+        //   halfway through a rollup is _also_ ad-hoc: it seems to 502/503/504 arbitrarily.
+
+        if (!(failure instanceof KairosDbRequestException)) {
+            return false;
         }
-        return false;
+
+        final KairosDbRequestException kdbFailure = ((KairosDbRequestException) failure);
+
+        final boolean wasLong = !kdbFailure.getRequestDuration().minus(Duration.ofSeconds(30)).isNegative();
+        final int statusGroup = kdbFailure.getHttpStatus() / 100 * 100;
+
+        return wasLong && statusGroup == 500;
     }
 
-    public static final class CannotSplitException extends Exception {
+    public static final class CannotSplitException extends Exception implements Serializable {
+        private static final long serialVersionUID = 7426023317765009608L;
         public final RollupDefinition job;
         public CannotSplitException(final RollupDefinition job) {
             super(job.toString());
