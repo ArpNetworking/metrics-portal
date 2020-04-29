@@ -107,11 +107,12 @@ public class RollupExecutor extends AbstractActorWithTimers {
         queryBuilder.setEndTime(rollupDefinition.getEndTime());
 
         metricBuilder.setName(rollupDefinition.getSourceMetricName());
+        metricBuilder.setTags(rollupDefinition.getFilterTags().asMultimap());
 
-        if (!rollupDefinition.getGroupByTags().isEmpty()) {
+        if (!rollupDefinition.getAllMetricTags().isEmpty()) {
             metricBuilder.setGroupBy(ImmutableList.of(
                     new MetricsQuery.QueryTagGroupBy.Builder()
-                            .setTags(rollupDefinition.getGroupByTags())
+                            .setTags(rollupDefinition.getAllMetricTags().keySet())
                             .build()
             ));
         }

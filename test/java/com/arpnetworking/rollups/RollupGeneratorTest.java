@@ -30,7 +30,6 @@ import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -162,7 +161,7 @@ public class RollupGeneratorTest {
         final TagNamesMessage tagNamesMessage = _probe.expectMsgClass(TagNamesMessage.class);
         assertFalse(tagNamesMessage.isFailure());
         assertEquals("metric", tagNamesMessage.getMetricName());
-        assertEquals(2, tagNamesMessage.getTagNames().size());
+        assertEquals(2, tagNamesMessage.getTags().size());
 
         verify(_kairosDbClient, times(1)).queryMetricTags(captor.capture());
         final TagsQuery tagQuery = captor.getValue();
@@ -200,7 +199,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new TagNamesMessage.Builder()
                         .setMetricName("metric")
-                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .build(),
                 ActorRef.noSender());
 
@@ -247,7 +246,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new TagNamesMessage.Builder()
                         .setMetricName("metric")
-                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .build(),
                 ActorRef.noSender());
 
@@ -308,7 +307,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new TagNamesMessage.Builder()
                         .setMetricName("metric")
-                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .build(),
                 ActorRef.noSender());
         final Instant expectedStartTime = RollupPeriod.HOURLY.recentEndTime(_clock.instant())
@@ -356,7 +355,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(null)
                         .build(),
@@ -394,7 +393,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(Instant.EPOCH)
                         .build(),
@@ -436,7 +435,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(lastDataPoint)
                         .build(),
@@ -477,7 +476,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(lastDataPoint)
                         .build(),
@@ -503,7 +502,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setFailure(new RuntimeException("Failure"))
                         .build(),
                 ActorRef.noSender());
@@ -526,7 +525,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(null)
                         .setRollupLastDataPointTime(null)
                         .build(),
@@ -553,7 +552,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(periodsBehind)))
                         .setRollupLastDataPointTime(null)
                         .build(),
@@ -590,7 +589,7 @@ public class RollupGeneratorTest {
         actor.tell(
                 new TagNamesMessage.Builder()
                         .setMetricName("metric")
-                        .setTagNames(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .build(),
                 ActorRef.noSender());
 
@@ -618,7 +617,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1d")
                         .setPeriod(RollupPeriod.DAILY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(lastDataPointTime)
                         .build(),
@@ -645,7 +644,7 @@ public class RollupGeneratorTest {
                         .setSourceMetricName("metric")
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setTags(ImmutableSet.of("tag1", "tag2"))
+                        .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setSourceLastDataPointTime(_clock.instant())
                         .setRollupLastDataPointTime(lastDataPointTime)
                         .build(),

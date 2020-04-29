@@ -30,6 +30,7 @@ import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -128,7 +129,7 @@ public class RollupExecutorTest {
                                 .setDestinationMetricName("metric_1h")
                                 .setPeriod(RollupPeriod.HOURLY)
                                 .setStartTime(Instant.EPOCH)
-                                .setGroupByTags(ImmutableSet.of())
+                                .setAllMetricTags(ImmutableMultimap.of())
                                 .build()
                         )
                         .build(),
@@ -173,7 +174,7 @@ public class RollupExecutorTest {
                         .setSourceMetricName("metric")
                         .setDestinationMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
-                        .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
+                        .setAllMetricTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                         .setStartTime(Instant.EPOCH)
                         .build(),
                 ActorRef.noSender());
@@ -219,7 +220,7 @@ public class RollupExecutorTest {
         RollupDefinition definition = new RollupDefinition.Builder()
                 .setSourceMetricName("my_metric")
                 .setDestinationMetricName("my_metric_1h")
-                .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
+                .setAllMetricTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
                 .build();
@@ -256,7 +257,7 @@ public class RollupExecutorTest {
         definition = new RollupDefinition.Builder()
                 .setSourceMetricName("my_metric_1h")
                 .setDestinationMetricName("my_metric_1d")
-                .setGroupByTags(ImmutableSet.of("tag1", "tag2"))
+                .setAllMetricTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
                 .setPeriod(RollupPeriod.DAILY)
                 .setStartTime(Instant.EPOCH)
                 .build();

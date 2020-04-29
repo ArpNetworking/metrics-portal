@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -43,7 +43,7 @@ public final class LastDataPointsMessage extends FailableMessage {
         return _rollupMetricName;
     }
 
-    public ImmutableSet<String> getTags() {
+    public ImmutableMultimap<String, String> getTags() {
         return _tags;
     }
 
@@ -72,7 +72,7 @@ public final class LastDataPointsMessage extends FailableMessage {
     private final String _sourceMetricName;
     private final String _rollupMetricName;
     private final RollupPeriod _period;
-    private final ImmutableSet<String> _tags;
+    private final ImmutableMultimap<String, String> _tags;
     private final Instant _sourceLastDataPointTime;
     private final Instant _rollupLastDataPointTime;
     private static final long serialVersionUID = 2800761302248621189L;
@@ -118,7 +118,7 @@ public final class LastDataPointsMessage extends FailableMessage {
          * @param value the {@code tags} to set
          * @return a reference to this Builder
          */
-        public Builder setTags(final ImmutableSet<String> value) {
+        public Builder setTags(final ImmutableMultimap<String, String> value) {
             _tags = value;
             return this;
         }
@@ -161,7 +161,7 @@ public final class LastDataPointsMessage extends FailableMessage {
             _sourceMetricName = null;
              _rollupMetricName = null;
             _period = null;
-            _tags = ImmutableSet.of();
+            _tags = ImmutableMultimap.of();
             _sourceLastDataPointTime = null;
             _rollupLastDataPointTime = null;
         }
@@ -180,7 +180,7 @@ public final class LastDataPointsMessage extends FailableMessage {
         @NotNull
         private RollupPeriod _period;
         @NotNull
-        private ImmutableSet<String> _tags = ImmutableSet.of();
+        private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
 
         private Instant _rollupLastDataPointTime;
         private Instant _sourceLastDataPointTime;
