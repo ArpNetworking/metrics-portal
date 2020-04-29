@@ -16,6 +16,7 @@
 package com.arpnetworking.kairos.client.models;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,6 +35,7 @@ import java.util.Objects;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
+@Loggable
 public final class Sampling {
 
     public SamplingUnit getUnit() {
