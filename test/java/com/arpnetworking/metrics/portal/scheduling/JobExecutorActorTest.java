@@ -86,6 +86,7 @@ public final class JobExecutorActorTest {
             @Override
             protected void configure() {
                 bind(MockableIntJobRepository.class).toInstance(_repo);
+                bind(MockableIntJobExecutionRepository.class).toInstance(_execRepo);
                 bind(MetricsFactory.class).toInstance(TsdMetricsFactory.newInstance("test", "test"));
             }
         });
@@ -106,7 +107,6 @@ public final class JobExecutorActorTest {
 
     private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {
         _repo.addOrUpdateJob(job, ORGANIZATION);
-        _execRepo.close();
         return job;
     }
 
