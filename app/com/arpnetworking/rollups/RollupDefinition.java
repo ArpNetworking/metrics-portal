@@ -176,9 +176,9 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         }
 
         /**
-         * Sets the {@code _allMetricTags} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _filterTags} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _allMetricTags} to set
+         * @param value the {@code _filterTags} to set
          * @return a reference to this Builder
          */
         public Builder setFilterTags(final ImmutableMap<String, String> value) {
