@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
 import com.google.common.base.Throwables;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.EbeanServer;
 import models.internal.Organization;
 import models.internal.impl.DefaultReportResult;
@@ -76,6 +77,10 @@ public class DatabaseReportExecutionRepositoryIT {
     }
 
     @Test
+    @SuppressFBWarnings(
+            value = "SIC_INNER_SHOULD_BE_STATIC_ANON",
+            justification = "The 'this' reference is the test class and I'm not concerned about it potentially living too long."
+    )
     public void testJobStarted() {
         final Instant scheduled = Instant.now();
 
@@ -91,23 +96,25 @@ public class DatabaseReportExecutionRepositoryIT {
 
         assertThat(_repository.getLastCompleted(_reportId, _organization), equalTo(Optional.empty()));
 
-        (new JobExecution.Visitor<Report.Result, Void>() {
+        // TODO(cbriones): This doesn't actually require an integer, but spotbugs complains that we're returning null if we use Void.
+        // Of course, in that case there's nothing else we can possibly return. The visitors below should also be changed.
+        (new JobExecution.Visitor<Report.Result, Integer>() {
             @Override
-            public Void visit(final JobExecution.Success<Report.Result> state) {
+            public Integer visit(final JobExecution.Success<Report.Result> state) {
                 fail("Got a success state when expecting started.");
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Failure<Report.Result> state) {
+            public Integer visit(final JobExecution.Failure<Report.Result> state) {
                 fail("Got a failure state when expecting started.");
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Started<Report.Result> state) {
+            public Integer visit(final JobExecution.Started<Report.Result> state) {
                 assertThat(state.getStartedAt(), not(nullValue()));
-                return null;
+                return 0;
             }
         }).apply(execution);
     }
@@ -136,27 +143,27 @@ public class DatabaseReportExecutionRepositoryIT {
         final Optional<JobExecution<Report.Result>> lastRun = _repository.getLastCompleted(_reportId, _organization);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
-        (new JobExecution.Visitor<Report.Result, Void>() {
+        (new JobExecution.Visitor<Report.Result, Integer>() {
             @Override
-            public Void visit(final JobExecution.Success<Report.Result> state) {
+            public Integer visit(final JobExecution.Success<Report.Result> state) {
                 assertThat(state.getCompletedAt(), not(nullValue()));
                 assertThat(state.getJobId(), equalTo(_reportId));
                 assertThat(state.getStartedAt(), not(nullValue()));
                 assertThat(state.getScheduled(), equalTo(scheduled));
                 assertThat(state.getResult(), not(nullValue()));
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Failure<Report.Result> state) {
+            public Integer visit(final JobExecution.Failure<Report.Result> state) {
                 fail("Got a failure state when expecting success.");
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Started<Report.Result> state) {
+            public Integer visit(final JobExecution.Started<Report.Result> state) {
                 fail("Got a started state when expecting success.");
-                return null;
+                return 0;
             }
         }).apply(lastRun.get());
     }
@@ -172,28 +179,28 @@ public class DatabaseReportExecutionRepositoryIT {
         final Optional<JobExecution<Report.Result>> lastRun = _repository.getLastCompleted(_reportId, _organization);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
-        (new JobExecution.Visitor<Report.Result, Void>() {
+        (new JobExecution.Visitor<Report.Result, Integer>() {
             @Override
-            public Void visit(final JobExecution.Success<Report.Result> state) {
+            public Integer visit(final JobExecution.Success<Report.Result> state) {
                 fail("Got a success state when expecting failure.");
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Failure<Report.Result> state) {
+            public Integer visit(final JobExecution.Failure<Report.Result> state) {
                 final Throwable retrievedError = state.getError();
                 assertThat(state.getCompletedAt(), not(nullValue()));
                 assertThat(state.getJobId(), equalTo(_reportId));
                 assertThat(state.getStartedAt(), not(nullValue()));
                 assertThat(state.getScheduled(), equalTo(scheduled));
                 assertThat(retrievedError.getMessage(), equalTo(Throwables.getStackTraceAsString(error)));
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Started<Report.Result> state) {
+            public Integer visit(final JobExecution.Started<Report.Result> state) {
                 fail("Got a started state when expecting failure.");
-                return null;
+                return 0;
             }
         }).apply(lastRun.get());
     }
@@ -235,28 +242,28 @@ public class DatabaseReportExecutionRepositoryIT {
         _repository.jobFailed(_reportId, _organization, scheduled, error);
         final JobExecution<Report.Result> updatedExecution = _repository.getLastCompleted(_reportId, _organization).get();
 
-        (new JobExecution.Visitor<Report.Result, Void>() {
+        (new JobExecution.Visitor<Report.Result, Integer>() {
             @Override
-            public Void visit(final JobExecution.Success<Report.Result> state) {
+            public Integer visit(final JobExecution.Success<Report.Result> state) {
                 fail("Got a success state when expecting failure.");
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Failure<Report.Result> state) {
+            public Integer visit(final JobExecution.Failure<Report.Result> state) {
                 final Throwable retrievedError = state.getError();
                 assertThat(state.getCompletedAt(), not(nullValue()));
                 assertThat(state.getJobId(), equalTo(_reportId));
                 assertThat(state.getStartedAt(), not(nullValue()));
                 assertThat(state.getScheduled(), equalTo(scheduled));
                 assertThat(retrievedError.getMessage(), equalTo(Throwables.getStackTraceAsString(error)));
-                return null;
+                return 0;
             }
 
             @Override
-            public Void visit(final JobExecution.Started<Report.Result> state) {
+            public Integer visit(final JobExecution.Started<Report.Result> state) {
                 fail("Got a started state when expecting failure.");
-                return null;
+                return 0;
             }
         }).apply(updatedExecution);
     }

@@ -24,7 +24,6 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.EbeanServer;
-import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultReport;
@@ -369,14 +368,5 @@ public class DatabaseReportRepositoryIT {
         final JobQuery<Report.Result> query = _repository.createJobQuery(_organization);
         final List<? extends Job<Report.Result>> results = query.execute().values();
         assertThat(results, empty());
-    }
-
-    private Optional<ReportExecution> getExecution(final UUID reportId, final Organization organization, final Instant scheduled) {
-        return _server.find(ReportExecution.class)
-                .where()
-                .eq("report.uuid", reportId)
-                .eq("report.organization.uuid", organization.getId())
-                .eq("scheduled", scheduled)
-                .findOneOrEmpty();
     }
 }
