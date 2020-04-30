@@ -103,9 +103,9 @@ public class RollupManager extends AbstractActorWithTimers {
             return;
         }
 
-        final ImmutableSet<RollupDefinition> subjobs;
+        final ImmutableSet<RollupDefinition> children;
         try {
-            subjobs = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
+            children = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
             _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 0);
         } catch (final RollupPartitioningUtils.CannotSplitException e) {
             _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 1);
@@ -117,7 +117,13 @@ public class RollupManager extends AbstractActorWithTimers {
             return;
         }
 
-        subjobs.forEach(subjob -> getSelf().tell(subjob, getSelf()));
+        LOGGER.info()
+                .setMessage("splitting and retrying job")
+                .addData("parent", message.getRollupDefinition())
+                .addData("children", children)
+                .setThrowable(failure.get())
+                .log();
+        children.forEach(child -> getSelf().tell(child, getSelf()));
     }
 
     private Optional<RollupDefinition> getNextRollup() {
