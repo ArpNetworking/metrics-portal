@@ -16,6 +16,8 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -38,6 +40,7 @@ import javax.inject.Inject;
  */
 public class RollupManager extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
+    private final MetricsFactory _metricsFactory;
     private TreeSet<RollupDefinition> _rollupDefinitions;
 
     private static final Object RECORD_METRICS_MSG = new Object();
@@ -51,8 +54,9 @@ public class RollupManager extends AbstractActorWithTimers {
      * @param periodicMetrics periodic metrics client
      */
     @Inject
-    public RollupManager(final PeriodicMetrics periodicMetrics) {
+    public RollupManager(final PeriodicMetrics periodicMetrics, final MetricsFactory metricsFactory) {
         _periodicMetrics = periodicMetrics;
+        _metricsFactory = metricsFactory;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
         getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
@@ -86,44 +90,49 @@ public class RollupManager extends AbstractActorWithTimers {
     }
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
-        final Optional<Throwable> failure = message.getFailure();
-        _periodicMetrics.recordCounter("rollup/manager/executor_finished/success", failure.isPresent() ? 0 : 1);
-        if (!failure.isPresent()) {
-            return;
-        }
+        try (final Metrics metrics = _metricsFactory.create()) {
+            metrics.addAnnotation("rollup_metric", message.getRollupDefinition().getDestinationMetricName());
+            metrics.incrementCounter("rollup/manager/executor_finished", 1);
 
-        final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
-        _periodicMetrics.recordCounter("rollup/manager/executor_finished/unretriable", isRetryable ? 0 : 1);
-        if (!isRetryable) {
-            LOGGER.warn()
-                    .setMessage("giving up after non-retryable error")
-                    .addData("rollupDefinition", message.getRollupDefinition())
+            final Optional<Throwable> failure = message.getFailure();
+            if (!failure.isPresent()) {
+                metrics.addAnnotation("status", "success");
+                return;
+            }
+
+            final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
+            if (!isRetryable) {
+                LOGGER.warn()
+                        .setMessage("giving up after non-retryable error")
+                        .addData("rollupDefinition", message.getRollupDefinition())
+                        .setThrowable(failure.get())
+                        .log();
+                metrics.addAnnotation("status", "non-retryable");
+                return;
+            }
+
+            final ImmutableSet<RollupDefinition> children;
+            try {
+                children = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
+            } catch (final RollupPartitioningUtils.CannotSplitException e) {
+                LOGGER.error()
+                        .setMessage("giving up on job that can't be split any more")
+                        .addData("rollupDefinition", message.getRollupDefinition())
+                        .setThrowable(failure.get())
+                        .log();
+                metrics.addAnnotation("status", "unsplittable");
+                return;
+            }
+
+            LOGGER.info()
+                    .setMessage("splitting and retrying job")
+                    .addData("parent", message.getRollupDefinition())
+                    .addData("children", children)
                     .setThrowable(failure.get())
                     .log();
-            return;
+            metrics.addAnnotation("status", "splittable");
+            children.forEach(child -> getSelf().tell(child, getSelf()));
         }
-
-        final ImmutableSet<RollupDefinition> children;
-        try {
-            children = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
-            _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 0);
-        } catch (final RollupPartitioningUtils.CannotSplitException e) {
-            _periodicMetrics.recordCounter("rollup/manager/executor_finished/unsplittable", 1);
-            LOGGER.error()
-                    .setMessage("giving up on job that can't be split any more")
-                    .addData("rollupDefinition", message.getRollupDefinition())
-                    .setThrowable(failure.get())
-                    .log();
-            return;
-        }
-
-        LOGGER.info()
-                .setMessage("splitting and retrying job")
-                .addData("parent", message.getRollupDefinition())
-                .addData("children", children)
-                .setThrowable(failure.get())
-                .log();
-        children.forEach(child -> getSelf().tell(child, getSelf()));
     }
 
     private Optional<RollupDefinition> getNextRollup() {
