@@ -215,14 +215,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                  System.nanoTime() - startTime,
                                 Optional.of(Units.NANOSECOND)
                             );
-                            return buildLastDataPointResponse(
-                                sourceMetricName,
-                                rollupMetricName,
-                                period,
-                                message.getTags(),
-                                response,
-                                failure
-                            );
+                            return ThreadLocalBuilder.build(LastDataPointsMessage.Builder.class, b -> buildLastDataPointResponse(
+                                    b,
+                                    sourceMetricName,
+                                    rollupMetricName,
+                                    period,
+                                    message.getTags(),
+                                    response,
+                                    failure
+                            ));
                         }),
                     getContext().dispatcher()
                 ).to(getSelf());
@@ -370,22 +371,20 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private LastDataPointsMessage buildLastDataPointResponse(
+            final LastDataPointsMessage.Builder builder,
             final String sourceMetricName,
             final String rollupMetricName,
             final RollupPeriod period,
             final ImmutableMultimap<String, String> tags,
             final MetricsQueryResponse response,
             @Nullable final Throwable failure) {
-        LastDataPointsMessage result = ThreadLocalBuilder.build(
-                LastDataPointsMessage.Builder.class,
-                builder -> builder
-                        .setSourceMetricName(sourceMetricName)
-                        .setRollupMetricName(rollupMetricName)
-                        .setPeriod(period)
-                        .setTags(tags)
-        );
+        builder.setSourceMetricName(sourceMetricName)
+                .setRollupMetricName(rollupMetricName)
+                .setPeriod(period)
+                .setTags(tags);
+
         if (failure != null) {
-            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class, b -> b.setFailure(failure));
+            return builder.setFailure(failure).build();
         }
         final Map<String, Optional<DataPoint>> queryResults =
                 response.getQueries()
@@ -399,27 +398,20 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         // Query results should *only* contain the source and destination metric.
         if (queryResults.size() != 2 || !queryResults.containsKey(sourceMetricName) || !queryResults.containsKey(rollupMetricName)) {
-            return ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
-                b -> b.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)));
+            return builder.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)).build();
         }
 
         // Set source time, if any.
-        final Optional<Instant> lastSourceTime = queryResults.get(sourceMetricName)
-                .map(DataPoint::getTime);
-        if (lastSourceTime.isPresent()) {
-            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
-                    b -> b.setSourceLastDataPointTime(lastSourceTime.get()));
-        }
+        queryResults.get(sourceMetricName)
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setSourceLastDataPointTime);
 
         // Set rollup time, if any.
-        final Optional<Instant> lastRollupTime = queryResults.get(rollupMetricName)
-                .map(DataPoint::getTime);
-        if (lastRollupTime.isPresent()) {
-            result = ThreadLocalBuilder.clone(result, LastDataPointsMessage.Builder.class,
-                    b -> b.setRollupLastDataPointTime(lastRollupTime.get()));
-        }
+        queryResults.get(rollupMetricName)
+                .map(DataPoint::getTime)
+                .ifPresent(builder::setRollupLastDataPointTime);
 
-        return result;
+        return builder.build();
     }
 
     private MetricsQuery buildLastDataPointQuery(
