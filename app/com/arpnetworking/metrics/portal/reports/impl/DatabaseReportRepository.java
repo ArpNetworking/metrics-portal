@@ -33,7 +33,6 @@ import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
 import models.ebean.PeriodicReportSchedule;
-import models.ebean.ReportExecution;
 import models.ebean.ReportSchedule;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -54,15 +53,12 @@ import play.Environment;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceException;
 
 /**
@@ -144,24 +140,6 @@ public final class DatabaseReportRepository implements ReportRepository {
     @Override
     public Optional<Job<Report.Result>> getJob(final UUID id, final Organization organization) {
         return getReport(id, organization).map(Function.identity());
-    }
-
-    @Override
-    public Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(
-            final UUID reportId,
-            final Organization organization
-    ) throws NoSuchElementException {
-        assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
-                .orderBy()
-                .desc("completed_at")
-                .where()
-                .eq("report.uuid", reportId)
-                .eq("report.organization.uuid", organization.getId())
-                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
-                .setMaxRows(1)
-                .findOneOrEmpty()
-                .map(ReportExecution::getScheduled);
     }
 
     @Override
@@ -288,19 +266,6 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     @Override
-    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
-        assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.FAILURE,
-                null,
-                error
-        );
-    }
-
-    @Override
     public JobQuery<Report.Result> createJobQuery(final Organization organization) {
         assertIsOpen();
         LOGGER.debug()
@@ -329,110 +294,6 @@ public final class DatabaseReportRepository implements ReportRepository {
                         .collect(ImmutableList.toImmutableList());
 
         return new DefaultQueryResult<>(reports, pagedReports.getTotalCount());
-    }
-
-    @Override
-    public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
-        assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.STARTED,
-                null,
-                null
-        );
-    }
-
-    @Override
-    public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
-        assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.SUCCESS,
-                result,
-                null
-        );
-    }
-
-    private void updateExecutionState(
-            final UUID reportId,
-            final Organization organization,
-            final Instant scheduled,
-            final ReportExecution.State state,
-            @Nullable final Report.Result result,
-            @Nullable final Throwable error
-    ) {
-        LOGGER.debug()
-                .setMessage("Updating report executions")
-                .addData("report.uuid", reportId)
-                .addData("scheduled", scheduled)
-                .addData("state", state)
-                .log();
-        try (Transaction transaction = _ebeanServer.beginTransaction()) {
-            final Optional<models.ebean.Report> report = getBeanReport(reportId, organization);
-            if (!report.isPresent()) {
-                final String message = String.format(
-                        "Could not find report with uuid=%s, organization.uuid=%s",
-                        reportId.toString(),
-                        organization.getId()
-                );
-                throw new EntityNotFoundException(message);
-            }
-
-            final Optional<ReportExecution> existingExecution =
-                    _ebeanServer.createQuery(ReportExecution.class)
-                            .where()
-                            .eq("report", report.get())
-                            .eq("scheduled", scheduled)
-                            .findOneOrEmpty();
-            final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
-            newOrUpdatedExecution.setError(error);
-            newOrUpdatedExecution.setReport(report.get());
-            newOrUpdatedExecution.setResult(result);
-            newOrUpdatedExecution.setScheduled(scheduled);
-            newOrUpdatedExecution.setState(state);
-
-            switch (state) {
-                case STARTED:
-                    newOrUpdatedExecution.setStartedAt(Instant.now());
-                    newOrUpdatedExecution.setCompletedAt(null);
-                    break;
-                case FAILURE:
-                case SUCCESS:
-                    newOrUpdatedExecution.setCompletedAt(Instant.now());
-                    break;
-                default:
-                    throw new AssertionError("unreachable branch");
-            }
-
-            if (existingExecution.isPresent()) {
-                _ebeanServer.update(newOrUpdatedExecution);
-            } else {
-                _ebeanServer.save(newOrUpdatedExecution);
-            }
-
-            LOGGER.debug()
-                    .setMessage("Updated report execution")
-                    .addData("report.uuid", reportId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .log();
-            transaction.commit();
-            // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatchCheck
-            LOGGER.error()
-                    .setMessage("Failed to update report executions")
-                    .addData("report.uuid", reportId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .setThrowable(e)
-                    .log();
-            throw new PersistenceException("Failed to update report executions", e);
-        }
     }
 
     private static PagedList<models.ebean.Report> createReportQuery(

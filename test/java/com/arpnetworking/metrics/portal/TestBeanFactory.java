@@ -75,6 +75,7 @@ public final class TestBeanFactory {
     private static final String TEST_NAME = "test-name";
     private static final String TEST_ETAG = "test-etag";
     private static final String TEST_TITLE = "test-title";
+    private static final URI TEST_URI = URI.create("http://example.com");
     private static final List<Operator> OPERATORS = Arrays.asList(
             Operator.EQUAL_TO,
             Operator.GREATER_THAN,
@@ -151,6 +152,30 @@ public final class TestBeanFactory {
                                 .build()))
                 .setReportSource(createWebPageReportSourceBuilder().build())
                 .setSchedule(schedule);
+    }
+
+    /**
+     * Factory method for creating a test bean report.
+     *
+     * @param organization The parent organization of the report.
+     * @return a report
+     */
+    public static models.ebean.Report createEbeanReport(final models.ebean.Organization organization) {
+        final models.ebean.NeverReportSchedule schedule = new models.ebean.NeverReportSchedule();
+        schedule.setRunAt(Instant.EPOCH); // This can't be empty but will never run.
+
+        final models.ebean.WebPageReportSource source = new models.ebean.WebPageReportSource();
+        source.setUuid(UUID.randomUUID());
+        source.setTitle(TEST_TITLE);
+        source.setUri(TEST_URI);
+
+        final models.ebean.Report ebeanReport = new models.ebean.Report();
+        ebeanReport.setOrganization(organization);
+        ebeanReport.setUuid(UUID.randomUUID());
+        ebeanReport.setName(TEST_NAME + UUID.randomUUID().toString());
+        ebeanReport.setReportSource(source);
+        ebeanReport.setSchedule(schedule);
+        return ebeanReport;
     }
 
     /**

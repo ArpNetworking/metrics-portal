@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
@@ -38,6 +39,7 @@ public final class JobMessageExtractorTest {
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .setOrganization(ORGANIZATION)
                 .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
                 .build();
         assertEquals(
                 String.join(
@@ -54,5 +56,5 @@ public final class JobMessageExtractorTest {
             .build();
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
-
+    private static class MockableIntJobExecutionRepository extends MapJobExecutionRepository<Integer> {}
 }

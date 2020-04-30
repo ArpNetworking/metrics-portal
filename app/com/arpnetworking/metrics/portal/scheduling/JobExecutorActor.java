@@ -165,7 +165,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         final JobRef<T> ref = cachedJob.getRef();
         final Job<T> job = cachedJob.getJob();
-        final JobRepository<T> repo = ref.getRepository(_injector);
+        final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
 
         if (_currentlyExecuting) {
             return;
@@ -297,7 +297,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         @SuppressWarnings("unchecked")
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
-        final JobRepository<T> repo = ref.getRepository(_injector);
+        final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
         try {
             final int successMetricValue = message.getError() == null ? 1 : 0;
             _periodicMetrics.recordCounter(

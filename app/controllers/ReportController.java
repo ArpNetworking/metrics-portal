@@ -20,6 +20,7 @@ import akka.cluster.sharding.ClusterSharding;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportQuery;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
@@ -261,6 +262,7 @@ public class ReportController extends Controller {
                                 .setId(reportId)
                                 .setOrganization(_organizationRepository.get(request()))
                                 .setRepositoryType(ReportRepository.class)
+                                .setExecutionRepositoryType(ReportExecutionRepository.class)
                                 .build())
                         .build(),
                 ActorRef.noSender());
