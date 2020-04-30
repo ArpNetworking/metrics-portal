@@ -50,8 +50,12 @@ public final class RollupPartitioningUtils {
         final Optional<String> nextFilterTag = allTags.keySet().stream()
                 .filter(tag -> !filterTags.containsKey(tag)) // already filtered on
                 .filter(tag -> allTags.get(tag).size() > 1) // no point splitting on a single-value tag
-                .max(Comparator.comparing(
-                        tag -> allTags.get(tag).size()
+                .min(Comparator.comparing(
+                        // Ad-hoc, not-super-principled attempt to balance the per-query overhead of splitting too much
+                        //   against the risk of splitting too little and having the sub-jobs time out:
+                        //   take the tag whose number of values is closest to 10, in log-space.
+                        //     (graph: https://www.desmos.com/calculator/vpr78hofys )
+                        tag -> Math.abs(Math.log10(allTags.get(tag).size()) - 1)
                 ));
 
         if (!nextFilterTag.isPresent()) {
