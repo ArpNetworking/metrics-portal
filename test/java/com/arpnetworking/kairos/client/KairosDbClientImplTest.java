@@ -27,6 +27,7 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,6 +77,7 @@ public class KairosDbClientImplTest {
                 .setActorSystem(_actorSystem)
                 .setMapper(OBJECT_MAPPER)
                 .setReadTimeout(new FiniteDuration(30, TimeUnit.SECONDS))
+                .setMetricsFactory(new NoOpMetricsFactory())
                 .build();
     }
 

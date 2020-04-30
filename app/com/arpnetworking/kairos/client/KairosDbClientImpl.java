@@ -34,11 +34,15 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagNamesResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.service.KairosDbServiceImpl;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
@@ -48,6 +52,8 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -60,27 +66,29 @@ import java.util.concurrent.TimeUnit;
 public final class KairosDbClientImpl implements KairosDbClient {
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
+        final Metrics metrics = _metricsFactory.create();
         final UUID queryUuid = UUID.randomUUID();
-        LOGGER.debug()
+        final JsonNode queryJson = _mapper.valueToTree(query);
+        LOGGER.trace()
                 .setMessage("starting queryMetrics")
                 .addData("queryUuid", queryUuid)
-                .addData("query", query)
+                .addData("query", queryJson)
                 .log();
-        try {
-            final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
-                    .withEntity(ContentTypes.APPLICATION_JSON, _mapper.writeValueAsString(query));
-            return fireRequest(request, MetricsQueryResponse.class)
-                    .whenComplete((response, error) -> {
-                        LOGGER.debug()
-                                .setMessage("finished queryMetrics")
-                                .addData("queryUuid", queryUuid)
-                                .addData("query", query)
-                                .addData("success", error == null)
-                                .log();
-                    });
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        final HttpRequest request = HttpRequest.POST(createUri(METRICS_QUERY_PATH).toString())
+                .withEntity(ContentTypes.APPLICATION_JSON, queryJson.toString());
+        final Instant startTime = Instant.now();
+        return fireRequest(request, MetricsQueryResponse.class)
+                .whenComplete((response, error) -> {
+                    LOGGER.trace()
+                            .setMessage("finished queryMetrics")
+                            .addData("queryUuid", queryUuid)
+                            .addData("query", queryJson)
+                            .addData("duration", Duration.between(startTime, Instant.now()))
+                            .setThrowable(error)
+                            .log();
+                    metrics.incrementCounter("kairosClient/queryMetrics/success", error == null ? 1 : 0);
+                    metrics.close();
+                });
     }
 
     @Override
@@ -188,6 +196,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
         _http = Http.get(actorSystem);
         _materializer = ActorMaterializer.create(actorSystem);
         _readTimeout = builder._readTimeout;
+        _metricsFactory = builder._metricsFactory;
     }
 
     private final ObjectMapper _mapper;
@@ -195,6 +204,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     private final ActorMaterializer _materializer;
     private final URI _uri;
     private final FiniteDuration _readTimeout;
+    private final MetricsFactory _metricsFactory;
 
     static final URI METRICS_QUERY_PATH = URI.create("/api/v1/datapoints/query");
     static final URI METRICS_NAMES_PATH = URI.create("/api/v1/metricnames");
@@ -260,6 +270,17 @@ public final class KairosDbClientImpl implements KairosDbClient {
             return this;
         }
 
+        /**
+         * Sets the {@link MetricsFactory} to use. Cannot be null.
+         *
+         * @param value the {@link MetricsFactory} to use
+         * @return this {@link KairosDbServiceImpl.Builder}
+         */
+        public Builder setMetricsFactory(final MetricsFactory value) {
+            _metricsFactory = value;
+            return this;
+        }
+
         @NotNull
         @JacksonInject
         private ActorSystem _actorSystem;
@@ -270,5 +291,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
         private URI _uri;
         @NotNull
         private FiniteDuration _readTimeout = FiniteDuration.apply(1, TimeUnit.HOURS);
+        @NotNull
+        private MetricsFactory _metricsFactory;
     }
 }

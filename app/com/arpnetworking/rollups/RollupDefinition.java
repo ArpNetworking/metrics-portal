@@ -17,7 +17,8 @@ package com.arpnetworking.rollups;
 
 import akka.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -36,14 +37,16 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     private final String _destinationMetricName;
     private final RollupPeriod _period;
     private final Instant _startTime;
-    private final ImmutableSet<String> _groupByTags;
+    private final ImmutableMap<String, String> _filterTags;
+    private final ImmutableMultimap<String, String> _allMetricTags;
 
     private RollupDefinition(final Builder builder) {
         _sourceMetricName = builder._sourceMetricName;
         _destinationMetricName = builder._destinationMetricName;
         _period = builder._period;
         _startTime = builder._startTime;
-        _groupByTags = builder._groupByTags;
+        _filterTags = builder._filterTags;
+        _allMetricTags = builder._allMetricTags;
     }
 
     public String getSourceMetricName() {
@@ -62,8 +65,12 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         return _startTime;
     }
 
-    public ImmutableSet<String> getGroupByTags() {
-        return _groupByTags;
+    public ImmutableMap<String, String> getFilterTags() {
+        return _filterTags;
+    }
+
+    public ImmutableMultimap<String, String> getAllMetricTags() {
+        return _allMetricTags;
     }
 
     @Override
@@ -78,12 +85,14 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         return _sourceMetricName.equals(that._sourceMetricName)
                 && _destinationMetricName.equals(that._destinationMetricName)
                 && _period == that._period
-                && _startTime.equals(that._startTime);
+                && _startTime.equals(that._startTime)
+                && _filterTags.equals(that._filterTags)
+                && _allMetricTags.equals(that._allMetricTags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _groupByTags);
+        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _filterTags, _allMetricTags);
     }
 
     @Override
@@ -110,7 +119,9 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         @NotNull
         private Instant _startTime;
         @NotNull
-        private ImmutableSet<String> _groupByTags;
+        private ImmutableMap<String, String> _filterTags = ImmutableMap.of();
+        @NotNull
+        private ImmutableMultimap<String, String> _allMetricTags;
 
         /**
          * Creates a builder for a RollupDefinition.
@@ -164,13 +175,24 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         }
 
         /**
-         * Sets the {@code _groupByTags} and returns a reference to this Builder so that the methods can be chained together.
+         * Sets the {@code _filterTags} and returns a reference to this Builder so that the methods can be chained together.
          *
-         * @param value the {@code _groupByTags} to set
+         * @param value the {@code _filterTags} to set
          * @return a reference to this Builder
          */
-        public Builder setGroupByTags(final ImmutableSet<String> value) {
-            _groupByTags = value;
+        public Builder setFilterTags(final ImmutableMap<String, String> value) {
+            _filterTags = value;
+            return this;
+        }
+
+        /**
+         * Sets the {@code _allMetricTags} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param value the {@code _allMetricTags} to set
+         * @return a reference to this Builder
+         */
+        public Builder setAllMetricTags(final ImmutableMultimap<String, String> value) {
+            _allMetricTags = value;
             return this;
         }
     }
