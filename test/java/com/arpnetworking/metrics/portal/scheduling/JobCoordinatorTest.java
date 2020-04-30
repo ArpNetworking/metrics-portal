@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
 import com.google.inject.AbstractModule;
@@ -111,6 +112,7 @@ public class JobCoordinatorTest {
                 .setId(job.getId())
                 .setOrganization(_organization)
                 .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
                 .build();
     }
 
@@ -119,6 +121,7 @@ public class JobCoordinatorTest {
                 _injector,
                 _clock,
                 MockableIntJobRepository.class,
+                MockableIntJobExecutionRepository.class,
                 _organizationRepo,
                 _messageExtractor.getRef(),
                 _periodicMetrics);
@@ -160,4 +163,5 @@ public class JobCoordinatorTest {
     }
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
+    private static class MockableIntJobExecutionRepository extends MapJobExecutionRepository<Integer> {}
 }

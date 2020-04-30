@@ -29,8 +29,6 @@ import models.internal.impl.DefaultQueryResult;
 import models.internal.reports.Report;
 import models.internal.scheduling.Job;
 
-import java.time.Instant;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -99,48 +97,6 @@ public final class NoReportRepository implements ReportRepository {
     @Override
     public Optional<Job<Report.Result>> getJob(final UUID id, final Organization organization) {
         return getReport(id, organization).map(Function.identity());
-    }
-
-    @Override
-    public Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(final UUID id, final Organization organization)
-            throws NoSuchElementException {
-        assertIsOpen();
-        return Optional.empty();
-    }
-
-    @Override
-    public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Report job started")
-                .addData("report.uuid", id)
-                .addData("organization", organization)
-                .addData("scheduled", scheduled)
-                .log();
-    }
-
-    @Override
-    public void jobSucceeded(final UUID id, final Organization organization, final Instant scheduled, final Report.Result result) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Report job succeeded")
-                .addData("report.uuid", id)
-                .addData("organization", organization)
-                .addData("scheduled", scheduled)
-                .addData("result", result)
-                .log();
-    }
-
-    @Override
-    public void jobFailed(final UUID id, final Organization organization, final Instant scheduled, final Throwable error) {
-        assertIsOpen();
-        LOGGER.debug()
-                .setMessage("Report job failed")
-                .addData("report.uuid", id)
-                .addData("organization", organization)
-                .addData("scheduled", scheduled)
-                .addData("error", error)
-                .log();
     }
 
     @Override

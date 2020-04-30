@@ -16,7 +16,7 @@
 
 package models.ebean;
 
-import com.google.common.base.Throwables;
+import com.google.common.base.MoreObjects;
 import io.ebean.annotation.DbJsonB;
 
 import java.time.Instant;
@@ -36,11 +36,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for a {@link Report}.
- *
+ * An execution event for a {@link ReportExecution}.
+ * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality
- * which serializes the state of the object can be dangerous (e.g. {@code toString},
+ * which serializes the state of the object could be side-effectful (e.g. {@code toString},
  * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
@@ -50,7 +50,6 @@ import javax.persistence.Table;
 @Table(name = "report_executions", schema = "portal")
 @IdClass(ReportExecution.Key.class)
 public final class ReportExecution {
-
     private static final String EXCEPTION_KEY = "exception";
 
     @Id
@@ -132,7 +131,7 @@ public final class ReportExecution {
     /**
      * Get the error associated with this execution, if any.
      *
-     * @return The error encoded as a string.
+     * @return The error message encoded as a string.
      */
     @Nullable
     public String getError() {
@@ -140,16 +139,25 @@ public final class ReportExecution {
     }
 
     /**
-     * Set the error associated with this execution.
+     * Set the error message associated with this execution.
      *
      * @param value the error
      */
-    public void setError(@Nullable final Throwable value) {
-        if (value == null) {
-            error = null;
-            return;
-        }
-        error = Collections.singletonMap(EXCEPTION_KEY, Throwables.getStackTraceAsString(value));
+    public void setError(final String value) {
+        error = Collections.singletonMap(EXCEPTION_KEY, value);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("report", report)
+                .add("state", state)
+                .add("scheduled", scheduled)
+                .add("started_at", started_at)
+                .add("completed_at", completed_at)
+                .add("result", result)
+                .add("error", error)
+                .toString();
     }
 
     /**

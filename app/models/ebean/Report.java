@@ -17,6 +17,7 @@ package models.ebean;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import io.ebean.EbeanServer;
 import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.UpdatedTimestamp;
@@ -28,6 +29,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -194,6 +196,24 @@ public class Report {
         organization = value;
     }
 
+    /**
+     * Finds a {@link Report} when given a uuid.
+     *
+     * @param ebeanServer The {@code EbeanServer} instance to use.
+     * @param organization The parent organization for this report.
+     * @param reportId The report uuid to lookup.
+     * @return The report from the database.
+     */
+    public static Optional<Report> findByUUID(
+            final EbeanServer ebeanServer,
+            final models.ebean.Organization organization,
+            final UUID reportId) {
+        return ebeanServer.find(models.ebean.Report.class)
+                .where()
+                .eq("uuid", reportId)
+                .eq("organization.uuid", organization.getUuid())
+                .findOneOrEmpty();
+    }
 
     /**
      * Transform this object into its internal representation.
