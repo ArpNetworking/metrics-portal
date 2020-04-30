@@ -16,13 +16,12 @@
 
 package models.ebean;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.base.MoreObjects;
 import io.ebean.annotation.DbJsonB;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -37,11 +36,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for a {@link Report}.
+ * An execution event for a {@link ReportExecution}.
  * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality
- * which serializes the state of the object can be dangerous (e.g. {@code toString},
+ * which serializes the state of the object could be side-effectful (e.g. {@code toString},
  * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
@@ -51,6 +50,8 @@ import javax.persistence.Table;
 @Table(name = "report_executions", schema = "portal")
 @IdClass(ReportExecution.Key.class)
 public final class ReportExecution {
+    private static final String EXCEPTION_KEY = "exception";
+
     @Id
     @ManyToOne(optional = false)
     @JoinColumn(name = "report_id")
@@ -74,7 +75,7 @@ public final class ReportExecution {
     @Nullable
     @DbJsonB
     @Column(name = "error")
-    private Error error;
+    private Map<String, String> error;
 
     public Report getReport() {
         return report;
@@ -130,20 +131,33 @@ public final class ReportExecution {
     /**
      * Get the error associated with this execution, if any.
      *
-     * @return The error encoded as a string.
+     * @return The error message encoded as a string.
      */
     @Nullable
-    public Error getError() {
-        return error;
+    public String getError() {
+        return error == null ? null : error.get(EXCEPTION_KEY);
     }
 
     /**
-     * Set the error associated with this execution.
+     * Set the error message associated with this execution.
      *
      * @param value the error
      */
-    public void setError(@Nullable final Error value) {
-        error = value;
+    public void setError(final String value) {
+        error = Collections.singletonMap(EXCEPTION_KEY, value);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("report", report)
+                .add("state", state)
+                .add("scheduled", scheduled)
+                .add("started_at", started_at)
+                .add("completed_at", completed_at)
+                .add("result", result)
+                .add("error", error)
+                .toString();
     }
 
     /**
@@ -171,11 +185,11 @@ public final class ReportExecution {
     protected static final class Key {
         @Nullable
         @Column(name = "report_id")
-        private final Long reportId;
+        private Long reportId;
 
         @Nullable
         @Column(name = "scheduled")
-        private final Instant scheduled;
+        private Instant scheduled;
 
         /**
          * Default constructor, required by Ebean.
@@ -201,62 +215,6 @@ public final class ReportExecution {
         public int hashCode() {
             return Objects.hash(reportId, scheduled);
         }
-    }
-
-    /**
-     * A container for errors that occurred during report execution.
-     */
-    @JsonTypeInfo(
-            use = JsonTypeInfo.Id.NAME,
-            defaultImpl = ErrorString.class,
-            property = "type"
-    )
-    @JsonSubTypes({
-            @JsonSubTypes.Type(value = ErrorString.class, name = "ERROR_STRING"),
-    })
-    public abstract static class Error {
-        /**
-         * Get a throwable corresponding to the underlying error.
-         * <p>
-         * Depending on the implementation, wrapping a throwable in an {@code Error} may be lossy.
-         * That is, it's not guaranteed in general that {@code new Error(t).getThrowable() == t}.
-         *
-         * @return A throwable for this error.
-         * @implSpec It's left unspecified if the throwable returned is always the same instance.
-         */
-        @JsonIgnore
-        public abstract Throwable getThrowable();
-    }
-
-    /**
-     * An error storage format that only contains an error message.
-     * <p>
-     * This is intended to be backwards compatible with existing ReportExecution entries,
-     * whose error format consisted of {@code Map<String, String>}.
-     */
-    public static final class ErrorString extends Error {
-        private final String _message;
-
-        /**
-         * Constructor.
-         *
-         * @param message The error message
-         */
-        public ErrorString(@JsonProperty("exception") final String message) {
-            this._message = message;
-        }
-
-        @JsonProperty("exception")
-        public String getMessage() {
-            return _message;
-        }
-
-
-        @Override
-        public Throwable getThrowable() {
-            return new Throwable(_message);
-        }
-
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

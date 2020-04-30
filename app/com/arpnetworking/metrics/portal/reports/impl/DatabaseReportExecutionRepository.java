@@ -117,7 +117,9 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
             if (execution instanceof JobExecution.Success) {
                 return Optional.of((JobExecution.Success<Report.Result>) execution);
             }
-            throw new IllegalStateException("execution returned was not a success");
+            throw new IllegalStateException(
+                    String.format("execution returned was not a success when specified by the query: %s", row.get())
+            );
         }
         return Optional.empty();
     }
@@ -176,7 +178,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                 scheduled,
                 ReportExecution.State.FAILURE,
                 execution -> {
-                    execution.setError(new ReportExecution.ErrorString(Throwables.getStackTraceAsString(error)));
+                    execution.setError(Throwables.getStackTraceAsString(error));
                     execution.setCompletedAt(Instant.now());
                 }
         );
@@ -262,7 +264,7 @@ public final class DatabaseReportExecutionRepository implements JobExecutionRepo
                         .setStartedAt(beanModel.getStartedAt())
                         .build();
             case FAILURE:
-                @Nullable final Throwable throwable = beanModel.getError() == null ? null : beanModel.getError().getThrowable();
+                @Nullable final Throwable throwable = beanModel.getError() == null ? null : new Throwable(beanModel.getError());
                 return new JobExecution.Failure.Builder<Report.Result>()
                         .setJobId(beanModel.getReport().getUuid())
                         .setScheduled(beanModel.getScheduled())

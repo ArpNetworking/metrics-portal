@@ -19,11 +19,8 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
-import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
@@ -34,7 +31,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -263,18 +259,6 @@ public class DatabaseReportExecutionRepositoryIT {
                 return null;
             }
         }).apply(updatedExecution);
-    }
-
-    @Test
-    public void testErrorSerializationIsBackwardsCompatible() throws Exception {
-        final String errorMessage = "boom";
-        final Map<String, String> oldErrorMap = ImmutableMap.of("exception", errorMessage);
-
-        final ObjectMapper mapper = new ObjectMapper();
-        final String serialized = mapper.writeValueAsString(oldErrorMap);
-        final ReportExecution.Error newError = mapper.readValue(serialized, ReportExecution.Error.class);
-
-        assertThat(newError.getThrowable().getMessage(), equalTo(errorMessage));
     }
 
     private Report.Result newResult() {
