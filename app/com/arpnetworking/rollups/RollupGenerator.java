@@ -370,7 +370,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         timers().startSingleTimer("sleepTimer", FETCH_METRIC, _fetchBackoff);
     }
 
-    private LastDataPointsMessage buildLastDataPointResponse(
+    private LastDataPointsMessage.Builder buildLastDataPointResponse(
             final LastDataPointsMessage.Builder builder,
             final String sourceMetricName,
             final String rollupMetricName,
@@ -384,7 +384,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .setTags(tags);
 
         if (failure != null) {
-            return builder.setFailure(failure).build();
+            return builder.setFailure(failure);
         }
         final Map<String, Optional<DataPoint>> queryResults =
                 response.getQueries()
@@ -398,7 +398,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
         // Query results should *only* contain the source and destination metric.
         if (queryResults.size() != 2 || !queryResults.containsKey(sourceMetricName) || !queryResults.containsKey(rollupMetricName)) {
-            return builder.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response)).build();
+            return builder.setFailure(new UnexpectedQueryResponseException("Unexpected or missing metric names", response));
         }
 
         // Set source time, if any.
@@ -411,7 +411,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .map(DataPoint::getTime)
                 .ifPresent(builder::setRollupLastDataPointTime);
 
-        return builder.build();
+        return builder;
     }
 
     private MetricsQuery buildLastDataPointQuery(
