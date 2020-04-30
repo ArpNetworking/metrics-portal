@@ -19,8 +19,6 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.scheduling.Job;
 
-import java.time.Instant;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,47 +49,6 @@ public interface JobRepository<T> {
      * @return The Job stored with that key.
      */
     Optional<Job<T>> getJob(UUID id, Organization organization);
-
-    /**
-     * Get the last time that any completed execution for a given job was scheduled for.
-     *
-     * More precisely, in pseudocode, {@code job.executions().filter(hasCompleted).map(scheduledFor).max()}.
-     *
-     * @param id The id assigned to the Job by a previous call to {@code add}.
-     * @param organization The organization owning the job.
-     * @return The last time that any completed execution for the job was scheduled for.
-     * @throws NoSuchElementException if no job has the given UUID.
-     */
-    Optional<Instant> getLastScheduledTimeWhereExecutionCompleted(UUID id, Organization organization) throws NoSuchElementException;
-
-    /**
-     * Notify the repository that a job has started executing.
-     *
-     * @param id The UUID of the job that completed.
-     * @param organization The organization owning the job.
-     * @param scheduled The time that the job started running for.
-     */
-    void jobStarted(UUID id, Organization organization, Instant scheduled);
-
-    /**
-     * Notify the repository that a job finished executing successfully.
-     *
-     * @param id The UUID of the job that completed.
-     * @param organization The organization owning the job.
-     * @param scheduled The time that the completed job-run was scheduled for.
-     * @param result The result that the job computed.
-     */
-    void jobSucceeded(UUID id, Organization organization, Instant scheduled, T result);
-
-    /**
-     * Notify the repository that a job encountered an error and aborted execution.
-     *
-     * @param id The UUID of the job that failed.
-     * @param organization The organization owning the job.
-     * @param scheduled The time that the failed job-run was scheduled for.
-     * @param error The exception that caused the job to fail.
-     */
-    void jobFailed(UUID id, Organization organization, Instant scheduled, Throwable error);
 
     /**
      * Create a job query against this repository.

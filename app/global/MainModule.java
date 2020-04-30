@@ -58,6 +58,7 @@ import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
+import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DefaultDevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
@@ -147,6 +148,9 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(ReportRepository.class)
                 .toProvider(ReportRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(ReportExecutionRepository.class)
+                .toProvider(ReportExecutionRepositoryProvider.class)
                 .asEagerSingleton();
 
         // Background tasks
@@ -517,6 +521,38 @@ public class MainModule extends AbstractModule {
         private final ApplicationLifecycle _lifecycle;
     }
 
+    private static final class ReportExecutionRepositoryProvider implements Provider<ReportExecutionRepository> {
+        @Inject
+        ReportExecutionRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public ReportExecutionRepository get() {
+            final ReportExecutionRepository executionRepository = _injector.getInstance(
+                    ConfigurationHelper.<ReportExecutionRepository>getType(_environment, _configuration, "reportExecutionRepository.type"));
+            executionRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        executionRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return executionRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
     private static final class HostProviderProvider implements Provider<ActorRef> {
         @Inject
         HostProviderProvider(
@@ -568,7 +604,12 @@ public class MainModule extends AbstractModule {
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 return _system.actorOf(ClusterSingletonManager.props(
-                        JobCoordinator.props(_injector, ReportRepository.class, _organizationRepository, _executorRegion, _periodicMetrics),
+                        JobCoordinator.props(_injector,
+                                ReportRepository.class,
+                                ReportExecutionRepository.class,
+                                _organizationRepository,
+                                _executorRegion,
+                                _periodicMetrics),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
                         "ReportJobCoordinator");

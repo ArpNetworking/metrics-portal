@@ -41,9 +41,11 @@ public final class JobRef<T> implements Serializable {
     private final Class<? extends JobRepository<T>> _repositoryType;
     private final UUID _jobId;
     private final UUID _orgId;
+    private final Class<? extends JobExecutionRepository<T>> _execRepositoryType;
 
     private JobRef(final Builder<T> builder) {
         _repositoryType = builder._repositoryType;
+        _execRepositoryType = builder._execRepositoryType;
         _jobId = builder._jobId;
         _orgId = builder._orgId;
     }
@@ -96,6 +98,16 @@ public final class JobRef<T> implements Serializable {
         return injector.getInstance(_repositoryType);
     }
 
+    /**
+     * Loads the {@link JobExecutionRepository} that {@code execRepositoryType} refers to.
+     *
+     * @param injector The Guice injector to load the repository through.
+     * @return The repository that the given injector has for this ref's {@code repositoryType}.
+     */
+    public JobExecutionRepository<T> getExecutionRepository(final Injector injector) {
+        return injector.getInstance(_execRepositoryType);
+    }
+
     public Class<? extends JobRepository<T>> getRepositoryType() {
         return _repositoryType;
     }
@@ -121,6 +133,8 @@ public final class JobRef<T> implements Serializable {
         @NotNull
         private Class<? extends JobRepository<T>> _repositoryType;
         @NotNull
+        private Class<? extends JobExecutionRepository<T>> _execRepositoryType;
+        @NotNull
         private UUID _jobId;
         @NotNull
         private UUID _orgId;
@@ -140,6 +154,17 @@ public final class JobRef<T> implements Serializable {
          */
         public Builder<T> setRepositoryType(final Class<? extends JobRepository<T>> repositoryType) {
             _repositoryType = repositoryType;
+            return this;
+        }
+
+        /**
+         * The type of the {@link JobExecutionRepository} that contains the results of each job. Required. Cannot be null.
+         *
+         * @param repositoryType The type of the repository, later used to load the repository via Guice.
+         * @return This instance of Builder.
+         */
+        public Builder<T> setExecutionRepositoryType(final Class<? extends JobExecutionRepository<T>> repositoryType) {
+            _execRepositoryType = repositoryType;
             return this;
         }
 

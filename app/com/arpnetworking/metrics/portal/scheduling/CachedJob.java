@@ -22,6 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import models.internal.scheduling.Job;
+import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -102,7 +103,9 @@ public final class CachedJob<T> implements Job<T> {
         }
         _periodicMetrics.recordCounter("cached_job_reload_success", 1);
         _cached = loaded.get();
-        _lastRun = _ref.getRepository(injector).getLastScheduledTimeWhereExecutionCompleted(_ref.getJobId(), _ref.getOrganization());
+        _lastRun = _ref.getExecutionRepository(injector)
+                .getLastCompleted(_ref.getJobId(), _ref.getOrganization())
+                .map(JobExecution::getScheduled);
     }
 
     /**

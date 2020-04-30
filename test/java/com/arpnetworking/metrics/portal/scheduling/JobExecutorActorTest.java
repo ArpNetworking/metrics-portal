@@ -25,6 +25,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
@@ -58,6 +59,17 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class JobExecutorActorTest {
 
 
+    private static final Instant T_0 = Instant.ofEpochMilli(0);
+    private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
+    private static final Organization ORGANIZATION = TestBeanFactory.organizationFrom(TestBeanFactory.createEbeanOrganization());
+    private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
+    private Injector _injector;
+    private MockableIntJobRepository _repo;
+    private MockableIntJobExecutionRepository _execRepo;
+    private ManualClock _clock;
+    private PeriodicMetrics _periodicMetrics;
+    private ActorSystem _system;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -65,12 +77,16 @@ public final class JobExecutorActorTest {
         _repo = Mockito.spy(new MockableIntJobRepository());
         _repo.open();
 
+        _execRepo = Mockito.spy(new MockableIntJobExecutionRepository());
+        _execRepo.open();
+
         _clock = new ManualClock(T_0, TICK_SIZE, ZoneId.systemDefault());
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
                 bind(MockableIntJobRepository.class).toInstance(_repo);
+                bind(MockableIntJobExecutionRepository.class).toInstance(_execRepo);
                 bind(MetricsFactory.class).toInstance(TsdMetricsFactory.newInstance("test", "test"));
             }
         });
@@ -105,6 +121,7 @@ public final class JobExecutorActorTest {
     private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
                 .setId(job.getId())
                 .setOrganization(ORGANIZATION)
                 .build();
@@ -122,7 +139,7 @@ public final class JobExecutorActorTest {
                 .build());
         makeAndInitializeExecutorActor(j);
 
-        Mockito.verify(_repo, Mockito.timeout(1000)).jobSucceeded(
+        Mockito.verify(_execRepo, Mockito.timeout(1000)).jobSucceeded(
                 j.getId(),
                 ORGANIZATION,
                 j.getSchedule().nextRun(Optional.empty()).get(),
@@ -139,7 +156,7 @@ public final class JobExecutorActorTest {
                 .build());
         makeAndInitializeExecutorActor(j);
 
-        Mockito.verify(_repo, Mockito.timeout(1000)).jobFailed(
+        Mockito.verify(_execRepo, Mockito.timeout(1000)).jobFailed(
                 Mockito.eq(j.getId()),
                 Mockito.eq(ORGANIZATION),
                 Mockito.eq(j.getSchedule().nextRun(Optional.empty()).get()),
@@ -156,9 +173,9 @@ public final class JobExecutorActorTest {
                         .build());
         makeAndInitializeExecutorActor(j);
 
-        Mockito.verify(_repo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.verify(_repo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.verify(_repo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -180,7 +197,7 @@ public final class JobExecutorActorTest {
 
         final ActorRef executor = makeAndInitializeExecutorActor(job);
 
-        Mockito.verify(_repo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
 
         // Now that execution has started once, execution shouldn't start until the job completes, even if the executor ticks several times
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
@@ -188,31 +205,29 @@ public final class JobExecutorActorTest {
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
         // (ensure that the job didn't weirdly complete for some reason)
-        Mockito.verify(_repo, Mockito.after(1000).never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.after(1000).never()).jobSucceeded(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any());
         // Ensure that, despite the ticks, still only a single execution for the job has ever started
-        Mockito.verify(_repo, Mockito.timeout(1000).times(1)).jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(Mockito.eq(job.getId()),
+                Mockito.eq(ORGANIZATION),
+                Mockito.any());
 
         blocker.complete(null);
 
         // NOW we should be able to run again; the necessary tick should have been triggered by job completion
-        Mockito.verify(_repo, Mockito.timeout(1000))
+        Mockito.verify(_execRepo, Mockito.timeout(1000))
                 .jobStarted(job.getId(), ORGANIZATION, job.getSchedule().nextRun(Optional.of(startAt)).get());
         // ...but still, only two executions should ever have started (one for T_0, one for T_0+period i.e. now)
-        Mockito.verify(_repo, Mockito.timeout(1000).times(2))
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
                 .jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
     }
 
-    private Injector _injector;
-    private MockableIntJobRepository _repo;
-    private ManualClock _clock;
-    private PeriodicMetrics _periodicMetrics;
-    private ActorSystem _system;
+    private static class MockableIntJobRepository extends MapJobRepository<Integer> {
+    }
 
-    private static final Instant T_0 = Instant.ofEpochMilli(0);
-    private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
-    private static final Organization ORGANIZATION = TestBeanFactory.organizationFrom(TestBeanFactory.createEbeanOrganization());
-    private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
-
-    private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
-
+    private static class MockableIntJobExecutionRepository extends MapJobExecutionRepository<Integer> {
+    }
 }
