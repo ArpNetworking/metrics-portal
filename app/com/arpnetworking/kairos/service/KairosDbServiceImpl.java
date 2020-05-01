@@ -113,7 +113,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
         return getMetricNames(metrics)
                 .thenApply(list -> filterMetricNames(list, containing, prefix, filterRollups))
-                .thenApply(list -> new MetricNamesResponse.Builder().setResults(list).build())
+                .thenApply(list -> ThreadLocalBuilder.build(MetricNamesResponse.Builder.class, b -> b.setResults(list)))
                 .whenComplete((result, error) -> {
                     timer.stop();
                     metrics.incrementCounter("kairosService/queryMetricNames/success", error == null ? 1 : 0);
