@@ -16,6 +16,8 @@
 package models.internal.scheduling;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import net.sf.oval.constraint.NotNull;
 
@@ -185,6 +187,34 @@ public abstract class JobExecution<T> {
             return visitor.visit(this);
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Started<?> started = (Started<?>) o;
+            return Objects.equal(getJobId(), started.getJobId())
+                    && Objects.equal(getScheduled(), started.getScheduled())
+                    && Objects.equal(_startedAt, started._startedAt);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(_startedAt);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_jobId", getJobId())
+                    .add("_scheduled", getScheduled())
+                    .add("_startedAt", _startedAt)
+                    .toString();
+        }
+
         /**
          * A builder for instances of {@link Started}.
          *
@@ -261,6 +291,38 @@ public abstract class JobExecution<T> {
         @Override
         public <U> U accept(final Visitor<T, U> visitor) {
             return visitor.visit(this);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Success<?> success = (Success<?>) o;
+            return Objects.equal(getJobId(), success.getJobId())
+                    && Objects.equal(getScheduled(), success.getScheduled())
+                    && Objects.equal(_startedAt, success._startedAt)
+                    && Objects.equal(_completedAt, success._completedAt)
+                    && Objects.equal(_result, success._result);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(_startedAt, _completedAt, _result);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_jobId", getJobId())
+                    .add("_scheduled", getScheduled())
+                    .add("_startedAt", _startedAt)
+                    .add("_completedAt", _completedAt)
+                    .add("_result", _result)
+                    .toString();
         }
 
         /**
@@ -370,6 +432,38 @@ public abstract class JobExecution<T> {
         @Override
         public <U> U accept(final Visitor<T, U> visitor) {
             return visitor.visit(this);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Failure<?> failure = (Failure<?>) o;
+            return Objects.equal(getJobId(), failure.getJobId())
+                    && Objects.equal(getScheduled(), failure.getScheduled())
+                    && Objects.equal(_startedAt, failure._startedAt)
+                    && Objects.equal(_completedAt, failure._completedAt)
+                    && Objects.equal(_result, failure._result);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(_startedAt, _completedAt, _result);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_jobId", getJobId())
+                    .add("_scheduled", getScheduled())
+                    .add("_startedAt", _startedAt)
+                    .add("_completedAt", _completedAt)
+                    .add("_result", _result)
+                    .toString();
         }
 
         /**
