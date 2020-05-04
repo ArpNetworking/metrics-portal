@@ -96,7 +96,7 @@ public class RollupManager extends AbstractActorWithTimers {
 
             final Optional<Throwable> failure = message.getFailure();
             if (!failure.isPresent()) {
-                metrics.addAnnotation("status", "success");
+                metrics.addAnnotation("outcome", "success");
                 return;
             }
 
@@ -107,7 +107,7 @@ public class RollupManager extends AbstractActorWithTimers {
                         .addData("rollupDefinition", message.getRollupDefinition())
                         .setThrowable(failure.get())
                         .log();
-                metrics.addAnnotation("status", "non-retryable");
+                metrics.addAnnotation("outcome", "non_retryable_error");
                 return;
             }
 
@@ -120,7 +120,7 @@ public class RollupManager extends AbstractActorWithTimers {
                         .addData("rollupDefinition", message.getRollupDefinition())
                         .setThrowable(failure.get())
                         .log();
-                metrics.addAnnotation("status", "unsplittable");
+                metrics.addAnnotation("outcome", "unable_to_split");
                 return;
             }
 
@@ -130,7 +130,7 @@ public class RollupManager extends AbstractActorWithTimers {
                     .addData("children", children)
                     .setThrowable(failure.get())
                     .log();
-            metrics.addAnnotation("status", "splittable");
+            metrics.addAnnotation("outcome", "split_and_retry");
             children.forEach(child -> getSelf().tell(child, getSelf()));
         }
     }
