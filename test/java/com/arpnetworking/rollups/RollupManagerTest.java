@@ -129,12 +129,7 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder()
-                .setSourceMetricName("foo")
-                .setDestinationMetricName("foo_1h")
-                .setPeriod(RollupPeriod.HOURLY)
-                .setAllMetricTags(ImmutableMultimap.of("bar", "val"))
-                .setStartTime(Instant.EPOCH);
+        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder();
         final RollupDefinition rollupDef = rollupDefBuilder.build();
         final RollupDefinition rollupDef2 = rollupDefBuilder.build();
         actor.tell(rollupDef, testActor);
@@ -150,14 +145,9 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder()
-                .setSourceMetricName("foo")
-                .setDestinationMetricName("foo_1h")
-                .setPeriod(RollupPeriod.HOURLY)
-                .setAllMetricTags(ImmutableMultimap.of("bar", "val"))
-                .setStartTime(Instant.EPOCH);
+        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder();
         final RollupDefinition rollupDef = rollupDefBuilder.build();
-        final RollupDefinition rollupDef2 = rollupDefBuilder.setStartTime(Instant.EPOCH.plus(1, ChronoUnit.HOURS)).build();
+        final RollupDefinition rollupDef2 = rollupDefBuilder.setStartTime(rollupDef.getStartTime().plus(1, ChronoUnit.HOURS)).build();
         actor.tell(rollupDef2, testActor);
         actor.tell(rollupDef, testActor);
         actor.tell(RollupFetch.getInstance(), testActor);
