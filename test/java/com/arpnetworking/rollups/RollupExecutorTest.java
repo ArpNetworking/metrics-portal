@@ -136,6 +136,7 @@ public class RollupExecutorTest {
                 )
         );
         actor.tell(finished, ActorRef.noSender());
+        _probe.expectMsg(finished);
         _probe.expectMsg(RollupFetch.getInstance());
     }
 
