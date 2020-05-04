@@ -76,7 +76,7 @@ public class RollupManager extends AbstractActorWithTimers {
                 )
                 .match(
                         RollupFetch.class,
-                        work -> {
+                        fetchMsg -> {
                             _periodicMetrics.recordCounter("rollup/manager/fetch", 1);
                             final Optional<RollupDefinition> rollupDefinition = getNextRollup();
                             if (rollupDefinition.isPresent()) {
