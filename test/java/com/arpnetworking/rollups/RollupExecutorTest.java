@@ -29,6 +29,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -126,14 +127,7 @@ public class RollupExecutorTest {
         _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
         final RollupExecutor.FinishRollupMessage finished = ThreadLocalBuilder.build(
                 RollupExecutor.FinishRollupMessage.Builder.class,
-                b -> b.setRollupDefinition(new RollupDefinition.Builder()
-                        .setSourceMetricName("metric")
-                        .setDestinationMetricName("metric_1h")
-                        .setPeriod(RollupPeriod.HOURLY)
-                        .setStartTime(Instant.EPOCH)
-                        .setAllMetricTags(ImmutableMultimap.of())
-                        .build()
-                )
+                b -> b.setRollupDefinition(TestBeanFactory.createRollupDefinitionBuilder().build())
         );
         actor.tell(finished, ActorRef.noSender());
         _probe.expectMsg(finished);
@@ -172,7 +166,7 @@ public class RollupExecutorTest {
         _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
 
         actor.tell(
-                new RollupDefinition.Builder()
+                TestBeanFactory.createRollupDefinitionBuilder()
                         .setSourceMetricName("metric")
                         .setDestinationMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
@@ -219,7 +213,7 @@ public class RollupExecutorTest {
 
     @Test
     public void testBuildRollupQuery() {
-        RollupDefinition definition = new RollupDefinition.Builder()
+        RollupDefinition definition = TestBeanFactory.createRollupDefinitionBuilder()
                 .setSourceMetricName("my_metric")
                 .setDestinationMetricName("my_metric_1h")
                 .setAllMetricTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
@@ -256,7 +250,7 @@ public class RollupExecutorTest {
                 RollupExecutor.buildQueryRollup(definition)
         );
 
-        definition = new RollupDefinition.Builder()
+        definition = TestBeanFactory.createRollupDefinitionBuilder()
                 .setSourceMetricName("my_metric_1h")
                 .setDestinationMetricName("my_metric_1d")
                 .setAllMetricTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))

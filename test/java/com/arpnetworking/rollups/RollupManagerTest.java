@@ -26,6 +26,7 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -102,7 +103,7 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder()
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
@@ -128,7 +129,7 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder()
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
@@ -149,7 +150,7 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+        final RollupDefinition.Builder rollupDefBuilder = TestBeanFactory.createRollupDefinitionBuilder()
                 .setSourceMetricName("foo")
                 .setDestinationMetricName("foo_1h")
                 .setPeriod(RollupPeriod.HOURLY)
@@ -174,12 +175,8 @@ public final class RollupManagerTest {
         final TestKit testKit = new TestKit(_system);
         final ActorRef actor = createActor();
         final ActorRef testActor = testKit.getTestActor();
-        final RollupDefinition rollupDef = new RollupDefinition.Builder()
-                .setSourceMetricName("foo")
-                .setDestinationMetricName("foo_1h")
-                .setPeriod(RollupPeriod.HOURLY)
+        final RollupDefinition rollupDef = TestBeanFactory.createRollupDefinitionBuilder()
                 .setAllMetricTags(ImmutableMultimap.of("tag", "val1", "tag", "val2"))
-                .setStartTime(Instant.EPOCH)
                 .build();
 
         final ImmutableSet<RollupDefinition> children = ImmutableSet.of("val1", "val2").stream()
@@ -200,6 +197,21 @@ public final class RollupManagerTest {
         actor.tell(RollupFetch.getInstance(), testActor);
         actor.tell(RollupFetch.getInstance(), testActor);
         testKit.expectMsgAllOf(children.toArray());
+
+        actor.tell(RollupFetch.getInstance(), testActor);
+        testKit.expectMsg(NoMoreRollups.getInstance());
+    }
+
+    @Test
+    public void testAgesOutExpiredRollups() {
+        final TestKit testKit = new TestKit(_system);
+        final ActorRef actor = createActor();
+        final ActorRef testActor = testKit.getTestActor();
+        final RollupDefinition rollupDef = TestBeanFactory.createRollupDefinitionBuilder()
+                .setGiveUpAfter(Instant.now().minusMillis(1))
+                .build();
+
+        actor.tell(rollupDef, testActor);
 
         actor.tell(RollupFetch.getInstance(), testActor);
         testKit.expectMsg(NoMoreRollups.getInstance());
