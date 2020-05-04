@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
@@ -147,6 +148,7 @@ public class RollupManager extends AbstractActorWithTimers {
         private static final long serialVersionUID = -3992696463296110397L;
 
         @Override
+        @SuppressFBWarnings("RV_NEGATING_RESULT_OF_COMPARETO")
         public int compare(final RollupDefinition def1, final RollupDefinition def2) {
             if (def1.equals(def2)) {
                 return 0;
