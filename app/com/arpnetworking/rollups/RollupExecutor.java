@@ -18,6 +18,7 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -83,10 +84,10 @@ public class RollupExecutor extends AbstractActorWithTimers {
                                     baseMetricName + "/latency",
                                     System.nanoTime() - startTime,
                                     Optional.of(Units.NANOSECOND));
-                            return new FinishRollupMessage.Builder()
+                            return ThreadLocalBuilder.build(FinishRollupMessage.Builder.class, b -> b
                                     .setRollupDefinition(rollupDefinition)
                                     .setFailure(failure)
-                                    .build();
+                            );
                         }), getContext().dispatcher())
                 .to(getSelf());
     }
@@ -98,48 +99,50 @@ public class RollupExecutor extends AbstractActorWithTimers {
     }
 
     /* package private */ static MetricsQuery buildQueryRollup(final RollupDefinition rollupDefinition) {
-        final MetricsQuery.Builder queryBuilder = new MetricsQuery.Builder();
-        final Metric.Builder metricBuilder = new Metric.Builder();
         final String rollupMetricName = rollupDefinition.getDestinationMetricName();
         final RollupPeriod period = rollupDefinition.getPeriod();
 
-        queryBuilder.setStartTime(rollupDefinition.getStartTime());
-        queryBuilder.setEndTime(rollupDefinition.getEndTime());
+        final Metric metric = ThreadLocalBuilder.build(Metric.Builder.class, metricBuilder -> {
+            metricBuilder.setName(rollupDefinition.getSourceMetricName());
+            metricBuilder.setTags(rollupDefinition.getFilterTags().asMultimap());
 
-        metricBuilder.setName(rollupDefinition.getSourceMetricName());
-        metricBuilder.setTags(rollupDefinition.getFilterTags().asMultimap());
-
-        if (!rollupDefinition.getAllMetricTags().isEmpty()) {
-            metricBuilder.setGroupBy(ImmutableList.of(
-                    new MetricsQuery.QueryTagGroupBy.Builder()
-                            .setTags(rollupDefinition.getAllMetricTags().keySet())
+            if (!rollupDefinition.getAllMetricTags().isEmpty()) {
+                metricBuilder.setGroupBy(ImmutableList.of(
+                        ThreadLocalBuilder.build(MetricsQuery.QueryTagGroupBy.Builder.class, builder -> builder
+                                .setTags(rollupDefinition.getAllMetricTags().keySet())
+                                .build()
+                        )
+                ));
+            }
+            metricBuilder.setAggregators(ImmutableList.of(
+                    new Aggregator.Builder()
+                            .setName("merge")
+                            .setSampling(new Sampling.Builder()
+                                    .setValue(1)
+                                    .setUnit(period.getSamplingUnit())
+                                    .build())
+                            .setAlignSampling(true)
+                            .setAlignStartTime(true)
+                            .build(),
+                    new Aggregator.Builder()
+                            .setName("save_as")
+                            .setOtherArgs(ImmutableMap.of(
+                                    "metric_name", rollupMetricName,
+                                    "add_saved_from", false
+                            ))
+                            .build(),
+                    new Aggregator.Builder()
+                            .setName("count")
                             .build()
             ));
-        }
-        metricBuilder.setAggregators(ImmutableList.of(
-                new Aggregator.Builder()
-                        .setName("merge")
-                        .setSampling(new Sampling.Builder()
-                                .setValue(1)
-                                .setUnit(period.getSamplingUnit())
-                                .build())
-                        .setAlignSampling(true)
-                        .setAlignStartTime(true)
-                        .build(),
-                new Aggregator.Builder()
-                        .setName("save_as")
-                        .setOtherArgs(ImmutableMap.of(
-                                "metric_name", rollupMetricName,
-                                "add_saved_from", false
-                        ))
-                        .build(),
-                new Aggregator.Builder()
-                        .setName("count")
-                        .build()
-        ));
+        });
 
-        queryBuilder.setMetrics(ImmutableList.of(metricBuilder.build()));
-        return queryBuilder.build();
+        return ThreadLocalBuilder.build(MetricsQuery.Builder.class, queryBuilder -> {
+            queryBuilder.setStartTime(rollupDefinition.getStartTime());
+            queryBuilder.setEndTime(rollupDefinition.getEndTime());
+
+            queryBuilder.setMetrics(ImmutableList.of(metric));
+        });
     }
 
     private void fetchRollup() {
