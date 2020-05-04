@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
- * Test cases for the RollupGenerator actor.
+ * Test cases for the {@link RollupExecutor} actor.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
@@ -136,6 +136,7 @@ public class RollupExecutorTest {
                 )
         );
         actor.tell(finished, ActorRef.noSender());
+        _probe.expectMsg(finished);
         _probe.expectMsg(RollupFetch.getInstance());
     }
 

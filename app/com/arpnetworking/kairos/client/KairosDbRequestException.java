@@ -18,6 +18,7 @@ package com.arpnetworking.kairos.client;
 import com.arpnetworking.logback.annotations.Loggable;
 
 import java.net.URI;
+import java.time.Duration;
 
 /**
  * An exception that represents a non-2xx KairosDB request.
@@ -39,18 +40,29 @@ public class KairosDbRequestException extends RuntimeException {
         return _requestUri;
     }
 
+    public Duration getRequestDuration() {
+        return _requestDuration;
+    }
+
     /**
      * Minimal constructor.
      *
      * @param httpStatus the status code from the http response
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
+     * @param requestDuration the length of time that the request was in flight
      */
-    public KairosDbRequestException(final int httpStatus, final String httpMessage, final URI requestUri) {
+    public KairosDbRequestException(
+            final int httpStatus,
+            final String httpMessage,
+            final URI requestUri,
+            final Duration requestDuration
+    ) {
         super(String.format("KairosDb request to %s failed because %s (%d)", requestUri, httpMessage, httpStatus));
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
         _requestUri = requestUri;
+        _requestDuration = requestDuration;
     }
 
     /**
@@ -60,12 +72,20 @@ public class KairosDbRequestException extends RuntimeException {
      * @param httpStatus the status code from the http response
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
+     * @param requestDuration the length of time that the request was in flight
      */
-    public KairosDbRequestException(final String message, final int httpStatus, final String httpMessage, final URI requestUri) {
+    public KairosDbRequestException(
+            final String message,
+            final int httpStatus,
+            final String httpMessage,
+            final URI requestUri,
+            final Duration requestDuration
+    ) {
         super(message);
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
         _requestUri = requestUri;
+        _requestDuration = requestDuration;
     }
 
     /**
@@ -76,21 +96,26 @@ public class KairosDbRequestException extends RuntimeException {
      * @param httpStatus the status code from the http response
      * @param httpMessage the status message from the http response
      * @param requestUri the uri requested
+     * @param requestDuration the length of time that the request was in flight
      */
     public KairosDbRequestException(
             final String message,
             final Throwable cause,
             final int httpStatus,
             final String httpMessage,
-            final URI requestUri) {
+            final URI requestUri,
+            final Duration requestDuration
+    ) {
         super(message, cause);
         _httpStatus = httpStatus;
         _httpMessage = httpMessage;
         _requestUri = requestUri;
+        _requestDuration = requestDuration;
     }
 
     private final int _httpStatus;
     private final String _httpMessage;
     private final URI _requestUri;
+    private final Duration _requestDuration;
     private static final long serialVersionUID = 6622759488133086527L;
 }

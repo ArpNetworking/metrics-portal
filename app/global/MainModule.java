@@ -71,6 +71,7 @@ import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
+import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
@@ -178,6 +179,8 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupManager"))
                 .toProvider(RollupManagerProvider.class)
                 .asEagerSingleton();
+        bind(RollupPartitioner.class)
+                .toInstance(new RollupPartitioner());
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
@@ -712,13 +715,20 @@ public class MainModule extends AbstractModule {
         private final boolean _enabled;
         private final Injector _injector;
         private final ActorSystem _system;
+        private final RollupPartitioner _partitioner;
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
-        RollupManagerProvider(final Injector injector, final ActorSystem system, final Features features) {
+        RollupManagerProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Features features,
+                final RollupPartitioner partitioner
+        ) {
             _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
+            _partitioner = partitioner;
         }
 
         @Override

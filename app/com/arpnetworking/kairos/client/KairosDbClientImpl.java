@@ -138,6 +138,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
     }
 
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final JavaType responseType) {
+        final Instant startTime = Instant.now();
         return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)), _materializer)
                 .thenCompose(httpResponse -> {
                     final HttpEncoding encoding = httpResponse.encoding();
@@ -158,13 +159,15 @@ public final class KairosDbClientImpl implements KairosDbClient {
                                         throw new KairosDbRequestException(
                                                 httpResponse.status().intValue(),
                                                 httpResponse.status().reason(),
-                                                URI.create(request.getUri().toString()));
+                                                URI.create(request.getUri().toString()),
+                                                Duration.between(startTime, Instant.now()));
                                     }
                                     throw new KairosDbRequestException(
                                             responseBody,
                                             httpResponse.status().intValue(),
                                             httpResponse.status().reason(),
-                                            URI.create(request.getUri().toString()));
+                                            URI.create(request.getUri().toString()),
+                                            Duration.between(startTime, Instant.now()));
                                 });
                     }
                     return httpResponse.entity()

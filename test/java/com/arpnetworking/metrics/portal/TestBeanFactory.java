@@ -23,7 +23,10 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.rollups.RollupDefinition;
+import com.arpnetworking.rollups.RollupPeriod;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
 import models.internal.Context;
@@ -221,6 +224,21 @@ public final class TestBeanFactory {
      */
     public static Sampling.Builder createSamplingBuilder() {
         return new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS);
+    }
+
+    /**
+     * Factory method for creating a {@link RollupDefinition.Builder}.
+     *
+     * @return the builder.
+     */
+    public static RollupDefinition.Builder createRollupDefinitionBuilder() {
+        return new RollupDefinition.Builder()
+                .setStartTime(Instant.now())
+                .setSourceMetricName("my_metric")
+                .setDestinationMetricName("my_metric_1h")
+                .setPeriod(RollupPeriod.HOURLY)
+                .setAllMetricTags(ImmutableMultimap.of("tag", "val"))
+                .setFilterTags(ImmutableMap.of());
     }
 
     /**

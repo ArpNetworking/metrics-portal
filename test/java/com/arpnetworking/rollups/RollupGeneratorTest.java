@@ -66,7 +66,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 /**
- * Test cases for the RollupGenerator actor.
+ * Test cases for the {@link RollupGenerator} actor.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
@@ -161,7 +161,7 @@ public class RollupGeneratorTest {
         final TagNamesMessage tagNamesMessage = _probe.expectMsgClass(TagNamesMessage.class);
         assertFalse(tagNamesMessage.isFailure());
         assertEquals("metric", tagNamesMessage.getMetricName());
-        assertEquals(2, tagNamesMessage.getTags().size());
+        assertEquals(ImmutableMultimap.of("tag1", "value1", "tag2", "value2"), tagNamesMessage.getTags());
 
         verify(_kairosDbClient, times(1)).queryMetricTags(captor.capture());
         final TagsQuery tagQuery = captor.getValue();

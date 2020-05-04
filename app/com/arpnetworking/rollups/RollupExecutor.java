@@ -25,11 +25,13 @@ import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
@@ -37,6 +39,7 @@ import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
@@ -152,6 +155,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
     private void handleFinishRollup(final FinishRollupMessage message) {
         _metrics.recordCounter("rollup/executor/finish_rollup_message/received", 1);
+        _rollupManager.tell(message, getSelf());
         fetchRollup();
     }
 
@@ -188,6 +192,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     static final Object FETCH_ROLLUP = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupExecutor.class);
 
+    @Loggable
     static final class FinishRollupMessage extends FailableMessage {
         private static final long serialVersionUID = -5696789105734902279L;
         private final RollupDefinition _rollupDefinition;
@@ -199,6 +204,32 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
         public RollupDefinition getRollupDefinition() {
             return _rollupDefinition;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final FinishRollupMessage that = (FinishRollupMessage) o;
+            return _rollupDefinition.equals(that._rollupDefinition)
+                    && getFailure().equals(that.getFailure());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_rollupDefinition, getFailure());
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_rollupDefinition", _rollupDefinition)
+                    .add("_failure", getFailure())
+                    .toString();
         }
 
         /**
