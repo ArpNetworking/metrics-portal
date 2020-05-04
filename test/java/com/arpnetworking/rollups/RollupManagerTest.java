@@ -45,7 +45,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Mockito.when;

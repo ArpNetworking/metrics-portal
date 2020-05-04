@@ -34,6 +34,9 @@ public class RollupPartitioner {
 
     private static final Duration TIMEOUT_HEURISTIC_THRESHOLD = Duration.ofSeconds(30);
 
+    /**
+     * Public constructor.
+     */
     public RollupPartitioner() {}
 
     /**

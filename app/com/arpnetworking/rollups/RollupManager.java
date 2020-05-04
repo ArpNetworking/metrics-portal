@@ -52,6 +52,8 @@ public class RollupManager extends AbstractActorWithTimers {
      * Metrics discovery constructor.
      *
      * @param periodicMetrics periodic metrics client
+     * @param metricsFactory metrics factory
+     * @param partitioner {@link RollupPartitioner} to split up failed jobs
      */
     @Inject
     public RollupManager(final PeriodicMetrics periodicMetrics, final MetricsFactory metricsFactory, final RollupPartitioner partitioner) {
@@ -91,7 +93,7 @@ public class RollupManager extends AbstractActorWithTimers {
     }
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
-        try (final Metrics metrics = _metricsFactory.create()) {
+        try (Metrics metrics = _metricsFactory.create()) {
             metrics.addAnnotation("rollup_metric", message.getRollupDefinition().getDestinationMetricName());
             metrics.incrementCounter("rollup/manager/executor_finished", 1);
 
@@ -151,15 +153,18 @@ public class RollupManager extends AbstractActorWithTimers {
             }
 
             int result;
-            if ((result = def1.getStartTime().compareTo(def2.getStartTime())) != 0) {
+            result = def1.getStartTime().compareTo(def2.getStartTime());
+            if (result != 0) {
                 // earlier = higher-priority
                 return result;
             }
-            if ((result = Integer.compare(def1.getFilterTags().size(), def2.getFilterTags().size())) != 0) {
+            result = Integer.compare(def1.getFilterTags().size(), def2.getFilterTags().size());
+            if (result != 0) {
                 // more specific = higher-priority
                 return -result;
             }
-            if ((result = def1.getPeriod().compareTo(def2.getPeriod())) != 0) {
+            result = def1.getPeriod().compareTo(def2.getPeriod());
+            if (result != 0) {
                 // shorter period = higher-priority
                 return result;
             }

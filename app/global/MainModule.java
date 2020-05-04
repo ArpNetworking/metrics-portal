@@ -719,7 +719,12 @@ public class MainModule extends AbstractModule {
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
-        RollupManagerProvider(final Injector injector, final ActorSystem system, final Features features, final RollupPartitioner partitioner) {
+        RollupManagerProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Features features,
+                final RollupPartitioner partitioner
+        ) {
             _enabled = features.isRollupsEnabled();
             _injector = injector;
             _system = system;
