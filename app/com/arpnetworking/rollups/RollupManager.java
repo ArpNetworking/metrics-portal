@@ -26,7 +26,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +41,7 @@ public class RollupManager extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private final MetricsFactory _metricsFactory;
     private TreeSet<RollupDefinition> _rollupDefinitions;
+    private RollupPartitioner _partitioner;
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
@@ -54,9 +54,10 @@ public class RollupManager extends AbstractActorWithTimers {
      * @param periodicMetrics periodic metrics client
      */
     @Inject
-    public RollupManager(final PeriodicMetrics periodicMetrics, final MetricsFactory metricsFactory) {
+    public RollupManager(final PeriodicMetrics periodicMetrics, final MetricsFactory metricsFactory, final RollupPartitioner partitioner) {
         _periodicMetrics = periodicMetrics;
         _metricsFactory = metricsFactory;
+        _partitioner = partitioner;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
         getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
@@ -100,7 +101,7 @@ public class RollupManager extends AbstractActorWithTimers {
                 return;
             }
 
-            final boolean isRetryable = RollupPartitioningUtils.mightSplittingFixFailure(failure.get());
+            final boolean isRetryable = _partitioner.mightSplittingFixFailure(failure.get());
             if (!isRetryable) {
                 LOGGER.warn()
                         .setMessage("giving up after non-retryable error")
@@ -113,8 +114,8 @@ public class RollupManager extends AbstractActorWithTimers {
 
             final ImmutableSet<RollupDefinition> children;
             try {
-                children = RollupPartitioningUtils.splitJob(message.getRollupDefinition());
-            } catch (final RollupPartitioningUtils.CannotSplitException e) {
+                children = _partitioner.splitJob(message.getRollupDefinition());
+            } catch (final RollupPartitioner.CannotSplitException e) {
                 LOGGER.error()
                         .setMessage("giving up on job that can't be split any more")
                         .addData("rollupDefinition", message.getRollupDefinition())
@@ -145,15 +146,25 @@ public class RollupManager extends AbstractActorWithTimers {
 
         @Override
         public int compare(final RollupDefinition def1, final RollupDefinition def2) {
-            // It's assumed that if the source, destination and period are the same then they represent
-            // the same period for a different (or the same) time range.  We don't check endTime, groupByTags,
-            // etc, because if they were different then the resulting rollup would be broken anyway.
-            if (Objects.hash(def1.getSourceMetricName(), def1.getDestinationMetricName(), def1.getPeriod())
-                    == Objects.hash(def2.getSourceMetricName(), def2.getDestinationMetricName(), def2.getPeriod())) {
-                return def1.getStartTime().compareTo(def2.getStartTime());
-            } else {
-                return 1;
+            if (def1.equals(def2)) {
+                return 0;
             }
+
+            int result;
+            if ((result = def1.getStartTime().compareTo(def2.getStartTime())) != 0) {
+                // earlier = higher-priority
+                return result;
+            }
+            if ((result = Integer.compare(def1.getFilterTags().size(), def2.getFilterTags().size())) != 0) {
+                // more specific = higher-priority
+                return -result;
+            }
+            if ((result = def1.getPeriod().compareTo(def2.getPeriod())) != 0) {
+                // shorter period = higher-priority
+                return result;
+            }
+
+            return 1;
         }
     }
 }

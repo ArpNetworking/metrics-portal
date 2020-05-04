@@ -30,11 +30,11 @@ import java.util.Optional;
  *
  * @author Spencer Pearson (spencerpearson@dropbox.com)
  */
-public final class RollupPartitioningUtils {
+public class RollupPartitioner {
 
     private static final Duration TIMEOUT_HEURISTIC_THRESHOLD = Duration.ofSeconds(30);
 
-    private RollupPartitioningUtils() {}
+    public RollupPartitioner() {}
 
     /**
      * Split a {@link RollupDefinition} into a family of cheaper-to-execute {@link RollupDefinition}s which,
@@ -44,7 +44,7 @@ public final class RollupPartitioningUtils {
      * @return a set of cheaper jobs which partition the parent's work among them
      * @throws CannotSplitException if there is no way to split the given job into multiple cheaper ones
      */
-    public static ImmutableSet<RollupDefinition> splitJob(final RollupDefinition job) throws CannotSplitException {
+    public ImmutableSet<RollupDefinition> splitJob(final RollupDefinition job) throws CannotSplitException {
         final ImmutableMap<String, String> filterTags = job.getFilterTags();
         final ImmutableMultimap<String, String> allTags = job.getAllMetricTags();
         final Optional<String> nextFilterTag = allTags.keySet().stream()
@@ -81,7 +81,7 @@ public final class RollupPartitioningUtils {
      * @param failure the failure that occurred when executing the {@link RollupDefinition}
      * @return a guess at whether splitting the job into smaller pieces might help
      */
-    public static boolean mightSplittingFixFailure(final Throwable failure) {
+    public boolean mightSplittingFixFailure(final Throwable failure) {
         if (!(failure instanceof KairosDbRequestException)) {
             return false;
         }

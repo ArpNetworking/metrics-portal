@@ -31,13 +31,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Test cases for {@link RollupPartitioningUtils}.
+ * Test cases for {@link RollupPartitioner}.
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public final class RollupPartitioningUtilsTest {
+public final class RollupPartitionerTest {
     @Test
     public void testPartitioning() throws Exception {
+        final RollupPartitioner partitioner = new RollupPartitioner();
         RollupDefinition job = TestBeanFactory.createRollupDefinitionBuilder()
                 .setAllMetricTags(ImmutableMultimap.of(
                         "twoValues", "1/2", "twoValues", "2/2",
@@ -57,7 +58,7 @@ public final class RollupPartitioningUtilsTest {
                                 .setFilterTags(ImmutableMap.of("threeValues", "3/3"))
                                 .build()
                 ),
-                RollupPartitioningUtils.splitJob(job)
+                partitioner.splitJob(job)
         );
 
         job = TestBeanFactory.createRollupDefinitionBuilder()
@@ -67,28 +68,29 @@ public final class RollupPartitioningUtilsTest {
                 .setFilterTags(ImmutableMap.of())
                 .build();
         try {
-            RollupPartitioningUtils.splitJob(job);
+            partitioner.splitJob(job);
             fail("should have been unable to split job");
-        } catch (final RollupPartitioningUtils.CannotSplitException err) {
+        } catch (final RollupPartitioner.CannotSplitException err) {
         }
     }
 
     @Test
     public void testRetryabilityChecking() {
-        assertFalse(RollupPartitioningUtils.mightSplittingFixFailure(new RuntimeException()));
-        assertFalse(RollupPartitioningUtils.mightSplittingFixFailure(new KairosDbRequestException(
+        final RollupPartitioner partitioner = new RollupPartitioner();
+        assertFalse(partitioner.mightSplittingFixFailure(new RuntimeException()));
+        assertFalse(partitioner.mightSplittingFixFailure(new KairosDbRequestException(
                 400,
                 "some error message",
                 URI.create("http://kairos"),
                 Duration.ofMinutes(2)
         )));
-        assertTrue(RollupPartitioningUtils.mightSplittingFixFailure(new KairosDbRequestException(
+        assertTrue(partitioner.mightSplittingFixFailure(new KairosDbRequestException(
                 500,
                 "some error message",
                 URI.create("http://kairos"),
                 Duration.ofMinutes(2)
         )));
-        assertFalse(RollupPartitioningUtils.mightSplittingFixFailure(new KairosDbRequestException(
+        assertFalse(partitioner.mightSplittingFixFailure(new KairosDbRequestException(
                 500,
                 "some error message",
                 URI.create("http://kairos"),
