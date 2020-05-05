@@ -26,6 +26,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -94,9 +96,18 @@ public class RollupManager extends AbstractActorWithTimers {
     }
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
+        final RollupDefinition definition = message.getRollupDefinition();
+        final double latencyNs = (double) Duration.between(definition.getStartTime(), Instant.now()).toNanos();
+
         try (Metrics metrics = _metricsFactory.create()) {
-            metrics.addAnnotation("rollup_metric", message.getRollupDefinition().getDestinationMetricName());
+            metrics.addAnnotation("rollup_metric", definition.getDestinationMetricName());
             metrics.incrementCounter("rollup/manager/executor_finished", 1);
+            metrics.setGauge("rollup/manager/completion_latency_sec", latencyNs / 1e9);
+            metrics.setGauge(
+                    "rollup/manager/completion_latency_periods",
+                    latencyNs / definition.getPeriod().periodCountToDuration(1).toNanos()
+            );
+
 
             final Optional<Throwable> failure = message.getFailure();
             if (!failure.isPresent()) {
@@ -117,11 +128,11 @@ public class RollupManager extends AbstractActorWithTimers {
 
             final ImmutableSet<RollupDefinition> children;
             try {
-                children = _partitioner.splitJob(message.getRollupDefinition());
+                children = _partitioner.splitJob(definition);
             } catch (final RollupPartitioner.CannotSplitException e) {
                 LOGGER.error()
                         .setMessage("giving up on job that can't be split any more")
-                        .addData("rollupDefinition", message.getRollupDefinition())
+                        .addData("rollupDefinition", definition)
                         .setThrowable(failure.get())
                         .log();
                 metrics.addAnnotation("outcome", "unable_to_split");
@@ -130,7 +141,7 @@ public class RollupManager extends AbstractActorWithTimers {
 
             LOGGER.info()
                     .setMessage("splitting and retrying job")
-                    .addData("parent", message.getRollupDefinition())
+                    .addData("parent", definition)
                     .addData("children", children)
                     .setThrowable(failure.get())
                     .log();
