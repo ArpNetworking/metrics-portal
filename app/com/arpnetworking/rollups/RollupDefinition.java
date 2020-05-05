@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
@@ -96,6 +97,18 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     }
 
     @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_sourceMetricName", _sourceMetricName)
+                .add("_destinationMetricName", _destinationMetricName)
+                .add("_period", _period)
+                .add("_startTime", _startTime)
+                .add("_filterTags", _filterTags)
+                .add("_allMetricTags", _allMetricTags)
+                .toString();
+    }
+
+    @Override
     public Object consistentHashKey() {
         return hashCode();
     }
@@ -126,7 +139,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         /**
          * Creates a builder for a RollupDefinition.
          */
-        protected Builder() {
+        public Builder() {
             super(RollupDefinition::new);
         }
 

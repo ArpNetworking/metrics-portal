@@ -153,37 +153,28 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 .build();
     }
 
-    // CHECKSTYLE.OFF: ParameterNumber - This is only called in one location.
-    private static <T> void runAntiEntropy(
-            final Injector injector,
-            final Clock clock,
-            final Class<? extends JobRepository<T>> repositoryType,
-            final Class<? extends JobExecutionRepository<T>> execRepositoryType,
-            final OrganizationRepository organizationRepository,
-            final ActorRef jobExecutorRegion,
-            final PeriodicMetrics periodicMetrics,
-            final ActorRef coordinator) {
-
+    private void runAntiEntropy() {
+        final ActorRef coordinator = self();
         try {
             LOGGER.debug()
                     .setMessage("starting anti-entropy")
-                    .addData("repositoryType", repositoryType)
-                    .addData("execRepositoryType", execRepositoryType)
+                    .addData("repositoryType", _repositoryType)
+                    .addData("execRepositoryType", _execRepositoryType)
                     .log();
 
-            final Instant startTime = clock.instant();
-            final JobRepository<T> repo = injector.getInstance(repositoryType);
-            final Iterable<? extends Organization> allOrgs = organizationRepository.query(organizationRepository.createQuery()).values();
+            final Instant startTime = _clock.instant();
+            final JobRepository<T> repo = _injector.getInstance(_repositoryType);
+            final Iterable<? extends Organization> allOrgs = _organizationRepository.query(_organizationRepository.createQuery()).values();
             for (final Organization organization : allOrgs) {
                 final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
                 allJobs.forEachRemaining(job -> {
                     final JobRef<T> ref = new JobRef.Builder<T>()
-                            .setRepositoryType(repositoryType)
-                            .setExecutionRepositoryType(execRepositoryType)
+                            .setRepositoryType(_repositoryType)
+                            .setExecutionRepositoryType(_execRepositoryType)
                             .setOrganization(organization)
                             .setId(job.getId())
                             .build();
-                    jobExecutorRegion.tell(
+                    _jobExecutorRegion.tell(
                             new JobExecutorActor.Reload.Builder<T>()
                                     .setJobRef(ref)
                                     .setETag(job.getETag().orElse(null))
@@ -196,49 +187,27 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             // There might still be actors which don't correspond to jobs, but that's fine:
             //   they should self-terminate next time they execute.
 
-            periodicMetrics.recordTimer(
+            _periodicMetrics.recordTimer(
                     "jobs/coordinator/anti_entropy/latency",
-                    ChronoUnit.NANOS.between(startTime, clock.instant()),
+                    ChronoUnit.NANOS.between(startTime, _clock.instant()),
                     Optional.of(NANOS));
 
-            periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 1);
+            _periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 1);
 
             LOGGER.debug()
                     .setMessage("finished anti-entropy")
-                    .addData("repositoryType", repositoryType)
-                    .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, clock.instant()))
+                    .addData("repositoryType", _repositoryType)
+                    .addData("elapsedTimeSec", ChronoUnit.NANOS.between(startTime, _clock.instant()))
                     .log();
             // CHECKSTYLE.OFF: IllegalCatch - Just for metrics
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatch
-            periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 0);
+            _periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 0);
             throw e;
         } finally {
             coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
         }
 
-    }
-    // CHECKSTYLE.ON: ParameterNumber
-
-    private Runnable createAntiEntropyRunnable() {
-        // Explicitly capture all instance variables for good practice, even though they're final
-        final Injector injector = _injector;
-        final Clock clock = _clock;
-        final Class<? extends JobRepository<T>> repositoryType = _repositoryType;
-        final Class<? extends JobExecutionRepository<T>> execRepositoryType = _execRepositoryType;
-        final OrganizationRepository organizationRepository = _organizationRepository;
-        final ActorRef jobExecutorRegion = _jobExecutorRegion;
-        final PeriodicMetrics periodicMetrics = _periodicMetrics;
-        final ActorRef self = getSelf();
-        return () -> runAntiEntropy(
-                injector,
-                clock,
-                repositoryType,
-                execRepositoryType,
-                organizationRepository,
-                jobExecutorRegion,
-                periodicMetrics,
-                self);
     }
 
     @Override
@@ -256,7 +225,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
                     getContext().getSystem().scheduler().scheduleOnce(
                             scala.concurrent.duration.Duration.Zero(),
-                            createAntiEntropyRunnable(),
+                            this::runAntiEntropy,
                             getContext().dispatcher());
                 })
                 .match(AntiEntropyFinished.class, message -> {
