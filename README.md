@@ -5,8 +5,8 @@ Metrics Portal
     <img src="https://img.shields.io/hexpm/l/plug.svg"
          alt="License: Apache 2">
 </a>
-<a href="https://travis-ci.org/ArpNetworking/metrics-portal/">
-    <img src="https://travis-ci.org/ArpNetworking/metrics-portal.png?branch=master"
+<a href="https://travis-ci.com/ArpNetworking/metrics-portal">
+    <img src="https://travis-ci.com/ArpNetworking/metrics-portal.svg?branch=master"
          alt="Travis Build">
 </a>
 <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.arpnetworking.metrics%22%20a%3A%22metrics-portal%22">
