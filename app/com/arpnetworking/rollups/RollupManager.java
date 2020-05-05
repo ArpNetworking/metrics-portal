@@ -103,11 +103,6 @@ public class RollupManager extends AbstractActorWithTimers {
             metrics.addAnnotation("rollup_metric", definition.getDestinationMetricName());
             metrics.incrementCounter("rollup/manager/executor_finished", 1);
             metrics.setGauge("rollup/manager/executor_finished/latency_sec", latencyNs / 1e9);
-            metrics.setGauge(
-                    "rollup/manager/executor_finished/latency_periods",
-                    latencyNs / definition.getPeriod().periodCountToDuration(1).toNanos()
-            );
-
 
             final Optional<Throwable> failure = message.getFailure();
             if (!failure.isPresent()) {
