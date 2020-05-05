@@ -97,7 +97,7 @@ public class RollupManager extends AbstractActorWithTimers {
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
         final RollupDefinition definition = message.getRollupDefinition();
-        final double latencyNs = (double) Duration.between(definition.getStartTime(), Instant.now()).toNanos();
+        final double latencyNs = (double) Duration.between(definition.getEndTime(), Instant.now()).toNanos();
 
         try (Metrics metrics = _metricsFactory.create()) {
             metrics.addAnnotation("rollup_metric", definition.getDestinationMetricName());
