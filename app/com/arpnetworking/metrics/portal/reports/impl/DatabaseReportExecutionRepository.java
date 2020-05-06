@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl;
 
+import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -43,7 +44,7 @@ import javax.persistence.PersistenceException;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DatabaseReportExecutionRepository implements JobExecutionRepository<Report.Result> {
+public final class DatabaseReportExecutionRepository implements ReportExecutionRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportExecutionRepository.class);
 
