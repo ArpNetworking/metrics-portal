@@ -17,9 +17,11 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
+import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.EbeanServer;
+import io.ebean.ExpressionList;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.reports.Report;
@@ -45,7 +47,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
-    private final DatabaseExecutionRepositoryHelper<Report.Result, ReportExecution> _helper;
+    private final DatabaseExecutionHelper<Report.Result, ReportExecution> _executionHelper;
 
     /**
      * Public constructor.
@@ -55,11 +57,11 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     @Inject
     public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;
-        _helper = new DatabaseExecutionRepositoryHelper<>(LOGGER, _ebeanServer, this::reportExecutionSupplier);
+        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution);
 
     }
 
-    private ReportExecution reportExecutionSupplier(
+    private ReportExecution findOrCreateReportExecution(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled
@@ -92,6 +94,13 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
         return newOrUpdatedExecution;
     }
 
+    private ExpressionList<ReportExecution> findExecutions(final UUID jobId, final Organization organization) {
+        return _ebeanServer.find(ReportExecution.class)
+                .where()
+                .eq("report.uuid", jobId)
+                .eq("report.organization.uuid", organization.getId());
+    }
+
     @Override
     public void open() {
         assertIsOpen(false);
@@ -119,32 +128,27 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
+        return findExecutions(jobId, organization)
+                .setMaxRows(1)
                 .orderBy()
                 .desc("scheduled")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .setMaxRows(1)
                 .findOneOrEmpty()
-                .map(DatabaseExecutionRepositoryHelper::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel);
     }
 
     @Override
     public Optional<JobExecution.Success<Report.Result>> getLastSuccess(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        final Optional<ReportExecution> row = _ebeanServer.find(ReportExecution.class)
+        final Optional<ReportExecution> row =
+            findExecutions(jobId, organization)
+                .eq("state", ReportExecution.State.SUCCESS)
                 .orderBy()
                 .desc("completed_at")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .eq("state", ReportExecution.State.SUCCESS)
                 .setMaxRows(1)
                 .findOneOrEmpty();
         if (row.isPresent()) {
-            final JobExecution<Report.Result> execution = DatabaseExecutionRepositoryHelper.toInternalModel(row.get());
+            final JobExecution<Report.Result> execution = DatabaseExecutionHelper.toInternalModel(row.get());
             if (execution instanceof JobExecution.Success) {
                 return Optional.of((JobExecution.Success<Report.Result>) execution);
             }
@@ -159,34 +163,31 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     public Optional<JobExecution<Report.Result>> getLastCompleted(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
+        return findExecutions(jobId, organization)
+                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
                 .orderBy()
                 .desc("completed_at")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
                 .setMaxRows(1)
                 .findOneOrEmpty()
-                .map(DatabaseExecutionRepositoryHelper::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel);
     }
 
     @Override
     public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        _helper.jobStarted(reportId, organization, scheduled);
+        _executionHelper.jobStarted(reportId, organization, scheduled);
     }
 
     @Override
     public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
-        _helper.jobSucceeded(reportId, organization, scheduled, result);
+        _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
     }
 
     @Override
     public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        _helper.jobFailed(reportId, organization, scheduled, error);
+        _executionHelper.jobFailed(reportId, organization, scheduled, error);
     }
 
     private void assertIsOpen() {

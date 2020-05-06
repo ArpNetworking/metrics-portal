@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.reports.impl;
+package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.steno.Logger;
@@ -32,24 +32,35 @@ import javax.annotation.Nullable;
 import javax.persistence.PersistenceException;
 
 /**
- * Helper class for implementing a SQL-backed {@link JobExecutionRepository}.
+ * Helper class for implementing a SQL-backed {@link JobExecutionRepository}, providing facilities for updating the state
+ * of an execution as well as mapping it back to an internal representation.
  * <p>
  * Classes using this should extend {@link BaseExecution} and delegate their {@code jobXXX} calls to this helper.
  *
+ * @param <T> The type of result produced by each job.
+ * @param <E> The type of the repository's bean.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<T>> {
+public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
     private final EbeanServer _ebeanServer;
-    private final ExecutionSupplier<T, E> _supplier;
+    private final ExecutionAdapter<T, E> _adapter;
     private final Logger _logger;
 
-    DatabaseExecutionRepositoryHelper(
+    /**
+     * Public constructor.
+     *
+     * @param logger The logger for the repository.
+     * @param ebeanServer An ebean server.
+     * @param adapter The execution adapter for the repository.
+     */
+    public DatabaseExecutionHelper(
             final Logger logger,
             final EbeanServer ebeanServer,
-            final ExecutionSupplier<T, E> supplier
+            final ExecutionAdapter<T, E> adapter
     ) {
         _ebeanServer = ebeanServer;
-        _supplier = supplier;
+        _adapter = adapter;
         _logger = logger;
     }
 
@@ -93,11 +104,11 @@ public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<
     }
 
     /**
-     * Mark this job as started.
+     * Notify the repository that a job has started executing.
      *
-     * @param jobId
-     * @param organization
-     * @param scheduled
+     * @param jobId The UUID of the job that completed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the job started running for.
      */
     public void jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
         updateExecutionState(
@@ -112,11 +123,12 @@ public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<
     }
 
     /**
-     * Mark this job as having succeeded with the given result.
+     * Notify the repository that a job finished executing successfully.
      *
-     * @param jobId
-     * @param organization
-     * @param scheduled
+     * @param jobId The UUID of the job that completed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the completed job-run was scheduled for.
+     * @param result The result that the job computed.
      */
     public void jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
         updateExecutionState(
@@ -132,12 +144,12 @@ public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<
     }
 
     /**
-     * Mark this job as having failed with the given error.
+     * Notify the repository that a job encountered an error and aborted execution.
      *
-     * @param jobId
-     * @param organization
-     * @param scheduled
-     * @param error
+     * @param jobId The UUID of the job that failed.
+     * @param organization The organization owning the job.
+     * @param scheduled The time that the failed job-run was scheduled for.
+     * @param error The exception that caused the job to fail.
      */
     public void jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
         updateExecutionState(
@@ -166,7 +178,7 @@ public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<
                 .addData("state", state)
                 .log();
         try (Transaction transaction = _ebeanServer.beginTransaction()) {
-            final E newOrUpdatedExecution = _supplier.findOrCreateExecution(jobId, organization, scheduled);
+            final E newOrUpdatedExecution = _adapter.findOrCreateExecution(jobId, organization, scheduled);
             update.accept(newOrUpdatedExecution);
             newOrUpdatedExecution.setState(state);
             _ebeanServer.save(newOrUpdatedExecution);
@@ -192,8 +204,22 @@ public final class DatabaseExecutionRepositoryHelper<T, E extends BaseExecution<
         }
     }
 
+    /**
+     * Repository Adapter for the concrete execution type.
+     *
+     * @param <T> The type of result produced by each job.
+     * @param <E> The type of the repository's bean.
+     */
     @FunctionalInterface
-    interface ExecutionSupplier<T, E extends BaseExecution<T>> {
+    public interface ExecutionAdapter<T, E extends BaseExecution<T>> {
+        /**
+         * Find an execution for the scheduled time, creating a new one if none exist.
+         *
+         * @param jobId The id of the job associated with this execution.
+         * @param organization The organization containing the job.
+         * @param scheduled The time the execution was scheduled.
+         * @return An execution.
+         */
         E findOrCreateExecution(UUID jobId, Organization organization, Instant scheduled);
     }
 }
