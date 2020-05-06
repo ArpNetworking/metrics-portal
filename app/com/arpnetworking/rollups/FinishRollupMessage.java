@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
@@ -23,6 +24,7 @@ import net.sf.oval.constraint.NotNull;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@Loggable
 public final class FinishRollupMessage extends FailableMessage {
 
     public String getMetricName() {
