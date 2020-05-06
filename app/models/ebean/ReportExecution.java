@@ -16,19 +16,15 @@
 
 package models.ebean;
 
-import com.google.common.base.MoreObjects;
 import io.ebean.annotation.DbJsonB;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
@@ -49,33 +45,15 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "report_executions", schema = "portal")
 @IdClass(ReportExecution.Key.class)
-public final class ReportExecution {
-    private static final String EXCEPTION_KEY = "exception";
-
+public final class ReportExecution extends BaseExecution<models.internal.reports.Report.Result> {
     @Id
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, targetEntity = Report.class)
     @JoinColumn(name = "report_id")
     private Report report;
-    @Column(name = "state")
-    @Enumerated(value = EnumType.STRING)
-    private State state;
-    @Id
-    @Column(name = "scheduled")
-    private Instant scheduled;
-    @Nullable
-    @Column(name = "started_at")
-    private Instant started_at;
-    @Nullable
-    @Column(name = "completed_at")
-    private Instant completed_at;
     @Nullable
     @DbJsonB
     @Column(name = "result")
     private models.internal.reports.Report.Result result;
-    @Nullable
-    @DbJsonB
-    @Column(name = "error")
-    private Map<String, String> error;
 
     public Report getReport() {
         return report;
@@ -85,97 +63,24 @@ public final class ReportExecution {
         report = value;
     }
 
-    public State getState() {
-        return state;
-    }
-
-    public void setState(final State value) {
-        state = value;
-    }
-
-    @Nullable
-    public Instant getStartedAt() {
-        return started_at;
-    }
-
-    public void setStartedAt(final Instant value) {
-        started_at = value;
-    }
-
-    public Instant getScheduled() {
-        return scheduled;
-    }
-
-    public void setScheduled(final Instant value) {
-        scheduled = value;
-    }
-
-    @Nullable
-    public Instant getCompletedAt() {
-        return completed_at;
-    }
-
-    public void setCompletedAt(@Nullable final Instant value) {
-        completed_at = value;
-    }
-
-    @Nullable
+    @Override
     public models.internal.reports.Report.Result getResult() {
         return result;
     }
 
+    @Override
     public void setResult(@Nullable final models.internal.reports.Report.Result value) {
         result = value;
     }
 
-    /**
-     * Get the error associated with this execution, if any.
-     *
-     * @return The error message encoded as a string.
-     */
-    @Nullable
-    public String getError() {
-        return error == null ? null : error.get(EXCEPTION_KEY);
-    }
-
-    /**
-     * Set the error message associated with this execution.
-     *
-     * @param value the error
-     */
-    public void setError(final String value) {
-        error = Collections.singletonMap(EXCEPTION_KEY, value);
+    @Override
+    public UUID getJobId() {
+        return report.getUuid();
     }
 
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("report", report)
-                .add("state", state)
-                .add("scheduled", scheduled)
-                .add("started_at", started_at)
-                .add("completed_at", completed_at)
-                .add("result", result)
-                .add("error", error)
-                .toString();
-    }
-
-    /**
-     * The state of execution for this particular report job.
-     */
-    public enum State {
-        /**
-         * This report execution has been started.
-         */
-        STARTED,
-        /**
-         * This report execution completed successfully.
-         */
-        SUCCESS,
-        /**
-         * This report execution failed.
-         */
-        FAILURE,
+    public void setJobId(final UUID jobId) {
+        report.setUuid(jobId);
     }
 
     /**
@@ -185,11 +90,11 @@ public final class ReportExecution {
     protected static final class Key {
         @Nullable
         @Column(name = "report_id")
-        private Long reportId;
+        private final Long reportId;
 
         @Nullable
         @Column(name = "scheduled")
-        private Instant scheduled;
+        private final Instant scheduled;
 
         /**
          * Default constructor, required by Ebean.
