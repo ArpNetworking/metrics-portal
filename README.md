@@ -29,7 +29,7 @@ Setup
 
 #### Source
 
-Clone the repository and build the source code! The artifacts from the build are in `target/metrics-portal-${VERSION}-bin.tgz`
+Clone the repository and build the source code? The artifacts from the build are in `target/metrics-portal-${VERSION}-bin.tgz`
 where `${VERSION}` is the current build version. To install, copy the artifact directories recursively into an
 appropriate target directory on your Metrics Portal host(s). For example:
 
