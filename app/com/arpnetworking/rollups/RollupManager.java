@@ -26,6 +26,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -144,7 +145,29 @@ public class RollupManager extends AbstractActorWithTimers {
     }
 
     private Optional<RollupDefinition> getNextRollup() {
-        return Optional.ofNullable(_rollupDefinitions.pollFirst());
+        while (!_rollupDefinitions.isEmpty()) {
+            final RollupDefinition earliest = _rollupDefinitions.pollFirst();
+            if (earliest == null) {
+                LOGGER.error()
+                        .setMessage("got null job out of set despite verifying non-emptiness; should be impossible")
+                        .log();
+                return Optional.empty();
+            }
+            final Instant now = Instant.now();
+            if (earliest.getGiveUpAfter().isAfter(now)) {
+                return Optional.of(earliest);
+            }
+            LOGGER.warn()
+                    .setMessage("rollup definition aged out")
+                    .addData("rollupDefinition", earliest)
+                    .addData("timeAgedOut", now)
+                    .log();
+            final Metrics metrics = _metricsFactory.create();
+            metrics.addAnnotation("rollup_metric", earliest.getDestinationMetricName());
+            metrics.incrementCounter("rollup/manager/aged_out");
+            metrics.close();
+        }
+        return Optional.empty();
     }
 
     private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {

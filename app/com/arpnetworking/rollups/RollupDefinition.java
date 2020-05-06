@@ -42,6 +42,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     private final Instant _startTime;
     private final ImmutableMap<String, String> _filterTags;
     private final ImmutableMultimap<String, String> _allMetricTags;
+    private final Instant _giveUpAfter;
 
     private RollupDefinition(final Builder builder) {
         _sourceMetricName = builder._sourceMetricName;
@@ -50,6 +51,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         _startTime = builder._startTime;
         _filterTags = builder._filterTags;
         _allMetricTags = builder._allMetricTags;
+        _giveUpAfter = builder._giveUpAfter;
     }
 
     public String getSourceMetricName() {
@@ -76,6 +78,10 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         return _allMetricTags;
     }
 
+    public Instant getGiveUpAfter() {
+        return _giveUpAfter;
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -90,12 +96,13 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
                 && _period == that._period
                 && _startTime.equals(that._startTime)
                 && _filterTags.equals(that._filterTags)
-                && _allMetricTags.equals(that._allMetricTags);
+                && _allMetricTags.equals(that._allMetricTags)
+                && _giveUpAfter.equals(that._giveUpAfter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _filterTags, _allMetricTags);
+        return Objects.hash(_sourceMetricName, _destinationMetricName, _period, _startTime, _filterTags, _allMetricTags, _giveUpAfter);
     }
 
     @Override
@@ -107,6 +114,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
                 .add("_startTime", _startTime)
                 .add("_filterTags", _filterTags)
                 .add("_allMetricTags", _allMetricTags)
+                .add("_giveUpAfter", _giveUpAfter)
                 .toString();
     }
 
@@ -137,6 +145,8 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
         private ImmutableMap<String, String> _filterTags = ImmutableMap.of();
         @NotNull
         private ImmutableMultimap<String, String> _allMetricTags;
+        @NotNull
+        private Instant _giveUpAfter;
 
         /**
          * Creates a builder for a RollupDefinition.
@@ -208,6 +218,17 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
          */
         public Builder setAllMetricTags(final ImmutableMultimap<String, String> value) {
             _allMetricTags = value;
+            return this;
+        }
+
+        /**
+         * Sets the {@code _giveUpAfter} and returns a reference to this Builder so that the methods can be chained together.
+         *
+         * @param value the {@code _giveUpAfter} to set
+         * @return a reference to this Builder
+         */
+        public Builder setGiveUpAfter(final Instant value) {
+            _giveUpAfter = value;
             return this;
         }
     }

@@ -313,7 +313,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setSourceMetricName(message.getSourceMetricName())
                         .setDestinationMetricName(rollupMetricName)
                         .setPeriod(period)
-                        .setAllMetricTags(message.getTags());
+                        .setAllMetricTags(message.getTags())
+                        .setGiveUpAfter(Instant.now().plus(period.periodCountToDuration(1)));
 
                 for (final Instant startTime : startTimes) {
                     rollupDefBuilder.setStartTime(startTime);
