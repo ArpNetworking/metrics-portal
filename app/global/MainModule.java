@@ -48,6 +48,7 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
+import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
@@ -146,6 +147,9 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(AlertExecutionRepository.class)
+                .toProvider(AlertExecutionRepositoryProvider.class)
                 .asEagerSingleton();
         bind(ReportRepository.class)
                 .toProvider(ReportRepositoryProvider.class)
@@ -484,6 +488,38 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return alertRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class AlertExecutionRepositoryProvider implements Provider<AlertExecutionRepository> {
+        @Inject
+        AlertExecutionRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public AlertExecutionRepository get() {
+            final AlertExecutionRepository executionRepository = _injector.getInstance(
+                    ConfigurationHelper.<AlertExecutionRepository>getType(_environment, _configuration, "alertExecutionRepository.type"));
+            executionRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        executionRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return executionRepository;
         }
 
         private final Injector _injector;
