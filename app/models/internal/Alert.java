@@ -15,9 +15,11 @@
  */
 package models.internal;
 
+import com.google.common.collect.ImmutableMap;
+import models.internal.alerts.MetricsQuery;
+
 import java.time.Duration;
 import java.util.UUID;
-import javax.annotation.Nullable;
 
 /**
  * Internal model interface for an alert.
@@ -25,82 +27,71 @@ import javax.annotation.Nullable;
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface Alert {
-
     /**
-     * The unique identifier of the alert.
+     * The unique identifier for this alert.
      *
-     * @return The unique identifier of the alert.
+     * @return The UUID
      */
     UUID getId();
 
     /**
-     * The context of the alert. Either a host or cluster.
+     * The organization for this alert.
      *
-     * @return The context of the alert.
+     * @return The organization.
      */
-    Context getContext();
+    Organization getOrganization();
 
     /**
-     * The name of the alert.
+     * A human-readable name for this alert.
      *
-     * @return The name of the alert.
+     * @return The alert name.
      */
     String getName();
 
     /**
-     * The name of the cluster for statistic identifier of condition left-hand side.
+     * The description of this alert.
+     * <p>
+     * This generally includes an explanation of the behavior that the alert query attempts to capture, as well
+     * as possible remediation steps.
      *
-     * @return The name of the cluster for statistic identifier of condition left-hand side.
+     * @return The alert description.
      */
-    String getCluster();
+    String getDescription();
 
     /**
-     * The name of the service for statistic identifier of condition left-hand side.
+     * The query to evaluate.
+     * <p>
+     * If an alert query evaluates to a nonempty series, then it is considered firing.
      *
-     * @return The name of the service for statistic identifier of condition left-hand side.
+     * @return the alert query.
      */
-    String getService();
+    MetricsQuery getQuery();
 
     /**
-     * The name of the metric for statistic identifier of condition left-hand side.
+     * The period used to evaluate this alert.
      *
-     * @return The name of the metric for statistic identifier of condition left-hand side.
-     */
-    String getMetric();
-
-    /**
-     * The name of the statistic for statistic identifier of condition left-hand side.
-     *
-     * @return The name of the statistic for statistic identifier of condition left-hand side.
-     */
-    String getStatistic();
-
-    /**
-     * The period to evaluate the condition in.
-     *
-     * @return The period to evaluate the condition in.
+     * @return the alert period.
      */
     Duration getPeriod();
 
     /**
-     * The condition operator.
+     * Returns {@code true} iff this alert is enabled.
      *
-     * @return The condition operator.
+     * @return true if this alert is enabled, otherwise false.
      */
-    Operator getOperator();
+    boolean isEnabled();
 
     /**
-     * The value of condition right-hand side.
+     * Implementation-defined metadata for this alert.
+     * <p>
+     * The contents of this field are intentionally left unspecified and are up to the particular alert implementation.
+     * <p>
+     * This is intended to act as a mechanism for implementations to pass around additional context outside of this interface
+     * (e.g. fields configured elsewhere that may be used outside of metrics portal).
      *
-     * @return The value of condition right-hand side.
-     */
-    Quantity getValue();
-
-    /**
-     * Nagios specific extensions.
+     * Particular implementations of {@link AlertRepository} may make use of this field, but that is not required.
      *
-     * @return Nagios specific extensions.
+     * @return the metadata.
      */
-    @Nullable
-    NagiosExtension getNagiosExtension();
+    ImmutableMap<String, Object> getAdditionalMetadata();
 }

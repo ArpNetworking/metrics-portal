@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package models.internal.alerts;
+package models.internal;
 
 import com.google.common.collect.ImmutableMap;
 
 /**
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface FiringAlertResult {
+public interface AlertEvaluationResult {
     /**
      * The arguments (tags) for the alert.
      *

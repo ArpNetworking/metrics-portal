@@ -19,8 +19,8 @@ package models.internal.impl;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.inject.Injector;
-import models.internal.alerts.Alert;
-import models.internal.alerts.FiringAlertResult;
+import models.internal.Alert;
+import models.internal.AlertEvaluationResult;
 import models.internal.scheduling.Job;
 
 import java.time.Duration;
@@ -36,7 +36,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertJob implements Job<FiringAlertResult> {
+public class AlertJob implements Job<AlertEvaluationResult> {
     private final Alert _alert;
 
     /**
@@ -71,8 +71,8 @@ public class AlertJob implements Job<FiringAlertResult> {
     }
 
     @Override
-    public CompletionStage<? extends FiringAlertResult> execute(final Injector injector, final Instant scheduled) {
-        final CompletableFuture<FiringAlertResult> future = new CompletableFuture<>();
+    public CompletionStage<? extends AlertEvaluationResult> execute(final Injector injector, final Instant scheduled) {
+        final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
         future.completeExceptionally(new RuntimeException("Alert execution is not yet implemented"));
         return future;
     }

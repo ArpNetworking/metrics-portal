@@ -18,18 +18,17 @@ package models.internal.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
 import models.internal.Alert;
-import models.internal.Context;
-import models.internal.NagiosExtension;
-import models.internal.Operator;
-import models.internal.Quantity;
+import models.internal.Organization;
+import models.internal.alerts.MetricsQuery;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.time.Duration;
-import java.util.Objects;
+import java.util.Map;
 import java.util.UUID;
-import javax.annotation.Nullable;
 
 /**
  * Default internal model implementation for an alert.
@@ -39,14 +38,34 @@ import javax.annotation.Nullable;
 @Loggable
 public final class DefaultAlert implements Alert {
 
+    private final UUID _id;
+    private final Organization _organization;
+    private final String _name;
+    private final String _description;
+    private final MetricsQuery _query;
+    private final Duration _period;
+    private final boolean _enabled;
+    private final ImmutableMap<String, Object> _additionalMetadata;
+
+    private DefaultAlert(final Builder builder) {
+        _id = builder._id;
+        _organization = builder._organization;
+        _name = builder._name;
+        _description = builder._description;
+        _query = builder._query;
+        _period = builder._period;
+        _enabled = builder._enabled;
+        _additionalMetadata = builder._additionalMetadata;
+    }
+
     @Override
     public UUID getId() {
         return _id;
     }
 
     @Override
-    public Context getContext() {
-        return _context;
+    public Organization getOrganization() {
+        return _organization;
     }
 
     @Override
@@ -55,23 +74,13 @@ public final class DefaultAlert implements Alert {
     }
 
     @Override
-    public String getCluster() {
-        return _cluster;
+    public String getDescription() {
+        return _description;
     }
 
     @Override
-    public String getService() {
-        return _service;
-    }
-
-    @Override
-    public String getMetric() {
-        return _metric;
-    }
-
-    @Override
-    public String getStatistic() {
-        return _statistic;
+    public MetricsQuery getQuery() {
+        return _query;
     }
 
     @Override
@@ -80,115 +89,81 @@ public final class DefaultAlert implements Alert {
     }
 
     @Override
-    public Operator getOperator() {
-        return _operator;
+    public boolean isEnabled() {
+        return _enabled;
     }
 
     @Override
-    public Quantity getValue() {
-        return _value;
+    public ImmutableMap<String, Object> getAdditionalMetadata() {
+        return _additionalMetadata;
     }
 
     @Override
-    public NagiosExtension getNagiosExtension() {
-        return _nagiosExtension;
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final DefaultAlert that = (DefaultAlert) o;
+        return _enabled == that._enabled
+                && Objects.equal(_id, that._id)
+                && Objects.equal(_organization, that._organization)
+                && Objects.equal(_name, that._name)
+                && Objects.equal(_description, that._description)
+                && Objects.equal(_query, that._query)
+                && Objects.equal(_period, that._period)
+                && Objects.equal(_additionalMetadata, that._additionalMetadata);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_id, _organization, _name, _description, _query, _period, _enabled, _additionalMetadata);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("id", Integer.toHexString(System.identityHashCode(this)))
-                .add("class", this.getClass())
-                .add("Id", _id)
-                .add("Context", _context)
-                .add("Name", _name)
-                .add("Cluster", _cluster)
-                .add("Service", _service)
-                .add("Metric", _metric)
-                .add("Statistic", _statistic)
-                .add("Period", _period)
-                .add("Operator", _operator)
-                .add("Value", _value)
-                .add("NagiosExtensions", _nagiosExtension)
+                .add("id", _id)
+                .add("organization", _organization)
+                .add("name", _name)
+                .add("description", _description)
+                .add("query", _query)
+                .add("period", _period)
+                .add("enabled", _enabled)
+                .add("additionalMetadata", _additionalMetadata)
                 .toString();
     }
-
-    @Override
-    public boolean equals(final Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (!(other instanceof DefaultAlert)) {
-            return false;
-        }
-
-        final DefaultAlert otherAlert = (DefaultAlert) other;
-        return Objects.equals(_id, otherAlert._id)
-                && Objects.equals(_context, otherAlert._context)
-                && Objects.equals(_name, otherAlert._name)
-                && Objects.equals(_cluster, otherAlert._cluster)
-                && Objects.equals(_service, otherAlert._service)
-                && Objects.equals(_metric, otherAlert._metric)
-                && Objects.equals(_statistic, otherAlert._statistic)
-                && Objects.equals(_period, otherAlert._period)
-                && Objects.equals(_operator, otherAlert._operator)
-                && Objects.equals(_value, otherAlert._value)
-                && Objects.equals(_nagiosExtension, otherAlert._nagiosExtension);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-                _id,
-                _context,
-                _name,
-                _cluster,
-                _service,
-                _metric,
-                _statistic,
-                _period,
-                _operator,
-                _value,
-                _nagiosExtension);
-    }
-
-    private DefaultAlert(final Builder builder) {
-        _id = builder._id;
-        _context = builder._context;
-        _name = builder._name;
-        _cluster = builder._cluster;
-        _service = builder._service;
-        _metric = builder._metric;
-        _statistic = builder._statistic;
-        _period = builder._period;
-        _operator = builder._operator;
-        _value = builder._value;
-        _nagiosExtension = builder._nagiosExtension;
-    }
-
-    private final UUID _id;
-    private final Context _context;
-    private final String _name;
-    private final String _cluster;
-    private final String _service;
-    private final String _metric;
-    private final String _statistic;
-    private final Duration _period;
-    private final Operator _operator;
-    private final Quantity _value;
-    private final NagiosExtension _nagiosExtension;
 
     /**
      * Builder implementation for {@link DefaultAlert}.
      */
     public static final class Builder extends OvalBuilder<DefaultAlert> {
 
+        @NotNull
+        private UUID _id;
+        @NotNull
+        private Organization _organization;
+        @NotNull
+        @NotEmpty
+        private String _name;
+        @NotNull
+        private String _description;
+        @NotNull
+        private MetricsQuery _query;
+        @NotNull
+        private Duration _period;
+        @NotNull
+        private Boolean _enabled;
+        private ImmutableMap<String, Object> _additionalMetadata;
+
         /**
          * Public constructor.
          */
         public Builder() {
             super(DefaultAlert::new);
+            _additionalMetadata = ImmutableMap.of();
         }
 
         /**
@@ -203,13 +178,13 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The context. Required. Cannot be null or empty.
+         * The organization. Required. Cannot be null.
          *
-         * @param value The context.
+         * @param value The organization.
          * @return This instance of {@link Builder}.
          */
-        public Builder setContext(final Context value) {
-            _context = value;
+        public Builder setOrganization(final Organization value) {
+            _organization = value;
             return this;
         }
 
@@ -225,51 +200,29 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The cluster. Required. Cannot be null or empty.
+         * The description. Defaults to an empty description.
          *
-         * @param value The cluster.
+         * @param value The description.
          * @return This instance of {@link Builder}.
          */
-        public Builder setCluster(final String value) {
-            _cluster = value;
+        public Builder setDescription(final String value) {
+            _description = value;
             return this;
         }
 
         /**
-         * The service. Required. Cannot be null or empty.
+         * The alert query. Required. Cannot be null.
          *
-         * @param value The service.
+         * @param value The query.
          * @return This instance of {@link Builder}.
          */
-        public Builder setService(final String value) {
-            _service = value;
+        public Builder setPeriod(final MetricsQuery value) {
+            _query = value;
             return this;
         }
 
         /**
-         * The metric. Required. Cannot be null or empty.
-         *
-         * @param value The metric.
-         * @return This instance of {@link Builder}.
-         */
-        public Builder setMetric(final String value) {
-            _metric = value;
-            return this;
-        }
-
-        /**
-         * The statistic. Required. Cannot be null or empty.
-         *
-         * @param value The statistic.
-         * @return This instance of {@link Builder}.
-         */
-        public Builder setStatistic(final String value) {
-            _statistic = value;
-            return this;
-        }
-
-        /**
-         * The period. Required. Cannot be null or empty.
+         * The period. Required. Cannot be null.
          *
          * @param value The period.
          * @return This instance of {@link Builder}.
@@ -280,64 +233,25 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The operator. Required. Cannot be null or empty.
+         * The enabled flag. Required.
          *
-         * @param value The operator.
+         * @param value Whether or not this alert is enabled.
          * @return This instance of {@link Builder}.
          */
-        public Builder setOperator(final Operator value) {
-            _operator = value;
+        public Builder setPeriod(final boolean value) {
+            _enabled = value;
             return this;
         }
 
         /**
-         * The value. Required. Cannot be null or empty.
+         * The additional metadata. Defaults to an empty map.
          *
-         * @param value The value.
+         * @param value The period.
          * @return This instance of {@link Builder}.
          */
-        public Builder setValue(final Quantity value) {
-            _value = value;
+        public Builder setAdditionalMetadata(final Map<String, Object> value) {
+            _additionalMetadata = ImmutableMap.copyOf(value);
             return this;
         }
-
-        /**
-         * The nagios specific extensions.
-         *
-         * @param value The extensions.
-         * @return This instance of {@link Builder}.
-         */
-        public Builder setNagiosExtension(@Nullable final NagiosExtension value) {
-            _nagiosExtension = value;
-            return this;
-        }
-
-        @NotNull
-        private UUID _id;
-        @NotNull
-        private Context _context;
-        @NotNull
-        @NotEmpty
-        private String _name;
-        @NotNull
-        @NotEmpty
-        private String _cluster;
-        @NotNull
-        @NotEmpty
-        private String _service;
-        @NotNull
-        @NotEmpty
-        private String _metric;
-        @NotNull
-        @NotEmpty
-        private String _statistic;
-        @NotNull
-        private Duration _period;
-        @NotNull
-        private Operator _operator;
-        @NotNull
-        private Quantity _value;
-        @Nullable
-        private NagiosExtension _nagiosExtension;
     }
 }
