@@ -27,8 +27,6 @@ import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 
 /**
@@ -39,6 +37,7 @@ import javax.persistence.MappedSuperclass;
  * which serializes the state of the object can be dangerous (e.g. {@code toString},
  * {@code @Loggable}, etc.).
  *
+ * @param <T> The type of result produced by this job.
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
@@ -82,7 +81,8 @@ public abstract class BaseExecution<T> {
      *
      * @return The result, or null if this execution has not completed.
      */
-    public abstract @Nullable T getResult();
+    public abstract @Nullable
+    T getResult();
 
     /**
      * Set the result for this execution.
