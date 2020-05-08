@@ -66,7 +66,9 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.QueueActor;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -195,6 +197,14 @@ public class MainModule extends AbstractModule {
 
         // Rollups
         bind(MetricsQueryConfig.class).to(MetricsQueryConfigImpl.class).asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupConsistencyCheckerQueue"))
+                .toProvider(RollupConsistencyCheckerQueueProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupConsistencyChecker"))
+                .toProvider(RollupConsistencyCheckerProvider.class)
+                .asEagerSingleton();
     }
 
     @Singleton
@@ -804,4 +814,58 @@ public class MainModule extends AbstractModule {
         private final Config _configuration;
         private final boolean _enabled;
     }
+
+    private static final class RollupConsistencyCheckerQueueProvider implements Provider<ActorRef> {
+        @Inject
+        RollupConsistencyCheckerQueueProvider(
+                final ActorSystem system,
+                final Config configuration
+        ) {
+            _system = system;
+            _configuration = configuration;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
+                    ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
+                    : Optional.empty();
+            return _system.actorOf(QueueActor.props(maxSize));
+        }
+
+        private final ActorSystem _system;
+        private final Config _configuration;
+        private static final String CONFIG_MAX_SIZE_PATH = "rollup.consistency_checker.queue.size";
+    }
+
+    private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
+        @Inject
+        RollupConsistencyCheckerProvider(
+                final Injector injector,
+                final ActorSystem system,
+                final Config configuration,
+                final Features features) {
+            _injector = injector;
+            _system = system;
+            _configuration = configuration;
+            _enabled = features.isRollupsEnabled();
+        }
+
+        @Override
+        public ActorRef get() {
+            final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
+            if (_enabled) {
+                for (int i = 0; i < actorCount; i++) {
+                    _system.actorOf(GuiceActorCreator.props(_injector, ConsistencyChecker.class));
+                }
+            }
+            return null;
+        }
+
+        private final Injector _injector;
+        private final ActorSystem _system;
+        private final Config _configuration;
+        private final boolean _enabled;
+    }
+
 }
