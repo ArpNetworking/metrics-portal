@@ -1,7 +1,7 @@
 {
-    "source_metric_name" : "my_metric",
-    "rollup_metric_name" : "my_metric_1h",
+    "sourceMetricName" : "my_metric",
+    "rollupMetricName" : "my_metric_1h",
     "period" : "HOURLY",
-    "start_time" : "2020-01-01T00:00:00Z",
+    "startTime" : "2020-01-01T00:00:00Z",
     "trigger": "HUMAN_REQUESTED"
 }
