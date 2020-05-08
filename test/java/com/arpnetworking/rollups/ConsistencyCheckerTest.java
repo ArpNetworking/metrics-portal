@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Dropbox Inc.
+ * Copyright 2020 Dropbox Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
@@ -29,13 +28,13 @@ import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.utility.test.ResourceHelper;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.ConfigFactory;
+import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,18 +43,20 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * Test cases for {@link ConsistencyChecker}.
  *
- * @author Gilligan Markham (gmarkham at dropbox dot com)
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class ConsistencyCheckerTest {
     private Injector _injector;
@@ -66,7 +67,6 @@ public final class ConsistencyCheckerTest {
     private TestKit _queue;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
-    private static final ObjectMapper MAPPER = ObjectMapperFactory.createInstance();
 
     @Before
     public void setUp() throws Exception {
@@ -181,5 +181,23 @@ public final class ConsistencyCheckerTest {
                         .build(),
                 actual
         );
+    }
+
+    @Test
+    public void testTaskValidation() {
+        final ConsistencyChecker.Task.Builder builder = new ConsistencyChecker.Task.Builder()
+                .setSourceMetricName("my_metric")
+                .setRollupMetricName("my_metric_1h")
+                .setPeriod(RollupPeriod.HOURLY)
+                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED);
+
+        builder.setStartTime(Instant.EPOCH).build();
+        builder.setStartTime(Instant.EPOCH.plus(Duration.ofHours(1))).build();
+
+        try {
+            builder.setStartTime(Instant.EPOCH.plus(Duration.ofSeconds(1))).build();
+            fail();
+        } catch (final ConstraintsViolatedException e) {
+        }
     }
 }

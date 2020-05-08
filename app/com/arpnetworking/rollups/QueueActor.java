@@ -16,11 +16,14 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActor;
+import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 
@@ -31,6 +34,15 @@ import java.util.Queue;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class QueueActor<T extends Serializable> extends AbstractActor {
+    /**
+     * Creates a {@link Props} for this actor.
+     *
+     * @param maxSize The maximum size for the queue (if any).
+     * @return A new Props.
+     */
+    public static Props props(final Optional<Long> maxSize) {
+        return Props.create(QueueActor.class, maxSize);
+    }
 
     @Override
     public Receive createReceive() {
@@ -86,6 +98,30 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
             return _item;
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Add<?> that = (Add<?>) o;
+            return _item.equals(that._item);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_item);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_item", _item)
+                    .toString();
+        }
+
         /**
          * Public constructor.
          * @param item the item to enqueue
@@ -109,6 +145,30 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
             return _item;
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final AddAccepted<?> that = (AddAccepted<?>) o;
+            return _item.equals(that._item);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_item);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_item", _item)
+                    .toString();
+        }
+
         /**
          * Public constructor.
          * @param item the item that was accepted
@@ -130,6 +190,30 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
 
         public T getItem() {
             return _item;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final AddRejected<?> that = (AddRejected<?>) o;
+            return _item.equals(that._item);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_item);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_item", _item)
+                    .toString();
         }
 
         /**

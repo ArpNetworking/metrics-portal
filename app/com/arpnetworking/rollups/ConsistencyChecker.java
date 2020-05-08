@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -57,7 +56,6 @@ import javax.inject.Named;
  * Actor that compares rollup datapoints to their source material, and logs any discrepancies.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
- *
  */
 public class ConsistencyChecker extends AbstractActorWithTimers {
 
