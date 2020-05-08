@@ -36,8 +36,10 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.constraint.ValidateWithMethod;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -48,26 +50,25 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * TODO(spencerpearson)
+ * Actor that compares rollup datapoints to their source material, and logs any discrepancies.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  *
  */
 public class ConsistencyChecker extends AbstractActorWithTimers {
 
-    public static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
 
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
                 .match(Task.class, this::startTask)
                 .match(SampleCounts.class, this::sampleCountsReceived)
-                .match(QueueActor.NoMoreWork.class, msg ->
+                .match(QueueActor.QueueEmpty.class, msg ->
                     getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
                 )
                 .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
@@ -79,6 +80,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
      *
      * @param kairosDbClient kairosdb client
      * @param metricsFactory metrics factory
+     * @param queue queue to request {@link Task}s from
      */
     @Inject
     public ConsistencyChecker(
@@ -142,14 +144,13 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
         final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
         metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-        final LogBuilder logBuilder = (
+        final LogBuilder logBuilder =
                 // TODO(spencerpearson): probably make this level-thresholding configurable?
-                fractionalDataLoss == 0 ? LOGGER.trace() :
-                        fractionalDataLoss < 0.001 ? LOGGER.debug() :
-                                fractionalDataLoss < 0.01 ? LOGGER.info() :
-                                        fractionalDataLoss < 0.1 ? LOGGER.warn() :
-                                                LOGGER.error()
-        );
+                fractionalDataLoss == 0 ? LOGGER.trace()
+                : fractionalDataLoss < 0.001 ? LOGGER.debug()
+                : fractionalDataLoss < 0.01 ? LOGGER.info()
+                : fractionalDataLoss < 0.1 ? LOGGER.warn()
+                : LOGGER.error();
         logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
                 .addData("task", task)
                 .addData("nOriginalSamples", nOriginalSamples)
@@ -175,26 +176,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
     }
 
-    @Loggable
-    public static final class MalformedSampleCountResponse extends Exception {
-        private final MetricsQueryResponse _response;
-
-        public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
-            super(cause);
-            _response = response;
-        }
-
-        public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
-            super(message);
-            _response = response;
-        }
-
-        public MetricsQueryResponse getResponse() {
-            return _response;
-        }
-    }
-
-    /* package private */ static SampleCounts parseSampleCounts(final Task task, final MetricsQueryResponse response) throws MalformedSampleCountResponse {
+    /* package private */ static SampleCounts parseSampleCounts(
+            final Task task,
+            final MetricsQueryResponse response
+    ) throws MalformedSampleCountResponse {
         final Map<String, Long> countsByMetric = Maps.newHashMap();
         if (response.getQueries().size() != 2) {
             throw new MalformedSampleCountResponse("expected exactly 1 query, got " + response.getQueries().size(), response);
@@ -264,10 +249,14 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     private final MetricsFactory _metricsFactory;
     private final ActorRef _queue;
 
-    /* package private */ BiConsumer<Task, Double> _reportDataLoss = (t, f) -> {};
+    /* package private */ BiConsumer<Task, Double> _reportDataLoss = (t, f) -> { };
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
+    private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
 
+    /**
+     * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
+     */
     @Loggable
     public static final class Task implements Serializable {
         private static final long serialVersionUID = 2980603523747090602L;
@@ -275,12 +264,19 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         private final String _rollupMetricName;
         private final RollupPeriod _period;
         private final Instant _startTime;
+        private final Trigger _trigger;
+
+        /**
+         * Why the {@link Task} was created. Used for metrics.
+         */
         public enum Trigger {
+            /**
+             * A human deliberately requested this task as a one-off.
+             */
             HUMAN_REQUESTED,
             // WRITE_COMPLETED,  // TODO(spencerpearson, OBS-1174)
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
-        private final Trigger _trigger;
 
         private Task(final Builder builder) {
             _sourceMetricName = builder._sourceMetricName;
@@ -342,6 +338,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     .toString();
         }
 
+        /**
+         * Builder for {@link Task}.
+         */
         public static final class Builder extends OvalBuilder<Task> {
             @NotNull
             @NotEmpty
@@ -352,12 +351,13 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             @NotNull
             private RollupPeriod _period;
             @NotNull
+            @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
             private Instant _startTime;
             @NotNull
             private Trigger _trigger;
 
             /**
-             * Creates a builder for a {@link Task}
+             * Public constructor.
              */
             public Builder() {
                 super(Task::new);
@@ -417,12 +417,20 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 _trigger = value;
                 return this;
             }
+
+            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
+            private boolean validateStartTime(final Instant startTime) {
+                return startTime.equals(_period.recentEndTime(startTime));
+            }
         }
     }
 
+    /**
+     * Message indicating that sample-counts for a rollup datapoint and its source material have been successfully queried.
+     */
     @Loggable
     public static final class SampleCounts extends FailableMessage implements Serializable {
-        private final static long serialVersionUID = 5564783719460633635L;
+        private static final long serialVersionUID = 5564783719460633635L;
         private final Task _task;
         private final long _sourceSampleCount;
         private final long _rollupSampleCount;
@@ -474,6 +482,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     .toString();
         }
 
+        /**
+         * Builder for {@link SampleCounts}.
+         */
         public static final class Builder extends FailableMessage.Builder<Builder, SampleCounts> {
             @NotNull
             private Task _task;
@@ -483,7 +494,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             private Long _rollupSampleCount;
 
             /**
-             * Creates a builder for a {@link SampleCounts}
+             * Public constructor.
              */
             public Builder() {
                 super(SampleCounts::new);
@@ -537,19 +548,38 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         }
     }
 
-    private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
-
     /**
-     * Internal message, telling the scheduler to run any necessary jobs.
-     * Intended only for internal use and testing.
+     *
      */
-    /* package private */ static final class RequestWork implements Serializable {
-        private static final long serialVersionUID = 1517210720424319371L;
-        private static final RequestWork _INSTANCE = new RequestWork();
-        public static RequestWork getInstance() {
-            return _INSTANCE;
+    @Loggable
+    public static final class MalformedSampleCountResponse extends Exception {
+        private final MetricsQueryResponse _response;
+
+        /**
+         * Public constructor.
+         *
+         * @param cause the error
+         * @param response the {@link MetricsQueryResponse} whose parsing failed
+         */
+        public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
+            super(cause);
+            _response = response;
         }
-        private RequestWork() {}
+
+        /**
+         * Public constructor.
+         *
+         * @param message the error message
+         * @param response the {@link MetricsQueryResponse} whose parsing failed
+         */
+        public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
+            super(message);
+            _response = response;
+        }
+
+        public MetricsQueryResponse getResponse() {
+            return _response;
+        }
     }
 
 }
