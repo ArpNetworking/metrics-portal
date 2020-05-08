@@ -35,6 +35,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
@@ -224,7 +225,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                                 .setAlignSampling(true)
                                 .setAlignStartTime(true)
                                 .build())
-                );
+                )
+                .setTags(task.getTags());
 
         return new MetricsQuery.Builder()
                 .setStartTime(task.getStartTime())
@@ -258,6 +260,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         private final String _rollupMetricName;
         private final RollupPeriod _period;
         private final Instant _startTime;
+        private final ImmutableMultimap<String, String> _tags;
         private final Trigger _trigger;
 
         /**
@@ -277,6 +280,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             _rollupMetricName = builder._rollupMetricName;
             _period = builder._period;
             _startTime = builder._startTime;
+            _tags = builder._tags;
             _trigger = builder._trigger;
         }
 
@@ -296,6 +300,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             return _startTime;
         }
 
+        public ImmutableMultimap<String, String> getTags() {
+            return _tags;
+        }
+
         public Trigger getTrigger() {
             return _trigger;
         }
@@ -313,12 +321,13 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     && _rollupMetricName.equals(task._rollupMetricName)
                     && _period == task._period
                     && _startTime.equals(task._startTime)
+                    && _tags.equals(task._tags)
                     && _trigger == task._trigger;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _trigger);
+            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _tags, _trigger);
         }
 
         @Override
@@ -328,6 +337,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     .add("_rollupMetricName", _rollupMetricName)
                     .add("_period", _period)
                     .add("_startTime", _startTime)
+                    .add("_tags", _tags)
                     .add("_trigger", _trigger)
                     .toString();
         }
@@ -344,6 +354,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             private String _rollupMetricName;
             @NotNull
             private RollupPeriod _period;
+            @NotNull
+            private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
             @NotNull
             @ValidateWithMethod(methodName = "validateStartTime", parameterType = Instant.class)
             private Instant _startTime;
@@ -398,6 +410,17 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
              */
             public Builder setStartTime(final Instant value) {
                 _startTime = value;
+                return this;
+            }
+
+            /**
+             * Sets the {@code _tags} and returns a reference to this Builder so that the methods can be chained together.
+             *
+             * @param value the {@code _tags} to set
+             * @return a reference to this Builder
+             */
+            public Builder setTags(final ImmutableMultimap<String, String> value) {
+                _tags = value;
                 return this;
             }
 
