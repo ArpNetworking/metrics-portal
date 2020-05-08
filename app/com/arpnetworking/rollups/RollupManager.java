@@ -106,6 +106,10 @@ public class RollupManager extends AbstractActorWithTimers {
 
             final Optional<Throwable> failure = message.getFailure();
             if (!failure.isPresent()) {
+                LOGGER.trace()
+                        .setMessage("rollup finished successfully")
+                        .addData("rollupDefinition", message.getRollupDefinition())
+                        .log();
                 metrics.addAnnotation("outcome", "success");
                 return;
             }

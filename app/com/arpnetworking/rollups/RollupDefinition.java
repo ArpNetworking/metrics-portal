@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -32,6 +33,7 @@ import java.util.Objects;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@Loggable
 public final class RollupDefinition implements Serializable, ConsistentHashingRouter.ConsistentHashable {
     private static final long serialVersionUID = -1098548879115718541L;
     private final String _sourceMetricName;
