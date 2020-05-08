@@ -347,7 +347,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             @NotNull
             private RollupPeriod _period;
             @NotNull
-            @ValidateWithMethod(methodName = "validateOffset", parameterType = Duration.class)
+            @ValidateWithMethod(methodName = "validateStartTime", parameterType = Instant.class)
             private Instant _startTime;
             @NotNull
             private Trigger _trigger;
