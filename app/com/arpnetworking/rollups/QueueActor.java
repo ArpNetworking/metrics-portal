@@ -50,7 +50,9 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
                 .match(Add.class, message -> {
                     final T item;
                     try {
-                        item = (T) message.getItem();
+                        // TODO(spencerpearson): I'm not sure what the Right Way is to address this. Maybe there isn't one.
+                        @SuppressWarnings("unchecked") final T intermediate = (T) message.getItem();
+                        item = intermediate;
                     } catch (final ClassCastException err) {
                         getSender().tell(new AddRejected<>(message.getItem()), getSelf());
                         return;
