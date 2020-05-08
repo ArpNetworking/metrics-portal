@@ -547,6 +547,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
      */
     @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
+        private static final long serialVersionUID = 839173899181349812L;
         private final MetricsQueryResponse _response;
 
         /**
