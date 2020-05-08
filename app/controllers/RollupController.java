@@ -58,13 +58,18 @@ public class RollupController extends Controller {
             final String period,
             final String startTime
     ) {
-        final ConsistencyChecker.Task task = new ConsistencyChecker.Task.Builder()
-                .setSourceMetricName(sourceMetricName)
-                .setRollupMetricName(rollupMetricName)
-                .setPeriod(RollupPeriod.valueOf(period))
-                .setStartTime(Instant.parse(startTime))
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
-                .build();
+        final ConsistencyChecker.Task task;
+        try {
+            task = new ConsistencyChecker.Task.Builder()
+                    .setSourceMetricName(sourceMetricName)
+                    .setRollupMetricName(rollupMetricName)
+                    .setPeriod(RollupPeriod.valueOf(period))
+                    .setStartTime(Instant.parse(startTime))
+                    .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
+                    .build();
+        } catch (final RuntimeException err) {
+            return badRequest(err.getMessage());
+        }
         _consistencyCheckerQueue.tell(
                 new QueueActor.Add<>(task),
                 null
