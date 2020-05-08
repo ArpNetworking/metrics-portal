@@ -207,7 +207,7 @@ public class DatabaseAlertExecutionRepositoryIT {
     @Test
     public void testJobMultipleRuns() {
         final Instant t0 = Instant.now();
-        final Duration dt = Duration.ofDays(1);
+        final Duration dt = Duration.ofHours(1);
 
         final int numJobs = 4;
         for (int i = 0; i < numJobs; i++) {

@@ -11,6 +11,8 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
+
+-- This table does not have a primary key constraint as that is not supported in Postgres 10 for partitioned tables.
 CREATE TABLE portal.alert_executions (
     organization_id BIGINT NOT NULL,
     alert_id UUID NOT NULL,
@@ -20,20 +22,33 @@ CREATE TABLE portal.alert_executions (
     state VARCHAR(255),
     result TEXT,
     error TEXT
-
---     What version of postgres do we run? This is supported in v11 but the local env runs v10
---     PRIMARY KEY (organization_id, alert_id, scheduled)
 ) PARTITION BY RANGE (scheduled);
 
--- CREATE INDEX alert_executions_state_completed_at_idx ON portal.alert_executions (alert_id, completed_at desc, state);
+-- Create daily partition tables <TABLE>_YEAR_MONTH_DAY for a specified parent table.
+--
+--     Example for portal.alert_executions, 8 May 2020:
+--
+--     CREATE TABLE portal.alert_executions_2020_05_08 PARTITION OF portal.alert_executions
+--            FOR VALUES FROM ('2020-05-08') TO ('2020-05-09');
+--
+-- Params:
+--    Table - Text - The name of the parent table.
+--    Start - Date - The beginning date of the time range, inclusive.
+--    End   - Date - The end date of the time range, exclusive.
+CREATE OR REPLACE FUNCTION create_daily_partition( TEXT, DATE, DATE )
+returns void AS $$
+DECLARE
+create_query text;
+BEGIN
+    FOR create_query IN SELECT
+        'CREATE TABLE ' || $1 || '_' || TO_CHAR(d, 'YYYY_MM_DD') ||
+        ' PARTITION OF ' || $1 || E' FOR VALUES FROM (\'' || d::date || E'\') TO (\'' || d::date + 1 || E'\');'
+        FROM generate_series($2, $3, '1 day') as d LOOP
+        EXECUTE create_query;
+    END LOOP;
+END;
+$$
+language plpgsql;
 
-CREATE TABLE portal.alert_executions_y2020m05d07 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-07') TO ('2020-05-08');
-CREATE TABLE portal.alert_executions_y2020m05d08 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-08') TO ('2020-05-09');
-CREATE TABLE portal.alert_executions_y2020m05d09 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-09') TO ('2020-05-10');
-CREATE TABLE portal.alert_executions_y2020m05d10 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-10') TO ('2020-05-11');
-CREATE TABLE portal.alert_executions_y2020m05d11 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-11') TO ('2020-05-12');
+-- Create an initial partition.
+SELECT create_daily_partition('portal.alert_executions', CURRENT_DATE, CURRENT_DATE + 1);
