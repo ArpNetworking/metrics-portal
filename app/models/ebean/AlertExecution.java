@@ -18,7 +18,7 @@ package models.ebean;
 
 import com.google.common.base.Objects;
 import io.ebean.annotation.DbJsonB;
-import models.internal.alerts.FiringAlertResult;
+import models.internal.AlertEvaluationResult;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -46,8 +46,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "alert_executions", schema = "portal")
 @IdClass(AlertExecution.Key.class)
-public final class AlertExecution extends BaseExecution<FiringAlertResult> {
-
+public final class AlertExecution extends BaseExecution<AlertEvaluationResult> {
+    @Id
     @ManyToOne(optional = false)
     @JoinColumn(name = "organization_id")
     private Organization organization;
@@ -57,7 +57,7 @@ public final class AlertExecution extends BaseExecution<FiringAlertResult> {
     @Nullable
     @DbJsonB
     @Column(name = "result")
-    private FiringAlertResult result;
+    private AlertEvaluationResult result;
 
     public Organization getOrganization() {
         return organization;
@@ -87,12 +87,12 @@ public final class AlertExecution extends BaseExecution<FiringAlertResult> {
 
     @Override
     @Nullable
-    public FiringAlertResult getResult() {
+    public AlertEvaluationResult getResult() {
         return result;
     }
 
     @Override
-    public void setResult(@Nullable final FiringAlertResult value) {
+    public void setResult(@Nullable final AlertEvaluationResult value) {
         result = value;
     }
 
@@ -101,6 +101,9 @@ public final class AlertExecution extends BaseExecution<FiringAlertResult> {
      */
     @Embeddable
     protected static final class Key {
+        @Nullable
+        @Column(name = "organization_id")
+        private final Long organizationId;
         @Nullable
         @Column(name = "alert_id")
         private final UUID alertId;
@@ -114,6 +117,7 @@ public final class AlertExecution extends BaseExecution<FiringAlertResult> {
         public Key() {
             alertId = null;
             scheduled = null;
+            organizationId = null;
         }
 
         @Override
@@ -126,12 +130,13 @@ public final class AlertExecution extends BaseExecution<FiringAlertResult> {
             }
             final Key key = (Key) o;
             return Objects.equal(alertId, key.alertId)
-                    && Objects.equal(scheduled, key.scheduled);
+                    && Objects.equal(scheduled, key.scheduled)
+                    && Objects.equal(organizationId, key.organizationId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(alertId, scheduled);
+            return Objects.hashCode(alertId, scheduled, organizationId);
         }
     }
 }

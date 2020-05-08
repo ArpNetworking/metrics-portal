@@ -17,15 +17,18 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
-import models.internal.alerts.FiringAlertResult;
+import models.internal.AlertEvaluationResult;
+import models.internal.scheduling.JobExecution;
 
 /**
- * A repository for storing and retrieving {@link models.internal.scheduling.JobExecution}s for an alert.
+ * A repository for storing and retrieving {@link JobExecution}s for an alert.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
- * @apiNote This class is intended for use as a type-token so that Guice can reflectively instantiate
- * the JobExecutionRepository at runtime. Scheduling code should be using a generic JobExecutionRepository.
+ *
+ * @apiNote
+ * This class is intended for use as a type-token so that Guice can reflectively instantiate
+ * the {@code JobExecutionRepository} at runtime. Scheduling code should be using a generic {@code JobExecutionRepository}.
  */
-public interface AlertExecutionRepository extends JobExecutionRepository<FiringAlertResult> {
+public interface AlertExecutionRepository extends JobExecutionRepository<AlertEvaluationResult> {
 }
 

@@ -23,8 +23,8 @@ import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.EbeanServer;
 import models.ebean.AlertExecution;
 import models.internal.Alert;
+import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
-import models.internal.alerts.FiringAlertResult;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
@@ -47,7 +47,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
-    private final DatabaseExecutionHelper<FiringAlertResult, AlertExecution> _helper;
+    private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
     /**
      * Public constructor.
@@ -77,11 +77,12 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         final Optional<AlertExecution> existingExecution = org.flatMap(r ->
                 _ebeanServer.createQuery(AlertExecution.class)
                         .where()
-                        .eq("organization", org)
+                        .eq("organization", org.get())
                         .eq("scheduled", scheduled)
                         .findOneOrEmpty()
         );
         final AlertExecution newOrUpdatedExecution = existingExecution.orElse(new AlertExecution());
+        newOrUpdatedExecution.setAlertId(jobId);
         newOrUpdatedExecution.setOrganization(org.get());
         newOrUpdatedExecution.setScheduled(scheduled);
         return newOrUpdatedExecution;
@@ -111,7 +112,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      * @return The last successful execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    public Optional<JobExecution<FiringAlertResult>> getLastScheduled(final UUID jobId, final Organization organization)
+    public Optional<JobExecution<AlertEvaluationResult>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(AlertExecution.class)
@@ -126,7 +127,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public Optional<JobExecution.Success<FiringAlertResult>> getLastSuccess(final UUID jobId, final Organization organization)
+    public Optional<JobExecution.Success<AlertEvaluationResult>> getLastSuccess(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         final Optional<AlertExecution> row = _ebeanServer.find(AlertExecution.class)
@@ -139,9 +140,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 .desc("completed_at")
                 .findOneOrEmpty();
         if (row.isPresent()) {
-            final JobExecution<FiringAlertResult> execution = DatabaseExecutionHelper.toInternalModel(row.get());
+            final JobExecution<AlertEvaluationResult> execution = DatabaseExecutionHelper.toInternalModel(row.get());
             if (execution instanceof JobExecution.Success) {
-                return Optional.of((JobExecution.Success<FiringAlertResult>) execution);
+                return Optional.of((JobExecution.Success<AlertEvaluationResult>) execution);
             }
             throw new IllegalStateException(
                     String.format("execution returned was not a success when specified by the query: %s", row.get())
@@ -151,7 +152,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public Optional<JobExecution<FiringAlertResult>> getLastCompleted(final UUID jobId, final Organization organization)
+    public Optional<JobExecution<AlertEvaluationResult>> getLastCompleted(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         return _ebeanServer.find(AlertExecution.class)
@@ -167,21 +168,26 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
+    public void jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        _helper.jobStarted(reportId, organization, scheduled);
+        _helper.jobStarted(alertId, organization, scheduled);
     }
 
     @Override
-    public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final FiringAlertResult result) {
+    public void jobSucceeded(
+            final UUID alertId,
+            final Organization organization,
+            final Instant scheduled,
+            final AlertEvaluationResult result
+    ) {
         assertIsOpen();
-        _helper.jobSucceeded(reportId, organization, scheduled, result);
+        _helper.jobSucceeded(alertId, organization, scheduled, result);
     }
 
     @Override
-    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public void jobFailed(final UUID alertId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        _helper.jobFailed(reportId, organization, scheduled, error);
+        _helper.jobFailed(alertId, organization, scheduled, error);
     }
 
     private void assertIsOpen() {

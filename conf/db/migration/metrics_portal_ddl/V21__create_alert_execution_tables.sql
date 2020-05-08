@@ -27,5 +27,13 @@ CREATE TABLE portal.alert_executions (
 
 -- CREATE INDEX alert_executions_state_completed_at_idx ON portal.alert_executions (alert_id, completed_at desc, state);
 
-CREATE TABLE portal.alert_executions_y2020m05d04 PARTITION OF portal.alert_executions
-    FOR VALUES FROM ('2020-05-04') TO ('2020-05-05');
+CREATE TABLE portal.alert_executions_y2020m05d07 PARTITION OF portal.alert_executions
+    FOR VALUES FROM ('2020-05-07') TO ('2020-05-08');
+CREATE TABLE portal.alert_executions_y2020m05d08 PARTITION OF portal.alert_executions
+    FOR VALUES FROM ('2020-05-08') TO ('2020-05-09');
+CREATE TABLE portal.alert_executions_y2020m05d09 PARTITION OF portal.alert_executions
+    FOR VALUES FROM ('2020-05-09') TO ('2020-05-10');
+CREATE TABLE portal.alert_executions_y2020m05d10 PARTITION OF portal.alert_executions
+    FOR VALUES FROM ('2020-05-10') TO ('2020-05-11');
+CREATE TABLE portal.alert_executions_y2020m05d11 PARTITION OF portal.alert_executions
+    FOR VALUES FROM ('2020-05-11') TO ('2020-05-12');

@@ -16,8 +16,8 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
+import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
-import models.internal.alerts.FiringAlertResult;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
@@ -42,14 +42,14 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public Optional<JobExecution.Success<FiringAlertResult>> getLastSuccess(
+    public Optional<JobExecution.Success<AlertEvaluationResult>> getLastSuccess(
             final UUID jobId, final Organization organization
     ) throws NoSuchElementException {
         return Optional.empty();
     }
 
     @Override
-    public Optional<JobExecution<FiringAlertResult>> getLastCompleted(
+    public Optional<JobExecution<AlertEvaluationResult>> getLastCompleted(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
@@ -62,7 +62,12 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public void jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final FiringAlertResult result) {
+    public void jobSucceeded(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final AlertEvaluationResult result
+    ) {
 
     }
 
