@@ -66,7 +66,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         return new ReceiveBuilder()
                 .match(Task.class, this::startTask)
                 .match(SampleCounts.class, this::sampleCountsReceived)
-                .match(QueueActor.QueueEmpty.class, msg ->
+                .match(CollectionActor.QueueEmpty.class, msg ->
                     getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
                 )
                 .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
@@ -98,7 +98,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private void requestWork() {
-        _queue.tell(QueueActor.Poll.getInstance(), getSelf());
+        _queue.tell(CollectionActor.Poll.getInstance(), getSelf());
     }
 
     private void startTask(final Task task) {

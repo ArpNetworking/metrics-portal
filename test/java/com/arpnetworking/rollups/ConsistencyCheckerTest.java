@@ -110,37 +110,37 @@ public final class ConsistencyCheckerTest {
     @Test
     public void testRequestsWorkOnStartup() {
         createActor();
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
     }
 
     @Test
     public void testRequestsWorkAfterQueryCompletes() {
         final ConsistencyChecker.Task task = TestBeanFactory.createConsistencyCheckerTaskBuilder().build();
         final ActorRef actor = createActor();
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // normal valid response
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // semantically invalid response
         when(_kairosDbClient.queryMetrics(Mockito.any())).thenReturn(CompletableFuture.completedFuture(
                 new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()
         ));
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // complete failure
         when(_kairosDbClient.queryMetrics(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
     }
 
     @Test
     public void testKairosDbInteraction() throws Exception {
         final ActorRef actor = createActor();
 
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
         actor.tell(
                 new ConsistencyChecker.Task.Builder()
                         .setSourceMetricName("my_metric")

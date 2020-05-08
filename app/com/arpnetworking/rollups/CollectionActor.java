@@ -23,25 +23,26 @@ import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 
 /**
- * An actor with a bounded queue.
+ * An actor with a bounded-size collection.
  *
- * @param <T>
+ * @param <T> the type of item being held
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class QueueActor<T extends Serializable> extends AbstractActor {
+public class CollectionActor<T extends Serializable, C extends Collection<T>> extends AbstractActor {
     /**
      * Creates a {@link Props} for this actor.
      *
      * @param maxSize The maximum size for the queue (if any).
+     * @param buffer The underlying {@link Collection} to store items in.
      * @return A new Props.
      */
-    public static Props props(final Optional<Long> maxSize) {
-        return Props.create(QueueActor.class, maxSize);
+    public static <C> Props props(final Optional<Long> maxSize, final C buffer) {
+        return Props.create(CollectionActor.class, maxSize, buffer);
     }
 
     @Override
@@ -57,17 +58,18 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
                         getSender().tell(new AddRejected<>(message.getItem()), getSelf());
                         return;
                     }
-                    if (_maxSize.isPresent() && _queue.size() < _maxSize.get()) {
-                        _queue.add(item);
+                    if (_maxSize.isPresent() && _buffer.size() < _maxSize.get()) {
+                        _buffer.add(item);
                         getSender().tell(new AddAccepted<>(item), getSelf());
                     } else {
                         getSender().tell(new AddRejected<>(item), getSelf());
                     }
                 })
                 .match(Poll.class, request -> {
+                    final Optional<T> result = _buffer.stream().findFirst();
+                    result.ifPresent(_buffer::remove);
                     getSender().tell(
-                            Optional.ofNullable((Object) _queue.poll())
-                                    .orElse(QueueEmpty.getInstance()),
+                            result.map(x -> (Object) x).orElse(QueueEmpty.getInstance()),
                             getSelf()
                     );
                 })
@@ -75,16 +77,17 @@ public class QueueActor<T extends Serializable> extends AbstractActor {
     }
 
     /**
-     * {@link QueueActor} actor constructor.
+     * {@link CollectionActor} actor constructor.
      *
      * @param maxSize the maximum size of the queue
      */
-    public QueueActor(final Optional<Long> maxSize) {
+    public CollectionActor(final Optional<Long> maxSize, final C buffer) {
         _maxSize = maxSize;
+        _buffer = buffer;
     }
 
     private final Optional<Long> _maxSize;
-    private final Queue<T> _queue = new ArrayDeque<>();
+    private final C _buffer;
 
     /**
      * Request that an item be added to the queue.

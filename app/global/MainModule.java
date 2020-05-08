@@ -68,7 +68,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
-import com.arpnetworking.rollups.QueueActor;
+import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -830,7 +830,7 @@ public class MainModule extends AbstractModule {
             final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
                     ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
                     : Optional.empty();
-            return _system.actorOf(QueueActor.props(maxSize));
+            return _system.actorOf(CollectionActor.props(maxSize, Sets.newHashSet()));
         }
 
         private final ActorSystem _system;

@@ -16,10 +16,8 @@
 package controllers;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.rollups.ConsistencyChecker;
-import com.arpnetworking.rollups.QueueActor;
-import com.arpnetworking.rollups.RollupPeriod;
+import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +26,6 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import java.io.IOException;
-import java.time.Instant;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -65,7 +62,7 @@ public class RollupController extends Controller {
             return badRequest(err.getMessage());
         }
         _consistencyCheckerQueue.tell(
-                new QueueActor.Add<>(task),
+                new CollectionActor.Add<>(task),
                 null
         );
         LOGGER.info()
