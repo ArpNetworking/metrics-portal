@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;

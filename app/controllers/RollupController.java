@@ -16,8 +16,8 @@
 package controllers;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.CollectionActor;
+import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,11 +39,14 @@ public class RollupController extends Controller {
 
     /**
      * Public constructor.
+     *
+     * @param mapper an {@link ObjectMapper} to use to deserialize requests
+     * @param consistencyCheckerQueue the {@link CollectionActor} to submit {@link ConsistencyChecker.Task}s to
      */
     @Inject
     public RollupController(
             final ObjectMapper mapper,
-        @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
+            @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
     ) {
         _mapper = mapper;
         _consistencyCheckerQueue = consistencyCheckerQueue;

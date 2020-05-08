@@ -22,7 +22,6 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
-import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +30,7 @@ import java.util.Optional;
  * An actor with a bounded-size collection.
  *
  * @param <T> the type of item being held
+ * @param <C> the type of collection to hold items in
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class CollectionActor<T extends Serializable, C extends Collection<T>> extends AbstractActor {
@@ -43,6 +43,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      *
      * @param maxSize The maximum size for the queue (if any).
      * @param buffer The underlying {@link Collection} to store items in.
+     * @param <C> The type of {@code buffer}.
      * @return A new Props.
      */
     public static <C> Props props(final Optional<Long> maxSize, final C buffer) {
@@ -84,6 +85,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      * {@link CollectionActor} actor constructor.
      *
      * @param maxSize the maximum size of the queue
+     * @param buffer the underlying {@link Collection} to store items in
      */
     public CollectionActor(final Optional<Long> maxSize, final C buffer) {
         _maxSize = maxSize;
