@@ -78,7 +78,7 @@ public final class ConsistencyCheckerTest {
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
-                bind(ActorRef.class).annotatedWith(Names.named("ConsistencyCheckerQueue")).toInstance(_queue.getRef());
+                bind(ActorRef.class).annotatedWith(Names.named("RollupConsistencyCheckerQueue")).toInstance(_queue.getRef());
                 bind(KairosDbClient.class).toInstance(_kairosDbClient);
                 bind(MetricsFactory.class).toInstance(new NoOpMetricsFactory());
             }

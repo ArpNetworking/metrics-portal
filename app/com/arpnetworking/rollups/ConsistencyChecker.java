@@ -84,7 +84,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     public ConsistencyChecker(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            @Named("ConsistencyCheckerQueue") final ActorRef queue
+            @Named("RollupConsistencyCheckerQueue") final ActorRef queue
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
