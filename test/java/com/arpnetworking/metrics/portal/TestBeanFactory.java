@@ -23,6 +23,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.RollupDefinition;
 import com.arpnetworking.rollups.RollupPeriod;
 import com.google.common.collect.ImmutableMap;
@@ -250,6 +251,20 @@ public final class TestBeanFactory {
         return new Aggregator.Builder()
                 .setName("count")
                 .setSampling(createSamplingBuilder().build());
+    }
+
+    /**
+     * Factory method for creating a {@link Aggregator.Builder}.
+     *
+     * @return the builder.
+     */
+    public static ConsistencyChecker.Task.Builder createConsistencyCheckerTaskBuilder() {
+        return new ConsistencyChecker.Task.Builder()
+                .setSourceMetricName("my_metric")
+                .setRollupMetricName("my_metric_1h")
+                .setPeriod(RollupPeriod.HOURLY)
+                .setStartTime(Instant.EPOCH)
+                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED);
     }
 
     /**

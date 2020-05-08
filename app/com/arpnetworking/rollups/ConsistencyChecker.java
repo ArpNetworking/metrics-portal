@@ -16,6 +16,7 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
@@ -32,21 +33,24 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Named;
 
 /**
  * TODO(spencerpearson)
@@ -56,11 +60,17 @@ import javax.inject.Inject;
  */
 public class ConsistencyChecker extends AbstractActorWithTimers {
 
+    public static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .match(Task.class, this::enqueueTask)
-                .match(SampleCounts.class, this::compareSampleCounts)
+                .match(Task.class, this::startTask)
+                .match(SampleCounts.class, this::sampleCountsReceived)
+                .match(QueueActor.NoMoreWork.class, msg ->
+                    getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
+                )
+                .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
                 .build();
     }
 
@@ -73,52 +83,50 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     @Inject
     public ConsistencyChecker(
             final KairosDbClient kairosDbClient,
-            final MetricsFactory metricsFactory) {
+            final MetricsFactory metricsFactory,
+            @Named("ConsistencyCheckerQueue") final ActorRef queue
+    ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
+        _queue = queue;
     }
 
-    private void enqueueTask(final Task task) {
-        if (_taskBuffer.size() > 10) {  // TODO(spencerpearson): make configurable
-            // TODO: log
-            return;
-        }
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
+        requestWork();
     }
+
+    private void requestWork() {
+        _queue.tell(QueueActor.Poll.getInstance(), getSelf());
+    }
+
     private void startTask(final Task task) {
-        _currentlyQuerying.set(true);
         Patterns.pipe(
                 _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
-                        .whenComplete((response, failure) -> _currentlyQuerying.set(false))
                         .thenApply(response -> {
                             try {
-                                return getSampleCounts(response);
-                            } catch (final MalformedSampleCountResponse e) {
-                                throw new CompletionException(e);
+                                return ConsistencyChecker.parseSampleCounts(task, response);
+                            } catch (final MalformedSampleCountResponse err) {
+                                throw new CompletionException(err);
                             }
                         })
-                        .handle((sampleCounts, failure) -> ThreadLocalBuilder.build(SampleCounts.Builder.class, builder -> {
-                            builder.setTask(task);
-                            if (failure != null) {
-                                builder.setFailure(failure);
-                            } else {
-                                builder.setSourceSampleCount(sampleCounts.get(task.getSourceMetricName()));
-                                builder.setRollupSampleCount(sampleCounts.get(task.getRollupMetricName()));
-                            }
-                        })),
+                        .whenComplete((response, failure) -> requestWork()),
                 getContext().dispatcher()
         ).to(getSelf());
     }
 
-    private void compareSampleCounts(final SampleCounts sampleCounts) {
-        final Metrics metrics = _metricsFactory.create();
+    private void sampleCountsReceived(final SampleCounts sampleCounts) {
         final Task task = sampleCounts.getTask();
+        final Optional<Throwable> failure = sampleCounts.getFailure();
+
+        final Metrics metrics = _metricsFactory.create();
         metrics.addAnnotation("trigger", task.getTrigger().name());
         metrics.addAnnotation("period", task.getPeriod().name());
 
         // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
         // metrics.addAnnotation("log_realized_cardinality", Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality()))));
 
-        final Optional<Throwable> failure = sampleCounts.getFailure();
         metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
 
         if (failure.isPresent()) {
@@ -127,26 +135,29 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     .addData("task", task)
                     .setThrowable(failure.get())
                     .log();
-        } else {
-            final double nOriginalSamples = sampleCounts.getSourceSampleCount();
-            final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
-            final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
-            metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-            final LogBuilder logBuilder = (
-                    // TODO(spencerpearson): probably make this level-thresholding configurable?
-                    fractionalDataLoss == 0 ? LOGGER.trace() :
-                    fractionalDataLoss < 0.001 ? LOGGER.debug() :
-                    fractionalDataLoss < 0.01 ? LOGGER.info() :
-                    fractionalDataLoss < 0.1 ? LOGGER.warn() :
-                    LOGGER.error()
-            );
-            logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
-                    .addData("task", task)
-                    .addData("nOriginalSamples", nOriginalSamples)
-                    .addData("nSamplesDropped", nSamplesDropped)
-                    .addData("fractionalDataLoss", fractionalDataLoss)
-                    .log();
+            return;
         }
+
+        final double nOriginalSamples = sampleCounts.getSourceSampleCount();
+        final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
+        final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
+        metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
+        final LogBuilder logBuilder = (
+                // TODO(spencerpearson): probably make this level-thresholding configurable?
+                fractionalDataLoss == 0 ? LOGGER.trace() :
+                        fractionalDataLoss < 0.001 ? LOGGER.debug() :
+                                fractionalDataLoss < 0.01 ? LOGGER.info() :
+                                        fractionalDataLoss < 0.1 ? LOGGER.warn() :
+                                                LOGGER.error()
+        );
+        logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
+                .addData("task", task)
+                .addData("nOriginalSamples", nOriginalSamples)
+                .addData("nSamplesDropped", nSamplesDropped)
+                .addData("fractionalDataLoss", fractionalDataLoss)
+                .log();
+
+        _reportDataLoss.accept(task, fractionalDataLoss);
 
         /* TODO(spencerpearson, OBS-1176): re-trigger re-execution of bad datapoints, something like
 
@@ -164,8 +175,14 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
     }
 
+    @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
         private final MetricsQueryResponse _response;
+
+        public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
+            super(cause);
+            _response = response;
+        }
 
         public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
             super(message);
@@ -177,8 +194,11 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         }
     }
 
-    private Map<String, Long> getSampleCounts(final MetricsQueryResponse response) throws MalformedSampleCountResponse {
-        final Map<String, Long> result = Maps.newHashMap();
+    /* package private */ static SampleCounts parseSampleCounts(final Task task, final MetricsQueryResponse response) throws MalformedSampleCountResponse {
+        final Map<String, Long> countsByMetric = Maps.newHashMap();
+        if (response.getQueries().size() != 2) {
+            throw new MalformedSampleCountResponse("expected exactly 1 query, got " + response.getQueries().size(), response);
+        }
         for (final MetricsQueryResponse.Query query : response.getQueries()) {
             if (query.getResults().size() != 1) {
                 throw new MalformedSampleCountResponse("expected exactly 1 result, got " + query.getResults().size(), response);
@@ -191,15 +211,27 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             if (!value.isPresent()) {
                 throw new MalformedSampleCountResponse("sample count has null value", response);
             }
-            final Long longValue;
+            final long longValue;
             try {
-                longValue = (Long) value.get();
-            } catch (final ClassCastException e) {
-                throw new MalformedSampleCountResponse(e.getMessage(), response);
+                longValue = Long.parseLong(value.get().toString());
+            } catch (final NumberFormatException e) {
+                throw new MalformedSampleCountResponse(e, response);
             }
-            result.put(queryResult.getName(), longValue);
+            countsByMetric.put(queryResult.getName(), longValue);
         }
-        return result;
+        final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
+        final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
+        if (sourceCount == null || rollupCount == null) {
+            throw new MalformedSampleCountResponse(
+                    String.format("expected keys %s and %s", task.getSourceMetricName(), task.getRollupMetricName()),
+                    response
+            );
+        }
+        return new SampleCounts.Builder()
+                .setTask(task)
+                .setSourceSampleCount(sourceCount)
+                .setRollupSampleCount(rollupCount)
+                .build();
     }
 
     private MetricsQuery buildCountComparisonQuery(final Task task) {
@@ -230,8 +262,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
-    private final Queue<Task> _taskBuffer = new ArrayDeque<>();
-    private final AtomicBoolean _currentlyQuerying = new AtomicBoolean(false);
+    private final ActorRef _queue;
+
+    /* package private */ BiConsumer<Task, Double> _reportDataLoss = (t, f) -> {};
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
 
@@ -275,6 +308,38 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
 
         public Trigger getTrigger() {
             return _trigger;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Task task = (Task) o;
+            return _sourceMetricName.equals(task._sourceMetricName)
+                    && _rollupMetricName.equals(task._rollupMetricName)
+                    && _period == task._period
+                    && _startTime.equals(task._startTime)
+                    && _trigger == task._trigger;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _trigger);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_sourceMetricName", _sourceMetricName)
+                    .add("_rollupMetricName", _rollupMetricName)
+                    .add("_period", _period)
+                    .add("_startTime", _startTime)
+                    .add("_trigger", _trigger)
+                    .toString();
         }
 
         public static final class Builder extends OvalBuilder<Task> {
@@ -381,6 +446,34 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             return _rollupSampleCount;
         }
 
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final SampleCounts that = (SampleCounts) o;
+            return _sourceSampleCount == that._sourceSampleCount
+                    && _rollupSampleCount == that._rollupSampleCount
+                    && _task.equals(that._task);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_task, _sourceSampleCount, _rollupSampleCount);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_task", _task)
+                    .add("_sourceSampleCount", _sourceSampleCount)
+                    .add("_rollupSampleCount", _rollupSampleCount)
+                    .toString();
+        }
+
         public static final class Builder extends FailableMessage.Builder<Builder, SampleCounts> {
             @NotNull
             private Task _task;
@@ -443,4 +536,20 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
         }
     }
+
+    private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
+
+    /**
+     * Internal message, telling the scheduler to run any necessary jobs.
+     * Intended only for internal use and testing.
+     */
+    /* package private */ static final class RequestWork implements Serializable {
+        private static final long serialVersionUID = 1517210720424319371L;
+        private static final RequestWork _INSTANCE = new RequestWork();
+        public static RequestWork getInstance() {
+            return _INSTANCE;
+        }
+        private RequestWork() {}
+    }
+
 }
