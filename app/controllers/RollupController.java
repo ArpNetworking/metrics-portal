@@ -16,15 +16,18 @@
 package controllers;
 
 import akka.actor.ActorRef;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.QueueActor;
 import com.arpnetworking.rollups.RollupPeriod;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.io.IOException;
 import java.time.Instant;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -42,8 +45,10 @@ public class RollupController extends Controller {
      */
     @Inject
     public RollupController(
+            final ObjectMapper mapper,
         @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
     ) {
+        _mapper = mapper;
         _consistencyCheckerQueue = consistencyCheckerQueue;
     }
 
@@ -52,22 +57,11 @@ public class RollupController extends Controller {
      *
      * @return Ok
      */
-    public Result enqueueConsistencyCheck(
-            final String sourceMetricName,
-            final String rollupMetricName,
-            final String period,
-            final String startTime
-    ) {
+    public Result enqueueConsistencyCheck() {
         final ConsistencyChecker.Task task;
         try {
-            task = new ConsistencyChecker.Task.Builder()
-                    .setSourceMetricName(sourceMetricName)
-                    .setRollupMetricName(rollupMetricName)
-                    .setPeriod(RollupPeriod.valueOf(period))
-                    .setStartTime(Instant.parse(startTime))
-                    .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
-                    .build();
-        } catch (final RuntimeException err) {
+            task = _mapper.treeToValue(request().body().asJson(), ConsistencyChecker.Task.class);
+        } catch (final IOException err) {
             return badRequest(err.getMessage());
         }
         _consistencyCheckerQueue.tell(
@@ -82,6 +76,7 @@ public class RollupController extends Controller {
     }
 
     private final ActorRef _consistencyCheckerQueue;
+    private final ObjectMapper _mapper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupController.class);
 }
