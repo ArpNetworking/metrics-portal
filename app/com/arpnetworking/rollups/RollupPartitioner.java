@@ -86,7 +86,8 @@ public class RollupPartitioner {
      */
     public boolean mightSplittingFixFailure(final Throwable failure) {
         if (!(failure instanceof KairosDbRequestException)) {
-            return false;
+            final Throwable cause = failure.getCause();
+            return cause != null && mightSplittingFixFailure(cause);
         }
 
         // TODO(spencerpearson): I hate how ad-hoc this is, but Kairos's behavior when it barfs
