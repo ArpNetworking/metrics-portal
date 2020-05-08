@@ -158,8 +158,6 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 .addData("fractionalDataLoss", fractionalDataLoss)
                 .log();
 
-        _reportDataLoss.accept(task, fractionalDataLoss);
-
         /* TODO(spencerpearson, OBS-1176): re-trigger re-execution of bad datapoints, something like
 
             if (discrepancyTooBig) {
@@ -248,8 +246,6 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
     private final ActorRef _queue;
-
-    /* package private */ BiConsumer<Task, Double> _reportDataLoss = (t, f) -> { };
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
     private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
