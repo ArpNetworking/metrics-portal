@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -33,6 +34,7 @@ import javax.annotation.Nullable;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@Loggable
 public final class LastDataPointsMessage extends FailableMessage {
 
     public String getSourceMetricName() {

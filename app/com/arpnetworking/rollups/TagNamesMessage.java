@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
+import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
@@ -24,6 +25,7 @@ import net.sf.oval.constraint.NotNull;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@Loggable
 public final class TagNamesMessage extends FailableMessage {
 
     public String getMetricName() {
