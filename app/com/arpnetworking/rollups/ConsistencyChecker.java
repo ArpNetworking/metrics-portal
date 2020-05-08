@@ -59,7 +59,9 @@ import javax.inject.Named;
  */
 public class ConsistencyChecker extends AbstractActorWithTimers {
 
-    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+    private final KairosDbClient _kairosDbClient;
+    private final MetricsFactory _metricsFactory;
+    private final ActorRef _queue;
 
     @Override
     public Receive createReceive() {
@@ -241,12 +243,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 )).build();
     }
 
-    private final KairosDbClient _kairosDbClient;
-    private final MetricsFactory _metricsFactory;
-    private final ActorRef _queue;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
     private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
+    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
 
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.

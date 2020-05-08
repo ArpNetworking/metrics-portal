@@ -34,6 +34,10 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public class CollectionActor<T extends Serializable, C extends Collection<T>> extends AbstractActor {
+
+    private final Optional<Long> _maxSize;
+    private final C _buffer;
+
     /**
      * Creates a {@link Props} for this actor.
      *
@@ -85,9 +89,6 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
         _maxSize = maxSize;
         _buffer = buffer;
     }
-
-    private final Optional<Long> _maxSize;
-    private final C _buffer;
 
     /**
      * Request that an item be added to the queue.
