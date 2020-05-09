@@ -42,6 +42,11 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
+    public Optional<JobExecution<AlertEvaluationResult>> getLastScheduled(final UUID jobId, final Organization organization) {
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<JobExecution.Success<AlertEvaluationResult>> getLastSuccess(
             final UUID jobId, final Organization organization
     ) throws NoSuchElementException {

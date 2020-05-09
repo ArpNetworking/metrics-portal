@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import models.internal.Organization;
+import models.internal.reports.Report;
 import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 
@@ -43,12 +44,24 @@ public interface JobExecutionRepository<T> {
     void close();
 
     /**
+     * Get the most recently scheduled execution, if any.
+     * <p>
+     * This could possibly return an execution that's pending completion.
+     *
+     * @param jobId The UUID of the job that completed.
+     * @param organization The organization owning the job.
+     * @return The last successful execution.
+     * @throws NoSuchElementException if no job has the given UUID.
+     */
+    Optional<JobExecution<T>> getLastScheduled(UUID jobId, Organization organization);
+
+    /**
      * Get the last successful execution, if any.
      *
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
-     * @throws NoSuchElementException if no job has the given UUID.
      * @return The last successful execution.
+     * @throws NoSuchElementException if no job has the given UUID.
      */
     Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException;
 
@@ -57,8 +70,8 @@ public interface JobExecutionRepository<T> {
      *
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
-     * @throws NoSuchElementException if no job has the given UUID.
      * @return The last completed execution.
+     * @throws NoSuchElementException if no job has the given UUID.
      */
     Optional<JobExecution<T>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
 

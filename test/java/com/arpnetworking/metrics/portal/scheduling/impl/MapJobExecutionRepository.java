@@ -58,6 +58,10 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
         _open.set(false);
     }
 
+    @Override
+    public Optional<JobExecution<T>> getLastScheduled(final UUID jobId, final Organization organization) {
+        return Optional.ofNullable(_lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId));
+    }
 
     @Override
     public Optional<JobExecution.Success<T>> getLastSuccess(final UUID jobId, final Organization organization) {

@@ -115,16 +115,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
         _isOpen.set(false);
     }
 
-    /**
-     * Get the most recently scheduled execution, if any.
-     * <p>
-     * This could possibly return an execution that's pending completion.
-     *
-     * @param jobId The UUID of the job that completed.
-     * @param organization The organization owning the job.
-     * @return The last successful execution.
-     * @throws NoSuchElementException if no job has the given UUID.
-     */
+    @Override
     public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
