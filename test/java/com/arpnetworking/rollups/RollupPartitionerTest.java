@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -90,6 +91,12 @@ public final class RollupPartitionerTest {
                 URI.create("http://kairos"),
                 Duration.ofMinutes(2)
         )));
+        assertTrue(partitioner.mightSplittingFixFailure(new CompletionException(new KairosDbRequestException(
+                500,
+                "some error message",
+                URI.create("http://kairos"),
+                Duration.ofMinutes(2)
+        ))));
         assertFalse(partitioner.mightSplittingFixFailure(new KairosDbRequestException(
                 500,
                 "some error message",

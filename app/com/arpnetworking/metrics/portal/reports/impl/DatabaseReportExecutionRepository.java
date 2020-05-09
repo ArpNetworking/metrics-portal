@@ -17,11 +17,11 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
+import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.common.base.Throwables;
 import io.ebean.EbeanServer;
-import io.ebean.Transaction;
+import io.ebean.ExpressionList;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.reports.Report;
@@ -32,12 +32,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityNotFoundException;
-import javax.persistence.PersistenceException;
 
 /**
  * Implementation of {@link JobExecutionRepository} for {@link Report} jobs using a SQL database.
@@ -50,6 +47,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
+    private final DatabaseExecutionHelper<Report.Result, ReportExecution> _executionHelper;
 
     /**
      * Public constructor.
@@ -59,6 +57,48 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     @Inject
     public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer) {
         _ebeanServer = ebeanServer;
+        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution);
+
+    }
+
+    private ReportExecution findOrCreateReportExecution(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled
+    ) {
+        final Optional<models.ebean.Report> report = models.ebean.Organization.findByOrganization(_ebeanServer, organization)
+                .flatMap(beanOrg -> models.ebean.Report.findByUUID(
+                        _ebeanServer,
+                        beanOrg,
+                        jobId
+                ));
+        if (!report.isPresent()) {
+            final String message = String.format(
+                    "Could not find report with uuid=%s, organization.uuid=%s",
+                    jobId,
+                    organization.getId()
+            );
+            throw new EntityNotFoundException(message);
+        }
+
+        final Optional<ReportExecution> existingExecution = report.flatMap(r ->
+                _ebeanServer.createQuery(ReportExecution.class)
+                        .where()
+                        .eq("report", r)
+                        .eq("scheduled", scheduled)
+                        .findOneOrEmpty()
+        );
+        final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
+        newOrUpdatedExecution.setReport(report.get());
+        newOrUpdatedExecution.setScheduled(scheduled);
+        return newOrUpdatedExecution;
+    }
+
+    private ExpressionList<ReportExecution> findExecutions(final UUID jobId, final Organization organization) {
+        return _ebeanServer.find(ReportExecution.class)
+                .where()
+                .eq("report.uuid", jobId)
+                .eq("report.organization.uuid", organization.getId());
     }
 
     @Override
@@ -75,7 +115,6 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
         _isOpen.set(false);
     }
 
-
     /**
      * Get the most recently scheduled execution, if any.
      * <p>
@@ -89,32 +128,27 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
+        return findExecutions(jobId, organization)
+                .setMaxRows(1)
                 .orderBy()
                 .desc("scheduled")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .setMaxRows(1)
                 .findOneOrEmpty()
-                .map(this::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel);
     }
 
     @Override
     public Optional<JobExecution.Success<Report.Result>> getLastSuccess(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        final Optional<ReportExecution> row = _ebeanServer.find(ReportExecution.class)
+        final Optional<ReportExecution> row =
+            findExecutions(jobId, organization)
+                .eq("state", ReportExecution.State.SUCCESS)
                 .orderBy()
                 .desc("completed_at")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .eq("state", ReportExecution.State.SUCCESS)
                 .setMaxRows(1)
                 .findOneOrEmpty();
         if (row.isPresent()) {
-            final JobExecution<Report.Result> execution = toInternalModel(row.get());
+            final JobExecution<Report.Result> execution = DatabaseExecutionHelper.toInternalModel(row.get());
             if (execution instanceof JobExecution.Success) {
                 return Optional.of((JobExecution.Success<Report.Result>) execution);
             }
@@ -129,161 +163,31 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     public Optional<JobExecution<Report.Result>> getLastCompleted(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(ReportExecution.class)
+        return findExecutions(jobId, organization)
+                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
                 .orderBy()
                 .desc("completed_at")
-                .where()
-                .eq("report.uuid", jobId)
-                .eq("report.organization.uuid", organization.getId())
-                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
                 .setMaxRows(1)
                 .findOneOrEmpty()
-                .map(this::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel);
     }
 
     @Override
     public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.STARTED,
-                execution -> {
-                    execution.setStartedAt(Instant.now());
-                }
-        );
+        _executionHelper.jobStarted(reportId, organization, scheduled);
     }
 
     @Override
     public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.SUCCESS,
-                execution -> {
-                    execution.setResult(result);
-                    execution.setCompletedAt(Instant.now());
-                }
-        );
+        _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
     }
 
     @Override
     public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        updateExecutionState(
-                reportId,
-                organization,
-                scheduled,
-                ReportExecution.State.FAILURE,
-                execution -> {
-                    execution.setError(Throwables.getStackTraceAsString(error));
-                    execution.setCompletedAt(Instant.now());
-                }
-        );
-    }
-
-    private void updateExecutionState(
-            final UUID reportId,
-            final Organization organization,
-            final Instant scheduled,
-            final ReportExecution.State state,
-            final Consumer<ReportExecution> update
-    ) {
-        LOGGER.debug()
-                .setMessage("Upserting report execution")
-                .addData("report.uuid", reportId)
-                .addData("scheduled", scheduled)
-                .addData("state", state)
-                .log();
-        try (Transaction transaction = _ebeanServer.beginTransaction()) {
-            final Optional<models.ebean.Report> report = models.ebean.Organization.findByOrganization(_ebeanServer, organization)
-                    .flatMap(beanOrg -> models.ebean.Report.findByUUID(
-                            _ebeanServer,
-                            beanOrg,
-                            reportId
-                    ));
-            if (!report.isPresent()) {
-                final String message = String.format(
-                        "Could not find report with uuid=%s, organization.uuid=%s",
-                        reportId,
-                        organization.getId()
-                );
-                throw new EntityNotFoundException(message);
-            }
-
-            final Optional<ReportExecution> existingExecution = report.flatMap(r ->
-                    _ebeanServer.createQuery(ReportExecution.class)
-                            .where()
-                            .eq("report", r)
-                            .eq("scheduled", scheduled)
-                            .findOneOrEmpty()
-            );
-            final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
-            newOrUpdatedExecution.setReport(report.get());
-            newOrUpdatedExecution.setScheduled(scheduled);
-
-            update.accept(newOrUpdatedExecution);
-            newOrUpdatedExecution.setState(state);
-
-            if (existingExecution.isPresent()) {
-                _ebeanServer.update(newOrUpdatedExecution);
-            } else {
-                _ebeanServer.save(newOrUpdatedExecution);
-            }
-
-            LOGGER.debug()
-                    .setMessage("Upserted report execution")
-                    .addData("report.uuid", reportId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .log();
-            transaction.commit();
-            // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatchCheck
-            LOGGER.error()
-                    .setMessage("Failed to upsert report executions")
-                    .addData("report.uuid", reportId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .setThrowable(e)
-                    .log();
-            throw new PersistenceException("Failed to upsert report executions", e);
-        }
-    }
-
-    private JobExecution<Report.Result> toInternalModel(final ReportExecution beanModel) {
-        final ReportExecution.State state = beanModel.getState();
-        switch (state) {
-            case STARTED:
-                return new JobExecution.Started.Builder<Report.Result>()
-                        .setJobId(beanModel.getReport().getUuid())
-                        .setScheduled(beanModel.getScheduled())
-                        .setStartedAt(beanModel.getStartedAt())
-                        .build();
-            case FAILURE:
-                @Nullable final Throwable throwable = beanModel.getError() == null ? null : new Throwable(beanModel.getError());
-                return new JobExecution.Failure.Builder<Report.Result>()
-                        .setJobId(beanModel.getReport().getUuid())
-                        .setScheduled(beanModel.getScheduled())
-                        .setStartedAt(beanModel.getStartedAt())
-                        .setCompletedAt(beanModel.getCompletedAt())
-                        .setError(throwable)
-                        .build();
-            case SUCCESS:
-                return new JobExecution.Success.Builder<Report.Result>()
-                        .setJobId(beanModel.getReport().getUuid())
-                        .setScheduled(beanModel.getScheduled())
-                        .setCompletedAt(beanModel.getCompletedAt())
-                        .setStartedAt(beanModel.getStartedAt())
-                        .setResult(beanModel.getResult())
-                        .build();
-            default:
-                throw new AssertionError("unexpected state: " + state);
-        }
+        _executionHelper.jobFailed(reportId, organization, scheduled, error);
     }
 
     private void assertIsOpen() {
