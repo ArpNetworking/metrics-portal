@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.base.Throwables;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -50,15 +49,29 @@ public abstract class JobExecutionRepositoryIT<T> {
     private UUID _jobId;
     private Organization _organization;
 
+    /**
+     * Construct an arbitrary result to be used in a test case.
+     *
+     * @return The result.
+     */
     abstract T newResult();
 
-    abstract JobExecutionRepository<T> setUp(final Organization _organization, final UUID jobId);
+    /**
+     * Construct a <b>closed</b> instance of the Repository to be tested.
+     * <p>
+     * The organization and job id for the given test case are provided as some repositories may validate
+     * that these objects exist when fetching the associated executions. Each test suite may want to ensure
+     * that these IDs reference valid objects before the test is run.
+     *
+     * @return The repository.
+     */
+    abstract JobExecutionRepository<T> setUpRepository(final Organization _organization, final UUID jobId);
 
     @Before
-    public void setUp() {
+    public void setUpRepository() {
         _jobId = UUID.randomUUID();
         _organization = TestBeanFactory.createOrganization();
-        _repository = setUp(_organization, _jobId);
+        _repository = setUpRepository(_organization, _jobId);
         _repository.open();
     }
 

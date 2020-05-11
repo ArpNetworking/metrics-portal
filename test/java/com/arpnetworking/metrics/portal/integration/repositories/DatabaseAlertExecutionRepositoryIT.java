@@ -36,14 +36,16 @@ import java.util.UUID;
  */
 public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
     @Override
-    public JobExecutionRepository<AlertEvaluationResult> setUp(final Organization organization, final UUID jobId) {
+    public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
 
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
 
-        // TODO(cbriones): create a set of partitions before this test run.
+        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
+        // references are not constrained in the underlying execution table.
+
         return new DatabaseAlertExecutionRepository(server);
     }
 
