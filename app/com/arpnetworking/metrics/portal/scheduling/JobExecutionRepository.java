@@ -49,7 +49,7 @@ public interface JobExecutionRepository<T> {
      *
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
-     * @return The last successful execution.
+     * @return The most recently scheduled execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
     Optional<JobExecution<T>> getLastScheduled(UUID jobId, Organization organization);
