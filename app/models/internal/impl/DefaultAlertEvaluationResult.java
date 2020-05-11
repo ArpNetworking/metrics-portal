@@ -70,6 +70,9 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
                 .toString();
     }
 
+    /**
+     * Builder class for instances of {@code DefaultAlertEvaluationResult}.
+     */
     public static class Builder extends OvalBuilder<DefaultAlertEvaluationResult> {
         private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 

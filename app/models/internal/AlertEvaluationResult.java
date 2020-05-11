@@ -27,7 +27,8 @@ import models.internal.scheduling.JobExecution;
  * The result of evaluating an Alert.
  * <p>
  * This is not useful on its own since it does not expose any event timestamps or alert metadata.
- * It's expected that those values will be obtained from the associated {@link JobExecution} instances along with the alert definition itself.
+ * It's expected that those values will be obtained from the associated {@link JobExecution} instances
+ * along with the alert definition itself.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */

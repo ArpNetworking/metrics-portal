@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import models.internal.Organization;
-import models.internal.reports.Report;
 import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 

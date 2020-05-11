@@ -42,6 +42,8 @@ import static org.junit.Assert.fail;
 /**
  * Generic integration tests for implementations of {@link JobExecutionRepository}.
  *
+ * @param <T> The job result type.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public abstract class JobExecutionRepositoryIT<T> {
@@ -65,7 +67,7 @@ public abstract class JobExecutionRepositoryIT<T> {
      *
      * @return The repository.
      */
-    abstract JobExecutionRepository<T> setUpRepository(final Organization _organization, final UUID jobId);
+    abstract JobExecutionRepository<T> setUpRepository(Organization organization, UUID jobId);
 
     @Before
     public void setUpRepository() {
