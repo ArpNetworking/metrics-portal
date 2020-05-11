@@ -33,7 +33,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for a {@link models.internal.alerts.Alert}.
+ * An execution event for an {@link models.internal.Alert}.
  * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality
