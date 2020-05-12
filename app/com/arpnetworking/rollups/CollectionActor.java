@@ -73,10 +73,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                 .match(Poll.class, request -> {
                     final Optional<T> result = _buffer.stream().findFirst();
                     result.ifPresent(_buffer::remove);
-                    getSender().tell(
-                            result.map(x -> (Object) x).orElse(QueueEmpty.getInstance()),
-                            getSelf()
-                    );
+                    getSender().tell(new PollResponse<>(result), getSelf());
                 })
                 .build();
     }
@@ -244,6 +241,53 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
             return INSTANCE;
         }
         private Poll() {}
+    }
+
+    /**
+     * Response to {@link Poll}, containing an item from the collection (if any).
+     *
+     * @param <T> the type of item being added
+     */
+    @Loggable
+    public static final class PollResponse<T> implements Serializable {
+        private static final long serialVersionUID = 3527299675739118395L;
+        private final Optional<T> _item;
+
+        public Optional<T> getItem() {
+            return _item;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final PollResponse<?> that = (PollResponse<?>) o;
+            return _item.equals(that._item);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(_item);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_item", _item)
+                    .toString();
+        }
+
+        /**
+         * Public constructor.
+         * @param item the item that was rejected
+         */
+        public PollResponse(final Optional<T> item) {
+            this._item = item;
+        }
     }
 
     /**
