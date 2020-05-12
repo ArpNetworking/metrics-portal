@@ -221,27 +221,30 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     private MetricsQuery buildCountComparisonQuery(final Task task) {
         final Consumer<Metric.Builder> setCommonFields = builder -> builder
                 .setAggregators(ImmutableList.of(
-                        new Aggregator.Builder()
+                        ThreadLocalBuilder.build(Aggregator.Builder.class, aggb -> aggb
                                 .setName("count")
-                                .setSampling(new Sampling.Builder().setUnit(task.getPeriod().getSamplingUnit()).setValue(1).build())
+                                .setSampling(ThreadLocalBuilder.build(Sampling.Builder.class, sb -> sb
+                                        .setUnit(task.getPeriod().getSamplingUnit()).setValue(1).build()
+                                ))
                                 .setAlignSampling(true)
                                 .setAlignStartTime(true)
-                                .build())
+                        ))
                 );
 
-        return new MetricsQuery.Builder()
+        return ThreadLocalBuilder.build(MetricsQuery.Builder.class, mqb -> mqb
                 .setStartTime(task.getStartTime())
                 .setEndTime(task.getStartTime().plus(task.getPeriod().periodCountToDuration(1)).minusMillis(1))
                 .setMetrics(ImmutableList.of(
-                        ThreadLocalBuilder.build(Metric.Builder.class, b -> {
-                            setCommonFields.accept(b);
-                            b.setName(task.getSourceMetricName());
+                        ThreadLocalBuilder.build(Metric.Builder.class, mb -> {
+                            setCommonFields.accept(mb);
+                            mb.setName(task.getSourceMetricName());
                         }),
-                        ThreadLocalBuilder.build(Metric.Builder.class, b -> {
-                            setCommonFields.accept(b);
-                            b.setName(task.getRollupMetricName());
+                        ThreadLocalBuilder.build(Metric.Builder.class, mb -> {
+                            setCommonFields.accept(mb);
+                            mb.setName(task.getRollupMetricName());
                         })
-                )).build();
+                ))
+        );
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
