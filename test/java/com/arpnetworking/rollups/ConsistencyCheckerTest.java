@@ -196,7 +196,7 @@ public final class ConsistencyCheckerTest {
 
         try {
             builder.setStartTime(Instant.EPOCH.plus(Duration.ofSeconds(1))).build();
-            fail();
+            fail("expected ConstraintsViolatedException");
         } catch (final ConstraintsViolatedException e) {
         }
     }
