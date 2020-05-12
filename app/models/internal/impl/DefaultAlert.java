@@ -20,9 +20,9 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
+import models.internal.MetricsQuery;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
-import models.internal.alerts.MetricsQuery;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
