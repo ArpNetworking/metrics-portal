@@ -60,7 +60,8 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                         @SuppressWarnings("unchecked") final T intermediate = (T) message.getItem();
                         item = intermediate;
                     } catch (final ClassCastException err) {
-                        getSender().tell(new AddRejected<>(message.getItem()), getSelf());
+                        final Serializable serializableItem = (Serializable) message.getItem();
+                        getSender().tell(new AddRejected<>(serializableItem), getSelf());
                         return;
                     }
                     if (_maxSize.isPresent() && _buffer.size() < _maxSize.get()) {
