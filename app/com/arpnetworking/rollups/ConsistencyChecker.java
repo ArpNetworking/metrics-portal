@@ -145,7 +145,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             metrics.addAnnotation("period", task.getPeriod().name());
 
             // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
-            // metrics.addAnnotation("log_realized_cardinality", Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality()))));
+            // metrics.addAnnotation(
+            //         "log_realized_cardinality",
+            //         Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality())))
+            // );
 
             metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
 
