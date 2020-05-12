@@ -197,7 +197,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
             final long longValue;
             try {
-                longValue = Long.parseLong(value.get().toString());
+                longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
             } catch (final NumberFormatException e) {
                 throw new MalformedSampleCountResponse(e, response);
             }
