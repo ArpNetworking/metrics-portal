@@ -15,6 +15,8 @@
  */
 package models.internal;
 
+import models.internal.alerts.Alert;
+
 import java.util.Optional;
 
 /**

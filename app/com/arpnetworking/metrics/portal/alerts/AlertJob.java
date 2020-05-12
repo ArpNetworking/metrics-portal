@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package models.internal.impl;
+package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.inject.Injector;
-import models.internal.Alert;
-import models.internal.AlertEvaluationResult;
+import models.internal.alerts.Alert;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.Job;
 
 import java.time.Duration;
@@ -73,7 +73,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
     @Override
     public CompletionStage<? extends AlertEvaluationResult> execute(final Injector injector, final Instant scheduled) {
         final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
-        future.completeExceptionally(new RuntimeException("Alert execution is not yet implemented"));
+        future.completeExceptionally(new UnsupportedOperationException("Alert execution is not implemented"));
         return future;
     }
 

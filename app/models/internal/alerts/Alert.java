@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Groupon.com
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal;
+package models.internal.alerts;
 
+import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.google.common.collect.ImmutableMap;
-import models.internal.alerts.MetricsQuery;
+import models.internal.MetricsQuery;
+import models.internal.Organization;
 
-import java.time.Duration;
 import java.util.UUID;
 
 /**
@@ -27,10 +28,11 @@ import java.util.UUID;
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public interface Alert {
+
     /**
-     * The unique identifier for this alert.
+     * The unique identifier of the alert.
      *
-     * @return The UUID
+     * @return The unique identifier of the alert.
      */
     UUID getId();
 
@@ -42,9 +44,9 @@ public interface Alert {
     Organization getOrganization();
 
     /**
-     * A human-readable name for this alert.
+     * The name of the alert.
      *
-     * @return The alert name.
+     * @return The name of the alert.
      */
     String getName();
 
@@ -66,13 +68,6 @@ public interface Alert {
      * @return the alert query.
      */
     MetricsQuery getQuery();
-
-    /**
-     * The period used to evaluate this alert.
-     *
-     * @return the alert period.
-     */
-    Duration getPeriod();
 
     /**
      * Returns {@code true} iff this alert is enabled.

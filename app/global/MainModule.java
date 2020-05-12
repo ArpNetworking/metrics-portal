@@ -91,9 +91,7 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import models.internal.Context;
 import models.internal.Features;
-import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
@@ -243,8 +241,6 @@ public class MainModule extends AbstractModule {
     private CodecRegistry provideCodecRegistry() {
         final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
         registry.register(InstantCodec.instance);
-        registry.register(new EnumNameCodec<>(Operator.class));
-        registry.register(new EnumNameCodec<>(Context.class));
         return registry;
     }
 

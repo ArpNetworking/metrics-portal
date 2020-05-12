@@ -17,6 +17,7 @@
 package models.ebean;
 
 import io.ebean.annotation.DbJsonB;
+import models.internal.alerts.Alert;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
- * A execution event for a {@link models.internal.Alert}.
+ * A generic execution event for a {@code Job}.
  * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality

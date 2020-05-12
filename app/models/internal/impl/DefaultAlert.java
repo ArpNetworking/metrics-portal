@@ -20,13 +20,12 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;
-import models.internal.Alert;
 import models.internal.Organization;
+import models.internal.alerts.Alert;
 import models.internal.alerts.MetricsQuery;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,7 +42,6 @@ public final class DefaultAlert implements Alert {
     private final String _name;
     private final String _description;
     private final MetricsQuery _query;
-    private final Duration _period;
     private final boolean _enabled;
     private final ImmutableMap<String, Object> _additionalMetadata;
 
@@ -53,7 +51,6 @@ public final class DefaultAlert implements Alert {
         _name = builder._name;
         _description = builder._description;
         _query = builder._query;
-        _period = builder._period;
         _enabled = builder._enabled;
         _additionalMetadata = builder._additionalMetadata;
     }
@@ -84,11 +81,6 @@ public final class DefaultAlert implements Alert {
     }
 
     @Override
-    public Duration getPeriod() {
-        return _period;
-    }
-
-    @Override
     public boolean isEnabled() {
         return _enabled;
     }
@@ -113,13 +105,12 @@ public final class DefaultAlert implements Alert {
                 && Objects.equal(_name, that._name)
                 && Objects.equal(_description, that._description)
                 && Objects.equal(_query, that._query)
-                && Objects.equal(_period, that._period)
                 && Objects.equal(_additionalMetadata, that._additionalMetadata);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_id, _organization, _name, _description, _query, _period, _enabled, _additionalMetadata);
+        return Objects.hashCode(_id, _organization, _name, _description, _query, _enabled, _additionalMetadata);
     }
 
     @Override
@@ -130,7 +121,6 @@ public final class DefaultAlert implements Alert {
                 .add("name", _name)
                 .add("description", _description)
                 .add("query", _query)
-                .add("period", _period)
                 .add("enabled", _enabled)
                 .add("additionalMetadata", _additionalMetadata)
                 .toString();
@@ -153,8 +143,6 @@ public final class DefaultAlert implements Alert {
         @NotNull
         private MetricsQuery _query;
         @NotNull
-        private Duration _period;
-        @NotNull
         private Boolean _enabled;
         private ImmutableMap<String, Object> _additionalMetadata;
 
@@ -167,7 +155,7 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The identifier. Required. Cannot be null.
+         * The alert identifier. Required. Cannot be null.
          *
          * @param value The identifier.
          * @return This instance of {@link Builder}.
@@ -178,7 +166,7 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The organization. Required. Cannot be null.
+         * The alert organization. Required. Cannot be null.
          *
          * @param value The organization.
          * @return This instance of {@link Builder}.
@@ -189,7 +177,7 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The name. Required. Cannot be null or empty.
+         * The alert name. Required. Cannot be null or empty.
          *
          * @param value The name.
          * @return This instance of {@link Builder}.
@@ -200,7 +188,7 @@ public final class DefaultAlert implements Alert {
         }
 
         /**
-         * The description. Defaults to an empty description.
+         * The alert description. Defaults to an empty description.
          *
          * @param value The description.
          * @return This instance of {@link Builder}.
@@ -216,19 +204,8 @@ public final class DefaultAlert implements Alert {
          * @param value The query.
          * @return This instance of {@link Builder}.
          */
-        public Builder setPeriod(final MetricsQuery value) {
+        public Builder setQuery(final MetricsQuery value) {
             _query = value;
-            return this;
-        }
-
-        /**
-         * The period. Required. Cannot be null.
-         *
-         * @param value The period.
-         * @return This instance of {@link Builder}.
-         */
-        public Builder setPeriod(final Duration value) {
-            _period = value;
             return this;
         }
 
@@ -238,7 +215,7 @@ public final class DefaultAlert implements Alert {
          * @param value Whether or not this alert is enabled.
          * @return This instance of {@link Builder}.
          */
-        public Builder setPeriod(final boolean value) {
+        public Builder setEnabled(final boolean value) {
             _enabled = value;
             return this;
         }

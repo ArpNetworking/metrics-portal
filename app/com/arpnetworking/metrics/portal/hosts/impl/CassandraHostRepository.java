@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -64,14 +63,14 @@ public class CassandraHostRepository implements HostRepository {
     @Override
     public void open() {
         assertIsOpen(false);
-        LOGGER.debug().setMessage("Opening alert repository").log();
+        LOGGER.debug().setMessage("Opening host repository").log();
         _isOpen.set(true);
     }
 
     @Override
     public void close() {
         assertIsOpen();
-        LOGGER.debug().setMessage("Closing alert repository").log();
+        LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
         _cassandraSession.close();
     }
@@ -122,8 +121,8 @@ public class CassandraHostRepository implements HostRepository {
                 .addData("hostname", hostname)
                 .addData("organization", organization)
                 .log();
-        final Optional<Host> alert = getHost(hostname, organization);
-        if (alert.isPresent()) {
+        final Optional<Host> host = getHost(hostname, organization);
+        if (host.isPresent()) {
             final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
             mapper.delete(organization, hostname);
         }
@@ -222,5 +221,5 @@ public class CassandraHostRepository implements HostRepository {
     private final MappingManager _mappingManager;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraAlertRepository.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraHostRepository.class);
 }
