@@ -21,7 +21,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import models.internal.AlertEvaluationResult;
+import models.internal.alerts.AlertEvaluationResult;
 
 import java.util.List;
 import java.util.Map;
