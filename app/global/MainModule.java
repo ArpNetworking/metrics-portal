@@ -90,6 +90,8 @@ import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.EbeanServer;
+import io.ebean.EbeanServerFactory;
+import io.ebean.config.ServerConfig;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;

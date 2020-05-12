@@ -23,8 +23,8 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
-import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
 
 import java.util.UUID;

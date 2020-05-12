@@ -17,7 +17,7 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
-import models.internal.AlertEvaluationResult;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
 /**

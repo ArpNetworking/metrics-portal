@@ -18,7 +18,7 @@ package models.ebean;
 
 import com.google.common.base.Objects;
 import io.ebean.annotation.DbJsonB;
-import models.internal.AlertEvaluationResult;
+import models.internal.alerts.AlertEvaluationResult;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -33,7 +33,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for an {@link models.internal.Alert}.
+ * An execution event for an {@link models.internal.alerts.Alert}.
  * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality

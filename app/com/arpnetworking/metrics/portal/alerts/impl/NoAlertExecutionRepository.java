@@ -18,8 +18,8 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;

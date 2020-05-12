@@ -22,9 +22,9 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.EbeanServer;
 import models.ebean.AlertExecution;
-import models.internal.Alert;
-import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
+import models.internal.alerts.Alert;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
