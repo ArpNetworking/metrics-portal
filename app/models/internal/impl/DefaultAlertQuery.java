@@ -18,10 +18,10 @@ package models.internal.impl;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.google.common.base.MoreObjects;
-import models.internal.alerts.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.alerts.Alert;
 
 import java.util.Optional;
 

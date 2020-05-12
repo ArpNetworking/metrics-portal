@@ -52,7 +52,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -294,28 +293,6 @@ public final class TestBeanFactory {
         organization.setUuid(UUID.randomUUID());
         return organization;
     }
-
-    /**
-     * Factory method to create an alert builder.
-     *
-     * @return an alert builder
-     */
-//    public static DefaultAlert.Builder createAlertBuilder() {
-        // FIXME(cbriones)
-//        return new DefaultAlert.Builder()
-//                .setId(UUID.randomUUID())
-//                .setMetric(TEST_METRIC + UUID.randomUUID().toString())
-//                .setService(TEST_SERVICE + UUID.randomUUID().toString())
-//                .setNagiosExtension(createNagiosExtension())
-//                .setName(TEST_NAME + UUID.randomUUID().toString())
-//                .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-//                .setPeriod(Duration.ofSeconds(RANDOM.nextInt(100)))
-//                .setStatistic(TEST_STATISTIC + UUID.randomUUID().toString())
-//                .setValue(new DefaultQuantity.Builder()
-//                        .setValue(100 + RANDOM.nextDouble())
-//                        .setUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100))
-//                        .build());
-//    }
 
     /**
      * Factory method for creating a cassandra host.

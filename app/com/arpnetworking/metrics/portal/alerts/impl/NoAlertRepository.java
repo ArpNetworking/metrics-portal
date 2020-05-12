@@ -21,10 +21,10 @@ import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
-import models.internal.alerts.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.alerts.Alert;
 import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultQueryResult;
 

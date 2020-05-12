@@ -75,7 +75,6 @@ import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;

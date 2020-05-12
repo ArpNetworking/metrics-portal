@@ -17,7 +17,6 @@
 package models.ebean;
 
 import io.ebean.annotation.DbJsonB;
-import models.internal.alerts.Alert;
 
 import java.time.Instant;
 import java.util.Collections;
