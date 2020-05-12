@@ -142,7 +142,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      * @param <T> the type of item being added
      */
     @Loggable
-    public static final class AddAccepted<T> implements Serializable {
+    public static final class AddAccepted<T extends Serializable> implements Serializable {
         private static final long serialVersionUID = 782305435749351105L;
         private final T _item;
 
@@ -189,7 +189,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      * @param <T> the type of item being added
      */
     @Loggable
-    public static final class AddRejected<T> implements Serializable {
+    public static final class AddRejected<T extends Serializable> implements Serializable {
         private static final long serialVersionUID = 7324573883451548747L;
         private final T _item;
 
@@ -249,7 +249,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      * @param <T> the type of item being added
      */
     @Loggable
-    public static final class PollResponse<T> implements Serializable {
+    public static final class PollResponse<T extends Serializable> implements Serializable {
         private static final long serialVersionUID = 3527299675739118395L;
         private final Optional<T> _item;
 
