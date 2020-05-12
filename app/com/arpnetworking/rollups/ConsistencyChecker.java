@@ -49,6 +49,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -216,8 +217,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
             countsByMetric.put(queryResult.getName(), longValue);
         }
-        final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
-        final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
+        @Nullable final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
+        @Nullable final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
         if (sourceCount == null || rollupCount == null) {
             throw new MalformedSampleCountResponse(
                     String.format("expected keys %s and %s", task.getSourceMetricName(), task.getRollupMetricName()),
