@@ -34,12 +34,6 @@ GET        /v1/hosts/query                      controllers.HostController.query
 GET        /v1/hosts/:id                        controllers.HostController.get(id: String)
 PUT        /v1/hosts                            controllers.HostController.addOrUpdate
 
-# Alerts
-GET        /v1/alerts/query                     controllers.AlertController.query(contains: String ?= null, context: String ?= null, cluster: String ?= null, service: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/alerts/:id                       controllers.AlertController.get(id: String)
-DELETE     /v1/alerts/:id                       controllers.AlertController.delete(id: String)
-PUT        /v1/alerts                           controllers.AlertController.addOrUpdate
-
 # Reports
 GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
 GET        /v1/reports/:id                      controllers.ReportController.get(id: java.util.UUID)

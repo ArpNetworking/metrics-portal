@@ -30,14 +30,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSetMultimap;
 import models.cassandra.Host;
-import models.internal.Context;
 import models.internal.MetricsSoftwareState;
-import models.internal.Operator;
 import models.internal.Organization;
 import models.internal.TimeRange;
-import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultOrganization;
-import models.internal.impl.DefaultQuantity;
 import models.internal.impl.DefaultRecipient;
 import models.internal.impl.DefaultRenderedReport;
 import models.internal.impl.DefaultReport;
@@ -57,7 +53,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -72,18 +67,10 @@ public final class TestBeanFactory {
     private static final String TEST_CLUSTER = "test-cluster";
     private static final String TEST_METRIC = "test-metric";
     private static final String TEST_SERVICE = "test-service";
-    private static final List<Context> CONTEXTS = Arrays.asList(Context.CLUSTER, Context.HOST);
     private static final String TEST_NAME = "test-name";
     private static final String TEST_ETAG = "test-etag";
     private static final String TEST_TITLE = "test-title";
     private static final URI TEST_URI = URI.create("http://example.com");
-    private static final List<Operator> OPERATORS = Arrays.asList(
-            Operator.EQUAL_TO,
-            Operator.GREATER_THAN,
-            Operator.GREATER_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN_OR_EQUAL_TO,
-            Operator.LESS_THAN,
-            Operator.NOT_EQUAL_TO);
     private static final int TEST_PERIOD_IN_SECONDS = 600;
     private static final String TEST_STATISTIC = "metrics_seen_sum";
     private static final String TEST_QUANTITY_UNIT = "test-unit";
@@ -320,118 +307,6 @@ public final class TestBeanFactory {
         final models.ebean.Organization organization = new models.ebean.Organization();
         organization.setUuid(UUID.randomUUID());
         return organization;
-    }
-
-    /**
-     * Factory method to create an alert builder.
-     *
-     * @return an alert builder
-     */
-    public static DefaultAlert.Builder createAlertBuilder() {
-        return new DefaultAlert.Builder()
-                .setId(UUID.randomUUID())
-                .setCluster(TEST_CLUSTER + UUID.randomUUID().toString())
-                .setMetric(TEST_METRIC + UUID.randomUUID().toString())
-                .setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())))
-                .setService(TEST_SERVICE + UUID.randomUUID().toString())
-                .setNagiosExtension(createNagiosExtension())
-                .setName(TEST_NAME + UUID.randomUUID().toString())
-                .setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())))
-                .setPeriod(Duration.ofSeconds(RANDOM.nextInt(100)))
-                .setStatistic(TEST_STATISTIC + UUID.randomUUID().toString())
-                .setValue(new DefaultQuantity.Builder()
-                        .setValue(100 + RANDOM.nextDouble())
-                        .setUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100))
-                        .build());
-    }
-
-    /**
-     * Factory method to create an ebean alert to a specified organization.
-     *
-     * @param organization the {@code models.ebean.Organization} to associate the alert with
-     * @return random Ebean alert instance
-     */
-    public static models.ebean.Alert createEbeanAlert(final models.ebean.Organization organization) {
-        final models.ebean.Alert ebeanAlert = new models.ebean.Alert();
-        ebeanAlert.setOrganization(organization);
-        ebeanAlert.setUuid(UUID.randomUUID());
-        ebeanAlert.setNagiosExtension(createEbeanNagiosExtension());
-        ebeanAlert.setName(TEST_NAME + UUID.randomUUID().toString());
-        ebeanAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
-        ebeanAlert.setPeriod(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        ebeanAlert.setStatistic(TEST_STATISTIC + UUID.randomUUID().toString());
-        ebeanAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        ebeanAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        ebeanAlert.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
-        ebeanAlert.setMetric(TEST_METRIC + UUID.randomUUID().toString());
-        ebeanAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        ebeanAlert.setService(TEST_SERVICE + UUID.randomUUID().toString());
-        return ebeanAlert;
-    }
-
-    /**
-     * Factory method to create a cassandra alert.
-     *
-     * @return a cassandra alert
-     */
-    public static models.cassandra.Alert createCassandraAlert() {
-        final models.cassandra.Alert cassandraAlert = new models.cassandra.Alert();
-        cassandraAlert.setOrganization(UUID.randomUUID());
-        cassandraAlert.setUuid(UUID.randomUUID());
-        cassandraAlert.setNagiosExtensions(createCassandraNagiosExtension());
-        cassandraAlert.setName(TEST_NAME + UUID.randomUUID().toString());
-        cassandraAlert.setOperator(OPERATORS.get(RANDOM.nextInt(OPERATORS.size())));
-        cassandraAlert.setPeriodInSeconds(TEST_PERIOD_IN_SECONDS + RANDOM.nextInt(100));
-        cassandraAlert.setStatistic(TEST_STATISTIC + UUID.randomUUID().toString());
-        cassandraAlert.setQuantityValue(100 + RANDOM.nextDouble());
-        cassandraAlert.setQuantityUnit(TEST_QUANTITY_UNIT + RANDOM.nextInt(100));
-        cassandraAlert.setCluster(TEST_CLUSTER + UUID.randomUUID().toString());
-        cassandraAlert.setMetric(TEST_METRIC + UUID.randomUUID().toString());
-        cassandraAlert.setContext(CONTEXTS.get(RANDOM.nextInt(CONTEXTS.size())));
-        cassandraAlert.setService(TEST_SERVICE + UUID.randomUUID().toString());
-        return cassandraAlert;
-    }
-
-    /**
-     * Factory method create create a cassandra nagios extension map.
-     *
-     * @return map of nagios extension key/value pairs
-     */
-    public static Map<String, String> createCassandraNagiosExtension() {
-        return new ImmutableMap.Builder<String, String>()
-                .put("severity", NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
-                .put("notify", TEST_NAGIOS_NOTIFY)
-                .put("attempts", Integer.toString(1 + RANDOM.nextInt(10)))
-                .put("freshness", Long.toString((long) RANDOM.nextInt(1000)))
-                .build();
-    }
-
-    /**
-     * Factory method to create a nagios extension.
-     *
-     * @return a nagios extension
-     */
-    public static models.internal.NagiosExtension createNagiosExtension() {
-        return new models.internal.NagiosExtension.Builder()
-                .setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())))
-                .setNotify(TEST_NAGIOS_NOTIFY)
-                .setMaxCheckAttempts(1 + RANDOM.nextInt(10))
-                .setFreshnessThresholdInSeconds((long) RANDOM.nextInt(1000))
-                .build();
-    }
-
-    /**
-     * Factory method to create an ebean nagios extension.
-     *
-     * @return an ebean nagios extension
-     */
-    public static models.ebean.NagiosExtension createEbeanNagiosExtension() {
-        final models.ebean.NagiosExtension nagiosExtension = new models.ebean.NagiosExtension();
-        nagiosExtension.setSeverity(NAGIOS_SEVERITY.get(RANDOM.nextInt(NAGIOS_SEVERITY.size())));
-        nagiosExtension.setNotify(TEST_NAGIOS_NOTIFY);
-        nagiosExtension.setMaxCheckAttempts(1 + RANDOM.nextInt(10));
-        nagiosExtension.setFreshnessThreshold((long) RANDOM.nextInt(1000));
-        return nagiosExtension;
     }
 
     /**
