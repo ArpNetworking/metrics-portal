@@ -21,6 +21,7 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -33,6 +34,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -551,7 +554,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
         private static final long serialVersionUID = 839173899181349812L;
-        private final MetricsQueryResponse _response;
+        private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
+        private final JsonNode _response;
 
         /**
          * Public constructor.
@@ -561,7 +565,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
             super(cause);
-            _response = response;
+            _response = MAPPER.valueToTree(response);
         }
 
         /**
@@ -572,10 +576,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
             super(message);
-            _response = response;
+            _response = MAPPER.valueToTree(response);
         }
 
-        public MetricsQueryResponse getResponse() {
+        public JsonNode getResponse() {
             return _response;
         }
     }
