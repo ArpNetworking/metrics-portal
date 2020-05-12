@@ -137,41 +137,42 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         final Task task = sampleCounts.getTask();
         final Optional<Throwable> failure = sampleCounts.getFailure();
 
-        final Metrics metrics = _metricsFactory.create();
-        metrics.addAnnotation("trigger", task.getTrigger().name());
-        metrics.addAnnotation("period", task.getPeriod().name());
+        try (Metrics metrics = _metricsFactory.create()) {
+            metrics.addAnnotation("trigger", task.getTrigger().name());
+            metrics.addAnnotation("period", task.getPeriod().name());
 
-        // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
-        // metrics.addAnnotation("log_realized_cardinality", Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality()))));
+            // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
+            // metrics.addAnnotation("log_realized_cardinality", Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality()))));
 
-        metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
+            metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
 
-        if (failure.isPresent()) {
-            LOGGER.warn()
-                    .setMessage("failed to query Kairos for sample-counts")
+            if (failure.isPresent()) {
+                LOGGER.warn()
+                        .setMessage("failed to query Kairos for sample-counts")
+                        .addData("task", task)
+                        .setThrowable(failure.get())
+                        .log();
+                return;
+            }
+
+            final double nOriginalSamples = sampleCounts.getSourceSampleCount();
+            final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
+            final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
+            metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
+            final LogBuilder logBuilder =
+                    // TODO(spencerpearson): probably make this level-thresholding configurable?
+                    Double.compare(fractionalDataLoss, 0) == 0 ? LOGGER.trace()
+                            : fractionalDataLoss < 0.001 ? LOGGER.debug()
+                            : fractionalDataLoss < 0.01 ? LOGGER.info()
+                            : fractionalDataLoss < 0.1 ? LOGGER.warn()
+                            : LOGGER.error();
+            logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
                     .addData("task", task)
-                    .setThrowable(failure.get())
+                    .addData("nOriginalSamples", nOriginalSamples)
+                    .addData("nSamplesDropped", nSamplesDropped)
+                    .addData("fractionalDataLoss", fractionalDataLoss)
                     .log();
-            return;
         }
-
-        final double nOriginalSamples = sampleCounts.getSourceSampleCount();
-        final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
-        final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
-        metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-        final LogBuilder logBuilder =
-                // TODO(spencerpearson): probably make this level-thresholding configurable?
-                fractionalDataLoss == 0 ? LOGGER.trace()
-                : fractionalDataLoss < 0.001 ? LOGGER.debug()
-                : fractionalDataLoss < 0.01 ? LOGGER.info()
-                : fractionalDataLoss < 0.1 ? LOGGER.warn()
-                : LOGGER.error();
-        logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
-                .addData("task", task)
-                .addData("nOriginalSamples", nOriginalSamples)
-                .addData("nSamplesDropped", nSamplesDropped)
-                .addData("fractionalDataLoss", fractionalDataLoss)
-                .log();
     }
 
     /* package private */ static SampleCounts parseSampleCounts(
@@ -180,7 +181,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     ) throws MalformedSampleCountResponse {
         final Map<String, Long> countsByMetric = Maps.newHashMap();
         if (response.getQueries().size() != 2) {
-            throw new MalformedSampleCountResponse("expected exactly 1 query, got " + response.getQueries().size(), response);
+            throw new MalformedSampleCountResponse("expected exactly 2 queries, got " + response.getQueries().size(), response);
         }
         for (final MetricsQueryResponse.Query query : response.getQueries()) {
             if (query.getResults().size() != 1) {
