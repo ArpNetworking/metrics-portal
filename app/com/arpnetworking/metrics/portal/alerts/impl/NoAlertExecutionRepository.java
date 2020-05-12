@@ -16,6 +16,8 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import models.internal.AlertEvaluationResult;
 import models.internal.Organization;
 import models.internal.scheduling.JobExecution;
@@ -24,6 +26,7 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An empty {@code AlertExecutionRepository}.
@@ -31,18 +34,26 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com).
  */
 public final class NoAlertExecutionRepository implements AlertExecutionRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NoAlertExecutionRepository.class);
+    private final AtomicBoolean _isOpen = new AtomicBoolean(false);
+
     @Override
     public void open() {
-
+        assertIsOpen(false);
+        LOGGER.debug().setMessage("Opening NoAlertExecutionRepository").log();
+        _isOpen.set(true);
     }
 
     @Override
     public void close() {
-
+        assertIsOpen(true);
+        LOGGER.debug().setMessage("Closing NoAlertExecutionRepository").log();
+        _isOpen.set(false);
     }
 
     @Override
     public Optional<JobExecution<AlertEvaluationResult>> getLastScheduled(final UUID jobId, final Organization organization) {
+        assertIsOpen();
         return Optional.empty();
     }
 
@@ -50,6 +61,7 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     public Optional<JobExecution.Success<AlertEvaluationResult>> getLastSuccess(
             final UUID jobId, final Organization organization
     ) throws NoSuchElementException {
+        assertIsOpen();
         return Optional.empty();
     }
 
@@ -58,12 +70,13 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
+        assertIsOpen();
         return Optional.empty();
     }
 
     @Override
     public void jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
-
+        assertIsOpen();
     }
 
     @Override
@@ -73,11 +86,23 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
             final Instant scheduled,
             final AlertEvaluationResult result
     ) {
-
+        assertIsOpen();
     }
 
     @Override
     public void jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
+        assertIsOpen();
+    }
 
+
+    private void assertIsOpen() {
+        assertIsOpen(true);
+    }
+
+    private void assertIsOpen(final boolean expectedState) {
+        if (_isOpen.get() != expectedState) {
+            throw new IllegalStateException(String.format("NoAlertExecutionRepository is not %s",
+                    expectedState ? "open" : "closed"));
+        }
     }
 }

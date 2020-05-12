@@ -90,8 +90,9 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.ebean.Ebean;
 import io.ebean.EbeanServer;
+import io.ebean.EbeanServerFactory;
+import io.ebean.config.ServerConfig;
 import models.internal.Context;
 import models.internal.Features;
 import models.internal.Operator;
@@ -384,17 +385,24 @@ public class MainModule extends AbstractModule {
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
+        private final ObjectMapper _objectMapper;
+
         @Inject
         MetricsPortalEbeanServerProvider(
+                final ObjectMapper objectMapper,
+                // Remaining arguments injected for dependency resolution only
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
                 final EbeanConfig ebeanConfig) {
-            // Constructor arguments injected for dependency resolution only
+            _objectMapper = objectMapper;
         }
 
         @Override
         public EbeanServer get() {
-            return Ebean.getServer("metrics_portal");
+            final ServerConfig config = new ServerConfig();
+            config.setName("metrics_portal");
+            config.setObjectMapper(_objectMapper);
+            return EbeanServerFactory.create(config);
         }
     }
 

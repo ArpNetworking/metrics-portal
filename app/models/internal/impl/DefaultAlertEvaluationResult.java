@@ -17,8 +17,6 @@
 package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -33,7 +31,6 @@ import java.util.Map;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-@JsonDeserialize(builder = DefaultAlertEvaluationResult.Builder.class)
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
 
@@ -89,7 +86,6 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
          * @param firingTags The set of firing tags.
          * @return This instance of {@code Builder}.
          */
-        @JsonProperty("firingTags")
         public Builder setFiringTags(final List<Map<String, String>> firingTags) {
             _firingTags = firingTags.stream().map(ImmutableMap::copyOf).collect(ImmutableList.toImmutableList());
             return this;

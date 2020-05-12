@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.integration.test;
 
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.google.common.collect.Maps;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -87,6 +88,7 @@ public final class EbeanServerHelper {
         serverConfig.setDefaultServer(setAsDefault);
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
         serverConfig.addPackage("models.ebean");
+        serverConfig.setObjectMapper(ObjectMapperFactory.getInstance());
         return EbeanServerFactory.create(serverConfig);
     }
 

@@ -77,11 +77,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         final Optional<AlertExecution> existingExecution = org.flatMap(r ->
                 _ebeanServer.createQuery(AlertExecution.class)
                         .where()
-                        .eq("organization", org.get())
+                        .eq("organization.uuid", org.get().getUuid())
                         .eq("scheduled", scheduled)
                         .findOneOrEmpty()
         );
-        final AlertExecution newOrUpdatedExecution = existingExecution.orElse(new AlertExecution());
+        final AlertExecution newOrUpdatedExecution = existingExecution.orElseGet(AlertExecution::new);
         newOrUpdatedExecution.setAlertId(jobId);
         newOrUpdatedExecution.setOrganization(org.get());
         newOrUpdatedExecution.setScheduled(scheduled);
