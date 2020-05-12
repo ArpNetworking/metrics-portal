@@ -644,6 +644,9 @@
               <alias>kairosdb</alias>
               <run>
                 <skip>${docker.skip.kairosdb}</skip>
+                <dependsOn>
+                  <container>cassandra</container>
+                </dependsOn>
                 <network>
                   <mode>custom</mode>
                   <name>metrics-portal-net</name>
