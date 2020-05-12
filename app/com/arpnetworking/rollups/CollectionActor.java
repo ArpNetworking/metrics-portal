@@ -74,7 +74,11 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                 .match(Poll.class, request -> {
                     final Optional<T> result = _buffer.stream().findFirst();
                     result.ifPresent(_buffer::remove);
-                    getSender().tell(new PollResponse<>(result), getSelf());
+                    getSender().tell(
+                            result.map(x -> (Object) new PollSucceeded<>(x))
+                                    .orElse(Empty.getInstance()),
+                            getSelf()
+                    );
                 })
                 .build();
     }
@@ -245,16 +249,16 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
     }
 
     /**
-     * Response to {@link Poll}, containing an item from the collection (if any).
+     * Response to {@link Poll}, containing an item from the collection.
      *
      * @param <T> the type of item being added
      */
     @Loggable
-    public static final class PollResponse<T extends Serializable> implements Serializable {
+    public static final class PollSucceeded<T extends Serializable> implements Serializable {
         private static final long serialVersionUID = 3527299675739118395L;
-        private final Optional<T> _item;
+        private final T _item;
 
-        public Optional<T> getItem() {
+        public T getItem() {
             return _item;
         }
 
@@ -266,7 +270,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final PollResponse<?> that = (PollResponse<?>) o;
+            final PollSucceeded<?> that = (PollSucceeded<?>) o;
             return _item.equals(that._item);
         }
 
@@ -284,23 +288,23 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
 
         /**
          * Public constructor.
-         * @param item the item that was rejected
+         * @param item the item polled from the collection
          */
-        public PollResponse(final Optional<T> item) {
+        public PollSucceeded(final T item) {
             this._item = item;
         }
     }
 
     /**
-     * Response to {@link Poll} indicating that the queue is empty.
+     * Response to {@link Poll} indicating that the collection is empty.
      */
     @Loggable
-    public static final class QueueEmpty implements Serializable {
+    public static final class Empty implements Serializable {
         private static final long serialVersionUID = 909545623248537954L;
-        private static final QueueEmpty INSTANCE = new QueueEmpty();
-        public static QueueEmpty getInstance() {
+        private static final Empty INSTANCE = new Empty();
+        public static Empty getInstance() {
             return INSTANCE;
         }
-        private QueueEmpty() {}
+        private Empty() {}
     }
 }

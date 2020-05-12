@@ -79,11 +79,11 @@ public final class CollectionActorTest {
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
         _probe.expectMsgAllOf(ImmutableSet.of(
-                new CollectionActor.PollResponse<>(Optional.of(1)),
-                new CollectionActor.PollResponse<>(Optional.of(2))
+                new CollectionActor.PollSucceeded<>(1),
+                new CollectionActor.PollSucceeded<>(2)
         ).toArray());
 
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(new CollectionActor.PollResponse<>(Optional.empty()));
+        _probe.expectMsg(CollectionActor.Empty.getInstance());
     }
 }

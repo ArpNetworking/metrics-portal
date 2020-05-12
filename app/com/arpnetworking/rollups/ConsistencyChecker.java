@@ -70,23 +70,22 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .match(CollectionActor.PollResponse.class, msg -> {
-                    if (msg.getItem().isPresent()) {
-                        final Task task;
-                        try {
-                            task = (Task) msg.getItem().get();
-                        } catch (final ClassCastException err) {
-                            LOGGER.error()
-                                    .setMessage("got non-Task item from task queue")
-                                    .addData("item", msg.getItem().get())
-                                    .log();
-                            return;
-                        }
-                        getSelf().tell(task, getSelf());
-                    } else {
-                        getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF);
+                .match(CollectionActor.PollSucceeded.class, msg -> {
+                    final Task task;
+                    try {
+                        task = (Task) msg.getItem();
+                    } catch (final ClassCastException err) {
+                        LOGGER.error()
+                                .setMessage("got non-Task item from task queue")
+                                .addData("item", msg.getItem())
+                                .log();
+                        return;
                     }
+                    getSelf().tell(task, getSelf());
                 })
+                .match(CollectionActor.Empty.class, msg ->
+                    getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
+                )
                 .match(Task.class, this::startTask)
                 .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
                 .match(SampleCounts.class, this::sampleCountsReceived)
