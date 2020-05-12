@@ -16,6 +16,7 @@
 package controllers;
 
 import akka.actor.ActorRef;
+import akka.pattern.Patterns;
 import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.steno.Logger;
@@ -26,6 +27,9 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -57,22 +61,43 @@ public class RollupController extends Controller {
      *
      * @return Ok
      */
-    public Result enqueueConsistencyCheck() {
+    public CompletionStage<Result> enqueueConsistencyCheck() {
         final ConsistencyChecker.Task task;
         try {
             task = _mapper.treeToValue(request().body().asJson(), ConsistencyChecker.Task.class);
         } catch (final IOException err) {
-            return badRequest(err.getMessage());
+            return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }
-        _consistencyCheckerQueue.tell(
-                new CollectionActor.Add<>(task),
-                null
-        );
-        LOGGER.info()
-                .setMessage("submitted consistency-checker task")
-                .addData("task", task)
-                .log();
-        return noContent();
+
+        final CompletableFuture<Result> result = new CompletableFuture<>();
+        Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(task), Duration.ofSeconds(10)).whenComplete((response, error) -> {
+            if (error != null) {
+                result.completeExceptionally(error);
+                return;
+            }
+            if (response instanceof CollectionActor.AddAccepted) {
+                LOGGER.info()
+                        .setMessage("submitted consistency-checker task")
+                        .addData("task", task)
+                        .log();
+                result.complete(noContent());
+            } else if (response instanceof CollectionActor.AddRejected) {
+                LOGGER.warn()
+                        .setMessage("consistency-check task rejected")
+                        .addData("task", task)
+                        .log();
+                result.complete(status(503, "consistency-checkers are too busy right now"));
+            } else {
+                LOGGER.error()
+                        .setMessage("unexpected response from consistency-checker queue")
+                        .addData("task", task)
+                        .addData("response", response)
+                        .log();
+                result.complete(internalServerError("unexpected response from consistency-checker queue"));
+            }
+        });
+
+        return result;
     }
 
     private final ActorRef _consistencyCheckerQueue;
