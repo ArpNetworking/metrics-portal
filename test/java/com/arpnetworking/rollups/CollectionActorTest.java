@@ -20,6 +20,7 @@ import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.typesafe.config.ConfigFactory;
 import org.junit.After;
@@ -76,12 +77,13 @@ public final class CollectionActorTest {
         _probe.expectMsg(new CollectionActor.AddRejected<>(3));
 
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(1);
+        actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
+        _probe.expectMsgAllOf(ImmutableSet.of(
+                new CollectionActor.PollResponse<>(Optional.of(1)),
+                new CollectionActor.PollResponse<>(Optional.of(2))
+        ).toArray());
 
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(2);
-
-        actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(CollectionActor.QueueEmpty.getInstance());
+        _probe.expectMsg(new CollectionActor.PollResponse<>(Optional.empty()));
     }
 }
