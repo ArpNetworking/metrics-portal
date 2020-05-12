@@ -147,7 +147,7 @@ public final class ConsistencyCheckerTest {
                         .setRollupMetricName("my_metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setStartTime(Instant.EPOCH)
-                        .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
+                        .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                         .build(),
                 _queue.getRef()
         );
@@ -167,7 +167,7 @@ public final class ConsistencyCheckerTest {
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
+                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                 .build();
         final ConsistencyChecker.SampleCounts actual = ConsistencyChecker.parseSampleCounts(
                 task,
@@ -189,7 +189,7 @@ public final class ConsistencyCheckerTest {
                 .setSourceMetricName("my_metric")
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED);
+                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND);
 
         builder.setStartTime(Instant.EPOCH).build();
         builder.setStartTime(Instant.EPOCH.plus(Duration.ofHours(1))).build();

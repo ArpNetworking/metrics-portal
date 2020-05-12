@@ -264,7 +264,7 @@ public final class TestBeanFactory {
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED);
+                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND);
     }
 
     /**

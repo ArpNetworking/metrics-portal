@@ -264,9 +264,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public enum Trigger {
             /**
-             * A human deliberately requested this task as a one-off.
+             * Something/somebody requested this task as a one-off.
              */
-            HUMAN_REQUESTED,
+            ON_DEMAND,
             // WRITE_COMPLETED,  // TODO(spencerpearson, OBS-1174)
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
