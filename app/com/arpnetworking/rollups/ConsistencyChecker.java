@@ -211,11 +211,11 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     response
             );
         }
-        return new SampleCounts.Builder()
+        return ThreadLocalBuilder.build(SampleCounts.Builder.class, b -> b
                 .setTask(task)
                 .setSourceSampleCount(sourceCount)
                 .setRollupSampleCount(rollupCount)
-                .build();
+        );
     }
 
     private MetricsQuery buildCountComparisonQuery(final Task task) {
