@@ -172,21 +172,6 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 .addData("nSamplesDropped", nSamplesDropped)
                 .addData("fractionalDataLoss", fractionalDataLoss)
                 .log();
-
-        /* TODO(spencerpearson, OBS-1176): re-trigger re-execution of bad datapoints, something like
-
-            if (discrepancyTooBig) {
-                _rollupManagerPool.tell(
-                    new RollupDefinition.Builder()
-                            .setSourceMetricName(task.getSourceMetricName())
-                            .setDestinationMetricName(task.getRollupMetricName())
-                            .setStartTime(task.getStartTime())
-                            .setPeriod(task.getPeriod())
-                            .build()
-                );
-            }
-
-         */
     }
 
     /* package private */ static SampleCounts parseSampleCounts(
