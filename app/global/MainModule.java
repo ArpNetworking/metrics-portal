@@ -75,7 +75,6 @@ import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -91,9 +90,7 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import models.internal.Context;
 import models.internal.Features;
-import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
@@ -243,8 +240,6 @@ public class MainModule extends AbstractModule {
     private CodecRegistry provideCodecRegistry() {
         final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
         registry.register(InstantCodec.instance);
-        registry.register(new EnumNameCodec<>(Operator.class));
-        registry.register(new EnumNameCodec<>(Context.class));
         return registry;
     }
 

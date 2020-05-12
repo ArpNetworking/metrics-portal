@@ -24,14 +24,11 @@ import com.chrisomeara.pillar.ReplicationOptions;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
-import models.internal.Context;
-import models.internal.Operator;
 import scala.Predef;
 import scala.collection.JavaConverters;
 
@@ -86,8 +83,6 @@ public final class CassandraServerHelper {
             throw new RuntimeException(e);
         }
         cluster.getConfiguration().getCodecRegistry().register(InstantCodec.instance);
-        cluster.getConfiguration().getCodecRegistry().register(new EnumNameCodec<>(Operator.class));
-        cluster.getConfiguration().getCodecRegistry().register(new EnumNameCodec<>(Context.class));
 
         final Session session = cluster.newSession();
 
