@@ -21,7 +21,6 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -34,8 +33,6 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -128,6 +125,15 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                                 return ConsistencyChecker.parseSampleCounts(task, response);
                             } catch (final MalformedSampleCountResponse err) {
                                 throw new CompletionException(err);
+                            }
+                        })
+                        .whenComplete((sampleCounts, failure) -> {
+                            if (failure != null) {
+                                LOGGER.error()
+                                        .setMessage("failed to fetch/parse response from KairosDB")
+                                        .addData("task", task)
+                                        .setThrowable(failure)
+                                        .log();
                             }
                         })
                         .whenComplete((response, failure) -> requestWork()),
@@ -555,9 +561,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
      */
     @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
-        private static final long serialVersionUID = 839173899181349812L;
-        private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
-        private final JsonNode _response;
+        private final MetricsQueryResponse _response;
 
         /**
          * Public constructor.
@@ -567,7 +571,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
             super(cause);
-            _response = MAPPER.valueToTree(response);
+            _response = response;
         }
 
         /**
@@ -578,10 +582,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
             super(message);
-            _response = MAPPER.valueToTree(response);
+            _response = response;
         }
 
-        public JsonNode getResponse() {
+        public MetricsQueryResponse getResponse() {
             return _response;
         }
     }
