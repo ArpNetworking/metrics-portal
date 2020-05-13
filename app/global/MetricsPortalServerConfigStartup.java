@@ -27,8 +27,10 @@ import io.ebean.event.ServerConfigStartup;
 /**
  * Plugin class to configure Ebean's {@link ServerConfig} at runtime.
  * <p>
- * This is necessary for configuring the server with dependencies constructed via Guice, for instance. This
+ * This is necessary for configuring the Ebean server with dependencies constructed via Guice, for instance. This
  * class will be invoked for every instance of {@code EbeanServer}.
+ * <p>
+ * NOTE: This <b>must</b> be used alongside an injector, since its whole purpose is a shim around Ebean's lack of Guice support.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -45,6 +47,13 @@ public class MetricsPortalServerConfigStartup implements ServerConfigStartup {
     @Override
     public void onStart(final ServerConfig serverConfig) {
         LOGGER.info().setMessage("Initializing Ebean ServerConfig").log();
+        if (gObjectMapper == null) {
+            // In some cases we manually load the ebean model classes via ServerConfig#addPackage (see EbeanServerHelper).
+            //
+            // If this class is accidentally loaded in those environments, then injection won't occur and we'll silently overwrite
+            // the configured ObjectMapper with null. Explicitly throwing makes this error appear obvious.
+            throw new IllegalStateException("ObjectMapper is null - was this class loaded manually outside of Play?");
+        }
         serverConfig.setObjectMapper(gObjectMapper);
     }
 }
