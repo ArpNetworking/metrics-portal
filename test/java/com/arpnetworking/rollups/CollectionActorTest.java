@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -26,6 +27,7 @@ import com.typesafe.config.ConfigFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
@@ -37,6 +39,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class CollectionActorTest {
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
+
     private ActorSystem _system;
 
     private TestKit _probe;
@@ -65,7 +70,12 @@ public final class CollectionActorTest {
 
     @Test
     public void testBasicAddAndPoll() {
-        final ActorRef actor = TestActorRef.create(_system, CollectionActor.props(Optional.of(2L), Sets.newHashSet()));
+        final ActorRef actor = TestActorRef.create(_system, CollectionActor.props(
+                Optional.of(2L),
+                Sets.newHashSet(),
+                _periodicMetrics,
+                ""
+        ));
 
         actor.tell(new CollectionActor.Add<>(1), _probe.getRef());
         _probe.expectMsg(new CollectionActor.AddAccepted<>(1));

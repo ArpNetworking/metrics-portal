@@ -814,10 +814,12 @@ public class MainModule extends AbstractModule {
         @Inject
         RollupConsistencyCheckerQueueProvider(
                 final ActorSystem system,
-                final Config configuration
+                final Config configuration,
+                final PeriodicMetrics periodicMetrics
         ) {
             _system = system;
             _configuration = configuration;
+            _periodicMetrics = periodicMetrics;
         }
 
         @Override
@@ -825,11 +827,17 @@ public class MainModule extends AbstractModule {
             final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
                     ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
                     : Optional.empty();
-            return _system.actorOf(CollectionActor.props(maxSize, Sets.newHashSet()));
+            return _system.actorOf(CollectionActor.props(
+                    maxSize,
+                    Sets.newHashSet(),
+                    _periodicMetrics,
+                    "rollup/consistency_checker/queue"
+            ));
         }
 
         private final ActorSystem _system;
         private final Config _configuration;
+        private final PeriodicMetrics _periodicMetrics;
         private static final String CONFIG_MAX_SIZE_PATH = "rollup.consistency_checker.queue.size";
     }
 

@@ -19,6 +19,7 @@ import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.base.MoreObjects;
 
 import java.io.Serializable;
@@ -37,17 +38,26 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
 
     private final Optional<Long> _maxSize;
     private final C _buffer;
+    private final PeriodicMetrics _periodicMetrics;
+    private final String _metricBaseName;
 
     /**
      * Creates a {@link Props} for this actor.
      *
      * @param maxSize The maximum size for the queue (if any).
      * @param buffer The underlying {@link Collection} to store items in.
+     * @param periodicMetrics The periodic metrics instance to record metrics to.
+     * @param metricBaseName The name to record metrics under.
      * @param <C> The type of {@code buffer}.
      * @return A new Props.
      */
-    public static <C> Props props(final Optional<Long> maxSize, final C buffer) {
-        return Props.create(CollectionActor.class, maxSize, buffer);
+    public static <C> Props props(
+            final Optional<Long> maxSize,
+            final C buffer,
+            final PeriodicMetrics periodicMetrics,
+            final String metricBaseName
+    ) {
+        return Props.create(CollectionActor.class, maxSize, buffer, periodicMetrics, metricBaseName);
     }
 
     @Override
@@ -88,10 +98,22 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
      *
      * @param maxSize the maximum size of the queue
      * @param buffer the underlying {@link Collection} to store items in
+     * @param periodicMetrics the periodic metrics instance to record metrics to
+     * @param metricBaseName the name to record metrics under
      */
-    public CollectionActor(final Optional<Long> maxSize, final C buffer) {
+    public CollectionActor(
+            final Optional<Long> maxSize,
+            final C buffer,
+            final PeriodicMetrics periodicMetrics,
+            final String metricBaseName
+    ) {
         _maxSize = maxSize;
         _buffer = buffer;
+        _periodicMetrics = periodicMetrics;
+        _metricBaseName = metricBaseName;
+        _periodicMetrics.registerPolledMetric(metrics -> {
+            metrics.recordGauge(_metricBaseName + "/size", _buffer.size());
+        });
     }
 
     /**
