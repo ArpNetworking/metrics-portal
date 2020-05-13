@@ -91,7 +91,6 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import models.ebean.MetricsPortalServerConfigStartup;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;

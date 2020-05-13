@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package models.ebean;
+package global;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
