@@ -59,7 +59,7 @@ public class RollupController extends Controller {
     /**
      * Requests a rollup be consistency-checked.
      *
-     * @return Ok
+     * @return 204 if the consistency-check task was successfully enqueued; else 503 if the queue is full; else 500 for unknown failures.
      */
     public CompletionStage<Result> enqueueConsistencyCheck() {
         final ConsistencyChecker.Task task;
