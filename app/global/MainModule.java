@@ -89,9 +89,9 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import io.ebean.EbeanServerFactory;
-import io.ebean.config.ServerConfig;
+import models.ebean.MetricsPortalServerConfigStartup;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
@@ -135,6 +135,10 @@ public class MainModule extends AbstractModule {
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
+
+        // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
+        // statically injecting them. Construction still happens at inject time, however.
+        requestStaticInjection(MetricsPortalServerConfigStartup.class);
 
         // Repositories
         bind(OrganizationRepository.class)
@@ -380,24 +384,17 @@ public class MainModule extends AbstractModule {
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
-        private final ObjectMapper _objectMapper;
-
         @Inject
         MetricsPortalEbeanServerProvider(
-                final ObjectMapper objectMapper,
-                // Remaining arguments injected for dependency resolution only
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
                 final EbeanConfig ebeanConfig) {
-            _objectMapper = objectMapper;
+            // Constructor arguments injected for dependency resolution only
         }
 
         @Override
         public EbeanServer get() {
-            final ServerConfig config = new ServerConfig();
-            config.setName("metrics_portal");
-            config.setObjectMapper(_objectMapper);
-            return EbeanServerFactory.create(config);
+            return Ebean.getServer("metrics_portal");
         }
     }
 
