@@ -15,24 +15,37 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
+import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
+import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQueryResult;
+import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNull;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,6 +61,7 @@ public class FileSystemAlertRepository implements AlertRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemAlertRepository.class);
     private final Path _path;
     private final ObjectMapper _objectMapper;
+    private final Organization _organization;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
     private final RepositoryOpenGuard _openGuard =
             new RepositoryOpenGuard(
@@ -58,9 +72,22 @@ public class FileSystemAlertRepository implements AlertRepository {
                     () -> LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log()
             );
 
-    public FileSystemAlertRepository(final ObjectMapper objectMapper, final Path path) {
+    /**
+     * Default Constructor.
+     *
+     * @param objectMapper The object mapper to use for alert deserialization.
+     * @param path The file path for the alert definitions.
+     * @param org The organization to group the alerts under.
+     */
+    @Inject
+    public FileSystemAlertRepository(
+            final ObjectMapper objectMapper,
+            @Named("fileSystemAlertRepository.path") final Path path,
+            @Named("fileSystemAlertRepository.org") final UUID org
+    ) {
         _objectMapper = objectMapper;
         _path = path;
+        _organization = new DefaultOrganization.Builder().setId(org).build();
     }
 
     @Override
@@ -128,35 +155,53 @@ public class FileSystemAlertRepository implements AlertRepository {
             throw new RuntimeException("Could not load alerts from filesystem", e);
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
-        for (final Alert alert : group.getAlerts()) {
-            final UUID uuid = computeUUID(alert);
+
+        for (final SerializedAlert fsAlert : group.getAlerts()) {
+            final UUID uuid = computeUUID(fsAlert);
+            final Alert alert =
+                new DefaultAlert.Builder()
+                        .setId(uuid)
+                        .setName(fsAlert.getName())
+                        .setDescription(fsAlert.getDescription())
+                        .setEnabled(fsAlert.isEnabled())
+                        .setOrganization(_organization)
+                        .setQuery(new KairosDbMetricsQuery(fsAlert.getQuery()))
+                        .setAdditionalMetadata(fsAlert.getAdditionalMetadata())
+                        .build();
             mapBuilder.put(uuid, alert);
         }
         return mapBuilder.build();
     }
 
-    private UUID computeUUID(final Alert alert) {
+    private UUID computeUUID(final SerializedAlert alert) {
         // TODO(cbriones): UUID v5
         return UUID.randomUUID();
     }
 
-    private static final class AlertGroup {
-        private final UUID _organizationId;
-        private final List<Alert> _alerts;
-        private final long _version;
+    private static final class KairosDbMetricsQuery implements models.internal.MetricsQuery {
+        private final MetricsQuery _metricsQuery;
 
-        private AlertGroup(final UUID organizationId, final List<Alert> alerts, final long version) {
-            _alerts = alerts;
-            _version = version;
-            _organizationId = organizationId;
+        private KairosDbMetricsQuery(final MetricsQuery metricsQuery) {
+            _metricsQuery = metricsQuery;
         }
 
-        public long getVersion() {
-            return _version;
+        @Override
+        public String getQuery() {
+            // TODO(cbriones): We should be able to serialize this into an equivalent
+            // query once we have our query language nailed down.
+            return "";
         }
 
-        public List<Alert> getAlerts() {
-            return _alerts;
+        @Override
+        public ZonedDateTime getStart() {
+            return ZonedDateTime.now()
+                    .truncatedTo(ChronoUnit.MINUTES)
+                    .minus(Duration.ofMinutes(1));
+        }
+
+        @Override
+        public ZonedDateTime getEnd() {
+            return ZonedDateTime.now().truncatedTo(ChronoUnit.MINUTES);
         }
     }
 
@@ -174,7 +219,7 @@ public class FileSystemAlertRepository implements AlertRepository {
         private final Runnable _onClose;
 
         /**
-         * Create a new guard without callbacks.
+         * Create a new guard without open/close callbacks.
          */
         RepositoryOpenGuard() {
             this(NOP_RUNNABLE, NOP_RUNNABLE);
@@ -230,6 +275,7 @@ public class FileSystemAlertRepository implements AlertRepository {
          * Execute an action iff the guard is open. The result of the action is returned to the caller.
          *
          * @param action the action to run if open.
+         * @return The result of the passed in action.
          * @throws IllegalStateException if the guard is closed.
          */
         public <T> T checked(final Supplier<T> action) {
@@ -247,5 +293,140 @@ public class FileSystemAlertRepository implements AlertRepository {
                         expectedState ? "open" : "closed"));
             }
         }
+    }
+
+    private static final class AlertGroup {
+        private final List<SerializedAlert> _alerts;
+        private final long _version;
+
+        private AlertGroup(final List<SerializedAlert> alerts, final long version) {
+            if (version < 0) {
+                throw new IllegalArgumentException("Version must be non-negative");
+            }
+            _alerts = alerts;
+            _version = version;
+        }
+
+        public long getVersion() {
+            return _version;
+        }
+
+        public List<SerializedAlert> getAlerts() {
+            return _alerts;
+        }
+    }
+
+    private static final class SerializedAlert {
+        private final String _name;
+        private final String _description;
+        private final com.arpnetworking.kairos.client.models.MetricsQuery _query;
+        private final boolean _enabled;
+        private final ImmutableMap<String, Object> _additionalMetadata;
+
+        private SerializedAlert(final Builder builder) {
+            assert builder._enabled != null;
+            assert builder._description != null;
+            assert builder._query != null;
+
+            _name = builder._name;
+            _description = builder._description;
+            _query = builder._query;
+            _enabled = builder._enabled;
+            _additionalMetadata = builder._additionalMetadata;
+        }
+
+        public String getName() {
+            return _name;
+        }
+
+        public String getDescription() {
+            return _description;
+        }
+
+        public MetricsQuery getQuery() {
+            return _query;
+        }
+
+        public boolean isEnabled() {
+            return _enabled;
+        }
+
+        public ImmutableMap<String, Object> getAdditionalMetadata() {
+            return _additionalMetadata;
+        }
+
+        private static final class Builder extends OvalBuilder<SerializedAlert> {
+            @NotNull
+            @NotEmpty
+            private String _name;
+            @NotNull
+            private @Nullable String _description;
+            @NotNull
+            private @Nullable com.arpnetworking.kairos.client.models.MetricsQuery _query;
+            @NotNull
+            private @Nullable Boolean _enabled;
+
+            private ImmutableMap<String, Object> _additionalMetadata = ImmutableMap.of();
+
+            /**
+             * Sets the name. Required. Cannot be empty.
+             *
+             * @param name the name.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setName(final String name) {
+                _name = name;
+                return this;
+            }
+
+            /**
+             * Sets the description. Required.
+             *
+             * @param description the description.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setDescription(final String description) {
+                _description = description;
+                return this;
+            }
+
+            /**
+             * Sets the query. Required.
+             *
+             * @param query the query.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setQuery(final MetricsQuery query) {
+                _query = query;
+                return this;
+            }
+
+            /**
+             * Sets enabled. Required.
+             *
+             * @param enabled if this alert is enabled.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setEnabled(final boolean enabled) {
+                _enabled = enabled;
+                return this;
+            }
+
+            /**
+             * Sets the additional metadata. Defaults to empty.
+             *
+             * @param additionalMetadata the additional metadata.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setAdditionalMetadata(final Map<String, Object> additionalMetadata) {
+                _additionalMetadata = ImmutableMap.copyOf(additionalMetadata);
+                return this;
+            }
+
+            Builder() {
+                super(SerializedAlert::new);
+            }
+        }
+
     }
 }
