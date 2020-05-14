@@ -157,7 +157,7 @@ public class FileSystemAlertRepository implements AlertRepository {
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
 
         for (final SerializedAlert fsAlert : group.getAlerts()) {
-            final UUID uuid = computeUUID(fsAlert);
+            final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
             final Alert alert =
                 new DefaultAlert.Builder()
                         .setId(uuid)
@@ -174,8 +174,14 @@ public class FileSystemAlertRepository implements AlertRepository {
     }
 
     private UUID computeUUID(final SerializedAlert alert) {
-        // TODO(cbriones): UUID v5
-        return UUID.randomUUID();
+        // TODO(cbriones): UUID v5 rather than v3.
+        //
+        // The standard method returns a v3 identifier using MD5.
+        // v5 uses SHA-1.
+
+        final String alertContents =
+                alert.getName() + alert.getDescription();
+        return UUID.nameUUIDFromBytes(alertContents.getBytes());
     }
 
     private static final class KairosDbMetricsQuery implements models.internal.MetricsQuery {
@@ -322,17 +328,23 @@ public class FileSystemAlertRepository implements AlertRepository {
         private final com.arpnetworking.kairos.client.models.MetricsQuery _query;
         private final boolean _enabled;
         private final ImmutableMap<String, Object> _additionalMetadata;
+        private final Optional<UUID> _uuid;
 
         private SerializedAlert(final Builder builder) {
             assert builder._enabled != null;
             assert builder._description != null;
             assert builder._query != null;
 
+            _uuid = Optional.ofNullable(builder._uuid);
             _name = builder._name;
             _description = builder._description;
             _query = builder._query;
             _enabled = builder._enabled;
             _additionalMetadata = builder._additionalMetadata;
+        }
+
+        public Optional<UUID> getUUID() {
+            return _uuid;
         }
 
         public String getName() {
@@ -356,6 +368,7 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
 
         private static final class Builder extends OvalBuilder<SerializedAlert> {
+            private @Nullable UUID _uuid;
             @NotNull
             @NotEmpty
             private String _name;
@@ -367,6 +380,21 @@ public class FileSystemAlertRepository implements AlertRepository {
             private @Nullable Boolean _enabled;
 
             private ImmutableMap<String, Object> _additionalMetadata = ImmutableMap.of();
+
+            Builder() {
+                super(SerializedAlert::new);
+            }
+
+            /**
+             * Sets the uuid.
+             *
+             * @param uuid the uuid.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setUuid(@Nullable final UUID uuid) {
+                _uuid = uuid;
+                return this;
+            }
 
             /**
              * Sets the name. Required. Cannot be empty.
@@ -421,10 +449,6 @@ public class FileSystemAlertRepository implements AlertRepository {
             public Builder setAdditionalMetadata(final Map<String, Object> additionalMetadata) {
                 _additionalMetadata = ImmutableMap.copyOf(additionalMetadata);
                 return this;
-            }
-
-            Builder() {
-                super(SerializedAlert::new);
             }
         }
 
