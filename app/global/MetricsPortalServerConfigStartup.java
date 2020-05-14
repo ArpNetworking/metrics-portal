@@ -49,14 +49,18 @@ public class MetricsPortalServerConfigStartup implements ServerConfigStartup {
     @Override
     public void onStart(final ServerConfig serverConfig) {
         LOGGER.info().setMessage("Initializing Ebean ServerConfig").log();
+        // In some cases we manually load the ebean model classes via
+        // ServerConfig#addPackage (see EbeanServerHelper).
+        //
+        // If this class is accidentally instantiated in those environments,
+        // then injection won't occur and we'll silently overwrite the
+        // configured ObjectMapper with null. Explicitly throwing makes this
+        // error appear obvious.
+        //
+        // This also prevents starting with an invalid object mapper in prod,
+        // which could lead to data corruption. Guice will encounter this
+        // exception as it tries to transitively instantiate an EbeanServer.
         if (gObjectMapper == null) {
-            // In some cases we manually load the ebean model classes via
-            // ServerConfig#addPackage (see EbeanServerHelper).
-            //
-            // If this class is accidentally instantiated in those environments,
-            // then injection won't occur and we'll silently overwrite the
-            // configured ObjectMapper with null. Explicitly throwing makes this
-            // error appear obvious.
             throw new IllegalStateException("ObjectMapper is null - was this class loaded manually outside of Play?");
         }
         serverConfig.setObjectMapper(gObjectMapper);
