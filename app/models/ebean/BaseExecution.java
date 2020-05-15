@@ -81,8 +81,7 @@ public abstract class BaseExecution<T> {
      *
      * @return The result, or null if this execution has not completed.
      */
-    public abstract @Nullable
-    T getResult();
+    public abstract @Nullable T getResult();
 
     /**
      * Set the result for this execution.

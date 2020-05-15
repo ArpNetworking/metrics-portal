@@ -299,6 +299,17 @@ public final class TestBeanFactory {
     }
 
     /**
+     * Factory method to create a new organization.
+     *
+     * @return an organization
+     */
+    public static Organization createOrganization() {
+        return new DefaultOrganization.Builder()
+                .setId(UUID.randomUUID())
+                .build();
+    }
+
+    /**
      * Factory method to create a new ebean organization.
      *
      * @return an ebean organization

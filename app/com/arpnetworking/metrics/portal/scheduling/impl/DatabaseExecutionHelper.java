@@ -73,6 +73,8 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @return An internal model for this execution
      */
     public static <T, E extends BaseExecution<T>> JobExecution<T> toInternalModel(final E beanModel) {
+        // TODO(cbriones) - This should not be static, repositories should call this from an instance.
+
         final BaseExecution.State state = beanModel.getState();
         switch (state) {
             case STARTED:

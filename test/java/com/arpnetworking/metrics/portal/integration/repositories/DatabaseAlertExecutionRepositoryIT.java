@@ -17,43 +17,42 @@
 package com.arpnetworking.metrics.portal.integration.repositories;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
-import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
 import models.internal.Organization;
-import models.internal.impl.DefaultReportResult;
-import models.internal.reports.Report;
+import models.internal.alerts.AlertEvaluationResult;
+import models.internal.impl.DefaultAlertEvaluationResult;
 
 import java.util.UUID;
 
 /**
- * Integration tests for {@link DatabaseReportExecutionRepository}.
+ * Integration tests for {@link DatabaseAlertExecutionRepository}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryIT<Report.Result> {
+public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
     @Override
-    JobExecutionRepository<Report.Result> setUpRepository(final Organization organization, final UUID jobId) {
+    public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
-        final DatabaseReportExecutionRepository _repository = new DatabaseReportExecutionRepository(server);
+
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
 
-        final models.ebean.Report ebeanReport = TestBeanFactory.createEbeanReport(ebeanOrganization);
-        ebeanReport.setUuid(jobId);
+        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
+        // references are not constrained in the underlying execution table.
 
-        // TODO(cbriones): I'm not sure why schedule / source need to be explicitly saved; I would expect a cascade to occur.
-        server.save(ebeanReport.getSchedule());
-        server.save(ebeanReport.getReportSource());
-        server.save(ebeanReport);
-
-        return _repository;
+        return new DatabaseAlertExecutionRepository(server);
     }
 
     @Override
-    Report.Result newResult() {
-        return new DefaultReportResult();
+    AlertEvaluationResult newResult() {
+        return new DefaultAlertEvaluationResult.Builder()
+                .setFiringTags(ImmutableList.of(ImmutableMap.of("tag-name", "tag-value")))
+                .build();
     }
 }
