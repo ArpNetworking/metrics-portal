@@ -35,6 +35,7 @@ import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
+import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
 
 import java.io.IOException;
@@ -50,7 +51,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * An alert repository that reads definitions from the filesystem.
@@ -59,18 +59,11 @@ import java.util.function.Supplier;
  */
 public class FileSystemAlertRepository implements AlertRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemAlertRepository.class);
+    private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final Path _path;
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
-    private final RepositoryOpenGuard _openGuard =
-            new RepositoryOpenGuard(
-                    () -> {
-                        LOGGER.debug().setMessage("Opening FileSystemAlertRepository").log();
-                        _alerts = loadAlerts();
-                    },
-                    () -> LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log()
-            );
 
     /**
      * Default Constructor.
@@ -92,22 +85,27 @@ public class FileSystemAlertRepository implements AlertRepository {
 
     @Override
     public void open() {
-        _openGuard.open();
+        assertIsOpen(false);
+        LOGGER.debug().setMessage("Opening FileSystemAlertRepository").log();
+        _alerts = loadAlerts();
+        _isOpen.set(true);
     }
 
     @Override
     public void close() {
-        _openGuard.close();
+        assertIsOpen();
+        LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log();
+        _isOpen.set(false);
     }
 
     @Override
     public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
-        return _openGuard.checked(() -> Optional.ofNullable(_alerts.get(identifier)));
+        return Optional.ofNullable(_alerts.get(identifier));
     }
 
     @Override
     public AlertQuery createAlertQuery(final Organization organization) {
-        return _openGuard.checked(() -> new DefaultAlertQuery(this, organization));
+        return new DefaultAlertQuery(this, organization);
     }
 
     @Override
@@ -116,21 +114,19 @@ public class FileSystemAlertRepository implements AlertRepository {
                 query.getContains().map(c -> (Predicate<Alert>) a -> a.getDescription().contains(c))
                         .orElse(e -> true);
 
-        return _openGuard.checked(() -> {
-            final ImmutableList<Alert> alerts = _alerts.values().stream()
-                    .filter(containsPredicate)
-                    .skip(query.getOffset().orElse(0))
-                    .limit(query.getOffset().orElse(1000))
-                    .collect(ImmutableList.toImmutableList());
+        final ImmutableList<Alert> alerts = _alerts.values().stream()
+                .filter(containsPredicate)
+                .skip(query.getOffset().orElse(0))
+                .limit(query.getOffset().orElse(1000))
+                .collect(ImmutableList.toImmutableList());
 
-            // TODO: is this total like the entire set or total like how big the page is?
-            return new DefaultQueryResult<>(alerts, alerts.size());
-        });
+        // TODO: is this total like the entire set or total like how big an individual page is?
+        return new DefaultQueryResult<>(alerts, alerts.size());
     }
 
     @Override
     public long getAlertCount(final Organization organization) {
-        return _openGuard.checked(() -> _alerts.size());
+        return _alerts.size();
     }
 
     /* Unsupported mutation operations */
@@ -155,19 +151,18 @@ public class FileSystemAlertRepository implements AlertRepository {
             throw new RuntimeException("Could not load alerts from filesystem", e);
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
-
         for (final SerializedAlert fsAlert : group.getAlerts()) {
             final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
             final Alert alert =
-                new DefaultAlert.Builder()
-                        .setId(uuid)
-                        .setName(fsAlert.getName())
-                        .setDescription(fsAlert.getDescription())
-                        .setEnabled(fsAlert.isEnabled())
-                        .setOrganization(_organization)
-                        .setQuery(new KairosDbMetricsQuery(fsAlert.getQuery()))
-                        .setAdditionalMetadata(fsAlert.getAdditionalMetadata())
-                        .build();
+                    new DefaultAlert.Builder()
+                            .setId(uuid)
+                            .setName(fsAlert.getName())
+                            .setDescription(fsAlert.getDescription())
+                            .setEnabled(fsAlert.isEnabled())
+                            .setOrganization(_organization)
+                            .setQuery(new KairosDbMetricsQuery(fsAlert.getQuery()))
+                            .setAdditionalMetadata(fsAlert.getAdditionalMetadata())
+                            .build();
             mapBuilder.put(uuid, alert);
         }
         return mapBuilder.build();
@@ -182,6 +177,17 @@ public class FileSystemAlertRepository implements AlertRepository {
         final String alertContents =
                 alert.getName() + alert.getDescription();
         return UUID.nameUUIDFromBytes(alertContents.getBytes());
+    }
+
+    private void assertIsOpen() {
+        assertIsOpen(true);
+    }
+
+    private void assertIsOpen(final boolean expectedState) {
+        if (_isOpen.get() != expectedState) {
+            throw new IllegalStateException(String.format("FileSystemAlertRepository is not %s",
+                    expectedState ? "open" : "closed"));
+        }
     }
 
     private static final class KairosDbMetricsQuery implements models.internal.MetricsQuery {
@@ -211,106 +217,13 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
     }
 
-    /**
-     * Helper class for managing the open/closed state of a repository.
-     * <p>
-     * The open and close methods on this class are <b>not</b> idempotent, and will throw if performed more than once.
-     */
-    private static final class RepositoryOpenGuard {
-        private static final Runnable NOP_RUNNABLE = () -> {
-        };
-
-        private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-        private final Runnable _onOpen;
-        private final Runnable _onClose;
-
-        /**
-         * Create a new guard without open/close callbacks.
-         */
-        RepositoryOpenGuard() {
-            this(NOP_RUNNABLE, NOP_RUNNABLE);
-        }
-
-        /**
-         * Create a guard with the given callbacks.
-         *
-         * @param onOpen the operation to run before opening.
-         * @param onClose the operation to run before closing.
-         */
-        RepositoryOpenGuard(final Runnable onOpen, final Runnable onClose) {
-            _onOpen = onOpen;
-            _onClose = onClose;
-        }
-
-        /**
-         * Mark the guard as open.
-         *
-         * @throws IllegalStateException if the guard is already open.
-         */
-        public void open() {
-            assertIsOpen(false);
-            _onOpen.run();
-            _isOpen.set(true);
-        }
-
-        /**
-         * Mark the guard as closed.
-         *
-         * @throws IllegalStateException if the guard is already closed.
-         */
-        public void close() {
-            assertIsOpen();
-            _onClose.run();
-            _isOpen.set(false);
-        }
-
-        /**
-         * Execute an action iff the guard is open.
-         *
-         * @param action the action to run if open.
-         * @throws IllegalStateException if the guard is closed.
-         */
-        public void checked(final Runnable action) {
-            checked(() -> {
-                action.run();
-                return null;
-            });
-        }
-
-        /**
-         * Execute an action iff the guard is open. The result of the action is returned to the caller.
-         *
-         * @param action the action to run if open.
-         * @return The result of the passed in action.
-         * @throws IllegalStateException if the guard is closed.
-         */
-        public <T> T checked(final Supplier<T> action) {
-            assertIsOpen();
-            return action.get();
-        }
-
-        private void assertIsOpen() {
-            assertIsOpen(true);
-        }
-
-        private void assertIsOpen(final boolean expectedState) {
-            if (_isOpen.get() != expectedState) {
-                throw new IllegalStateException(String.format("RepositoryOpenGuard is not %s",
-                        expectedState ? "open" : "closed"));
-            }
-        }
-    }
-
     private static final class AlertGroup {
         private final List<SerializedAlert> _alerts;
         private final long _version;
 
-        private AlertGroup(final List<SerializedAlert> alerts, final long version) {
-            if (version < 0) {
-                throw new IllegalArgumentException("Version must be non-negative");
-            }
-            _alerts = alerts;
-            _version = version;
+        private AlertGroup(final Builder builder) {
+            _alerts = builder._alerts;
+            _version = builder._version;
         }
 
         public long getVersion() {
@@ -319,6 +232,28 @@ public class FileSystemAlertRepository implements AlertRepository {
 
         public List<SerializedAlert> getAlerts() {
             return _alerts;
+        }
+
+        private static final class Builder extends OvalBuilder<AlertGroup> {
+            private List<SerializedAlert> _alerts;
+            @NotNull
+            @NotNegative
+            private Long _version;
+
+            public Builder() {
+                super(AlertGroup::new);
+                _alerts = ImmutableList.of();
+            }
+
+            public Builder setAlerts(final List<SerializedAlert> alerts) {
+                _alerts = alerts;
+                return this;
+            }
+
+            public Builder setVersion(final long version) {
+                _version = version;
+                return this;
+            }
         }
     }
 
@@ -368,16 +303,20 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
 
         private static final class Builder extends OvalBuilder<SerializedAlert> {
-            private @Nullable UUID _uuid;
+            private @Nullable
+            UUID _uuid;
             @NotNull
             @NotEmpty
             private String _name;
             @NotNull
-            private @Nullable String _description;
+            private @Nullable
+            String _description;
             @NotNull
-            private @Nullable com.arpnetworking.kairos.client.models.MetricsQuery _query;
+            private @Nullable
+            com.arpnetworking.kairos.client.models.MetricsQuery _query;
             @NotNull
-            private @Nullable Boolean _enabled;
+            private @Nullable
+            Boolean _enabled;
 
             private ImmutableMap<String, Object> _additionalMetadata = ImmutableMap.of();
 

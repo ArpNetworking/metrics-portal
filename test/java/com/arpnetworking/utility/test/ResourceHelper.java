@@ -34,12 +34,41 @@ public final class ResourceHelper {
      *
      * E.g. for class {@code foo.bar.Baz}, with suffix {@code quux}, the resource will live at {@code foo/bar/Baz.quux.json}.
      *
+     * @param object An instance of the test-class that owns the resource.
+     * @throws IllegalArgumentException if the resource does not exist.
+     * @throws IOException if the resource can't be loaded.
+     */
+    public static String loadResource(final Object object, final String suffix) throws IOException {
+        return loadResource(object.getClass().getSimpleName(), suffix);
+    }
+
+    /**
+     * Load a resource associated with a particular class.
+     *
+     * E.g. for class {@code foo.bar.Baz}, with suffix {@code quux}, the resource will live at {@code foo/bar/Baz.quux.json}.
+     *
      * @param testClass The test-class that owns the resource.
      * @param suffix A resource identifier appended to the class's basename.
      * @return The contents of that resource-file, as a string.
+     * @throws IllegalArgumentException if the resource does not exist.
      * @throws IOException if the resource can't be loaded.
      */
     public static String loadResource(final Class<?> testClass, final String suffix) throws IOException {
+        final URL resourceUrl = resourceURL(testClass, suffix);
+        return Resources.toString(resourceUrl, Charsets.UTF_8);
+    }
+
+    /**
+     * Get the URI for a resource associated with a particular class.
+     *
+     * E.g. for class {@code foo.bar.Baz}, with suffix {@code quux}, the resource will live at {@code foo/bar/Baz.quux.json}.
+     *
+     * @param testClass The test-class that owns the resource.
+     * @param suffix A resource identifier appended to the class's basename.
+     * @throws IllegalArgumentException if the resource does not exist.
+     * @return A URI for that resource-file.
+     */
+    public static URL resourceURL(final Class<?> testClass, final String suffix) throws IOException {
         final String resourcePath = testClass.getCanonicalName().replace(".", "/")
                 + "."
                 + suffix
@@ -48,7 +77,7 @@ public final class ResourceHelper {
         if (resourceUrl == null) {
             throw new IllegalArgumentException(String.format("Resource not found: %s", resourcePath));
         }
-        return Resources.toString(resourceUrl, Charsets.UTF_8);
+        return resourceUrl;
     }
 
     /**
