@@ -66,7 +66,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                 .match(Add.class, message -> {
                     final T item;
                     try {
-                        // TODO(spencerpearson): I'm not sure what the Right Way is to address this. Maybe there isn't one.
+                        // AFAIK there's no good way to make this cast truly safe.
                         @SuppressWarnings("unchecked") final T intermediate = (T) message.getItem();
                         item = intermediate;
                     } catch (final ClassCastException err) {

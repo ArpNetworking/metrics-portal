@@ -153,12 +153,6 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             metrics.addAnnotation("trigger", task.getTrigger().name());
             metrics.addAnnotation("period", task.getPeriod().name());
 
-            // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
-            // metrics.addAnnotation(
-            //         "log_realized_cardinality",
-            //         Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality())))
-            // );
-
             metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
 
             if (failure.isPresent()) {
@@ -175,7 +169,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
             metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
             final LogBuilder logBuilder =
-                    // TODO(spencerpearson): probably make this level-thresholding configurable?
+                    // This level-thresholding should probably be configurable.
                     Double.compare(fractionalDataLoss, 0) == 0 ? LOGGER.trace()
                             : fractionalDataLoss < 0.001 ? LOGGER.debug()
                             : fractionalDataLoss < 0.01 ? LOGGER.info()
