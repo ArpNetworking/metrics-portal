@@ -43,10 +43,12 @@ safe_command() {
 checksum() {
   l_file="$1"
   checksum_exec=""
+  checksum_args=""
   if command -v sha256sum > /dev/null; then
     checksum_exec="sha256sum"
   elif command -v shasum > /dev/null; then
-    checksum_exec="shasum -a 256"
+    checksum_exec="shasum"
+    checksum_args="-a 256"
   elif command -v sha1sum > /dev/null; then
     checksum_exec="sha1sum"
   elif command -v md5 > /dev/null; then
@@ -56,7 +58,7 @@ checksum() {
     log_err "ERROR: No supported checksum command found!"
     exit 1
   fi
-  "${checksum_exec}" < "${l_file}"
+  ${checksum_exec} ${checksum_args} < "${l_file}"
 }
 
 rand() {
@@ -175,26 +177,6 @@ jdkw_wrapper="jdk-wrapper.sh"
 download_if_needed "${jdkw_impl}" "${jdkw_path}"
 download_if_needed "${jdkw_wrapper}" "${jdkw_path}"
 
-# Execute the provided command
-
-# Run the command in the backround (with all the trouble that entails)
-# NOTE: Alternatively convert this to an exec if we don't need to output the
-# wrapper mismatch at the end; e.g. make that a hard precondition to running.
-trap 'kill -TERM ${impl_pid}' TERM INT
-"${jdkw_path}/${jdkw_impl}" "$@" &
-impl_pid=$!
-wait ${impl_pid} > /dev/null 2>&1
-wait_result=$?
-if [ ${wait_result} -ne 127 ]; then
-  result=${wait_result}
-fi
-trap - TERM INT
-wait ${impl_pid} > /dev/null 2>&1
-wait_result=$?
-if [ ${wait_result} -ne 127 ]; then
-  result=${wait_result}
-fi
-
 # Check whether this wrapper is the one specified for this version
 jdkw_download="${jdkw_path}/${jdkw_wrapper}"
 jdkw_current="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/$(basename "$0")"
@@ -202,6 +184,13 @@ if [ "$(checksum "${jdkw_download}")" != "$(checksum "${jdkw_current}")" ]; then
   printf "\e[0;31m[WARNING]\e[0m Your jdk-wrapper.sh file does not match the one in your JDKW_RELEASE.\n"
   printf "\e[0;32mUpdate your jdk-wrapper.sh to match by running:\e[0m\n"
   printf "cp \"%s\" \"%s\"\n" "${jdkw_download}" "${jdkw_current}"
+  sleep 3
 fi
 
-exit ${result}
+# Execute the provided command
+# NOTE: The requirements proved quite difficult to run this without exec.
+# 1) Exit with the exit status of the child process
+# 2) Allow running the wrapper in the background and terminating the child process
+# 3) Allow the child process to read from standard input when not running in the background
+exec "${jdkw_path}/${jdkw_impl}" "$@"
+
