@@ -36,7 +36,7 @@ public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryI
     @Override
     JobExecutionRepository<Report.Result> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
-        final DatabaseReportExecutionRepository _repository = new DatabaseReportExecutionRepository(server);
+        final DatabaseReportExecutionRepository repository = new DatabaseReportExecutionRepository(server);
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
@@ -49,7 +49,7 @@ public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryI
         server.save(ebeanReport.getReportSource());
         server.save(ebeanReport);
 
-        return _repository;
+        return repository;
     }
 
     @Override
