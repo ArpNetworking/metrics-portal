@@ -283,7 +283,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
              * Something/somebody requested this task as a one-off.
              */
             ON_DEMAND,
-            // WRITE_COMPLETED,  // TODO(spencerpearson, OBS-1174)
+            WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
 
