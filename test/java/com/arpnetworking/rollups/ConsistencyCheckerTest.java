@@ -169,7 +169,7 @@ public final class ConsistencyCheckerTest {
                 .setStartTime(Instant.EPOCH)
                 .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                 .build();
-        final ConsistencyChecker.SampleCounts actual = ConsistencyChecker.parseSampleCounts(
+        ConsistencyChecker.SampleCounts actual = ConsistencyChecker.parseSampleCounts(
                 task,
                 ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.response", MetricsQueryResponse.class)
         );
@@ -178,6 +178,19 @@ public final class ConsistencyCheckerTest {
                         .setTask(task)
                         .setSourceSampleCount(100)
                         .setRollupSampleCount(80)
+                        .build(),
+                actual
+        );
+
+        actual = ConsistencyChecker.parseSampleCounts(
+                task,
+                ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.no-data.response", MetricsQueryResponse.class)
+        );
+        assertEquals(
+                new ConsistencyChecker.SampleCounts.Builder()
+                        .setTask(task)
+                        .setSourceSampleCount(100)
+                        .setRollupSampleCount(0)
                         .build(),
                 actual
         );

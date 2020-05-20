@@ -197,20 +197,24 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 throw new MalformedSampleCountResponse("expected exactly 1 result, got " + query.getResults().size(), response);
             }
             final MetricsQueryResponse.QueryResult queryResult = query.getResults().get(0);
-            if (queryResult.getValues().size() != 1) {
-                throw new MalformedSampleCountResponse("expected exactly 1 value, got " + queryResult.getValues().size(), response);
+
+            if (queryResult.getValues().isEmpty()) {
+                countsByMetric.put(queryResult.getName(), 0L);
+            } else if (queryResult.getValues().size() != 1) {
+                throw new MalformedSampleCountResponse("expected 0 or 1 values, got " + queryResult.getValues().size(), response);
+            } else {
+                final Optional<Object> value = queryResult.getValues().get(0).getValue();
+                if (!value.isPresent()) {
+                    throw new MalformedSampleCountResponse("sample count has null value", response);
+                }
+                final long longValue;
+                try {
+                    longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
+                } catch (final NumberFormatException e) {
+                    throw new MalformedSampleCountResponse(e, response);
+                }
+                countsByMetric.put(queryResult.getName(), longValue);
             }
-            final Optional<Object> value = queryResult.getValues().get(0).getValue();
-            if (!value.isPresent()) {
-                throw new MalformedSampleCountResponse("sample count has null value", response);
-            }
-            final long longValue;
-            try {
-                longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
-            } catch (final NumberFormatException e) {
-                throw new MalformedSampleCountResponse(e, response);
-            }
-            countsByMetric.put(queryResult.getName(), longValue);
         }
         @Nullable final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
         @Nullable final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
