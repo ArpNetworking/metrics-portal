@@ -17,6 +17,8 @@ package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Status;
+import akka.pattern.Patterns;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -30,8 +32,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test cases for {@link ConsistencyChecker}.
@@ -78,22 +86,45 @@ public final class CollectionActorTest {
         ));
 
         actor.tell(new CollectionActor.Add<>(1), _probe.getRef());
-        _probe.expectMsg(new CollectionActor.AddAccepted<>(1));
+        _probe.expectMsgClass(Status.Success.class);
 
         actor.tell(new CollectionActor.Add<>(2), _probe.getRef());
-        _probe.expectMsg(new CollectionActor.AddAccepted<>(2));
+        _probe.expectMsgClass(Status.Success.class);
 
         actor.tell(new CollectionActor.Add<>(3), _probe.getRef());
-        _probe.expectMsg(new CollectionActor.AddRejected<>(3));
+        _probe.expectMsgClass(Status.Failure.class);
 
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
         _probe.expectMsgAllOf(ImmutableSet.of(
-                new CollectionActor.PollSucceeded<>(1),
-                new CollectionActor.PollSucceeded<>(2)
+                new Status.Success(1),
+                new Status.Success(2)
         ).toArray());
 
         actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(CollectionActor.Empty.getInstance());
+        _probe.expectMsgClass(Status.Failure.class);
+    }
+
+    @Test
+    public void testAsk() throws Exception {
+        final ActorRef actor = TestActorRef.create(_system, CollectionActor.props(
+                Optional.of(1L),
+                Sets.newHashSet(),
+                _periodicMetrics,
+                ""
+        ));
+
+        assertEquals(
+                1,
+                Patterns.ask(actor, new CollectionActor.Add<>(1), Duration.ofSeconds(1)).toCompletableFuture().get()
+        );
+
+        Patterns.ask(actor, new CollectionActor.Add<>(1), Duration.ofSeconds(1))
+                .handle((response, failure) -> {
+                    assertTrue(failure instanceof CollectionActor.Full);
+                    return null;
+                })
+                .toCompletableFuture()
+                .get();
     }
 }

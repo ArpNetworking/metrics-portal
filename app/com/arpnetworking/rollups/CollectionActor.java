@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -70,23 +71,22 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                         @SuppressWarnings("unchecked") final T intermediate = (T) message.getItem();
                         item = intermediate;
                     } catch (final ClassCastException err) {
-                        final Serializable serializableItem = (Serializable) message.getItem();
-                        getSender().tell(new AddRejected<>(serializableItem), getSelf());
+                        getSender().tell(new Status.Failure(err), getSelf());
                         return;
                     }
                     if (_maxSize.isPresent() && _buffer.size() < _maxSize.get()) {
                         _buffer.add(item);
-                        getSender().tell(new AddAccepted<>(item), getSelf());
+                        getSender().tell(new Status.Success(item), getSelf());
                     } else {
-                        getSender().tell(new AddRejected<>(item), getSelf());
+                        getSender().tell(new Status.Failure(Full.getInstance()), getSelf());
                     }
                 })
                 .match(Poll.class, request -> {
                     final Optional<T> result = _buffer.stream().findFirst();
                     result.ifPresent(_buffer::remove);
                     getSender().tell(
-                            result.map(x -> (Object) new PollSucceeded<>(x))
-                                    .orElse(Empty.getInstance()),
+                            result.map(x -> (Object) new Status.Success(x))
+                                    .orElse(new Status.Failure(Empty.getInstance())),
                             getSelf()
                     );
                 })
@@ -164,100 +164,6 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
     }
 
     /**
-     * Response to {@link Add}, indicating that the actor has accepted the submission.
-     *
-     * @param <T> the type of item being added
-     */
-    @Loggable
-    public static final class AddAccepted<T extends Serializable> implements Serializable {
-        private static final long serialVersionUID = 782305435749351105L;
-        private final T _item;
-
-        public T getItem() {
-            return _item;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final AddAccepted<?> that = (AddAccepted<?>) o;
-            return _item.equals(that._item);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(_item);
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("_item", _item)
-                    .toString();
-        }
-
-        /**
-         * Public constructor.
-         * @param item the item that was accepted
-         */
-        public AddAccepted(final T item) {
-            this._item = item;
-        }
-    }
-
-    /**
-     * Response to {@link Add}, indicating that the actor has refused the submission.
-     *
-     * @param <T> the type of item being added
-     */
-    @Loggable
-    public static final class AddRejected<T extends Serializable> implements Serializable {
-        private static final long serialVersionUID = 7324573883451548747L;
-        private final T _item;
-
-        public T getItem() {
-            return _item;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final AddRejected<?> that = (AddRejected<?>) o;
-            return _item.equals(that._item);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(_item);
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("_item", _item)
-                    .toString();
-        }
-
-        /**
-         * Public constructor.
-         * @param item the item that was rejected
-         */
-        public AddRejected(final T item) {
-            this._item = item;
-        }
-    }
-
-    /**
      * Requests an item from the queue.
      */
     @Loggable
@@ -270,63 +176,27 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
         private Poll() {}
     }
 
-    /**
-     * Response to {@link Poll}, containing an item from the collection.
-     *
-     * @param <T> the type of item being added
-     */
     @Loggable
-    public static final class PollSucceeded<T extends Serializable> implements Serializable {
-        private static final long serialVersionUID = 3527299675739118395L;
-        private final T _item;
-
-        public T getItem() {
-            return _item;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final PollSucceeded<?> that = (PollSucceeded<?>) o;
-            return _item.equals(that._item);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(_item);
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("_item", _item)
-                    .toString();
-        }
-
-        /**
-         * Public constructor.
-         * @param item the item polled from the collection
-         */
-        public PollSucceeded(final T item) {
-            this._item = item;
-        }
-    }
-
-    /**
-     * Response to {@link Poll} indicating that the collection is empty.
-     */
-    @Loggable
-    public static final class Empty implements Serializable {
-        private static final long serialVersionUID = 909545623248537954L;
+    public static final class Empty extends IllegalStateException {
+        private static final long serialVersionUID = 557016693602118796L;
         private static final Empty INSTANCE = new Empty();
         public static Empty getInstance() {
             return INSTANCE;
         }
-        private Empty() {}
+        public Empty() {
+            super("collection is empty");
+        }
+    }
+
+    @Loggable
+    public static final class Full extends Exception {
+        private static final long serialVersionUID = 7840529083811798202L;
+        private static final Full INSTANCE = new Full();
+        public static Full getInstance() {
+            return INSTANCE;
+        }
+        public Full() {
+            super("collection is full");
+        }
     }
 }
