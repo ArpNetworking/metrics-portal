@@ -15,6 +15,8 @@
  */
 package models.internal;
 
+import models.internal.alerts.Alert;
+
 import java.util.Optional;
 
 /**
@@ -31,30 +33,6 @@ public interface AlertQuery {
      * @return This instance of {@link AlertQuery}.
      */
     AlertQuery contains(Optional<String> contains);
-
-    /**
-     * Set the context to query for. Optional. Defaults to all context types.
-     *
-     * @param context The context to match.
-     * @return This instance of {@code AlertQuery}.
-     */
-    AlertQuery context(Optional<Context> context);
-
-    /**
-     * Set the cluster to query for. Optional. Defaults to all clusters.
-     *
-     * @param cluster The cluster to match.
-     * @return This instance of {@link AlertQuery}.
-     */
-    AlertQuery cluster(Optional<String> cluster);
-
-    /**
-     * Set the service to query for. Optional. Defaults to all services.
-     *
-     * @param service The service to match.
-     * @return This instance of {@link AlertQuery}.
-     */
-    AlertQuery service(Optional<String> service);
 
     /**
      * The maximum number of alerts to return.  Optional. Default is 1000.
@@ -92,27 +70,6 @@ public interface AlertQuery {
      * @return The contains.
      */
     Optional<String> getContains();
-
-    /**
-     * Accessor for the context.
-     *
-     * @return The context.
-     */
-    Optional<Context> getContext();
-
-    /**
-     * Accessor for the cluster.
-     *
-     * @return The cluster.
-     */
-    Optional<String> getCluster();
-
-    /**
-     * Accessor for the service.
-     *
-     * @return The service.
-     */
-    Optional<String> getService();
 
     /**
      * Accessor for the limit.

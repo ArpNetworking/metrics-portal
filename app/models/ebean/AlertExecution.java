@@ -16,10 +16,11 @@
 
 package models.ebean;
 
+import com.google.common.base.Objects;
 import io.ebean.annotation.DbJsonB;
+import models.internal.alerts.AlertEvaluationResult;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
@@ -32,66 +33,80 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 /**
- * An execution event for a {@link ReportExecution}.
+ * An execution event for an {@link models.internal.alerts.Alert}.
  * <p>
  * NOTE: This class is enhanced by Ebean to do things like lazy loading and
  * resolving relationships between beans. Therefore, including functionality
- * which serializes the state of the object could be side-effectful (e.g. {@code toString},
+ * which serializes the state of the object can be dangerous (e.g. {@code toString},
  * {@code @Loggable}, etc.).
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
 @Entity
-@Table(name = "report_executions", schema = "portal")
-@IdClass(ReportExecution.Key.class)
-public final class ReportExecution extends BaseExecution<models.internal.reports.Report.Result> {
+@Table(name = "alert_executions", schema = "portal")
+@IdClass(AlertExecution.Key.class)
+public final class AlertExecution extends BaseExecution<AlertEvaluationResult> {
     @Id
-    @ManyToOne(optional = false, targetEntity = Report.class)
-    @JoinColumn(name = "report_id")
-    private Report report;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
+    @Id
+    @Column(name = "alert_id")
+    private UUID alertId;
     @Nullable
     @DbJsonB
     @Column(name = "result")
-    private models.internal.reports.Report.Result result;
+    private AlertEvaluationResult result;
 
-    public Report getReport() {
-        return report;
+    public Organization getOrganization() {
+        return organization;
     }
 
-    public void setReport(final Report value) {
-        report = value;
+    public void setOrganization(final Organization value) {
+        organization = value;
     }
 
-    @Override
-    public models.internal.reports.Report.Result getResult() {
-        return result;
+    public UUID getAlertId() {
+        return alertId;
     }
 
-    @Override
-    public void setResult(@Nullable final models.internal.reports.Report.Result value) {
-        result = value;
+    public void setAlertId(final UUID value) {
+        alertId = value;
     }
 
     @Override
     public UUID getJobId() {
-        return report.getUuid();
+        return alertId;
     }
 
     @Override
     public void setJobId(final UUID jobId) {
-        report.setUuid(jobId);
+        alertId = jobId;
+    }
+
+    @Override
+    @Nullable
+    public AlertEvaluationResult getResult() {
+        return result;
+    }
+
+    @Override
+    public void setResult(@Nullable final AlertEvaluationResult value) {
+        result = value;
     }
 
     /**
-     * Primary Key for a {@link ReportExecution}.
+     * Primary Key for a {@link AlertExecution}.
      */
     @Embeddable
     protected static final class Key {
         @Nullable
-        @Column(name = "report_id")
-        private final Long reportId;
-
+        @Column(name = "organization_id")
+        private final Long organizationId;
+        @Nullable
+        @Column(name = "alert_id")
+        private final UUID alertId;
         @Nullable
         @Column(name = "scheduled")
         private final Instant scheduled;
@@ -100,8 +115,9 @@ public final class ReportExecution extends BaseExecution<models.internal.reports
          * Default constructor, required by Ebean.
          */
         public Key() {
-            reportId = null;
+            alertId = null;
             scheduled = null;
+            organizationId = null;
         }
 
         @Override
@@ -113,12 +129,14 @@ public final class ReportExecution extends BaseExecution<models.internal.reports
                 return false;
             }
             final Key key = (Key) o;
-            return Objects.equals(reportId, key.reportId) && Objects.equals(scheduled, key.scheduled);
+            return Objects.equal(alertId, key.alertId)
+                    && Objects.equal(scheduled, key.scheduled)
+                    && Objects.equal(organizationId, key.organizationId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(reportId, scheduled);
+            return Objects.hashCode(alertId, scheduled, organizationId);
         }
     }
 }

@@ -15,15 +15,19 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.Actor;
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.typesafe.config.ConfigFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
@@ -34,7 +38,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public final class QueueActorTest {
+public final class CollectionActorTest {
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
+
     private ActorSystem _system;
 
     private TestKit _probe;
@@ -63,24 +70,30 @@ public final class QueueActorTest {
 
     @Test
     public void testBasicAddAndPoll() {
-        final TestActorRef<Actor> queue = TestActorRef.create(_system, QueueActor.props(Optional.of(2L)));
+        final ActorRef actor = TestActorRef.create(_system, CollectionActor.props(
+                Optional.of(2L),
+                Sets.newHashSet(),
+                _periodicMetrics,
+                ""
+        ));
 
-        queue.tell(new QueueActor.Add<>(1), _probe.getRef());
-        _probe.expectMsg(new QueueActor.AddAccepted<>(1));
+        actor.tell(new CollectionActor.Add<>(1), _probe.getRef());
+        _probe.expectMsg(new CollectionActor.AddAccepted<>(1));
 
-        queue.tell(new QueueActor.Add<>(2), _probe.getRef());
-        _probe.expectMsg(new QueueActor.AddAccepted<>(2));
+        actor.tell(new CollectionActor.Add<>(2), _probe.getRef());
+        _probe.expectMsg(new CollectionActor.AddAccepted<>(2));
 
-        queue.tell(new QueueActor.Add<>(3), _probe.getRef());
-        _probe.expectMsg(new QueueActor.AddRejected<>(3));
+        actor.tell(new CollectionActor.Add<>(3), _probe.getRef());
+        _probe.expectMsg(new CollectionActor.AddRejected<>(3));
 
-        queue.tell(QueueActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(1);
+        actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
+        actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
+        _probe.expectMsgAllOf(ImmutableSet.of(
+                new CollectionActor.PollSucceeded<>(1),
+                new CollectionActor.PollSucceeded<>(2)
+        ).toArray());
 
-        queue.tell(QueueActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(2);
-
-        queue.tell(QueueActor.Poll.getInstance(), _probe.getRef());
-        _probe.expectMsg(QueueActor.QueueEmpty.getInstance());
+        actor.tell(CollectionActor.Poll.getInstance(), _probe.getRef());
+        _probe.expectMsg(CollectionActor.Empty.getInstance());
     }
 }

@@ -48,6 +48,7 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
+import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
@@ -66,9 +67,9 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
-import com.arpnetworking.rollups.QueueActor;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -77,7 +78,6 @@ import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.enums.EnumNameCodec;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -93,9 +93,7 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import models.internal.Context;
 import models.internal.Features;
-import models.internal.Operator;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
@@ -139,6 +137,10 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
 
+        // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
+        // statically injecting them. Construction still happens at inject time, however.
+        requestStaticInjection(MetricsPortalServerConfigStartup.class);
+
         // Repositories
         bind(OrganizationRepository.class)
                 .toProvider(OrganizationRepositoryProvider.class)
@@ -148,6 +150,9 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
         bind(AlertRepository.class)
                 .toProvider(AlertRepositoryProvider.class)
+                .asEagerSingleton();
+        bind(AlertExecutionRepository.class)
+                .toProvider(AlertExecutionRepositoryProvider.class)
                 .asEagerSingleton();
         bind(ReportRepository.class)
                 .toProvider(ReportRepositoryProvider.class)
@@ -253,8 +258,6 @@ public class MainModule extends AbstractModule {
     private CodecRegistry provideCodecRegistry() {
         final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
         registry.register(InstantCodec.instance);
-        registry.register(new EnumNameCodec<>(Operator.class));
-        registry.register(new EnumNameCodec<>(Context.class));
         return registry;
     }
 
@@ -494,6 +497,38 @@ public class MainModule extends AbstractModule {
                         return CompletableFuture.completedFuture(null);
                     });
             return alertRepository;
+        }
+
+        private final Injector _injector;
+        private final Environment _environment;
+        private final Config _configuration;
+        private final ApplicationLifecycle _lifecycle;
+    }
+
+    private static final class AlertExecutionRepositoryProvider implements Provider<AlertExecutionRepository> {
+        @Inject
+        AlertExecutionRepositoryProvider(
+                final Injector injector,
+                final Environment environment,
+                final Config configuration,
+                final ApplicationLifecycle lifecycle) {
+            _injector = injector;
+            _environment = environment;
+            _configuration = configuration;
+            _lifecycle = lifecycle;
+        }
+
+        @Override
+        public AlertExecutionRepository get() {
+            final AlertExecutionRepository executionRepository = _injector.getInstance(
+                    ConfigurationHelper.<AlertExecutionRepository>getType(_environment, _configuration, "alertExecutionRepository.type"));
+            executionRepository.open();
+            _lifecycle.addStopHook(
+                    () -> {
+                        executionRepository.close();
+                        return CompletableFuture.completedFuture(null);
+                    });
+            return executionRepository;
         }
 
         private final Injector _injector;
@@ -819,10 +854,12 @@ public class MainModule extends AbstractModule {
         @Inject
         RollupConsistencyCheckerQueueProvider(
                 final ActorSystem system,
-                final Config configuration
+                final Config configuration,
+                final PeriodicMetrics periodicMetrics
         ) {
             _system = system;
             _configuration = configuration;
+            _periodicMetrics = periodicMetrics;
         }
 
         @Override
@@ -830,11 +867,17 @@ public class MainModule extends AbstractModule {
             final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
                     ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
                     : Optional.empty();
-            return _system.actorOf(QueueActor.props(maxSize));
+            return _system.actorOf(CollectionActor.props(
+                    maxSize,
+                    Sets.newHashSet(),
+                    _periodicMetrics,
+                    "rollup/consistency_checker/queue"
+            ));
         }
 
         private final ActorSystem _system;
         private final Config _configuration;
+        private final PeriodicMetrics _periodicMetrics;
         private static final String CONFIG_MAX_SIZE_PATH = "rollup.consistency_checker.queue.size";
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Groupon.com
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,42 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal;
 
-/**
- * Alert condition operators.
- *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
- */
-public enum Operator {
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package models.internal.alerts;
 
-    /**
-     * Equal to.
-     */
-    EQUAL_TO,
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 
-    /**
-     * Not equal to.
-     */
-    NOT_EQUAL_TO,
-
-    /**
-     * Less than.
-     */
-    LESS_THAN,
-
-    /**
-     * Less than or equal to.
-     */
-    LESS_THAN_OR_EQUAL_TO,
-
-    /**
-     * Greater than.
-     */
-    GREATER_THAN,
-
-    /**
-     * Greater than or equal to.
-     */
-    GREATER_THAN_OR_EQUAL_TO;
-}
+import javax.annotation.ParametersAreNonnullByDefault;

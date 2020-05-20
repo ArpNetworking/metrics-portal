@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.alerts;
 
-import models.internal.Alert;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;
+import models.internal.alerts.Alert;
 
 import java.util.Optional;
 import java.util.UUID;

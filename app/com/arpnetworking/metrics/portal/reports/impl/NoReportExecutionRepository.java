@@ -42,6 +42,11 @@ public final class NoReportExecutionRepository implements ReportExecutionReposit
     }
 
     @Override
+    public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization) {
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<JobExecution.Success<Report.Result>> getLastSuccess(
             final UUID jobId,
             final Organization organization

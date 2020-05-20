@@ -16,10 +16,9 @@
 package controllers;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.kairos.client.models.MetricsQuery;
+import akka.pattern.Patterns;
+import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
-import com.arpnetworking.rollups.QueueActor;
-import com.arpnetworking.rollups.RollupPeriod;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +27,9 @@ import play.mvc.Controller;
 import play.mvc.Result;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -42,11 +43,14 @@ public class RollupController extends Controller {
 
     /**
      * Public constructor.
+     *
+     * @param mapper an {@link ObjectMapper} to use to deserialize requests
+     * @param consistencyCheckerQueue the {@link CollectionActor} to submit {@link ConsistencyChecker.Task}s to
      */
     @Inject
     public RollupController(
             final ObjectMapper mapper,
-        @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
+            @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
     ) {
         _mapper = mapper;
         _consistencyCheckerQueue = consistencyCheckerQueue;
@@ -55,24 +59,45 @@ public class RollupController extends Controller {
     /**
      * Requests a rollup be consistency-checked.
      *
-     * @return Ok
+     * @return 204 if the consistency-check task was successfully enqueued; else 503 if the queue is full; else 500 for unknown failures.
      */
-    public Result enqueueConsistencyCheck() {
+    public CompletionStage<Result> enqueueConsistencyCheck() {
         final ConsistencyChecker.Task task;
         try {
             task = _mapper.treeToValue(request().body().asJson(), ConsistencyChecker.Task.class);
         } catch (final IOException err) {
-            return badRequest(err.getMessage());
+            return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }
-        _consistencyCheckerQueue.tell(
-                new QueueActor.Add<>(task),
-                null
-        );
-        LOGGER.info()
-                .setMessage("submitted consistency-checker task")
-                .addData("task", task)
-                .log();
-        return noContent();
+
+        final CompletableFuture<Result> result = new CompletableFuture<>();
+        Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(task), Duration.ofSeconds(10)).whenComplete((response, error) -> {
+            if (error != null) {
+                result.completeExceptionally(error);
+                return;
+            }
+            if (response instanceof CollectionActor.AddAccepted) {
+                LOGGER.info()
+                        .setMessage("submitted consistency-checker task")
+                        .addData("task", task)
+                        .log();
+                result.complete(noContent());
+            } else if (response instanceof CollectionActor.AddRejected) {
+                LOGGER.warn()
+                        .setMessage("consistency-check task rejected")
+                        .addData("task", task)
+                        .log();
+                result.complete(status(503, "consistency-checkers are too busy right now"));
+            } else {
+                LOGGER.error()
+                        .setMessage("unexpected response from consistency-checker queue")
+                        .addData("task", task)
+                        .addData("response", response)
+                        .log();
+                result.complete(internalServerError("unexpected response from consistency-checker queue"));
+            }
+        });
+
+        return result;
     }
 
     private final ActorRef _consistencyCheckerQueue;

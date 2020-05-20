@@ -21,6 +21,7 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -33,6 +34,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -42,6 +45,7 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
@@ -50,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -60,17 +65,32 @@ import javax.inject.Named;
  */
 public class ConsistencyChecker extends AbstractActorWithTimers {
 
-    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+    private final KairosDbClient _kairosDbClient;
+    private final MetricsFactory _metricsFactory;
+    private final ActorRef _queue;
 
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .match(Task.class, this::startTask)
-                .match(SampleCounts.class, this::sampleCountsReceived)
-                .match(QueueActor.QueueEmpty.class, msg ->
+                .match(CollectionActor.PollSucceeded.class, msg -> {
+                    final Task task;
+                    try {
+                        task = (Task) msg.getItem();
+                    } catch (final ClassCastException err) {
+                        LOGGER.error()
+                                .setMessage("got non-Task item from task queue")
+                                .addData("item", msg.getItem())
+                                .log();
+                        return;
+                    }
+                    getSelf().tell(task, getSelf());
+                })
+                .match(CollectionActor.Empty.class, msg ->
                     getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
                 )
+                .match(Task.class, this::startTask)
                 .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
+                .match(SampleCounts.class, this::sampleCountsReceived)
                 .build();
     }
 
@@ -99,7 +119,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private void requestWork() {
-        _queue.tell(QueueActor.Poll.getInstance(), getSelf());
+        _queue.tell(CollectionActor.Poll.getInstance(), getSelf());
     }
 
     private void startTask(final Task task) {
@@ -112,6 +132,15 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                                 throw new CompletionException(err);
                             }
                         })
+                        .whenComplete((sampleCounts, failure) -> {
+                            if (failure != null) {
+                                LOGGER.error()
+                                        .setMessage("failed to fetch/parse response from KairosDB")
+                                        .addData("task", task)
+                                        .setThrowable(failure)
+                                        .log();
+                            }
+                        })
                         .whenComplete((response, failure) -> requestWork()),
                 getContext().dispatcher()
         ).to(getSelf());
@@ -121,56 +150,39 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         final Task task = sampleCounts.getTask();
         final Optional<Throwable> failure = sampleCounts.getFailure();
 
-        final Metrics metrics = _metricsFactory.create();
-        metrics.addAnnotation("trigger", task.getTrigger().name());
-        metrics.addAnnotation("period", task.getPeriod().name());
+        try (Metrics metrics = _metricsFactory.create()) {
+            metrics.addAnnotation("trigger", task.getTrigger().name());
+            metrics.addAnnotation("period", task.getPeriod().name());
 
-        // TODO(spencerpearson): it might be useful to see how behavior varies by cardinality, something like
-        // metrics.addAnnotation("log_realized_cardinality", Long.toString((long) Math.floor(Math.log10(task.getRealizedCardinality()))));
+            metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
 
-        metrics.incrementCounter("rollup/consistency_checker/query_successful", failure.isPresent() ? 0 : 1);
-
-        if (failure.isPresent()) {
-            LOGGER.warn()
-                    .setMessage("failed to query Kairos for sample-counts")
-                    .addData("task", task)
-                    .setThrowable(failure.get())
-                    .log();
-            return;
-        }
-
-        final double nOriginalSamples = sampleCounts.getSourceSampleCount();
-        final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
-        final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
-        metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-        final LogBuilder logBuilder =
-                // TODO(spencerpearson): probably make this level-thresholding configurable?
-                fractionalDataLoss == 0 ? LOGGER.trace()
-                : fractionalDataLoss < 0.001 ? LOGGER.debug()
-                : fractionalDataLoss < 0.01 ? LOGGER.info()
-                : fractionalDataLoss < 0.1 ? LOGGER.warn()
-                : LOGGER.error();
-        logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
-                .addData("task", task)
-                .addData("nOriginalSamples", nOriginalSamples)
-                .addData("nSamplesDropped", nSamplesDropped)
-                .addData("fractionalDataLoss", fractionalDataLoss)
-                .log();
-
-        /* TODO(spencerpearson, OBS-1176): re-trigger re-execution of bad datapoints, something like
-
-            if (discrepancyTooBig) {
-                _rollupManagerPool.tell(
-                    new RollupDefinition.Builder()
-                            .setSourceMetricName(task.getSourceMetricName())
-                            .setDestinationMetricName(task.getRollupMetricName())
-                            .setStartTime(task.getStartTime())
-                            .setPeriod(task.getPeriod())
-                            .build()
-                );
+            if (failure.isPresent()) {
+                LOGGER.warn()
+                        .setMessage("failed to query Kairos for sample-counts")
+                        .addData("task", task)
+                        .setThrowable(failure.get())
+                        .log();
+                return;
             }
 
-         */
+            final double nOriginalSamples = sampleCounts.getSourceSampleCount();
+            final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
+            final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
+            metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
+            final LogBuilder logBuilder =
+                    // This level-thresholding should probably be configurable.
+                    Double.compare(fractionalDataLoss, 0) == 0 ? LOGGER.trace()
+                            : fractionalDataLoss < 0.001 ? LOGGER.debug()
+                            : fractionalDataLoss < 0.01 ? LOGGER.info()
+                            : fractionalDataLoss < 0.1 ? LOGGER.warn()
+                            : LOGGER.error();
+            logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
+                    .addData("task", task)
+                    .addData("nOriginalSamples", nOriginalSamples)
+                    .addData("nSamplesDropped", nSamplesDropped)
+                    .addData("fractionalDataLoss", fractionalDataLoss)
+                    .log();
+        }
     }
 
     /* package private */ static SampleCounts parseSampleCounts(
@@ -179,7 +191,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     ) throws MalformedSampleCountResponse {
         final Map<String, Long> countsByMetric = Maps.newHashMap();
         if (response.getQueries().size() != 2) {
-            throw new MalformedSampleCountResponse("expected exactly 1 query, got " + response.getQueries().size(), response);
+            throw new MalformedSampleCountResponse("expected exactly 2 queries, got " + response.getQueries().size(), response);
         }
         for (final MetricsQueryResponse.Query query : response.getQueries()) {
             if (query.getResults().size() != 1) {
@@ -195,60 +207,60 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
             final long longValue;
             try {
-                longValue = Long.parseLong(value.get().toString());
+                longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
             } catch (final NumberFormatException e) {
                 throw new MalformedSampleCountResponse(e, response);
             }
             countsByMetric.put(queryResult.getName(), longValue);
         }
-        final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
-        final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
+        @Nullable final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
+        @Nullable final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
         if (sourceCount == null || rollupCount == null) {
             throw new MalformedSampleCountResponse(
                     String.format("expected keys %s and %s", task.getSourceMetricName(), task.getRollupMetricName()),
                     response
             );
         }
-        return new SampleCounts.Builder()
+        return ThreadLocalBuilder.build(SampleCounts.Builder.class, b -> b
                 .setTask(task)
                 .setSourceSampleCount(sourceCount)
                 .setRollupSampleCount(rollupCount)
-                .build();
+        );
     }
 
     private MetricsQuery buildCountComparisonQuery(final Task task) {
         final Consumer<Metric.Builder> setCommonFields = builder -> builder
                 .setAggregators(ImmutableList.of(
-                        new Aggregator.Builder()
+                        ThreadLocalBuilder.build(Aggregator.Builder.class, aggb -> aggb
                                 .setName("count")
-                                .setSampling(new Sampling.Builder().setUnit(task.getPeriod().getSamplingUnit()).setValue(1).build())
+                                .setSampling(ThreadLocalBuilder.build(Sampling.Builder.class, sb -> sb
+                                        .setUnit(task.getPeriod().getSamplingUnit()).setValue(1).build()
+                                ))
                                 .setAlignSampling(true)
                                 .setAlignStartTime(true)
-                                .build())
+                        ))
                 )
                 .setTags(task.getTags());
 
-        return new MetricsQuery.Builder()
+        return ThreadLocalBuilder.build(MetricsQuery.Builder.class, mqb -> mqb
                 .setStartTime(task.getStartTime())
                 .setEndTime(task.getStartTime().plus(task.getPeriod().periodCountToDuration(1)).minusMillis(1))
                 .setMetrics(ImmutableList.of(
-                        ThreadLocalBuilder.build(Metric.Builder.class, b -> {
-                            setCommonFields.accept(b);
-                            b.setName(task.getSourceMetricName());
+                        ThreadLocalBuilder.build(Metric.Builder.class, mb -> {
+                            setCommonFields.accept(mb);
+                            mb.setName(task.getSourceMetricName());
                         }),
-                        ThreadLocalBuilder.build(Metric.Builder.class, b -> {
-                            setCommonFields.accept(b);
-                            b.setName(task.getRollupMetricName());
+                        ThreadLocalBuilder.build(Metric.Builder.class, mb -> {
+                            setCommonFields.accept(mb);
+                            mb.setName(task.getRollupMetricName());
                         })
-                )).build();
+                ))
+        );
     }
-
-    private final KairosDbClient _kairosDbClient;
-    private final MetricsFactory _metricsFactory;
-    private final ActorRef _queue;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
     private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
+    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
 
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
@@ -268,9 +280,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public enum Trigger {
             /**
-             * A human deliberately requested this task as a one-off.
+             * Something/somebody requested this task as a one-off.
              */
-            HUMAN_REQUESTED,
+            ON_DEMAND,
             // WRITE_COMPLETED,  // TODO(spencerpearson, OBS-1174)
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
@@ -570,8 +582,12 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
      */
     @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
-        private static final long serialVersionUID = 839173899181349812L;
-        private final MetricsQueryResponse _response;
+        private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
+        private static final long serialVersionUID = 752780265350084369L;
+
+        // This "should" be a MetricsQueryResponse, but that class isn't Serializable.
+        // ("Why isn't it?" Several of the data-models contain Optional values, and Optional isn't Serializable.)
+        private final JsonNode _response;
 
         /**
          * Public constructor.
@@ -581,7 +597,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
             super(cause);
-            _response = response;
+            _response = MAPPER.valueToTree(response);
         }
 
         /**
@@ -592,11 +608,20 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
             super(message);
-            _response = response;
+            _response = MAPPER.valueToTree(response);
         }
 
+        /**
+         * Get the {@link MetricsQueryResponse} that failed to parse.
+         *
+         * @return the response
+         */
         public MetricsQueryResponse getResponse() {
-            return _response;
+            try {
+                return MAPPER.treeToValue(_response, MetricsQueryResponse.class);
+            } catch (final IOException err) {
+                throw new RuntimeException("somehow failed to deserialize a serialized MetricsQueryResponse", err);
+            }
         }
     }
 

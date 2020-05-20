@@ -110,44 +110,44 @@ public final class ConsistencyCheckerTest {
     @Test
     public void testRequestsWorkOnStartup() {
         createActor();
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
     }
 
     @Test
     public void testRequestsWorkAfterQueryCompletes() {
         final ConsistencyChecker.Task task = TestBeanFactory.createConsistencyCheckerTaskBuilder().build();
         final ActorRef actor = createActor();
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // normal valid response
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // semantically invalid response
         when(_kairosDbClient.queryMetrics(Mockito.any())).thenReturn(CompletableFuture.completedFuture(
                 new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()
         ));
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
 
         // complete failure
         when(_kairosDbClient.queryMetrics(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
         actor.tell(task, _queue.getRef());
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
     }
 
     @Test
     public void testKairosDbInteraction() throws Exception {
         final ActorRef actor = createActor();
 
-        _queue.expectMsg(QueueActor.Poll.getInstance());
+        _queue.expectMsg(CollectionActor.Poll.getInstance());
         actor.tell(
                 new ConsistencyChecker.Task.Builder()
                         .setSourceMetricName("my_metric")
                         .setRollupMetricName("my_metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setStartTime(Instant.EPOCH)
-                        .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
+                        .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                         .build(),
                 _queue.getRef()
         );
@@ -167,7 +167,7 @@ public final class ConsistencyCheckerTest {
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED)
+                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                 .build();
         final ConsistencyChecker.SampleCounts actual = ConsistencyChecker.parseSampleCounts(
                 task,
@@ -189,14 +189,14 @@ public final class ConsistencyCheckerTest {
                 .setSourceMetricName("my_metric")
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
-                .setTrigger(ConsistencyChecker.Task.Trigger.HUMAN_REQUESTED);
+                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND);
 
         builder.setStartTime(Instant.EPOCH).build();
         builder.setStartTime(Instant.EPOCH.plus(Duration.ofHours(1))).build();
 
         try {
             builder.setStartTime(Instant.EPOCH.plus(Duration.ofSeconds(1))).build();
-            fail();
+            fail("expected ConstraintsViolatedException");
         } catch (final ConstraintsViolatedException e) {
         }
     }
