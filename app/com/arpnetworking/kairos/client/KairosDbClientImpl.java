@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public final class KairosDbClientImpl implements KairosDbClient {
+public final class KairosDbClientImpl extends KairosDbClient {
     @Override
     public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery query) {
         final Metrics metrics = _metricsFactory.create();

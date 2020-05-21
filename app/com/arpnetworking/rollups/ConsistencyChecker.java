@@ -25,9 +25,11 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -69,6 +71,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
     private final ActorRef _queue;
+    private final ActorRef _rollupManager;
+
+    // TODO(spencerpearson): make configurable
+    public static final double FRACTIONAL_DATA_LOSS_TO_TRIGGER_ROLLUP_REEXECUTION = 0.01;
 
     @Override
     public Receive createReceive() {
@@ -86,16 +92,19 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
      * @param kairosDbClient kairosdb client
      * @param metricsFactory metrics factory
      * @param queue queue to request {@link Task}s from
+     * @param rollupManager queue to request {@link Task}s from
      */
     @Inject
     public ConsistencyChecker(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef queue
+            @Named("RollupConsistencyCheckerQueue") final ActorRef queue,
+            @Named("RollupManager") final ActorRef rollupManager
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
         _queue = queue;
+        _rollupManager = rollupManager;
     }
 
     @Override
@@ -206,6 +215,20 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
                         .log();
+                if (fractionalDataLoss > FRACTIONAL_DATA_LOSS_TO_TRIGGER_ROLLUP_REEXECUTION) {
+                    Patterns.pipe(
+                            _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
+                                    new RollupDefinition.Builder()
+                                            .setSourceMetricName(task.getSourceMetricName())
+                                            .setDestinationMetricName(task.getRollupMetricName())
+                                            .setStartTime(task.getStartTime())
+                                            .setPeriod(task.getPeriod())
+                                            .setAllMetricTags(tags)
+                                            .build()
+                            ),
+                            getContext().getDispatcher()
+                    ).to(_rollupManager);
+                }
             } else {
                 LOGGER.trace()
                         .setMessage("no data lost in rollup")
