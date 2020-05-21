@@ -83,6 +83,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     if (_queue.size() < _bufferSize) {
                         _queue.add(task);
                         getSender().tell(new Status.Success(task), getSelf());
+                        tick();
                     } else {
                         getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
                     }
@@ -141,30 +142,33 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
 
     private void tick() {
         while (_nAvailableRequests > 0 && !_queue.isEmpty()) {
-            final Task task = dequeueWork();
-            _nAvailableRequests -= 1;
-            Patterns.pipe(
-                    _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
-                            .thenApply(response -> {
-                                try {
-                                    return ConsistencyChecker.parseSampleCounts(task, response);
-                                } catch (final MalformedSampleCountResponse err) {
-                                    throw new CompletionException(err);
-                                }
-                            })
-                            .whenComplete((sampleCounts, failure) -> {
-                                if (failure != null) {
-                                    LOGGER.error()
-                                            .setMessage("failed to fetch/parse response from KairosDB")
-                                            .addData("task", task)
-                                            .setThrowable(failure)
-                                            .log();
-                                }
-                            })
-                        .whenComplete((response, error) -> getSelf().tell(REQUEST_FINISHED, getSelf())),
-                    getContext().getDispatcher()
-            ).to(getSelf());
+            startRequest(dequeueWork());
         }
+    }
+
+    private void startRequest(final Task task) {
+        _nAvailableRequests -= 1;
+        Patterns.pipe(
+                _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
+                        .whenComplete((response, error) -> getSelf().tell(REQUEST_FINISHED, getSelf()))
+                        .thenApply(response -> {
+                            try {
+                                return ConsistencyChecker.parseSampleCounts(task, response);
+                            } catch (final MalformedSampleCountResponse err) {
+                                throw new CompletionException(err);
+                            }
+                        })
+                        .whenComplete((sampleCounts, failure) -> {
+                            if (failure != null) {
+                                LOGGER.error()
+                                        .setMessage("failed to fetch/parse response from KairosDB")
+                                        .addData("task", task)
+                                        .setThrowable(failure)
+                                        .log();
+                            }
+                        }),
+                getContext().getDispatcher()
+        ).to(getSelf());
     }
 
     private void sampleCountsReceived(final SampleCounts sampleCounts) {

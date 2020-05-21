@@ -45,15 +45,15 @@ public class RollupController extends Controller {
      * Public constructor.
      *
      * @param mapper an {@link ObjectMapper} to use to deserialize requests
-     * @param consistencyCheckerQueue the {@link ConsistencyChecker} to submit {@link ConsistencyChecker.Task}s to
+     * @param consistencyChecker the {@link ConsistencyChecker} to submit {@link ConsistencyChecker.Task}s to
      */
     @Inject
     public RollupController(
             final ObjectMapper mapper,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
+            @Named("RollupConsistencyChecker") final ActorRef consistencyChecker
     ) {
         _mapper = mapper;
-        _consistencyCheckerQueue = consistencyCheckerQueue;
+        _consistencyChecker = consistencyChecker;
     }
 
     /**
@@ -71,7 +71,7 @@ public class RollupController extends Controller {
             return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }
 
-        return Patterns.ask(_consistencyCheckerQueue, task, Duration.ofSeconds(10))
+        return Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(10))
                 .handle((response, error) -> {
                     if (error == null) {
                         LOGGER.info()
@@ -92,7 +92,7 @@ public class RollupController extends Controller {
                 });
     }
 
-    private final ActorRef _consistencyCheckerQueue;
+    private final ActorRef _consistencyChecker;
     private final ObjectMapper _mapper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupController.class);

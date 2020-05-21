@@ -126,26 +126,6 @@ public final class ConsistencyCheckerTest {
     }
 
     @Test
-    public void testDequeuesMultipleTasks() {
-        final AtomicInteger tasksCreated = new AtomicInteger();
-        final Supplier<ConsistencyChecker.Task> taskSupplier = () -> TestBeanFactory.createConsistencyCheckerTaskBuilder()
-                .setSourceMetricName("my_metric_" + tasksCreated.getAndIncrement())
-                .build();
-        final ActorRef actor = createActor(3, 5);
-
-        final CompletableFuture<?> blocker = new CompletableFuture<>();
-        Mockito.when(_kairosDbClient.queryMetrics(Mockito.any())).then(args -> blocker.get());
-
-        for (int i=0; i<5; i++) {
-            actor.tell(taskSupplier.get(), ActorRef.noSender());
-        }
-        actor.tell(ConsistencyChecker.TICK, ActorRef.noSender());
-        Mockito.verify(_kairosDbClient, Mockito.timeout(1000).times(3)).queryMetrics(Mockito.any());
-        blocker.complete(null);
-//        Mockito.verify(_kairosDbClient, Mockito.timeout(1000).times(2)).queryMetrics(Mockito.any());
-    }
-
-    @Test
     public void testKairosDbInteraction() throws Exception {
         final ActorRef actor = createActor(1, 1);
 
