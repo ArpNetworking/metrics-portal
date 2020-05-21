@@ -29,6 +29,7 @@ import play.mvc.Result;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -59,6 +60,8 @@ public class RollupController extends Controller {
     /**
      * Requests a rollup be consistency-checked.
      *
+     * This endpoint is currently intended only for debugging purposes. Do not rely on it.
+     *
      * @return 204 if the consistency-check task was successfully enqueued; else 503 if the queue is full; else 500 for unknown failures.
      */
     public CompletionStage<Result> enqueueConsistencyCheck() {
@@ -69,35 +72,25 @@ public class RollupController extends Controller {
             return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }
 
-        final CompletableFuture<Result> result = new CompletableFuture<>();
-        Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(task), Duration.ofSeconds(10)).whenComplete((response, error) -> {
-            if (error != null) {
-                result.completeExceptionally(error);
-                return;
-            }
-            if (response instanceof CollectionActor.AddAccepted) {
-                LOGGER.info()
-                        .setMessage("submitted consistency-checker task")
-                        .addData("task", task)
-                        .log();
-                result.complete(noContent());
-            } else if (response instanceof CollectionActor.AddRejected) {
-                LOGGER.warn()
-                        .setMessage("consistency-check task rejected")
-                        .addData("task", task)
-                        .log();
-                result.complete(status(503, "consistency-checkers are too busy right now"));
-            } else {
-                LOGGER.error()
-                        .setMessage("unexpected response from consistency-checker queue")
-                        .addData("task", task)
-                        .addData("response", response)
-                        .log();
-                result.complete(internalServerError("unexpected response from consistency-checker queue"));
-            }
-        });
-
-        return result;
+        return Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(task), Duration.ofSeconds(10))
+                .handle((response, error) -> {
+                    if (error == null) {
+                        LOGGER.info()
+                                .setMessage("submitted consistency-checker task")
+                                .addData("task", task)
+                                .log();
+                        return noContent();
+                    } else if (error instanceof CollectionActor.Full) {
+                        LOGGER.warn()
+                                .setMessage("consistency-checker queue rejected task")
+                                .addData("task", task)
+                                .setThrowable(error)
+                                .log();
+                        return status(503, "consistency-checkers are too busy right now");
+                    } else {
+                        throw new CompletionException(error);
+                    }
+                });
     }
 
     private final ActorRef _consistencyCheckerQueue;

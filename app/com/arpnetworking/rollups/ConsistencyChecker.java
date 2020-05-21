@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -72,24 +73,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .match(CollectionActor.PollSucceeded.class, msg -> {
-                    final Task task;
-                    try {
-                        task = (Task) msg.getItem();
-                    } catch (final ClassCastException err) {
-                        LOGGER.error()
-                                .setMessage("got non-Task item from task queue")
-                                .addData("item", msg.getItem())
-                                .log();
-                        return;
-                    }
-                    getSelf().tell(task, getSelf());
-                })
-                .match(CollectionActor.Empty.class, msg ->
-                    getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF)
-                )
-                .match(Task.class, this::startTask)
+                .matchEquals(WORK_REQUEST_BACKOFF_MSG, msg -> backoff())
                 .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
+                .match(Task.class, this::startTask)
                 .match(SampleCounts.class, this::sampleCountsReceived)
                 .build();
     }
@@ -118,11 +104,44 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         requestWork();
     }
 
+    private void backoff() {
+        getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF);
+    }
+
     private void requestWork() {
-        _queue.tell(CollectionActor.Poll.getInstance(), getSelf());
+        final CompletionStage<Object> ask = Patterns.ask(_queue, CollectionActor.Poll.getInstance(), Duration.ofSeconds(10))
+                .handle((response, failure) -> {
+                    if (failure == null) {
+                        if (response instanceof Task) {
+                            return response;
+                        } else {
+                            LOGGER.error()
+                                    .setMessage("unexpected response from queue")
+                                    .addData("response", response)
+                                    .log();
+                            return WORK_REQUEST_BACKOFF_MSG;
+                        }
+                    } else if (failure instanceof CollectionActor.Empty) {
+                        LOGGER.debug()
+                                .setMessage("queue is empty; backing off")
+                                .log();
+                        return WORK_REQUEST_BACKOFF_MSG;
+                    } else {
+                        LOGGER.error()
+                                .setMessage("communication with queue failed")
+                                .setThrowable(failure)
+                                .log();
+                        return WORK_REQUEST_BACKOFF_MSG;
+                    }
+                });
+        Patterns.pipe(ask, getContext().getDispatcher()).to(getSelf());
     }
 
     private void startTask(final Task task) {
+        LOGGER.debug()
+                .setMessage("starting task")
+                .addData("task", task)
+                .log();
         Patterns.pipe(
                 _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
                         .thenApply(response -> {
@@ -166,22 +185,34 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
 
             final double nOriginalSamples = sampleCounts.getSourceSampleCount();
-            final double nSamplesDropped = nOriginalSamples - sampleCounts.getRollupSampleCount();
-            final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
-            metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-            final LogBuilder logBuilder =
-                    // This level-thresholding should probably be configurable.
-                    Double.compare(fractionalDataLoss, 0) == 0 ? LOGGER.trace()
-                            : fractionalDataLoss < 0.001 ? LOGGER.debug()
-                            : fractionalDataLoss < 0.01 ? LOGGER.info()
-                            : fractionalDataLoss < 0.1 ? LOGGER.warn()
-                            : LOGGER.error();
-            logBuilder.setMessage((fractionalDataLoss == 0 ? "no " : "") + "data lost in rollup")
-                    .addData("task", task)
-                    .addData("nOriginalSamples", nOriginalSamples)
-                    .addData("nSamplesDropped", nSamplesDropped)
-                    .addData("fractionalDataLoss", fractionalDataLoss)
-                    .log();
+            final double nRollupSamples = sampleCounts.getRollupSampleCount();
+            final double nSamplesDropped = nOriginalSamples - nRollupSamples;
+            if (nOriginalSamples < nRollupSamples) {
+                LOGGER.error()
+                        .setMessage("somehow got more samples for rolled-up data than original data")
+                        .addData("task", task)
+                        .addData("sampleCounts", sampleCounts)
+                        .log();
+            } else if (nOriginalSamples > nRollupSamples) {
+                final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
+                metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
+                final LogBuilder logBuilder =
+                        // This level-thresholding should probably be configurable.
+                        fractionalDataLoss < 0.001 ? LOGGER.debug()
+                                : fractionalDataLoss < 0.01 ? LOGGER.info()
+                                : fractionalDataLoss < 0.1 ? LOGGER.warn()
+                                : LOGGER.error();
+                logBuilder.setMessage("data lost in rollup")
+                        .addData("task", task)
+                        .addData("sampleCounts", sampleCounts)
+                        .log();
+            } else {
+                LOGGER.trace()
+                        .setMessage("no data lost in rollup")
+                        .addData("task", task)
+                        .addData("sampleCounts", sampleCounts)
+                        .log();
+            }
         }
     }
 
@@ -198,20 +229,24 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 throw new MalformedSampleCountResponse("expected exactly 1 result, got " + query.getResults().size(), response);
             }
             final MetricsQueryResponse.QueryResult queryResult = query.getResults().get(0);
-            if (queryResult.getValues().size() != 1) {
-                throw new MalformedSampleCountResponse("expected exactly 1 value, got " + queryResult.getValues().size(), response);
+
+            if (queryResult.getValues().isEmpty()) {
+                countsByMetric.put(queryResult.getName(), 0L);
+            } else if (queryResult.getValues().size() != 1) {
+                throw new MalformedSampleCountResponse("expected 0 or 1 values, got " + queryResult.getValues().size(), response);
+            } else {
+                final Optional<Object> value = queryResult.getValues().get(0).getValue();
+                if (!value.isPresent()) {
+                    throw new MalformedSampleCountResponse("sample count has null value", response);
+                }
+                final long longValue;
+                try {
+                    longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
+                } catch (final NumberFormatException e) {
+                    throw new MalformedSampleCountResponse(e, response);
+                }
+                countsByMetric.put(queryResult.getName(), longValue);
             }
-            final Optional<Object> value = queryResult.getValues().get(0).getValue();
-            if (!value.isPresent()) {
-                throw new MalformedSampleCountResponse("sample count has null value", response);
-            }
-            final long longValue;
-            try {
-                longValue = Double.valueOf(Double.parseDouble(value.get().toString())).longValue();
-            } catch (final NumberFormatException e) {
-                throw new MalformedSampleCountResponse(e, response);
-            }
-            countsByMetric.put(queryResult.getName(), longValue);
         }
         @Nullable final Long sourceCount = countsByMetric.get(task.getSourceMetricName());
         @Nullable final Long rollupCount = countsByMetric.get(task.getRollupMetricName());
@@ -259,6 +294,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
+    private static final Object WORK_REQUEST_BACKOFF_MSG = new Object();
     private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
     private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
 
