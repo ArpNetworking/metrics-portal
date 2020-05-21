@@ -78,7 +78,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                         _buffer.add(item);
                         getSender().tell(new Status.Success(item), getSelf());
                     } else {
-                        getSender().tell(new Status.Failure(Full.getInstance()), getSelf());
+                        getSender().tell(new Status.Failure(Full.INSTANCE), getSelf());
                     }
                 })
                 .match(Poll.class, request -> {
@@ -86,7 +86,7 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
                     result.ifPresent(_buffer::remove);
                     getSender().tell(
                             result.map(x -> (Object) new Status.Success(x))
-                                    .orElse(new Status.Failure(Empty.getInstance())),
+                                    .orElse(new Status.Failure(Empty.INSTANCE)),
                             getSelf()
                     );
                 })
@@ -176,26 +176,32 @@ public class CollectionActor<T extends Serializable, C extends Collection<T>> ex
         private Poll() {}
     }
 
+    /**
+     * Indicates that a {@link Poll} failed because the collection is empty.
+     */
     @Loggable
     public static final class Empty extends IllegalStateException {
         private static final long serialVersionUID = 557016693602118796L;
-        private static final Empty INSTANCE = new Empty();
-        public static Empty getInstance() {
-            return INSTANCE;
-        }
-        public Empty() {
+        /**
+         * The singleton instance.
+         */
+        public static final Empty INSTANCE = new Empty();
+        private Empty() {
             super("collection is empty");
         }
     }
 
+    /**
+     * Indicates that an {@link Add} failed because the collection is full.
+     */
     @Loggable
     public static final class Full extends Exception {
         private static final long serialVersionUID = 7840529083811798202L;
-        private static final Full INSTANCE = new Full();
-        public static Full getInstance() {
-            return INSTANCE;
-        }
-        public Full() {
+        /**
+         * The singleton instance.
+         */
+        public static final Full INSTANCE = new Full();
+        private Full() {
             super("collection is full");
         }
     }

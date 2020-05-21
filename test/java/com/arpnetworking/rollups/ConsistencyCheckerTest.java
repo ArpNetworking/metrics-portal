@@ -184,7 +184,11 @@ public final class ConsistencyCheckerTest {
 
         actual = ConsistencyChecker.parseSampleCounts(
                 task,
-                ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.no-data.response", MetricsQueryResponse.class)
+                ResourceHelper.loadResourceAs(
+                        getClass(),
+                        "my_metric.hourly.t0.human_requested.no-data.response",
+                        MetricsQueryResponse.class
+                )
         );
         assertEquals(
                 new ConsistencyChecker.SampleCounts.Builder()

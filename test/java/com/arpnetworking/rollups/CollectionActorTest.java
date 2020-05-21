@@ -34,12 +34,10 @@ import org.mockito.MockitoAnnotations;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test cases for {@link ConsistencyChecker}.

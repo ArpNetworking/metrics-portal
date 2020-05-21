@@ -16,7 +16,6 @@
 package controllers;
 
 import akka.actor.ActorRef;
-import akka.actor.Status;
 import akka.pattern.Patterns;
 import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
