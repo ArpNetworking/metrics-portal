@@ -63,7 +63,7 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class ConsistencyChecker extends AbstractActorWithTimers {
+public final class ConsistencyChecker extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
@@ -645,9 +645,17 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         }
     }
 
+    /**
+     * Indicates that a submitted {@link Task} was rejected because the internal task-buffer is full.
+     */
     public static final class BufferFull extends Exception {
         private static final long serialVersionUID = 7840529083811798202L;
-        private static final BufferFull INSTANCE = new BufferFull();
+        public static final BufferFull INSTANCE = new BufferFull();
+
+        /**
+         * Get the singleton instance. (Other instances might be created by deserialization, though.)
+         * @return the singleton instance
+         */
         public static BufferFull getInstance() {
             return INSTANCE;
         }

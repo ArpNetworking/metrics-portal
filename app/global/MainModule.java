@@ -851,36 +851,30 @@ public class MainModule extends AbstractModule {
                 final ActorSystem system,
                 final KairosDbClient kairosDbClient,
                 final MetricsFactory metricsFactory,
-                final Config configuration,
-                final Features features
+                final Config configuration
         ) {
             _system = system;
             _kairosDbClient = kairosDbClient;
             _metricsFactory = metricsFactory;
             _configuration = configuration;
-            _enabled = features.isRollupsEnabled();
         }
 
         @Override
         public ActorRef get() {
-            if (_enabled) {
-                final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
-                final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
-                return _system.actorOf(ConsistencyChecker.props(
-                            _kairosDbClient,
-                            _metricsFactory,
-                            maxConcurrentRequests,
-                            bufferSize
-                ));
-            }
-            return null;
+            final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
+            final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
+            return _system.actorOf(ConsistencyChecker.props(
+                        _kairosDbClient,
+                        _metricsFactory,
+                        maxConcurrentRequests,
+                        bufferSize
+            ));
         }
 
         private final ActorSystem _system;
         private final KairosDbClient _kairosDbClient;
         private final MetricsFactory _metricsFactory;
         private final Config _configuration;
-        private final boolean _enabled;
     }
 
 }

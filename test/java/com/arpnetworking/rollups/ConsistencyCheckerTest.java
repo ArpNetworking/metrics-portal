@@ -34,15 +34,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -173,7 +170,11 @@ public final class ConsistencyCheckerTest {
 
         actual = ConsistencyChecker.parseSampleCounts(
                 task,
-                ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.no-data.response", MetricsQueryResponse.class)
+                ResourceHelper.loadResourceAs(
+                        getClass(),
+                        "my_metric.hourly.t0.human_requested.no-data.response",
+                        MetricsQueryResponse.class
+                )
         );
         assertEquals(
                 new ConsistencyChecker.SampleCounts.Builder()
