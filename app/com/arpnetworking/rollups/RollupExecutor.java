@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
+import akka.actor.Status;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -176,26 +177,30 @@ public class RollupExecutor extends AbstractActorWithTimers {
                 .build();
         Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(ccTask), Duration.ofSeconds(10))
                 .whenComplete((response, failure) -> {
-                    if (failure != null) {
+                    if (failure == null) {
+                        if (response instanceof Status.Success) {
+                            LOGGER.debug()
+                                    .setMessage("consistency-checker queue accepted task")
+                                    .addData("task", ccTask)
+                                    .log();
+                        } else {
+                            LOGGER.error()
+                                    .setMessage("unexpected response from consistency-checker")
+                                    .addData("task", ccTask)
+                                    .addData("response", response)
+                                    .log();
+                        }
+                    } else if (failure instanceof CollectionActor.Full) {
+                        LOGGER.warn()
+                                .setMessage("consistency-checker task rejected")
+                                .addData("task", ccTask)
+                                .setThrowable(failure)
+                                .log();
+                    } else {
                         LOGGER.error()
                                 .setMessage("communication with consistency-checker queue failed")
                                 .addData("task", ccTask)
                                 .setThrowable(failure)
-                                .log();
-                    } else if (response instanceof CollectionActor.AddRejected) {
-                        LOGGER.warn()
-                                .setMessage("consistency-checker task rejected")
-                                .addData("task", ccTask)
-                                .log();
-                    } else if (response instanceof CollectionActor.AddAccepted){
-                        LOGGER.debug()
-                                .setMessage("consistency-checker queue accepted task")
-                                .addData("task", ccTask)
-                                .log();
-                    } else {
-                        LOGGER.error()
-                                .setMessage("unexpected response from consistency-checker")
-                                .addData("task", ccTask)
                                 .log();
                     }
                 });
