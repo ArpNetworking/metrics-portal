@@ -67,7 +67,6 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupExecutor;
@@ -202,10 +201,6 @@ public class MainModule extends AbstractModule {
 
         // Rollups
         bind(MetricsQueryConfig.class).to(MetricsQueryConfigImpl.class).asEagerSingleton();
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("RollupConsistencyCheckerQueue"))
-                .toProvider(RollupConsistencyCheckerQueueProvider.class)
-                .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
@@ -850,63 +845,40 @@ public class MainModule extends AbstractModule {
         private final boolean _enabled;
     }
 
-    private static final class RollupConsistencyCheckerQueueProvider implements Provider<ActorRef> {
-        @Inject
-        RollupConsistencyCheckerQueueProvider(
-                final ActorSystem system,
-                final Config configuration,
-                final PeriodicMetrics periodicMetrics
-        ) {
-            _system = system;
-            _configuration = configuration;
-            _periodicMetrics = periodicMetrics;
-        }
-
-        @Override
-        public ActorRef get() {
-            final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
-                    ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
-                    : Optional.empty();
-            return _system.actorOf(CollectionActor.props(
-                    maxSize,
-                    Sets.newHashSet(),
-                    _periodicMetrics,
-                    "rollup/consistency_checker/queue"
-            ));
-        }
-
-        private final ActorSystem _system;
-        private final Config _configuration;
-        private final PeriodicMetrics _periodicMetrics;
-        private static final String CONFIG_MAX_SIZE_PATH = "rollup.consistency_checker.queue.size";
-    }
-
     private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
         @Inject
         RollupConsistencyCheckerProvider(
-                final Injector injector,
                 final ActorSystem system,
+                final KairosDbClient kairosDbClient,
+                final MetricsFactory metricsFactory,
                 final Config configuration,
-                final Features features) {
-            _injector = injector;
+                final Features features
+        ) {
             _system = system;
+            _kairosDbClient = kairosDbClient;
+            _metricsFactory = metricsFactory;
             _configuration = configuration;
             _enabled = features.isRollupsEnabled();
         }
 
         @Override
         public ActorRef get() {
-            final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
             if (_enabled) {
-                for (int i = 0; i < actorCount; i++) {
-                    _system.actorOf(GuiceActorCreator.props(_injector, ConsistencyChecker.class));
-                }
+                final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
+                final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
+                return _system.actorOf(ConsistencyChecker.props(
+                            _kairosDbClient,
+                            _metricsFactory,
+                            maxConcurrentRequests,
+                            bufferSize
+                ));
             }
             return null;
         }
 
-        private final Injector _injector;
         private final ActorSystem _system;
+        private final KairosDbClient _kairosDbClient;
+        private final MetricsFactory _metricsFactory;
         private final Config _configuration;
         private final boolean _enabled;
     }

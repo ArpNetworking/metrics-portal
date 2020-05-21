@@ -16,7 +16,7 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
@@ -49,15 +49,14 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Actor that compares rollup datapoints to their source material, and logs any discrepancies.
@@ -68,101 +67,104 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
-    private final ActorRef _queue;
+    private final int _bufferSize;
+    private final LinkedHashSet<Task> _queue;
+    private int _nAvailableRequests;
 
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .matchEquals(WORK_REQUEST_BACKOFF_MSG, msg -> backoff())
-                .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
-                .match(Task.class, this::startTask)
+                .matchEquals(TICK, msg -> tick())
+                .matchEquals(REQUEST_FINISHED, msg -> {
+                    _nAvailableRequests += 1;
+                    tick();
+                })
+                .match(Task.class, task -> {
+                    if (_queue.size() < _bufferSize) {
+                        _queue.add(task);
+                        getSender().tell(new Status.Success(task), getSelf());
+                    } else {
+                        getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
+                    }
+                })
                 .match(SampleCounts.class, this::sampleCountsReceived)
                 .build();
     }
 
     /**
-     * {@link ConsistencyChecker} actor constructor.
+     * Creates a {@link Props} for this actor.
      *
      * @param kairosDbClient kairosdb client
      * @param metricsFactory metrics factory
-     * @param queue queue to request {@link Task}s from
+     * @param maxConcurrentRequests maximum number of queries that can be outstanding to KairosDB at a time
+     * @param bufferSize maximum number of items to allow in the queue
+     * @return A new Props.
      */
-    @Inject
-    public ConsistencyChecker(
+    public static Props props(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef queue
+            final int maxConcurrentRequests,
+            final int bufferSize
+    ) {
+        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, maxConcurrentRequests, bufferSize);
+    }
+
+    private ConsistencyChecker(
+            final KairosDbClient kairosDbClient,
+            final MetricsFactory metricsFactory,
+            final int maxConcurrentRequests,
+            final int bufferSize
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
-        _queue = queue;
+        _bufferSize = bufferSize;
+        _queue = new LinkedHashSet<>();
+        _nAvailableRequests = maxConcurrentRequests;
     }
 
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        requestWork();
+        getSelf().tell(TICK, getSelf());
+        getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
     }
 
-    private void backoff() {
-        getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF);
+    private Task dequeueWork() {
+        final Iterator<Task> iterator = _queue.iterator();
+        if (!iterator.hasNext()) {
+            throw new IllegalStateException();
+        }
+        final Task result = iterator.next();
+        _queue.remove(result);
+        return result;
     }
 
-    private void requestWork() {
-        final CompletionStage<Object> ask = Patterns.ask(_queue, CollectionActor.Poll.getInstance(), Duration.ofSeconds(10))
-                .handle((response, failure) -> {
-                    if (failure == null) {
-                        if (response instanceof Task) {
-                            return response;
-                        } else {
-                            LOGGER.error()
-                                    .setMessage("unexpected response from queue")
-                                    .addData("response", response)
-                                    .log();
-                            return WORK_REQUEST_BACKOFF_MSG;
-                        }
-                    } else if (failure instanceof CollectionActor.Empty) {
-                        LOGGER.debug()
-                                .setMessage("queue is empty; backing off")
-                                .log();
-                        return WORK_REQUEST_BACKOFF_MSG;
-                    } else {
-                        LOGGER.error()
-                                .setMessage("communication with queue failed")
-                                .setThrowable(failure)
-                                .log();
-                        return WORK_REQUEST_BACKOFF_MSG;
-                    }
-                });
-        Patterns.pipe(ask, getContext().getDispatcher()).to(getSelf());
-    }
-
-    private void startTask(final Task task) {
-        LOGGER.debug()
-                .setMessage("starting task")
-                .addData("task", task)
-                .log();
-        Patterns.pipe(
-                _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
-                        .thenApply(response -> {
-                            try {
-                                return ConsistencyChecker.parseSampleCounts(task, response);
-                            } catch (final MalformedSampleCountResponse err) {
-                                throw new CompletionException(err);
-                            }
-                        })
-                        .whenComplete((sampleCounts, failure) -> {
-                            if (failure != null) {
-                                LOGGER.error()
-                                        .setMessage("failed to fetch/parse response from KairosDB")
-                                        .addData("task", task)
-                                        .setThrowable(failure)
-                                        .log();
-                            }
-                        })
-                        .whenComplete((response, failure) -> requestWork()),
-                getContext().dispatcher()
-        ).to(getSelf());
+    private void tick() {
+        while (_nAvailableRequests > 0 && !_queue.isEmpty()) {
+            final Task task = dequeueWork();
+            _nAvailableRequests -= 1;
+            Patterns.pipe(
+                    _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
+                            .thenApply(response -> {
+                                try {
+                                    return ConsistencyChecker.parseSampleCounts(task, response);
+                                } catch (final MalformedSampleCountResponse err) {
+                                    throw new CompletionException(err);
+                                }
+                            })
+                            .whenComplete((sampleCounts, failure) -> {
+                                if (failure != null) {
+                                    LOGGER.error()
+                                            .setMessage("failed to fetch/parse response from KairosDB")
+                                            .addData("task", task)
+                                            .setThrowable(failure)
+                                            .log();
+                                }
+                            })
+                        .whenComplete((response, error) -> getSelf().tell(REQUEST_FINISHED, getSelf())),
+                    getContext().getDispatcher()
+            ).to(getSelf());
+        }
     }
 
     private void sampleCountsReceived(final SampleCounts sampleCounts) {
@@ -293,9 +295,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
-    private static final Object WORK_REQUEST_BACKOFF_MSG = new Object();
-    private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
-    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+    /* package private */ static final Object TICK = new Object();
+    private static final Object REQUEST_FINISHED = new Object();
+    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
 
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
@@ -638,5 +640,17 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
         }
     }
+
+    public static final class BufferFull extends Exception {
+        private static final long serialVersionUID = 7840529083811798202L;
+        private static final BufferFull INSTANCE = new BufferFull();
+        public static BufferFull getInstance() {
+            return INSTANCE;
+        }
+        public BufferFull() {
+            super("buffer is full");
+        }
+    }
+
 
 }

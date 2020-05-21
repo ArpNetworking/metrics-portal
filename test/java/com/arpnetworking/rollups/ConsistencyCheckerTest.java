@@ -17,22 +17,16 @@ package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.pattern.Patterns;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
-import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.utility.test.ResourceHelper;
-import com.google.common.collect.ImmutableList;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.name.Names;
 import com.typesafe.config.ConfigFactory;
 import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.After;
@@ -46,9 +40,12 @@ import org.mockito.MockitoAnnotations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,12 +56,9 @@ import static org.mockito.Mockito.when;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class ConsistencyCheckerTest {
-    private Injector _injector;
     @Mock
     private KairosDbClient _kairosDbClient;
     private ActorSystem _system;
-
-    private TestKit _queue;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 
@@ -73,16 +67,6 @@ public final class ConsistencyCheckerTest {
         MockitoAnnotations.initMocks(this);
 
         _system = ActorSystem.create();
-        _queue = new TestKit(_system);
-
-        _injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(ActorRef.class).annotatedWith(Names.named("RollupConsistencyCheckerQueue")).toInstance(_queue.getRef());
-                bind(KairosDbClient.class).toInstance(_kairosDbClient);
-                bind(MetricsFactory.class).toInstance(new NoOpMetricsFactory());
-            }
-        });
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
@@ -103,44 +87,68 @@ public final class ConsistencyCheckerTest {
         _system = null;
     }
 
-    private TestActorRef<ConsistencyChecker> createActor() {
-        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, ConsistencyChecker.class));
-    }
-
-    @Test
-    public void testRequestsWorkOnStartup() {
-        createActor();
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
-    }
-
-    @Test
-    public void testRequestsWorkAfterQueryCompletes() {
-        final ConsistencyChecker.Task task = TestBeanFactory.createConsistencyCheckerTaskBuilder().build();
-        final ActorRef actor = createActor();
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
-
-        // normal valid response
-        actor.tell(task, _queue.getRef());
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
-
-        // semantically invalid response
-        when(_kairosDbClient.queryMetrics(Mockito.any())).thenReturn(CompletableFuture.completedFuture(
-                new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()
+    private TestActorRef<ConsistencyChecker> createActor(
+            final int maxConcurrentRequests,
+            final int bufferSize
+    ) {
+        return TestActorRef.create(
+                _system,
+                ConsistencyChecker.props(_kairosDbClient,
+                new NoOpMetricsFactory(),
+                maxConcurrentRequests,
+                bufferSize
         ));
-        actor.tell(task, _queue.getRef());
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
+    }
 
-        // complete failure
-        when(_kairosDbClient.queryMetrics(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
-        actor.tell(task, _queue.getRef());
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
+    @Test
+    public void testTaskSubmissionResponses() throws Exception {
+        final ActorRef checker = createActor(0, 1);
+
+        final ConsistencyChecker.Task task = TestBeanFactory.createConsistencyCheckerTaskBuilder()
+                .setSourceMetricName("foo")
+                .build();
+        Patterns.ask(checker, task, Duration.ofSeconds(10))
+                .thenAccept(response -> assertEquals(task, response))
+                .toCompletableFuture()
+                .get();
+
+
+        final ConsistencyChecker.Task otherTask = TestBeanFactory.createConsistencyCheckerTaskBuilder()
+                .setSourceMetricName("other")
+                .build();
+        Patterns.ask(checker, otherTask, Duration.ofSeconds(10))
+                .handle((response, error) -> {
+                    assertTrue(error instanceof ConsistencyChecker.BufferFull);
+                    return null;
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    @Test
+    public void testDequeuesMultipleTasks() {
+        final AtomicInteger tasksCreated = new AtomicInteger();
+        final Supplier<ConsistencyChecker.Task> taskSupplier = () -> TestBeanFactory.createConsistencyCheckerTaskBuilder()
+                .setSourceMetricName("my_metric_" + tasksCreated.getAndIncrement())
+                .build();
+        final ActorRef actor = createActor(3, 5);
+
+        final CompletableFuture<?> blocker = new CompletableFuture<>();
+        Mockito.when(_kairosDbClient.queryMetrics(Mockito.any())).then(args -> blocker.get());
+
+        for (int i=0; i<5; i++) {
+            actor.tell(taskSupplier.get(), ActorRef.noSender());
+        }
+        actor.tell(ConsistencyChecker.TICK, ActorRef.noSender());
+        Mockito.verify(_kairosDbClient, Mockito.timeout(1000).times(3)).queryMetrics(Mockito.any());
+        blocker.complete(null);
+//        Mockito.verify(_kairosDbClient, Mockito.timeout(1000).times(2)).queryMetrics(Mockito.any());
     }
 
     @Test
     public void testKairosDbInteraction() throws Exception {
-        final ActorRef actor = createActor();
+        final ActorRef actor = createActor(1, 1);
 
-        _queue.expectMsg(CollectionActor.Poll.getInstance());
         actor.tell(
                 new ConsistencyChecker.Task.Builder()
                         .setSourceMetricName("my_metric")
@@ -149,8 +157,9 @@ public final class ConsistencyCheckerTest {
                         .setStartTime(Instant.EPOCH)
                         .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
                         .build(),
-                _queue.getRef()
+                ActorRef.noSender()
         );
+        actor.tell(ConsistencyChecker.TICK, ActorRef.noSender());
 
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         verify(_kairosDbClient).queryMetrics(captor.capture());
