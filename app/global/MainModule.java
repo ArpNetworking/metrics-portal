@@ -905,7 +905,9 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             if (_enabled) {
                 final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
-                final double dataLossReexecutionThreshold = _configuration.getInt("rollup.consistency_checker.executor.reexecution.data_loss_threshold");
+                final double dataLossReexecutionThreshold = _configuration.getInt(
+                        "rollup.consistency_checker.executor.reexecution.data_loss_threshold"
+                );
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(ConsistencyChecker.props(
                             _kairosDbClient,
