@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
@@ -25,11 +26,9 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
-import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
-import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -40,6 +39,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -54,12 +54,12 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Actor that compares rollup datapoints to their source material, and logs any discrepancies.
@@ -72,9 +72,32 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     private final MetricsFactory _metricsFactory;
     private final ActorRef _queue;
     private final ActorRef _rollupManager;
+    private final double _dataLossReexecutionThreshold;
+    private final TreeMap<Double, Supplier<LogBuilder>> _dataLossLogLevelThresholds = new TreeMap<>(ImmutableMap.of(
+            0.000, LOGGER::debug,
+            0.001, LOGGER::info,
+            0.010, LOGGER::warn,
+            0.100, LOGGER::error
+    ));
 
-    // TODO(spencerpearson): make configurable
-    public static final double FRACTIONAL_DATA_LOSS_TO_TRIGGER_ROLLUP_REEXECUTION = 0.01;
+    /**
+     * Creates a {@link Props} for this actor.
+     *
+     * @param kairosDbClient kairosdb client
+     * @param metricsFactory metrics factory
+     * @param queue queue to request {@link Task}s from
+     * @param rollupManager queue to request {@link Task}s from
+     * @return A new Props.
+     */
+    public static Props props(
+            final KairosDbClient kairosDbClient,
+            final MetricsFactory metricsFactory,
+            final ActorRef queue,
+            final ActorRef rollupManager,
+            final double dataLossReexecutionThreshold
+    ) {
+        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, queue, rollupManager, dataLossReexecutionThreshold);
+    }
 
     @Override
     public Receive createReceive() {
@@ -86,25 +109,18 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                 .build();
     }
 
-    /**
-     * {@link ConsistencyChecker} actor constructor.
-     *
-     * @param kairosDbClient kairosdb client
-     * @param metricsFactory metrics factory
-     * @param queue queue to request {@link Task}s from
-     * @param rollupManager queue to request {@link Task}s from
-     */
-    @Inject
-    public ConsistencyChecker(
+    private ConsistencyChecker(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef queue,
-            @Named("RollupManager") final ActorRef rollupManager
+            final ActorRef queue,
+            final ActorRef rollupManager,
+            final double dataLossReexecutionThreshold
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
         _queue = queue;
         _rollupManager = rollupManager;
+        _dataLossReexecutionThreshold = dataLossReexecutionThreshold;
     }
 
     @Override
@@ -205,17 +221,15 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             } else if (nOriginalSamples > nRollupSamples) {
                 final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
                 metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-                final LogBuilder logBuilder =
-                        // This level-thresholding should probably be configurable.
-                        fractionalDataLoss < 0.001 ? LOGGER.debug()
-                                : fractionalDataLoss < 0.01 ? LOGGER.info()
-                                : fractionalDataLoss < 0.1 ? LOGGER.warn()
-                                : LOGGER.error();
+                final LogBuilder logBuilder = _dataLossLogLevelThresholds.getOrDefault(
+                        _dataLossLogLevelThresholds.floorKey(fractionalDataLoss),
+                        LOGGER::error
+                ).get();
                 logBuilder.setMessage("data lost in rollup")
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
                         .log();
-                if (fractionalDataLoss > FRACTIONAL_DATA_LOSS_TO_TRIGGER_ROLLUP_REEXECUTION) {
+                if (fractionalDataLoss > _dataLossReexecutionThreshold) {
                     Patterns.pipe(
                             _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
                                     new RollupDefinition.Builder()

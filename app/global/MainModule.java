@@ -884,30 +884,47 @@ public class MainModule extends AbstractModule {
     private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
         @Inject
         RollupConsistencyCheckerProvider(
-                final Injector injector,
-                final ActorSystem system,
                 final Config configuration,
-                final Features features) {
-            _injector = injector;
-            _system = system;
+                final ActorSystem system,
+                final KairosDbClient kairosDbClient,
+                final MetricsFactory metricsFactory,
+                @Named("RollupConsistencyCheckerQueue") final ActorRef queue,
+                @Named("RollupManager") final ActorRef rollupManager,
+                final Features features
+        ) {
             _configuration = configuration;
+            _system = system;
+            _kairosDbClient = kairosDbClient;
+            _metricsFactory = metricsFactory;
+            _queue = queue;
+            _rollupManager = rollupManager;
             _enabled = features.isRollupsEnabled();
         }
 
         @Override
         public ActorRef get() {
-            final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
             if (_enabled) {
+                final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
+                final double dataLossReexecutionThreshold = _configuration.getInt("rollup.consistency_checker.executor.reexecution.data_loss_threshold");
                 for (int i = 0; i < actorCount; i++) {
-                    _system.actorOf(GuiceActorCreator.props(_injector, ConsistencyChecker.class));
+                    _system.actorOf(ConsistencyChecker.props(
+                            _kairosDbClient,
+                            _metricsFactory,
+                            _queue,
+                            _rollupManager,
+                            dataLossReexecutionThreshold
+                    ));
                 }
             }
             return null;
         }
 
-        private final Injector _injector;
-        private final ActorSystem _system;
         private final Config _configuration;
+        private final ActorSystem _system;
+        private final KairosDbClient _kairosDbClient;
+        private final MetricsFactory _metricsFactory;
+        private final ActorRef _queue;
+        private final ActorRef _rollupManager;
         private final boolean _enabled;
     }
 
