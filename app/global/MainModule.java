@@ -851,11 +851,13 @@ public class MainModule extends AbstractModule {
                 final ActorSystem system,
                 final KairosDbClient kairosDbClient,
                 final MetricsFactory metricsFactory,
+                final PeriodicMetrics periodicMetrics,
                 final Config configuration
         ) {
             _system = system;
             _kairosDbClient = kairosDbClient;
             _metricsFactory = metricsFactory;
+            _periodicMetrics = periodicMetrics;
             _configuration = configuration;
         }
 
@@ -866,6 +868,7 @@ public class MainModule extends AbstractModule {
             return _system.actorOf(ConsistencyChecker.props(
                         _kairosDbClient,
                         _metricsFactory,
+                        _periodicMetrics,
                         maxConcurrentRequests,
                         bufferSize
             ));
@@ -874,6 +877,7 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
         private final KairosDbClient _kairosDbClient;
         private final MetricsFactory _metricsFactory;
+        private final PeriodicMetrics _periodicMetrics;
         private final Config _configuration;
     }
 

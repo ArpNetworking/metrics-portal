@@ -23,7 +23,9 @@ import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.utility.test.ResourceHelper;
@@ -55,6 +57,10 @@ import static org.mockito.Mockito.when;
 public final class ConsistencyCheckerTest {
     @Mock
     private KairosDbClient _kairosDbClient;
+    @Mock
+    private MetricsFactory _metricsFactory;
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -91,7 +97,8 @@ public final class ConsistencyCheckerTest {
         return TestActorRef.create(
                 _system,
                 ConsistencyChecker.props(_kairosDbClient,
-                new NoOpMetricsFactory(),
+                _metricsFactory,
+                _periodicMetrics,
                 maxConcurrentRequests,
                 bufferSize
         ));

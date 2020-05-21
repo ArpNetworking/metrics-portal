@@ -32,6 +32,7 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -67,6 +68,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
+    private final PeriodicMetrics _periodicMetrics;
     private final int _bufferSize;
     private final LinkedHashSet<Task> _queue;
     private int _nAvailableRequests;
@@ -83,9 +85,12 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                     if (_queue.size() < _bufferSize) {
                         _queue.add(task);
                         getSender().tell(new Status.Success(task), getSelf());
+                        recordCounter("buffer_size", _queue.size());
+                        recordCounter("submit/success", 1);
                         tick();
                     } else {
                         getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
+                        recordCounter("submit/success", 0);
                     }
                 })
                 .match(SampleCounts.class, this::sampleCountsReceived)
@@ -97,6 +102,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
      *
      * @param kairosDbClient kairosdb client
      * @param metricsFactory metrics factory
+     * @param periodicMetrics periodic metrics
      * @param maxConcurrentRequests maximum number of queries that can be outstanding to KairosDB at a time
      * @param bufferSize maximum number of items to allow in the queue
      * @return A new Props.
@@ -104,20 +110,23 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     public static Props props(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
+            final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
             final int bufferSize
     ) {
-        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, maxConcurrentRequests, bufferSize);
+        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, periodicMetrics, maxConcurrentRequests, bufferSize);
     }
 
     private ConsistencyChecker(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
+            final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
             final int bufferSize
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
+        _periodicMetrics = periodicMetrics;
         _bufferSize = bufferSize;
         _queue = new LinkedHashSet<>();
         _nAvailableRequests = maxConcurrentRequests;
@@ -137,25 +146,40 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         }
         final Task result = iterator.next();
         _queue.remove(result);
+        recordCounter("buffer_size", _queue.size());
         return result;
     }
 
+    private void recordCounter(final String metricName, final long value) {
+        _periodicMetrics.recordCounter("rollup/consistency_checker/" + metricName, value);
+
+    }
+
     private void tick() {
+        recordCounter("tick", 1);
         while (_nAvailableRequests > 0 && !_queue.isEmpty()) {
             startRequest(dequeueWork());
         }
     }
 
     private void startRequest(final Task task) {
+        recordCounter("request/start", 1);
         _nAvailableRequests -= 1;
         Patterns.pipe(
                 _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
-                        .whenComplete((response, error) -> getSelf().tell(REQUEST_FINISHED, getSelf()))
+                        .whenComplete((response, error) -> {
+                            getSelf().tell(REQUEST_FINISHED, getSelf());
+                            recordCounter("request/finish_success", error == null ? 1 : 0);
+                        })
                         .thenApply(response -> {
+                            boolean parseFailure = false;
                             try {
                                 return ConsistencyChecker.parseSampleCounts(task, response);
                             } catch (final MalformedSampleCountResponse err) {
+                                parseFailure = true;
                                 throw new CompletionException(err);
+                            } finally {
+                                recordCounter("parse_failure", parseFailure ? 1 : 0);
                             }
                         })
                         .whenComplete((sampleCounts, failure) -> {
@@ -193,7 +217,10 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final double nOriginalSamples = sampleCounts.getSourceSampleCount();
             final double nRollupSamples = sampleCounts.getRollupSampleCount();
             final double nSamplesDropped = nOriginalSamples - nRollupSamples;
-            if (nOriginalSamples < nRollupSamples) {
+
+            final boolean tooManyRollupSamples = nOriginalSamples < nRollupSamples;
+            recordCounter("too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
+            if (tooManyRollupSamples) {
                 LOGGER.error()
                         .setMessage("somehow got more samples for rolled-up data than original data")
                         .addData("task", task)
