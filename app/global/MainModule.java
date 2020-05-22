@@ -867,13 +867,15 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
             final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
+            final int reexecutionThreshold = _configuration.getInt("rollup.consistency_checker.reexecution.fractional_data_loss_threshold");
             return _system.actorOf(ConsistencyChecker.props(
                     _kairosDbClient,
                     _metricsFactory,
                     _periodicMetrics,
                     maxConcurrentRequests,
                     bufferSize,
-                    _rollupManager
+                    _rollupManager,
+                    reexecutionThreshold
             ));
         }
 

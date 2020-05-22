@@ -57,10 +57,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 /**
@@ -77,19 +75,13 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private final LinkedHashSet<Task> _queue;
     private int _nAvailableRequests;
     private final ActorRef _rollupManager;
+    private final double _dataLossReexecutionThreshold;
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
     /* package private */ static final Object TICK = new Object();
     private static final Object REQUEST_FINISHED = new Object();
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
-    private static final double DATA_LOSS_REEXECUTION_THRESHOLD = 0.01;
-    private static final TreeMap<Double, Supplier<LogBuilder>> DATA_LOSS_LOG_LEVEL_THRESHOLDS = new TreeMap<>(ImmutableMap.of(
-            0.000, LOGGER::debug,
-            0.001, LOGGER::info,
-            0.010, LOGGER::warn,
-            0.100, LOGGER::error
-    ));
 
     @Override
     public Receive createReceive() {
@@ -124,6 +116,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
      * @param maxConcurrentRequests maximum number of queries that can be outstanding to KairosDB at a time
      * @param bufferSize maximum number of items to allow in the queue
      * @param rollupManager {@link RollupManager} reference to send rollup datapoints to when they need re-execution
+     * @param dataLossReexecutionThreshold fraction of data loss that should trigger re-execution of a datapoint
      * @return A new Props.
      */
     public static Props props(
@@ -132,7 +125,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
             final int bufferSize,
-            final ActorRef rollupManager
+            final ActorRef rollupManager,
+            final double dataLossReexecutionThreshold
         ) {
         return Props.create(
                 ConsistencyChecker.class,
@@ -141,7 +135,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 periodicMetrics,
                 maxConcurrentRequests,
                 bufferSize,
-                rollupManager
+                rollupManager,
+                dataLossReexecutionThreshold
         );
     }
 
@@ -151,7 +146,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
             final int bufferSize,
-            final ActorRef rollupManager
+            final ActorRef rollupManager,
+            final double dataLossReexecutionThreshold
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
@@ -160,6 +156,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         _queue = new LinkedHashSet<>();
         _nAvailableRequests = maxConcurrentRequests;
         _rollupManager = rollupManager;
+        _dataLossReexecutionThreshold = dataLossReexecutionThreshold;
     }
 
     @Override
@@ -259,16 +256,18 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             } else if (nOriginalSamples > nRollupSamples) {
                 final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
                 metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-                final LogBuilder logBuilder = DATA_LOSS_LOG_LEVEL_THRESHOLDS.getOrDefault(
-                        DATA_LOSS_LOG_LEVEL_THRESHOLDS.floorKey(fractionalDataLoss),
-                        LOGGER::error
-                ).get();
+                final LogBuilder logBuilder =
+                        // This level-thresholding should probably be configurable.
+                        fractionalDataLoss < 0.001 ? LOGGER.debug()
+                                : fractionalDataLoss < 0.01 ? LOGGER.info()
+                                : fractionalDataLoss < 0.1 ? LOGGER.warn()
+                        : LOGGER.error();
                 logBuilder.setMessage("data lost in rollup")
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
                         .log();
 
-                if (fractionalDataLoss > DATA_LOSS_REEXECUTION_THRESHOLD) {
+                if (fractionalDataLoss > _dataLossReexecutionThreshold) {
                     Patterns.pipe(
                             _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
                                     new RollupDefinition.Builder()

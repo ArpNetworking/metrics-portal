@@ -103,7 +103,8 @@ public final class ConsistencyCheckerTest {
                 _periodicMetrics,
                 maxConcurrentRequests,
                 bufferSize,
-                _rollupManager.getRef()
+                _rollupManager.getRef(),
+                0.01
         ));
     }
 
