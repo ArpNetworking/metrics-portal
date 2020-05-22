@@ -225,8 +225,7 @@ public final class RollupManager extends AbstractActorWithTimers {
     }
 
     private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
-        final boolean result = !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
-        return result;
+        return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
     }
 
     private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {
