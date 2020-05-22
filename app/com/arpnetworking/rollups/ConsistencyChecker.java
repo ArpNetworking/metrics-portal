@@ -625,7 +625,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     /**
-     *
+     * Indicates that KairosDB returned "successfully" but the data was incomprehensible.
      */
     @Loggable
     public static final class MalformedSampleCountResponse extends Exception {
