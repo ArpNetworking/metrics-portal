@@ -357,7 +357,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              */
             ON_DEMAND,
             /**
-             * A {@link RollupExecutor} finished writing a datapoint and decided to consistency-check it.
+             * Some rollup data finished being written successfully.
              */
             WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
