@@ -20,6 +20,7 @@ import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
@@ -112,18 +113,18 @@ public final class ConsistencyCheckerTest {
     public void testTaskSubmissionResponses() throws Exception {
         final ActorRef checker = createActor(0, 1);
 
-        final ConsistencyChecker.Task task = TestBeanFactory.createConsistencyCheckerTaskBuilder()
+        final ConsistencyChecker.Task task = TestBeanFactory.buildConsistencyCheckerTaskBuilder(b -> b
                 .setSourceMetricName("foo")
-                .build();
+        );
         Patterns.ask(checker, task, Duration.ofSeconds(10))
                 .thenAccept(response -> assertEquals(task, response))
                 .toCompletableFuture()
                 .get();
 
 
-        final ConsistencyChecker.Task otherTask = TestBeanFactory.createConsistencyCheckerTaskBuilder()
+        final ConsistencyChecker.Task otherTask = TestBeanFactory.buildConsistencyCheckerTaskBuilder(b -> b
                 .setSourceMetricName("other")
-                .build();
+        );
         Patterns.ask(checker, otherTask, Duration.ofSeconds(10))
                 .handle((response, error) -> {
                     assertTrue(error instanceof ConsistencyChecker.BufferFull);
@@ -138,13 +139,13 @@ public final class ConsistencyCheckerTest {
         final ActorRef actor = createActor(1, 1);
 
         actor.tell(
-                new ConsistencyChecker.Task.Builder()
+                ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
                         .setSourceMetricName("my_metric")
                         .setRollupMetricName("my_metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setStartTime(Instant.EPOCH)
                         .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
-                        .build(),
+                ),
                 ActorRef.noSender()
         );
         actor.tell(ConsistencyChecker.TICK, ActorRef.noSender());
@@ -159,23 +160,23 @@ public final class ConsistencyCheckerTest {
 
     @Test
     public void testParseSampleCounts() throws Exception {
-        final ConsistencyChecker.Task task = new ConsistencyChecker.Task.Builder()
+        final ConsistencyChecker.Task task = ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
                 .setSourceMetricName("my_metric")
                 .setRollupMetricName("my_metric_1h")
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
                 .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND)
-                .build();
+        );
         ConsistencyChecker.SampleCounts actual = ConsistencyChecker.parseSampleCounts(
                 task,
                 ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.response", MetricsQueryResponse.class)
         );
         assertEquals(
-                new ConsistencyChecker.SampleCounts.Builder()
+                ThreadLocalBuilder.build(ConsistencyChecker.SampleCounts.Builder.class, b -> b
                         .setTask(task)
                         .setSourceSampleCount(100)
                         .setRollupSampleCount(80)
-                        .build(),
+                ),
                 actual
         );
 

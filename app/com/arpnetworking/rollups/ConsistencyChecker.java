@@ -21,7 +21,6 @@ import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
-import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -42,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
@@ -52,12 +52,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 
@@ -76,6 +76,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private int _nAvailableRequests;
     private final ActorRef _rollupManager;
     private final double _dataLossReexecutionThreshold;
+    private final AtomicInteger _maxRecentBufferSize;
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
@@ -95,7 +96,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                     if (_queue.size() < _bufferSize) {
                         _queue.add(task);
                         getSender().tell(new Status.Success(task), getSelf());
-                        recordCounter("buffer_size", _queue.size());
+                        _maxRecentBufferSize.accumulateAndGet(_queue.size(), Math::max);
                         recordCounter("submit/success", 1);
                         tick();
                     } else {
@@ -157,6 +158,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         _nAvailableRequests = maxConcurrentRequests;
         _rollupManager = rollupManager;
         _dataLossReexecutionThreshold = dataLossReexecutionThreshold;
+        _maxRecentBufferSize = new AtomicInteger(0);
+
+        _periodicMetrics.registerPolledMetric(metrics -> {
+            metrics.recordGauge("rollup/consistency_checker/buffer_size", _maxRecentBufferSize.getAndSet(_queue.size()));
+        });
     }
 
     @Override
@@ -167,13 +173,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private Task dequeueWork() {
-        final Iterator<Task> iterator = _queue.iterator();
-        if (!iterator.hasNext()) {
-            throw new IllegalStateException();
+        @Nullable final Task result = Iterables.getFirst(_queue, null);
+        if (result == null) {
+            throw new IllegalStateException("queue is empty");
         }
-        final Task result = iterator.next();
         _queue.remove(result);
-        recordCounter("buffer_size", _queue.size());
         return result;
     }
 
@@ -466,7 +470,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         /**
          * Builder for {@link Task}.
          */
-        public static final class Builder extends OvalBuilder<Task> {
+        public static final class Builder extends ThreadLocalBuilder<Task> {
             @NotNull
             @NotEmpty
             private String _sourceMetricName;
@@ -488,6 +492,15 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              */
             public Builder() {
                 super(Task::new);
+            }
+
+            @Override
+            protected void reset() {
+                _sourceMetricName = null;
+                _rollupMetricName = null;
+                _period = null;
+                _startTime = null;
+                _trigger = null;
             }
 
             /**
