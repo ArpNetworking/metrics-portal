@@ -55,7 +55,6 @@ import static org.mockito.Mockito.when;
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
 public final class RollupManagerTest {
-    private Injector _injector;
     @Mock
     private PeriodicMetrics _periodicMetrics;
     @Mock
@@ -63,6 +62,8 @@ public final class RollupManagerTest {
     @Mock
     private RollupPartitioner _partitioner;
     private ActorSystem _system;
+
+    private TestKit _consistencyChecker;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
 
@@ -72,18 +73,11 @@ public final class RollupManagerTest {
         when(_features.isRollupsEnabled()).thenReturn(true);
         when(_partitioner.mightSplittingFixFailure(Mockito.any())).thenReturn(false);
 
-        _injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
-                bind(Features.class).toInstance(_features);
-                bind(MetricsFactory.class).toInstance(new NoOpMetricsFactory());
-            }
-        });
-
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+
+        _consistencyChecker = new TestKit(_system);
 
     }
 
@@ -94,7 +88,13 @@ public final class RollupManagerTest {
     }
 
     private TestActorRef<MetricsDiscovery> createActor() {
-        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, RollupManager.class));
+        return TestActorRef.create(_system, RollupManager.props(
+                _periodicMetrics,
+                new NoOpMetricsFactory(),
+                _partitioner,
+                _consistencyChecker.getRef(),
+                1
+        ));
     }
 
     @Test
@@ -207,6 +207,28 @@ public final class RollupManagerTest {
 
     @Test
     public void testRequestsConsistencyCheck() {
+        final ActorRef actor = createActor();
+        actor.tell(
+                ThreadLocalBuilder.build(RollupExecutor.FinishRollupMessage.Builder.class, b -> b
+                        .setRollupDefinition(new RollupDefinition.Builder()
+                            .setSourceMetricName("my_metric")
+                            .setDestinationMetricName("my_metric_1h")
+                            .setPeriod(RollupPeriod.HOURLY)
+                            .setStartTime(Instant.EPOCH)
+                            .setAllMetricTags(ImmutableMultimap.of("tag", "val1", "tag", "val2"))
+                            .setFilterTags(ImmutableMap.of("tag", "val1"))
+                            .build()
+                )),
+                ActorRef.noSender()
+        );
+        _consistencyChecker.expectMsg(ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
+                .setSourceMetricName("my_metric")
+                .setRollupMetricName("my_metric_1h")
+                .setPeriod(RollupPeriod.HOURLY)
+                .setStartTime(Instant.EPOCH)
+                .setFilterTags(ImmutableMap.of("tag", "val1"))
+                .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
+        ));
 
     }
 }

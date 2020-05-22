@@ -81,7 +81,6 @@ public class RollupExecutorTest {
     private PeriodicMetrics _periodicMetrics;
 
     private TestKit _manager;
-    private TestKit _consistencyChecker;
 
     private ActorSystem _system;
 
@@ -93,7 +92,6 @@ public class RollupExecutorTest {
         _system = ActorSystem.create();
 
         _manager = new TestKit(_system);
-        _consistencyChecker = new TestKit(_system);
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -103,9 +101,6 @@ public class RollupExecutorTest {
                 bind(ActorRef.class)
                         .annotatedWith(Names.named("RollupManager"))
                         .toInstance(_manager.getRef());
-                bind(ActorRef.class)
-                        .annotatedWith(Names.named("RollupConsistencyChecker"))
-                        .toInstance(_consistencyChecker.getRef());
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
@@ -227,31 +222,6 @@ public class RollupExecutorTest {
     }
 
     @Test
-    public void testRequestsConsistencyCheck() {
-        final TestActorRef<TestRollupExecutor> actor = createActor();
-        actor.underlyingActor()._shouldRequestConsistencyCheck = true;
-        actor.tell(
-                new RollupDefinition.Builder()
-                        .setSourceMetricName("my_metric")
-                        .setDestinationMetricName("my_metric_1h")
-                        .setPeriod(RollupPeriod.HOURLY)
-                        .setStartTime(Instant.EPOCH)
-                        .setAllMetricTags(ImmutableMultimap.of("tag", "val1", "tag", "val2"))
-                        .setFilterTags(ImmutableMap.of("tag", "val1"))
-                        .build(),
-                ActorRef.noSender()
-        );
-        _consistencyChecker.expectMsg(ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
-                .setSourceMetricName("my_metric")
-                .setRollupMetricName("my_metric_1h")
-                .setPeriod(RollupPeriod.HOURLY)
-                .setStartTime(Instant.EPOCH)
-                .setFilterTags(ImmutableMap.of("tag", "val"))
-                .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
-        ));
-    }
-
-    @Test
     public void testBuildRollupQuery() {
         RollupDefinition definition = new RollupDefinition.Builder()
                 .setSourceMetricName("my_metric")
@@ -333,22 +303,15 @@ public class RollupExecutorTest {
      * can be intercepted.
      */
     public static final class TestRollupExecutor extends RollupExecutor {
-        private boolean _shouldRequestConsistencyCheck = false;
         @Inject
         public TestRollupExecutor(
                 final Config configuration,
                 @Named("RollupManager") final ActorRef testActor,
-                @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
                 final KairosDbClient kairosDbClient,
                 final PeriodicMetrics metrics
         ) {
-            super(configuration, testActor, consistencyChecker, kairosDbClient, metrics);
+            super(configuration, testActor, kairosDbClient, metrics);
             _self = testActor;
-        }
-
-        @Override
-        protected boolean shouldRequestConsistencyCheck(final FinishRollupMessage message) {
-            return _shouldRequestConsistencyCheck;
         }
 
         @Override

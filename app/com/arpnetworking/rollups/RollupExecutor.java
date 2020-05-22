@@ -158,47 +158,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     private void handleFinishRollup(final FinishRollupMessage message) {
         _metrics.recordCounter("rollup/executor/finish_rollup_message/received", 1);
         _rollupManager.tell(message, getSelf());
-        final RollupDefinition defn = message.getRollupDefinition();
-        if (shouldRequestConsistencyCheck(message)) {
-            requestConsistencyCheck(defn);
-        }
         fetchRollup();
-    }
-
-    private void requestConsistencyCheck(final RollupDefinition defn) {
-        final ConsistencyChecker.Task ccTask = new ConsistencyChecker.Task.Builder()
-                .setSourceMetricName(defn.getSourceMetricName())
-                .setRollupMetricName(defn.getDestinationMetricName())
-                .setStartTime(defn.getStartTime())
-                .setPeriod(defn.getPeriod())
-                .setFilterTags(defn.getFilterTags())
-                .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
-                .build();
-        Patterns.ask(_consistencyChecker, ccTask, Duration.ofSeconds(10))
-                .whenComplete((response, failure) -> {
-                    if (failure == null) {
-                        LOGGER.debug()
-                                .setMessage("consistency-checker queue accepted task")
-                                .addData("task", ccTask)
-                                .log();
-                    } else if (failure instanceof ConsistencyChecker.BufferFull) {
-                        LOGGER.warn()
-                                .setMessage("consistency-checker task rejected")
-                                .addData("task", ccTask)
-                                .setThrowable(failure)
-                                .log();
-                    } else {
-                        LOGGER.error()
-                                .setMessage("communication with consistency-checker failed")
-                                .addData("task", ccTask)
-                                .setThrowable(failure)
-                                .log();
-                    }
-                });
-    }
-
-    protected boolean shouldRequestConsistencyCheck(final FinishRollupMessage message) {
-        return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
     }
 
     private void scheduleFetch(final NoMoreRollups message) {
@@ -211,7 +171,6 @@ public class RollupExecutor extends AbstractActorWithTimers {
      *
      * @param configuration play configuration
      * @param rollupManager actor ref to RollupManager actor
-     * @param consistencyChecker {@link ConsistencyChecker} ref that should be told to consistency-check completed datapoints
      * @param kairosDbClient kairosdb client
      * @param metrics periodic metrics instance
      */
@@ -219,25 +178,19 @@ public class RollupExecutor extends AbstractActorWithTimers {
     public RollupExecutor(
             final Config configuration,
             @Named("RollupManager") final ActorRef rollupManager,
-            @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
             final KairosDbClient kairosDbClient,
             final PeriodicMetrics metrics) {
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
-        _consistencyChecker = consistencyChecker;
         _metrics = metrics;
         _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.executor.pollInterval");
-        _consistencyCheckFractionOfWrites = configuration.getDouble("rollup.executor.consistency_check_fraction_of_writes");
     }
 
     private final KairosDbClient _kairosDbClient;
     private final PeriodicMetrics _metrics;
     private final ActorRef _rollupManager;
-    private final ActorRef _consistencyChecker;
     private final FiniteDuration _pollInterval;
-    private final double _consistencyCheckFractionOfWrites;
     private static final String FETCH_TIMER = "rollupFetchTimer";
-    private static final Random RANDOM = new Random();
     static final Object FETCH_ROLLUP = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupExecutor.class);
 
