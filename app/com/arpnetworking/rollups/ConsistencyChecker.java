@@ -677,7 +677,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
      */
     public static final class BufferFull extends Exception {
         private static final long serialVersionUID = 7840529083811798202L;
-        public static final BufferFull INSTANCE = new BufferFull();
+        private static final BufferFull INSTANCE = new BufferFull();
 
         /**
          * Get the singleton instance. (Other instances might be created by deserialization, though.)
@@ -686,7 +686,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         public static BufferFull getInstance() {
             return INSTANCE;
         }
-        public BufferFull() {
+
+        private BufferFull() {
             super("buffer is full");
         }
     }
