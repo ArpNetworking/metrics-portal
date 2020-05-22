@@ -38,11 +38,9 @@ import com.typesafe.config.Config;
 import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.time.Duration;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;

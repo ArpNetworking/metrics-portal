@@ -18,13 +18,11 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
-import akka.cluster.Cluster;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
@@ -46,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class RollupManager extends AbstractActorWithTimers {
+public final class RollupManager extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private final MetricsFactory _metricsFactory;
     private TreeSet<RollupDefinition> _rollupDefinitions;
@@ -230,7 +228,7 @@ public class RollupManager extends AbstractActorWithTimers {
                 });
     }
 
-    protected boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
+    private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
         final boolean result = !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
         LOGGER.error()
                 .setMessage("SRP -- checking whether we should CC")
