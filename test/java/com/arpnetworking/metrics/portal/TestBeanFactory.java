@@ -245,6 +245,7 @@ public final class TestBeanFactory {
     /**
      * Factory method for creating a {@link Aggregator.Builder}.
      *
+     * @param populate populate the builder produced by {@link ThreadLocalBuilder}.
      * @return the builder.
      */
     public static ConsistencyChecker.Task buildConsistencyCheckerTaskBuilder(final Consumer<ConsistencyChecker.Task.Builder> populate) {
