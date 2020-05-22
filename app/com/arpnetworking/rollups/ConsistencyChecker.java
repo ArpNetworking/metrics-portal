@@ -356,6 +356,9 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Something/somebody requested this task as a one-off.
              */
             ON_DEMAND,
+            /**
+             * A {@link RollupExecutor} finished writing a datapoint and decided to consistency-check it.
+             */
             WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
@@ -459,6 +462,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 _sourceMetricName = null;
                 _rollupMetricName = null;
                 _period = null;
+                _filterTags = null;
                 _startTime = null;
                 _trigger = null;
             }
