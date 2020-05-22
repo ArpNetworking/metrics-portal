@@ -197,7 +197,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
                 });
     }
 
-    private boolean shouldRequestConsistencyCheck(final FinishRollupMessage message) {
+    protected boolean shouldRequestConsistencyCheck(final FinishRollupMessage message) {
         return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
     }
 

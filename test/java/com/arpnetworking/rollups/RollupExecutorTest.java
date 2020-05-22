@@ -15,8 +15,11 @@
  */
 package com.arpnetworking.rollups;
 
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.testkit.TestActor;
+import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
@@ -29,6 +32,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -113,8 +117,8 @@ public class RollupExecutorTest {
         _system = null;
     }
 
-    private ActorRef createActor() {
-        return _system.actorOf(GuiceActorCreator.props(_injector, TestRollupExecutor.class));
+    private TestActorRef<TestRollupExecutor> createActor() {
+        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, TestRollupExecutor.class));
     }
 
     @Test
@@ -223,6 +227,31 @@ public class RollupExecutorTest {
     }
 
     @Test
+    public void testRequestsConsistencyCheck() {
+        final TestActorRef<TestRollupExecutor> actor = createActor();
+        actor.underlyingActor()._shouldRequestConsistencyCheck = true;
+        actor.tell(
+                new RollupDefinition.Builder()
+                        .setSourceMetricName("my_metric")
+                        .setDestinationMetricName("my_metric_1h")
+                        .setPeriod(RollupPeriod.HOURLY)
+                        .setStartTime(Instant.EPOCH)
+                        .setAllMetricTags(ImmutableMultimap.of("tag", "val1", "tag", "val2"))
+                        .setFilterTags(ImmutableMap.of("tag", "val1"))
+                        .build(),
+                ActorRef.noSender()
+        );
+        _consistencyChecker.expectMsg(ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
+                .setSourceMetricName("my_metric")
+                .setRollupMetricName("my_metric_1h")
+                .setPeriod(RollupPeriod.HOURLY)
+                .setStartTime(Instant.EPOCH)
+                .setFilterTags(ImmutableMap.of("tag", "val"))
+                .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
+        ));
+    }
+
+    @Test
     public void testBuildRollupQuery() {
         RollupDefinition definition = new RollupDefinition.Builder()
                 .setSourceMetricName("my_metric")
@@ -304,6 +333,7 @@ public class RollupExecutorTest {
      * can be intercepted.
      */
     public static final class TestRollupExecutor extends RollupExecutor {
+        private boolean _shouldRequestConsistencyCheck = false;
         @Inject
         public TestRollupExecutor(
                 final Config configuration,
@@ -314,6 +344,11 @@ public class RollupExecutorTest {
         ) {
             super(configuration, testActor, consistencyChecker, kairosDbClient, metrics);
             _self = testActor;
+        }
+
+        @Override
+        protected boolean shouldRequestConsistencyCheck(final FinishRollupMessage message) {
+            return _shouldRequestConsistencyCheck;
         }
 
         @Override

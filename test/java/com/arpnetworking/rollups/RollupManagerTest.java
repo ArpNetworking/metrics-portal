@@ -204,4 +204,9 @@ public final class RollupManagerTest {
         actor.tell(RollupFetch.getInstance(), testActor);
         testKit.expectMsg(NoMoreRollups.getInstance());
     }
+
+    @Test
+    public void testRequestsConsistencyCheck() {
+
+    }
 }
