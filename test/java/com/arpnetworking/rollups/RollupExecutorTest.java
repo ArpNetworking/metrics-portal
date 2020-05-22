@@ -17,7 +17,6 @@ package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
@@ -77,7 +76,7 @@ public class RollupExecutorTest {
     @Mock
     private PeriodicMetrics _periodicMetrics;
 
-    private TestKit _manager;
+    private TestKit _probe;
 
     private ActorSystem _system;
 
@@ -88,7 +87,7 @@ public class RollupExecutorTest {
 
         _system = ActorSystem.create();
 
-        _manager = new TestKit(_system);
+        _probe = new TestKit(_system);
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -97,7 +96,7 @@ public class RollupExecutorTest {
                 bind(Config.class).toInstance(_config);
                 bind(ActorRef.class)
                         .annotatedWith(Names.named("RollupManager"))
-                        .toInstance(_manager.getRef());
+                        .toInstance(_probe.getRef());
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
@@ -109,22 +108,22 @@ public class RollupExecutorTest {
         _system = null;
     }
 
-    private TestActorRef<TestRollupExecutor> createActor() {
-        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, TestRollupExecutor.class));
+    private ActorRef createActor() {
+        return _system.actorOf(GuiceActorCreator.props(_injector, TestRollupExecutor.class));
     }
 
     @Test
     public void testSendsFetchOnStartup() {
         final ActorRef actor = createActor();
-        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
         actor.tell(RollupExecutor.FETCH_ROLLUP, ActorRef.noSender());
-        _manager.expectMsg(RollupFetch.getInstance());
+        _probe.expectMsg(RollupFetch.getInstance());
     }
 
     @Test
     public void testFetchesNextRollup() {
         final ActorRef actor = createActor();
-        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
         final RollupExecutor.FinishRollupMessage finished = ThreadLocalBuilder.build(
                 RollupExecutor.FinishRollupMessage.Builder.class,
                 b -> b.setRollupDefinition(new RollupDefinition.Builder()
@@ -137,8 +136,8 @@ public class RollupExecutorTest {
                 )
         );
         actor.tell(finished, ActorRef.noSender());
-        _manager.expectMsg(finished);
-        _manager.expectMsg(RollupFetch.getInstance());
+        _probe.expectMsg(finished);
+        _probe.expectMsg(RollupFetch.getInstance());
     }
 
     @Test
@@ -170,7 +169,7 @@ public class RollupExecutorTest {
 
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         final ActorRef actor = createActor();
-        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
 
         actor.tell(
                 new RollupDefinition.Builder()
@@ -183,7 +182,7 @@ public class RollupExecutorTest {
                 ActorRef.noSender());
 
         final RollupExecutor.FinishRollupMessage finishRollupMessage =
-                _manager.expectMsgClass(RollupExecutor.FinishRollupMessage.class);
+                _probe.expectMsgClass(RollupExecutor.FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getRollupDefinition().getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getRollupDefinition().getPeriod());
@@ -215,7 +214,7 @@ public class RollupExecutorTest {
         assertEquals("count", metric.getAggregators().get(2).getName());
         assertFalse(metric.getAggregators().get(2).getSampling().isPresent());
 
-        _manager.expectNoMessage();
+        _probe.expectNoMessage();
     }
 
     @Test
@@ -305,8 +304,7 @@ public class RollupExecutorTest {
                 final Config configuration,
                 @Named("RollupManager") final ActorRef testActor,
                 final KairosDbClient kairosDbClient,
-                final PeriodicMetrics metrics
-        ) {
+                final PeriodicMetrics metrics) {
             super(configuration, testActor, kairosDbClient, metrics);
             _self = testActor;
         }

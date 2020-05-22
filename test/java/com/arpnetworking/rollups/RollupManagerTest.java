@@ -82,7 +82,7 @@ public final class RollupManagerTest {
         _system = null;
     }
 
-    private TestActorRef<MetricsDiscovery> createActor() {
+    private TestActorRef<RollupManager> createActor() {
         return TestActorRef.create(_system, RollupManager.props(
                 _periodicMetrics,
                 new NoOpMetricsFactory(),
