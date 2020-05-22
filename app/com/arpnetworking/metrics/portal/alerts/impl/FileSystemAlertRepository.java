@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -32,6 +31,7 @@ import models.internal.QueryResult;
 import models.internal.alerts.Alert;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertQuery;
+import models.internal.impl.DefaultMetricsQuery;
 import models.internal.impl.DefaultOrganization;
 import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
@@ -42,9 +42,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,8 +118,11 @@ public class FileSystemAlertRepository implements AlertRepository {
                 .limit(query.getOffset().orElse(1000))
                 .collect(ImmutableList.toImmutableList());
 
-        // TODO: is this total like the entire set or total like how big an individual page is?
-        return new DefaultQueryResult<>(alerts, alerts.size());
+        final long total = _alerts.values().stream()
+                .filter(containsPredicate)
+                .count();
+
+        return new DefaultQueryResult<>(alerts, total);
     }
 
     @Override
@@ -153,6 +154,15 @@ public class FileSystemAlertRepository implements AlertRepository {
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
         for (final SerializedAlert fsAlert : group.getAlerts()) {
             final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
+
+            // TODO(cbriones):
+            // These start and end times should correspond to the interval of the
+            // metric and should not be hardcoded like an ordinary query.
+            final models.internal.MetricsQuery query = new DefaultMetricsQuery.Builder()
+                    .setQuery(fsAlert.getQuery())
+                    .setStart(ZonedDateTime.now())
+                    .setEnd(ZonedDateTime.now())
+                    .build();
             final Alert alert =
                     new DefaultAlert.Builder()
                             .setId(uuid)
@@ -160,7 +170,7 @@ public class FileSystemAlertRepository implements AlertRepository {
                             .setDescription(fsAlert.getDescription())
                             .setEnabled(fsAlert.isEnabled())
                             .setOrganization(_organization)
-                            .setQuery(new KairosDbMetricsQuery(fsAlert.getQuery()))
+                            .setQuery(query)
                             .setAdditionalMetadata(fsAlert.getAdditionalMetadata())
                             .build();
             mapBuilder.put(uuid, alert);
@@ -190,33 +200,6 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
     }
 
-    private static final class KairosDbMetricsQuery implements models.internal.MetricsQuery {
-        private final MetricsQuery _metricsQuery;
-
-        private KairosDbMetricsQuery(final MetricsQuery metricsQuery) {
-            _metricsQuery = metricsQuery;
-        }
-
-        @Override
-        public String getQuery() {
-            // TODO(cbriones): We should be able to serialize this into an equivalent
-            // query once we have our query language nailed down.
-            return "";
-        }
-
-        @Override
-        public ZonedDateTime getStart() {
-            return ZonedDateTime.now()
-                    .truncatedTo(ChronoUnit.MINUTES)
-                    .minus(Duration.ofMinutes(1));
-        }
-
-        @Override
-        public ZonedDateTime getEnd() {
-            return ZonedDateTime.now().truncatedTo(ChronoUnit.MINUTES);
-        }
-    }
-
     private static final class AlertGroup {
         private final List<SerializedAlert> _alerts;
         private final long _version;
@@ -240,7 +223,12 @@ public class FileSystemAlertRepository implements AlertRepository {
             @NotNegative
             private Long _version;
 
-            public Builder() {
+            /**
+             * Default constructor.
+             * <p>
+             * Invoked by Jackson.
+             */
+            Builder() {
                 super(AlertGroup::new);
                 _alerts = ImmutableList.of();
             }
@@ -260,7 +248,7 @@ public class FileSystemAlertRepository implements AlertRepository {
     private static final class SerializedAlert {
         private final String _name;
         private final String _description;
-        private final com.arpnetworking.kairos.client.models.MetricsQuery _query;
+        private final String _query;
         private final boolean _enabled;
         private final ImmutableMap<String, Object> _additionalMetadata;
         private final Optional<UUID> _uuid;
@@ -290,7 +278,7 @@ public class FileSystemAlertRepository implements AlertRepository {
             return _description;
         }
 
-        public MetricsQuery getQuery() {
+        public String getQuery() {
             return _query;
         }
 
@@ -303,20 +291,24 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
 
         private static final class Builder extends OvalBuilder<SerializedAlert> {
-            private @Nullable
-            UUID _uuid;
+            @Nullable
+            private UUID _uuid;
+
             @NotNull
             @NotEmpty
             private String _name;
+
             @NotNull
-            private @Nullable
-            String _description;
+            @NotEmpty
+            private String _description;
+
             @NotNull
-            private @Nullable
-            com.arpnetworking.kairos.client.models.MetricsQuery _query;
+            @NotEmpty
+            private String _query;
+
             @NotNull
-            private @Nullable
-            Boolean _enabled;
+            @Nullable
+            private Boolean _enabled;
 
             private ImmutableMap<String, Object> _additionalMetadata = ImmutableMap.of();
 
@@ -363,7 +355,7 @@ public class FileSystemAlertRepository implements AlertRepository {
              * @param query the query.
              * @return This instance of {@code Builder} for chaining.
              */
-            public Builder setQuery(final MetricsQuery query) {
+            public Builder setQuery(final String query) {
                 _query = query;
                 return this;
             }
