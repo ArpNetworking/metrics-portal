@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal;
 
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
@@ -55,6 +56,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Builds valid beans with default content for tests.
@@ -245,13 +247,15 @@ public final class TestBeanFactory {
      *
      * @return the builder.
      */
-    public static ConsistencyChecker.Task.Builder createConsistencyCheckerTaskBuilder() {
-        return new ConsistencyChecker.Task.Builder()
-                .setSourceMetricName("my_metric")
-                .setRollupMetricName("my_metric_1h")
-                .setPeriod(RollupPeriod.HOURLY)
-                .setStartTime(Instant.EPOCH)
-                .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND);
+    public static ConsistencyChecker.Task buildConsistencyCheckerTaskBuilder(final Consumer<ConsistencyChecker.Task.Builder> populate) {
+        return ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> {
+            b.setSourceMetricName("my_metric")
+                    .setRollupMetricName("my_metric_1h")
+                    .setPeriod(RollupPeriod.HOURLY)
+                    .setStartTime(Instant.EPOCH)
+                    .setTrigger(ConsistencyChecker.Task.Trigger.ON_DEMAND);
+            populate.accept(b);
+        });
     }
 
     /**
