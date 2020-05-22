@@ -227,9 +227,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         _consistencyChecker = consistencyChecker;
         _metrics = metrics;
         _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.executor.pollInterval");
-        _consistencyCheckFractionOfWrites = configuration.hasPath("rollup.executor._consistencyCheckFractionOfWrites")
-                ? configuration.getDouble("rollup.executor._consistencyCheckFractionOfWrites")
-                : 0;
+        _consistencyCheckFractionOfWrites = configuration.getDouble("rollup.executor.consistency_check_fraction_of_writes");
     }
 
     private final KairosDbClient _kairosDbClient;

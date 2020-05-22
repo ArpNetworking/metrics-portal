@@ -261,7 +261,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         fractionalDataLoss < 0.001 ? LOGGER.debug()
                                 : fractionalDataLoss < 0.01 ? LOGGER.info()
                                 : fractionalDataLoss < 0.1 ? LOGGER.warn()
-                        : LOGGER.error();
+                                : LOGGER.error();
                 logBuilder.setMessage("data lost in rollup")
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
