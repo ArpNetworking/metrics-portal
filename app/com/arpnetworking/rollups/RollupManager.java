@@ -130,10 +130,6 @@ public final class RollupManager extends AbstractActorWithTimers {
     }
 
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
-        LOGGER.error()
-                .setMessage("SRP -- in handler")
-                .addData("message", message)
-                .log();
         final RollupDefinition definition = message.getRollupDefinition();
         final double latencyNs = (double) Duration.between(definition.getEndTime(), Instant.now()).toNanos();
 
@@ -230,10 +226,6 @@ public final class RollupManager extends AbstractActorWithTimers {
 
     private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
         final boolean result = !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
-        LOGGER.error()
-                .setMessage("SRP -- checking whether we should CC")
-                .addData("result", result)
-                .log();
         return result;
     }
 
