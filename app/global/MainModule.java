@@ -852,14 +852,12 @@ public class MainModule extends AbstractModule {
                 final KairosDbClient kairosDbClient,
                 final MetricsFactory metricsFactory,
                 final PeriodicMetrics periodicMetrics,
-                @Named("RollupManager") final ActorRef rollupManager,
                 final Config configuration
         ) {
             _system = system;
             _kairosDbClient = kairosDbClient;
             _metricsFactory = metricsFactory;
             _periodicMetrics = periodicMetrics;
-            _rollupManager = rollupManager;
             _configuration = configuration;
         }
 
@@ -867,15 +865,12 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
             final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
-            final int reexecutionThreshold = _configuration.getInt("rollup.consistency_checker.reexecution.fractional_data_loss_threshold");
             return _system.actorOf(ConsistencyChecker.props(
-                    _kairosDbClient,
-                    _metricsFactory,
-                    _periodicMetrics,
-                    maxConcurrentRequests,
-                    bufferSize,
-                    _rollupManager,
-                    reexecutionThreshold
+                        _kairosDbClient,
+                        _metricsFactory,
+                        _periodicMetrics,
+                        maxConcurrentRequests,
+                        bufferSize
             ));
         }
 
@@ -883,7 +878,6 @@ public class MainModule extends AbstractModule {
         private final KairosDbClient _kairosDbClient;
         private final MetricsFactory _metricsFactory;
         private final PeriodicMetrics _periodicMetrics;
-        private final ActorRef _rollupManager;
         private final Config _configuration;
     }
 

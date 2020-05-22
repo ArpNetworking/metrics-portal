@@ -16,7 +16,6 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
@@ -74,15 +73,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private final int _bufferSize;
     private final LinkedHashSet<Task> _queue;
     private int _nAvailableRequests;
-    private final ActorRef _rollupManager;
-    private final double _dataLossReexecutionThreshold;
     private final AtomicInteger _maxRecentBufferSize;
-
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
-    /* package private */ static final Object TICK = new Object();
-    private static final Object REQUEST_FINISHED = new Object();
-    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
 
     @Override
     public Receive createReceive() {
@@ -116,8 +107,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
      * @param periodicMetrics periodic metrics
      * @param maxConcurrentRequests maximum number of queries that can be outstanding to KairosDB at a time
      * @param bufferSize maximum number of items to allow in the queue
-     * @param rollupManager {@link RollupManager} reference to send rollup datapoints to when they need re-execution
-     * @param dataLossReexecutionThreshold fraction of data loss that should trigger re-execution of a datapoint
      * @return A new Props.
      */
     public static Props props(
@@ -125,20 +114,9 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final MetricsFactory metricsFactory,
             final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
-            final int bufferSize,
-            final ActorRef rollupManager,
-            final double dataLossReexecutionThreshold
-        ) {
-        return Props.create(
-                ConsistencyChecker.class,
-                kairosDbClient,
-                metricsFactory,
-                periodicMetrics,
-                maxConcurrentRequests,
-                bufferSize,
-                rollupManager,
-                dataLossReexecutionThreshold
-        );
+            final int bufferSize
+    ) {
+        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, periodicMetrics, maxConcurrentRequests, bufferSize);
     }
 
     private ConsistencyChecker(
@@ -146,9 +124,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final MetricsFactory metricsFactory,
             final PeriodicMetrics periodicMetrics,
             final int maxConcurrentRequests,
-            final int bufferSize,
-            final ActorRef rollupManager,
-            final double dataLossReexecutionThreshold
+            final int bufferSize
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
@@ -156,8 +132,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         _bufferSize = bufferSize;
         _queue = new LinkedHashSet<>();
         _nAvailableRequests = maxConcurrentRequests;
-        _rollupManager = rollupManager;
-        _dataLossReexecutionThreshold = dataLossReexecutionThreshold;
         _maxRecentBufferSize = new AtomicInteger(0);
 
         _periodicMetrics.registerPolledMetric(metrics -> {
@@ -270,21 +244,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
                         .log();
-
-                if (fractionalDataLoss > _dataLossReexecutionThreshold) {
-                    Patterns.pipe(
-                            _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
-                                    new RollupDefinition.Builder()
-                                            .setSourceMetricName(task.getSourceMetricName())
-                                            .setDestinationMetricName(task.getRollupMetricName())
-                                            .setStartTime(task.getStartTime())
-                                            .setPeriod(task.getPeriod())
-                                            .setAllMetricTags(tags)
-                                            .build()
-                            ),
-                            getContext().getDispatcher()
-                    ).to(_rollupManager);
-                }
             } else {
                 LOGGER.trace()
                         .setMessage("no data lost in rollup")
@@ -353,8 +312,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                                 .setAlignSampling(true)
                                 .setAlignStartTime(true)
                         ))
-                )
-                .setTags(task.getFilterTags().asMultimap());
+                );
 
         return ThreadLocalBuilder.build(MetricsQuery.Builder.class, mqb -> mqb
                 .setStartTime(task.getStartTime())
@@ -371,6 +329,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 ))
         );
     }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
+    /* package private */ static final Object TICK = new Object();
+    private static final Object REQUEST_FINISHED = new Object();
+    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
 
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
@@ -393,9 +356,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Something/somebody requested this task as a one-off.
              */
             ON_DEMAND,
-            /**
-             * A {@link RollupExecutor} finished writing a datapoint and decided to consistency-check it.
-             */
             WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }

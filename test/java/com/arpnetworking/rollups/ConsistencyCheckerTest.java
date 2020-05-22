@@ -61,7 +61,6 @@ public final class ConsistencyCheckerTest {
     private MetricsFactory _metricsFactory;
     @Mock
     private PeriodicMetrics _periodicMetrics;
-    private TestKit _rollupManager;
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -76,8 +75,6 @@ public final class ConsistencyCheckerTest {
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration())
         );
-
-        _rollupManager = new TestKit(_system);
 
         when(_kairosDbClient.queryMetrics(
                 ResourceHelper.loadResourceAs(getClass(), "my_metric.hourly.t0.human_requested.request", MetricsQuery.class))
@@ -103,9 +100,7 @@ public final class ConsistencyCheckerTest {
                 _metricsFactory,
                 _periodicMetrics,
                 maxConcurrentRequests,
-                bufferSize,
-                _rollupManager.getRef(),
-                0.01
+                bufferSize
         ));
     }
 
