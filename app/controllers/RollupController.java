@@ -17,7 +17,6 @@ package controllers;
 
 import akka.actor.ActorRef;
 import akka.pattern.Patterns;
-import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -46,15 +45,15 @@ public class RollupController extends Controller {
      * Public constructor.
      *
      * @param mapper an {@link ObjectMapper} to use to deserialize requests
-     * @param consistencyCheckerQueue the {@link CollectionActor} to submit {@link ConsistencyChecker.Task}s to
+     * @param consistencyChecker the {@link ConsistencyChecker} to submit {@link ConsistencyChecker.Task}s to
      */
     @Inject
     public RollupController(
             final ObjectMapper mapper,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue
+            @Named("RollupConsistencyChecker") final ActorRef consistencyChecker
     ) {
         _mapper = mapper;
-        _consistencyCheckerQueue = consistencyCheckerQueue;
+        _consistencyChecker = consistencyChecker;
     }
 
     /**
@@ -72,7 +71,7 @@ public class RollupController extends Controller {
             return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }
 
-        return Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(task), Duration.ofSeconds(10))
+        return Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(10))
                 .handle((response, error) -> {
                     if (error == null) {
                         LOGGER.info()
@@ -80,7 +79,7 @@ public class RollupController extends Controller {
                                 .addData("task", task)
                                 .log();
                         return noContent();
-                    } else if (error instanceof CollectionActor.Full) {
+                    } else if (error instanceof ConsistencyChecker.BufferFull) {
                         LOGGER.warn()
                                 .setMessage("consistency-checker queue rejected task")
                                 .addData("task", task)
@@ -93,7 +92,7 @@ public class RollupController extends Controller {
                 });
     }
 
-    private final ActorRef _consistencyCheckerQueue;
+    private final ActorRef _consistencyChecker;
     private final ObjectMapper _mapper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupController.class);

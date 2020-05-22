@@ -67,7 +67,6 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.arpnetworking.rollups.CollectionActor;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupExecutor;
@@ -202,10 +201,6 @@ public class MainModule extends AbstractModule {
 
         // Rollups
         bind(MetricsQueryConfig.class).to(MetricsQueryConfigImpl.class).asEagerSingleton();
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("RollupConsistencyCheckerQueue"))
-                .toProvider(RollupConsistencyCheckerQueueProvider.class)
-                .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
@@ -850,84 +845,44 @@ public class MainModule extends AbstractModule {
         private final boolean _enabled;
     }
 
-    private static final class RollupConsistencyCheckerQueueProvider implements Provider<ActorRef> {
+    private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
         @Inject
-        RollupConsistencyCheckerQueueProvider(
+        RollupConsistencyCheckerProvider(
                 final ActorSystem system,
-                final Config configuration,
-                final PeriodicMetrics periodicMetrics
+                final KairosDbClient kairosDbClient,
+                final MetricsFactory metricsFactory,
+                final PeriodicMetrics periodicMetrics,
+                @Named("RollupManager") final ActorRef rollupManager,
+                final Config configuration
         ) {
             _system = system;
-            _configuration = configuration;
+            _kairosDbClient = kairosDbClient;
+            _metricsFactory = metricsFactory;
             _periodicMetrics = periodicMetrics;
+            _rollupManager = rollupManager;
+            _configuration = configuration;
         }
 
         @Override
         public ActorRef get() {
-            final Optional<Long> maxSize = _configuration.hasPath(CONFIG_MAX_SIZE_PATH)
-                    ? Optional.of(_configuration.getLong(CONFIG_MAX_SIZE_PATH))
-                    : Optional.empty();
-            return _system.actorOf(CollectionActor.props(
-                    maxSize,
-                    Sets.newHashSet(),
+            final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
+            final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
+            return _system.actorOf(ConsistencyChecker.props(
+                    _kairosDbClient,
+                    _metricsFactory,
                     _periodicMetrics,
-                    "rollup/consistency_checker/queue"
+                    maxConcurrentRequests,
+                    bufferSize,
+                    _rollupManager
             ));
         }
 
         private final ActorSystem _system;
-        private final Config _configuration;
-        private final PeriodicMetrics _periodicMetrics;
-        private static final String CONFIG_MAX_SIZE_PATH = "rollup.consistency_checker.queue.size";
-    }
-
-    private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
-        @Inject
-        RollupConsistencyCheckerProvider(
-                final Config configuration,
-                final ActorSystem system,
-                final KairosDbClient kairosDbClient,
-                final MetricsFactory metricsFactory,
-                @Named("RollupConsistencyCheckerQueue") final ActorRef queue,
-                @Named("RollupManager") final ActorRef rollupManager,
-                final Features features
-        ) {
-            _configuration = configuration;
-            _system = system;
-            _kairosDbClient = kairosDbClient;
-            _metricsFactory = metricsFactory;
-            _queue = queue;
-            _rollupManager = rollupManager;
-            _enabled = features.isRollupsEnabled();
-        }
-
-        @Override
-        public ActorRef get() {
-            if (_enabled) {
-                final int actorCount = _configuration.getInt("rollup.consistency_checker.executor.count");
-                final double dataLossReexecutionThreshold = _configuration.getInt(
-                        "rollup.consistency_checker.executor.reexecution.data_loss_threshold"
-                );
-                for (int i = 0; i < actorCount; i++) {
-                    _system.actorOf(ConsistencyChecker.props(
-                            _kairosDbClient,
-                            _metricsFactory,
-                            _queue,
-                            _rollupManager,
-                            dataLossReexecutionThreshold
-                    ));
-                }
-            }
-            return null;
-        }
-
-        private final Config _configuration;
-        private final ActorSystem _system;
         private final KairosDbClient _kairosDbClient;
         private final MetricsFactory _metricsFactory;
-        private final ActorRef _queue;
+        private final PeriodicMetrics _periodicMetrics;
         private final ActorRef _rollupManager;
-        private final boolean _enabled;
+        private final Config _configuration;
     }
 
 }

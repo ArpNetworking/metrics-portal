@@ -18,6 +18,7 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
@@ -32,6 +33,7 @@ import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -40,7 +42,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotEmpty;
@@ -51,12 +52,13 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -66,13 +68,17 @@ import javax.annotation.Nullable;
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public class ConsistencyChecker extends AbstractActorWithTimers {
+public final class ConsistencyChecker extends AbstractActorWithTimers {
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
-    private final ActorRef _queue;
+    private final PeriodicMetrics _periodicMetrics;
+    private final int _bufferSize;
+    private final LinkedHashSet<Task> _queue;
+    private int _nAvailableRequests;
     private final ActorRef _rollupManager;
-    private final double _dataLossReexecutionThreshold;
+
+    private static final double _dataLossReexecutionThreshold = 0.01;
     private final TreeMap<Double, Supplier<LogBuilder>> _dataLossLogLevelThresholds = new TreeMap<>(ImmutableMap.of(
             0.000, LOGGER::debug,
             0.001, LOGGER::info,
@@ -80,100 +86,117 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             0.100, LOGGER::error
     ));
 
+    @Override
+    public Receive createReceive() {
+        return new ReceiveBuilder()
+                .matchEquals(TICK, msg -> tick())
+                .matchEquals(REQUEST_FINISHED, msg -> {
+                    _nAvailableRequests += 1;
+                    tick();
+                })
+                .match(Task.class, task -> {
+                    if (_queue.size() < _bufferSize) {
+                        _queue.add(task);
+                        getSender().tell(new Status.Success(task), getSelf());
+                        recordCounter("buffer_size", _queue.size());
+                        recordCounter("submit/success", 1);
+                        tick();
+                    } else {
+                        getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
+                        recordCounter("submit/success", 0);
+                    }
+                })
+                .match(SampleCounts.class, this::sampleCountsReceived)
+                .build();
+    }
+
     /**
      * Creates a {@link Props} for this actor.
      *
      * @param kairosDbClient kairosdb client
      * @param metricsFactory metrics factory
-     * @param queue queue to request {@link Task}s from
-     * @param rollupManager queue to request {@link Task}s from
+     * @param periodicMetrics periodic metrics
+     * @param maxConcurrentRequests maximum number of queries that can be outstanding to KairosDB at a time
+     * @param bufferSize maximum number of items to allow in the queue
+     * @param rollupManager {@link RollupManager} reference to send rollup datapoints to when they need re-execution
      * @return A new Props.
      */
     public static Props props(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            final ActorRef queue,
-            final ActorRef rollupManager,
-            final double dataLossReexecutionThreshold
-    ) {
-        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, queue, rollupManager, dataLossReexecutionThreshold);
-    }
-
-    @Override
-    public Receive createReceive() {
-        return new ReceiveBuilder()
-                .matchEquals(WORK_REQUEST_BACKOFF_MSG, msg -> backoff())
-                .matchEquals(WORK_REQUEST_BACKOFF_EXPIRED_MSG, msg -> this.requestWork())
-                .match(Task.class, this::startTask)
-                .match(SampleCounts.class, this::sampleCountsReceived)
-                .build();
+            final PeriodicMetrics periodicMetrics,
+            final int maxConcurrentRequests,
+            final int bufferSize,
+            final ActorRef rollupManager
+        ) {
+        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, periodicMetrics, maxConcurrentRequests, bufferSize, rollupManager);
     }
 
     private ConsistencyChecker(
             final KairosDbClient kairosDbClient,
             final MetricsFactory metricsFactory,
-            final ActorRef queue,
-            final ActorRef rollupManager,
-            final double dataLossReexecutionThreshold
+            final PeriodicMetrics periodicMetrics,
+            final int maxConcurrentRequests,
+            final int bufferSize,
+            final ActorRef rollupManager
     ) {
         _kairosDbClient = kairosDbClient;
         _metricsFactory = metricsFactory;
-        _queue = queue;
+        _periodicMetrics = periodicMetrics;
+        _bufferSize = bufferSize;
+        _queue = new LinkedHashSet<>();
+        _nAvailableRequests = maxConcurrentRequests;
         _rollupManager = rollupManager;
-        _dataLossReexecutionThreshold = dataLossReexecutionThreshold;
     }
 
     @Override
     public void preStart() throws Exception {
         super.preStart();
-        requestWork();
+        getSelf().tell(TICK, getSelf());
+        getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
     }
 
-    private void backoff() {
-        getTimers().startSingleTimer("WORK_REQUEST_BACKOFF", WORK_REQUEST_BACKOFF_EXPIRED_MSG, REQUEST_WORK_BACKOFF);
+    private Task dequeueWork() {
+        final Iterator<Task> iterator = _queue.iterator();
+        if (!iterator.hasNext()) {
+            throw new IllegalStateException();
+        }
+        final Task result = iterator.next();
+        _queue.remove(result);
+        recordCounter("buffer_size", _queue.size());
+        return result;
     }
 
-    private void requestWork() {
-        final CompletionStage<Object> ask = Patterns.ask(_queue, CollectionActor.Poll.getInstance(), Duration.ofSeconds(10))
-                .handle((response, failure) -> {
-                    if (failure == null) {
-                        if (response instanceof Task) {
-                            return response;
-                        } else {
-                            LOGGER.error()
-                                    .setMessage("unexpected response from queue")
-                                    .addData("response", response)
-                                    .log();
-                            return WORK_REQUEST_BACKOFF_MSG;
-                        }
-                    } else if (failure instanceof CollectionActor.Empty) {
-                        LOGGER.debug()
-                                .setMessage("queue is empty; backing off")
-                                .log();
-                        return WORK_REQUEST_BACKOFF_MSG;
-                    } else {
-                        LOGGER.error()
-                                .setMessage("communication with queue failed")
-                                .setThrowable(failure)
-                                .log();
-                        return WORK_REQUEST_BACKOFF_MSG;
-                    }
-                });
-        Patterns.pipe(ask, getContext().getDispatcher()).to(getSelf());
+    private void recordCounter(final String metricName, final long value) {
+        _periodicMetrics.recordCounter("rollup/consistency_checker/" + metricName, value);
+
     }
 
-    private void startTask(final Task task) {
-        LOGGER.debug()
-                .setMessage("starting task")
-                .addData("task", task)
-                .log();
+    private void tick() {
+        recordCounter("tick", 1);
+        while (_nAvailableRequests > 0 && !_queue.isEmpty()) {
+            startRequest(dequeueWork());
+        }
+    }
+
+    private void startRequest(final Task task) {
+        recordCounter("request/start", 1);
+        _nAvailableRequests -= 1;
         Patterns.pipe(
                 _kairosDbClient.queryMetrics(buildCountComparisonQuery(task))
+                        .whenComplete((response, error) -> {
+                            getSelf().tell(REQUEST_FINISHED, getSelf());
+                            recordCounter("request/finish_success", error == null ? 1 : 0);
+                        })
                         .thenApply(response -> {
+                            boolean parseFailure = false;
                             try {
                                 return ConsistencyChecker.parseSampleCounts(task, response);
                             } catch (final MalformedSampleCountResponse err) {
+                                parseFailure = true;
                                 throw new CompletionException(err);
+                            } finally {
+                                recordCounter("parse_failure", parseFailure ? 1 : 0);
                             }
                         })
                         .whenComplete((sampleCounts, failure) -> {
@@ -184,9 +207,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                                         .setThrowable(failure)
                                         .log();
                             }
-                        })
-                        .whenComplete((response, failure) -> requestWork()),
-                getContext().dispatcher()
+                        }),
+                getContext().getDispatcher()
         ).to(getSelf());
     }
 
@@ -212,7 +234,10 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             final double nOriginalSamples = sampleCounts.getSourceSampleCount();
             final double nRollupSamples = sampleCounts.getRollupSampleCount();
             final double nSamplesDropped = nOriginalSamples - nRollupSamples;
-            if (nOriginalSamples < nRollupSamples) {
+
+            final boolean tooManyRollupSamples = nOriginalSamples < nRollupSamples;
+            recordCounter("too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
+            if (tooManyRollupSamples) {
                 LOGGER.error()
                         .setMessage("somehow got more samples for rolled-up data than original data")
                         .addData("task", task)
@@ -229,6 +254,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("task", task)
                         .addData("sampleCounts", sampleCounts)
                         .log();
+
                 if (fractionalDataLoss > _dataLossReexecutionThreshold) {
                     Patterns.pipe(
                             _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
@@ -312,7 +338,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                                 .setAlignStartTime(true)
                         ))
                 )
-                .setTags(task.getTags());
+                .setTags(task.getFilterTags().asMultimap());
 
         return ThreadLocalBuilder.build(MetricsQuery.Builder.class, mqb -> mqb
                 .setStartTime(task.getStartTime())
@@ -331,9 +357,9 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
-    private static final Object WORK_REQUEST_BACKOFF_MSG = new Object();
-    private static final Object WORK_REQUEST_BACKOFF_EXPIRED_MSG = new Object();
-    private static final Duration REQUEST_WORK_BACKOFF = Duration.ofMinutes(1);
+    /* package private */ static final Object TICK = new Object();
+    private static final Object REQUEST_FINISHED = new Object();
+    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
 
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
@@ -345,7 +371,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
         private final String _rollupMetricName;
         private final RollupPeriod _period;
         private final Instant _startTime;
-        private final ImmutableMultimap<String, String> _tags;
+        private final ImmutableMap<String, String> _filterTags;
         private final Trigger _trigger;
 
         /**
@@ -365,7 +391,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             _rollupMetricName = builder._rollupMetricName;
             _period = builder._period;
             _startTime = builder._startTime;
-            _tags = builder._tags;
+            _filterTags = builder._filterTags;
             _trigger = builder._trigger;
         }
 
@@ -385,8 +411,8 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             return _startTime;
         }
 
-        public ImmutableMultimap<String, String> getTags() {
-            return _tags;
+        public ImmutableMap<String, String> getFilterTags() {
+            return _filterTags;
         }
 
         public Trigger getTrigger() {
@@ -406,13 +432,13 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     && _rollupMetricName.equals(task._rollupMetricName)
                     && _period == task._period
                     && _startTime.equals(task._startTime)
-                    && _tags.equals(task._tags)
+                    && _filterTags.equals(task._filterTags)
                     && _trigger == task._trigger;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _tags, _trigger);
+            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _filterTags, _trigger);
         }
 
         @Override
@@ -422,7 +448,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
                     .add("_rollupMetricName", _rollupMetricName)
                     .add("_period", _period)
                     .add("_startTime", _startTime)
-                    .add("_tags", _tags)
+                    .add("_filterTags", _filterTags)
                     .add("_trigger", _trigger)
                     .toString();
         }
@@ -440,7 +466,7 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             @NotNull
             private RollupPeriod _period;
             @NotNull
-            private ImmutableMultimap<String, String> _tags = ImmutableMultimap.of();
+            private ImmutableMap<String, String> _filterTags = ImmutableMap.of();
             @NotNull
             @ValidateWithMethod(methodName = "validateStartTime", parameterType = Instant.class)
             private Instant _startTime;
@@ -499,13 +525,13 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
 
             /**
-             * Sets the {@code _tags} and returns a reference to this Builder so that the methods can be chained together.
+             * Sets the {@code _filterTags} and returns a reference to this Builder so that the methods can be chained together.
              *
-             * @param value the {@code _tags} to set
+             * @param value the {@code _filterTags} to set
              * @return a reference to this Builder
              */
-            public Builder setTags(final ImmutableMultimap<String, String> value) {
-                _tags = value;
+            public Builder setFilterTags(final ImmutableMap<String, String> value) {
+                _filterTags = value;
                 return this;
             }
 
@@ -697,5 +723,25 @@ public class ConsistencyChecker extends AbstractActorWithTimers {
             }
         }
     }
+
+    /**
+     * Indicates that a submitted {@link Task} was rejected because the internal task-buffer is full.
+     */
+    public static final class BufferFull extends Exception {
+        private static final long serialVersionUID = 7840529083811798202L;
+        public static final BufferFull INSTANCE = new BufferFull();
+
+        /**
+         * Get the singleton instance. (Other instances might be created by deserialization, though.)
+         * @return the singleton instance
+         */
+        public static BufferFull getInstance() {
+            return INSTANCE;
+        }
+        public BufferFull() {
+            super("buffer is full");
+        }
+    }
+
 
 }

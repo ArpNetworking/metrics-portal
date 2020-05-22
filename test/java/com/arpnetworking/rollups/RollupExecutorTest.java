@@ -76,7 +76,8 @@ public class RollupExecutorTest {
     @Mock
     private PeriodicMetrics _periodicMetrics;
 
-    private TestKit _probe;
+    private TestKit _manager;
+    private TestKit _consistencyChecker;
 
     private ActorSystem _system;
 
@@ -87,7 +88,8 @@ public class RollupExecutorTest {
 
         _system = ActorSystem.create();
 
-        _probe = new TestKit(_system);
+        _manager = new TestKit(_system);
+        _consistencyChecker = new TestKit(_system);
 
         _injector = Guice.createInjector(new AbstractModule() {
             @Override
@@ -96,7 +98,10 @@ public class RollupExecutorTest {
                 bind(Config.class).toInstance(_config);
                 bind(ActorRef.class)
                         .annotatedWith(Names.named("RollupManager"))
-                        .toInstance(_probe.getRef());
+                        .toInstance(_manager.getRef());
+                bind(ActorRef.class)
+                        .annotatedWith(Names.named("RollupConsistencyChecker"))
+                        .toInstance(_consistencyChecker.getRef());
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
             }
         });
@@ -115,15 +120,15 @@ public class RollupExecutorTest {
     @Test
     public void testSendsFetchOnStartup() {
         final ActorRef actor = createActor();
-        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
         actor.tell(RollupExecutor.FETCH_ROLLUP, ActorRef.noSender());
-        _probe.expectMsg(RollupFetch.getInstance());
+        _manager.expectMsg(RollupFetch.getInstance());
     }
 
     @Test
     public void testFetchesNextRollup() {
         final ActorRef actor = createActor();
-        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
         final RollupExecutor.FinishRollupMessage finished = ThreadLocalBuilder.build(
                 RollupExecutor.FinishRollupMessage.Builder.class,
                 b -> b.setRollupDefinition(new RollupDefinition.Builder()
@@ -136,8 +141,8 @@ public class RollupExecutorTest {
                 )
         );
         actor.tell(finished, ActorRef.noSender());
-        _probe.expectMsg(finished);
-        _probe.expectMsg(RollupFetch.getInstance());
+        _manager.expectMsg(finished);
+        _manager.expectMsg(RollupFetch.getInstance());
     }
 
     @Test
@@ -169,7 +174,7 @@ public class RollupExecutorTest {
 
         final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
         final ActorRef actor = createActor();
-        _probe.expectMsg(RollupExecutor.FETCH_ROLLUP);
+        _manager.expectMsg(RollupExecutor.FETCH_ROLLUP);
 
         actor.tell(
                 new RollupDefinition.Builder()
@@ -182,7 +187,7 @@ public class RollupExecutorTest {
                 ActorRef.noSender());
 
         final RollupExecutor.FinishRollupMessage finishRollupMessage =
-                _probe.expectMsgClass(RollupExecutor.FinishRollupMessage.class);
+                _manager.expectMsgClass(RollupExecutor.FinishRollupMessage.class);
         assertFalse(finishRollupMessage.isFailure());
         assertEquals("metric", finishRollupMessage.getRollupDefinition().getSourceMetricName());
         assertEquals(RollupPeriod.HOURLY, finishRollupMessage.getRollupDefinition().getPeriod());
@@ -214,7 +219,7 @@ public class RollupExecutorTest {
         assertEquals("count", metric.getAggregators().get(2).getName());
         assertFalse(metric.getAggregators().get(2).getSampling().isPresent());
 
-        _probe.expectNoMessage();
+        _manager.expectNoMessage();
     }
 
     @Test
@@ -303,9 +308,11 @@ public class RollupExecutorTest {
         public TestRollupExecutor(
                 final Config configuration,
                 @Named("RollupManager") final ActorRef testActor,
+                @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
                 final KairosDbClient kairosDbClient,
-                final PeriodicMetrics metrics) {
-            super(configuration, testActor, kairosDbClient, metrics);
+                final PeriodicMetrics metrics
+        ) {
+            super(configuration, testActor, consistencyChecker, kairosDbClient, metrics);
             _self = testActor;
         }
 

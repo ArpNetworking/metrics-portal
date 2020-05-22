@@ -172,25 +172,17 @@ public class RollupExecutor extends AbstractActorWithTimers {
                 .setRollupMetricName(defn.getDestinationMetricName())
                 .setStartTime(defn.getStartTime())
                 .setPeriod(defn.getPeriod())
-                .setTags(defn.getFilterTags().asMultimap())
+                .setFilterTags(defn.getFilterTags())
                 .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
                 .build();
-        Patterns.ask(_consistencyCheckerQueue, new CollectionActor.Add<>(ccTask), Duration.ofSeconds(10))
+        Patterns.ask(_consistencyChecker, ccTask, Duration.ofSeconds(10))
                 .whenComplete((response, failure) -> {
                     if (failure == null) {
-                        if (response instanceof Status.Success) {
-                            LOGGER.debug()
-                                    .setMessage("consistency-checker queue accepted task")
-                                    .addData("task", ccTask)
-                                    .log();
-                        } else {
-                            LOGGER.error()
-                                    .setMessage("unexpected response from consistency-checker")
-                                    .addData("task", ccTask)
-                                    .addData("response", response)
-                                    .log();
-                        }
-                    } else if (failure instanceof CollectionActor.Full) {
+                        LOGGER.debug()
+                                .setMessage("consistency-checker queue accepted task")
+                                .addData("task", ccTask)
+                                .log();
+                    } else if (failure instanceof ConsistencyChecker.BufferFull) {
                         LOGGER.warn()
                                 .setMessage("consistency-checker task rejected")
                                 .addData("task", ccTask)
@@ -198,7 +190,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
                                 .log();
                     } else {
                         LOGGER.error()
-                                .setMessage("communication with consistency-checker queue failed")
+                                .setMessage("communication with consistency-checker failed")
                                 .addData("task", ccTask)
                                 .setThrowable(failure)
                                 .log();
@@ -220,7 +212,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
      *
      * @param configuration play configuration
      * @param rollupManager actor ref to RollupManager actor
-     * @param consistencyCheckerQueue actor ref to actor that should be told to consistency-check completed datapoints
+     * @param consistencyChecker {@link ConsistencyChecker} ref that should be told to consistency-check completed datapoints
      * @param kairosDbClient kairosdb client
      * @param metrics periodic metrics instance
      */
@@ -228,12 +220,12 @@ public class RollupExecutor extends AbstractActorWithTimers {
     public RollupExecutor(
             final Config configuration,
             @Named("RollupManager") final ActorRef rollupManager,
-            @Named("RollupConsistencyCheckerQueue") final ActorRef consistencyCheckerQueue,
+            @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
             final KairosDbClient kairosDbClient,
             final PeriodicMetrics metrics) {
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
-        _consistencyCheckerQueue = consistencyCheckerQueue;
+        _consistencyChecker = consistencyChecker;
         _metrics = metrics;
         _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.executor.pollInterval");
         _consistencyCheckFractionOfWrites = configuration.hasPath("rollup.executor._consistencyCheckFractionOfWrites")
@@ -244,7 +236,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     private final KairosDbClient _kairosDbClient;
     private final PeriodicMetrics _metrics;
     private final ActorRef _rollupManager;
-    private final ActorRef _consistencyCheckerQueue;
+    private final ActorRef _consistencyChecker;
     private final FiniteDuration _pollInterval;
     private final double _consistencyCheckFractionOfWrites;
     private static final String FETCH_TIMER = "rollupFetchTimer";
