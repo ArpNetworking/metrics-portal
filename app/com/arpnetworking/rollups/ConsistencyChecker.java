@@ -78,8 +78,13 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private int _nAvailableRequests;
     private final ActorRef _rollupManager;
 
-    private static final double _dataLossReexecutionThreshold = 0.01;
-    private final TreeMap<Double, Supplier<LogBuilder>> _dataLossLogLevelThresholds = new TreeMap<>(ImmutableMap.of(
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
+    /* package private */ static final Object TICK = new Object();
+    private static final Object REQUEST_FINISHED = new Object();
+    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
+    private static final double DATA_LOSS_REEXECUTION_THRESHOLD = 0.01;
+    private static final TreeMap<Double, Supplier<LogBuilder>> DATA_LOSS_LOG_LEVEL_THRESHOLDS = new TreeMap<>(ImmutableMap.of(
             0.000, LOGGER::debug,
             0.001, LOGGER::info,
             0.010, LOGGER::warn,
@@ -129,7 +134,15 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final int bufferSize,
             final ActorRef rollupManager
         ) {
-        return Props.create(ConsistencyChecker.class, kairosDbClient, metricsFactory, periodicMetrics, maxConcurrentRequests, bufferSize, rollupManager);
+        return Props.create(
+                ConsistencyChecker.class,
+                kairosDbClient,
+                metricsFactory,
+                periodicMetrics,
+                maxConcurrentRequests,
+                bufferSize,
+                rollupManager
+        );
     }
 
     private ConsistencyChecker(
@@ -246,8 +259,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             } else if (nOriginalSamples > nRollupSamples) {
                 final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
                 metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
-                final LogBuilder logBuilder = _dataLossLogLevelThresholds.getOrDefault(
-                        _dataLossLogLevelThresholds.floorKey(fractionalDataLoss),
+                final LogBuilder logBuilder = DATA_LOSS_LOG_LEVEL_THRESHOLDS.getOrDefault(
+                        DATA_LOSS_LOG_LEVEL_THRESHOLDS.floorKey(fractionalDataLoss),
                         LOGGER::error
                 ).get();
                 logBuilder.setMessage("data lost in rollup")
@@ -255,7 +268,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("sampleCounts", sampleCounts)
                         .log();
 
-                if (fractionalDataLoss > _dataLossReexecutionThreshold) {
+                if (fractionalDataLoss > DATA_LOSS_REEXECUTION_THRESHOLD) {
                     Patterns.pipe(
                             _kairosDbClient.queryMetricTags(task.getSourceMetricName(), task.getStartTime()).thenApply(tags ->
                                     new RollupDefinition.Builder()
@@ -356,11 +369,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         );
     }
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConsistencyChecker.class);
-    /* package private */ static final Object TICK = new Object();
-    private static final Object REQUEST_FINISHED = new Object();
-    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
-
     /**
      * Commands the {@link ConsistencyChecker} to compare a rollup-datapoint against the corresponding source-datapoints.
      */
@@ -382,6 +390,9 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Something/somebody requested this task as a one-off.
              */
             ON_DEMAND,
+            /**
+             * A {@link RollupExecutor} finished writing a datapoint and decided to consistency-check it.
+             */
             WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
@@ -738,7 +749,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         public static BufferFull getInstance() {
             return INSTANCE;
         }
-        public BufferFull() {
+        private BufferFull() {
             super("buffer is full");
         }
     }
