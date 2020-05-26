@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
 import models.internal.Organization;
@@ -51,7 +50,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
- * An alert repository that reads definitions from the filesystem.
+ * An alert repository that loads definitions from the filesystem.
+ *
+ * @apiNote
+ * This repository is read-only, so any additions, deletions, or updates will
+ * result in an {@link UnsupportedOperationException}.
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  */
@@ -73,8 +76,8 @@ public class FileSystemAlertRepository implements AlertRepository {
     @Inject
     public FileSystemAlertRepository(
             final ObjectMapper objectMapper,
-            @Named("fileSystemAlertRepository.path") final Path path,
-            @Named("fileSystemAlertRepository.org") final UUID org
+            final Path path,
+            final UUID org
     ) {
         _objectMapper = objectMapper;
         _path = path;
@@ -98,18 +101,22 @@ public class FileSystemAlertRepository implements AlertRepository {
 
     @Override
     public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
+        assertIsOpen();
         return Optional.ofNullable(_alerts.get(identifier));
     }
 
     @Override
     public AlertQuery createAlertQuery(final Organization organization) {
+        assertIsOpen();
         return new DefaultAlertQuery(this, organization);
     }
 
     @Override
     public QueryResult<Alert> queryAlerts(final AlertQuery query) {
+        assertIsOpen();
         final Predicate<Alert> containsPredicate =
-                query.getContains().map(c -> (Predicate<Alert>) a -> a.getDescription().contains(c))
+                query.getContains()
+                        .map(c -> (Predicate<Alert>) a -> a.getDescription().contains(c))
                         .orElse(e -> true);
 
         final ImmutableList<Alert> alerts = _alerts.values().stream()
@@ -127,6 +134,7 @@ public class FileSystemAlertRepository implements AlertRepository {
 
     @Override
     public long getAlertCount(final Organization organization) {
+        assertIsOpen();
         return _alerts.size();
     }
 
@@ -134,11 +142,16 @@ public class FileSystemAlertRepository implements AlertRepository {
 
     @Override
     public int deleteAlert(final UUID identifier, final Organization organization) {
+        // Since we expect to use this repository just as every other AlertRepository,
+        // we should enforce the open-before-use invariant rather than immediately
+        // throwing on mutations.
+        assertIsOpen();
         throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
     }
 
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
+        assertIsOpen();
         throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
     }
 
@@ -149,15 +162,16 @@ public class FileSystemAlertRepository implements AlertRepository {
                     reader,
                     AlertGroup.class);
         } catch (final IOException e) {
-            throw new RuntimeException("Could not load alerts from filesystem", e);
+            throw new RuntimeException("Could not load alerts", e);
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
         for (final SerializedAlert fsAlert : group.getAlerts()) {
             final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
 
             // TODO(cbriones):
-            // These start and end times should correspond to the interval of the
-            // metric and should not be hardcoded like an ordinary query.
+            // Unlike an ordinary query, the alert start and end times are dependent
+            // on both the current time and query itself, so it's likely that this
+            // query field needs to be expressed differently.
             final models.internal.MetricsQuery query = new DefaultMetricsQuery.Builder()
                     .setQuery(fsAlert.getQuery())
                     .setStart(ZonedDateTime.now())
@@ -181,11 +195,8 @@ public class FileSystemAlertRepository implements AlertRepository {
     private UUID computeUUID(final SerializedAlert alert) {
         // TODO(cbriones): UUID v5 rather than v3.
         //
-        // The standard method returns a v3 identifier using MD5.
-        // v5 uses SHA-1.
-
-        final String alertContents =
-                alert.getName() + alert.getDescription();
+        // v3 UUID identifiers use MD5 while v5 uses SHA-1.
+        final String alertContents = alert.getName();
         return UUID.nameUUIDFromBytes(alertContents.getBytes());
     }
 
@@ -245,6 +256,9 @@ public class FileSystemAlertRepository implements AlertRepository {
         }
     }
 
+    /**
+     * The alert data model for this repository.
+     */
     private static final class SerializedAlert {
         private final String _name;
         private final String _description;
@@ -317,7 +331,8 @@ public class FileSystemAlertRepository implements AlertRepository {
             }
 
             /**
-             * Sets the uuid.
+             * Sets the uuid. If not present, one will be computed using
+             * the contents of the alert.
              *
              * @param uuid the uuid.
              * @return This instance of {@code Builder} for chaining.

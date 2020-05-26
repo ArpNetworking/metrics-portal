@@ -50,6 +50,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.FileSystemAlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -104,10 +105,12 @@ import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
+import java.nio.file.FileSystems;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -380,6 +383,22 @@ public class MainModule extends AbstractModule {
         final Cluster cluster = Cluster.get(system);
         final ActorRef clusterStatusCache = system.actorOf(ClusterStatusCacheActor.props(cluster, metricsFactory), "cluster-status");
         return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
+    }
+
+    @Provides
+    @Singleton
+    private FileSystemAlertRepository provideFileSystemAlertRepository(
+            final ObjectMapper objectMapper,
+            final Config config
+    ) {
+        final String path = config.getString("filesystemAlertRepository.path");
+        final String uuid = config.getString("filesystemAlertRepository.organization");
+        // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
+        return new FileSystemAlertRepository(
+                objectMapper,
+                FileSystems.getDefault().getPath(path),
+                UUID.fromString(uuid)
+        );
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {

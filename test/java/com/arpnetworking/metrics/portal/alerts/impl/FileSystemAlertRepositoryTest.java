@@ -92,7 +92,7 @@ public class FileSystemAlertRepositoryTest {
 
     @Test
     public void testGetAlert() {
-        final UUID uuid = UUID.fromString("a211febc-1d38-34f2-8628-d12cc013296c");
+        final UUID uuid = UUID.fromString("1de1fa81-6b32-361c-b949-0fc3c2e558d7");
         final String name = "BarIsTooLow";
         final String description = "You've set the bar too low.";
 
