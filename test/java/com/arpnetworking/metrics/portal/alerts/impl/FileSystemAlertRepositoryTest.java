@@ -46,7 +46,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 
 public class FileSystemAlertRepositoryTest {
-    private final static UUID METADATA_ALERT = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
+    private final static UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
     private static final Map<String, Object> EXPECTED_METADATA = ImmutableMap.of(
         "externalFieldA", "A",
         "externalFieldB", ImmutableMap.of(
@@ -106,8 +106,8 @@ public class FileSystemAlertRepositoryTest {
         assertThat(alert.getAdditionalMetadata(), is(anEmptyMap()));
 
         // Get an alert with a UUID
-        final Alert metadataAlert = _repository.getAlert(METADATA_ALERT, _organization).get();
-        assertThat(metadataAlert.getId(), equalTo(METADATA_ALERT));
+        final Alert metadataAlert = _repository.getAlert(METADATA_ALERT_ID, _organization).get();
+        assertThat(metadataAlert.getId(), equalTo(METADATA_ALERT_ID));
         assertThat(metadataAlert.getAdditionalMetadata(), equalTo(EXPECTED_METADATA));
     }
 
@@ -132,12 +132,12 @@ public class FileSystemAlertRepositoryTest {
 
     @Test(expected=UnsupportedOperationException.class)
     public void testDeleteAlert() {
-        _repository.deleteAlert(METADATA_ALERT, _organization);
+        _repository.deleteAlert(METADATA_ALERT_ID, _organization);
     }
 
     @Test(expected=UnsupportedOperationException.class)
     public void testAddOrUpdateAlert() {
-        final Alert alert = _repository.getAlert(METADATA_ALERT, _organization).get();
+        final Alert alert = _repository.getAlert(METADATA_ALERT_ID, _organization).get();
         _repository.addOrUpdateAlert(alert, _organization);
     }
 }
