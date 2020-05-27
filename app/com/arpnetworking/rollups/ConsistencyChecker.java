@@ -462,7 +462,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 _sourceMetricName = null;
                 _rollupMetricName = null;
                 _period = null;
-                _filterTags = null;
+                _filterTags = ImmutableMap.of();
                 _startTime = null;
                 _trigger = null;
             }
