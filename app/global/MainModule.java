@@ -753,29 +753,44 @@ public class MainModule extends AbstractModule {
 
     private static final class RollupManagerProvider implements Provider<ActorRef> {
         private final boolean _enabled;
-        private final Injector _injector;
         private final ActorSystem _system;
+        private final PeriodicMetrics _periodicMetrics;
+        private final MetricsFactory _metricsFactory;
         private final RollupPartitioner _partitioner;
+        private final ActorRef _consistencyChecker;
+        private final Config _config;
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
         RollupManagerProvider(
-                final Injector injector,
                 final ActorSystem system,
-                final Features features,
-                final RollupPartitioner partitioner
+                final PeriodicMetrics periodicMetrics,
+                final MetricsFactory metricsFactory,
+                final RollupPartitioner partitioner,
+                @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
+                final Config config,
+                final Features features
         ) {
             _enabled = features.isRollupsEnabled();
-            _injector = injector;
             _system = system;
+            _periodicMetrics = periodicMetrics;
+            _metricsFactory = metricsFactory;
             _partitioner = partitioner;
+            _consistencyChecker = consistencyChecker;
+            _config = config;
         }
 
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                return _system.actorOf(GuiceActorCreator.props(_injector, RollupManager.class));
+                return _system.actorOf(RollupManager.props(
+                        _periodicMetrics,
+                        _metricsFactory,
+                        _partitioner,
+                        _consistencyChecker,
+                        _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+                ));
             }
             return _system.actorOf(Props.create(NoopActor.class));
         }
