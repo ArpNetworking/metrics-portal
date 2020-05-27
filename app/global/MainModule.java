@@ -391,6 +391,7 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private FileAlertRepository provideFileSystemAlertRepository(
             final ObjectMapper objectMapper,
             final Config config
