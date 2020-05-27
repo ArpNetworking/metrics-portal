@@ -16,6 +16,10 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
+import akka.actor.Props;
+import akka.pattern.Patterns;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -30,9 +34,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
 
 /**
  * Actor for holding and dispatching rollup definitions.  This allows for different mechanisms, e.g. automated
@@ -40,29 +44,59 @@ import javax.inject.Inject;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
-public class RollupManager extends AbstractActorWithTimers {
+public final class RollupManager extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private final MetricsFactory _metricsFactory;
     private TreeSet<RollupDefinition> _rollupDefinitions;
     private RollupPartitioner _partitioner;
+    private final ActorRef _consistencyChecker;
+    private final double _consistencyCheckFractionOfWrites;
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
     private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupManager.class);
+    private static final Random RANDOM = new Random();
 
     /**
-     * Metrics discovery constructor.
+     * Creates a {@link Props} for use in Akka.
      *
      * @param periodicMetrics periodic metrics client
      * @param metricsFactory metrics factory
      * @param partitioner {@link RollupPartitioner} to split up failed jobs
+     * @param consistencyChecker {@link ConsistencyChecker} ref that should be told to consistency-check completed datapoints
+     * @param consistencyCheckFractionOfWrites fraction of successfully written datapoints to request consistency-checks for
+     * @return A new props to create this actor.
      */
-    @Inject
-    public RollupManager(final PeriodicMetrics periodicMetrics, final MetricsFactory metricsFactory, final RollupPartitioner partitioner) {
+    public static Props props(
+            final PeriodicMetrics periodicMetrics,
+            final MetricsFactory metricsFactory,
+            final RollupPartitioner partitioner,
+            final ActorRef consistencyChecker,
+            final double consistencyCheckFractionOfWrites
+    ) {
+        return Props.create(
+                RollupManager.class,
+                periodicMetrics,
+                metricsFactory,
+                partitioner,
+                consistencyChecker,
+                consistencyCheckFractionOfWrites
+        );
+    }
+
+    private RollupManager(
+            final PeriodicMetrics periodicMetrics,
+            final MetricsFactory metricsFactory,
+            final RollupPartitioner partitioner,
+            final ActorRef consistencyChecker,
+            final double consistencyCheckFractionOfWrites
+    ) {
         _periodicMetrics = periodicMetrics;
         _metricsFactory = metricsFactory;
         _partitioner = partitioner;
+        _consistencyChecker = consistencyChecker;
+        _consistencyCheckFractionOfWrites = consistencyCheckFractionOfWrites;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
         getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
@@ -98,6 +132,11 @@ public class RollupManager extends AbstractActorWithTimers {
     private void executorFinished(final RollupExecutor.FinishRollupMessage message) {
         final RollupDefinition definition = message.getRollupDefinition();
         final double latencyNs = (double) Duration.between(definition.getEndTime(), Instant.now()).toNanos();
+
+        final RollupDefinition defn = message.getRollupDefinition();
+        if (shouldRequestConsistencyCheck(message)) {
+            requestConsistencyCheck(defn);
+        }
 
         try (Metrics metrics = _metricsFactory.create()) {
             metrics.addAnnotation("rollup_metric", definition.getDestinationMetricName());
@@ -151,6 +190,42 @@ public class RollupManager extends AbstractActorWithTimers {
 
     private Optional<RollupDefinition> getNextRollup() {
         return Optional.ofNullable(_rollupDefinitions.pollFirst());
+    }
+
+    private void requestConsistencyCheck(final RollupDefinition defn) {
+        final ConsistencyChecker.Task ccTask = ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
+                .setSourceMetricName(defn.getSourceMetricName())
+                .setRollupMetricName(defn.getDestinationMetricName())
+                .setStartTime(defn.getStartTime())
+                .setPeriod(defn.getPeriod())
+                .setFilterTags(defn.getFilterTags())
+                .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
+        );
+        Patterns.ask(_consistencyChecker, ccTask, Duration.ofSeconds(10))
+                .whenComplete((response, failure) -> {
+                    if (failure == null) {
+                        LOGGER.debug()
+                                .setMessage("consistency-checker queue accepted task")
+                                .addData("task", ccTask)
+                                .log();
+                    } else if (failure instanceof ConsistencyChecker.BufferFull) {
+                        LOGGER.warn()
+                                .setMessage("consistency-checker task rejected")
+                                .addData("task", ccTask)
+                                .setThrowable(failure)
+                                .log();
+                    } else {
+                        LOGGER.error()
+                                .setMessage("communication with consistency-checker failed")
+                                .addData("task", ccTask)
+                                .setThrowable(failure)
+                                .log();
+                    }
+                });
+    }
+
+    private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
+        return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
     }
 
     private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {
