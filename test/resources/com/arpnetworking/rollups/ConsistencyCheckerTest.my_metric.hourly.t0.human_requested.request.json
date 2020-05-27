@@ -1,0 +1,32 @@
+{
+  "metrics": [
+    {
+      "name": "my_metric",
+      "aggregators": [ {
+        "name": "count",
+        "sampling": {
+          "value": 1,
+          "unit": "hours"
+        },
+        "align_sampling": true,
+        "align_start_time": true
+      } ]
+    },
+    {
+      "name": "my_metric_1h",
+      "aggregators": [
+        {
+          "name": "count",
+          "sampling": {
+            "value": 1,
+            "unit": "hours"
+          },
+          "align_sampling": true,
+          "align_start_time": true
+        }
+      ]
+    }
+  ],
+  "start_absolute": 0,
+  "end_absolute": 3599999
+}

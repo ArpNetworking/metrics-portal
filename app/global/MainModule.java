@@ -68,6 +68,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
+import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
@@ -203,6 +204,10 @@ public class MainModule extends AbstractModule {
 
         // Rollups
         bind(MetricsQueryConfig.class).to(MetricsQueryConfigImpl.class).asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("RollupConsistencyChecker"))
+                .toProvider(RollupConsistencyCheckerProvider.class)
+                .asEagerSingleton();
     }
 
     @Singleton
@@ -857,4 +862,41 @@ public class MainModule extends AbstractModule {
         private final Config _configuration;
         private final boolean _enabled;
     }
+
+    private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
+        @Inject
+        RollupConsistencyCheckerProvider(
+                final ActorSystem system,
+                final KairosDbClient kairosDbClient,
+                final MetricsFactory metricsFactory,
+                final PeriodicMetrics periodicMetrics,
+                final Config configuration
+        ) {
+            _system = system;
+            _kairosDbClient = kairosDbClient;
+            _metricsFactory = metricsFactory;
+            _periodicMetrics = periodicMetrics;
+            _configuration = configuration;
+        }
+
+        @Override
+        public ActorRef get() {
+            final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
+            final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
+            return _system.actorOf(ConsistencyChecker.props(
+                        _kairosDbClient,
+                        _metricsFactory,
+                        _periodicMetrics,
+                        maxConcurrentRequests,
+                        bufferSize
+            ));
+        }
+
+        private final ActorSystem _system;
+        private final KairosDbClient _kairosDbClient;
+        private final MetricsFactory _metricsFactory;
+        private final PeriodicMetrics _periodicMetrics;
+        private final Config _configuration;
+    }
+
 }

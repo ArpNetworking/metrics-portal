@@ -1,0 +1,27 @@
+{
+  "queries": [
+    {
+      "sample_size": 100,
+      "results": [
+        {
+          "name": "my_metric",
+          "values": [
+            [
+              0,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "sample_size": 80,
+      "results": [
+        {
+          "name": "my_metric_1h",
+          "values": []
+        }
+      ]
+    }
+  ]
+}

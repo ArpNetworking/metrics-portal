@@ -1,0 +1,7 @@
+{
+    "sourceMetricName" : "my_metric",
+    "rollupMetricName" : "my_metric_1h",
+    "period" : "HOURLY",
+    "startTime" : "2020-01-01T00:00:00Z",
+    "trigger": "ON_DEMAND"
+}
