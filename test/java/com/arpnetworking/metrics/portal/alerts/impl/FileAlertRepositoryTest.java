@@ -20,7 +20,6 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
-import junit.framework.TestCase;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
 import org.junit.After;
@@ -30,6 +29,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
@@ -44,24 +45,30 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
+import static org.junit.Assert.fail;
 
-public class FileSystemAlertRepositoryTest {
-    private final static UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
+/**
+ * Unit Tests for {@link FileAlertRepository}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+public class FileAlertRepositoryTest {
+    private static final UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
     private static final Map<String, Object> EXPECTED_METADATA = ImmutableMap.of(
-        "externalFieldA", "A",
-        "externalFieldB", ImmutableMap.of(
-                "externalFieldC", "C"
+            "externalFieldA", "A",
+            "externalFieldB", ImmutableMap.of(
+                    "externalFieldC", "C"
             )
     );
 
     private Organization _organization;
-    private FileSystemAlertRepository _repository;
+    private FileAlertRepository _repository;
 
     @Before
     public void setUp() throws IOException, URISyntaxException {
-        final URL url = ResourceHelper.resourceURL(FileSystemAlertRepositoryTest.class, "Alerts");
+        final URL url = ResourceHelper.resourceURL(FileAlertRepositoryTest.class, "Alerts");
         _organization = TestBeanFactory.createOrganization();
-        _repository = new FileSystemAlertRepository(
+        _repository = new FileAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
                 Paths.get(url.toURI()),
                 _organization.getId()
@@ -76,16 +83,26 @@ public class FileSystemAlertRepositoryTest {
 
     @Test
     public void testInvalidPathOnOpen() {
-        final FileSystemAlertRepository _badRepository = new FileSystemAlertRepository(
+        final Path path;
+        try {
+            path = Paths.get("valid_but_nonexistent");
+        } catch (final InvalidPathException e) {
+            fail("Test path should be valid");
+            return; // Needed to convince the compiler path is initialized.
+        }
+
+        final FileAlertRepository badRepository = new FileAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
-                Paths.get("not-a-real-path"),
+                path,
                 _organization.getId()
         );
 
         try {
-            _badRepository.open();
-            TestCase.fail("Expected an exception while loading alerts.");
-        } catch (final Exception e) {
+            badRepository.open();
+            fail("Expected an exception while loading alerts.");
+            // CHECKSTYLE.OFF: IllegalCatch
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
             // expected
         }
     }
@@ -130,12 +147,12 @@ public class FileSystemAlertRepositoryTest {
         assertThat(_repository.getAlertCount(_organization), equalTo(6L));
     }
 
-    @Test(expected=UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testDeleteAlert() {
         _repository.deleteAlert(METADATA_ALERT_ID, _organization);
     }
 
-    @Test(expected=UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void testAddOrUpdateAlert() {
         final Alert alert = _repository.getAlert(METADATA_ALERT_ID, _organization).get();
         _repository.addOrUpdateAlert(alert, _organization);

@@ -50,7 +50,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.FileSystemAlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -386,15 +386,14 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @Singleton
-    private FileSystemAlertRepository provideFileSystemAlertRepository(
+    private FileAlertRepository provideFileSystemAlertRepository(
             final ObjectMapper objectMapper,
             final Config config
     ) {
-        final String path = config.getString("filesystemAlertRepository.path");
-        final String uuid = config.getString("filesystemAlertRepository.organization");
+        final String path = config.getString("fileAlertRepository.path");
+        final String uuid = config.getString("fileAlertRepository.organization");
         // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
-        return new FileSystemAlertRepository(
+        return new FileAlertRepository(
                 objectMapper,
                 FileSystems.getDefault().getPath(path),
                 UUID.fromString(uuid)

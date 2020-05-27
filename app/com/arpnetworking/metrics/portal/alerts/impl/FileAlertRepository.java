@@ -39,6 +39,7 @@ import net.sf.oval.constraint.NotNull;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
@@ -58,8 +59,8 @@ import java.util.function.Predicate;
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  */
-public class FileSystemAlertRepository implements AlertRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemAlertRepository.class);
+public class FileAlertRepository implements AlertRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileAlertRepository.class);
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final Path _path;
     private final ObjectMapper _objectMapper;
@@ -74,7 +75,7 @@ public class FileSystemAlertRepository implements AlertRepository {
      * @param org The organization to group the alerts under.
      */
     @Inject
-    public FileSystemAlertRepository(
+    public FileAlertRepository(
             final ObjectMapper objectMapper,
             final Path path,
             final UUID org
@@ -197,7 +198,7 @@ public class FileSystemAlertRepository implements AlertRepository {
         //
         // v3 UUID identifiers use MD5 while v5 uses SHA-1.
         final String alertContents = alert.getName();
-        return UUID.nameUUIDFromBytes(alertContents.getBytes());
+        return UUID.nameUUIDFromBytes(alertContents.getBytes(Charset.defaultCharset()));
     }
 
     private void assertIsOpen() {
