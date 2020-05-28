@@ -48,6 +48,7 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
+import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -92,6 +93,7 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
+import io.ebean.EbeanServerFactory;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
@@ -843,6 +845,36 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
         private final Config _configuration;
         private final boolean _enabled;
+    }
+
+    private static final class AlertExecutionPartitionCreatorProvider implements Provider<ActorRef> {
+        @Inject
+        AlertExecutionPartitionCreatorProvider(
+                final ActorSystem system,
+                final EbeanServer ebeanServer,
+                final PeriodicMetrics periodicMetrics,
+                final Config configuration
+        ) {
+            _system = system;
+            _ebeanServer = ebeanServer;
+            _periodicMetrics = periodicMetrics;
+            _configuration = configuration;
+        }
+
+        @Override
+        public ActorRef get() {
+            final int maxLookAhead = _configuration.getInt("alerts.execution_partitions.create");
+            return _system.actorOf(AlertExecutionPartitionCreator.props(
+                    _ebeanServer,
+                    _periodicMetrics,
+                    maxLookAhead
+            ));
+        }
+
+        private final ActorSystem _system;
+        private final PeriodicMetrics _periodicMetrics;
+        private final EbeanServer _ebeanServer;
+        private final Config _configuration;
     }
 
     private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {
