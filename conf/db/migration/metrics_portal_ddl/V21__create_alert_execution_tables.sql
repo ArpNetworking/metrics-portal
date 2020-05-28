@@ -36,16 +36,23 @@ CREATE TABLE portal.alert_executions (
 --    Start - Date - The beginning date of the time range, inclusive.
 --    End   - Date - The end date of the time range, exclusive.
 CREATE OR REPLACE FUNCTION create_daily_partition( TEXT, DATE, DATE )
-returns void AS $$
+returns INTEGER AS $$
 DECLARE
-create_query text;
+    create_query text;
+    created INTEGER := 0;
+    tables_created INTEGER := 0;
 BEGIN
-    FOR create_query IN SELECT
-        'CREATE TABLE ' || $1 || '_' || TO_CHAR(d, 'YYYY_MM_DD') ||
+    FOR create_query IN (SELECT
+        'CREATE TABLE IF NOT EXISTS ' || $1 || '_' || TO_CHAR(d, 'YYYY_MM_DD') ||
         ' PARTITION OF ' || $1 || E' FOR VALUES FROM (\'' || d::date || E'\') TO (\'' || d::date + 1 || E'\');'
-        FROM generate_series($2, $3, '1 day') as d LOOP
-        EXECUTE create_query;
+        FROM generate_series($2, $3, '1 day') as d)
+    LOOP
+        EXECUTE create_query INTO created;
+        IF (created > 0) THEN
+            tables_created := tables_created + 1;
+        END IF;
     END LOOP;
+    RETURN tables_created;
 END;
 $$
 language plpgsql;
