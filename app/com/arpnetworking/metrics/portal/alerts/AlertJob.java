@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.inject.Injector;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
@@ -28,7 +27,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -38,14 +36,17 @@ import java.util.concurrent.CompletionStage;
  */
 public class AlertJob implements Job<AlertEvaluationResult> {
     private final Alert _alert;
+    private final Schedule _schedule;
 
     /**
      * Create a job from an alert.
      *
      * @param alert The alert that this job will evaluate.
+     * @param schedule The schedule for this job.
      */
-    public AlertJob(final Alert alert) {
-        this._alert = alert;
+    public AlertJob(final Alert alert, final Schedule schedule) {
+        _alert = alert;
+        _schedule = schedule;
     }
 
     @Override
@@ -60,9 +61,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public Schedule getSchedule() {
-        // TODO(cbriones): If the alert is enabled, this should return an interval corresponding to the smallest query period
-        // in that alert's query.
-        return NeverSchedule.getInstance();
+        return _schedule;
     }
 
     @Override
@@ -72,9 +71,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public CompletionStage<? extends AlertEvaluationResult> execute(final Injector injector, final Instant scheduled) {
-        final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
-        future.completeExceptionally(new UnsupportedOperationException("Alert execution is not implemented"));
-        return future;
+        return injector.getInstance(AlertExecutionContext.class).execute(_alert, scheduled);
     }
 
 }
