@@ -16,8 +16,13 @@
 package controllers;
 
 import akka.stream.javadsl.StreamConverters;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
-import com.arpnetworking.kairos.client.models.*;
+import com.arpnetworking.kairos.client.models.Aggregator;
+import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
@@ -28,7 +33,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
@@ -170,42 +174,7 @@ public class KairosDbProxyController extends Controller {
             }
 
             if (_addMergeAggregator) {
-                List<Metric> newMetrics = new ArrayList<>();
-                for (Metric metric : metricsQuery.getMetrics()){
-                    List<Aggregator> newAggregators = new ArrayList<>();
-                    if (!metric.getAggregators().isEmpty() && metric.getAggregators().get(0).getName() != "merge"
-                            && metric.getAggregators().stream().anyMatch(
-                                    aggregator -> nonHistAggregators.contains(aggregator.getName()))) {
-                        Optional<Sampling> originalSampling = metric.getAggregators().get(0).getSampling();
-                        newAggregators.add(
-                                new Aggregator.Builder().
-                                        setName("merge").
-                                        setSampling(originalSampling.isPresent()?
-                                                new Sampling.Builder().
-                                                        setValue(originalSampling.get().getValue()).
-                                                        setUnit(originalSampling.get().getUnit()).
-                                                        setOtherArgs(originalSampling.get().getOtherArgs()).
-                                                        build(): null).build());
-                        newAggregators.addAll(metric.getAggregators());
-                    } else {
-                        newAggregators = metric.getAggregators();
-                    }
-                    newMetrics.add(new Metric.Builder().
-                            setName(metric.getName()).
-                            setGroupBy(metric.getGroupBy()).
-                            setLimit(metric.getLimit().isPresent()? metric.getLimit().get() : null).
-                            setOrder(metric.getOrder().isPresent()? metric.getOrder().get() : null).
-                            setTags(ImmutableMultimap.copyOf(metric.getTags())).
-                            setOtherArgs(metric.getOtherArgs()).
-                            setAggregators(ImmutableList.copyOf(newAggregators)).build());
-                }
-                MetricsQuery newMetricsQuery = new MetricsQuery.Builder().
-                        setMetrics(ImmutableList.copyOf(newMetrics)).
-                        setEndTime(metricsQuery.getEndTime().isPresent()? metricsQuery.getEndTime().get() : null).
-                        setStartTime(metricsQuery.getStartTime().isPresent()? metricsQuery.getStartTime().get() : null).
-                        setOtherArgs(metricsQuery.getOtherArgs()).build();
-
-                return _kairosService.queryMetrics(newMetricsQuery)
+                return _kairosService.queryMetrics(addMergeAggregator(metricsQuery))
                     .<JsonNode>thenApply(_mapper::valueToTree)
                     .thenApply(Results::ok);
             }
@@ -216,6 +185,29 @@ public class KairosDbProxyController extends Controller {
         } catch (final IOException e) {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
+    }
+
+    MetricsQuery addMergeAggregator(final MetricsQuery metricsQuery) {
+        final List<Metric> newMetrics = new ArrayList<>();
+        for (Metric metric : metricsQuery.getMetrics()) {
+            List<Aggregator> newAggregators = new ArrayList<>();
+            if (!metric.getAggregators().isEmpty() && !(metric.getAggregators().get(0).getName()).equals("merge")
+                    && metric.getAggregators().stream().noneMatch(
+                            aggregator -> NONHISTAGGREGATORS.contains(aggregator.getName()))) {
+                final Optional<Sampling> originalSampling = metric.getAggregators().get(0).getSampling();
+                newAggregators.add(ThreadLocalBuilder.build(Aggregator.Builder.class,
+                        b -> b.setName("merge").setSampling(originalSampling.map(
+                                sampling -> ThreadLocalBuilder.clone(sampling, Sampling.Builder.class)).orElse(null))));
+                newAggregators.addAll(metric.getAggregators());
+            } else {
+                newAggregators = metric.getAggregators();
+            }
+            final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
+            newMetrics.add(ThreadLocalBuilder.clone(metric, Metric.Builder.class, b->b.setAggregators(finalNewAggregators)));
+        }
+
+        final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
+        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
     }
 
     /**
@@ -268,7 +260,7 @@ public class KairosDbProxyController extends Controller {
     private final boolean _addMergeAggregator;
     private final KairosDbService _kairosService;
 
-    private static final ImmutableSet<String> nonHistAggregators = ImmutableSet.of("sum","count","avg","max","min");
+    private static final ImmutableSet<String> NONHISTAGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
 

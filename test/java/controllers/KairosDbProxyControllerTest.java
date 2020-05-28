@@ -78,6 +78,7 @@ public class KairosDbProxyControllerTest {
         MockitoAnnotations.initMocks(this);
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
+        when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(true);
         when(_mockMetricsFactory.create()).thenReturn(_mockMetrics);
         when(_mockMetrics.createTimer(any())).thenReturn(_mockTimer);
         when(_mockKairosDbClient.queryMetricNames()).thenReturn(CompletableFuture.completedFuture(
@@ -193,5 +194,45 @@ public class KairosDbProxyControllerTest {
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+    }
+
+    @Test
+    public void testAddMergeAggregator() {
+        final Metric.Builder metric1Builder = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("filter").build()));
+        final Metric.Builder metric2Builder = new Metric.Builder()
+                .setName("metric2")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()));
+        final MetricsQuery.Builder builder = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
+
+        final Http.RequestBuilder request = Helpers.fakeRequest()
+                .method(Helpers.POST)
+                .uri("/api/v1/datapoints/query")
+                .header("Content-Type", "application/json")
+                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
+
+        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
+                        .setQueries(ImmutableList.of()).build())
+        );
+
+        // ***
+        // Test case where one metric doesn't have merge aggregator and is not one of "min,max,avg,count,sum"
+        // ***
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+            final CompletionStage<Result> completionStage = _controller.queryMetrics();
+            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
+        });
+
+        assertEquals(Http.Status.OK, result.status());
+        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+
+        final MetricsQuery newMetricsQuery = _controller.addMergeAggregator(builder.build());
+        assertEquals("merge", newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getName());
+        assertEquals("filter", newMetricsQuery.getMetrics().get(0).getAggregators().get(1).getName());
+        assertEquals("min", newMetricsQuery.getMetrics().get(1).getAggregators().get(0).getName());
     }
 }
