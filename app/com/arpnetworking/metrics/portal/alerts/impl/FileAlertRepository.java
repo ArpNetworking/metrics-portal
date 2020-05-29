@@ -21,6 +21,8 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.StringArgGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -182,7 +184,9 @@ public class FileAlertRepository implements AlertRepository {
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
         for (final SerializedAlert fsAlert : group.getAlerts()) {
-            final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
+
+            final StringArgGenerator uuidGen = Generators.nameBasedGenerator(_organization.getId());
+            final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(uuidGen, fsAlert));
 
             // Version-specific attributes.
             //
@@ -214,12 +218,9 @@ public class FileAlertRepository implements AlertRepository {
         return mapBuilder.build();
     }
 
-    private UUID computeUUID(final SerializedAlert alert) {
-        // TODO(cbriones): UUID v5 rather than v3.
-        //
-        // v3 UUID identifiers use MD5 while v5 uses SHA-1.
+    private UUID computeUUID(final StringArgGenerator uuidGen, final SerializedAlert alert) {
         final String alertContents = alert.getName();
-        return UUID.nameUUIDFromBytes(alertContents.getBytes(Charset.defaultCharset()));
+        return uuidGen.generate(alertContents.getBytes(Charset.defaultCharset()));
     }
 
     private void assertIsOpen() {

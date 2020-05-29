@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
+import models.internal.impl.DefaultOrganization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +55,7 @@ import static org.junit.Assert.fail;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class FileAlertRepositoryTest {
+    private static final UUID ORGANIZATION_ID = UUID.fromString("fb04046e-689a-49a1-9468-e15c44587b4f");
     private static final UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
 
     private Organization _organization;
@@ -62,7 +64,11 @@ public class FileAlertRepositoryTest {
     @Before
     public void setUp() throws URISyntaxException {
         final URL url = ResourceHelper.resourceURL(FileAlertRepositoryTest.class, "Alerts");
-        _organization = TestBeanFactory.createOrganization();
+
+        // Organization is fixed because alerts IDs are namespaced by org.
+        _organization = new DefaultOrganization.Builder()
+                .setId(ORGANIZATION_ID)
+                .build();
         _repository = new FileAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
                 Paths.get(url.toURI()),
@@ -113,7 +119,7 @@ public class FileAlertRepositoryTest {
 
     @Test
     public void testGetAlert() {
-        final UUID uuid = UUID.fromString("1de1fa81-6b32-361c-b949-0fc3c2e558d7");
+        final UUID uuid = UUID.fromString("998ddc83-218b-5d46-9b02-cadc7389ed91");
         final String name = "BarIsTooLow";
         final String description = "You've set the bar too low.";
         final Map<String, Object> expectedMetadata = ImmutableMap.of(
