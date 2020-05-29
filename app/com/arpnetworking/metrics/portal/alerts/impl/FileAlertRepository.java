@@ -107,6 +107,9 @@ public class FileAlertRepository implements AlertRepository {
     @Override
     public Optional<Alert> getAlert(final UUID identifier, final Organization organization) {
         assertIsOpen();
+        if (!_organization.equals(organization)) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(_alerts.get(identifier));
     }
 
@@ -119,6 +122,11 @@ public class FileAlertRepository implements AlertRepository {
     @Override
     public QueryResult<Alert> queryAlerts(final AlertQuery query) {
         assertIsOpen();
+
+        if (!query.getOrganization().equals(_organization)) {
+            return new DefaultQueryResult<>(ImmutableList.of(), 0);
+        }
+
         final Predicate<Alert> containsPredicate =
                 query.getContains()
                         .map(c -> (Predicate<Alert>) a -> a.getDescription().contains(c))
@@ -140,6 +148,9 @@ public class FileAlertRepository implements AlertRepository {
     @Override
     public long getAlertCount(final Organization organization) {
         assertIsOpen();
+        if (!_organization.equals(organization)) {
+            return 0;
+        }
         return _alerts.size();
     }
 

@@ -21,6 +21,7 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
 import models.internal.Organization;
+import models.internal.QueryResult;
 import models.internal.alerts.Alert;
 import org.junit.After;
 import org.junit.Before;
@@ -33,6 +34,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,6 +74,21 @@ public class FileAlertRepositoryTest {
     @After
     public void tearDown() {
         _repository.close();
+    }
+
+    @Test
+    public void testUnknownOrganization() {
+        final Organization org = TestBeanFactory.newOrganization();
+
+        final Optional<Alert> alert = _repository.getAlert(METADATA_ALERT_ID, org);
+        assertThat(alert, equalTo(Optional.empty()));
+
+        final long alertCount = _repository.getAlertCount(org);
+        assertThat(alertCount, equalTo(0L));
+
+        final QueryResult<Alert> queryResult = _repository.createAlertQuery(org).execute();
+        assertThat(queryResult.values(), empty());
+        assertThat(queryResult.total(), equalTo(0L));
     }
 
     @Test
