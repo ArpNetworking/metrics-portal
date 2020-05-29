@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
+import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
@@ -169,15 +170,11 @@ public class FileAlertRepository implements AlertRepository {
         for (final SerializedAlert fsAlert : group.getAlerts()) {
             final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
 
-            // TODO(cbriones):
-            // Unlike an ordinary query, the alert start and end times are dependent
-            // on both the current time and query itself, so it's likely that this
-            // query field needs to be expressed differently.
             final models.internal.MetricsQuery query = new DefaultMetricsQuery.Builder()
                     .setQuery(fsAlert.getQuery())
-                    .setStart(ZonedDateTime.now())
-                    .setEnd(ZonedDateTime.now())
+                    .setFormat(MetricsQueryFormat.KAIROS_DB)
                     .build();
+
             final Alert alert =
                     new DefaultAlert.Builder()
                             .setId(uuid)
