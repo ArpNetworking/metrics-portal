@@ -17,13 +17,12 @@ package models.internal.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import models.internal.MetricsQueryFormat;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
-import java.time.ZonedDateTime;
-
 /**
- * View model for metrics queries.
+ * Internal model for metrics queries.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
@@ -35,24 +34,17 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
     }
 
     @Override
-    public ZonedDateTime getStart() {
-        return _start;
-    }
-
-    @Override
-    public ZonedDateTime getEnd() {
-        return _end;
+    public MetricsQueryFormat getQueryFormat() {
+        return _format;
     }
 
     private DefaultMetricsQuery(final Builder builder) {
         _query = builder._query;
-        _start = builder._start;
-        _end = builder._end;
+        _format = builder._format;
     }
 
     private final String _query;
-    private final ZonedDateTime _start;
-    private final ZonedDateTime _end;
+    private final MetricsQueryFormat _format;
 
     /**
      * Implementation of the builder pattern for {@link DefaultMetricsQuery}.
@@ -77,32 +69,19 @@ public final class DefaultMetricsQuery implements models.internal.MetricsQuery {
         }
 
         /**
-         * Sets the end time. Required. Cannot be null.
-         *
-         * @param value the end time
-         * @return this {@link Builder}
-         */
-        public Builder setEnd(final ZonedDateTime value) {
-            _end = value;
-            return this;
-        }
-
-        /**
-         * Sets the start time. Required. Cannot be null.
+         * Sets the format. Required. Cannot be null.
          *
          * @param value the start time
          * @return this {@link Builder}
          */
-        public Builder setStart(final ZonedDateTime value) {
-            _start = value;
+        public Builder setFormat(final MetricsQueryFormat value) {
+            _format = value;
             return this;
         }
         @NotNull
         @NotEmpty
         private String _query;
         @NotNull
-        private ZonedDateTime _start;
-        @NotNull
-        private ZonedDateTime _end;
+        private MetricsQueryFormat _format;
     }
 }
