@@ -123,7 +123,7 @@ public class FileAlertRepository implements AlertRepository {
         final ImmutableList<Alert> alerts = _alerts.values().stream()
                 .filter(containsPredicate)
                 .skip(query.getOffset().orElse(0))
-                .limit(query.getOffset().orElse(1000))
+                .limit(query.getLimit())
                 .collect(ImmutableList.toImmutableList());
 
         final long total = _alerts.values().stream()

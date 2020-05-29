@@ -26,15 +26,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,6 +42,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.fail;
 
@@ -54,18 +53,12 @@ import static org.junit.Assert.fail;
  */
 public class FileAlertRepositoryTest {
     private static final UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
-    private static final Map<String, Object> EXPECTED_METADATA = ImmutableMap.of(
-            "externalFieldA", "A",
-            "externalFieldB", ImmutableMap.of(
-                    "externalFieldC", "C"
-            )
-    );
 
     private Organization _organization;
     private FileAlertRepository _repository;
 
     @Before
-    public void setUp() throws IOException, URISyntaxException {
+    public void setUp() throws URISyntaxException {
         final URL url = ResourceHelper.resourceURL(FileAlertRepositoryTest.class, "Alerts");
         _organization = TestBeanFactory.createOrganization();
         _repository = new FileAlertRepository(
@@ -82,14 +75,8 @@ public class FileAlertRepositoryTest {
     }
 
     @Test
-    public void testInvalidPathOnOpen() {
-        final Path path;
-        try {
-            path = Paths.get("valid_but_nonexistent");
-        } catch (final InvalidPathException e) {
-            fail("Test path should be valid");
-            return; // Needed to convince the compiler path is initialized.
-        }
+    public void testInvalidPathOnOpen() throws Exception {
+        final Path path = Paths.get("valid_but_nonexistent");
 
         final FileAlertRepository badRepository = new FileAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
@@ -112,6 +99,12 @@ public class FileAlertRepositoryTest {
         final UUID uuid = UUID.fromString("1de1fa81-6b32-361c-b949-0fc3c2e558d7");
         final String name = "BarIsTooLow";
         final String description = "You've set the bar too low.";
+        final Map<String, Object> expectedMetadata = ImmutableMap.of(
+                "externalFieldA", "A",
+                "externalFieldB", ImmutableMap.of(
+                        "externalFieldC", "C"
+                )
+        );
 
         // Get an alert with a UUID computed at read-time
         final Alert alert = _repository.getAlert(uuid, _organization).get();
@@ -125,21 +118,52 @@ public class FileAlertRepositoryTest {
         // Get an alert with a UUID
         final Alert metadataAlert = _repository.getAlert(METADATA_ALERT_ID, _organization).get();
         assertThat(metadataAlert.getId(), equalTo(METADATA_ALERT_ID));
-        assertThat(metadataAlert.getAdditionalMetadata(), equalTo(EXPECTED_METADATA));
+        assertThat(metadataAlert.getAdditionalMetadata(), equalTo(expectedMetadata));
     }
 
     @Test
-    public void testQueryAlerts() {
-        final List<? extends Alert> allAlerts = _repository.createAlertQuery(_organization).execute().values();
-        assertThat(allAlerts, not(empty()));
-
+    public void testQueryAlertsContains() {
         final List<? extends Alert> alertsMatching =
                 _repository.createAlertQuery(_organization)
-                        .contains(Optional.of("quick brown fox"))
+                        .contains("quick brown fox")
                         .execute()
                         .values();
         assertThat(alertsMatching, hasSize(1));
         assertThat(alertsMatching.get(0).getDescription(), equalTo("The quick brown fox jumps over the lazy dog."));
+    }
+
+    @Test
+    public void testQueryAlertsPaginate() {
+        final int alertCount = 6;
+        final int pageSize = 2;
+        final int expectedPageCount = alertCount / pageSize;
+
+        final List<? extends Alert> allAlerts = _repository.createAlertQuery(_organization).execute().values();
+        assertThat(allAlerts, not(empty()));
+
+        final List<Alert> paginatedAlerts = new ArrayList<>();
+        for (int pageNo = 0; pageNo < expectedPageCount; pageNo++) {
+            final int offset = pageNo * pageSize;
+
+            final List<? extends Alert> alerts =
+                    _repository.createAlertQuery(_organization)
+                            .offset(offset)
+                            .limit(pageSize)
+                            .execute()
+                            .values();
+
+            assertThat(alerts, hasSize(pageSize));
+            paginatedAlerts.addAll(alerts);
+        }
+
+        final List<? extends Alert> emptyPage =
+                _repository.createAlertQuery(_organization)
+                        .offset(expectedPageCount * pageSize)
+                        .execute()
+                        .values();
+        assertThat(emptyPage, empty());
+
+        assertThat(paginatedAlerts, containsInAnyOrder(allAlerts.toArray()));
     }
 
     @Test
