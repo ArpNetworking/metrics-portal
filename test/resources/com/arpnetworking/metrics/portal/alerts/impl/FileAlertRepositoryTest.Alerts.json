@@ -5,32 +5,136 @@
       "name" : "FooIsTooHigh",
       "description" : "Foo is too high.",
       "enabled" : true,
-      "query" : "TODO foo query"
+      "query" : {
+        "metrics": [
+          {
+            "tags": {
+              "host": ["host1"]
+            },
+            "name": "foo",
+            "limit": 10000,
+            "aggregators": [
+              {
+                "name": "sum",
+                "sampling": {
+                  "value": 1,
+                  "unit": "minutes"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "LT",
+                "threshold" : 10000.0
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name" : "BarIsTooLow",
       "description" : "You've set the bar too low.",
       "enabled" : true,
-      "query" : "TODO bar query"
+      "query" : {
+        "metrics": [
+          {
+            "name": "bar",
+            "aggregators": [
+              {
+                "name": "sum",
+                "sampling": {
+                  "value": 1,
+                  "unit": "minutes"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "GTE",
+                "threshold" : 0.0
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name" : "Qux",
       "description" : "The quick brown fox jumps over the lazy dog.",
       "enabled" : true,
-      "query" : "TODO qux query"
+      "query" : {
+        "metrics": [
+          {
+            "name": "qux",
+            "aggregators": [
+              {
+                "name": "count",
+                "sampling": {
+                  "value": 1,
+                  "unit": "hours"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "GTE",
+                "threshold" : 0.0
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "name" : "Disabled",
       "description" : "This alert is disabled.",
       "enabled" : false,
-      "query" : "TODO qux query"
+      "query" : {
+        "metrics": [
+          {
+            "name": "qux",
+            "aggregators": [
+              {
+                "name": "count",
+                "sampling": {
+                  "value": 1,
+                  "unit": "hours"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "GTE",
+                "threshold" : 0.0
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "uuid" : "4e957d3d-ccc7-4d4a-bb25-9305cc8c7e60",
       "name" : "AlertWithUUID",
       "description" : "This alert already has a uuid defined.",
       "enabled" : true,
-      "query" : "TODO qux query"
+      "query" : {
+        "metrics": [
+          {
+            "name": "qux",
+            "aggregators": [
+              {
+                "name": "count",
+                "sampling": {
+                  "value": 1,
+                  "unit": "hours"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "GTE",
+                "threshold" : 0.0
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "uuid" : "0eca730a-5f9a-49db-8711-29a49cac98ff",
@@ -43,7 +147,27 @@
           "externalFieldC" : "C"
         }
       },
-      "query" : "TODO qux query"
+      "query" : {
+        "metrics": [
+          {
+            "name": "qux",
+            "aggregators": [
+              {
+                "name": "count",
+                "sampling": {
+                  "value": 1,
+                  "unit": "hours"
+                }
+              },
+              {
+                "name": "filter",
+                "filter_op": "GTE",
+                "threshold" : 0.0
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

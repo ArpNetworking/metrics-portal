@@ -19,12 +19,14 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
+import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -43,7 +45,6 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,11 +55,13 @@ import java.util.function.Predicate;
 /**
  * An alert repository that loads definitions from the filesystem.
  *
+ * @author Christian Briones (cbriones at dropbox dot com).
  * @apiNote
  * This repository is read-only, so any additions, deletions, or updates will
  * result in an {@link UnsupportedOperationException}.
- *
- * @author Christian Briones (cbriones at dropbox dot com).
+ * @implNote
+ * This repository is currently tied to the organization given at construction, returning
+ * an empty result for any other organization passed in.
  */
 public class FileAlertRepository implements AlertRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileAlertRepository.class);
@@ -170,10 +173,20 @@ public class FileAlertRepository implements AlertRepository {
         for (final SerializedAlert fsAlert : group.getAlerts()) {
             final UUID uuid = fsAlert.getUUID().orElseGet(() -> computeUUID(fsAlert));
 
-            final models.internal.MetricsQuery query = new DefaultMetricsQuery.Builder()
-                    .setQuery(fsAlert.getQuery())
-                    .setFormat(MetricsQueryFormat.KAIROS_DB)
-                    .build();
+            // Version-specific attributes.
+            //
+            // Version 0
+            //    query - Queries are KairosDB JSON requests.
+
+            final MetricsQuery query;
+            if (group.getVersion() == 0) {
+                query = new DefaultMetricsQuery.Builder()
+                        .setQuery(fsAlert.getQuery().toString())
+                        .setFormat(MetricsQueryFormat.KAIROS_DB)
+                        .build();
+            } else {
+                throw new IllegalArgumentException(String.format("Unhandled alert version %d", group.getVersion()));
+            }
 
             final Alert alert =
                     new DefaultAlert.Builder()
@@ -260,7 +273,7 @@ public class FileAlertRepository implements AlertRepository {
     private static final class SerializedAlert {
         private final String _name;
         private final String _description;
-        private final String _query;
+        private final JsonNode _query;
         private final boolean _enabled;
         private final ImmutableMap<String, Object> _additionalMetadata;
         private final Optional<UUID> _uuid;
@@ -290,7 +303,7 @@ public class FileAlertRepository implements AlertRepository {
             return _description;
         }
 
-        public String getQuery() {
+        public JsonNode getQuery() {
             return _query;
         }
 
@@ -316,7 +329,7 @@ public class FileAlertRepository implements AlertRepository {
 
             @NotNull
             @NotEmpty
-            private String _query;
+            private JsonNode _query;
 
             @NotNull
             @Nullable
@@ -329,8 +342,7 @@ public class FileAlertRepository implements AlertRepository {
             }
 
             /**
-             * Sets the uuid. If not present, one will be computed using
-             * the contents of the alert.
+             * Sets the uuid. If not present, one will be computed using the contents of the alert.
              *
              * @param uuid the uuid.
              * @return This instance of {@code Builder} for chaining.
@@ -368,7 +380,7 @@ public class FileAlertRepository implements AlertRepository {
              * @param query the query.
              * @return This instance of {@code Builder} for chaining.
              */
-            public Builder setQuery(final String query) {
+            public Builder setQuery(final JsonNode query) {
                 _query = query;
                 return this;
             }
