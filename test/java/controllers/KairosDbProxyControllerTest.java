@@ -42,7 +42,6 @@ import play.mvc.Result;
 import play.test.Helpers;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -211,12 +210,9 @@ public class KairosDbProxyControllerTest {
         final Metric.Builder metric2Builder = new Metric.Builder()
                 .setName("metric2")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()));
-        final Metric.Builder metric3Builder = new Metric.Builder()
-                .setName("metric3")
-                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("dev").build()));
         final MetricsQuery.Builder builder = new MetricsQuery.Builder()
                 .setStartTime(Instant.now())
-                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build(), metric3Builder.build()));
+                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
         final Http.RequestBuilder request = Helpers.fakeRequest()
                 .method(Helpers.POST)
@@ -247,8 +243,5 @@ public class KairosDbProxyControllerTest {
         assertEquals(newMetricsQuery.getMetrics().get(0).getAggregators().get(2).getSampling(),
                 newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getSampling());
         assertEquals("min", newMetricsQuery.getMetrics().get(1).getAggregators().get(0).getName());
-        assertEquals("merge", newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getName());
-        assertEquals("dev", newMetricsQuery.getMetrics().get(2).getAggregators().get(1).getName());
-        assertEquals(Optional.empty(), newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getSampling());
     }
 }

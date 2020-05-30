@@ -187,14 +187,13 @@ public class KairosDbProxyController extends Controller {
     /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
         final List<Metric> newMetrics = new ArrayList<>();
         for (final Metric metric : metricsQuery.getMetrics()) {
-            @Nullable final List<Aggregator> newAggregators;
             if (needMergeAggregator(metric.getAggregators())) {
-                newAggregators = new ArrayList<>();
+                final List<Aggregator> newAggregators = new ArrayList<>();
                 final Optional<Aggregator> aggregatorWithSampling = metric.getAggregators().stream().filter(
                         aggregator -> aggregator.getSampling().isPresent()).findFirst();
-                newAggregators.add(aggregatorWithSampling.isPresent()
-                        ? ThreadLocalBuilder.clone(aggregatorWithSampling.get(), Aggregator.Builder.class, b->b.setName("merge"))
-                        : ThreadLocalBuilder.build(Aggregator.Builder.class, b->b.setName("merge")));
+                newAggregators.add(aggregatorWithSampling.map(
+                        aggregator -> ThreadLocalBuilder.clone(aggregator, Aggregator.Builder.class, b -> b.setName("merge"))).
+                        orElseGet(() -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> b.setName("merge"))));
                 newAggregators.addAll(metric.getAggregators());
                 final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
                 newMetrics.add(ThreadLocalBuilder.clone(
