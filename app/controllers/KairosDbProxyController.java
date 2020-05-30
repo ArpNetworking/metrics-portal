@@ -21,7 +21,6 @@ import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
-import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.service.KairosDbService;
@@ -188,14 +187,14 @@ public class KairosDbProxyController extends Controller {
     /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
         final List<Metric> newMetrics = new ArrayList<>();
         for (final Metric metric : metricsQuery.getMetrics()) {
-            @Nullable List<Aggregator> newAggregators;
+            @Nullable final List<Aggregator> newAggregators;
             if (needMergeAggregator(metric.getAggregators())) {
                 newAggregators = new ArrayList<>();
                 final Optional<Aggregator> aggregatorWithSampling = metric.getAggregators().stream().filter(
                         aggregator -> aggregator.getSampling().isPresent()).findFirst();
-                newAggregators.add(aggregatorWithSampling.isPresent()?
-                        ThreadLocalBuilder.clone(aggregatorWithSampling.get(), Aggregator.Builder.class, b->b.setName("merge")):
-                        ThreadLocalBuilder.build(Aggregator.Builder.class, b->b.setName("merge")));
+                newAggregators.add(aggregatorWithSampling.isPresent()
+                        ? ThreadLocalBuilder.clone(aggregatorWithSampling.get(), Aggregator.Builder.class, b->b.setName("merge"))
+                        : ThreadLocalBuilder.build(Aggregator.Builder.class, b->b.setName("merge")));
                 newAggregators.addAll(metric.getAggregators());
                 final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
                 newMetrics.add(ThreadLocalBuilder.clone(
@@ -212,7 +211,7 @@ public class KairosDbProxyController extends Controller {
     private Boolean needMergeAggregator(final ImmutableList<Aggregator> aggregators) {
         return !aggregators.isEmpty()
                 && !(aggregators.get(0).getName().equals("merge"))
-                && aggregators.stream().noneMatch(aggregator -> NON_HISTOGRAM_AGGREGATORS.contains(aggregator.getName()));
+                && aggregators.stream().anyMatch(aggregator -> !NON_HISTOGRAM_AGGREGATORS.contains(aggregator.getName()));
     }
 
     /**
