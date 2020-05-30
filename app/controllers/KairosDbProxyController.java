@@ -166,7 +166,7 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryMetrics() {
         try {
-            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
             if (_requireAggregators
                     && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().isEmpty())) {
                 return CompletableFuture.completedFuture(
@@ -174,9 +174,7 @@ public class KairosDbProxyController extends Controller {
             }
 
             if (_addMergeAggregator) {
-                return _kairosService.queryMetrics(addMergeAggregator(metricsQuery))
-                    .<JsonNode>thenApply(_mapper::valueToTree)
-                    .thenApply(Results::ok);
+                metricsQuery = checkAndAddMergeAggregator(metricsQuery);
             }
 
             return _kairosService.queryMetrics(metricsQuery)
@@ -187,27 +185,34 @@ public class KairosDbProxyController extends Controller {
         }
     }
 
-    MetricsQuery addMergeAggregator(final MetricsQuery metricsQuery) {
+    /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
         final List<Metric> newMetrics = new ArrayList<>();
-        for (Metric metric : metricsQuery.getMetrics()) {
-            List<Aggregator> newAggregators = new ArrayList<>();
-            if (!metric.getAggregators().isEmpty() && !(metric.getAggregators().get(0).getName()).equals("merge")
-                    && metric.getAggregators().stream().noneMatch(
-                            aggregator -> NONHISTAGGREGATORS.contains(aggregator.getName()))) {
-                final Optional<Sampling> originalSampling = metric.getAggregators().get(0).getSampling();
-                newAggregators.add(ThreadLocalBuilder.build(Aggregator.Builder.class,
-                        b -> b.setName("merge").setSampling(originalSampling.map(
-                                sampling -> ThreadLocalBuilder.clone(sampling, Sampling.Builder.class)).orElse(null))));
+        for (final Metric metric : metricsQuery.getMetrics()) {
+            @Nullable List<Aggregator> newAggregators;
+            if (needMergeAggregator(metric.getAggregators())) {
+                newAggregators = new ArrayList<>();
+                final Optional<Aggregator> aggregatorWithSampling = metric.getAggregators().stream().filter(
+                        aggregator -> aggregator.getSampling().isPresent()).findFirst();
+                newAggregators.add(aggregatorWithSampling.isPresent()?
+                        ThreadLocalBuilder.clone(aggregatorWithSampling.get(), Aggregator.Builder.class, b->b.setName("merge")):
+                        ThreadLocalBuilder.build(Aggregator.Builder.class, b->b.setName("merge")));
                 newAggregators.addAll(metric.getAggregators());
+                final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
+                newMetrics.add(ThreadLocalBuilder.clone(
+                        metric, Metric.Builder.class, b->b.setAggregators(finalNewAggregators)));
             } else {
-                newAggregators = metric.getAggregators();
+                newMetrics.add(metric);
             }
-            final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
-            newMetrics.add(ThreadLocalBuilder.clone(metric, Metric.Builder.class, b->b.setAggregators(finalNewAggregators)));
         }
 
         final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
         return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
+    }
+
+    private Boolean needMergeAggregator(final ImmutableList<Aggregator> aggregators) {
+        return !aggregators.isEmpty()
+                && !(aggregators.get(0).getName().equals("merge"))
+                && aggregators.stream().noneMatch(aggregator -> NON_HISTOGRAM_AGGREGATORS.contains(aggregator.getName()));
     }
 
     /**
@@ -260,7 +265,7 @@ public class KairosDbProxyController extends Controller {
     private final boolean _addMergeAggregator;
     private final KairosDbService _kairosService;
 
-    private static final ImmutableSet<String> NONHISTAGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
+    private static final ImmutableSet<String> NON_HISTOGRAM_AGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
 

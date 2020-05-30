@@ -21,6 +21,8 @@ import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -200,7 +202,10 @@ public class KairosDbProxyControllerTest {
     public void testAddMergeAggregator() {
         final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
-                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("filter").build()));
+                .setAggregators(ImmutableList.of(
+                        new Aggregator.Builder().setName("filter").build(),
+                        new Aggregator.Builder().setName("max").setSampling(
+                                new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).build()));
         final Metric.Builder metric2Builder = new Metric.Builder()
                 .setName("metric2")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()));
@@ -230,9 +235,53 @@ public class KairosDbProxyControllerTest {
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
 
-        final MetricsQuery newMetricsQuery = _controller.addMergeAggregator(builder.build());
+        final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(builder.build());
         assertEquals("merge", newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getName());
         assertEquals("filter", newMetricsQuery.getMetrics().get(0).getAggregators().get(1).getName());
+        assertEquals("max", newMetricsQuery.getMetrics().get(0).getAggregators().get(2).getName());
+        assertEquals(newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getSampling(),
+                newMetricsQuery.getMetrics().get(0).getAggregators().get(2).getSampling());
         assertEquals("min", newMetricsQuery.getMetrics().get(1).getAggregators().get(0).getName());
+    }
+
+    @Test
+    public void testAddMergeAggregatorOff() {
+        when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(false);
+
+        final Metric.Builder metric1Builder = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()));
+        final Metric.Builder metric2Builder = new Metric.Builder()
+                .setName("metric2")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("filter").build()));
+        final MetricsQuery.Builder builder = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
+
+        final Http.RequestBuilder request = Helpers.fakeRequest()
+                .method(Helpers.POST)
+                .uri("/api/v1/datapoints/query")
+                .header("Content-Type", "application/json")
+                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
+
+        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
+                        .setQueries(ImmutableList.of()).build())
+        );
+
+        // ***
+        // Test case where one metric doesn't have merge aggregator and is not one of "min,max,avg,count,sum"
+        // ***
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+            final CompletionStage<Result> completionStage = _controller.queryMetrics();
+            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
+        });
+
+        assertEquals(Http.Status.OK, result.status());
+        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+
+        final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(builder.build());
+        assertEquals("min", newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getName());
+        assertEquals("filter", newMetricsQuery.getMetrics().get(1).getAggregators().get(0).getName());
     }
 }
