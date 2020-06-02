@@ -17,19 +17,16 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
@@ -94,11 +91,11 @@ public final class PeriodicScheduleTest {
 
         // typical progression, from lastRun=null to lastRun>runUntil
         assertEquals(
-                Optional.of(Instant.parse("2019-01-02T12:00:00Z")),
+                Optional.of(Instant.parse("2019-01-01T12:00:00Z")),
                 schedule.nextRun(Optional.empty()));
         assertEquals(
-                Optional.of(Instant.parse("2019-01-03T12:00:00Z")),
-                schedule.nextRun(Optional.of(Instant.parse("2019-01-02T12:00:00Z"))));
+                Optional.of(Instant.parse("2019-01-02T12:00:00Z")),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-01T12:00:00Z"))));
         assertEquals(
                 Optional.empty(),
                 schedule.nextRun(Optional.of(Instant.parse("2019-01-03T12:00:00Z"))));

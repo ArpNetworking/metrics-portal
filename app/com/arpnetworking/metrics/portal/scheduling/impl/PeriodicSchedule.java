@@ -52,19 +52,13 @@ public final class PeriodicSchedule extends BaseSchedule {
 
     @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
-        final ZonedDateTime nextAlignedBoundary;
+        final Instant lastRunInstant = lastRun.orElseGet(this::getRunAtAndAfter);
+
+        ZonedDateTime nextAlignedBoundary = ZonedDateTime.ofInstant(lastRunInstant, _zone).truncatedTo(_period);
         if (lastRun.isPresent()) {
-            final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone);
-            nextAlignedBoundary = _period.addTo(zonedLastRun.truncatedTo(_period), _periodCount);
-        } else {
-            final ZonedDateTime zonedRunAt = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone);
-            final ZonedDateTime alignedRunAt = zonedRunAt.truncatedTo(_period);
-            if (alignedRunAt.toInstant().isBefore(getRunAtAndAfter())) {
-                nextAlignedBoundary = _period.addTo(alignedRunAt, _periodCount);
-            } else {
-                nextAlignedBoundary = alignedRunAt;
-            }
+            nextAlignedBoundary = nextAlignedBoundary.plus(_periodCount, _period);
         }
+
         return Optional.of(nextAlignedBoundary.plus(_offset).toInstant());
     }
 
