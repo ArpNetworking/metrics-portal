@@ -38,12 +38,14 @@ import java.util.Optional;
 public final class PeriodicSchedule extends BaseSchedule {
 
     private final ChronoUnit _period;
+    private final long _periodCount;
     private final ZoneId _zone;
     private final Duration _offset;
 
     private PeriodicSchedule(final Builder builder) {
         super(builder);
         _period = builder._period;
+        _periodCount = builder._periodCount;
         _zone = builder._zone;
         _offset = builder._offset;
     }
@@ -53,12 +55,12 @@ public final class PeriodicSchedule extends BaseSchedule {
         final ZonedDateTime nextAlignedBoundary;
         if (lastRun.isPresent()) {
             final ZonedDateTime zonedLastRun = ZonedDateTime.ofInstant(lastRun.get(), _zone);
-            nextAlignedBoundary = _period.addTo(zonedLastRun.truncatedTo(_period), 1);
+            nextAlignedBoundary = _period.addTo(zonedLastRun.truncatedTo(_period), _periodCount);
         } else {
             final ZonedDateTime zonedRunAt = ZonedDateTime.ofInstant(getRunAtAndAfter(), _zone);
             final ZonedDateTime alignedRunAt = zonedRunAt.truncatedTo(_period);
             if (alignedRunAt.toInstant().isBefore(getRunAtAndAfter())) {
-                nextAlignedBoundary = _period.addTo(alignedRunAt, 1);
+                nextAlignedBoundary = _period.addTo(alignedRunAt, _periodCount);
             } else {
                 nextAlignedBoundary = alignedRunAt;
             }
@@ -73,6 +75,10 @@ public final class PeriodicSchedule extends BaseSchedule {
 
     public ChronoUnit getPeriod() {
         return _period;
+    }
+
+    public long getPeriodCount() {
+        return _periodCount;
     }
 
     public ZoneId getZone() {
@@ -96,19 +102,21 @@ public final class PeriodicSchedule extends BaseSchedule {
         }
         final PeriodicSchedule that = (PeriodicSchedule) o;
         return Objects.equals(getPeriod(), that.getPeriod())
+                && Objects.equals(getPeriodCount(), that.getPeriodCount())
                 && Objects.equals(getZone(), that.getZone())
                 && Objects.equals(getOffset(), that.getOffset());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), getPeriod(), getZone(), getOffset());
+        return Objects.hash(super.hashCode(), getPeriod(), getPeriodCount(), getZone(), getOffset());
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("period", _period)
+                .add("periodCount", _periodCount)
                 .add("offset", _offset)
                 .add("zone", _zone)
                 .add("start", getRunAtAndAfter())
@@ -122,6 +130,7 @@ public final class PeriodicSchedule extends BaseSchedule {
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
     public static final class Builder extends BaseSchedule.Builder<Builder, PeriodicSchedule> {
+        private long _periodCount = 1;
         @NotNull
         private ChronoUnit _period;
         @NotNull
@@ -154,6 +163,17 @@ public final class PeriodicSchedule extends BaseSchedule {
         }
 
         /**
+         * The number of periods with which the schedule fires. Defaults to 1.
+         *
+         * @param periodCount The period count.
+         * @return This instance of Builder.
+         */
+        public Builder setPeriodCount(final long periodCount) {
+            _periodCount = periodCount;
+            return this;
+        }
+
+        /**
          * The time zone the times should be computed in. Required. Cannot be null.
          *
          * @param zone The time zone.
@@ -166,6 +186,9 @@ public final class PeriodicSchedule extends BaseSchedule {
 
         /**
          * The offset from the period start when the schedule should fire. Defaults to zero. Cannot be null.
+         *
+         * The offset must be strictly smaller than a single period.
+         *
          * (e.g. {@code Duration.ofHours(2)} to run 2h after the start of the day, if period=DAY.
          *
          * @param offset The offset.
