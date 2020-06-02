@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -24,9 +25,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * Tests for {@link PeriodicSchedule}.
@@ -87,11 +91,11 @@ public final class PeriodicScheduleTest {
 
         // typical progression, from lastRun=null to lastRun>runUntil
         assertEquals(
-                Optional.of(Instant.parse("2019-01-02T12:00:00Z")),
+                Optional.of(Instant.parse("2019-01-01T12:00:00Z")),
                 schedule.nextRun(Optional.empty()));
         assertEquals(
-                Optional.of(Instant.parse("2019-01-03T12:00:00Z")),
-                schedule.nextRun(Optional.of(Instant.parse("2019-01-02T12:00:00Z"))));
+                Optional.of(Instant.parse("2019-01-02T12:00:00Z")),
+                schedule.nextRun(Optional.of(Instant.parse("2019-01-01T12:00:00Z"))));
         assertEquals(
                 Optional.empty(),
                 schedule.nextRun(Optional.of(Instant.parse("2019-01-03T12:00:00Z"))));
@@ -270,4 +274,101 @@ public final class PeriodicScheduleTest {
         assertEquals(Optional.of(ZonedDateTime.parse("2019-01-01T12:00:00+12:34").toInstant()), schedule.nextRun(Optional.empty()));
     }
 
+    @Test
+    public void testScheduleWithMultiplePeriods() {
+        final Schedule everyThirtyMinutes = new PeriodicSchedule.Builder()
+                .setZone(ZoneId.of("+12:34"))
+                .setPeriod(ChronoUnit.MINUTES)
+                .setPeriodCount(30)
+                .setRunAtAndAfter(ZonedDateTime.parse("2019-01-01T00:00:00+12:34").toInstant())
+                .setRunUntil(ZonedDateTime.parse("2019-01-01T02:45:00+12:34").toInstant())
+                .setOffset(Duration.ofSeconds(17))
+                .build();
+
+        final List<ZonedDateTime> expectedRuns = ImmutableList.of(
+            ZonedDateTime.parse("2019-01-01T00:00:17+12:34"),
+            ZonedDateTime.parse("2019-01-01T00:30:17+12:34"),
+            ZonedDateTime.parse("2019-01-01T01:00:17+12:34"),
+            ZonedDateTime.parse("2019-01-01T01:30:17+12:34"),
+            ZonedDateTime.parse("2019-01-01T02:00:17+12:34"),
+            ZonedDateTime.parse("2019-01-01T02:30:17+12:34")
+        );
+        Optional<Instant> prevRun = Optional.empty();
+        for (final ZonedDateTime run : expectedRuns) {
+            final Optional<Instant> currentRun = Optional.of(run.toInstant());
+            assertThat(everyThirtyMinutes.nextRun(prevRun), equalTo(currentRun));
+            prevRun = currentRun;
+        }
+        assertThat(Optional.empty(), equalTo(everyThirtyMinutes.nextRun(prevRun)));
+    }
+
+    @Test
+    public void testEveryThirtyMinutesRunAcrossRepeatedHour() {
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+
+        final List<ZonedDateTime> expectedRuns = ImmutableList.of(
+            // 1 am local time
+            ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone),
+            ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 30, 0), zone),
+            // 1 am local time (repeated)
+            ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 0, 0), zone).withLaterOffsetAtOverlap(),
+            ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 1, 30, 0), zone).withLaterOffsetAtOverlap(),
+            // 2 am local time
+            ZonedDateTime.of(LocalDateTime.of(2018, 11, 4, 2, 0, 0), zone)
+        );
+
+        for (int i = 0; i < expectedRuns.size() - 1; i++) {
+            // Sanity check that the expectedRuns list is consistent.
+            final long gap = ChronoUnit.MINUTES.between(expectedRuns.get(i), expectedRuns.get(i + 1));
+            assertThat(gap, equalTo(30L));
+        }
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.MINUTES)
+                .setPeriodCount(30)
+                .setRunAtAndAfter(expectedRuns.get(0).toInstant())
+                .build();
+
+        Optional<Instant> prevRun = Optional.empty();
+        for (final ZonedDateTime run : expectedRuns) {
+            final Optional<Instant> currentRun = Optional.of(run.toInstant());
+            assertThat(schedule.nextRun(prevRun), equalTo(currentRun));
+            prevRun = currentRun;
+        }
+    }
+
+    @Test
+    public void testEveryThirtyMinutesRunAcrossNonexistentHour() {
+        final ZoneId zone = ZoneId.of("America/Los_Angeles");
+
+        final List<ZonedDateTime> expectedRuns = ImmutableList.of(
+                // 1 am local time
+                ZonedDateTime.of(LocalDateTime.of(2020, 3, 8, 1, 0, 0), zone),
+                ZonedDateTime.of(LocalDateTime.of(2020, 3, 8, 1, 30, 0), zone),
+                // skipped 2 am
+                ZonedDateTime.of(LocalDateTime.of(2020, 3, 8, 3, 0, 0), zone),
+                ZonedDateTime.of(LocalDateTime.of(2020, 3, 8, 3, 30, 0), zone)
+        );
+
+        for (int i = 0; i < expectedRuns.size() - 1; i++) {
+            // Sanity check that the expectedRuns list is consistent.
+            final long gap = ChronoUnit.MINUTES.between(expectedRuns.get(i), expectedRuns.get(i + 1));
+            assertThat(gap, equalTo(30L));
+        }
+
+        final Schedule schedule = new PeriodicSchedule.Builder()
+                .setZone(zone)
+                .setPeriod(ChronoUnit.MINUTES)
+                .setPeriodCount(30)
+                .setRunAtAndAfter(expectedRuns.get(0).toInstant())
+                .build();
+
+        Optional<Instant> prevRun = Optional.empty();
+        for (final ZonedDateTime run : expectedRuns) {
+            final Optional<Instant> currentRun = Optional.of(run.toInstant());
+            assertThat(schedule.nextRun(prevRun), equalTo(currentRun));
+            prevRun = currentRun;
+        }
+    }
 }
