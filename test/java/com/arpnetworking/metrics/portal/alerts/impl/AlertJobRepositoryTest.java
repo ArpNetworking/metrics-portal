@@ -24,7 +24,6 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.common.collect.ImmutableList;
 import models.internal.AlertQuery;
-import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
@@ -41,6 +40,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -79,18 +79,20 @@ public class AlertJobRepositoryTest {
                 .setQuery(
                         new DefaultMetricsQuery.Builder()
                                 .setQuery("Query TBD")
-                                .setFormat(MetricsQueryFormat.KAIROS_DB)
+                                .setStart(ZonedDateTime.now())
+                                .setEnd(ZonedDateTime.now())
                                 .build()
                 )
                 .build();
 
+        // Create a mock AlertRepository that contains a single alert.
         MockitoAnnotations.initMocks(this);
+        Mockito.when(_alertRepository.getAlert(_id, _organization))
+                .thenReturn(Optional.of(_alert));
+
         final Schedule schedule = NeverSchedule.getInstance();
         _context = new AlertExecutionContext(schedule);
         _jobRepository = new AlertJobRepository(_alertRepository, _context);
-
-        Mockito.when(_alertRepository.getAlert(_id, _organization))
-                .thenReturn(Optional.of(_alert));
     }
 
     @Test
@@ -113,6 +115,8 @@ public class AlertJobRepositoryTest {
         final int offset = 7;
         final int limit = 100;
 
+        // mock AlertRepository such that for the above query params it returns
+        // a page with a single alert.
         final ArgumentCaptor<AlertQuery> captor = ArgumentCaptor.forClass(AlertQuery.class);
         Mockito.when(_alertRepository.createAlertQuery(eq(_organization))).thenReturn(new DefaultAlertQuery(
                 _alertRepository,

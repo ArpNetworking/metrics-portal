@@ -30,7 +30,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A wrapper around {@code Alert} instances to allow for scheduling and evaluation of Alert queries.
+ * A wrapper around {@code Alert} instances to allow for scheduling and evaluation
+ * of Alert queries.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */

@@ -31,7 +31,10 @@ import javax.inject.Inject;
  *
  * This essentially encapsulates the dependencies and functionality necessary to
  * allow {@link Alert} instances to implement the {@link Job} interface.
+ * <p>
+ * {@code AlertJob} acts as a binding between Alert instances and this class.
  *
+ * @see AlertJob
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class AlertExecutionContext {
