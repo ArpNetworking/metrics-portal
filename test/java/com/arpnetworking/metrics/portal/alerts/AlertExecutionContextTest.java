@@ -44,7 +44,7 @@ public class AlertExecutionContextTest {
     private Schedule _schedule;
 
     @Before
-    public void setup() {
+    public void setUp() {
         final Organization organization = TestBeanFactory.createOrganization();
         final UUID id = UUID.randomUUID();
         _schedule = NeverSchedule.getInstance();
