@@ -200,16 +200,13 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void testAddMergeAggregator() {
+    public void testAddMergeAggregatorOn() {
         final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
-                .setAggregators(ImmutableList.of(
-                        new Aggregator.Builder().setName("filter").build(),
-                        new Aggregator.Builder().setName("max").setSampling(
-                                new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).build()));
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count").build()));
         final Metric.Builder metric2Builder = new Metric.Builder()
                 .setName("metric2")
-                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()));
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("filter").build()));
         final MetricsQuery.Builder builder = new MetricsQuery.Builder()
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
@@ -220,14 +217,16 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
 
-        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
+        when(_mockKairosDbClient.queryMetrics(
+                builder.setMetrics(ImmutableList.of(metric1Builder.build(),
+                        metric2Builder.setAggregators(ImmutableList.of(
+                                new Aggregator.Builder().setName("merge").build(),
+                                new Aggregator.Builder().setName("filter").build())).build())).build())
+        ).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
 
-        // ***
-        // Test case where one metric doesn't have merge aggregator and is not one of "min,max,avg,count,sum"
-        // ***
         final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
             final CompletionStage<Result> completionStage = _controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
@@ -235,8 +234,73 @@ public class KairosDbProxyControllerTest {
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+    }
 
-        final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(builder.build());
+    @Test
+    public void testAddMergeAggregatorff() {
+        when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(false);
+
+        final KairosDbProxyController controller = new KairosDbProxyController(
+                _mockConfig,
+                _mockWSClient,
+                _mockKairosDbClient,
+                OBJECT_MAPPER,
+                _mockMetricsFactory,
+                _mockMetricsqueryConfig
+        );
+
+        final Metric metric1 = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count").build()))
+                .build();
+        final Metric metric2 = new Metric.Builder()
+                .setName("metric2")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("filter").build()))
+                .build();
+        final MetricsQuery metricsQuery = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1, metric2))
+                .build();
+
+        final Http.RequestBuilder request = Helpers.fakeRequest()
+                .method(Helpers.POST)
+                .uri("/api/v1/datapoints/query")
+                .header("Content-Type", "application/json")
+                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
+
+        when(_mockKairosDbClient.queryMetrics(metricsQuery)).thenReturn(
+                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
+                        .setQueries(ImmutableList.of()).build())
+        );
+
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+            final CompletionStage<Result> completionStage = controller.queryMetrics();
+            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
+        });
+
+        assertEquals(Http.Status.OK, result.status());
+        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+    }
+
+    @Test
+    public void TestCheckAndAddMergeAggregator() {
+        final Metric metric1 = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(
+                        new Aggregator.Builder().setName("filter").build(),
+                        new Aggregator.Builder().setName("max").setSampling(
+                                new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).build()))
+                .build();
+        final Metric metric2 = new Metric.Builder()
+                .setName("metric2")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()))
+                .build();
+        final MetricsQuery metricsQuery = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1, metric2))
+                .build();
+
+        final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(metricsQuery);
         assertEquals("merge", newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getName());
         assertEquals("filter", newMetricsQuery.getMetrics().get(0).getAggregators().get(1).getName());
         assertEquals("max", newMetricsQuery.getMetrics().get(0).getAggregators().get(2).getName());
