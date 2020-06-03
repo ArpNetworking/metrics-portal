@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.alerts.impl;
+package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.alerts.AlertExecutionContext;
-import com.arpnetworking.metrics.portal.alerts.AlertJob;
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJob;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
@@ -44,7 +44,7 @@ import javax.inject.Inject;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertJobRepository implements JobRepository<AlertEvaluationResult> {
+public final class AlertJobRepository implements JobRepository<AlertEvaluationResult> {
     private final AlertRepository _repo;
     private final AlertExecutionContext _context;
 

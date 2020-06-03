@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.alerts;
+package com.arpnetworking.metrics.portal.alerts.scheduling;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import models.internal.alerts.Alert;

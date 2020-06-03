@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.alerts;
+package com.arpnetworking.metrics.portal.alerts.scheduling;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.inject.Injector;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertJob implements Job<AlertEvaluationResult> {
+/* package private */ final class AlertJob implements Job<AlertEvaluationResult> {
     private final Alert _alert;
     private final AlertExecutionContext _context;
 
@@ -44,7 +44,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
      * @param alert The alert that this job will evaluate.
      * @param context The execution context.
      */
-    public AlertJob(final Alert alert, final AlertExecutionContext context) {
+    /* package private */ AlertJob(final Alert alert, final AlertExecutionContext context) {
         _alert = alert;
         _context = context;
     }
