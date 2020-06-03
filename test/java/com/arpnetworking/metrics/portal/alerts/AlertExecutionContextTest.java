@@ -39,7 +39,7 @@ import static org.junit.Assert.assertThat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class AlertExecutionContextTest {
-    private AlertExecutionContext context;
+    private AlertExecutionContext _context;
     private Alert _alert;
     private Schedule _schedule;
 
@@ -61,11 +61,11 @@ public class AlertExecutionContextTest {
                                 .build()
                 )
                 .build();
-        context = new AlertExecutionContext(_schedule);
+        _context = new AlertExecutionContext(_schedule);
     }
 
     @Test
     public void testReturnsTheConfiguredSchedule() {
-        assertThat(context.getSchedule(_alert), equalTo(_schedule));
+        assertThat(_context.getSchedule(_alert), equalTo(_schedule));
     }
 }

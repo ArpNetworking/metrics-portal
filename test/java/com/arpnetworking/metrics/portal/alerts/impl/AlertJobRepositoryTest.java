@@ -17,8 +17,8 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
@@ -51,6 +51,11 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
+/**
+ * Unit tests for {@link AlertJobRepository}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 public class AlertJobRepositoryTest {
     @Mock
     private AlertRepository _alertRepository;
@@ -72,10 +77,10 @@ public class AlertJobRepositoryTest {
                 .setName("TestAlert")
                 .setDescription("Used in a test.")
                 .setQuery(
-                    new DefaultMetricsQuery.Builder()
-                        .setQuery("Query TBD")
-                        .setFormat(MetricsQueryFormat.KAIROS_DB)
-                        .build()
+                        new DefaultMetricsQuery.Builder()
+                                .setQuery("Query TBD")
+                                .setFormat(MetricsQueryFormat.KAIROS_DB)
+                                .build()
                 )
                 .build();
 
@@ -109,8 +114,11 @@ public class AlertJobRepositoryTest {
         final int limit = 100;
 
         final ArgumentCaptor<AlertQuery> captor = ArgumentCaptor.forClass(AlertQuery.class);
-        Mockito.when(_alertRepository.createAlertQuery(eq(_organization))).thenReturn(new DefaultAlertQuery(_alertRepository, _organization));
-        Mockito.when(_alertRepository.queryAlerts(any())).thenReturn(new DefaultQueryResult<>(ImmutableList.of(_alert), alertTotal));
+        Mockito.when(_alertRepository.createAlertQuery(eq(_organization))).thenReturn(new DefaultAlertQuery(
+                _alertRepository,
+                _organization));
+        Mockito.when(_alertRepository.queryAlerts(any())).thenReturn(new DefaultQueryResult<>(ImmutableList.of(_alert),
+                alertTotal));
 
         final QueryResult<Job<AlertEvaluationResult>> wrappedResults = _jobRepository
                 .createJobQuery(_organization)

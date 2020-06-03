@@ -16,8 +16,6 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
-import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJob;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
@@ -37,7 +35,7 @@ import javax.inject.Inject;
 
 /**
  * A {@code JobRepository} for alert evaluation jobs.
- *
+ * <p>
  * This class is meant to act as an adapter, wrapping an {@link AlertRepository}
  * and allowing for the construction of {@link AlertJob}s from alert instances
  * defined in that repository.
