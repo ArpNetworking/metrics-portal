@@ -16,100 +16,64 @@
 
 package com.arpnetworking.metrics.portal.alerts;
 
-import com.arpnetworking.kairos.client.models.DataPoint;
-import com.arpnetworking.kairos.client.models.MetricsQuery;
-import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
-import models.internal.impl.DefaultAlertEvaluationResult;
+import models.internal.scheduling.Job;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
  * Utility class for scheduling and evaluating alerts.
  *
+ * This essentially encapsulates the dependencies and functionality necessary to
+ * allow {@link Alert} instances to implement the {@link Job} interface.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertExecutionContext {
-    private final KairosDbService _kairosDbService;
-    private final ObjectMapper _objectMapper;
-    private final Duration _executionInterval;
+public final class AlertExecutionContext {
+    private final Schedule _defaultSchedule;
 
+    /**
+     * Default constructor.
+     *
+     * @param defaultSchedule The default alert execution schedule.
+     */
     @Inject
     public AlertExecutionContext(
-            final KairosDbService service,
-            final ObjectMapper objectMapper,
-            final Duration executionInterval
+            final Schedule defaultSchedule
     ) {
-        _kairosDbService = service;
-        _objectMapper = objectMapper;
-        _executionInterval = executionInterval;
+        _defaultSchedule = defaultSchedule;
     }
 
+    /**
+     * Evaluate an alert that was scheduled for the given instant.
+     *
+     * @param alert The alert to evaluate.
+     * @param scheduled The scheduled evaluation time.
+     * @return A completion stage containing {@code AlertEvaluationResult}.
+     */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
-        final MetricsQuery kdbQuery;
-        try {
-            kdbQuery = _objectMapper.readValue(
-                    alert.getQuery().getQuery(),
-                    MetricsQuery.class
-            );
-        } catch (final JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-        return _kairosDbService.queryMetrics(kdbQuery)
-                .thenApply(res -> {
-                    if (res.getQueries().size() != 1) {
-                        throw new RuntimeException("Unexpected number of queries in response.");
-                    }
-                    final ImmutableList<MetricsQueryResponse.QueryResult> results = res.getQueries().get(0).getResults();
-                    final ImmutableList<Map<String, String>> firingTags = results.stream()
-                            .flatMap(queryResult -> {
-                                final List<DataPoint> values = queryResult.getValues();
-                                if (!values.isEmpty()) {
-                                    return queryResult.getGroupBy().stream()
-                                            .filter(queryGroupBy -> queryGroupBy instanceof MetricsQueryResponse.QueryTagGroupBy)
-                                            .map(queryGroupBy -> (MetricsQueryResponse.QueryTagGroupBy) queryGroupBy)
-                                            .map(MetricsQueryResponse.QueryTagGroupBy::getGroup);
-                                }
-                                return Stream.empty();
-                            }).collect(ImmutableList.toImmutableList());
-                    return new DefaultAlertEvaluationResult.Builder()
-                            .setFiringTags(firingTags)
-                            .build();
-                });
+        final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
+        future.completeExceptionally(new UnsupportedOperationException("Alert execution is not implemented"));
+        return future;
     }
 
     /**
      * Get an evaluation schedule for this alert.
-     *
+     * <p>
      * This will attempt to find the largest possible schedule that will still
-     * guarantee alert evalation will not fall behind.
-     *
-     * If this is not possible, then a minimally
+     * guarantee alert evaluation will not fall behind.
+     * <p>
+     * If this is not possible, then a default execution interval will be used.
      *
      * @param alert The alert.
      * @return a schedule
      */
     public Schedule getSchedule(final Alert alert) {
-        return new PeriodicSchedule.Builder()
-                .setRunAtAndAfter(Instant.MIN)
-                .setOffset(Duration.ofSeconds(0))
-                .setPeriod(ChronoUnit.MINUTES)
-                .setZone(ZoneOffset.UTC)
-                .build();
+        return _defaultSchedule;
     }
 }

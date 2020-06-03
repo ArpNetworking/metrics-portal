@@ -46,9 +46,6 @@ import javax.inject.Inject;
  */
 public class AlertJobRepository implements JobRepository<AlertEvaluationResult> {
     private final AlertRepository _repo;
-    // We have access to AlertExecutionContext since we'd like to colocate
-    // the logic for determining scheduling as well as the actual query
-    // evaluation.
     private final AlertExecutionContext _context;
 
     /**
@@ -81,7 +78,7 @@ public class AlertJobRepository implements JobRepository<AlertEvaluationResult> 
             final UUID id, final Organization organization
     ) {
         return _repo.getAlert(id, organization)
-                .map(a -> new AlertJob(a, _context.getSchedule(a)));
+                .map(a -> new AlertJob(a, _context));
     }
 
     @Override
@@ -97,7 +94,7 @@ public class AlertJobRepository implements JobRepository<AlertEvaluationResult> 
                 .execute();
         final List<Job<AlertEvaluationResult>> values = queryResult.values()
                 .stream()
-                .map(a -> new AlertJob(a, _context.getSchedule(a)))
+                .map(a -> new AlertJob(a, _context))
                 .collect(ImmutableList.toImmutableList());
         return new DefaultQueryResult<>(values, queryResult.total());
     }

@@ -37,6 +37,7 @@ import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
+import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -48,6 +49,7 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
+import com.arpnetworking.metrics.portal.alerts.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -66,6 +68,8 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
@@ -106,6 +110,8 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -196,7 +202,8 @@ public class MainModule extends AbstractModule {
                 .toProvider(RollupManagerPoolProvider.class)
                 .asEagerSingleton();
 
-        // Reporting
+        // Job Execution
+        bind(AlertExecutionContext.class).asEagerSingleton();
         bind(ReportExecutionContext.class).asEagerSingleton();
 
         // Rollups
@@ -205,6 +212,19 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+    }
+
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private AlertExecutionContext provideAlertExecutionContext(final Config config) {
+        final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
+        final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
+                .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
+                .setPeriodCount(interval.length())
+                .setZone(ZoneOffset.UTC)
+                .setRunAtAndAfter(Instant.MIN)
+                .build();
+        return new AlertExecutionContext(defaultAlertSchedule);
     }
 
     @Singleton

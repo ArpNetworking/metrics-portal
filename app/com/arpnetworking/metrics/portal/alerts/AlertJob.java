@@ -36,17 +36,17 @@ import java.util.concurrent.CompletionStage;
  */
 public class AlertJob implements Job<AlertEvaluationResult> {
     private final Alert _alert;
-    private final Schedule _schedule;
+    private final AlertExecutionContext _context;
 
     /**
      * Create a job from an alert.
      *
      * @param alert The alert that this job will evaluate.
-     * @param schedule The schedule for this job.
+     * @param context The execution context.
      */
-    public AlertJob(final Alert alert, final Schedule schedule) {
+    public AlertJob(final Alert alert, final AlertExecutionContext context) {
         _alert = alert;
-        _schedule = schedule;
+        _context = context;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public Schedule getSchedule() {
-        return _schedule;
+        return _context.getSchedule(_alert);
     }
 
     @Override
@@ -71,7 +71,6 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public CompletionStage<? extends AlertEvaluationResult> execute(final Injector injector, final Instant scheduled) {
-        return injector.getInstance(AlertExecutionContext.class).execute(_alert, scheduled);
+        return _context.execute(_alert, scheduled);
     }
-
 }
