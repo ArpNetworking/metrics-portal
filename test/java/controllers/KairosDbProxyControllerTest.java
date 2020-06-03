@@ -237,7 +237,7 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void testAddMergeAggregatorff() {
+    public void testAddMergeAggregatorOff() {
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(false);
 
         final KairosDbProxyController controller = new KairosDbProxyController(
@@ -283,7 +283,7 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void TestCheckAndAddMergeAggregator() {
+    public void testCheckAndAddMergeAggregator() {
         final Metric metric1 = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(
