@@ -32,7 +32,7 @@ public interface AlertQuery {
      * @param contains The text to match.
      * @return This instance of {@link AlertQuery}.
      */
-    AlertQuery contains(Optional<String> contains);
+    AlertQuery contains(String contains);
 
     /**
      * The maximum number of alerts to return.  Optional. Default is 1000.
@@ -48,7 +48,7 @@ public interface AlertQuery {
      * @param offset The offset into the result set.
      * @return This instance of {@link AlertQuery}.
      */
-    AlertQuery offset(Optional<Integer> offset);
+    AlertQuery offset(int offset);
 
     /**
      * Execute the query and return the results.
