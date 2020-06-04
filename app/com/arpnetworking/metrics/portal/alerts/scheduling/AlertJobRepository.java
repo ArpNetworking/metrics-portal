@@ -87,7 +87,7 @@ public final class AlertJobRepository implements JobRepository<AlertEvaluationRe
     @Override
     public QueryResult<Job<AlertEvaluationResult>> queryJobs(final JobQuery<AlertEvaluationResult> query) {
         final QueryResult<Alert> queryResult = _repo.createAlertQuery(query.getOrganization())
-                .offset(Optional.of(query.getOffset().orElse(0)))
+                .offset(query.getOffset().orElse(0))
                 .limit(query.getLimit())
                 .execute();
         final List<Job<AlertEvaluationResult>> values = queryResult.values()
