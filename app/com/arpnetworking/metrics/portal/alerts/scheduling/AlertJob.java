@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.alerts;
+package com.arpnetworking.metrics.portal.alerts.scheduling;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.inject.Injector;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
@@ -28,24 +27,27 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * A wrapper around {@code Alert} instances to allow for scheduling and evaluation of Alert queries.
+ * A wrapper around {@code Alert} instances to allow for scheduling and evaluation
+ * of Alert queries.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertJob implements Job<AlertEvaluationResult> {
+/* package private */ final class AlertJob implements Job<AlertEvaluationResult> {
     private final Alert _alert;
+    private final AlertExecutionContext _context;
 
     /**
      * Create a job from an alert.
      *
      * @param alert The alert that this job will evaluate.
+     * @param context The execution context.
      */
-    public AlertJob(final Alert alert) {
-        this._alert = alert;
+    /* package private */ AlertJob(final Alert alert, final AlertExecutionContext context) {
+        _alert = alert;
+        _context = context;
     }
 
     @Override
@@ -60,9 +62,7 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public Schedule getSchedule() {
-        // TODO(cbriones): If the alert is enabled, this should return an interval corresponding to the smallest query period
-        // in that alert's query.
-        return NeverSchedule.getInstance();
+        return _context.getSchedule(_alert);
     }
 
     @Override
@@ -72,9 +72,6 @@ public class AlertJob implements Job<AlertEvaluationResult> {
 
     @Override
     public CompletionStage<? extends AlertEvaluationResult> execute(final Injector injector, final Instant scheduled) {
-        final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
-        future.completeExceptionally(new UnsupportedOperationException("Alert execution is not implemented"));
-        return future;
+        return _context.execute(_alert, scheduled);
     }
-
 }
