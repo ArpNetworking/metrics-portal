@@ -20,6 +20,8 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.CallableSql;
@@ -27,27 +29,50 @@ import io.ebean.EbeanServer;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import javax.persistence.PersistenceException;
 
 /**
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
+public final class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
     /* package private */ static final Object TICK = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutionPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
+
     private final int _lookahead;
+    private final String _schema;
+    private final String _table;
+
+    private Optional<Instant> _lastRun;
+    private Schedule _schedule;
 
     private AlertExecutionPartitionCreator(
             final EbeanServer ebeanServer,
             final PeriodicMetrics periodicMetrics,
+            final String schema,
+            final String table,
+            final Duration scheduleOffset,
             final int lookahead
     ) {
         _ebeanServer = ebeanServer;
         _periodicMetrics = periodicMetrics;
         _lookahead = lookahead;
+        _schedule = new PeriodicSchedule.Builder()
+                .setOffset(scheduleOffset)
+                .setPeriod(ChronoUnit.DAYS)
+                .setRunAtAndAfter(Instant.MIN)
+                .setZone(ZoneOffset.UTC)
+                .build();
+        _lastRun = Optional.empty();
+        _schema = schema;
+        _table = table;
     }
 
     /**
@@ -55,15 +80,28 @@ public class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
      *
      * @param ebeanServer the ebean server
      * @param periodicMetrics metrics instance to use
+     * @param schema The database schema name
+     * @param table The parent table name
+     * @param scheduleOffset Execution offset from midnight
      * @param lookahead maximum number of partitions to create in advance
      * @return A new Props.
      */
     public static Props props(
             final EbeanServer ebeanServer,
             final PeriodicMetrics periodicMetrics,
+            final String schema,
+            final String table,
+            final Duration scheduleOffset,
             final int lookahead
     ) {
-        return Props.create(AlertExecutionPartitionCreator.class, ebeanServer, periodicMetrics, lookahead);
+        return Props.create(
+            AlertExecutionPartitionCreator.class,
+            ebeanServer,
+            periodicMetrics,
+            schema,
+            table,
+            scheduleOffset,
+            lookahead);
     }
 
     @Override
@@ -76,24 +114,58 @@ public class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
+
+        execute();
+
         getSelf().tell(TICK, getSelf());
         getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
     }
 
     private void recordCounter(final String metricName, final long value) {
-        _periodicMetrics.recordCounter("alerts/executions/partition_manager/" + metricName, value);
+        final String fullMetric = String.format("executions/partition_manager/%s/%s", _table, metricName);
+        _periodicMetrics.recordCounter(fullMetric, value);
     }
 
     private void tick() {
         recordCounter("tick", 1);
 
-        // TODO(cbriones): Only create the partitions if they don't already exist.
-        // TODO(cbriones): Perhaps this should be configurable by table and lookahead.
-        // TODO(cbriones): Only bind when the repository is bound.
-        final CallableSql sql = _ebeanServer.createCallableSql("{ call create_daily_partition(?, ?, ?) }");
-        sql.bind(0, "portal.alert_executions");
-        sql.bind(0, Instant.now());
-        sql.bind(1, Instant.now().plus(_lookahead, ChronoUnit.DAYS));
-        _ebeanServer.execute(sql);
+        if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(Instant.now())).orElse(true)) {
+            execute();
+        }
+    }
+
+    private void execute() {
+        CallableSql sql = _ebeanServer.createCallableSql("{ call create_daily_partition(?, ?, ?, ?) }");
+
+        final LocalDate startDate = ZonedDateTime.now().toLocalDate();
+        final LocalDate endDate = startDate.plusDays(_lookahead);
+
+        sql = sql.bind(0, _schema)
+                .bind(1, _table)
+                .bind(2, startDate)
+                .bind(3, endDate);
+
+        LOGGER.info().setMessage("Creating daily partitions for table")
+                .addData("schema", _schema)
+                .addData("table", _table)
+                .addData("startDate", startDate)
+                .addData("endDate", endDate)
+                .log();
+
+        boolean success = false;
+        try {
+            _ebeanServer.execute(sql);
+            success = true;
+            _lastRun = Optional.of(Instant.now());
+        } catch (final PersistenceException e) {
+            LOGGER.error().setMessage("Failed to create daily partitions for table")
+                    .addData("schema", _schema)
+                    .addData("table", _table)
+                    .addData("startDate", startDate)
+                    .addData("endDate", endDate)
+                    .setThrowable(e)
+                    .log();
+        }
+        recordCounter("create", success ? 1 : 0);
     }
 }

@@ -93,7 +93,6 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
-import io.ebean.EbeanServerFactory;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
@@ -196,6 +195,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupManagerPool"))
                 .toProvider(RollupManagerPoolProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("AlertExecutionPartitionCreator"))
+                .toProvider(AlertExecutionPartitionCreatorProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -867,6 +870,9 @@ public class MainModule extends AbstractModule {
             return _system.actorOf(AlertExecutionPartitionCreator.props(
                     _ebeanServer,
                     _periodicMetrics,
+                    "portal",
+                    "alert_executions",
+                    java.time.Duration.ZERO,
                     maxLookAhead
             ));
         }
