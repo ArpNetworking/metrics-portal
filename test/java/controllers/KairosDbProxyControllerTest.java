@@ -176,27 +176,7 @@ public class KairosDbProxyControllerTest {
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
-        final Http.RequestBuilder request = Helpers.fakeRequest()
-                .method(Helpers.POST)
-                .uri("/api/v1/datapoints/query")
-                .header("Content-Type", "application/json")
-                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
-
-        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
-                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
-                        .setQueries(ImmutableList.of()).build())
-        );
-
-        // ***
-        // Test case where one metric doesn't have an aggregator and requiredAggregators is disabled
-        // ***
-        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
-
-        assertEquals(Http.Status.OK, result.status());
-        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+        mockQueryMetrics(controller, builder.build(), any());
     }
 
     @Test
@@ -211,29 +191,10 @@ public class KairosDbProxyControllerTest {
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
-        final Http.RequestBuilder request = Helpers.fakeRequest()
-                .method(Helpers.POST)
-                .uri("/api/v1/datapoints/query")
-                .header("Content-Type", "application/json")
-                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
-
-        when(_mockKairosDbClient.queryMetrics(
-                builder.setMetrics(ImmutableList.of(metric1Builder.build(),
+        mockQueryMetrics(_controller, builder.build(), builder.setMetrics(ImmutableList.of(metric1Builder.build(),
                         metric2Builder.setAggregators(ImmutableList.of(
                                 new Aggregator.Builder().setName("merge").build(),
-                                new Aggregator.Builder().setName("filter").build())).build())).build())
-        ).thenReturn(
-                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
-                        .setQueries(ImmutableList.of()).build())
-        );
-
-        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
-
-        assertEquals(Http.Status.OK, result.status());
-        assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+                                new Aggregator.Builder().setName("filter").build())).build())).build());
     }
 
     @Test
@@ -262,19 +223,24 @@ public class KairosDbProxyControllerTest {
                 .setMetrics(ImmutableList.of(metric1, metric2))
                 .build();
 
-        final Http.RequestBuilder request = Helpers.fakeRequest()
-                .method(Helpers.POST)
+        mockQueryMetrics(controller, metricsQuery, metricsQuery);
+    }
+
+    private void mockQueryMetrics(final KairosDbProxyController controller, final MetricsQuery metricsQuery,
+                                  final MetricsQuery newMetricsQuery) {
+        final Http.RequestBuilder request = play.test.Helpers.fakeRequest()
+                .method(play.test.Helpers.POST)
                 .uri("/api/v1/datapoints/query")
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
 
-        when(_mockKairosDbClient.queryMetrics(metricsQuery)).thenReturn(
+        when(_mockKairosDbClient.queryMetrics(newMetricsQuery)).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
 
         final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = controller.queryMetrics();
+            final CompletionStage<play.mvc.Result> completionStage = controller.queryMetrics();
             return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
         });
 
