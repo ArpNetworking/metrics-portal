@@ -35,27 +35,30 @@ CREATE TABLE portal.alert_executions (
 --    Table - Text - The name of the parent table.
 --    Start - Date - The beginning date of the time range, inclusive.
 --    End   - Date - The end date of the time range, exclusive.
-CREATE OR REPLACE FUNCTION create_daily_partition( TEXT, DATE, DATE )
-returns INTEGER AS $$
+CREATE OR REPLACE FUNCTION create_daily_partition(schema TEXT, tablename TEXT, start_date DATE, end_date DATE)
+returns void AS $$
 DECLARE
-    create_query text;
-    created INTEGER := 0;
-    tables_created INTEGER := 0;
+    partition_table text;
+    day DATE;
 BEGIN
-    FOR create_query IN (SELECT
-        'CREATE TABLE IF NOT EXISTS ' || $1 || '_' || TO_CHAR(d, 'YYYY_MM_DD') ||
-        ' PARTITION OF ' || $1 || E' FOR VALUES FROM (\'' || d::date || E'\') TO (\'' || d::date + 1 || E'\');'
-        FROM generate_series($2, $3, '1 day') as d)
+    FOR day IN (SELECT d FROM generate_series(start_date, end_date, '1 day') AS d)
     LOOP
-        EXECUTE create_query INTO created;
-        IF (created > 0) THEN
-            tables_created := tables_created + 1;
-        END IF;
+        partition_table := tablename || '_' || TO_CHAR(day, 'YYYY_MM_DD');
+        EXECUTE format(
+            $query$
+                CREATE TABLE IF NOT EXISTS %I.%I PARTITION OF %I.%I FOR VALUES FROM (%L) TO (%L);
+            $query$,
+            schema,
+            partition_table,
+            schema,
+            tablename,
+            day,
+            day + 1
+        );
     END LOOP;
-    RETURN tables_created;
 END;
 $$
 language plpgsql;
 
 -- Create an initial partition.
-SELECT create_daily_partition('portal.alert_executions', CURRENT_DATE, CURRENT_DATE + 1);
+SELECT create_daily_partition('portal', 'alert_executions', CURRENT_DATE, CURRENT_DATE + 1);
