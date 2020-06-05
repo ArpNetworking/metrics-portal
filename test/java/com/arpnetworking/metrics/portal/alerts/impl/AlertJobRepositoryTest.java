@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.common.collect.ImmutableList;
 import models.internal.AlertQuery;
+import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
@@ -40,7 +41,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -78,9 +78,8 @@ public class AlertJobRepositoryTest {
                 .setDescription("Used in a test.")
                 .setQuery(
                         new DefaultMetricsQuery.Builder()
-                                .setQuery("Query TBD")
-                                .setStart(ZonedDateTime.now())
-                                .setEnd(ZonedDateTime.now())
+                                .setQuery("This query is invalid but never evaluated")
+                                .setFormat(MetricsQueryFormat.KAIROS_DB)
                                 .build()
                 )
                 .build();

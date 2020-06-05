@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
 import models.internal.impl.DefaultAlert;
@@ -27,7 +28,6 @@ import models.internal.impl.DefaultMetricsQuery;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -55,11 +55,10 @@ public class AlertExecutionContextTest {
                 .setName("TestAlert")
                 .setDescription("Used in a test.")
                 .setQuery(
-                        new DefaultMetricsQuery.Builder()
-                                .setQuery("Query TBD")
-                                .setStart(ZonedDateTime.now())
-                                .setEnd(ZonedDateTime.now())
-                                .build()
+                    new DefaultMetricsQuery.Builder()
+                            .setQuery("This query is invalid but never evaluated")
+                            .setFormat(MetricsQueryFormat.KAIROS_DB)
+                            .build()
                 )
                 .build();
         _context = new AlertExecutionContext(_schedule);
