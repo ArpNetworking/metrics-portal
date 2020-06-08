@@ -41,6 +41,7 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     private final RollupPeriod _period;
     private final Instant _startTime;
     private final ImmutableMap<String, String> _filterTags;
+    // TagName -> Set[TagValue]
     private final ImmutableMultimap<String, String> _allMetricTags;
 
     private RollupDefinition(final Builder builder) {
