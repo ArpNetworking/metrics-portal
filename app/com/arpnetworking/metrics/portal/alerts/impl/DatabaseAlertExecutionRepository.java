@@ -28,12 +28,10 @@ import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -100,11 +98,6 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
-        try {
-            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
-        } catch (final ExecutionException | InterruptedException e) {
-            throw new RuntimeException("Failed to create initial partitions", e);
-        }
         _isOpen.set(true);
     }
 
