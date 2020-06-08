@@ -16,7 +16,13 @@
 
 package com.arpnetworking.metrics.portal.integration.repositories;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.metrics.impl.NoOpMetrics;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
@@ -26,7 +32,9 @@ import io.ebean.EbeanServer;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
+import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.UUID;
 
 /**
@@ -35,18 +43,35 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
+    private ActorSystem _system;
+    private TestKit _probe;
+
     @Override
     public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+
+        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
+        // references are not constrained in the underlying execution table.
 
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
 
-        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
-        // references are not constrained in the underlying execution table.
+        _system = ActorSystem.create();
+        _probe = new TestKit(_system);
+        final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
-        return new DatabaseAlertExecutionRepository(server);
+        final ActorRef ref = _system.actorOf(
+                AlertExecutionPartitionCreator.props(
+                        server,
+                        metricsMock,
+                        "portal",
+                        "alert_executions",
+                        Duration.ZERO,
+                        1
+                )
+        );
+        return new DatabaseAlertExecutionRepository(server, ref);
     }
 
     @Override

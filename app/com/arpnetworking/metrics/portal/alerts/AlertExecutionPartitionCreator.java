@@ -17,8 +17,10 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
+import akka.pattern.Patterns;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
@@ -34,6 +36,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import javax.persistence.PersistenceException;
 
 /**
@@ -41,6 +45,8 @@ import javax.persistence.PersistenceException;
  */
 public final class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
     /* package private */ static final Object TICK = new Object();
+    /* package private */ static final Object EXECUTE = new Object();
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutionPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private final EbeanServer _ebeanServer;
@@ -51,7 +57,7 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
     private final String _table;
 
     private Optional<Instant> _lastRun;
-    private Schedule _schedule;
+    private final Schedule _schedule;
 
     private AlertExecutionPartitionCreator(
             final EbeanServer ebeanServer,
@@ -95,19 +101,40 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
             final int lookahead
     ) {
         return Props.create(
-            AlertExecutionPartitionCreator.class,
-            ebeanServer,
-            periodicMetrics,
-            schema,
-            table,
-            scheduleOffset,
-            lookahead);
+                AlertExecutionPartitionCreator.class,
+                ebeanServer,
+                periodicMetrics,
+                schema,
+                table,
+                scheduleOffset,
+                lookahead);
+    }
+
+    /**
+     * Ask the actor referenced by {@code ref} to execute synchronously.
+     *
+     * @param ref an {@code AlertExecutionPartitionCreator}.
+     * @param timeout timeout for the operation
+     * @throws ExecutionException if an exception was thrown during execution.
+     * @throws InterruptedException if the actor does not reply within the allotted timeout, or if
+     * the thread was interrupted for other reasons.
+     */
+    public static boolean execute(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
+        return Patterns.ask(
+                ref,
+                EXECUTE,
+                timeout
+        )
+        .thenApply(o -> (Boolean) o)
+        .toCompletableFuture()
+        .get();
     }
 
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
                 .matchEquals(TICK, msg -> tick())
+                .matchEquals(EXECUTE, msg -> execute(getSender()))
                 .build();
     }
 
@@ -115,9 +142,6 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
     public void preStart() throws Exception {
         super.preStart();
 
-        execute();
-
-        getSelf().tell(TICK, getSelf());
         getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
     }
 
@@ -130,20 +154,20 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
         recordCounter("tick", 1);
 
         if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(Instant.now())).orElse(true)) {
-            execute();
+            getSelf().tell(EXECUTE, getSelf());
         }
     }
 
-    private void execute() {
+    private void execute(final ActorRef sender) {
         CallableSql sql = _ebeanServer.createCallableSql("{ call create_daily_partition(?, ?, ?, ?) }");
 
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
-        sql = sql.bind(0, _schema)
-                .bind(1, _table)
-                .bind(2, startDate)
-                .bind(3, endDate);
+        sql = sql.bind(1, _schema)
+                .bind(2, _table)
+                .bind(3, startDate)
+                .bind(4, endDate);
 
         LOGGER.info().setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
@@ -167,5 +191,8 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
                     .log();
         }
         recordCounter("create", success ? 1 : 0);
+
+        sender.tell(success, getSelf());
     }
+
 }

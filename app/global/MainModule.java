@@ -511,7 +511,8 @@ public class MainModule extends AbstractModule {
                 final Injector injector,
                 final Environment environment,
                 final Config configuration,
-                final ApplicationLifecycle lifecycle) {
+                final ApplicationLifecycle lifecycle
+        ) {
             _injector = injector;
             _environment = environment;
             _configuration = configuration;
