@@ -40,7 +40,16 @@ public final class RollupDefinition implements Serializable, ConsistentHashingRo
     private final String _destinationMetricName;
     private final RollupPeriod _period;
     private final Instant _startTime;
+    // Matcher describing the set of tag combinations that this RollupDefinition will execute.
+    //
+    // e.g. if there are two tags "foo" and "bar", then setting this to {"foo":"some_value"} will rollups for all series
+    // with the foo=some_value tag, no matter the value of the "bar" tag.
+    //
+    // TagName -> TagValue
     private final ImmutableMap<String, String> _filterTags;
+    // Describes all tag combinations that might be incorporated into the tree of rollups that this RollupDefinition is
+    // part of.
+    //
     // TagName -> Set[TagValue]
     private final ImmutableMultimap<String, String> _allMetricTags;
 
