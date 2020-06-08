@@ -16,7 +16,6 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
@@ -58,12 +57,12 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      * Public constructor.
      *
      * @param ebeanServer Play's {@code EbeanServer} for this repository.
-     * @param partitionManager A reference to an {@link AlertExecutionPartitionCreator}.
+     * @param partitionManager A reference to an {@link DailyPartitionCreator}.
      */
     @Inject
     public DatabaseAlertExecutionRepository(
             @Named("metrics_portal") final EbeanServer ebeanServer,
-            @Named("AlertExecutionPartitionCreator") final ActorRef partitionManager
+            final ActorRef partitionManager
     ) {
         _ebeanServer = ebeanServer;
         _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
@@ -102,7 +101,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
         try {
-            AlertExecutionPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
+            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
         } catch (final ExecutionException | InterruptedException e) {
             throw new RuntimeException("Failed to create initial partitions", e);
         }

@@ -19,10 +19,9 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.arpnetworking.metrics.impl.NoOpMetrics;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
+import com.arpnetworking.metrics.portal.alerts.impl.DailyPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
@@ -62,7 +61,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
         final ActorRef ref = _system.actorOf(
-                AlertExecutionPartitionCreator.props(
+                DailyPartitionCreator.props(
                         server,
                         metricsMock,
                         "portal",

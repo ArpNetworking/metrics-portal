@@ -49,9 +49,10 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
-import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.DailyPartitionCreator;
+import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -108,6 +109,7 @@ import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
@@ -204,10 +206,6 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupManagerPool"))
                 .toProvider(RollupManagerPoolProvider.class)
-                .asEagerSingleton();
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("AlertExecutionPartitionCreator"))
-                .toProvider(AlertExecutionPartitionCreatorProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -429,6 +427,29 @@ public class MainModule extends AbstractModule {
                 FileSystems.getDefault().getPath(path),
                 UUID.fromString(uuid)
         );
+    }
+
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private DatabaseAlertExecutionRepository provideDatabaseAlertExecutionRepository(
+            final Config config,
+            final PeriodicMetrics periodicMetrics,
+            final ActorSystem actorSystem,
+            @Named("metrics_portal") final EbeanServer server
+    ) {
+        final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
+
+        final int maxLookAhead = partitionConfig.getInt("lookahead");
+        final Duration offset = ConfigurationHelper.getFiniteDuration(partitionConfig, "offset");
+        final ActorRef actorRef = actorSystem.actorOf(DailyPartitionCreator.props(
+                server,
+                periodicMetrics,
+                "portal",
+                "alert_executions",
+                java.time.Duration.ofSeconds(offset.toSeconds()),
+                maxLookAhead
+        ));
+        return new DatabaseAlertExecutionRepository(server, actorRef);
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
@@ -903,39 +924,6 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
         private final Config _configuration;
         private final boolean _enabled;
-    }
-
-    private static final class AlertExecutionPartitionCreatorProvider implements Provider<ActorRef> {
-        @Inject
-        AlertExecutionPartitionCreatorProvider(
-                final ActorSystem system,
-                @Named("metrics_portal") final EbeanServer ebeanServer,
-                final PeriodicMetrics periodicMetrics,
-                final Config configuration
-        ) {
-            _system = system;
-            _ebeanServer = ebeanServer;
-            _periodicMetrics = periodicMetrics;
-            _configuration = configuration;
-        }
-
-        @Override
-        public ActorRef get() {
-            final int maxLookAhead = _configuration.getInt("alerts.execution_partitions.create");
-            return _system.actorOf(AlertExecutionPartitionCreator.props(
-                    _ebeanServer,
-                    _periodicMetrics,
-                    "portal",
-                    "alert_executions",
-                    java.time.Duration.ZERO,
-                    maxLookAhead
-            ));
-        }
-
-        private final ActorSystem _system;
-        private final PeriodicMetrics _periodicMetrics;
-        private final EbeanServer _ebeanServer;
-        private final Config _configuration;
     }
 
     private static final class RollupConsistencyCheckerProvider implements Provider<ActorRef> {

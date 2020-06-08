@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.alerts;
+package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
@@ -43,11 +43,11 @@ import javax.persistence.PersistenceException;
 /**
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class AlertExecutionPartitionCreator extends AbstractActorWithTimers {
+public final class DailyPartitionCreator extends AbstractActorWithTimers {
     /* package private */ static final Object TICK = new Object();
     /* package private */ static final Object EXECUTE = new Object();
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutionPartitionCreator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
@@ -59,7 +59,7 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
     private Optional<Instant> _lastRun;
     private final Schedule _schedule;
 
-    private AlertExecutionPartitionCreator(
+    private DailyPartitionCreator(
             final EbeanServer ebeanServer,
             final PeriodicMetrics periodicMetrics,
             final String schema,
@@ -101,7 +101,7 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
             final int lookahead
     ) {
         return Props.create(
-                AlertExecutionPartitionCreator.class,
+                DailyPartitionCreator.class,
                 ebeanServer,
                 periodicMetrics,
                 schema,
