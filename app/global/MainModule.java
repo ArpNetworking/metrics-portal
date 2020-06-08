@@ -855,7 +855,7 @@ public class MainModule extends AbstractModule {
         @Inject
         AlertExecutionPartitionCreatorProvider(
                 final ActorSystem system,
-                final EbeanServer ebeanServer,
+                @Named("metrics_portal") final EbeanServer ebeanServer,
                 final PeriodicMetrics periodicMetrics,
                 final Config configuration
         ) {
