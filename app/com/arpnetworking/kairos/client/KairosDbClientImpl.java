@@ -37,6 +37,7 @@ import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -79,13 +80,15 @@ public final class KairosDbClientImpl implements KairosDbClient {
         final Instant startTime = Instant.now();
         return fireRequest(request, MetricsQueryResponse.class)
                 .whenComplete((response, error) -> {
-                    LOGGER.trace()
+                    final LogBuilder logBuilder = LOGGER.trace()
                             .setMessage("finished queryMetrics")
                             .addData("queryUuid", queryUuid)
                             .addData("query", queryJson)
-                            .addData("duration", Duration.between(startTime, Instant.now()))
-                            .setThrowable(error)
-                            .log();
+                            .addData("duration", Duration.between(startTime, Instant.now()));
+                    if (error != null) {
+                        logBuilder.setThrowable(error);
+                    }
+                    logBuilder.log();
                     metrics.incrementCounter("kairosClient/queryMetrics/success", error == null ? 1 : 0);
                     metrics.close();
                 });
