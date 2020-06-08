@@ -37,6 +37,7 @@ import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
+import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -51,6 +52,8 @@ import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -67,6 +70,8 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
@@ -106,10 +111,14 @@ import play.libs.Json;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
+import java.nio.file.FileSystems;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -210,6 +219,20 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+    }
+
+    @Singleton
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private AlertExecutionContext provideAlertExecutionContext(final Config config) {
+        final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
+        final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
+                .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
+                .setPeriodCount(interval.length())
+                .setZone(ZoneOffset.UTC)
+                .setRunAtAndAfter(Instant.MIN)
+                .build();
+        return new AlertExecutionContext(defaultAlertSchedule);
     }
 
     @Singleton
@@ -390,6 +413,22 @@ public class MainModule extends AbstractModule {
         final Cluster cluster = Cluster.get(system);
         final ActorRef clusterStatusCache = system.actorOf(ClusterStatusCacheActor.props(cluster, metricsFactory), "cluster-status");
         return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
+    }
+
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private FileAlertRepository provideFileSystemAlertRepository(
+            final ObjectMapper objectMapper,
+            final Config config
+    ) {
+        final String path = config.getString("fileAlertRepository.path");
+        final String uuid = config.getString("fileAlertRepository.organization");
+        // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
+        return new FileAlertRepository(
+                objectMapper,
+                FileSystems.getDefault().getPath(path),
+                UUID.fromString(uuid)
+        );
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
@@ -759,29 +798,44 @@ public class MainModule extends AbstractModule {
 
     private static final class RollupManagerProvider implements Provider<ActorRef> {
         private final boolean _enabled;
-        private final Injector _injector;
         private final ActorSystem _system;
+        private final PeriodicMetrics _periodicMetrics;
+        private final MetricsFactory _metricsFactory;
         private final RollupPartitioner _partitioner;
+        private final ActorRef _consistencyChecker;
+        private final Config _config;
         static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
 
         @Inject
         RollupManagerProvider(
-                final Injector injector,
                 final ActorSystem system,
-                final Features features,
-                final RollupPartitioner partitioner
+                final PeriodicMetrics periodicMetrics,
+                final MetricsFactory metricsFactory,
+                final RollupPartitioner partitioner,
+                @Named("RollupConsistencyChecker") final ActorRef consistencyChecker,
+                final Config config,
+                final Features features
         ) {
             _enabled = features.isRollupsEnabled();
-            _injector = injector;
             _system = system;
+            _periodicMetrics = periodicMetrics;
+            _metricsFactory = metricsFactory;
             _partitioner = partitioner;
+            _consistencyChecker = consistencyChecker;
+            _config = config;
         }
 
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                return _system.actorOf(GuiceActorCreator.props(_injector, RollupManager.class));
+                return _system.actorOf(RollupManager.props(
+                        _periodicMetrics,
+                        _metricsFactory,
+                        _partitioner,
+                        _consistencyChecker,
+                        _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+                ));
             }
             return _system.actorOf(Props.create(NoopActor.class));
         }

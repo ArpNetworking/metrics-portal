@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -344,6 +345,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
         private final String _rollupMetricName;
         private final RollupPeriod _period;
         private final Instant _startTime;
+        private final ImmutableMap<String, String> _filterTags;
         private final Trigger _trigger;
 
         /**
@@ -354,7 +356,10 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Something/somebody requested this task as a one-off.
              */
             ON_DEMAND,
-            // WRITE_COMPLETED,  // TODO(spencerpearson, OBS-1174)
+            /**
+             * Some rollup data finished being written successfully.
+             */
+            WRITE_COMPLETED,
             // QUERIED,  // TODO(spencerpearson, OBS-1175)
         }
 
@@ -363,6 +368,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             _rollupMetricName = builder._rollupMetricName;
             _period = builder._period;
             _startTime = builder._startTime;
+            _filterTags = builder._filterTags;
             _trigger = builder._trigger;
         }
 
@@ -382,6 +388,10 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             return _startTime;
         }
 
+        public ImmutableMap<String, String> getFilterTags() {
+            return _filterTags;
+        }
+
         public Trigger getTrigger() {
             return _trigger;
         }
@@ -399,12 +409,13 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                     && _rollupMetricName.equals(task._rollupMetricName)
                     && _period == task._period
                     && _startTime.equals(task._startTime)
+                    && _filterTags.equals(task._filterTags)
                     && _trigger == task._trigger;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _trigger);
+            return Objects.hash(_sourceMetricName, _rollupMetricName, _period, _startTime, _filterTags, _trigger);
         }
 
         @Override
@@ -414,6 +425,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                     .add("_rollupMetricName", _rollupMetricName)
                     .add("_period", _period)
                     .add("_startTime", _startTime)
+                    .add("_filterTags", _filterTags)
                     .add("_trigger", _trigger)
                     .toString();
         }
@@ -430,6 +442,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             private String _rollupMetricName;
             @NotNull
             private RollupPeriod _period;
+            @NotNull
+            private ImmutableMap<String, String> _filterTags = ImmutableMap.of();
             @NotNull
             @ValidateWithMethod(methodName = "validateStartTime", parameterType = Instant.class)
             private Instant _startTime;
@@ -448,6 +462,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 _sourceMetricName = null;
                 _rollupMetricName = null;
                 _period = null;
+                _filterTags = ImmutableMap.of();
                 _startTime = null;
                 _trigger = null;
             }
@@ -493,6 +508,17 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              */
             public Builder setStartTime(final Instant value) {
                 _startTime = value;
+                return this;
+            }
+
+            /**
+             * Sets the {@code _filterTags} and returns a reference to this Builder so that the methods can be chained together.
+             *
+             * @param value the {@code _filterTags} to set
+             * @return a reference to this Builder
+             */
+            public Builder setFilterTags(final ImmutableMap<String, String> value) {
+                _filterTags = value;
                 return this;
             }
 

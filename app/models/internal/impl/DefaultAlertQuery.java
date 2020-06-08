@@ -45,8 +45,8 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     @Override
-    public AlertQuery contains(final Optional<String> contains) {
-        _contains = contains;
+    public AlertQuery contains(final String contains) {
+        _contains = Optional.of(contains);
         return this;
     }
 
@@ -57,8 +57,8 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     @Override
-    public AlertQuery offset(final Optional<Integer> offset) {
-        _offset = offset;
+    public AlertQuery offset(final int offset) {
+        _offset = Optional.of(offset);
         return this;
     }
 
