@@ -31,6 +31,7 @@ public class RollupForwarder extends AbstractActor {
      * {@link RollupForwarder} actor constructor.
      *
      * @param rollupManager actor ref to RollupManager actor
+     * @param metrics periodic metrics instance to log stats to
      */
     @Inject
     public RollupForwarder(
