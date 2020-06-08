@@ -119,15 +119,22 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
      * @throws InterruptedException if the actor does not reply within the allotted timeout, or if
      * the thread was interrupted for other reasons.
      */
-    public static boolean execute(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
-        return Patterns.ask(
-                ref,
-                EXECUTE,
-                timeout
-        )
-        .thenApply(o -> (Boolean) o)
-        .toCompletableFuture()
-        .get();
+    public static void execute(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
+            Patterns.ask(
+                    ref,
+                    EXECUTE,
+                    timeout
+            )
+            .thenCompose(reply -> {
+                @SuppressWarnings("unchecked")
+                final Optional<PersistenceException> o = (Optional<PersistenceException>) reply;
+                final CompletableFuture<Void> future = new CompletableFuture<>();
+                o.ifPresent(future::completeExceptionally);
+                future.complete(null);
+                return future;
+            })
+            .toCompletableFuture()
+            .get();
     }
 
     @Override
@@ -176,12 +183,12 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
                 .addData("endDate", endDate)
                 .log();
 
-        boolean success = false;
+        Optional<PersistenceException> error = Optional.empty();
         try {
             _ebeanServer.execute(sql);
-            success = true;
             _lastRun = Optional.of(Instant.now());
         } catch (final PersistenceException e) {
+            error = Optional.of(e);
             LOGGER.error().setMessage("Failed to create daily partitions for table")
                     .addData("schema", _schema)
                     .addData("table", _table)
@@ -190,9 +197,9 @@ public final class AlertExecutionPartitionCreator extends AbstractActorWithTimer
                     .setThrowable(e)
                     .log();
         }
-        recordCounter("create", success ? 1 : 0);
+        recordCounter("create", error.isPresent() ? 0 : 1);
 
-        sender.tell(success, getSelf());
+        sender.tell(error, getSelf());
     }
 
 }
