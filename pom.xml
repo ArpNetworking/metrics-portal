@@ -77,7 +77,7 @@
     <akka.persistence.jdbc.version>3.5.0</akka.persistence.jdbc.version>
     <akka.persistence.inmemory.version>2.5.1.1</akka.persistence.inmemory.version>
     <anorm.version>2.6.2</anorm.version>
-    <arpnetworking.commons.version>1.19.1-SNAPSHOT</arpnetworking.commons.version>
+    <arpnetworking.commons.version>1.19.0</arpnetworking.commons.version>
     <aspectjrt.version>1.9.2</aspectjrt.version>
     <asynchttpclient.version>1.1.9</asynchttpclient.version>
     <cassandra.version>3.2.0</cassandra.version>

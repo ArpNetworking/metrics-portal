@@ -242,7 +242,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
              */
             // CHECKSTYLE.OFF: RedundantModifier
             //   This is _not_ redundant, because of reflection done by ThreadLocalBuildableTestHelper.
-            Builder() {
+            public Builder() {
             // CHECKSTYLE.ON: RedundantModifier
                 super(FinishRollupMessage::new);
             }
