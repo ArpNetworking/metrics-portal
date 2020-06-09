@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.time.Instant;
 
 /**
  * Tests for {@link MetricNamesResponse}.
