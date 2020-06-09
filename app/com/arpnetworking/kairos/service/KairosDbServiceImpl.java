@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.kairos.service;
 
+import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -32,6 +33,8 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.rollups.ConsistencyChecker;
+import com.arpnetworking.rollups.RollupPeriod;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.cache.Cache;
@@ -41,18 +44,25 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotNull;
 
+import java.time.Instant;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Defines a service provider that augments calls to a KairosDB backend server.
@@ -94,6 +104,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
                 .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
+                .whenComplete(this::maybeQueueConsistencyChecks)
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
@@ -219,6 +230,79 @@ public final class KairosDbServiceImpl implements KairosDbService {
         }
 
         return response;
+    }
+
+    private void maybeQueueConsistencyChecks(final MetricsQuery query, final Throwable throwable) {
+        if (throwable != null) {
+            // Something downstream in the calling pipeline should get the error.
+            return;
+        }
+
+        if (!query.getStartTime().isPresent()) {
+            // TODO: log
+            return;
+        }
+
+        if (!query.getEndTime().isPresent()) {
+            // TODO: log
+            return;
+        }
+
+        final Instant startTime = query.getStartTime().get();
+        final Instant endTime = query.getEndTime().get();
+
+        query.getMetrics().stream()
+                .filter(m -> IS_ROLLUP.test(m.getName()))
+                .forEach(metric -> {
+                    final String originalName = getBaseName(metric.getName());
+                    final RollupPeriod period = getRollupPeriod(metric.getName());
+
+                    final PeriodIterator periods = new PeriodIterator(startTime, endTime, period);
+                    final Stream<Instant> stream = StreamSupport.stream(
+                            Spliterators.spliteratorUnknownSize(
+                                    periods,
+                                    Spliterator.ORDERED)
+                            , false);
+
+                    // TODO: maybe a for loop would be better
+                    stream
+                            .map(periodStartTime -> new ConsistencyChecker.Task.Builder()
+                                    .setSourceMetricName(originalName)
+                                    .setRollupMetricName(metric.getName())
+                                    .setStartTime(periodStartTime)
+                                    .setTrigger(ConsistencyChecker.Task.Trigger.QUERIED)
+                                    .setPeriod(period)
+                                    .build())
+                            // TODO: move everything below this line to another func
+                            .randomFilter()
+                            // TODO: wait for consistency checker to process the message before sending more?
+                            .forEach(task -> consistencyChecker.tell(task, ActorRef.noSender()));
+                });
+    }
+
+
+    static class PeriodIterator implements Iterator<Instant> {
+        Instant _periodStart;
+        final Instant _end;
+        final RollupPeriod _rollupPeriod;
+
+        public PeriodIterator(final Instant _start, final Instant _end, RollupPeriod _rollupPeriod) {
+            this._periodStart = _start;
+            this._end = _end;
+            this._rollupPeriod = _rollupPeriod;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return _periodStart.isBefore(_end);
+        }
+
+        @Override
+        public Instant next() {
+            final Instant ret = _periodStart;
+            _periodStart = _rollupPeriod.nextPeriodStart(_periodStart);
+            return ret;
+        }
     }
 
     /* package private */ static MetricsQuery useAvailableRollups(
