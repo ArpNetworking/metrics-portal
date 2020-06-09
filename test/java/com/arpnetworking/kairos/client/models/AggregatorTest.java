@@ -58,6 +58,23 @@ public final class AggregatorTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new Aggregator.Builder()
+                        .setName("name1")
+                        .setAlignSampling(true)
+                        .setSampling(
+                                new Sampling.Builder()
+                                        .setValue(1)
+                                        .setUnit(SamplingUnit.HOURS)
+                                        .build())
+                        .setAlignStartTime(true)
+                        .setAlignEndTime(true)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new Aggregator.Builder()

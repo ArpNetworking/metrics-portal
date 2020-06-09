@@ -331,6 +331,7 @@ public final class TagsQuery {
             _endTime = null;
             _startRelative = null;
             _endRelative = null;
+            _metrics = ImmutableList.of();
             _otherArgs = Maps.newHashMap();
         }
 
