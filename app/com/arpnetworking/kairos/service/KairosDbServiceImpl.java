@@ -32,6 +32,7 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.rollups.RollupMetric;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.cache.Cache;
@@ -247,10 +248,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             Optional.empty(),
                             false
                     );
-                    final List<String> rollupMetrics = filteredMetrics
+                    final List<RollupMetric> rollupMetrics = filteredMetrics
                             .stream()
-                            .filter(IS_ROLLUP)
-                            .filter(s -> s.length() == metricName.length() + 3)
+                            .map(s -> RollupMetric.fromRollupMetricName(s))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
                             .collect(Collectors.toList());
 
                     if (rollupMetrics.isEmpty()) {
@@ -265,14 +267,14 @@ public final class KairosDbServiceImpl implements KairosDbService {
 
 
                     if (maxUsableRollupUnit.isPresent()) {
-                        final Optional<String> rollupName = getCoarsestUsableRollupMetric(
+                        final Optional<RollupMetric> rollupMetric = getCoarsestUsableRollupMetric(
                                 metricName,
                                 rollupMetrics,
                                 queryConfig,
                                 maxUsableRollupUnit.get()
                         );
-                        metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", rollupName.isPresent() ? 0 : 1);
-                        final String rewrittenMetricName = rollupName.orElse(metricName);
+                        metrics.incrementCounter("kairosService/useRollups/noMatchingRollup", rollupMetric.isPresent() ? 0 : 1);
+                        final String rewrittenMetricName = rollupMetric.map(RollupMetric::getRollupMetricName).orElse(metricName);
                         return Metric.Builder.<Metric, Metric.Builder>clone(metric)
                                 .setName(rewrittenMetricName)
                                 .build();
@@ -293,23 +295,20 @@ public final class KairosDbServiceImpl implements KairosDbService {
      * @param maxUsableRollupUnit The longest rollup-period we're willing to accept (for fear of changing the query's results).
      * @return The given enabled {@code rollupMetric} with the greatest period not exceeding the threshold (if any).
      */
-    /* package private */ static Optional<String> getCoarsestUsableRollupMetric(
+    /* package private */ static Optional<RollupMetric> getCoarsestUsableRollupMetric(
             final String metricName,
-            final List<String> rollupMetrics,
+            final List<RollupMetric> rollupMetrics,
             final MetricsQueryConfig queryConfig,
             final SamplingUnit maxUsableRollupUnit
         ) {
         final Set<SamplingUnit> enabledRollups = queryConfig.getQueryEnabledRollups(metricName);
 
-        final TreeMap<SamplingUnit, String> orderedRollups = new TreeMap<>();
-        rollupMetrics.forEach(name -> {
-            final Optional<SamplingUnit> rollupUnit =
-                    rollupSuffixToSamplingUnit(name.substring(metricName.length() + 1));
-            rollupUnit.ifPresent(samplingUnit -> {
-                if (enabledRollups.contains(samplingUnit)) {
-                    orderedRollups.put(samplingUnit, name);
-                }
-            });
+        final TreeMap<SamplingUnit, RollupMetric> orderedRollups = new TreeMap<>();
+        rollupMetrics.forEach(rollupMetric -> {
+            final SamplingUnit rollupUnit = rollupMetric.getPeriod().getSamplingUnit();
+            if (enabledRollups.contains(rollupUnit)) {
+                orderedRollups.put(rollupUnit, rollupMetric);
+            }
         });
 
         return Optional.ofNullable(orderedRollups.floorEntry(maxUsableRollupUnit)).map(Map.Entry::getValue);
