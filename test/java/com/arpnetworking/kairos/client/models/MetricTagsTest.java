@@ -19,6 +19,7 @@ import com.arpnetworking.commons.test.BuildableTestHelper;
 import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import org.junit.Test;
@@ -48,6 +49,16 @@ public final class MetricTagsTest {
                         .setTags(ImmutableMultimap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
                 MetricTags.class);
+    }
+
+    @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricTags.Builder()
+                        .setName("metricName")
+                        .setTags(ImmutableMultimap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
     }
 
     @Test

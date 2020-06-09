@@ -15,9 +15,18 @@
  */
 package com.arpnetworking.kairos.client.models;
 
+import com.arpnetworking.commons.test.BuildableTestHelper;
+import com.arpnetworking.commons.test.EqualityTestHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 
 /**
  * Tests for {@link TagsQuery}.
@@ -53,4 +62,9 @@ public final class TagsQueryTest {
                 ResourceHelper.loadResource(getClass(), "testNoEndTime"),
                 TagsQuery.class);
     }
+
+    // Ideally, we would have builder/equality tests, but those test-helpers assume that the builder
+    //     (a) has a 1:1 correspondence between setters and fields, and
+    //     (b) has no interdependencies between its fields
+    //   both of which this class violates, because the KairosDB API violates it.
 }

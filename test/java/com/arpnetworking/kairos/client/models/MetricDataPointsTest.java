@@ -21,6 +21,8 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -55,6 +57,22 @@ public final class MetricDataPointsTest {
                         .setTags(ImmutableMap.of("tag", "value"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
                 MetricDataPoints.class);
+    }
+
+    @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricDataPoints.Builder()
+                        .setName("metricName")
+                        .setTtl(123)
+                        .setTags(ImmutableMap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+                        .setDatapoints(ImmutableList.of(
+                                new DataPoint.Builder()
+                                        .setTime(Instant.now())
+                                        .setValue(123)
+                                        .build()))
+        );
     }
 
     @Test

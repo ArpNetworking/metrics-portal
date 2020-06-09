@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
+import java.time.Instant;
 
 /**
  * Tests for {@link MetricNamesResponse}.
@@ -47,6 +48,15 @@ public final class MetricNamesResponseTest {
                         .setResults(ImmutableList.of("tag1"))
                         .setOtherArgs(ImmutableMap.of("foo", "bar")),
                 MetricNamesResponse.class);
+    }
+
+    @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
     }
 
     @Test
