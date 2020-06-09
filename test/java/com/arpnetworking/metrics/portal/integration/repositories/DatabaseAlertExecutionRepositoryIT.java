@@ -16,24 +16,25 @@
 
 package com.arpnetworking.metrics.portal.integration.repositories;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.alerts.impl.DailyPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
+import io.ebean.SqlUpdate;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 /**
@@ -42,7 +43,7 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
-    private ActorSystem _system;
+    private ActorSystem _actorSystem;
     private TestKit _probe;
 
     @Override
@@ -56,21 +57,34 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
 
-        _system = ActorSystem.create();
-        _probe = new TestKit(_system);
+        _actorSystem = ActorSystem.create();
+        _probe = new TestKit(_actorSystem);
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
-        final ActorRef ref = _system.actorOf(
-                DailyPartitionCreator.props(
-                        server,
-                        metricsMock,
-                        "portal",
-                        "alert_executions",
-                        Duration.ZERO,
-                        1
-                )
+        createPartitions(server);
+
+        return new DatabaseAlertExecutionRepository(
+                server,
+                EbeanServerHelper.getAdminMetricsDatabase(),
+                _actorSystem,
+                metricsMock,
+                Duration.ZERO,
+                1
         );
-        return new DatabaseAlertExecutionRepository(server, ref);
+    }
+
+    private void createPartitions(final EbeanServer server) {
+        SqlUpdate sql = server.createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)");
+
+        final LocalDate startDate = ZonedDateTime.now().toLocalDate();
+        final LocalDate endDate = startDate.plusDays(1);
+
+        sql = sql.setNextParameter("portal")
+                .setNextParameter("alert_executions")
+                .setNextParameter(startDate)
+                .setNextParameter(endDate);
+
+        sql.execute();
     }
 
     @Override

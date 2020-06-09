@@ -66,6 +66,21 @@ public final class EbeanServerHelper {
         return ebeanServer;
     }
 
+    public static synchronized EbeanServer getAdminMetricsDatabase() {
+        @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_ADMIN_NAME);
+        if (ebeanServer == null) {
+            ebeanServer = createEbeanServer(
+                    getEnvOrDefault("PG_HOST", "localhost"),
+                    getEnvOrDefault("PG_PORT", DEFAULT_POSTGRES_PORT, Integer::parseInt),
+                    METRICS_DATABASE_NAME,
+                    METRICS_DATABASE_ADMIN_USERNAME,
+                    METRICS_DATABASE_ADMIN_PASSWORD,
+                    false);
+            EBEAN_SERVER_MAP.put(METRICS_ADMIN_NAME, ebeanServer);
+        }
+        return ebeanServer;
+    }
+
     private static EbeanServer createEbeanServer(
             final String hostname,
             final int port,
@@ -128,6 +143,7 @@ public final class EbeanServerHelper {
 
     private static final Map<String, EbeanServer> EBEAN_SERVER_MAP = Maps.newHashMap();
     private static final String METRICS_DATABASE_NAME = "metrics";
+    private static final String METRICS_ADMIN_NAME = "metrics_ddl";
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";
     private static final String METRICS_DATABASE_PASSWORD = "metrics_app_password";
     private static final String METRICS_DATABASE_ADMIN_USERNAME = "metrics_dba";

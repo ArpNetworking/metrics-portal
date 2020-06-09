@@ -16,6 +16,8 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
@@ -28,10 +30,12 @@ import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -49,22 +53,38 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
+
     private final ActorRef _partitionManager;
 
     /**
      * Public constructor.
      *
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
-     * @param partitionManager A reference to an {@link DailyPartitionCreator}.
+     * @param portalServer Play's {@code EbeanServer} for this repository.
+     * @param partitionServer Play's {@code EbeanServer} for this repository.
+     * @param actorSystem The actor system to use.
+     * @param periodicMetrics A metrics instance to record against.
+     * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
+     * @param partitionCreationLookahead How many days of partitions to create
      */
     @Inject
     public DatabaseAlertExecutionRepository(
-            @Named("metrics_portal") final EbeanServer ebeanServer,
-            final ActorRef partitionManager
+            final EbeanServer portalServer,
+            final EbeanServer partitionServer,
+            final ActorSystem actorSystem,
+            final PeriodicMetrics periodicMetrics,
+            final Duration partitionCreationOffset,
+            final int partitionCreationLookahead
     ) {
-        _ebeanServer = ebeanServer;
+        _ebeanServer = portalServer;
         _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
-        _partitionManager = partitionManager;
+        _partitionManager = actorSystem.actorOf(DailyPartitionCreator.props(
+                partitionServer,
+                periodicMetrics,
+                "portal",
+                "alert_executions",
+                partitionCreationOffset,
+                partitionCreationLookahead
+        ));
     }
 
     private AlertExecution findOrCreateAlertExecution(
@@ -98,6 +118,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
+//        try {
+//            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
+//        } catch (final ExecutionException | InterruptedException e) {
+//            throw new RuntimeException("Failed to create initial partitions", e);
+//        }
         _isOpen.set(true);
     }
 

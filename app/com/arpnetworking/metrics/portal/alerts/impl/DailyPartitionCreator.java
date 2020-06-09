@@ -28,6 +28,8 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.CallableSql;
 import io.ebean.EbeanServer;
+import io.ebean.SqlQuery;
+import io.ebean.SqlUpdate;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -166,15 +168,15 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
     }
 
     private void execute(final ActorRef sender) {
-        CallableSql sql = _ebeanServer.createCallableSql("{ call create_daily_partition(?, ?, ?, ?) }");
+        SqlUpdate sql = _ebeanServer.createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)");
 
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
-        sql = sql.bind(1, _schema)
-                .bind(2, _table)
-                .bind(3, startDate)
-                .bind(4, endDate);
+        sql = sql.setNextParameter(_schema)
+                .setNextParameter(_table)
+                .setNextParameter(startDate)
+                .setNextParameter(endDate);
 
         LOGGER.info().setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
@@ -185,7 +187,7 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
 
         Optional<PersistenceException> error = Optional.empty();
         try {
-            _ebeanServer.execute(sql);
+            sql.execute();
             _lastRun = Optional.of(Instant.now());
         } catch (final PersistenceException e) {
             error = Optional.of(e);

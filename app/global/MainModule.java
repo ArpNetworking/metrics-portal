@@ -51,7 +51,6 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.DailyPartitionCreator;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
@@ -147,6 +146,10 @@ public class MainModule extends AbstractModule {
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
+
+        bind(EbeanServer.class)
+                .annotatedWith(Names.named("metrics_portal_ddl"))
+                .toProvider(AdminEbeanServerProvider.class);
 
         // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
         // statically injecting them. Construction still happens at inject time, however.
@@ -435,21 +438,21 @@ public class MainModule extends AbstractModule {
             final Config config,
             final PeriodicMetrics periodicMetrics,
             final ActorSystem actorSystem,
-            @Named("metrics_portal") final EbeanServer server
+            @Named("metrics_portal") final EbeanServer portalServer,
+            @Named("metrics_portal_ddl") final EbeanServer ddlServer
     ) {
         final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
 
         final int maxLookAhead = partitionConfig.getInt("lookahead");
         final Duration offset = ConfigurationHelper.getFiniteDuration(partitionConfig, "offset");
-        final ActorRef actorRef = actorSystem.actorOf(DailyPartitionCreator.props(
-                server,
-                periodicMetrics,
-                "portal",
-                "alert_executions",
-                java.time.Duration.ofSeconds(offset.toSeconds()),
-                maxLookAhead
-        ));
-        return new DatabaseAlertExecutionRepository(server, actorRef);
+        return new DatabaseAlertExecutionRepository(
+            portalServer,
+            ddlServer,
+            actorSystem,
+            periodicMetrics,
+            java.time.Duration.ofSeconds(offset.toSeconds()),
+            maxLookAhead
+        );
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
@@ -464,6 +467,21 @@ public class MainModule extends AbstractModule {
         @Override
         public EbeanServer get() {
             return Ebean.getServer("metrics_portal");
+        }
+    }
+
+    private static final class AdminEbeanServerProvider implements Provider<EbeanServer> {
+        @Inject
+        AdminEbeanServerProvider(
+                final Configuration configuration,
+                final DynamicEvolutions dynamicEvolutions,
+                final EbeanConfig ebeanConfig) {
+            // Constructor arguments injected for dependency resolution only
+        }
+
+        @Override
+        public EbeanServer get() {
+            return Ebean.getServer("metrics_portal_ddl");
         }
     }
 
