@@ -21,8 +21,6 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
