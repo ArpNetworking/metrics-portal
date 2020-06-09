@@ -50,6 +50,15 @@ public final class MetricNamesResponseTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricNamesResponse.Builder()
+                        .setResults(ImmutableList.of("tag1"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new MetricNamesResponse.Builder()

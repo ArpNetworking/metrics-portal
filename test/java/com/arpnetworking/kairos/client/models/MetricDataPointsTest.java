@@ -58,6 +58,22 @@ public final class MetricDataPointsTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricDataPoints.Builder()
+                        .setName("metricName")
+                        .setTtl(123)
+                        .setTags(ImmutableMap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+                        .setDatapoints(ImmutableList.of(
+                                new DataPoint.Builder()
+                                        .setTime(Instant.now())
+                                        .setValue(123)
+                                        .build()))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new MetricDataPoints.Builder()

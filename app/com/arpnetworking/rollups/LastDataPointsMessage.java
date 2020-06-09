@@ -160,6 +160,7 @@ public final class LastDataPointsMessage extends FailableMessage {
 
         @Override
         protected void reset() {
+            super.reset();
             _sourceMetricName = null;
              _rollupMetricName = null;
             _period = null;

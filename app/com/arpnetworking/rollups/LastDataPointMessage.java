@@ -123,6 +123,7 @@ public final class LastDataPointMessage extends FailableMessage {
 
         @Override
         protected void reset() {
+            super.reset();
             _metricName = null;
             _period = null;
             _tags = ImmutableSet.of();
