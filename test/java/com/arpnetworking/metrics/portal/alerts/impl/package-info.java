@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Inscope Metrics, Inc
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package models.internal;
 
+@ParametersAreNonnullByDefault
+@ReturnValuesAreNonnullByDefault
+package com.arpnetworking.metrics.portal.alerts.impl;
 
-/**
- * A generic time-series query.
- *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
- */
-public interface MetricsQuery {
-    /**
-     * Gets the raw string query.
-     *
-     * @return the query
-     */
-    String getQuery();
+import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 
-    /**
-     * The serialization format of this query.
-     *
-     * @return the serialization format.
-     */
-    MetricsQueryFormat getQueryFormat();
-}
+import javax.annotation.ParametersAreNonnullByDefault;

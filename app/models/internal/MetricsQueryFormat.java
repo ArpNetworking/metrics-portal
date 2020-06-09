@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Inscope Metrics, Inc
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package models.internal;
 
-
 /**
- * A generic time-series query.
+ * A query serialization format.
  *
- * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
+ * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface MetricsQuery {
+public enum MetricsQueryFormat {
     /**
-     * Gets the raw string query.
-     *
-     * @return the query
+     * A KairosDB query in the standard JSON format.
      */
-    String getQuery();
-
-    /**
-     * The serialization format of this query.
-     *
-     * @return the serialization format.
-     */
-    MetricsQueryFormat getQueryFormat();
+    KAIROS_DB
 }
