@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.utility.test.ResourceHelper;
+import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.After;
@@ -42,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -209,5 +211,31 @@ public final class ConsistencyCheckerTest {
             fail("expected ConstraintsViolatedException");
         } catch (final ConstraintsViolatedException e) {
         }
+    }
+
+    private static final Supplier<ConsistencyChecker.Task.Builder> FULLY_SPECIFIED_TASK_BUILDER = () ->
+            new ConsistencyChecker.Task.Builder()
+                    .setSourceMetricName("foo")
+                    .setRollupMetricName("bar")
+                    .setPeriod(RollupPeriod.HOURLY)
+                    .setStartTime(Instant.EPOCH)
+                    .setFilterTags(ImmutableMap.of("k", "v"))
+                    .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED);
+
+    private static final Supplier<ConsistencyChecker.SampleCounts.Builder> FULLY_SPECIFIED_SAMPLE_COUNTS_BUILDER = () ->
+            new ConsistencyChecker.SampleCounts.Builder()
+                    .setSourceSampleCount(1)
+                    .setRollupSampleCount(1)
+                    .setTask(FULLY_SPECIFIED_TASK_BUILDER.get().build())
+                    .setFailure(new RuntimeException());
+
+    @Test
+    public void testTaskBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(FULLY_SPECIFIED_TASK_BUILDER.get());
+    }
+
+    @Test
+    public void testSampleCountsBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(FULLY_SPECIFIED_SAMPLE_COUNTS_BUILDER.get());
     }
 }
