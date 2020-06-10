@@ -168,15 +168,15 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
     }
 
     private void execute(final ActorRef sender) {
-        SqlUpdate sql = _ebeanServer.createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)");
-
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
-        sql = sql.setNextParameter(_schema)
-                .setNextParameter(_table)
-                .setNextParameter(startDate)
-                .setNextParameter(endDate);
+        final SqlUpdate sql = _ebeanServer
+            .createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)")
+            .setNextParameter(_schema)
+            .setNextParameter(_table)
+            .setNextParameter(startDate)
+            .setNextParameter(endDate);
 
         LOGGER.info().setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
