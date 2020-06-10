@@ -250,7 +250,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                     );
                     final List<RollupMetric> rollupMetrics = filteredMetrics
                             .stream()
-                            .map(s -> RollupMetric.fromRollupMetricName(s))
+                            .map(RollupMetric::fromRollupMetricName)
                             .filter(Optional::isPresent)
                             .map(Optional::get)
                             .collect(Collectors.toList());
