@@ -75,7 +75,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private int _nAvailableRequests;
     private final AtomicInteger _maxRecentBufferSize;
     private static final String FRACTIONAL_DATA_LOSS_METRIC = "rollup/consistency_checker/fractional_data_loss";
-    public static final String SUBMIT_SUCCESS_METRIC = "submit/success";
+    private static final String SUBMIT_SUCCESS_METRIC = "submit/success";
 
     @Override
     public Receive createReceive() {
