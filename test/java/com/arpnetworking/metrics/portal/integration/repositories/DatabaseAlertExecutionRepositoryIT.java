@@ -76,6 +76,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     @Override
     AlertEvaluationResult newResult() {
         return new DefaultAlertEvaluationResult.Builder()
+                .setName("example-series")
                 .setFiringTags(ImmutableList.of(ImmutableMap.of("tag-name", "tag-value")))
                 .build();
     }
