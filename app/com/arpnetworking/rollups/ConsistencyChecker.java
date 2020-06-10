@@ -245,6 +245,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("sampleCounts", sampleCounts)
                         .log();
             } else {
+                metrics.setGauge("rollup/consistency_checker/fractional_data_loss", 0);
                 LOGGER.trace()
                         .setMessage("no data lost in rollup")
                         .addData("task", task)
