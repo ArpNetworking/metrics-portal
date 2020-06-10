@@ -24,14 +24,6 @@ public class RollupMetric {
         return _period;
     }
 
-    public Optional<RollupMetric> nextFiner() {
-        return _period.nextSmallest().map(finerPeriod ->
-            ThreadLocalBuilder.clone(this, Builder.class, b -> b
-                    .setPeriod(finerPeriod)
-            )
-        );
-    }
-
     public static Optional<RollupMetric> fromRollupMetricName(final String name) {
         for (final RollupPeriod period : RollupPeriod.values()) {
             if (name.endsWith(period.getSuffix())) {
