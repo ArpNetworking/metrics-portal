@@ -410,24 +410,6 @@ public final class KairosDbServiceImpl implements KairosDbService {
                                         e -> e.getValue()))));
     }
 
-    private static Optional<SamplingUnit> rollupSuffixToSamplingUnit(final String suffix) {
-        // Assuming we only rollup to a single sampling unit (e.g. 1 hour or 1 day) and not multiples
-        switch (suffix.charAt(suffix.length() - 1)) {
-            case 'h':
-                return Optional.of(SamplingUnit.HOURS);
-            case 'd':
-                return Optional.of(SamplingUnit.DAYS);
-            case 'w':
-                return Optional.of(SamplingUnit.WEEKS);
-            case 'm':
-                return Optional.of(SamplingUnit.MONTHS);
-            case 'y':
-                return Optional.of(SamplingUnit.YEARS);
-            default:
-                return Optional.empty();
-        }
-    }
-
     private KairosDbServiceImpl(final Builder builder) {
         this._kairosDbClient = builder._kairosDbClient;
         this._metricsFactory = builder._metricsFactory;
