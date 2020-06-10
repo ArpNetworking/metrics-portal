@@ -252,12 +252,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
         final Instant endTime = query.getEndTime().get();
 
         query.getMetrics().stream()
-                .filter(m -> IS_ROLLUP.test(m.getName()))
-                .forEach(metric -> {
-                    final String originalName = getBaseName(metric.getName());
-                    final RollupPeriod period = getRollupPeriod(metric.getName());
-
-                    final PeriodIterator periods = new PeriodIterator(startTime, endTime, period);
+                .map(Metric::getName)
+                .map(RollupMetric::fromRollupMetricName)
+                .forEach(rollupMetricMaybe -> {
+                    rollupMetricMaybe.ifPresent(rollupMetric -> {
+                    final PeriodIterator periods = new PeriodIterator(startTime, endTime, rollupMetric.getPeriod());
                     final Stream<Instant> stream = StreamSupport.stream(
                             Spliterators.spliteratorUnknownSize(
                                     periods,
@@ -267,17 +266,18 @@ public final class KairosDbServiceImpl implements KairosDbService {
                     // TODO: maybe a for loop would be better
                     stream
                             .map(periodStartTime -> new ConsistencyChecker.Task.Builder()
-                                    .setSourceMetricName(originalName)
-                                    .setRollupMetricName(metric.getName())
+                                    .setSourceMetricName(rollupMetric.getBaseMetricName())
+                                    .setRollupMetricName(rollupMetric.getRollupMetricName())
                                     .setStartTime(periodStartTime)
                                     .setTrigger(ConsistencyChecker.Task.Trigger.QUERIED)
-                                    .setPeriod(period)
+                                    .setPeriod(rollupMetric.getPeriod())
                                     .build())
                             // TODO: move everything below this line to another func
                             .randomFilter()
                             // TODO: wait for consistency checker to process the message before sending more?
                             .forEach(task -> consistencyChecker.tell(task, ActorRef.noSender()));
                 });
+            });
     }
 
 
@@ -527,7 +527,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private static final String METRICS_KEY = "METRICNAMES";
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
-    private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
+    private static final Predicate<String> IS_ROLLUP = s -> RollupMetric.fromRollupMetricName(s).isPresent();
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbServiceImpl.class);
 
     /**
