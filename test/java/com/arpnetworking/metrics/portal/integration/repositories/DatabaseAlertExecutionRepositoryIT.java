@@ -26,6 +26,8 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
+import io.ebean.SqlQuery;
+import io.ebean.SqlRow;
 import io.ebean.SqlUpdate;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
@@ -35,6 +37,7 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -49,6 +52,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     @Override
     public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final EbeanServer adminServer = EbeanServerHelper.getAdminMetricsDatabase();
 
         // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
         // references are not constrained in the underlying execution table.
@@ -61,11 +65,11 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         _probe = new TestKit(_actorSystem);
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
-        createPartitions(server);
+        createPartitions(adminServer);
 
         return new DatabaseAlertExecutionRepository(
                 server,
-                EbeanServerHelper.getAdminMetricsDatabase(),
+                adminServer,
                 _actorSystem,
                 metricsMock,
                 Duration.ZERO,
@@ -74,17 +78,17 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     }
 
     private void createPartitions(final EbeanServer server) {
-        SqlUpdate sql = server.createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)");
 
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(1);
 
-        sql = sql.setNextParameter("portal")
-                .setNextParameter("alert_executions")
-                .setNextParameter(startDate)
-                .setNextParameter(endDate);
+        final SqlQuery sql = server.createSqlQuery("select create_daily_partition(?::text, ?::text, ?::date, ?::date)")
+            .setParameter(1, "portal")
+            .setParameter(2, "alert_executions")
+            .setParameter(3, startDate)
+            .setParameter(4, endDate);
 
-        sql.execute();
+        sql.findOneOrEmpty().orElseThrow(() -> new RuntimeException("Expected a single empty result."));
     }
 
     @Override
