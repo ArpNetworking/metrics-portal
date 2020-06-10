@@ -54,6 +54,11 @@ public final class RollupMetricTest {
                 Optional.empty(),
                 RollupMetric.fromRollupMetricName("foo_1x")
         );
+
+        assertEquals(
+                Optional.empty(),
+                RollupMetric.fromRollupMetricName("_1h")
+        );
     }
 
     @Test
