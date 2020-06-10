@@ -50,6 +50,16 @@ public final class RelativeDateTimeTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new RelativeDateTime.Builder()
+                        .setValue(1)
+                        .setUnit(TimeUnit.HOURS)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new RelativeDateTime.Builder()
