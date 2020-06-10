@@ -50,6 +50,16 @@ public final class SamplingTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new Sampling.Builder()
+                        .setValue(1)
+                        .setUnit(SamplingUnit.HOURS)
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new Sampling.Builder()
