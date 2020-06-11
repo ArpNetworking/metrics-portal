@@ -66,6 +66,11 @@ public final class EbeanServerHelper {
         return ebeanServer;
     }
 
+     /**
+     * Obtain a reference to the shared Metrics database {@code EbeanServer} with the admin user.
+     *
+     * @return reference to the shared Metrics database {@code EbeanServer}
+     */
     public static synchronized EbeanServer getAdminMetricsDatabase() {
         @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_ADMIN_NAME);
         if (ebeanServer == null) {
@@ -149,5 +154,5 @@ public final class EbeanServerHelper {
     private static final String METRICS_DATABASE_ADMIN_USERNAME = "metrics_dba";
     private static final String METRICS_DATABASE_ADMIN_PASSWORD = "metrics_dba_password";
     private static final int DEFAULT_POSTGRES_PORT = 6432;
-    private static final int DEFAULT_POOL_SIZE = 50;
+    private static final int DEFAULT_POOL_SIZE = 5;
 }

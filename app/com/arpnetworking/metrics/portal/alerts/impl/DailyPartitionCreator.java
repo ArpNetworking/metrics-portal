@@ -26,11 +26,10 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import io.ebean.CallableSql;
 import io.ebean.EbeanServer;
 import io.ebean.SqlQuery;
-import io.ebean.SqlUpdate;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -43,23 +42,27 @@ import java.util.concurrent.ExecutionException;
 import javax.persistence.PersistenceException;
 
 /**
+ * An actor that will periodically create table partitions.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DailyPartitionCreator extends AbstractActorWithTimers {
+public class DailyPartitionCreator extends AbstractActorWithTimers {
+    /* package private */ static final Object START_TICKING = new Object();
     /* package private */ static final Object TICK = new Object();
     /* package private */ static final Object EXECUTE = new Object();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
+    private static final String TICKER_NAME = "PERIODIC_TICK";
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
 
     private final int _lookahead;
     private final String _schema;
     private final String _table;
-
-    private Optional<Instant> _lastRun;
+    private final Clock _clock;
     private final Schedule _schedule;
+    private Optional<Instant> _lastRun;
 
     private DailyPartitionCreator(
             final EbeanServer ebeanServer,
@@ -68,6 +71,18 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
             final String table,
             final Duration scheduleOffset,
             final int lookahead
+    ) {
+        this(ebeanServer, periodicMetrics, schema, table, scheduleOffset, lookahead, Clock.systemUTC());
+    }
+
+    /* package private */ DailyPartitionCreator(
+            final EbeanServer ebeanServer,
+            final PeriodicMetrics periodicMetrics,
+            final String schema,
+            final String table,
+            final Duration scheduleOffset,
+            final int lookahead,
+            final Clock clock
     ) {
         _ebeanServer = ebeanServer;
         _periodicMetrics = periodicMetrics;
@@ -81,10 +96,11 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
         _lastRun = Optional.empty();
         _schema = schema;
         _table = table;
+        _clock = clock;
     }
 
     /**
-     * Creates a {@link Props} for this actor.
+     * Create {@link Props} for this actor.
      *
      * @param ebeanServer the ebean server
      * @param periodicMetrics metrics instance to use
@@ -104,78 +120,116 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
     ) {
         return Props.create(
                 DailyPartitionCreator.class,
-                ebeanServer,
-                periodicMetrics,
-                schema,
-                table,
-                scheduleOffset,
-                lookahead);
+                () -> new DailyPartitionCreator(
+                    ebeanServer,
+                    periodicMetrics,
+                    schema,
+                    table,
+                    scheduleOffset,
+                    lookahead
+                )
+        );
     }
 
     /**
-     * Ask the actor referenced by {@code ref} to execute synchronously.
+     * Ask the actor referenced by {@code ref} to start execution.
+     * <p>
+     * This will execute partition creation exactly once and then periodically thereafter using the actor's props.
      *
-     * @param ref an {@code AlertExecutionPartitionCreator}.
+     * @param ref an {@code DailyPartitionCreator}.
      * @param timeout timeout for the operation
      * @throws ExecutionException if an exception was thrown during execution.
-     * @throws InterruptedException if the actor does not reply within the allotted timeout, or if
-     * the thread was interrupted for other reasons.
+     * @throws InterruptedException if the actor does not reply within the allotted timeout, or if the actor thread was
+     * interrupted for other reasons.
      */
-    public static void execute(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
-            Patterns.ask(
-                    ref,
-                    EXECUTE,
-                    timeout
-            )
-            .thenCompose(reply -> {
-                @SuppressWarnings("unchecked")
-                final Optional<PersistenceException> o = (Optional<PersistenceException>) reply;
-                final CompletableFuture<Void> future = new CompletableFuture<>();
-                o.ifPresent(future::completeExceptionally);
-                future.complete(null);
-                return future;
-            })
-            .toCompletableFuture()
-            .get();
+    public static void start(
+            final ActorRef ref,
+            final Duration timeout
+    ) throws ExecutionException, InterruptedException {
+        Patterns.ask(
+                ref,
+                START_TICKING,
+                timeout
+        )
+                .thenCompose(reply -> {
+                    @SuppressWarnings("unchecked") final Optional<Throwable> o = (Optional<Throwable>) reply;
+                    final CompletableFuture<Void> future = new CompletableFuture<>();
+                    o.ifPresent(future::completeExceptionally);
+                    future.complete(null);
+                    return future;
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    /**
+     * Ask the actor referenced by {@code ref} to stop execution.
+     *
+     * @param ref an {@code DailyPartitionCreator}.
+     * @param timeout timeout for the operation
+     * @throws ExecutionException if an exception was thrown during execution.
+     * @throws InterruptedException if the actor does not stop within the allotted timeout, or if the actor thread was
+     * interrupted for other reasons.
+     */
+    public static void stop(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
+        Patterns.gracefulStop(ref, timeout).toCompletableFuture().get();
+    }
+
+    @Override
+    public void postStop() throws Exception {
+        super.postStop();
+        LOGGER.info().setMessage("Actor was stopped")
+                .addData("schema", _schema)
+                .addData("table", _table)
+                .addData("lookahead", _lookahead)
+                .log();
     }
 
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
+                .matchEquals(START_TICKING, msg -> startTicking())
                 .matchEquals(TICK, msg -> tick())
-                .matchEquals(EXECUTE, msg -> execute(getSender()))
+                .matchEquals(EXECUTE, msg -> execute())
                 .build();
     }
 
-    @Override
-    public void preStart() throws Exception {
-        super.preStart();
-
-        getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
+    private void recordCounter(final String metricName, final long value) {
+        final String fullMetric = String.format("partition_creator/%s/%s", _table, metricName);
+        _periodicMetrics.recordCounter(fullMetric, value);
     }
 
-    private void recordCounter(final String metricName, final long value) {
-        final String fullMetric = String.format("executions/partition_manager/%s/%s", _table, metricName);
-        _periodicMetrics.recordCounter(fullMetric, value);
+    // Message handlers
+
+    private void startTicking() {
+        if (getTimers().isTimerActive(TICKER_NAME)) {
+            getSender().tell(Optional.of(new IllegalStateException("Timer already started")), getSelf());
+            return;
+        }
+        LOGGER.info().setMessage("Starting execution timer")
+            .addData("schema", _schema)
+            .addData("table", _table)
+            .addData("lookahead", _lookahead)
+            .log();
+        final Optional<Exception> executeResult = execute();
+        getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
+        getSender().tell(executeResult, getSelf());
     }
 
     private void tick() {
         recordCounter("tick", 1);
 
-        if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(Instant.now())).orElse(true)) {
+        final Instant now = _clock.instant();
+        if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(now)).orElse(true)) {
             getSelf().tell(EXECUTE, getSelf());
         }
     }
 
-    private void execute(final ActorRef sender) {
+    // Wrapper to propagate any errors that occurred to the caller.
+    // This is really only useful on a call to `start`.
+    private Optional<Exception> execute() {
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
-
-        final SqlQuery sql = _ebeanServer.createSqlQuery("select * from create_daily_partition(?::text, ?::text, ?::date, ?::date)")
-                .setParameter(1, "portal")
-                .setParameter(2, "alert_executions")
-                .setParameter(3, startDate)
-                .setParameter(4, endDate);
 
         LOGGER.info().setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
@@ -184,10 +238,10 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
                 .addData("endDate", endDate)
                 .log();
 
-        Optional<PersistenceException> error = Optional.empty();
+        Optional<Exception> error = Optional.empty();
         try {
-            sql.findOneOrEmpty().orElseThrow(() -> new IllegalStateException("Expected a single empty result."));
-            _lastRun = Optional.of(Instant.now());
+            execute(_schema, _table, startDate, endDate);
+            _lastRun = Optional.of(_clock.instant());
         } catch (final PersistenceException e) {
             error = Optional.of(e);
             LOGGER.error().setMessage("Failed to create daily partitions for table")
@@ -199,8 +253,31 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
                     .log();
         }
         recordCounter("create", error.isPresent() ? 0 : 1);
-
-        sender.tell(error, getSelf());
+        return error;
     }
 
+    /**
+     * Create a series of daily partitions for the given parameters.
+     *
+     * @param schema the database schema
+     * @param table the parent table
+     * @param startDate the start date, inclusive.
+     * @param endDate the end date, exclusive.
+     */
+    protected void execute(final String schema,
+                         final String table,
+                         final LocalDate startDate,
+                         final LocalDate endDate) {
+        // While this query does not return anything meaningful semantically,
+        // it still returns a "non-empty" void result and so we can't use the
+        // ordinarily more appropriate SqlUpdate type.
+        final SqlQuery sql = _ebeanServer.createSqlQuery(
+                "select * from create_daily_partition(?::text, ?::text, ?::date, ?::date)")
+                .setParameter(1, schema)
+                .setParameter(2, table)
+                .setParameter(3, startDate)
+                .setParameter(4, endDate);
+
+        sql.findOneOrEmpty().orElseThrow(() -> new IllegalStateException("Expected a single empty result."));
+    }
 }

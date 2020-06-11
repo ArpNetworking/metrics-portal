@@ -17,12 +17,14 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Props;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
@@ -53,13 +55,17 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private final EbeanServer _ebeanServer;
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
-    private final ActorRef _partitionManager;
+    private static final String ACTOR_NAME = "alertExecutionPartitionCreator";
+    @Nullable
+    private ActorRef _partitionCreator;
+    private final Props _props;
+    private final ActorSystem _actorSystem;
 
     /**
      * Public constructor.
      *
      * @param portalServer Play's {@code EbeanServer} for this repository.
-     * @param partitionServer Play's {@code EbeanServer} for this repository.
+     * @param partitionServer Play's {@code EbeanServer} for partition creation.
      * @param actorSystem The actor system to use.
      * @param periodicMetrics A metrics instance to record against.
      * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
@@ -76,14 +82,15 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     ) {
         _ebeanServer = portalServer;
         _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
-        _partitionManager = actorSystem.actorOf(DailyPartitionCreator.props(
+        _actorSystem = actorSystem;
+        _props = DailyPartitionCreator.props(
                 partitionServer,
                 periodicMetrics,
                 "portal",
                 "alert_executions",
                 partitionCreationOffset,
                 partitionCreationLookahead
-        ));
+        );
     }
 
     private AlertExecution findOrCreateAlertExecution(
@@ -118,9 +125,10 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
         try {
-            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
+            _partitionCreator = _actorSystem.actorOf(_props);
+            DailyPartitionCreator.start(_partitionCreator, Duration.ofSeconds(5));
         } catch (final ExecutionException | InterruptedException e) {
-            throw new RuntimeException("Failed to create initial partitions", e);
+            throw new RuntimeException("Failed to start partition creator", e);
         }
         _isOpen.set(true);
     }
@@ -129,6 +137,13 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void close() {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing DatabaseAlertExecutionRepository").log();
+        assert _partitionCreator != null : "partitionCreator should be non-null when open";
+        try {
+            DailyPartitionCreator.stop(_partitionCreator, Duration.ofSeconds(5));
+            _partitionCreator = null;
+        } catch (final ExecutionException | InterruptedException e) {
+            throw new RuntimeException("Failed to shutdown partition creator", e);
+        }
         _isOpen.set(false);
     }
 

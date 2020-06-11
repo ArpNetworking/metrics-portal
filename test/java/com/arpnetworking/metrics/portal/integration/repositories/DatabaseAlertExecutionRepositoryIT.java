@@ -26,18 +26,12 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.ebean.EbeanServer;
-import io.ebean.SqlQuery;
-import io.ebean.SqlRow;
-import io.ebean.SqlUpdate;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import org.mockito.Mockito;
 
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -65,8 +59,6 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         _probe = new TestKit(_actorSystem);
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
-        createPartitions(adminServer);
-
         return new DatabaseAlertExecutionRepository(
                 server,
                 adminServer,
@@ -75,20 +67,6 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
                 Duration.ZERO,
                 1
         );
-    }
-
-    private void createPartitions(final EbeanServer server) {
-
-        final LocalDate startDate = ZonedDateTime.now().toLocalDate();
-        final LocalDate endDate = startDate.plusDays(1);
-
-        final SqlQuery sql = server.createSqlQuery("select create_daily_partition(?::text, ?::text, ?::date, ?::date)")
-            .setParameter(1, "portal")
-            .setParameter(2, "alert_executions")
-            .setParameter(3, startDate)
-            .setParameter(4, endDate);
-
-        sql.findOneOrEmpty().orElseThrow(() -> new RuntimeException("Expected a single empty result."));
     }
 
     @Override
