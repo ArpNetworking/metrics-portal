@@ -254,7 +254,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         query.getMetrics().stream()
                 .map(Metric::getName)
                 .map(RollupMetric::fromRollupMetricName)
-                .forEach(rollupMetricMaybe -> {
+                .forEach(rollupMetricMaybe ->
                     rollupMetricMaybe.ifPresent(rollupMetric -> {
                     final PeriodIterator periods = new PeriodIterator(startTime, endTime, rollupMetric.getPeriod());
                     final Stream<Instant> stream = StreamSupport.stream(
@@ -276,8 +276,8 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             .randomFilter()
                             // TODO: wait for consistency checker to process the message before sending more?
                             .forEach(task -> consistencyChecker.tell(task, ActorRef.noSender()));
-                });
-            });
+                })
+            );
     }
 
 
