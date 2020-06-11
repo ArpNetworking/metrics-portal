@@ -6,6 +6,7 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
@@ -13,6 +14,16 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
+    private static final Random RANDOM = new Random();
+
+    private final float _checkFraction;
+    private final ActorRef _consistencyChecker;
+
+    public QueryConsistencyTaskCreator(final float _checkFraction, final ActorRef _consistencyChecker) {
+        this._checkFraction = _checkFraction;
+        this._consistencyChecker = _consistencyChecker;
+    }
+
     @Override
     public void accept(MetricsQuery query) {
         if (!query.getStartTime().isPresent()) {
@@ -33,12 +44,10 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .map(RollupMetric::fromRollupMetricName)
                 .forEach(rollupMetricMaybe ->
                         rollupMetricMaybe.ifPresent(rollupMetric -> {
-                            // TODO: maybe a for loop would be better
                             checkerTasks(startTime, endTime, rollupMetric)
-                                    // TODO: move everything below this line to another func
-                                    .randomFilter()
+                                    .filter(tasj -> RANDOM.nextFloat() < _checkFraction)
                                     // TODO: wait for consistency checker to process the message before sending more?
-                                    .forEach(task -> consistencyChecker.tell(task, ActorRef.noSender()));
+                                    .forEach(task -> _consistencyChecker.tell(task, ActorRef.noSender()));
                         })
                 );
 
