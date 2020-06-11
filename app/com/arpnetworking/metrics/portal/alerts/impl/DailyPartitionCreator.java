@@ -47,9 +47,9 @@ import javax.persistence.PersistenceException;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DailyPartitionCreator extends AbstractActorWithTimers {
-    /* package private */ static final Object START_TICKING = new Object();
     /* package private */ static final Object TICK = new Object();
-    /* package private */ static final Object EXECUTE = new Object();
+    private static final Object START_TICKING = new Object();
+    private static final Object EXECUTE = new Object();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
@@ -228,7 +228,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     // Wrapper to propagate any errors that occurred to the caller.
     // This is really only useful on a call to `start`.
     private Optional<Exception> execute() {
-        final LocalDate startDate = ZonedDateTime.now().toLocalDate();
+        final LocalDate startDate = ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone()).toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
         LOGGER.info().setMessage("Creating daily partitions for table")

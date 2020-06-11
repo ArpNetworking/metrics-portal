@@ -41,7 +41,6 @@ import java.util.UUID;
  */
 public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
     private ActorSystem _actorSystem;
-    private TestKit _probe;
 
     @Override
     public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
@@ -56,7 +55,6 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         server.save(ebeanOrganization);
 
         _actorSystem = ActorSystem.create();
-        _probe = new TestKit(_actorSystem);
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
         return new DatabaseAlertExecutionRepository(
@@ -67,6 +65,12 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
                 Duration.ZERO,
                 1
         );
+    }
+
+    @Override
+    public void tearDown() {
+        super.tearDown();
+        TestKit.shutdownActorSystem(_actorSystem);
     }
 
     @Override

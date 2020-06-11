@@ -32,9 +32,15 @@ import org.mockito.Mockito;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.PersistenceException;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 /**
  * Tests for {@link DailyPartitionCreator}.
@@ -47,6 +53,7 @@ import javax.persistence.PersistenceException;
 public class DailyPartitionCreatorTest {
     private static final Object EXECUTE_WAS_CALLED = new Object();
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
+    private static final long TEST_LOOKAHEAD = 7;
 
     private ManualClock _clock;
 
@@ -82,7 +89,7 @@ public class DailyPartitionCreatorTest {
                         "testSchema",
                         "testTable",
                         Duration.ZERO,
-                        1,
+                        (int) TEST_LOOKAHEAD,
                         _clock
                 ) {
                     @Override
@@ -93,6 +100,15 @@ public class DailyPartitionCreatorTest {
                             final LocalDate endDate
                     ) {
                         executeFn.run();
+
+                        final long difference = ChronoUnit.DAYS.between(startDate, endDate);
+                        assertThat("range should respect lookahead", difference, equalTo(TEST_LOOKAHEAD));
+
+                        final long clockDifference = ChronoUnit.DAYS.between(
+                                startDate,
+                                ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
+                        );
+                        assertThat("range should start from current date", clockDifference, equalTo(0L));
                     }
                 }
         );
