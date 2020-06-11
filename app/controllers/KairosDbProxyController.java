@@ -192,12 +192,13 @@ public class KairosDbProxyController extends Controller {
                 final Optional<Aggregator> aggregatorWithSampling = metric.getAggregators().stream().filter(
                         aggregator -> aggregator.getSampling().isPresent()).findFirst();
                 newAggregators.add(aggregatorWithSampling.map(
-                        aggregator -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> b
-                                .setName("merge")
-                                .setSampling(aggregator.getSampling().isPresent() ? aggregator.getSampling().get() : null)
-                                .setAlignSampling(aggregator.getAlignSampling().isPresent() ? aggregator.getAlignSampling().get() : null)
-                                .setAlignStartTime(aggregator.getAlignStartTime().isPresent() ? aggregator.getAlignStartTime().get() : null)
-                                .setAlignEndTime(aggregator.getAlignEndTime().isPresent() ? aggregator.getAlignEndTime().get() : null))).
+                        aggregator -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> {
+                            b.setName("merge");
+                            aggregator.getSampling().ifPresent(b::setSampling);
+                            aggregator.getAlignStartTime().ifPresent(b::setAlignStartTime);
+                            aggregator.getAlignSampling().ifPresent(b::setAlignSampling);
+                            aggregator.getAlignEndTime().ifPresent(b::setAlignEndTime);
+                        })).
                         orElseGet(() -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> b.setName("merge"))));
                 newAggregators.addAll(metric.getAggregators());
                 final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
