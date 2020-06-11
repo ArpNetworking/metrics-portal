@@ -54,27 +54,28 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         _objectMapper = objectMapper;
     }
 
-    @SuppressWarnings("checkstyle:IllegalCatch")
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) {
         final CompletableFuture<MetricsQueryResult> result = new CompletableFuture<>();
         try {
             return executeQueryInner(query);
+            // CHECKSTYLE.OFF: IllegalCatch - Execution errors should occur asynchronously
         } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
             result.completeExceptionally(e);
             return result;
         }
     }
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final MetricsQuery query)
-            throws JsonProcessingException
-    {
+            throws JsonProcessingException {
         if (query.getQueryFormat() != MetricsQueryFormat.KAIROS_DB) {
             // FIXME(cbriones): exception type
             throw new UnsupportedOperationException("Unsupported query format: " + query.getQueryFormat());
         }
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
-        metricsQuery = _objectMapper.readValue(query.getQuery(), com.arpnetworking.kairos.client.models.MetricsQuery.class);
+        metricsQuery = _objectMapper.readValue(query.getQuery(),
+                com.arpnetworking.kairos.client.models.MetricsQuery.class);
         return _service.queryMetrics(metricsQuery).thenApply(this::toInternal);
     }
 
@@ -119,13 +120,11 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                             .setValue(v.getValue()).build())
                     .collect(ImmutableList.toImmutableList());
 
-        final TimeSeriesResult.Result result = new DefaultTimeSeriesResult.Result.Builder()
+        return new DefaultTimeSeriesResult.Result.Builder()
                 .setName(qr.getName())
                 .setTags(qr.getTags())
                 .setGroupBy(groupBys)
                 .setValues(values)
                 .build();
-
-        return result;
     }
 }

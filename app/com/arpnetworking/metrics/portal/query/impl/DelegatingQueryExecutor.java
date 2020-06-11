@@ -35,18 +35,24 @@ import java.util.concurrent.CompletionStage;
 public class DelegatingQueryExecutor implements QueryExecutor {
     private Map<MetricsQueryFormat, QueryExecutor> _executors;
 
+    /**
+     * Default Constructor.
+     *
+     * @param executors
+     */
     @Inject
     public DelegatingQueryExecutor(@Named("queryExecutors") final Map<MetricsQueryFormat, QueryExecutor> executors) {
         _executors = executors;
     }
 
-    @SuppressWarnings("checkstyle:IllegalCatch")
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) {
         final CompletableFuture<MetricsQueryResult> result = new CompletableFuture<>();
         try {
             return executeQueryInner(query);
+            // CHECKSTYLE.OFF: IllegalCatch - Execution errors should occur asynchronously
         } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
             result.completeExceptionally(e);
             return result;
         }
