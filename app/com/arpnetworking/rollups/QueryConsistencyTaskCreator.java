@@ -16,10 +16,10 @@ import java.util.stream.StreamSupport;
 public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     private static final Random RANDOM = new Random();
 
-    private final float _checkFraction;
+    private final double _checkFraction;
     private final ActorRef _consistencyChecker;
 
-    public QueryConsistencyTaskCreator(final float _checkFraction, final ActorRef _consistencyChecker) {
+    public QueryConsistencyTaskCreator(final double _checkFraction, final ActorRef _consistencyChecker) {
         this._checkFraction = _checkFraction;
         this._consistencyChecker = _consistencyChecker;
     }
@@ -45,7 +45,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .forEach(rollupMetricMaybe ->
                         rollupMetricMaybe.ifPresent(rollupMetric -> {
                             checkerTasks(startTime, endTime, rollupMetric)
-                                    .filter(tasj -> RANDOM.nextFloat() < _checkFraction)
+                                    .filter(_ignored -> RANDOM.nextDouble() < _checkFraction)
                                     // TODO: wait for consistency checker to process the message before sending more?
                                     .forEach(task -> _consistencyChecker.tell(task, ActorRef.noSender()));
                         })
