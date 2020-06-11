@@ -158,5 +158,5 @@ public final class EbeanServerHelper {
     private static final String METRICS_DATABASE_ADMIN_PASSWORD = "metrics_dba_password";
     private static final int DEFAULT_POSTGRES_PORT = 6432;
     private static final int DEFAULT_POOL_SIZE = 50;
-    private static final int ADMIN_POOL_SIZE = 5;
+    private static final int ADMIN_POOL_SIZE = 2;
 }
