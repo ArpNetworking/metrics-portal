@@ -18,20 +18,40 @@ package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
+import com.arpnetworking.metrics.portal.query.QueryExecutionException;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.google.common.collect.ImmutableList;
 import models.internal.MetricsQueryFormat;
+import models.internal.MetricsQueryResult;
 import models.internal.Organization;
+import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
+import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultMetricsQuery;
+import models.internal.impl.DefaultMetricsQueryResult;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isA;
 
 /**
  * Unit tests for {@link AlertExecutionContext}.
@@ -42,6 +62,7 @@ public class AlertExecutionContextTest {
     private AlertExecutionContext _context;
     private Alert _alert;
     private Schedule _schedule;
+    private QueryExecutor _executor;
 
     @Before
     public void setUp() {
@@ -61,11 +82,53 @@ public class AlertExecutionContextTest {
                             .build()
                 )
                 .build();
-        _context = new AlertExecutionContext(_schedule);
+        _executor = Mockito.mock(QueryExecutor.class);
+        _context = new AlertExecutionContext(
+                _schedule,
+                _executor
+        );
     }
 
     @Test
     public void testReturnsTheConfiguredSchedule() {
         assertThat(_context.getSchedule(_alert), equalTo(_schedule));
+    }
+
+    @Test
+    public void testQueryExecuteError() throws QueryExecutionException, InterruptedException {
+        final Throwable queryError = new RuntimeException("Something went wrong");
+        final CompletableFuture<MetricsQueryResult> exceptionalCompletionStage = new CompletableFuture<>();
+        exceptionalCompletionStage.completeExceptionally(queryError);
+        Mockito.when(_executor.executeQuery(any())).thenReturn(exceptionalCompletionStage);
+
+        final CompletionStage<AlertEvaluationResult> cs = _context.execute(_alert, Instant.now());
+
+        try {
+            cs.toCompletableFuture().get();
+            fail("Expected an exception");
+        } catch (final ExecutionException e) {
+            assertThat(e.getCause(), equalTo(queryError));
+        }
+    }
+
+    @Test
+    public void testSingleSeriesNotFiring() throws Exception {
+//        Mockito.when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(
+//        ));
+    }
+
+    @Test
+    public void testSingleSeriesFiring() throws Exception {
+
+    }
+
+    @Test
+    public void testGroupByMultipleFiring() throws Exception {
+
+    }
+
+    @Test
+    public void testGroupByNoneFiring() throws Exception {
+
     }
 }

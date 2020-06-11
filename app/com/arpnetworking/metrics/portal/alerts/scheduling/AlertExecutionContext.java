@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
@@ -30,10 +31,9 @@ import models.internal.scheduling.Job;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
@@ -86,24 +86,26 @@ public final class AlertExecutionContext {
 
     private AlertEvaluationResult toAlertResult(final MetricsQueryResult queryResult) {
 
-        // Query result expectations:
+        // Query result preconditions:
         //
         // - There is only ever a single query.
-        // - There are either multiple results, each containing a tag group-by,
-        //   or a single result, with *no* tag group-by.
+        // - If there are multiple results, each *must* contain a tag group-by.
+        //   Otherwise there is exactly one result, which may or may not contain
+        //   a tag group-by.
         // - The name field of each result should be identical, since the only
-        //   difference should be in the group-by and values.
+        //   difference should be in the grouping.
 
         final ImmutableList<? extends TimeSeriesResult.Query> queries = queryResult.getQueryResult().getQueries();
         if (queries.size() != 1) {
             throw new IllegalStateException("Alert definitions should only ever contain a single query.");
         }
         final TimeSeriesResult.Query query = queries.get(0);
-        if (query.getResults().isEmpty()) {
+        final ImmutableList<? extends TimeSeriesResult.Result> results = query.getResults();
+        if (results.isEmpty()) {
             throw new IllegalStateException("Expected at least one result.");
         }
 
-        final long uniqueNames = query.getResults().stream()
+        final long uniqueNames = results.stream()
                 .map(TimeSeriesResult.Result::getName)
                 .distinct()
                 .count();
@@ -112,43 +114,39 @@ public final class AlertExecutionContext {
         if (uniqueNames > 1) {
             throw new IllegalStateException("Received more than one metric name back in the results");
         }
-        name = query.getResults().get(0).getName();
+        name = results.get(0).getName();
 
-        final List<Map<String, String>> firingTags =
-                query.getResults()
+        final List<Map<String, String>> firingSeries;
+        if (results.size() == 1 && !getTagGroupBy(results.get(0)).isPresent()) {
+            // There was no group by.
+            if (results.get(0).getValues().isEmpty()) {
+                firingSeries = ImmutableList.of(ImmutableMap.of());
+            } else {
+                firingSeries = ImmutableList.of();
+            }
+        } else {
+            firingSeries =
+                    results
                         .stream()
-                        .map(this::getTagGroupBys)
+                        .filter(res -> !res.getValues().isEmpty())
+                        .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group by")))
                         .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
                         .collect(ImmutableList.toImmutableList());
-
-        // FIXME: Wtf do we do if an alert is firing and there are *no* group-bys.
-        //
-        // I think this might be better expressed as:
-        //  setFiringGroups :: List<FiringGroup>
-        //
-        //  FiringGroup :: {
-        //      name = String,
-        //      tags = Map<String, String>,
-        //  }
-        //
+        }
 
         return new DefaultAlertEvaluationResult.Builder()
                 .setName(name)
-                .setFiringTags(firingTags)
+                .setFiringTags(firingSeries)
                 .build();
     }
 
-    private TimeSeriesResult.QueryTagGroupBy getTagGroupBys(final TimeSeriesResult.Result result) {
-        // If there is not a supported group by in here we should throw because
-        // that means that we got a result back we weren't expecting.
-        final ImmutableList<TimeSeriesResult.QueryTagGroupBy> groupBys = result.getGroupBy().stream()
+    private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
+        // We don't expect the tag group-by to be the only value in the stream
+        // because the histogram plugin uses its own group-by.
+        return result.getGroupBy().stream()
                 .filter(g -> g instanceof TimeSeriesResult.QueryTagGroupBy)
                 .map(g -> (TimeSeriesResult.QueryTagGroupBy) g)
-                .collect(ImmutableList.toImmutableList());
-        if (groupBys.size() != 1) {
-            throw new IllegalStateException("Result group-bys does not contain any known types");
-        }
-        return groupBys.get(0);
+                .findFirst();
     }
 
     /**
