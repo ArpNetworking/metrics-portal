@@ -171,12 +171,11 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
         final LocalDate startDate = ZonedDateTime.now().toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
-        final SqlUpdate sql = _ebeanServer
-            .createSqlUpdate("select create_daily_partition(?::text, ?::text, ?::date, ?::date)")
-            .setNextParameter(_schema)
-            .setNextParameter(_table)
-            .setNextParameter(startDate)
-            .setNextParameter(endDate);
+        final SqlQuery sql = _ebeanServer.createSqlQuery("select * from create_daily_partition(?::text, ?::text, ?::date, ?::date)")
+                .setParameter(1, "portal")
+                .setParameter(2, "alert_executions")
+                .setParameter(3, startDate)
+                .setParameter(4, endDate);
 
         LOGGER.info().setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
@@ -187,7 +186,7 @@ public final class DailyPartitionCreator extends AbstractActorWithTimers {
 
         Optional<PersistenceException> error = Optional.empty();
         try {
-            sql.execute();
+            sql.findOneOrEmpty().orElseThrow(() -> new IllegalStateException("Expected a single empty result."));
             _lastRun = Optional.of(Instant.now());
         } catch (final PersistenceException e) {
             error = Optional.of(e);

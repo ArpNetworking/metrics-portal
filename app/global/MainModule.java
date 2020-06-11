@@ -100,6 +100,7 @@ import io.ebean.Ebean;
 import io.ebean.EbeanServer;
 import models.internal.Features;
 import models.internal.impl.DefaultFeatures;
+import org.flywaydb.play.PlayInitializer;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
@@ -149,7 +150,7 @@ public class MainModule extends AbstractModule {
 
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal_ddl"))
-                .toProvider(AdminEbeanServerProvider.class);
+                .toProvider(MetricsPortalDDLEbeanServerProvider.class);
 
         // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
         // statically injecting them. Construction still happens at inject time, however.
@@ -460,8 +461,10 @@ public class MainModule extends AbstractModule {
         MetricsPortalEbeanServerProvider(
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
-                final EbeanConfig ebeanConfig) {
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
             // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
         }
 
         @Override
@@ -470,13 +473,15 @@ public class MainModule extends AbstractModule {
         }
     }
 
-    private static final class AdminEbeanServerProvider implements Provider<EbeanServer> {
+    private static final class MetricsPortalDDLEbeanServerProvider implements Provider<EbeanServer> {
         @Inject
-        AdminEbeanServerProvider(
+        MetricsPortalDDLEbeanServerProvider(
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
-                final EbeanConfig ebeanConfig) {
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
             // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
         }
 
         @Override

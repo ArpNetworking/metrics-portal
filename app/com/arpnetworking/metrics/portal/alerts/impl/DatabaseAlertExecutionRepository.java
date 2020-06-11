@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.persistence.EntityNotFoundException;
@@ -116,11 +117,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
-//        try {
-//            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
-//        } catch (final ExecutionException | InterruptedException e) {
-//            throw new RuntimeException("Failed to create initial partitions", e);
-//        }
+        try {
+            DailyPartitionCreator.execute(_partitionManager, Duration.ofSeconds(5));
+        } catch (final ExecutionException | InterruptedException e) {
+            throw new RuntimeException("Failed to create initial partitions", e);
+        }
         _isOpen.set(true);
     }
 
