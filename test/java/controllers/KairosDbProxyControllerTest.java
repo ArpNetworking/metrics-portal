@@ -31,6 +31,7 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.typesafe.config.Config;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +48,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
@@ -250,6 +251,7 @@ public class KairosDbProxyControllerTest {
 
     @Test
     public void testCheckAndAddMergeAggregator() {
+        // Test case where the first aggregator doesn't have a sampling
         final Metric metric1 = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(
@@ -257,13 +259,21 @@ public class KairosDbProxyControllerTest {
                         new Aggregator.Builder().setName("max").setSampling(
                                 new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).build()))
                 .build();
+        // Test case where the merge aggregator is not needed
         final Metric metric2 = new Metric.Builder()
                 .setName("metric2")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("min").build()))
                 .build();
+        // Test case where top aggregator with sampling has non-merge specific attributes
+        final Metric metric3 = new Metric.Builder()
+                .setName("metric3")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("hpercentile").setSampling(
+                        new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).setAlignStartTime(
+                                true).addOtherArg("percentile", 0.5).build()))
+                .build();
         final MetricsQuery metricsQuery = new MetricsQuery.Builder()
                 .setStartTime(Instant.now())
-                .setMetrics(ImmutableList.of(metric1, metric2))
+                .setMetrics(ImmutableList.of(metric1, metric2, metric3))
                 .build();
 
         final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(metricsQuery);
@@ -273,5 +283,12 @@ public class KairosDbProxyControllerTest {
         assertEquals(newMetricsQuery.getMetrics().get(0).getAggregators().get(2).getSampling(),
                 newMetricsQuery.getMetrics().get(0).getAggregators().get(0).getSampling());
         assertEquals("min", newMetricsQuery.getMetrics().get(1).getAggregators().get(0).getName());
+        assertEquals("merge", newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getName());
+        assertEquals("hpercentile", newMetricsQuery.getMetrics().get(2).getAggregators().get(1).getName());
+        assertEquals(newMetricsQuery.getMetrics().get(2).getAggregators().get(1).getSampling(),
+                newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getSampling());
+        assertEquals(newMetricsQuery.getMetrics().get(2).getAggregators().get(1).getAlignStartTime(),
+                newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getAlignStartTime());
+        assertTrue(newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getOtherArgs().isEmpty());
     }
 }
