@@ -59,6 +59,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -104,7 +105,14 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
                 .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
-                .whenComplete(this::maybeQueueConsistencyChecks)
+                .whenComplete((query, throwable) -> {
+                    if (throwable != null) {
+                        // Something downstream in the pipeline should get the error.
+                        return;
+                    }
+
+                    _rewrittenQueryConsumer.accept(query);
+                })
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
@@ -232,7 +240,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         return response;
     }
 
-    private void maybeQueueConsistencyChecks(final MetricsQuery query, final Throwable throwable) {
+    private static void maybeQueueConsistencyChecks(final MetricsQuery query, final Throwable throwable) {
         if (throwable != null) {
             // Something downstream in the calling pipeline should get the error.
             return;
@@ -256,15 +264,8 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .map(RollupMetric::fromRollupMetricName)
                 .forEach(rollupMetricMaybe ->
                     rollupMetricMaybe.ifPresent(rollupMetric -> {
-                    final PeriodIterator periods = new PeriodIterator(startTime, endTime, rollupMetric.getPeriod());
-                    final Stream<Instant> stream = StreamSupport.stream(
-                            Spliterators.spliteratorUnknownSize(
-                                    periods,
-                                    Spliterator.ORDERED)
-                            , false);
-
-                    // TODO: maybe a for loop would be better
-                    stream
+                        // TODO: maybe a for loop would be better
+                        periodStreamForInterval(startTime, endTime, rollupMetric)
                             .map(periodStartTime -> new ConsistencyChecker.Task.Builder()
                                     .setSourceMetricName(rollupMetric.getBaseMetricName())
                                     .setRollupMetricName(rollupMetric.getRollupMetricName())
@@ -278,6 +279,15 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             .forEach(task -> consistencyChecker.tell(task, ActorRef.noSender()));
                 })
             );
+    }
+
+    private static Stream<Instant> periodStreamForInterval(Instant startTime, Instant endTime, RollupMetric rollupMetric) {
+        final PeriodIterator periods = new PeriodIterator(startTime, endTime, rollupMetric.getPeriod());
+        return StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(
+                        periods,
+                        Spliterator.ORDERED)
+                , false);
     }
 
 
@@ -498,12 +508,14 @@ public final class KairosDbServiceImpl implements KairosDbService {
         this._metricsFactory = builder._metricsFactory;
         this._excludedTagNames = builder._excludedTagNames;
         this._metricsQueryConfig = builder._metricsQueryConfig;
+        this._rewrittenQueryConsumer = builder._rewrittenQueryConsumer;
     }
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
     private final ImmutableSet<String> _excludedTagNames;
     private final MetricsQueryConfig _metricsQueryConfig;
+    private final Consumer<MetricsQuery> _rewrittenQueryConsumer;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
@@ -570,6 +582,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
             return this;
         }
 
+        public Builder setRewrittenQueryConsumer(final Consumer<MetricsQuery> consumer) {
+            _rewrittenQueryConsumer = consumer;
+            return this;
+        }
+
         @NotNull
         private KairosDbClient _kairosDbClient;
         @NotNull
@@ -578,5 +595,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         private ImmutableSet<String> _excludedTagNames = ImmutableSet.of();
         @NotNull
         private MetricsQueryConfig _metricsQueryConfig;
+        @NotNull
+        private Consumer<MetricsQuery> _rewrittenQueryConsumer = (query -> {});
     }
 }
