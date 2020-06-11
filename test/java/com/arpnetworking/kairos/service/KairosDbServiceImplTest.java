@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.kairos.service;
 
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -34,6 +35,8 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Timer;
 import com.arpnetworking.metrics.impl.NoOpMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.rollups.RollupMetric;
+import com.arpnetworking.rollups.RollupPeriod;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -412,11 +415,19 @@ public class KairosDbServiceImplTest {
 
     @Test
     public void testGetCoarsestUsableRollupMetric() {
+        final RollupMetric hourly = ThreadLocalBuilder.build(RollupMetric.Builder.class, b -> b
+                .setBaseMetricName("my_metric")
+                .setPeriod(RollupPeriod.HOURLY)
+        );
+        final RollupMetric daily = ThreadLocalBuilder.build(RollupMetric.Builder.class, b -> b
+                .setBaseMetricName("my_metric")
+                .setPeriod(RollupPeriod.DAILY)
+        );
         assertEquals(
-                Optional.of("my_metric_1h"),
+                Optional.of(hourly),
                 KairosDbServiceImpl.getCoarsestUsableRollupMetric(
                         "my_metric",
-                        ImmutableList.of("my_metric_1h", "my_metric_1d"),
+                        ImmutableList.of(hourly, daily),
                         s -> ImmutableSet.of(SamplingUnit.HOURS),
                         SamplingUnit.HOURS
                 )
@@ -425,7 +436,7 @@ public class KairosDbServiceImplTest {
                 Optional.empty(),
                 KairosDbServiceImpl.getCoarsestUsableRollupMetric(
                         "my_metric",
-                        ImmutableList.of("my_metric_1d"),
+                        ImmutableList.of(daily),
                         s -> ImmutableSet.of(SamplingUnit.HOURS),
                         SamplingUnit.HOURS
                 )
@@ -434,7 +445,7 @@ public class KairosDbServiceImplTest {
                 Optional.empty(),
                 KairosDbServiceImpl.getCoarsestUsableRollupMetric(
                         "my_metric",
-                        ImmutableList.of("my_metric_1h"),
+                        ImmutableList.of(hourly),
                         s -> ImmutableSet.of(),
                         SamplingUnit.HOURS
                 )
