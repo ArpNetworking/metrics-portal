@@ -22,8 +22,7 @@ import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.steno.Logger;
-import com.arpnetworking.steno.LoggerFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.EbeanServer;
 import org.junit.After;
 import org.junit.Before;
@@ -49,8 +48,6 @@ public class DailyPartitionCreatorTest {
     private static final Object EXECUTE_WAS_CALLED = new Object();
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreatorTest.class);
-
     private ManualClock _clock;
 
     // Unused Mocks
@@ -58,7 +55,6 @@ public class DailyPartitionCreatorTest {
     private PeriodicMetrics _metrics;
 
     // ActorSystem fields
-    private Props _props;
     private ActorSystem _actorSystem;
     private TestKit _probe;
 
@@ -76,6 +72,7 @@ public class DailyPartitionCreatorTest {
         return createActor(() -> _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef()));
     }
 
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private ActorRef createActor(final Runnable executeFn) {
         final Props props = Props.create(
                 DailyPartitionCreator.class,
