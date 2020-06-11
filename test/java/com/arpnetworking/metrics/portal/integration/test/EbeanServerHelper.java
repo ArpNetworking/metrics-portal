@@ -53,6 +53,7 @@ public final class EbeanServerHelper {
                     METRICS_DATABASE_NAME,
                     METRICS_DATABASE_USERNAME,
                     METRICS_DATABASE_PASSWORD,
+                    DEFAULT_POOL_SIZE,
                     true);
             migrateServer(
                     getEnvOrDefault("PG_HOST", "localhost"),
@@ -80,6 +81,7 @@ public final class EbeanServerHelper {
                     METRICS_DATABASE_NAME,
                     METRICS_DATABASE_ADMIN_USERNAME,
                     METRICS_DATABASE_ADMIN_PASSWORD,
+                    ADMIN_POOL_SIZE,
                     false);
             EBEAN_SERVER_MAP.put(METRICS_ADMIN_NAME, ebeanServer);
         }
@@ -92,13 +94,14 @@ public final class EbeanServerHelper {
             final String database,
             final String username,
             final String password,
+            final int poolSize,
             final boolean setAsDefault) {
         final String name = database + "-" + UUID.randomUUID().toString();
 
         final HikariConfig hikariConfig = new HikariConfig();
         hikariConfig.setDriverClassName("org.postgresql.Driver");
         hikariConfig.setJdbcUrl(createJdbcUrl(hostname, port, database));
-        hikariConfig.setMaximumPoolSize(DEFAULT_POOL_SIZE);
+        hikariConfig.setMaximumPoolSize(poolSize);
         hikariConfig.setPassword(password);
         hikariConfig.setPoolName(name);
         hikariConfig.setUsername(username);
@@ -154,5 +157,6 @@ public final class EbeanServerHelper {
     private static final String METRICS_DATABASE_ADMIN_USERNAME = "metrics_dba";
     private static final String METRICS_DATABASE_ADMIN_PASSWORD = "metrics_dba_password";
     private static final int DEFAULT_POSTGRES_PORT = 6432;
-    private static final int DEFAULT_POOL_SIZE = 5;
+    private static final int DEFAULT_POOL_SIZE = 50;
+    private static final int ADMIN_POOL_SIZE = 5;
 }
