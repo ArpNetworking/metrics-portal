@@ -316,8 +316,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setAllMetricTags(message.getTags());
 
                 for (final Instant startTime : startTimes) {
-                    rollupDefBuilder.setStartTime(startTime);
-                    _rollupManagerPool.tell(rollupDefBuilder.build(), self());
+                    final RollupDefinition defn = rollupDefBuilder.setStartTime(startTime).build();
+                    _rollupManagerPool.tell(defn, self());
+                    LOGGER.debug()
+                            .setMessage("sent task to _rollupManagerPool")
+                            .addData("task", defn)
+                            .addData("pool", _rollupManagerPool)
+                            .log();
+                    _metrics.recordCounter("rollup/generator/task_sent", 1);
                 }
             }
 

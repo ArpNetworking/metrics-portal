@@ -50,6 +50,15 @@ public final class TagNamesResponseTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new TagNamesResponse.Builder()
+                        .setResults(ImmutableSet.of("tag1"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new TagNamesResponse.Builder()

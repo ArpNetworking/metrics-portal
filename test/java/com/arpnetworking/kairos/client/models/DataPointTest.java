@@ -92,6 +92,15 @@ public final class DataPointTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new DataPoint.Builder()
+                        .setValue(1)
+                        .setTime(Instant.now())
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new DataPoint.Builder()
