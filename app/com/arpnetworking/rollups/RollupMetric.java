@@ -1,3 +1,18 @@
+/*
+ * Copyright 2020 Dropbox Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.rollups;
 
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
@@ -8,7 +23,12 @@ import net.sf.oval.constraint.NotNull;
 import java.util.Objects;
 import java.util.Optional;
 
-public class RollupMetric {
+/**
+ * Identifies a rolled-up KairosDB metric.
+ *
+ * @author Spencer Pearson (spencerpearson at dropbox dot com)
+ */
+public final class RollupMetric {
     private final String _baseMetricName;
     private final RollupPeriod _period;
 
@@ -16,6 +36,11 @@ public class RollupMetric {
         return _baseMetricName;
     }
 
+    /**
+     * Return the name that the rolled-up data should be stored under in KairosDB, e.g. "my_metric_1h".
+     *
+     * @return the metric name for the rolled-up data
+     */
     public String getRollupMetricName() {
         return _baseMetricName + _period.getSuffix();
     }
@@ -24,21 +49,23 @@ public class RollupMetric {
         return _period;
     }
 
-    public Optional<RollupMetric> nextFiner() {
-        return _period.nextSmallest().map(finerPeriod ->
-            ThreadLocalBuilder.clone(this, Builder.class, b -> b
-                    .setPeriod(finerPeriod)
-            )
-        );
-    }
-
+    /**
+     * Inverse of {@link #getRollupMetricName()}: parse a KairosDB metric name.
+     *
+     * @param name the KairosDB metric name
+     * @return the parsed {@link RollupMetric} (if the string can be parsed)
+     */
     public static Optional<RollupMetric> fromRollupMetricName(final String name) {
         for (final RollupPeriod period : RollupPeriod.values()) {
-            if (name.endsWith(period.getSuffix())) {
-                return Optional.of(ThreadLocalBuilder.build(Builder.class, b -> b
-                        .setBaseMetricName(name.substring(0, name.length() - period.getSuffix().length()))
-                        .setPeriod(period)
-                ));
+            final String suffix = period.getSuffix();
+            if (name.endsWith(suffix)) {
+                final String basename = name.substring(0, name.length() - suffix.length());
+                if (!basename.isEmpty()) {
+                    return Optional.of(ThreadLocalBuilder.build(Builder.class, b -> b
+                            .setBaseMetricName(basename)
+                            .setPeriod(period)
+                    ));
+                }
             }
         }
         return Optional.empty();

@@ -74,6 +74,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     private final LinkedHashSet<Task> _queue;
     private int _nAvailableRequests;
     private final AtomicInteger _maxRecentBufferSize;
+    private static final String FRACTIONAL_DATA_LOSS_METRIC = "rollup/consistency_checker/fractional_data_loss";
+    private static final String SUBMIT_SUCCESS_METRIC = "submit/success";
 
     @Override
     public Receive createReceive() {
@@ -88,11 +90,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         _queue.add(task);
                         getSender().tell(new Status.Success(task), getSelf());
                         _maxRecentBufferSize.accumulateAndGet(_queue.size(), Math::max);
-                        recordCounter("submit/success", 1);
+                        recordCounter(SUBMIT_SUCCESS_METRIC, 1);
                         tick();
                     } else {
                         getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
-                        recordCounter("submit/success", 0);
+                        recordCounter(SUBMIT_SUCCESS_METRIC, 0);
                     }
                 })
                 .match(SampleCounts.class, this::sampleCountsReceived)
@@ -233,7 +235,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .log();
             } else if (nOriginalSamples > nRollupSamples) {
                 final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
-                metrics.setGauge("rollup/consistency_checker/fractional_data_loss", fractionalDataLoss);
+                metrics.setGauge(FRACTIONAL_DATA_LOSS_METRIC, fractionalDataLoss);
                 final LogBuilder logBuilder =
                         // This level-thresholding should probably be configurable.
                         fractionalDataLoss < 0.001 ? LOGGER.debug()
@@ -245,6 +247,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("sampleCounts", sampleCounts)
                         .log();
             } else {
+                metrics.setGauge(FRACTIONAL_DATA_LOSS_METRIC, 0);
                 LOGGER.trace()
                         .setMessage("no data lost in rollup")
                         .addData("task", task)
