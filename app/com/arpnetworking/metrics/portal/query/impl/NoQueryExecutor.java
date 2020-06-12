@@ -22,6 +22,7 @@ import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 import models.internal.Problem;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Singleton;
 
@@ -33,8 +34,10 @@ import javax.inject.Singleton;
 @Singleton
 public class NoQueryExecutor implements QueryExecutor {
     @Override
-    public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) throws QueryExecutionException {
+    public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) {
         final Problem notEnabledProblem = new Problem.Builder().setProblemCode("NOT_ENABLED").build();
-        throw new QueryExecutionException("Queries are not enabled", ImmutableList.of(notEnabledProblem));
+        final CompletableFuture<MetricsQueryResult> cs = new CompletableFuture<>();
+        cs.completeExceptionally(new QueryExecutionException("Queries are not enabled", ImmutableList.of(notEnabledProblem)));
+        return cs;
     }
 }

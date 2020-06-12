@@ -56,26 +56,23 @@ public class KairosDbQueryExecutor implements QueryExecutor {
 
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) {
-        final CompletableFuture<MetricsQueryResult> result = new CompletableFuture<>();
-        try {
-            return executeQueryInner(query);
-            // CHECKSTYLE.OFF: IllegalCatch - Execution errors should occur asynchronously
-        } catch (final Exception e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            result.completeExceptionally(e);
-            return result;
-        }
+        return CompletableFuture.completedFuture(query).thenCompose(this::executeQueryInner);
     }
 
-    private CompletionStage<MetricsQueryResult> executeQueryInner(final MetricsQuery query)
-            throws JsonProcessingException {
+    private CompletionStage<MetricsQueryResult> executeQueryInner(final MetricsQuery query) {
         if (query.getQueryFormat() != MetricsQueryFormat.KAIROS_DB) {
-            // FIXME(cbriones): exception type
             throw new UnsupportedOperationException("Unsupported query format: " + query.getQueryFormat());
         }
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
-        metricsQuery = _objectMapper.readValue(query.getQuery(),
-                com.arpnetworking.kairos.client.models.MetricsQuery.class);
+        try {
+            metricsQuery = _objectMapper.readValue(query.getQuery(),
+                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException("Could not parse query", e);
+        }
+        // TODO(cbriones):
+        // This will not propagate the structured error information from KairosDB
+        // until _service provides that capability.
         return _service.queryMetrics(metricsQuery).thenApply(this::toInternal);
     }
 

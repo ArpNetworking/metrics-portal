@@ -44,7 +44,14 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for {@link KairosDbQueryExecutor}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
 public class KairosDbQueryExecutorTest {
 
     private KairosDbService _service;
@@ -74,7 +81,7 @@ public class KairosDbQueryExecutorTest {
 
         final ArgumentCaptor<com.arpnetworking.kairos.client.models.MetricsQuery> captor = ArgumentCaptor.forClass(
                 com.arpnetworking.kairos.client.models.MetricsQuery.class);
-        Mockito.when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
+        when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
         final MetricsQuery query = new DefaultMetricsQuery.Builder()
                 .setQuery(_objectMapper.writeValueAsString(request))
@@ -83,7 +90,7 @@ public class KairosDbQueryExecutorTest {
         final MetricsQueryResult result;
         try {
             result = _executor.executeQuery(query).toCompletableFuture().get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (final InterruptedException | ExecutionException e) {
             fail("Unexpected exception: " + e);
             return;
         }
@@ -109,16 +116,13 @@ public class KairosDbQueryExecutorTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void testQueryParsingException() throws Exception {
-        final MetricsQuery invalidQuery = new DefaultMetricsQuery.Builder()
-                .setQuery("This isn't valid JSON")
-                .setFormat(MetricsQueryFormat.KAIROS_DB)
-                .build();
-        _executor.executeQuery(invalidQuery).toCompletableFuture().get();
+    public void testKairosDBReturnsError() throws Exception {
+        when(_service.queryMetrics(any())).thenThrow(new RuntimeException("boom"));
+        _executor.executeQuery(any()).toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
-    public void testInvalidQueryFormat() throws Exception {
+    public void testQueryParsingException() throws Exception {
         final MetricsQuery invalidQuery = new DefaultMetricsQuery.Builder()
                 .setQuery("This isn't valid JSON")
                 .setFormat(MetricsQueryFormat.KAIROS_DB)

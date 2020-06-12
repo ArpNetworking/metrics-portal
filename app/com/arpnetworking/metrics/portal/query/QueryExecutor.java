@@ -23,6 +23,9 @@ import java.util.concurrent.CompletionStage;
 /**
  * Interface to describe classes that execute time series queries.
  *
+ * @see MetricsQuery
+ * @see MetricsQueryResult
+ *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public interface QueryExecutor {
@@ -31,7 +34,6 @@ public interface QueryExecutor {
      *
      * @param query query to execute
      * @return {@link CompletionStage} of the result
-     * @throws QueryExecutionException on errors during query execution
      */
-    CompletionStage<MetricsQueryResult> executeQuery(MetricsQuery query) throws QueryExecutionException;
+    CompletionStage<MetricsQueryResult> executeQuery(MetricsQuery query);
 }
