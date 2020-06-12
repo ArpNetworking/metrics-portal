@@ -51,6 +51,16 @@ public final class MetricTagsTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new MetricTags.Builder()
+                        .setName("metricName")
+                        .setTags(ImmutableMultimap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new MetricTags.Builder()

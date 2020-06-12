@@ -109,7 +109,14 @@ public final class RollupManager extends AbstractActorWithTimers {
                         work -> _periodicMetrics.recordGauge("rollup/manager/queue_size", _rollupDefinitions.size()))
                 .match(
                         RollupDefinition.class,
-                        work -> _rollupDefinitions.add(work))
+                        work -> {
+                            _periodicMetrics.recordCounter("rollup/manager/submit", 1);
+                            LOGGER.debug()
+                                    .setMessage("received task")
+                                    .addData("task", work)
+                                    .log();
+                            _rollupDefinitions.add(work);
+                        })
                 .match(
                         RollupExecutor.FinishRollupMessage.class,
                         this::executorFinished

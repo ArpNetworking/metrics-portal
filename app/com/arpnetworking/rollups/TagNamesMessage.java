@@ -82,7 +82,7 @@ public final class TagNamesMessage extends FailableMessage {
 
         @Override
         protected void reset() {
-            super.reset();;
+            super.reset();
             _tags = ImmutableMultimap.of();
             _metricName = null;
         }
