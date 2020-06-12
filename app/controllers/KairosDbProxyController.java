@@ -27,7 +27,6 @@ import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.ProxyClient;
-import com.arpnetworking.rollups.QueryConsistencyTaskCreator;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
