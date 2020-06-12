@@ -18,14 +18,12 @@ package com.arpnetworking.metrics.portal.query.impl;
 
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -33,16 +31,16 @@ import java.util.concurrent.CompletionStage;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DelegatingQueryExecutor implements QueryExecutor {
-    private Map<MetricsQueryFormat, QueryExecutor> _executors;
+    private QueryExecutorRegistry _executors;
 
     /**
      * Default Constructor.
      *
-     * @param executors
+     * @param executorRegistry Executor registry to delgate to
      */
     @Inject
-    public DelegatingQueryExecutor(@Named("queryExecutors") final Map<MetricsQueryFormat, QueryExecutor> executors) {
-        _executors = executors;
+    public DelegatingQueryExecutor(final QueryExecutorRegistry executorRegistry) {
+        _executors = executorRegistry;
     }
 
     @Override
@@ -60,11 +58,9 @@ public class DelegatingQueryExecutor implements QueryExecutor {
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final MetricsQuery query) throws QueryExecutionException {
         final MetricsQueryFormat format = query.getQueryFormat();
-
-        @Nullable final QueryExecutor executor =  _executors.get(format);
-        if (executor == null) {
+        final QueryExecutor executor =  _executors.getExecutorFor(format).orElseThrow(() -> {
             throw new UnsupportedOperationException("No registered executor for format: " + format);
-        }
+        });
         return executor.executeQuery(query);
     }
 }

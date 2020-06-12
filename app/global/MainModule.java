@@ -41,6 +41,7 @@ import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
@@ -61,6 +62,7 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
+import com.arpnetworking.metrics.portal.query.impl.DelegatingQueryExecutor;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
@@ -98,6 +100,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
 import models.internal.Features;
+import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
 import play.Environment;
 import play.api.Configuration;
@@ -214,6 +217,8 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+
+        bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
     }
 
     @Singleton
@@ -307,14 +312,14 @@ public class MainModule extends AbstractModule {
             final Config configuration,
             final Injector injector,
             final Environment environment) {
-        final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<MetricsQueryFormat, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
         for (final String key: keys) {
             final Config subconfig = executorsConfig.getConfig(key);
             final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
             final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
-            registryMapBuilder.put(key, childInjector.getInstance(clazz));
+            registryMapBuilder.put(MetricsQueryFormat.valueOf(key), childInjector.getInstance(clazz));
         }
         return new QueryExecutorRegistry.Builder()
                 .setExecutors(registryMapBuilder.build())
