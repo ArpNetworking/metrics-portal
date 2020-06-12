@@ -64,6 +64,10 @@ public enum RollupPeriod {
         return recentEndTime(time).minus(1, _truncationUnit);
     }
 
+    public Instant truncate(final Instant time) {
+        return time.truncatedTo(_truncationUnit);
+    }
+
     /**
      * Calculates the next period aligned time relative to the instant provided.
      *

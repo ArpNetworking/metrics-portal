@@ -17,6 +17,7 @@ public class QueueConsistencyTaskCreatorTest {
                 RollupPeriod.HOURLY).collect(Collectors.toList());
 
         Assert.assertEquals(Arrays.asList(
+                Instant.parse("2020-06-11T22:00:00Z"),
                 Instant.parse("2020-06-11T23:00:00Z"),
                 Instant.parse("2020-06-12T00:00:00Z"),
                 Instant.parse("2020-06-12T01:00:00Z")), actual);
