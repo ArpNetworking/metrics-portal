@@ -64,7 +64,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                         .build());
     }
 
-    private static Stream<Instant> periodStreamForInterval(Instant startTime, Instant endTime, RollupPeriod period) {
+    static Stream<Instant> periodStreamForInterval(Instant startTime, Instant endTime, RollupPeriod period) {
         final PeriodIterator periods = new PeriodIterator(startTime, endTime, period);
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(
