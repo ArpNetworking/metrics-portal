@@ -95,6 +95,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                q -> {}, //TODO:mock?
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );
@@ -163,6 +164,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                q->{},
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );
@@ -206,6 +208,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                q->{}, // TODO: mock?
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );

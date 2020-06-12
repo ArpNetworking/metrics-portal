@@ -41,6 +41,7 @@ import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
@@ -74,6 +75,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.QueryConsistencyTaskCreator;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -120,6 +122,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -169,6 +172,7 @@ public class MainModule extends AbstractModule {
                 .toProvider(ReportExecutionRepositoryProvider.class)
                 .asEagerSingleton();
 
+
         // Background tasks
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
@@ -214,6 +218,7 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+
     }
 
     @Singleton
@@ -228,6 +233,18 @@ public class MainModule extends AbstractModule {
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule);
+    }
+
+    @Provides
+    @Named("RewrittenQueryConsumer") // TODO: better name
+    private Consumer<MetricsQuery> provideWhatever(final Config config,
+                                                   @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
+        // TODO: better flag name
+        final double queryCheckFraction = config.getDouble("kairosdb.proxy.consistency_check_fraction_of_queries");
+
+        return new QueryConsistencyTaskCreator(
+                queryCheckFraction,
+                rollupConsistencyChecker);
     }
 
     @Singleton
