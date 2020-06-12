@@ -44,12 +44,7 @@ import models.internal.scheduling.JobExecution;
 )
 public interface AlertEvaluationResult {
 
-    /**
-     * The series name at the time of evaluation.
-     *
-     * @return the tag sets
-     */
-    String getName();
+    // XXX(cbriones): This is likely to change once we actually integrate alerts with the job scheduling code.
 
     /**
      * A list of firing tag-sets at the time of evaluation.

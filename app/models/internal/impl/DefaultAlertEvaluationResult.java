@@ -21,10 +21,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
-import net.sf.oval.constraint.NotBlank;
-import net.sf.oval.constraint.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -35,17 +32,10 @@ import java.util.Map;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
-    private final String _name;
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
 
     private DefaultAlertEvaluationResult(final Builder builder) {
-        _name = builder._name;
         _firingTags = builder._firingTags;
-    }
-
-    @Override
-    public String getName() {
-        return _name;
     }
 
     @Override
@@ -83,26 +73,11 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     public static class Builder extends OvalBuilder<DefaultAlertEvaluationResult> {
         private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 
-        @NotNull
-        @NotBlank
-        private @Nullable String _name;
-
         /**
          * Default constructor for an empty builder.
          */
         public Builder() {
             super(DefaultAlertEvaluationResult::new);
-        }
-
-        /**
-         * Set the name. Required. Cannot be null or empty.
-         *
-         * @param name the series name
-         * @return This instance of {@code Builder}.
-         */
-        public Builder setName(@Nullable final String name) {
-            _name = name;
-            return this;
         }
 
         /**

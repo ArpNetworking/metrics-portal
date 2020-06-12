@@ -17,10 +17,9 @@ package com.arpnetworking.metrics.portal.query;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.google.common.collect.ImmutableMap;
-import models.internal.MetricsQueryFormat;
 import net.sf.oval.constraint.NotNull;
 
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Holds executor references and allows us to inject them into a controller for runtime selection.
@@ -28,21 +27,21 @@ import java.util.Optional;
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
 public final class QueryExecutorRegistry {
-
-    private final ImmutableMap<MetricsQueryFormat, QueryExecutor> _executors;
-
     /**
      * Gets a query executor by name.
-     * @param format The query format
+     * @param name name of the executor
      * @return the executor, or null if an executor of that name does not exist
      */
-    public Optional<QueryExecutor> getExecutorFor(final MetricsQueryFormat format) {
-        return Optional.ofNullable(_executors.getOrDefault(format, null));
+    @Nullable
+    public QueryExecutor getExecutor(final String name) {
+        return _executors.getOrDefault(name, null);
     }
 
     private QueryExecutorRegistry(final Builder builder) {
         _executors = builder._executors;
     }
+
+    private final ImmutableMap<String, QueryExecutor> _executors;
 
     /**
      * Implementation of the Builder pattern for {@link QueryExecutorRegistry}.
@@ -50,9 +49,6 @@ public final class QueryExecutorRegistry {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     public static class Builder extends OvalBuilder<QueryExecutorRegistry> {
-        @NotNull
-        private ImmutableMap<MetricsQueryFormat, QueryExecutor> _executors = ImmutableMap.of();
-
         /**
          * Public constructor.
          */
@@ -66,9 +62,12 @@ public final class QueryExecutorRegistry {
          * @param value the time
          * @return this {@link Builder}
          */
-        public Builder setExecutors(final ImmutableMap<MetricsQueryFormat, QueryExecutor> value) {
+        public Builder setExecutors(final ImmutableMap<String, QueryExecutor> value) {
             _executors = value;
             return this;
         }
+
+        @NotNull
+        private ImmutableMap<String, QueryExecutor> _executors = ImmutableMap.of();
     }
 }

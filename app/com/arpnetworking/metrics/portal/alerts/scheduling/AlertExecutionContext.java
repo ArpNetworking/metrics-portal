@@ -16,22 +16,12 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.query.QueryExecutionException;
-import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import models.internal.MetricsQueryResult;
-import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
-import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
@@ -48,22 +38,18 @@ import javax.inject.Inject;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class AlertExecutionContext {
-    private final QueryExecutor _executor;
     private final Schedule _defaultSchedule;
 
     /**
      * Default constructor.
      *
      * @param defaultSchedule The default alert execution schedule.
-     * @param executor The executor to use for alert queries.
      */
     @Inject
     public AlertExecutionContext(
-            final Schedule defaultSchedule,
-            final QueryExecutor executor
+            final Schedule defaultSchedule
     ) {
         _defaultSchedule = defaultSchedule;
-        _executor = executor;
     }
 
     /**
@@ -74,87 +60,9 @@ public final class AlertExecutionContext {
      * @return A completion stage containing {@code AlertEvaluationResult}.
      */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
-        CompletableFuture<MetricsQueryResult> queryStage;
-        try {
-            queryStage = _executor.executeQuery(alert.getQuery()).toCompletableFuture();
-        } catch (final QueryExecutionException e) {
-            queryStage = new CompletableFuture<>();
-            queryStage.completeExceptionally(e);
-        }
-        return queryStage.thenApply(this::toAlertResult);
-    }
-
-    private AlertEvaluationResult toAlertResult(final MetricsQueryResult queryResult) {
-
-        // Query result preconditions:
-        //
-        // - There is only ever a single query.
-        // - If there are multiple results, each *must* contain a tag group-by.
-        //   Otherwise there is exactly one result, which may or may not contain
-        //   a tag group-by.
-        // - The name field of each result should be identical, since the only
-        //   difference should be in the grouping.
-        if (!queryResult.getErrors().isEmpty()) {
-            // FIXME: Exception type
-            throw new RuntimeException("Encountered query errors");
-        }
-
-        final ImmutableList<? extends TimeSeriesResult.Query> queries = queryResult.getQueryResult().getQueries();
-        if (queries.size() != 1) {
-            throw new IllegalStateException("Expected exactly one query.");
-        }
-        final TimeSeriesResult.Query query = queries.get(0);
-        final ImmutableList<? extends TimeSeriesResult.Result> results = query.getResults();
-        if (results.isEmpty()) {
-            throw new IllegalStateException("Expected at least one result.");
-        }
-
-        final long uniqueNames = results.stream()
-                .map(TimeSeriesResult.Result::getName)
-                .distinct()
-                .count();
-
-        final String name;
-        if (uniqueNames > 1) {
-            throw new IllegalStateException("Expected identical metric names for each result.");
-        }
-        name = results.get(0).getName();
-
-        final List<Map<String, String>> firingSeries;
-        if (results.size() == 1 && !getTagGroupBy(results.get(0)).isPresent()) {
-            // There was no group by.
-            if (results.get(0).getValues().isEmpty()) {
-                firingSeries = ImmutableList.of();
-            } else {
-                firingSeries = ImmutableList.of(ImmutableMap.of());
-            }
-        } else {
-            if (!results.stream().allMatch(res -> getTagGroupBy(res).isPresent())) {
-                throw new IllegalStateException("Expected all results to contain a group-by.");
-            }
-
-            firingSeries =
-                    results
-                        .stream()
-                        .filter(res -> !res.getValues().isEmpty())
-                        .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group-by")))
-                        .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
-                        .collect(ImmutableList.toImmutableList());
-        }
-
-        return new DefaultAlertEvaluationResult.Builder()
-                .setName(name)
-                .setFiringTags(firingSeries)
-                .build();
-    }
-
-    private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
-        // We don't expect the tag group-by to be the only value in the stream
-        // because the histogram plugin uses its own group-by.
-        return result.getGroupBy().stream()
-                .filter(g -> g instanceof TimeSeriesResult.QueryTagGroupBy)
-                .map(g -> (TimeSeriesResult.QueryTagGroupBy) g)
-                .findFirst();
+        final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
+        future.completeExceptionally(new UnsupportedOperationException("Alert execution is not implemented"));
+        return future;
     }
 
     /**
