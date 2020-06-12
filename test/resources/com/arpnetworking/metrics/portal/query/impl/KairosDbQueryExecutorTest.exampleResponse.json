@@ -9,10 +9,10 @@
             {
               "name": "tag",
               "tags": [
-                "os_name"
+                "os"
               ],
               "group": {
-                "os_name": "ios"
+                "os": "linux"
               }
             },
             {
@@ -21,49 +21,7 @@
             }
           ],
           "tags": {
-            "os_name": [
-              "ios"
-            ],
-            "environment": [
-              "production",
-              "staging",
-              "test"
-            ]
-          },
-          "values": [
-            [
-              1591831200000,
-              10
-            ],
-            [
-              1591834800000,
-              17
-            ],
-            [
-              1591838400000,
-              11
-            ]
-          ]
-        },
-        {
-          "name": "client/samples_sink/submitted_samples",
-          "group_by": [
-            {
-              "name": "tag",
-              "tags": [
-                "os_name"
-              ],
-              "group": {
-                "os_name": "linux"
-              }
-            },
-            {
-              "name": "type",
-              "type": "histogram"
-            }
-          ],
-          "tags": {
-            "os_name": [
+            "os": [
               "linux"
             ],
             "environment": [
@@ -93,10 +51,10 @@
             {
               "name": "tag",
               "tags": [
-                "os_name"
+                "os"
               ],
               "group": {
-                "os_name": "mac"
+                "os": "mac"
               }
             },
             {
@@ -105,7 +63,7 @@
             }
           ],
           "tags": {
-            "os_name": [
+            "os": [
               "mac"
             ],
             "environment": [
@@ -135,10 +93,10 @@
             {
               "name": "tag",
               "tags": [
-                "os_name"
+                "os"
               ],
               "group": {
-                "os_name": "unknown"
+                "os": "unknown"
               }
             },
             {
@@ -147,7 +105,7 @@
             }
           ],
           "tags": {
-            "os_name": [
+            "os": [
               "unknown"
             ],
             "environment": [
@@ -177,10 +135,10 @@
             {
               "name": "tag",
               "tags": [
-                "os_name"
+                "os"
               ],
               "group": {
-                "os_name": "windows"
+                "os": "windows"
               }
             },
             {
@@ -189,7 +147,7 @@
             }
           ],
           "tags": {
-            "os_name": [
+            "os": [
               "windows"
             ],
             "environment": [

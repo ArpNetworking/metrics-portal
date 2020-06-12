@@ -1,0 +1,30 @@
+{
+  "metrics": [
+    {
+      "tags": {},
+      "name": "client/samples_sink/submitted_samples",
+      "group_by": [
+        {
+          "name": "tag",
+          "tags": [
+            "os"
+          ]
+        }
+      ],
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": "1",
+            "unit": "minutes"
+          }
+        }
+      ]
+    }
+  ],
+ "cache_time": 0,
+  "start_relative": {
+    "value": "1",
+    "unit": "hours"
+  }
+}
