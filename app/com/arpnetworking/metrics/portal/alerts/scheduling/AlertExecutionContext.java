@@ -94,10 +94,14 @@ public final class AlertExecutionContext {
         //   a tag group-by.
         // - The name field of each result should be identical, since the only
         //   difference should be in the grouping.
+        if (!queryResult.getErrors().isEmpty()) {
+            // FIXME: Exception type
+            throw new RuntimeException("Encountered query errors");
+        }
 
         final ImmutableList<? extends TimeSeriesResult.Query> queries = queryResult.getQueryResult().getQueries();
         if (queries.size() != 1) {
-            throw new IllegalStateException("Alert definitions should only ever contain a single query.");
+            throw new IllegalStateException("Expected exactly one query.");
         }
         final TimeSeriesResult.Query query = queries.get(0);
         final ImmutableList<? extends TimeSeriesResult.Result> results = query.getResults();
@@ -112,7 +116,7 @@ public final class AlertExecutionContext {
 
         final String name;
         if (uniqueNames > 1) {
-            throw new IllegalStateException("Received more than one metric name back in the results");
+            throw new IllegalStateException("Expected identical metric names for each result.");
         }
         name = results.get(0).getName();
 
@@ -120,16 +124,20 @@ public final class AlertExecutionContext {
         if (results.size() == 1 && !getTagGroupBy(results.get(0)).isPresent()) {
             // There was no group by.
             if (results.get(0).getValues().isEmpty()) {
-                firingSeries = ImmutableList.of(ImmutableMap.of());
-            } else {
                 firingSeries = ImmutableList.of();
+            } else {
+                firingSeries = ImmutableList.of(ImmutableMap.of());
             }
         } else {
+            if (!results.stream().allMatch(res -> getTagGroupBy(res).isPresent())) {
+                throw new IllegalStateException("Expected all results to contain a group-by.");
+            }
+
             firingSeries =
                     results
                         .stream()
                         .filter(res -> !res.getValues().isEmpty())
-                        .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group by")))
+                        .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group-by")))
                         .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
                         .collect(ImmutableList.toImmutableList());
         }

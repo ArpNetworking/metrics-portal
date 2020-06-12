@@ -54,7 +54,7 @@ public class KairosDbQueryExecutorTest {
     @Before
     public void setUp() {
         _service = Mockito.mock(KairosDbService.class);
-        _objectMapper = SerializationTestUtils.getApiObjectMapper()
+        _objectMapper = SerializationTestUtils.getApiObjectMapper();
 
         _executor = new KairosDbQueryExecutor(
                 _service,
