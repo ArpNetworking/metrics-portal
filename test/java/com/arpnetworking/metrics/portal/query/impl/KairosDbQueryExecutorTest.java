@@ -64,7 +64,11 @@ public class KairosDbQueryExecutorTest {
 
     @Test
     public void testExecuteQuery() throws IOException {
-        final String request = ResourceHelper.loadResource(getClass(), "exampleRequest");
+        final com.arpnetworking.kairos.client.models.MetricsQuery request = ResourceHelper.loadResourceAs(
+                        getClass(),
+                        "exampleRequest",
+                        com.arpnetworking.kairos.client.models.MetricsQuery.class);
+
         final String responseJSON = ResourceHelper.loadResource(getClass(), "exampleResponse");
         final MetricsQueryResponse response = _objectMapper.readValue(responseJSON, MetricsQueryResponse.class);
 
@@ -73,7 +77,7 @@ public class KairosDbQueryExecutorTest {
         Mockito.when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
         final MetricsQuery query = new DefaultMetricsQuery.Builder()
-                .setQuery(request)
+                .setQuery(_objectMapper.writeValueAsString(request))
                 .setFormat(MetricsQueryFormat.KAIROS_DB)
                 .build();
         final MetricsQueryResult result;
@@ -84,6 +88,8 @@ public class KairosDbQueryExecutorTest {
             return;
         }
 
+        assertThat("Request should be passed-through and parsed", captor.getValue(), equalTo(request));
+
         assertThat(result.getErrors(), is(empty()));
         assertThat(result.getWarnings(), is(empty()));
         assertThat(result.getQueryResult().getQueries(), hasSize(1));
@@ -93,10 +99,10 @@ public class KairosDbQueryExecutorTest {
         assertThat(tsQuery.getResults(), hasSize(4));
 
         final TimeSeriesResult.Result tsResult = tsQuery.getResults().get(0);
-        assertThat(tsResult.getName(), equalTo("client/samples_sink/submitted"));
+        assertThat(tsResult.getName(), equalTo("client/samples_sink/submitted_samples"));
         assertThat(tsResult.getValues(), not(empty()));
         assertThat(tsResult.getTags().asMap(), equalTo(ImmutableMap.of(
-                "os_name", ImmutableList.of("ios"),
+                "os", ImmutableList.of("linux"),
                 "environment", ImmutableList.of("production", "staging", "test")
         )));
         assertThat(tsResult.getGroupBy(), hasSize(2));
