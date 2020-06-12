@@ -237,10 +237,11 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @Named("RewrittenQueryConsumer") // TODO: better name
-    private Consumer<MetricsQuery> provideWhatever(final Config config,
-                                                   @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
+    private Consumer<MetricsQuery> provideWhatever(
+            final Config config,
+            @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
         // TODO: better flag name
-        final double queryCheckFraction = config.getDouble("kairosdb.proxy.consistency_check_fraction_of_queries");
+        final double queryCheckFraction = config.getDouble("rollup.consistency_check.read_fraction");
 
         return new QueryConsistencyTaskCreator(
                 queryCheckFraction,
@@ -324,7 +325,7 @@ public class MainModule extends AbstractModule {
         final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
-        for (final String key: keys) {
+        for (final String key : keys) {
             final Config subconfig = executorsConfig.getConfig(key);
             final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
             final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
@@ -687,8 +688,7 @@ public class MainModule extends AbstractModule {
                 final ActorSystem system,
                 final Injector injector,
                 final OrganizationRepository organizationRepository,
-                @Named("job-execution-shard-region")
-                final ActorRef executorRegion,
+                @Named("job-execution-shard-region") final ActorRef executorRegion,
                 final PeriodicMetrics periodicMetrics) {
             _system = system;
             _injector = injector;
@@ -937,11 +937,11 @@ public class MainModule extends AbstractModule {
             final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
             final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
             return _system.actorOf(ConsistencyChecker.props(
-                        _kairosDbClient,
-                        _metricsFactory,
-                        _periodicMetrics,
-                        maxConcurrentRequests,
-                        bufferSize
+                    _kairosDbClient,
+                    _metricsFactory,
+                    _periodicMetrics,
+                    maxConcurrentRequests,
+                    bufferSize
             ));
         }
 

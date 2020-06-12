@@ -26,6 +26,10 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
 
     @Override
     public void accept(MetricsQuery query) {
+        if (RANDOM.nextDouble() < _checkFraction) {
+            return;
+        }
+
         if (!query.getStartTime().isPresent()) {
             // TODO: log
             return;
@@ -45,7 +49,6 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .forEach(rollupMetricMaybe ->
                         rollupMetricMaybe.ifPresent(rollupMetric -> {
                             checkerTasks(startTime, endTime, rollupMetric)
-                                    .filter(_ignored -> RANDOM.nextDouble() < _checkFraction)
                                     // TODO: wait for consistency checker to process the message before sending more?
                                     .forEach(task -> _consistencyChecker.tell(task, ActorRef.noSender()));
                         })
