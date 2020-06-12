@@ -44,6 +44,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
@@ -595,6 +596,29 @@ public class RollupGeneratorTest {
 
         // LastDataPointMessage should never be sent.
         _probe.expectNoMessage();
+    }
+
+    @Test
+    public void testLastEligiblePeriodStart() {
+        final Instant t0 = Instant.parse("2020-01-01T00:00:00Z");
+        final Duration hour = Duration.ofHours(1);
+        final Duration minute = Duration.ofMinutes(1);
+        assertEquals(
+                t0,
+                RollupGenerator.lastEligiblePeriodStart(
+                        RollupPeriod.HOURLY,
+                        t0.plus(hour),
+                        t0.plus(hour)
+                )
+        );
+        assertEquals(
+                t0,
+                RollupGenerator.lastEligiblePeriodStart(
+                        RollupPeriod.HOURLY,
+                        t0.plus(minute),
+                        t0.plus(hour)
+                )
+        );
     }
 
     @Test

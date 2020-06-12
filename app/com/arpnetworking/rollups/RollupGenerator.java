@@ -297,10 +297,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
             final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.MIN);
 
-            final Instant startOfLastEligiblePeriod =
-                message.getSourceLastDataPointTime()
-                        .map(period::recentStartTime)
-                        .orElse(Instant.MIN);
+            final Instant startOfLastEligiblePeriod = lastEligiblePeriodStart(
+                    period,
+                    message.getRollupLastDataPointTime().orElse(Instant.MIN),
+                    _clock.instant()
+            );
 
             // If the most recent period aligned start time is after the most recent datapoint then
             // we need to run the rollup, otherwise we can skip this and just send a finish message.
@@ -448,6 +449,27 @@ public class RollupGenerator extends AbstractActorWithTimers {
                                  b.setName(rollupMetricName);
                              })
                         )).build();
+    }
+
+    /**
+     * Find the start-time of the last time interval eligible to be rolled up.
+     *
+     * @param period the {@link RollupPeriod} to be rolled up
+     * @param lastSourceDataPoint the timestamp of the last datapoint of the base time-series to be rolled up
+     * @param incompleteAt the time at which we stop being confident that all the base data is present
+     *   (probably something close to {@link Instant#now()}
+     * @return the start-time of the last time interval that we should roll up
+     */
+    /* package private */ static Instant lastEligiblePeriodStart(
+            final RollupPeriod period,
+            final Instant lastSourceDataPoint,
+            final Instant incompleteAt
+    ) {
+        final Instant periodStartContainingLastSourceDataPoint = period.recentEndTime(lastSourceDataPoint);
+        final Instant lastCompletePeriodStart = period.recentStartTime(incompleteAt);
+        return periodStartContainingLastSourceDataPoint.isBefore(lastCompletePeriodStart)
+                ? periodStartContainingLastSourceDataPoint
+                : lastCompletePeriodStart;
     }
 
     private final ActorRef _metricsDiscovery;
