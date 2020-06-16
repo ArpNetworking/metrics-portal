@@ -76,6 +76,7 @@ public final class AlertExecutionContext {
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
         CompletableFuture<MetricsQueryResult> queryStage;
         try {
+            // FIXME: This needs to apply the time range.
             queryStage = _executor.executeQuery(alert.getQuery()).toCompletableFuture();
         } catch (final QueryExecutionException e) {
             queryStage = new CompletableFuture<>();
