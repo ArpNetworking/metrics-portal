@@ -69,6 +69,23 @@ public final class MetricTest {
     }
 
     @Test
+    public void testBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(
+                new Metric.Builder()
+                        .setName("metricName")
+                        .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("foo").build()))
+                        .setGroupBy(ImmutableList.of(
+                                new MetricsQuery.QueryTagGroupBy.Builder()
+                                        .setTags(ImmutableSet.of("host"))
+                                        .build()))
+                        .setLimit(1)
+                        .setOrder(Metric.Order.DESC)
+                        .setTags(ImmutableMultimap.of("tag", "value"))
+                        .setOtherArgs(ImmutableMap.of("foo", "bar"))
+        );
+    }
+
+    @Test
     public void testEquality() throws InvocationTargetException, IllegalAccessException {
         EqualityTestHelper.testEquality(
                 new Metric.Builder()
