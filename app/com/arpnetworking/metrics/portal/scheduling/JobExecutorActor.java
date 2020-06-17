@@ -179,6 +179,22 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             throw new NoSuchJobException("job no longer exists in repository", error);
         }
 
+        // Ideally we could use the same start time defined below instead of
+        // Instant.now but because System.nanoTime does not return wall-clock
+        // time it can't be compared to an Instant.
+        final long executionLagNanos = ChronoUnit.NANOS.between(scheduled, Instant.now());
+        _periodicMetrics.recordTimer(
+                "jobs/executor/execution_lag",
+                executionLagNanos,
+                Optional.of(Units.NANOSECOND));
+
+        _periodicMetrics.recordTimer(
+                "jobs/executor/by_type/"
+                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
+                        + "/execution_lag",
+                executionLagNanos,
+                Optional.of(Units.NANOSECOND));
+
         final long startTime = System.nanoTime();
         PatternsCS.pipe(
                 job.execute(_injector, scheduled)
