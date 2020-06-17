@@ -22,7 +22,6 @@ import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
-import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -33,7 +32,6 @@ import models.internal.Organization;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
-import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.impl.DefaultMetricsQuery;
 import models.internal.impl.DefaultMetricsQueryResult;
 import models.internal.impl.DefaultTimeSeriesResult;
@@ -95,6 +93,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         _executor = Mockito.mock(QueryExecutor.class);
+        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.HOURS));
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor
@@ -325,8 +324,9 @@ public class AlertExecutionContextTest {
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
         when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
+        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
 
-        // Scheduled for now
+        // Scheduled for now, minutely
 
         Instant scheduled = Instant.now();
         _context.execute(_alert, scheduled);
@@ -334,7 +334,7 @@ public class AlertExecutionContextTest {
         BoundedMetricsQuery captured = captor.getValue();
         Instant truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
 
-        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
+        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
         assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
 
         // Scheduled for one week ago
@@ -344,6 +344,19 @@ public class AlertExecutionContextTest {
 
         captured = captor.getValue();
         truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
+
+        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
+        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
+
+        // Scheduled for now, hourly
+
+        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.HOURS));
+
+        scheduled = Instant.now();
+        _context.execute(_alert, scheduled);
+
+        captured = captor.getValue();
+        truncatedScheduled = scheduled.truncatedTo(ChronoUnit.HOURS);
 
         assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
         assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
@@ -501,6 +514,13 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void testMissingPeriodHint() throws Exception {
+        when(_executor.periodHint(any())).thenReturn(Optional.empty());
+        when(_executor.executeQuery(any())).thenReturn(new CompletableFuture<>());
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 }

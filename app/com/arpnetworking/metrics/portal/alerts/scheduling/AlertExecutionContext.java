@@ -79,17 +79,10 @@ public final class AlertExecutionContext {
      * @return A completion stage containing {@code AlertEvaluationResult}.
      */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
-        CompletableFuture<MetricsQueryResult> queryStage;
-        try {
-            final BoundedMetricsQuery withTimeRange = applyTimeRange(alert.getQuery(), scheduled);
-            queryStage = _executor.executeQuery(withTimeRange).toCompletableFuture();
-            // CHECKSTYLE.OFF: IllegalCatch - Caught into a CompletionStage
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            queryStage = new CompletableFuture<>();
-            queryStage.completeExceptionally(e);
-        }
-        return queryStage.thenApply(this::toAlertResult);
+        return CompletableFuture.completedFuture(null)
+                .thenApply(ignored -> applyTimeRange(alert.getQuery(), scheduled))
+                .thenCompose(_executor::executeQuery)
+                .thenApply(this::toAlertResult);
     }
 
     private AlertEvaluationResult toAlertResult(final MetricsQueryResult queryResult) {
@@ -180,13 +173,18 @@ public final class AlertExecutionContext {
         return _defaultSchedule;
     }
 
-    private static BoundedMetricsQuery applyTimeRange(final MetricsQuery query, final Instant scheduled) {
-        final ZonedDateTime latestMinute = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(ChronoUnit.MINUTES);
-        final ZonedDateTime oneMinuteBefore = latestMinute.minusHours(1);
+    private BoundedMetricsQuery applyTimeRange(final MetricsQuery query, final Instant scheduled) {
+        // If we're unable to obtain a period hint then we will not be able to
+        // correctly window the query, as smaller intervals could miss data.
+        final ChronoUnit queryPeriod = _executor.periodHint(query)
+                .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
+
+        final ZonedDateTime latest = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(queryPeriod);
+        final ZonedDateTime previous = latest.minus(1, queryPeriod);
 
         return new DefaultBoundedMetricsQuery.Builder()
-                .setStartTime(oneMinuteBefore)
-                .setEndTime(latestMinute)
+                .setStartTime(previous)
+                .setEndTime(latest)
                 .setQuery(query.getQuery())
                 .setFormat(query.getQueryFormat())
                 .build();
