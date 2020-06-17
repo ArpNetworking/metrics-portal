@@ -26,20 +26,27 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
+import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.impl.DefaultMetricsQuery;
 import models.internal.impl.DefaultMetricsQueryResult;
 import models.internal.impl.DefaultTimeSeriesResult;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -52,7 +59,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
@@ -140,7 +146,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
 
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getName(), equalTo(TEST_METRIC));
@@ -176,7 +182,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
 
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getName(), equalTo(TEST_METRIC));
@@ -245,7 +251,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         final ImmutableList<ImmutableMap<String, String>> expectedFiringTags = ImmutableList.of(
@@ -307,11 +313,40 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(empty()));
+    }
+
+    @Test
+    public void testAppliesExpectedTimeRange() {
+        final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
+        final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
+        when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
+
+        // Scheduled for now
+
+        Instant scheduled = Instant.now();
+        _context.execute(_alert, scheduled);
+
+        BoundedMetricsQuery captured = captor.getValue();
+        Instant truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
+
+        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
+        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
+
+        // Scheduled for one week ago
+
+        scheduled = Instant.now().minus(Duration.ofDays(7));
+        _context.execute(_alert, scheduled);
+
+        captured = captor.getValue();
+        truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
+
+        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
+        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
     }
 
     @Test(expected = ExecutionException.class)
@@ -352,7 +387,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -382,7 +417,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -417,7 +452,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
     }
@@ -448,7 +483,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -465,13 +500,7 @@ public class AlertExecutionContextTest {
                         .build()
                 )
                 .build();
-        when(_executor.executeQuery(eq(_alert.getQuery()))).thenReturn(CompletableFuture.completedFuture(mockResult));
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-    }
-
-    private CompletionStage<MetricsQueryResult> mockedResult(final String resourceName) throws Exception {
-        return CompletableFuture.completedFuture(
-            ResourceHelper.loadResourceAs(getClass(), resourceName, MetricsQueryResult.class)
-        );
     }
 }

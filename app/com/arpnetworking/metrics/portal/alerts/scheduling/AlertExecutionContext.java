@@ -16,19 +16,24 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import models.internal.BoundedMetricsQuery;
+import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
+import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.scheduling.Job;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,9 +81,11 @@ public final class AlertExecutionContext {
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
         CompletableFuture<MetricsQueryResult> queryStage;
         try {
-            // FIXME: This needs to apply the time range.
-            queryStage = _executor.executeQuery(alert.getQuery()).toCompletableFuture();
-        } catch (final QueryExecutionException e) {
+            final BoundedMetricsQuery withTimeRange = applyTimeRange(alert.getQuery(), scheduled);
+            queryStage = _executor.executeQuery(withTimeRange).toCompletableFuture();
+            // CHECKSTYLE.OFF: IllegalCatch - Caught into a CompletionStage
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
             queryStage = new CompletableFuture<>();
             queryStage.completeExceptionally(e);
         }
@@ -171,5 +178,17 @@ public final class AlertExecutionContext {
      */
     public Schedule getSchedule(final Alert alert) {
         return _defaultSchedule;
+    }
+
+    private static BoundedMetricsQuery applyTimeRange(final MetricsQuery query, final Instant scheduled) {
+        final ZonedDateTime latestMinute = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(ChronoUnit.MINUTES);
+        final ZonedDateTime oneMinuteBefore = latestMinute.minusHours(1);
+
+        return new DefaultBoundedMetricsQuery.Builder()
+                .setStartTime(oneMinuteBefore)
+                .setEndTime(latestMinute)
+                .setQuery(query.getQuery())
+                .setFormat(query.getQueryFormat())
+                .build();
     }
 }
