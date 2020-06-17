@@ -23,17 +23,20 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import models.internal.MetricsQuery;
+import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
-import models.internal.impl.DefaultMetricsQuery;
+import models.internal.impl.DefaultBoundedMetricsQuery;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -53,6 +56,10 @@ import static org.mockito.Mockito.when;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class KairosDbQueryExecutorTest {
+    private static final ZonedDateTime QUERY_START_TIME = ZonedDateTime.parse("2020-06-16T00:00-07:00[America/Los_Angeles]");
+    private static final ZonedDateTime QUERY_END_TIME = ZonedDateTime.parse("2020-06-16T00:01-07:00[America/Los_Angeles]");
+
+
 
     private KairosDbService _service;
     private KairosDbQueryExecutor _executor;
@@ -71,6 +78,7 @@ public class KairosDbQueryExecutorTest {
 
     @Test
     public void testExecuteQuery() throws IOException {
+
         final com.arpnetworking.kairos.client.models.MetricsQuery request = ResourceHelper.loadResourceAs(
                         getClass(),
                         "exampleRequest",
@@ -83,10 +91,13 @@ public class KairosDbQueryExecutorTest {
                 com.arpnetworking.kairos.client.models.MetricsQuery.class);
         when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
-        final MetricsQuery query = new DefaultMetricsQuery.Builder()
+        final BoundedMetricsQuery query = new DefaultBoundedMetricsQuery.Builder()
                 .setQuery(_objectMapper.writeValueAsString(request))
                 .setFormat(MetricsQueryFormat.KAIROS_DB)
+                .setStartTime(QUERY_START_TIME)
+                .setEndTime(QUERY_END_TIME)
                 .build();
+
         final MetricsQueryResult result;
         try {
             result = _executor.executeQuery(query).toCompletableFuture().get();
@@ -95,7 +106,11 @@ public class KairosDbQueryExecutorTest {
             return;
         }
 
-        assertThat("Request should be passed-through and parsed", captor.getValue(), equalTo(request));
+        final com.arpnetworking.kairos.client.models.MetricsQuery capturedRequest = captor.getValue();
+        assertThat(capturedRequest.getMetrics(), equalTo(request.getMetrics()));
+        assertThat(capturedRequest.getOtherArgs(), equalTo(request.getOtherArgs()));
+        assertThat(capturedRequest.getStartTime(), equalTo(Optional.of(QUERY_START_TIME.toInstant())));
+        assertThat(capturedRequest.getEndTime(), equalTo(Optional.of(QUERY_END_TIME.toInstant())));
 
         assertThat(result.getErrors(), is(empty()));
         assertThat(result.getWarnings(), is(empty()));
@@ -123,9 +138,11 @@ public class KairosDbQueryExecutorTest {
 
     @Test(expected = ExecutionException.class)
     public void testQueryParsingException() throws Exception {
-        final MetricsQuery invalidQuery = new DefaultMetricsQuery.Builder()
+        final BoundedMetricsQuery invalidQuery = new DefaultBoundedMetricsQuery.Builder()
                 .setQuery("This isn't valid JSON")
                 .setFormat(MetricsQueryFormat.KAIROS_DB)
+                .setStartTime(QUERY_START_TIME)
+                .setEndTime(QUERY_END_TIME)
                 .build();
         _executor.executeQuery(invalidQuery).toCompletableFuture().get();
     }

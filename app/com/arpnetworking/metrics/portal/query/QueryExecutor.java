@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.query;
 
+import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 
@@ -35,5 +36,5 @@ public interface QueryExecutor {
      * @param query query to execute
      * @return {@link CompletionStage} of the result
      */
-    CompletionStage<MetricsQueryResult> executeQuery(MetricsQuery query);
+    CompletionStage<MetricsQueryResult> executeQuery(BoundedMetricsQuery query);
 }

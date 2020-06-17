@@ -22,9 +22,5 @@
       ]
     }
   ],
- "cache_time": 0,
-  "start_relative": {
-    "value": "1",
-    "unit": "hours"
-  }
+ "cache_time": 0
 }

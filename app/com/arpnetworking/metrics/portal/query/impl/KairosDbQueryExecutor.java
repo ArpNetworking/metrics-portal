@@ -22,7 +22,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import models.internal.MetricsQuery;
+import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
@@ -55,21 +55,26 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public CompletionStage<MetricsQueryResult> executeQuery(final MetricsQuery query) {
+    public CompletionStage<MetricsQueryResult> executeQuery(final BoundedMetricsQuery query) {
         return CompletableFuture.completedFuture(query).thenCompose(this::executeQueryInner);
     }
 
-    private CompletionStage<MetricsQueryResult> executeQueryInner(final MetricsQuery query) {
+    private CompletionStage<MetricsQueryResult> executeQueryInner(final BoundedMetricsQuery query) {
         if (query.getQueryFormat() != MetricsQueryFormat.KAIROS_DB) {
             throw new UnsupportedOperationException("Unsupported query format: " + query.getQueryFormat());
         }
-        final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
+        final com.arpnetworking.kairos.client.models.MetricsQuery.Builder metricsQueryBuilder;
         try {
-            metricsQuery = _objectMapper.readValue(query.getQuery(),
-                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
+            metricsQueryBuilder = _objectMapper.readValue(query.getQuery(),
+                    com.arpnetworking.kairos.client.models.MetricsQuery.Builder.class);
         } catch (final JsonProcessingException e) {
             throw new RuntimeException("Could not parse query", e);
         }
+        metricsQueryBuilder.setStartTime(query.getStartTime().toInstant());
+        query.getEndTime().ifPresent(endTime ->
+                metricsQueryBuilder.setEndTime(endTime.toInstant())
+        );
+        final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery = metricsQueryBuilder.build();
         // TODO(cbriones):
         // This will not propagate the structured error information from KairosDB
         // until _service provides that capability.
