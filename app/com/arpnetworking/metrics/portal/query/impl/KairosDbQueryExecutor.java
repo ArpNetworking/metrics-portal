@@ -16,19 +16,28 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
+import com.arpnetworking.kairos.client.models.Aggregator;
+import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 import models.internal.BoundedMetricsQuery;
+import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
 import models.internal.impl.DefaultMetricsQueryResult;
 import models.internal.impl.DefaultTimeSeriesResult;
 
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
@@ -57,6 +66,39 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final BoundedMetricsQuery query) {
         return CompletableFuture.completedFuture(query).thenCompose(this::executeQueryInner);
+    }
+
+    @Override
+    public Optional<ChronoUnit> periodHint(final MetricsQuery query) {
+        final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
+        try {
+            metricsQuery = _objectMapper.readValue(query.getQuery(),
+                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
+        } catch (final JsonProcessingException e) {
+            throw new RuntimeException("Could not parse query", e);
+        }
+        // The period hint of the query is the smallest of each metric within
+        return metricsQuery.getMetrics()
+                .stream()
+                .map(this::periodHint)
+                .flatMap(Streams::stream)
+                .min(Enum::compareTo);
+    }
+
+    private Optional<ChronoUnit> periodHint(final Metric metric) {
+        final List<Aggregator> aggregators = metric.getAggregators();
+        if (aggregators.isEmpty()) {
+            return Optional.empty();
+        }
+        // For the purposes of periodic querying, the only aggregator size that matters
+        // is the final aggregator with a sampling parameter.
+        for (int i = aggregators.size() - 1; i >= 0; i--) {
+            final Optional<Sampling> sampling = aggregators.get(i).getSampling();
+            if (sampling.isPresent()) {
+                return sampling.map(s -> SamplingUnit.toChronoUnit(s.getUnit()));
+            }
+        }
+        return Optional.empty();
     }
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final BoundedMetricsQuery query) {

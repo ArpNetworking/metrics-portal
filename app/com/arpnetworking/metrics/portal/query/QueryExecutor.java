@@ -19,6 +19,8 @@ import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -37,4 +39,21 @@ public interface QueryExecutor {
      * @return {@link CompletionStage} of the result
      */
     CompletionStage<MetricsQueryResult> executeQuery(BoundedMetricsQuery query);
+
+    /**
+     * Return a minimum period size for this query, if any.
+     *
+     * Consumers of this interface may take this hint into consideration to
+     * avoid querying for results at a higher frequency then what is actually
+     * necessary. This would allow you to avoid polling an hourly metric every
+     * minute, for example.
+     *
+     * By default, no hint is returned.
+     *
+     * @param query The query
+     * @return The minimum polling period necessary to avoid missing data.
+     */
+    default Optional<ChronoUnit> periodHint(final MetricsQuery query) {
+        return Optional.empty();
+    }
 }

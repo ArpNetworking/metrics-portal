@@ -1,0 +1,24 @@
+{
+  "metrics": [
+    {
+      "tags": {},
+      "name": "client/samples_sink/submitted_samples",
+      "aggregators": [
+        {
+          "name": "count",
+          "sampling": {
+            "value": "1",
+            "unit": "minutes"
+          }
+        },
+        {
+          "name": "sum",
+          "sampling": {
+            "value": "1",
+            "unit": "hours"
+          }
+        }
+      ]
+    }
+  ]
+}
