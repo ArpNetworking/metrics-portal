@@ -30,6 +30,7 @@ import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.scheduling.Job;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -80,12 +81,22 @@ public final class AlertExecutionContext {
      */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
         return CompletableFuture.completedFuture(null)
-                .thenApply(ignored -> applyTimeRange(alert.getQuery(), scheduled))
-                .thenCompose(_executor::executeQuery)
-                .thenApply(this::toAlertResult);
+                .thenCompose(ignored -> {
+                    // If we're unable to obtain a period hint then we will not be able to
+                    // correctly window the query, as smaller intervals could miss data.
+                    final MetricsQuery query = alert.getQuery();
+                    final ChronoUnit period = _executor.periodHint(query)
+                            .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
+                    final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
+
+                    return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period));
+                });
     }
 
-    private AlertEvaluationResult toAlertResult(final MetricsQueryResult queryResult) {
+    private AlertEvaluationResult toAlertResult(
+            final MetricsQueryResult queryResult,
+            final Instant scheduled,
+            final ChronoUnit period) {
 
         // Query result preconditions:
         //
@@ -124,10 +135,10 @@ public final class AlertExecutionContext {
         final List<Map<String, String>> firingSeries;
         if (results.size() == 1 && !getTagGroupBy(results.get(0)).isPresent()) {
             // There was no group by.
-            if (results.get(0).getValues().isEmpty()) {
-                firingSeries = ImmutableList.of();
-            } else {
+            if (isFiring(results.get(0).getValues(), period, scheduled)) {
                 firingSeries = ImmutableList.of(ImmutableMap.of());
+            } else {
+                firingSeries = ImmutableList.of();
             }
         } else {
             if (!results.stream().allMatch(res -> getTagGroupBy(res).isPresent())) {
@@ -137,7 +148,7 @@ public final class AlertExecutionContext {
             firingSeries =
                     results
                         .stream()
-                        .filter(res -> !res.getValues().isEmpty())
+                        .filter(res -> isFiring(res.getValues(), period, scheduled))
                         .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group-by")))
                         .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
                         .collect(ImmutableList.toImmutableList());
@@ -147,6 +158,18 @@ public final class AlertExecutionContext {
                 .setName(name)
                 .setFiringTags(firingSeries)
                 .build();
+    }
+
+    private boolean isFiring(final List<? extends TimeSeriesResult.DataPoint> values,
+                             final ChronoUnit period,
+                             final Instant scheduled) {
+        if (values.isEmpty()) {
+            return false;
+        }
+        final TimeSeriesResult.DataPoint mostRecentDatapoint = values.get(values.size() - 1);
+        final Duration timeSinceDatapoint = Duration.between(mostRecentDatapoint.getTime(), scheduled);
+        // Consider firing if less than a single period has elapsed.
+        return timeSinceDatapoint.compareTo(period.getDuration()) < 0;
     }
 
     private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
@@ -173,14 +196,11 @@ public final class AlertExecutionContext {
         return _defaultSchedule;
     }
 
-    private BoundedMetricsQuery applyTimeRange(final MetricsQuery query, final Instant scheduled) {
-        // If we're unable to obtain a period hint then we will not be able to
-        // correctly window the query, as smaller intervals could miss data.
-        final ChronoUnit queryPeriod = _executor.periodHint(query)
-                .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
-
-        final ZonedDateTime latest = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(queryPeriod);
-        final ZonedDateTime previous = latest.minus(1, queryPeriod);
+    private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
+                                               final Instant scheduled,
+                                               final ChronoUnit period) {
+        final ZonedDateTime latest = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(period);
+        final ZonedDateTime previous = latest.minus(1, period);
 
         return new DefaultBoundedMetricsQuery.Builder()
                 .setStartTime(previous)
