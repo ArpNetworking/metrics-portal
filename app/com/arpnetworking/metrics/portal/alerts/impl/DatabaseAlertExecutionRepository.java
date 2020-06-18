@@ -137,7 +137,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void close() {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing DatabaseAlertExecutionRepository").log();
-        assert _partitionCreator != null : "partitionCreator should be non-null when open";
+        if (_partitionCreator == null) {
+            throw new IllegalStateException("partitionCreator should be non-null when open");
+        }
         try {
             DailyPartitionCreator.stop(_partitionCreator, Duration.ofSeconds(5));
             _partitionCreator = null;

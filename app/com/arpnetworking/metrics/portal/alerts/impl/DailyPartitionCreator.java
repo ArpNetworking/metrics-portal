@@ -47,13 +47,12 @@ import javax.persistence.PersistenceException;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DailyPartitionCreator extends AbstractActorWithTimers {
-    /* package private */ static final Object TICK = new Object();
-    private static final Object START_TICKING = new Object();
-    private static final Object EXECUTE = new Object();
-
+    /* package private */ static final Object TICK = "MSG_TICK";
     private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private static final String TICKER_NAME = "PERIODIC_TICK";
+    private static final String START_TICKING = "MSG_START_TICKING";
+    private static final String EXECUTE = "MSG_EXECUTE";
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
 
@@ -231,7 +230,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         final LocalDate startDate = ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone()).toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
-        LOGGER.info().setMessage("Creating daily partitions for table")
+        LOGGER.info()
+                .setMessage("Creating daily partitions for table")
                 .addData("schema", _schema)
                 .addData("table", _table)
                 .addData("startDate", startDate)
@@ -244,15 +244,17 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             _lastRun = Optional.of(_clock.instant());
         } catch (final PersistenceException e) {
             error = Optional.of(e);
-            LOGGER.error().setMessage("Failed to create daily partitions for table")
+            LOGGER.error()
+                    .setMessage("Failed to create daily partitions for table")
                     .addData("schema", _schema)
                     .addData("table", _table)
                     .addData("startDate", startDate)
                     .addData("endDate", endDate)
                     .setThrowable(e)
                     .log();
+        } finally {
+            recordCounter("create", error.isPresent() ? 0 : 1);
         }
-        recordCounter("create", error.isPresent() ? 0 : 1);
         return error;
     }
 
@@ -264,10 +266,12 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param startDate the start date, inclusive.
      * @param endDate the end date, exclusive.
      */
-    protected void execute(final String schema,
-                         final String table,
-                         final LocalDate startDate,
-                         final LocalDate endDate) {
+    protected void execute(
+            final String schema,
+            final String table,
+            final LocalDate startDate,
+            final LocalDate endDate
+    ) {
         // While this query does not return anything meaningful semantically,
         // it still returns a "non-empty" void result and so we can't use the
         // ordinarily more appropriate SqlUpdate type.
@@ -278,6 +282,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .setParameter(3, startDate)
                 .setParameter(4, endDate);
 
-        sql.findOneOrEmpty().orElseThrow(() -> new IllegalStateException("Expected a single empty result."));
+        sql.findOneOrEmpty().orElseThrow(() -> new PersistenceException("Expected a single empty result."));
     }
 }
