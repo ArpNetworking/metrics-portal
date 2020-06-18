@@ -52,6 +52,7 @@ public final class RollupManager extends AbstractActorWithTimers {
     private RollupPartitioner _partitioner;
     private final ActorRef _consistencyChecker;
     private final double _consistencyCheckFractionOfWrites;
+    private Duration _consistencyCheckDelay = Duration.ofSeconds(30);
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
@@ -146,8 +147,8 @@ public final class RollupManager extends AbstractActorWithTimers {
         if (shouldRequestConsistencyCheck(message)) {
             EXECUTOR.schedule(
                     () -> RollupManager.requestConsistencyCheck(_consistencyChecker, defn),
-                    30,
-                    TimeUnit.SECONDS
+                    _consistencyCheckDelay.toMillis(),
+                    TimeUnit.MILLISECONDS
             );
             // ^ "Why delay?" Because KairosDB has an internal write-queue that might take a little while
             //   to flush to Cassandra, so we don't quite have read-after-write consistency.
@@ -245,6 +246,10 @@ public final class RollupManager extends AbstractActorWithTimers {
 
     private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
         return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
+    }
+
+    public void setConsistencyCheckDelay(final Duration consistencyCheckDelay) {
+        _consistencyCheckDelay = consistencyCheckDelay;
     }
 
     private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {
