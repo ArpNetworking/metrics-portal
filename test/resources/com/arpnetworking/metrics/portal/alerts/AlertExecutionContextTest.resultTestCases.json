@@ -1,0 +1,25 @@
+{
+  "mismatchedNamesInResults" : {
+    "queryResult" : {
+      "queries" : [
+        {
+          "sampleSize" : 1000,
+          "results" : [
+            {
+              "name" : "testMetricA",
+              "tags" : {
+                "foo" : ["bar"]
+              }
+            },
+            {
+              "name" : "testMetricB",
+              "tags" : {
+                "foo" : ["bar"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -22,6 +22,10 @@ import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
+import com.arpnetworking.testing.SerializationTestUtils;
+import com.arpnetworking.utility.test.ResourceHelper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -40,10 +44,12 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -70,6 +76,7 @@ public class AlertExecutionContextTest {
     private Alert _alert;
     private Schedule _schedule;
     private QueryExecutor _executor;
+    private ObjectMapper _objectMapper;
 
     // This is small because the futures here should never actually block.
     private static final long TEST_TIMEOUT_MS = 50;
@@ -98,6 +105,7 @@ public class AlertExecutionContextTest {
                 _schedule,
                 _executor
         );
+        _objectMapper = SerializationTestUtils.getApiObjectMapper();
     }
 
     @Test
@@ -145,6 +153,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
 
+        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
@@ -186,6 +195,47 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of(ImmutableMap.of())));
+    }
+
+    @Test
+    public void testSingleSeriesDatapointTooOld() throws Exception {
+        final Instant scheduled = Instant.now();
+        final ChronoUnit period = ChronoUnit.HOURS;
+        when(_executor.periodHint(any())).thenReturn(Optional.of(period));
+        final Instant lastDatapointTs = scheduled.minus(1, period);
+
+        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
+                .setQueryResult(new DefaultTimeSeriesResult.Builder()
+                        .setQueries(ImmutableList.of(
+                                new DefaultTimeSeriesResult.Query.Builder()
+                                        .setSampleSize(1000L)
+                                        .setResults(ImmutableList.of(
+                                                new DefaultTimeSeriesResult.Result.Builder()
+                                                        .setName(TEST_METRIC)
+                                                        .setValues(ImmutableList.of(
+                                                                new DefaultTimeSeriesResult.DataPoint.Builder()
+                                                                        .setTime(lastDatapointTs)
+                                                                        .setValue(1)
+                                                                        .build()
+                                                        ))
+                                                        .setTags(ImmutableMultimap.of(
+                                                                "os", "linux",
+                                                                "os", "mac",
+                                                                "os", "windows"
+                                                        ))
+                                                        .build()
+                                        ))
+                                        .build()
+                        ))
+                        .build()
+                )
+                .build();
+
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        assertThat(result.getName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), equalTo(ImmutableList.of()));
     }
 
     @Test
@@ -472,30 +522,7 @@ public class AlertExecutionContextTest {
 
     @Test(expected = ExecutionException.class)
     public void testMismatchedNamesInResults() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "foo", "bar"
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName("other_metric")
-                                                        .setTags(ImmutableMultimap.of(
-                                                                         "foo", "bar"
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("mismatchedNamesInResults");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
@@ -522,5 +549,18 @@ public class AlertExecutionContextTest {
         when(_executor.periodHint(any())).thenReturn(Optional.empty());
         when(_executor.executeQuery(any())).thenReturn(new CompletableFuture<>());
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+    }
+
+    private MetricsQueryResult getTestcase(final String name) throws IOException {
+        final String json = ResourceHelper.loadResource(getClass(), "resultTestCases");
+
+        final Map<String, DefaultMetricsQueryResult> testcases;
+        testcases = _objectMapper.readValue(json, new TypeReference<Map<String, DefaultMetricsQueryResult>>() {});
+
+        final DefaultMetricsQueryResult result = testcases.get(name);
+        if (result == null) {
+            fail("Could not find testcase: " + name);
+        }
+        return result;
     }
 }
