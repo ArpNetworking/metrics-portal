@@ -22,6 +22,7 @@ import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.EbeanServer;
 import org.junit.After;
@@ -50,7 +51,8 @@ import static org.junit.Assert.assertThat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DailyPartitionCreatorTest {
-    private static final String EXECUTE_WAS_CALLED = "EXECUTE_WAS_CALLED";
+    private static final String TEST_SCHEMA = "TEST_SCHEMA";
+    private static final String TEST_TABLE = "TEST_TABLE";
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
     private static final long TEST_LOOKAHEAD = 7;
 
@@ -74,17 +76,20 @@ public class DailyPartitionCreatorTest {
         _probe = new TestKit(_actorSystem);
     }
 
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    private ActorRef createActor(final PartitionCreator executeFn) {
-        // Create an actor with the db execution behavior mocked out.
+    private ActorRef createActor() {
+        return createActor(() -> {});
+    }
 
+    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
+    private ActorRef createActor(final Runnable onExecute) {
+        // Create an actor with the db execution behavior mocked out.
         final Props props = Props.create(
                 DailyPartitionCreator.class,
                 () -> new DailyPartitionCreator(
                         _server,
                         _metrics,
-                        "testSchema",
-                        "testTable",
+                        TEST_SCHEMA,
+                        TEST_TABLE,
                         Duration.ZERO,
                         (int) TEST_LOOKAHEAD,
                         _clock
@@ -96,7 +101,11 @@ public class DailyPartitionCreatorTest {
                             final LocalDate startDate,
                             final LocalDate endDate
                     ) {
-                        executeFn.execute(schema, table, startDate, endDate);
+                        onExecute.run();
+                        _probe.getRef().tell(
+                                new ExecuteCall(schema, table, startDate, endDate),
+                                _probe.getRef()
+                        );
                     }
                 }
         );
@@ -112,21 +121,17 @@ public class DailyPartitionCreatorTest {
 
     @Test
     public void testCreatePartitionsOnTick() throws Exception {
-        final ActorRef ref = createActor((final String table, final String schema, final LocalDate start, final LocalDate end) -> {
-            _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef());
-
-            final long difference = ChronoUnit.DAYS.between(start, end);
-            assertThat("range should respect lookahead", difference, equalTo(TEST_LOOKAHEAD));
-
-            final long clockDifference = ChronoUnit.DAYS.between(
-                    start,
-                    ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
-            );
-            assertThat("range should start from current date", clockDifference, equalTo(0L));
-        });
+        final ActorRef ref = createActor();
 
         // The actor will tick on startup.
-        _probe.expectMsg(EXECUTE_WAS_CALLED);
+        ExecuteCall call = _probe.expectMsgClass(ExecuteCall.class);
+        long clockDifference = ChronoUnit.DAYS.between(
+                call.getStart(),
+                ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
+        );
+        assertThat("range should start from current date", clockDifference, equalTo(0L));
+        assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
+        assertThat(call.getTable(), equalTo(TEST_TABLE));
 
         for (int i = 0; i < 3; i++) {
             // Clock didn't move
@@ -136,7 +141,19 @@ public class DailyPartitionCreatorTest {
             // Clock moved 1 day
             _clock.tick();
             ref.tell(DailyPartitionCreator.TICK, _probe.getRef());
-            _probe.expectMsg(EXECUTE_WAS_CALLED);
+            call = _probe.expectMsgClass(ExecuteCall.class);
+
+            assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
+            assertThat(call.getTable(), equalTo(TEST_TABLE));
+
+            final long difference = ChronoUnit.DAYS.between(call.getStart(), call.getEnd());
+            assertThat("range should respect lookahead", difference, equalTo(TEST_LOOKAHEAD));
+
+            clockDifference = ChronoUnit.DAYS.between(
+                    call.getStart(),
+                    ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
+            );
+            assertThat("range should start from current date", clockDifference, equalTo(0L));
         }
         DailyPartitionCreator.stop(ref, MSG_TIMEOUT);
         _probe.expectTerminated(ref);
@@ -145,20 +162,17 @@ public class DailyPartitionCreatorTest {
     @Test
     public void testCreatePartitionsOnDemand() throws Exception {
         final LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
-        final ActorRef ref = createActor((final String table, final String schema, final LocalDate start, final LocalDate end) -> {
-            _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef());
-//
-//            assertThat(start, equalTo(oneWeekAgo));
-//
-//            final long difference = ChronoUnit.DAYS.between(start, end);
-//            assertThat("on demand creates a single day", difference, equalTo(1));
-        });
+        final ActorRef ref = createActor();
 
         // The actor will tick on startup.
-        _probe.expectMsg(EXECUTE_WAS_CALLED);
+        _probe.expectMsgClass(ExecuteCall.class);
 
         DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
-        _probe.expectMsg(EXECUTE_WAS_CALLED);
+        final ExecuteCall call = _probe.expectMsgClass(ExecuteCall.class);
+        assertThat(call.getStart(), equalTo(oneWeekAgo));
+        assertThat(call.getEnd(), equalTo(oneWeekAgo.plusDays(1)));
+        assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
+        assertThat(call.getTable(), equalTo(TEST_TABLE));
 
         DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
         _probe.expectNoMessage(); // should have been cached
@@ -170,15 +184,50 @@ public class DailyPartitionCreatorTest {
     @Test(expected = ExecutionException.class)
     public void testExecutionError() throws Exception {
         final ActorRef ref = createActor(
-                (final String table, final String schema, final LocalDate start, final LocalDate end) -> {
+                () -> {
                     throw new PersistenceException("Something went wrong");
                 }
         );
         DailyPartitionCreator.ensurePartitionExistsForDate(ref, LocalDate.now(), MSG_TIMEOUT);
     }
 
-    @FunctionalInterface
-    interface PartitionCreator {
-        void execute(String schema, String table, LocalDate start, LocalDate end);
+    public static final class ExecuteCall {
+        private final String _schema;
+        private final String _table;
+        private final LocalDate _start;
+        private final LocalDate _end;
+
+        public ExecuteCall(final String schema, final String table, final LocalDate start, final LocalDate end) {
+            _schema = schema;
+            _table = table;
+            _start = start;
+            _end = end;
+        }
+
+        public String getSchema() {
+            return _schema;
+        }
+
+        public String getTable() {
+            return _table;
+        }
+
+        public LocalDate getStart() {
+            return _start;
+        }
+
+        public LocalDate getEnd() {
+            return _end;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_schema", _schema)
+                    .add("_table", _table)
+                    .add("_start", _start)
+                    .add("_end", _end)
+                    .toString();
+        }
     }
 }
