@@ -1,23 +1,336 @@
 {
-  "mismatchedNamesInResults" : {
-    "queryResult" : {
-      "queries" : [
+  "mismatchedNamesInResults": {
+    "queryResult": {
+      "queries": [
         {
-          "sampleSize" : 1000,
-          "results" : [
+          "sampleSize": 1000,
+          "results": [
             {
-              "name" : "testMetricA",
-              "tags" : {
-                "foo" : ["bar"]
+              "name": "testMetricA",
+              "tags": {
+                "foo": [
+                  "bar"
+                ]
               }
             },
             {
-              "name" : "testMetricB",
-              "tags" : {
-                "foo" : ["bar"]
+              "name": "testMetricB",
+              "tags": {
+                "foo": [
+                  "bar"
+                ]
               }
             }
           ]
+        }
+      ]
+    }
+  },
+  "singleSeriesNotFiring": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "linux",
+                  "mac",
+                  "windows"
+                ]
+              }
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "singleSeriesFiring": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "values": [
+                [
+                  1592443414231,
+                  1
+                ]
+              ],
+              "tags": {
+                "os": [
+                  "linux",
+                  "mac",
+                  "windows"
+                ]
+              },
+              "name": "test_metric"
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "groupBySomeFiring": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "linux"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "linux"
+                ]
+              }
+            },
+            {
+              "values": [
+                [
+                  1592443497836,
+                  1
+                ]
+              ],
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "mac"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "mac"
+                ]
+              }
+            },
+            {
+              "values": [
+                [
+                  1592443497840,
+                  1
+                ]
+              ],
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "windows"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "windows"
+                ]
+              }
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "groupByNoneFiring": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "name": "test_metric",
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "linux"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "tags": {
+                "os": [
+                  "linux"
+                ]
+              }
+            },
+            {
+              "name": "test_metric",
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "mac"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "tags": {
+                "os": [
+                  "mac"
+                ]
+              }
+            },
+            {
+              "name": "test_metric",
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "windows"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "tags": {
+                "os": [
+                  "windows"
+                ]
+              }
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "oneResultMissingGroupBy": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "linux"
+                ]
+              },
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "tags": [
+                    "os"
+                  ],
+                  "group": {
+                    "os": "linux"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "test_metric",
+              "tags": {
+                "os": [
+                  "windows"
+                ]
+              },
+              "values": [
+                [
+                  1592443601464,
+                  1
+                ]
+              ]
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "multipleResultsWithoutAGroupBy": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "tags": {
+                "os": [
+                  "linux"
+                ]
+              },
+              "name": "test_metric"
+            },
+            {
+              "tags": {
+                "os": [
+                  "windows"
+                ]
+              },
+              "name": "test_metric"
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "moreThanOneQuery": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "tags": {
+                "foo": [
+                  "bar"
+                ]
+              },
+              "name": "test_metric"
+            }
+          ],
+          "sample_size": 1000
+        },
+        {
+          "results": [
+            {
+              "tags": {
+                "foo": [
+                  "bar"
+                ]
+              },
+              "name": "test_metric"
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "noResults": {
+    "queryResult": {
+      "queries": [
+        {
+          "sample_size": 1000,
+          "results": []
         }
       ]
     }

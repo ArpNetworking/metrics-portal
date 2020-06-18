@@ -132,27 +132,7 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testSingleSeriesNotFiring() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                    .setQueries(ImmutableList.of(
-                        new DefaultTimeSeriesResult.Query.Builder()
-                            .setSampleSize(1000L)
-                            .setResults(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Result.Builder()
-                                    .setName(TEST_METRIC)
-                                    .setTags(ImmutableMultimap.of(
-                                            "os", "linux",
-                                            "os", "mac",
-                                            "os", "windows"
-                                    ))
-                                    .build()
-                            ))
-                            .build()
-                    ))
-                    .build()
-                )
-                .build();
-
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
@@ -163,33 +143,7 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testSingleSeriesFiring() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setValues(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.DataPoint.Builder()
-                                                                    .setTime(Instant.now())
-                                                                    .setValue(1)
-                                                                    .build()
-                                                        ))
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "linux",
-                                                                "os", "mac",
-                                                                "os", "windows"
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
-
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
@@ -218,11 +172,6 @@ public class AlertExecutionContextTest {
                                                                         .setValue(1)
                                                                         .build()
                                                         ))
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "linux",
-                                                                "os", "mac",
-                                                                "os", "windows"
-                                                        ))
                                                         .build()
                                         ))
                                         .build()
@@ -240,66 +189,7 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testGroupBySomeFiring() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "linux"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "linux"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "mac"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "mac"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .setValues(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.DataPoint.Builder()
-                                                                        .setTime(Instant.now())
-                                                                        .setValue(1)
-                                                                        .build()
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "windows"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "windows"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .setValues(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.DataPoint.Builder()
-                                                                        .setTime(Instant.now())
-                                                                        .setValue(1)
-                                                                        .build()
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("groupBySomeFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
@@ -314,54 +204,8 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testGroupByNoneFiring() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                            "os", "linux"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                    .setGroup(ImmutableMap.of("os", "linux"))
-                                                                    .setTags(ImmutableList.of("os"))
-                                                                    .build()
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                              "os", "mac"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "mac"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                             "os", "windows"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "windows"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("groupByNoneFiring");
+        final String json = _objectMapper.writeValueAsString(mockResult);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
@@ -414,110 +258,23 @@ public class AlertExecutionContextTest {
 
     @Test(expected = ExecutionException.class)
     public void testOneResultMissingGroupBy() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "linux"
-                                                        ))
-                                                        .setGroupBy(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.QueryTagGroupBy.Builder()
-                                                                        .setGroup(ImmutableMap.of("os", "linux"))
-                                                                        .setTags(ImmutableList.of("os"))
-                                                                        .build()
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "windows"
-                                                        ))
-                                                        .setValues(ImmutableList.of(
-                                                                new DefaultTimeSeriesResult.DataPoint.Builder()
-                                                                        .setTime(Instant.now())
-                                                                        .setValue(1)
-                                                                        .build()
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("oneResultMissingGroupBy");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = ExecutionException.class)
     public void testMultipleResultsWithoutAGroupBy() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "linux"
-                                                        ))
-                                                        .build(),
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "os", "windows"
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("multipleResultsWithoutAGroupBy");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
     @Test(expected = ExecutionException.class)
     public void testMoreThanOneQuery() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                "foo", "bar"
-                                                        ))
-                                                        .build()
-                                        ))
-                                        .build(),
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of(
-                                                new DefaultTimeSeriesResult.Result.Builder()
-                                                        .setName(TEST_METRIC)
-                                                        .setTags(ImmutableMultimap.of(
-                                                                     "foo", "bar"
-                                                        ))
-                                                        .build()
-                                                ))
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("moreThanOneQuery");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-
     }
 
     @Test(expected = ExecutionException.class)
@@ -529,17 +286,8 @@ public class AlertExecutionContextTest {
 
     @Test(expected = ExecutionException.class)
     public void testNoResults() throws Exception {
-        final MetricsQueryResult mockResult = new DefaultMetricsQueryResult.Builder()
-                .setQueryResult(new DefaultTimeSeriesResult.Builder()
-                        .setQueries(ImmutableList.of(
-                                new DefaultTimeSeriesResult.Query.Builder()
-                                        .setSampleSize(1000L)
-                                        .setResults(ImmutableList.of())
-                                        .build()
-                        ))
-                        .build()
-                )
-                .build();
+        final MetricsQueryResult mockResult = getTestcase("noResults");
+        final String json = _objectMapper.writeValueAsString(mockResult);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
@@ -554,10 +302,10 @@ public class AlertExecutionContextTest {
     private MetricsQueryResult getTestcase(final String name) throws IOException {
         final String json = ResourceHelper.loadResource(getClass(), "resultTestCases");
 
-        final Map<String, DefaultMetricsQueryResult> testcases;
-        testcases = _objectMapper.readValue(json, new TypeReference<Map<String, DefaultMetricsQueryResult>>() {});
+        final Map<String, MetricsQueryResult> testcases;
+        testcases = _objectMapper.readValue(json, new TypeReference<Map<String, MetricsQueryResult>>() {});
 
-        final DefaultMetricsQueryResult result = testcases.get(name);
+        final MetricsQueryResult result = testcases.get(name);
         if (result == null) {
             fail("Could not find testcase: " + name);
         }
