@@ -145,7 +145,7 @@ public final class RollupManager extends AbstractActorWithTimers {
         final RollupDefinition defn = message.getRollupDefinition();
         if (shouldRequestConsistencyCheck(message)) {
             EXECUTOR.schedule(
-                    () -> requestConsistencyCheck(defn),
+                    () -> RollupManager.requestConsistencyCheck(_consistencyChecker, defn),
                     30,
                     TimeUnit.SECONDS
             );
@@ -211,7 +211,7 @@ public final class RollupManager extends AbstractActorWithTimers {
         return Optional.ofNullable(_rollupDefinitions.pollFirst());
     }
 
-    private void requestConsistencyCheck(final RollupDefinition defn) {
+    private static void requestConsistencyCheck(final ActorRef consistencyChecker, final RollupDefinition defn) {
         final ConsistencyChecker.Task ccTask = ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
                 .setSourceMetricName(defn.getSourceMetricName())
                 .setRollupMetricName(defn.getDestinationMetricName())
@@ -220,7 +220,7 @@ public final class RollupManager extends AbstractActorWithTimers {
                 .setFilterTags(defn.getFilterTags())
                 .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
         );
-        Patterns.ask(_consistencyChecker, ccTask, Duration.ofSeconds(10))
+        Patterns.ask(consistencyChecker, ccTask, Duration.ofSeconds(10))
                 .whenComplete((response, failure) -> {
                     if (failure == null) {
                         LOGGER.debug()
