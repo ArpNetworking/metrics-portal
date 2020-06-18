@@ -34,6 +34,8 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -124,12 +126,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
-        try {
-            _partitionCreator = _actorSystem.actorOf(_props);
-            DailyPartitionCreator.start(_partitionCreator, Duration.ofSeconds(5));
-        } catch (final ExecutionException | InterruptedException e) {
-            throw new RuntimeException("Failed to start partition creator", e);
-        }
+        _partitionCreator = _actorSystem.actorOf(_props);
         _isOpen.set(true);
     }
 
@@ -208,6 +205,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     @Override
     public void jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobStarted(alertId, organization, scheduled);
     }
 
@@ -219,12 +217,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobSucceeded(alertId, organization, scheduled, result);
     }
 
     @Override
     public void jobFailed(final UUID alertId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobFailed(alertId, organization, scheduled, error);
     }
 
@@ -236,6 +236,23 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("DatabaseAlertExecutionRepository is not %s",
                     expectedState ? "open" : "closed"));
+        }
+    }
+
+    private void ensurePartition(final Instant scheduled) {
+        if (_partitionCreator == null) {
+            throw new IllegalStateException("partitionCreator should be non-null when open");
+        }
+        try {
+            DailyPartitionCreator.ensurePartitionExistsForDate(
+                    _partitionCreator,
+                    ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).toLocalDate(),
+                    Duration.ofSeconds(1)
+            );
+        } catch (final InterruptedException e) {
+            throw new RuntimeException("partition creation interrupted", e);
+        } catch (final ExecutionException e) {
+            throw new RuntimeException("Could not ensure partition for instant: " + scheduled, e);
         }
     }
 }

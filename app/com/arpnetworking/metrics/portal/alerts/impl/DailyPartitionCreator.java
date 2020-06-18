@@ -22,11 +22,13 @@ import akka.actor.Props;
 import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.Sets;
 import io.ebean.EbeanServer;
 import io.ebean.SqlQuery;
 
@@ -38,6 +40,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.PersistenceException;
 
@@ -51,8 +54,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private static final String TICKER_NAME = "PERIODIC_TICK";
-    private static final String START_TICKING = "MSG_START_TICKING";
-    private static final String EXECUTE = "MSG_EXECUTE";
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
 
@@ -62,6 +63,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private final Clock _clock;
     private final Schedule _schedule;
     private Optional<Instant> _lastRun;
+
+    private Set<LocalDate> _partitionCache;
 
     private DailyPartitionCreator(
             final EbeanServer ebeanServer,
@@ -89,13 +92,14 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         _schedule = new PeriodicSchedule.Builder()
                 .setOffset(scheduleOffset)
                 .setPeriod(ChronoUnit.DAYS)
-                .setRunAtAndAfter(Instant.MIN)
+                .setRunAtAndAfter(Instant.EPOCH)
                 .setZone(ZoneOffset.UTC)
                 .build();
         _lastRun = Optional.empty();
         _schema = schema;
         _table = table;
         _clock = clock;
+        _partitionCache = Sets.newHashSet();
     }
 
     /**
@@ -131,30 +135,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     }
 
     /**
-     * Ask the actor referenced by {@code ref} to start execution.
-     * <p>
-     * This will execute partition creation exactly once and then periodically thereafter using the actor's props.
-     *
-     * @param ref an {@code DailyPartitionCreator}.
-     * @param timeout timeout for the operation
-     * @throws ExecutionException if an exception was thrown during execution.
-     * @throws InterruptedException if the actor does not reply within the allotted timeout, or if the actor thread was
-     * interrupted for other reasons.
-     */
-    public static void start(
-            final ActorRef ref,
-            final Duration timeout
-    ) throws ExecutionException, InterruptedException {
-        Patterns.ask(
-                ref,
-                START_TICKING,
-                timeout
-        )
-        .toCompletableFuture()
-        .get();
-    }
-
-    /**
      * Ask the actor referenced by {@code ref} to stop execution.
      *
      * @param ref an {@code DailyPartitionCreator}.
@@ -166,6 +146,47 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     public static void stop(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
         Patterns.gracefulStop(ref, timeout).toCompletableFuture().get();
     }
+
+    /**
+     * Ask the actor referenced by {@code ref} to create the partition(s) needed
+     * for the given date.
+     *
+     * @param ref an {@code DailyPartitionCreator}.
+     * @param date The partition date
+     * @param timeout timeout for the operation
+     * @throws ExecutionException if an exception was thrown during execution.
+     * @throws InterruptedException if the actor does not respond within the allotted timeout, or if the actor thread was
+     * interrupted for other reasons.
+     */
+    public static void ensurePartitionExistsForDate(
+            final ActorRef ref,
+            final LocalDate date,
+            final Duration timeout
+    ) throws ExecutionException, InterruptedException {
+        final CreateForRange createPartitions = new CreateForRange.Builder()
+                .setStart(date)
+                .setEnd(date.plusDays(1))
+                .build();
+        Patterns.ask(
+                ref,
+                createPartitions,
+                timeout
+        )
+        .toCompletableFuture()
+        .get();
+    }
+
+    @Override
+    public void preStart() {
+        LOGGER.info().setMessage("Starting execution timer")
+                .addData("schema", _schema)
+                .addData("table", _table)
+                .addData("lookahead", _lookahead)
+                .log();
+        getSelf().tell(TICK, getSelf());
+        getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
+    }
+
 
     @Override
     public void postStop() throws Exception {
@@ -180,9 +201,13 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return new ReceiveBuilder()
-                .matchEquals(START_TICKING, msg -> startTicking())
                 .matchEquals(TICK, msg -> tick())
-                .matchEquals(EXECUTE, msg -> execute())
+                .match(CreateForRange.class, msg -> {
+                    final Status.Status resp = execute(msg.getStart(), msg.getEnd());
+                    if (!getSender().equals(getSelf())) {
+                        getSender().tell(resp, getSelf());
+                    }
+                })
                 .build();
     }
 
@@ -193,35 +218,42 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     // Message handlers
 
-    private void startTicking() {
-        if (getTimers().isTimerActive(TICKER_NAME)) {
-            getSender().tell(new Status.Failure(new IllegalStateException("Timer already started")), getSelf());
-            return;
-        }
-        LOGGER.info().setMessage("Starting execution timer")
-            .addData("schema", _schema)
-            .addData("table", _table)
-            .addData("lookahead", _lookahead)
-            .log();
-        final Status.Status executeResponse = execute();
-        getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
-        getSender().tell(executeResponse, getSelf());
-    }
-
     private void tick() {
         recordCounter("tick", 1);
 
         final Instant now = _clock.instant();
         if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(now)).orElse(true)) {
-            getSelf().tell(EXECUTE, getSelf());
+            final LocalDate startDate = ZonedDateTime.ofInstant(now, _clock.getZone()).toLocalDate();
+            final LocalDate endDate = startDate.plusDays(_lookahead);
+
+            final CreateForRange createPartitions = new CreateForRange.Builder()
+                    .setStart(startDate)
+                    .setEnd(endDate)
+                    .build();
+            getSelf().tell(createPartitions, getSelf());
         }
     }
 
-    // Wrapper to propagate any errors that occurred to the caller.
-    // This is really only useful on a call to `start`.
-    private Status.Status execute() {
-        final LocalDate startDate = ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone()).toLocalDate();
-        final LocalDate endDate = startDate.plusDays(_lookahead);
+    private Status.Status execute(final LocalDate startDate, final LocalDate endDate) {
+        LocalDate d = startDate;
+        boolean allPartitionsExist = true;
+        while (!d.equals(endDate)) {
+            if (!_partitionCache.contains(d)) {
+                allPartitionsExist = false;
+                break;
+            }
+            d = d.plusDays(1);
+        }
+        if (allPartitionsExist) {
+            LOGGER.debug()
+                    .setMessage("partitions already exist, ignoring execute request")
+                    .addData("schema", _schema)
+                    .addData("table", _table)
+                    .addData("startDate", startDate)
+                    .addData("endDate", endDate)
+                    .log();
+            return new Status.Success(null);
+        }
 
         LOGGER.info()
                 .setMessage("Creating daily partitions for table")
@@ -235,6 +267,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         try {
             execute(_schema, _table, startDate, endDate);
             _lastRun = Optional.of(_clock.instant());
+            updateCache(startDate, endDate);
         } catch (final PersistenceException e) {
             status = new Status.Failure(e);
             LOGGER.error()
@@ -249,6 +282,14 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             recordCounter("create", status instanceof Status.Success ? 0 : 1);
         }
         return status;
+    }
+
+    void updateCache(final LocalDate start, final LocalDate end) {
+        LocalDate date = start;
+        while (!date.equals(end)) {
+            _partitionCache.add(date);
+            date = date.plusDays(1);
+        }
     }
 
     /**
@@ -276,5 +317,54 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .setParameter(4, endDate);
 
         sql.findOneOrEmpty().orElseThrow(() -> new PersistenceException("Expected a single empty result."));
+    }
+
+    private static final class CreateForRange {
+        private final LocalDate _start;
+        private final LocalDate _end;
+
+        private CreateForRange(final Builder builder) {
+            _start = builder._start;
+            _end = builder._end;
+        }
+
+        public LocalDate getStart() {
+            return _start;
+        }
+
+        public LocalDate getEnd() {
+            return _end;
+        }
+
+        static final class Builder extends OvalBuilder<CreateForRange> {
+            private LocalDate _start;
+            private LocalDate _end;
+
+            Builder() {
+                super(CreateForRange::new);
+            }
+
+            /**
+             * Sets the start.
+             *
+             * @param start the start.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setStart(final LocalDate start) {
+                _start = start;
+                return this;
+            }
+
+            /**
+             * Sets the end.
+             *
+             * @param end the end.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setEnd(final LocalDate end) {
+                _end = end;
+                return this;
+            }
+        }
     }
 }

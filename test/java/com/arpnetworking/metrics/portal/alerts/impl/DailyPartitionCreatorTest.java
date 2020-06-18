@@ -50,7 +50,7 @@ import static org.junit.Assert.assertThat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DailyPartitionCreatorTest {
-    private static final Object EXECUTE_WAS_CALLED = new Object();
+    private static final String EXECUTE_WAS_CALLED = "EXECUTE_WAS_CALLED";
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
     private static final long TEST_LOOKAHEAD = 7;
 
@@ -74,12 +74,10 @@ public class DailyPartitionCreatorTest {
         _probe = new TestKit(_actorSystem);
     }
 
-    private ActorRef createActor() {
-        return createActor(() -> _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef()));
-    }
-
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    private ActorRef createActor(final Runnable executeFn) {
+    private ActorRef createActor(final PartitionCreator executeFn) {
+        // Create an actor with the db execution behavior mocked out.
+
         final Props props = Props.create(
                 DailyPartitionCreator.class,
                 () -> new DailyPartitionCreator(
@@ -98,16 +96,7 @@ public class DailyPartitionCreatorTest {
                             final LocalDate startDate,
                             final LocalDate endDate
                     ) {
-                        executeFn.run();
-
-                        final long difference = ChronoUnit.DAYS.between(startDate, endDate);
-                        assertThat("range should respect lookahead", difference, equalTo(TEST_LOOKAHEAD));
-
-                        final long clockDifference = ChronoUnit.DAYS.between(
-                                startDate,
-                                ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
-                        );
-                        assertThat("range should start from current date", clockDifference, equalTo(0L));
+                        executeFn.execute(schema, table, startDate, endDate);
                     }
                 }
         );
@@ -123,10 +112,20 @@ public class DailyPartitionCreatorTest {
 
     @Test
     public void testCreatePartitionsOnTick() throws Exception {
-        final ActorRef ref = createActor();
+        final ActorRef ref = createActor((final String table, final String schema, final LocalDate start, final LocalDate end) -> {
+            _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef());
 
-        // First call should have been synchronous
-        DailyPartitionCreator.start(ref, MSG_TIMEOUT);
+            final long difference = ChronoUnit.DAYS.between(start, end);
+            assertThat("range should respect lookahead", difference, equalTo(TEST_LOOKAHEAD));
+
+            final long clockDifference = ChronoUnit.DAYS.between(
+                    start,
+                    ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
+            );
+            assertThat("range should start from current date", clockDifference, equalTo(0L));
+        });
+
+        // The actor will tick on startup.
         _probe.expectMsg(EXECUTE_WAS_CALLED);
 
         for (int i = 0; i < 3; i++) {
@@ -143,21 +142,43 @@ public class DailyPartitionCreatorTest {
         _probe.expectTerminated(ref);
     }
 
-    @Test(expected = ExecutionException.class)
-    public void testDoubleStartWithoutStop() throws Exception {
-        final ActorRef ref = createActor();
+    @Test
+    public void testCreatePartitionsOnDemand() throws Exception {
+        final LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
+        final ActorRef ref = createActor((final String table, final String schema, final LocalDate start, final LocalDate end) -> {
+            _probe.getRef().tell(EXECUTE_WAS_CALLED, _probe.getRef());
+//
+//            assertThat(start, equalTo(oneWeekAgo));
+//
+//            final long difference = ChronoUnit.DAYS.between(start, end);
+//            assertThat("on demand creates a single day", difference, equalTo(1));
+        });
 
-        DailyPartitionCreator.start(ref, MSG_TIMEOUT);
-        DailyPartitionCreator.start(ref, MSG_TIMEOUT);
+        // The actor will tick on startup.
+        _probe.expectMsg(EXECUTE_WAS_CALLED);
+
+        DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
+        _probe.expectMsg(EXECUTE_WAS_CALLED);
+
+        DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
+        _probe.expectNoMessage(); // should have been cached
+
+        DailyPartitionCreator.stop(ref, MSG_TIMEOUT);
+        _probe.expectTerminated(ref);
     }
 
     @Test(expected = ExecutionException.class)
     public void testExecutionError() throws Exception {
         final ActorRef ref = createActor(
-                () -> {
+                (final String table, final String schema, final LocalDate start, final LocalDate end) -> {
                     throw new PersistenceException("Something went wrong");
                 }
         );
-        DailyPartitionCreator.start(ref, MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForDate(ref, LocalDate.now(), MSG_TIMEOUT);
+    }
+
+    @FunctionalInterface
+    interface PartitionCreator {
+        void execute(String schema, String table, LocalDate start, LocalDate end);
     }
 }
