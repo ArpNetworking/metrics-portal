@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -37,7 +38,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.PersistenceException;
 
@@ -150,15 +150,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 START_TICKING,
                 timeout
         )
-                .thenCompose(reply -> {
-                    @SuppressWarnings("unchecked") final Optional<Throwable> o = (Optional<Throwable>) reply;
-                    final CompletableFuture<Void> future = new CompletableFuture<>();
-                    o.ifPresent(future::completeExceptionally);
-                    future.complete(null);
-                    return future;
-                })
-                .toCompletableFuture()
-                .get();
+        .toCompletableFuture()
+        .get();
     }
 
     /**
@@ -202,7 +195,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     private void startTicking() {
         if (getTimers().isTimerActive(TICKER_NAME)) {
-            getSender().tell(Optional.of(new IllegalStateException("Timer already started")), getSelf());
+            getSender().tell(new Status.Failure(new IllegalStateException("Timer already started")), getSelf());
             return;
         }
         LOGGER.info().setMessage("Starting execution timer")
@@ -210,9 +203,9 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             .addData("table", _table)
             .addData("lookahead", _lookahead)
             .log();
-        final Optional<Exception> executeResult = execute();
+        final Status.Status executeResponse = execute();
         getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
-        getSender().tell(executeResult, getSelf());
+        getSender().tell(executeResponse, getSelf());
     }
 
     private void tick() {
@@ -226,7 +219,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     // Wrapper to propagate any errors that occurred to the caller.
     // This is really only useful on a call to `start`.
-    private Optional<Exception> execute() {
+    private Status.Status execute() {
         final LocalDate startDate = ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone()).toLocalDate();
         final LocalDate endDate = startDate.plusDays(_lookahead);
 
@@ -238,12 +231,12 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .addData("endDate", endDate)
                 .log();
 
-        Optional<Exception> error = Optional.empty();
+        Status.Status status = new Status.Success(null);
         try {
             execute(_schema, _table, startDate, endDate);
             _lastRun = Optional.of(_clock.instant());
         } catch (final PersistenceException e) {
-            error = Optional.of(e);
+            status = new Status.Failure(e);
             LOGGER.error()
                     .setMessage("Failed to create daily partitions for table")
                     .addData("schema", _schema)
@@ -253,9 +246,9 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     .setThrowable(e)
                     .log();
         } finally {
-            recordCounter("create", error.isPresent() ? 0 : 1);
+            recordCounter("create", status instanceof Status.Success ? 0 : 1);
         }
-        return error;
+        return status;
     }
 
     /**
