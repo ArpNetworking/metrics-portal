@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -57,6 +58,7 @@ public final class RollupManager extends AbstractActorWithTimers {
     private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupManager.class);
     private static final Random RANDOM = new Random();
+    private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
      * Creates a {@link Props} for use in Akka.
@@ -142,7 +144,17 @@ public final class RollupManager extends AbstractActorWithTimers {
 
         final RollupDefinition defn = message.getRollupDefinition();
         if (shouldRequestConsistencyCheck(message)) {
-            requestConsistencyCheck(defn);
+            // "Why delay?" Because KairosDB has an internal write-queue that might take a little while
+            //   to flush to Cassandra, so we don't quite have read-after-write consistency.
+            // (example shelldump: https://pastebin.com/dTq8X5et )
+            // Empirically, in simple tests like that, I see discrepancies get resolved in <1sec,
+            //   but waiting is cheap, and large write-batches might take longer to flush,
+            //   so to be safe, we wait much longer than that 1sec.
+            EXECUTOR.schedule(
+                    () -> requestConsistencyCheck(defn),
+                    30,
+                    TimeUnit.SECONDS
+            );
         }
 
         try (Metrics metrics = _metricsFactory.create()) {
