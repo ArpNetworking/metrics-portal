@@ -77,7 +77,7 @@ public class DailyPartitionCreatorTest {
     }
 
     private ActorRef createActor() {
-        return createActor(() -> {});
+        return createActor(() -> { });
     }
 
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
@@ -191,6 +191,9 @@ public class DailyPartitionCreatorTest {
         DailyPartitionCreator.ensurePartitionExistsForDate(ref, LocalDate.now(), MSG_TIMEOUT);
     }
 
+    /**
+     * Helper message class used by the test probe in this suite to inspect arguments to DailyPartionCreator#execute.
+     */
     public static final class ExecuteCall {
         private final String _schema;
         private final String _table;
