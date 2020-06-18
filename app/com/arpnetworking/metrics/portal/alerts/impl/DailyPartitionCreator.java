@@ -284,7 +284,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         return status;
     }
 
-    void updateCache(final LocalDate start, final LocalDate end) {
+    private void updateCache(final LocalDate start, final LocalDate end) {
         LocalDate date = start;
         while (!date.equals(end)) {
             _partitionCache.add(date);
