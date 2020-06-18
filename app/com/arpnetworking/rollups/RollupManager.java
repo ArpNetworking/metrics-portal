@@ -144,17 +144,17 @@ public final class RollupManager extends AbstractActorWithTimers {
 
         final RollupDefinition defn = message.getRollupDefinition();
         if (shouldRequestConsistencyCheck(message)) {
-            // "Why delay?" Because KairosDB has an internal write-queue that might take a little while
-            //   to flush to Cassandra, so we don't quite have read-after-write consistency.
-            // (example shelldump: https://pastebin.com/dTq8X5et )
-            // Empirically, in simple tests like that, I see discrepancies get resolved in <1sec,
-            //   but waiting is cheap, and large write-batches might take longer to flush,
-            //   so to be safe, we wait much longer than that 1sec.
             EXECUTOR.schedule(
                     () -> requestConsistencyCheck(defn),
                     30,
                     TimeUnit.SECONDS
             );
+            // ^ "Why delay?" Because KairosDB has an internal write-queue that might take a little while
+            //   to flush to Cassandra, so we don't quite have read-after-write consistency.
+            // (example shelldump: https://pastebin.com/dTq8X5et )
+            // Empirically, in simple tests like that, I see discrepancies get resolved in <1sec,
+            //   but waiting is cheap, and large write-batches might take longer to flush,
+            //   so to be safe, we wait much longer than that 1sec.
         }
 
         try (Metrics metrics = _metricsFactory.create()) {
