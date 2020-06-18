@@ -50,7 +50,7 @@ public class DelegatingQueryExecutor implements QueryExecutor {
 
     @Override
     public CompletionStage<MetricsQueryResult> executeQuery(final BoundedMetricsQuery query) {
-        CompletableFuture.completedFuture(null).thenCompose(ignored -> executeQueryInner(query));
+        return CompletableFuture.completedFuture(null).thenCompose(ignored -> executeQueryInner(query));
     }
 
     @Override
