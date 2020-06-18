@@ -29,6 +29,7 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -50,6 +51,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -292,6 +294,16 @@ public class RollupExecutorTest {
                         .build(),
                 RollupExecutor.buildQueryRollup(definition)
         );
+    }
+
+    private static final Supplier<RollupExecutor.FinishRollupMessage.Builder> FULLY_SPECIFIED_FINISH_MESSAGE_BUILDER = () ->
+            new RollupExecutor.FinishRollupMessage.Builder()
+                    .setRollupDefinition(TestBeanFactory.createRollupDefinitionBuilder().build())
+                    .setFailure(new RuntimeException());
+
+    @Test
+    public void testFinishMessageBuilderReset() throws Exception {
+        com.arpnetworking.commons.test.ThreadLocalBuildableTestHelper.testReset(FULLY_SPECIFIED_FINISH_MESSAGE_BUILDER.get());
     }
 
     /**

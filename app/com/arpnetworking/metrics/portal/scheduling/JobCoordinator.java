@@ -27,6 +27,7 @@ import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.util.PagingIterator;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.CaseFormat;
 import com.google.inject.Injector;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
@@ -155,6 +156,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
 
     private void runAntiEntropy() {
         final ActorRef coordinator = self();
+        final String repoName = simpleTypeName(_repositoryType);
         try {
             LOGGER.debug()
                     .setMessage("starting anti-entropy")
@@ -165,9 +167,12 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             final Instant startTime = _clock.instant();
             final JobRepository<T> repo = _injector.getInstance(_repositoryType);
             final Iterable<? extends Organization> allOrgs = _organizationRepository.query(_organizationRepository.createQuery()).values();
+
+            long jobCount = 0;
             for (final Organization organization : allOrgs) {
                 final Iterator<? extends Job<T>> allJobs = getAllJobs(repo, organization);
-                allJobs.forEachRemaining(job -> {
+                while (allJobs.hasNext()) {
+                    final Job<T> job = allJobs.next();
                     final JobRef<T> ref = new JobRef.Builder<T>()
                             .setRepositoryType(_repositoryType)
                             .setExecutionRepositoryType(_execRepositoryType)
@@ -180,19 +185,32 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                                     .setETag(job.getETag().orElse(null))
                                     .build(),
                             coordinator);
-                });
+                    jobCount += 1;
+                }
             }
+            _periodicMetrics.recordGauge(
+                    String.format("jobs/coordinator/by_type/%s/job_count", repoName),
+                    jobCount);
 
             // We now know that all jobs in the repo have current actors.
             // There might still be actors which don't correspond to jobs, but that's fine:
             //   they should self-terminate next time they execute.
 
+            final long latencyNanos = ChronoUnit.NANOS.between(startTime, _clock.instant());
             _periodicMetrics.recordTimer(
                     "jobs/coordinator/anti_entropy/latency",
-                    ChronoUnit.NANOS.between(startTime, _clock.instant()),
+                    latencyNanos,
+                    Optional.of(NANOS));
+
+            _periodicMetrics.recordTimer(
+                    String.format("jobs/coordinator/by_type/%s/anti_entropy/latency", repoName),
+                    latencyNanos,
                     Optional.of(NANOS));
 
             _periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 1);
+            _periodicMetrics.recordCounter(
+                    String.format("jobs/coordinator/by_type/%s/anti_entropy/success", repoName),
+                    1);
 
             LOGGER.debug()
                     .setMessage("finished anti-entropy")
@@ -203,11 +221,18 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatch
             _periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 0);
+            _periodicMetrics.recordCounter(
+                    String.format("jobs/coordinator/by_type/%s/anti_entropy/success", repoName),
+                    0);
             throw e;
         } finally {
             coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
         }
+    }
 
+    private static String simpleTypeName(final Class<?> clazz) {
+        // e.g. AlertJobRepository.class yields "alert_job_repository"
+        return CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, clazz.getSimpleName());
     }
 
     @Override

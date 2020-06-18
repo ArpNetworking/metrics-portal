@@ -53,4 +53,9 @@ public final class TagsQueryTest {
                 ResourceHelper.loadResource(getClass(), "testNoEndTime"),
                 TagsQuery.class);
     }
+
+    // Ideally, we would have builder/equality tests, but those test-helpers assume that the builder
+    //     (a) has a 1:1 correspondence between setters and fields, and
+    //     (b) has no interdependencies between its fields
+    //   both of which this class violates, because the KairosDB API violates it.
 }

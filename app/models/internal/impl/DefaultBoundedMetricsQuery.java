@@ -30,7 +30,7 @@ import java.util.Optional;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class DefaultBoundedMetricsQuery implements BoundedMetricsQuery {
+public final class DefaultBoundedMetricsQuery implements BoundedMetricsQuery {
     private final String _query;
     private final MetricsQueryFormat _format;
     private final ZonedDateTime _startTime;

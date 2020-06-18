@@ -97,7 +97,8 @@ public enum SamplingUnit {
                 return ChronoUnit.MONTHS;
             case YEARS:
                 return ChronoUnit.YEARS;
+            default:
+                throw new IllegalStateException("Unknown value: " + unit);
         }
-        throw new IllegalStateException("Unknown value: " + unit);
     }
 }
