@@ -144,8 +144,8 @@ public class KairosDbProxyController extends Controller {
 
     private static CompletionStage<Result> noJsonFoundResponse() {
         return CompletableFuture.completedFuture(Results.badRequest(
-                "no JSON found in request; did you remember to set Content-Type: application/json " +
-                        "in the HTTP header?"));
+                "no JSON found in request; did you remember to set Content-Type: application/json "
+                        + "in the HTTP header?"));
     }
 
     /**
