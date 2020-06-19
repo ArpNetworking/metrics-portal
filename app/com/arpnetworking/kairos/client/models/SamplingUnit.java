@@ -17,6 +17,7 @@ package com.arpnetworking.kairos.client.models;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 /**
@@ -70,5 +71,34 @@ public enum SamplingUnit {
     @JsonValue
     public String toJson() {
         return name().toLowerCase(Locale.getDefault());
+    }
+
+    /**
+     * Convert a sampling unit to the equivalent {@code ChronoUnit}.
+     *
+     * @param unit The sampling unit to convert.
+     * @return A ChronoUnit representing the same unit of time.
+     */
+    public static ChronoUnit toChronoUnit(final SamplingUnit unit) {
+        switch (unit) {
+            case MILLISECONDS:
+                return ChronoUnit.MILLIS;
+            case SECONDS:
+                return ChronoUnit.SECONDS;
+            case MINUTES:
+                return ChronoUnit.MINUTES;
+            case HOURS:
+                return ChronoUnit.HOURS;
+            case DAYS:
+                return ChronoUnit.DAYS;
+            case WEEKS:
+                return ChronoUnit.WEEKS;
+            case MONTHS:
+                return ChronoUnit.MONTHS;
+            case YEARS:
+                return ChronoUnit.YEARS;
+            default:
+                throw new IllegalStateException("Unknown value: " + unit);
+        }
     }
 }
