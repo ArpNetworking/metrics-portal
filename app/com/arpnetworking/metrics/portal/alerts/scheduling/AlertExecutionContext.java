@@ -166,10 +166,10 @@ public final class AlertExecutionContext {
         if (values.isEmpty()) {
             return false;
         }
-        final TimeSeriesResult.DataPoint mostRecentDatapoint = values.get(values.size() - 1);
-        final Duration timeSinceDatapoint = Duration.between(mostRecentDatapoint.getTime(), scheduled);
-        // Consider firing if less than a single period has elapsed.
-        return timeSinceDatapoint.compareTo(period.getDuration()) < 0;
+        // The most recent datapoint and scheduled time must belong to the same
+        // period.
+        final Instant mostRecentDatapointTime = values.get(values.size() - 1).getTime();
+        return period.between(mostRecentDatapointTime, scheduled) == 0;
     }
 
     private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
@@ -199,6 +199,7 @@ public final class AlertExecutionContext {
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
                                                final Instant scheduled,
                                                final ChronoUnit period) {
+        // We must truncate to avoid dealing with partially aggregated periods.
         final ZonedDateTime latest = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(period);
         final ZonedDateTime previous = latest.minus(1, period);
 
