@@ -15,7 +15,6 @@
  */
 package models.internal;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -41,7 +40,6 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface Query {
-        @JsonProperty("sample_size")
         long getSampleSize();
 
         ImmutableList<? extends Result> getResults();
