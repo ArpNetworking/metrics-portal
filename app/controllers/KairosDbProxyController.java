@@ -142,6 +142,12 @@ public class KairosDbProxyController extends Controller {
         return proxy();
     }
 
+    private static CompletionStage<Result> noJsonFoundResponse() {
+        return CompletableFuture.completedFuture(Results.badRequest(
+                "no JSON found in request; did you remember to set Content-Type: application/json " +
+                        "in the HTTP header?"));
+    }
+
     /**
      * Proxied queryTags call.
      *
@@ -149,7 +155,12 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryTags() {
         try {
-            final TagsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), TagsQuery.class);
+            final JsonNode jsonBody = request().body().asJson();
+            if (jsonBody == null) {
+                return noJsonFoundResponse();
+            }
+
+            final TagsQuery metricsQuery = _mapper.treeToValue(jsonBody, TagsQuery.class);
             return _kairosService.queryMetricTags(metricsQuery)
                     .<JsonNode>thenApply(_mapper::valueToTree)
                     .thenApply(Results::ok);
@@ -167,9 +178,7 @@ public class KairosDbProxyController extends Controller {
         try {
             final JsonNode jsonBody = request().body().asJson();
             if (jsonBody == null) {
-                return CompletableFuture.completedFuture(Results.badRequest(
-                        "no JSON found in request; did you remember to set Content-Type: application/json " +
-                        "in the HTTP header?"));
+                return noJsonFoundResponse();
             }
 
             MetricsQuery metricsQuery = _mapper.treeToValue(jsonBody, MetricsQuery.class);
