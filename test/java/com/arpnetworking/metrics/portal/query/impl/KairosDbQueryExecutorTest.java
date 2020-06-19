@@ -64,15 +64,10 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(Enclosed.class)
 public class KairosDbQueryExecutorTest {
-    public static final class ExecuteQueryTests {
-        private static final ZonedDateTime QUERY_START_TIME = ZonedDateTime.parse(
-                "2020-06-16T00:00-07:00[America/Los_Angeles]");
-        private static final ZonedDateTime QUERY_END_TIME = ZonedDateTime.parse(
-                "2020-06-16T00:01-07:00[America/Los_Angeles]");
-
-        private KairosDbService _service;
-        private KairosDbQueryExecutor _executor;
-        private ObjectMapper _objectMapper;
+    public abstract static class BaseTests {
+        protected KairosDbService _service;
+        protected KairosDbQueryExecutor _executor;
+        protected ObjectMapper _objectMapper;
 
         @Before
         public void setUp() {
@@ -83,6 +78,13 @@ public class KairosDbQueryExecutorTest {
                     _objectMapper
             );
         }
+    }
+
+    public static final class ExecuteQueryTests extends BaseTests {
+        private static final ZonedDateTime QUERY_START_TIME = ZonedDateTime.parse(
+                "2020-06-16T00:00-07:00[America/Los_Angeles]");
+        private static final ZonedDateTime QUERY_END_TIME = ZonedDateTime.parse(
+                "2020-06-16T00:01-07:00[America/Los_Angeles]");
 
         @Test
         public void testExecuteQuery() throws IOException {
@@ -158,10 +160,7 @@ public class KairosDbQueryExecutorTest {
     }
 
     @RunWith(Parameterized.class)
-    public static final class PeriodHintTests {
-        private KairosDbQueryExecutor _executor;
-        private ObjectMapper _objectMapper;
-
+    public static final class PeriodHintTests extends BaseTests {
         @Parameterized.Parameter(0)
         public String testName;
 
@@ -176,15 +175,6 @@ public class KairosDbQueryExecutorTest {
                     {"periodHintNone", Optional.empty()},
                     {"periodHintMultipleMetrics", Optional.of(ChronoUnit.MINUTES)}
             });
-        }
-
-        @Before
-        public void setUp() {
-            _objectMapper = SerializationTestUtils.getApiObjectMapper();
-            _executor = new KairosDbQueryExecutor(
-                    Mockito.mock(KairosDbService.class),
-                    _objectMapper
-            );
         }
 
         @Test
