@@ -73,11 +73,11 @@ import javax.inject.Named;
 public class KairosDbProxyController extends Controller {
     /**
      * Public constructor.
-     *  @param configuration Play configuration to configure the proxy
+     * @param configuration Play configuration to configure the proxy
      * @param client ws client to use
      * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
-     * @param meh
+     * @param rewrittenQueryConsumer Consumer to tee post-rollup-rewrite queries to.
      * @param metricsFactory MetricsFactory for recording request metrics
      * @param metricsQueryConfig Configuration for proxied metrics queries
      */
