@@ -19,7 +19,6 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -142,7 +141,6 @@ public final class TimeSeriesResult {
             return _otherArgs;
         }
 
-        @JsonProperty("sample_size")
         public long getSampleSize() {
             return _sampleSize;
         }
@@ -212,7 +210,6 @@ public final class TimeSeriesResult {
              * @param value the sample size
              * @return this {@link Builder}
              */
-            @JsonProperty("sample_size")
             public Builder setSampleSize(final long value) {
                 _sampleSize = value;
                 return this;
