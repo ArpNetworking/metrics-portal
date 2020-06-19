@@ -165,7 +165,14 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryMetrics() {
         try {
-            MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            final JsonNode jsonBody = request().body().asJson();
+            if (jsonBody == null) {
+                return CompletableFuture.completedFuture(Results.badRequest(
+                        "no JSON found in request; did you remember to set Content-Type: application/json " +
+                        "in the HTTP header?"));
+            }
+
+            MetricsQuery metricsQuery = _mapper.treeToValue(jsonBody, MetricsQuery.class);
             if (_requireAggregators
                     && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().isEmpty())) {
                 return CompletableFuture.completedFuture(
