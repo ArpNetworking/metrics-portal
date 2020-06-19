@@ -16,6 +16,7 @@
 package com.arpnetworking.utility.test;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 
@@ -92,7 +93,11 @@ public final class ResourceHelper {
      * @return The contents of that resource-file.
      * @throws IOException if the resource can't be loaded, or if deserialization fails.
      */
-    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<T> clazz) throws IOException {
+    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<? extends T> clazz) throws IOException {
+        return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
+    }
+
+    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final TypeReference<? extends T> clazz) throws IOException {
         return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
     }
 
