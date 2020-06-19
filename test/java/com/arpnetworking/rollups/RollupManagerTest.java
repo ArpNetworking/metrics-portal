@@ -202,7 +202,9 @@ public final class RollupManagerTest {
 
     @Test
     public void testRequestsConsistencyCheck() {
-        final ActorRef actor = createActor();
+        final TestActorRef<RollupManager> actor = createActor();
+        actor.underlyingActor().setConsistencyCheckDelay(Duration.ZERO);
+
         actor.tell(
                 ThreadLocalBuilder.build(RollupExecutor.FinishRollupMessage.Builder.class, b -> b
                         .setRollupDefinition(new RollupDefinition.Builder()
