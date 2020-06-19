@@ -99,6 +99,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
 import models.internal.Features;
+import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
 import org.flywaydb.play.PlayInitializer;
 import play.Environment;
@@ -311,14 +312,15 @@ public class MainModule extends AbstractModule {
             final Config configuration,
             final Injector injector,
             final Environment environment) {
-        final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<MetricsQueryFormat, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
         for (final String key: keys) {
+            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
             final Config subconfig = executorsConfig.getConfig(key);
             final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
             final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
-            registryMapBuilder.put(key, childInjector.getInstance(clazz));
+            registryMapBuilder.put(format, childInjector.getInstance(clazz));
         }
         return new QueryExecutorRegistry.Builder()
                 .setExecutors(registryMapBuilder.build())
