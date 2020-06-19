@@ -225,8 +225,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final double nRollupSamples = sampleCounts.getRollupSampleCount();
             final double nSamplesDropped = nOriginalSamples - nRollupSamples;
 
+            metrics.incrementCounter("rollup/consistency_checker/original_samples", (long) nOriginalSamples);
+            metrics.incrementCounter("rollup/consistency_checker/dropped_samples", (long) nOriginalSamples);
+
             final boolean tooManyRollupSamples = nOriginalSamples < nRollupSamples;
-            recordCounter("too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
+            metrics.incrementCounter("rollup/consistency_checker/too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
             if (tooManyRollupSamples) {
                 LOGGER.error()
                         .setMessage("somehow got more samples for rolled-up data than original data")
