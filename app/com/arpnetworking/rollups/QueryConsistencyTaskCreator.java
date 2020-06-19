@@ -26,7 +26,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
 
     @Override
     public void accept(MetricsQuery query) {
-        if (RANDOM.nextDouble() < _checkFraction) {
+        if (RANDOM.nextDouble() > _checkFraction) {
             return;
         }
 
