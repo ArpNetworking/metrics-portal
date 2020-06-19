@@ -83,7 +83,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                 .stream()
                 .map(this::periodHint)
                 .flatMap(Streams::stream)
-                .min(Enum::compareTo);
+                .min(ChronoUnit::compareTo);
     }
 
     private Optional<ChronoUnit> periodHint(final Metric metric) {
