@@ -28,7 +28,6 @@ import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
-import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
@@ -50,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -157,7 +157,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     _metrics.recordTimer(
                             baseMetricName + "/latency",
                             System.nanoTime() - startTime,
-                            Optional.of(Units.NANOSECOND));
+                            Optional.of(TimeUnit.NANOSECONDS));
                     if (failure != null) {
                         return ThreadLocalBuilder.build(TagNamesMessage.Builder.class, b -> b
                                 .setMetricName(metricName)
@@ -213,7 +213,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                             _metrics.recordTimer(
                                  baseMetricName + "/latency",
                                  System.nanoTime() - startTime,
-                                Optional.of(Units.NANOSECOND)
+                                Optional.of(TimeUnit.NANOSECONDS)
                             );
                             return ThreadLocalBuilder.build(LastDataPointsMessage.Builder.class, b -> buildLastDataPointResponse(
                                     b,
