@@ -158,7 +158,7 @@ public class KairosDbQueryExecutorTest {
     }
 
     @RunWith(Parameterized.class)
-    public static final class QueryHintTests {
+    public static final class PeriodHintTests {
         private KairosDbQueryExecutor _executor;
         private ObjectMapper _objectMapper;
 
@@ -171,10 +171,10 @@ public class KairosDbQueryExecutorTest {
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    {"queryHintMinutely", Optional.of(ChronoUnit.MINUTES)},
-                    {"queryHintHourly", Optional.of(ChronoUnit.HOURS)},
-                    {"queryHintNone", Optional.empty()},
-                    {"queryHintMultipleMetrics", Optional.of(ChronoUnit.MINUTES)}
+                    {"periodHintMinutely", Optional.of(ChronoUnit.MINUTES)},
+                    {"periodHintHourly", Optional.of(ChronoUnit.HOURS)},
+                    {"periodHintNone", Optional.empty()},
+                    {"periodHintMultipleMetrics", Optional.of(ChronoUnit.MINUTES)}
             });
         }
 
@@ -188,7 +188,7 @@ public class KairosDbQueryExecutorTest {
         }
 
         @Test
-        public void testQueryHint() throws Exception {
+        public void testPeriodHint() throws Exception {
             final com.arpnetworking.kairos.client.models.MetricsQuery request = ResourceHelper.loadResourceAs(
                     KairosDbQueryExecutorTest.class,
                     testName,

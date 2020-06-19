@@ -70,6 +70,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
 
     @Override
     public Optional<ChronoUnit> periodHint(final MetricsQuery query) {
+        assertFormatIsSupported(query.getQueryFormat());
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
         try {
             metricsQuery = _objectMapper.readValue(query.getQuery(),
@@ -102,9 +103,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     }
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final BoundedMetricsQuery query) {
-        if (query.getQueryFormat() != MetricsQueryFormat.KAIROS_DB) {
-            throw new UnsupportedOperationException("Unsupported query format: " + query.getQueryFormat());
-        }
+        assertFormatIsSupported(query.getQueryFormat());
         final com.arpnetworking.kairos.client.models.MetricsQuery.Builder metricsQueryBuilder;
         try {
             metricsQueryBuilder = _objectMapper.readValue(query.getQuery(),
@@ -120,6 +119,9 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         // TODO(cbriones):
         // This will not propagate the structured error information from KairosDB
         // until _service provides that capability.
+        //
+        // However, since the service call will still resolve with an exception
+        // this is mostly an issue of debuggability.
         return _service.queryMetrics(metricsQuery).thenApply(this::toInternal);
     }
 
@@ -170,5 +172,11 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                 .setGroupBy(groupBys)
                 .setValues(values)
                 .build();
+    }
+
+    private void assertFormatIsSupported(final MetricsQueryFormat queryFormat) {
+        if (!queryFormat.equals(MetricsQueryFormat.KAIROS_DB)) {
+            throw new UnsupportedOperationException("Unsupported query format: " + queryFormat);
+        }
     }
 }
