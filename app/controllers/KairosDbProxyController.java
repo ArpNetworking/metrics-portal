@@ -16,7 +16,10 @@
 package controllers;
 
 import akka.stream.javadsl.StreamConverters;
+import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
+import com.arpnetworking.kairos.client.models.Aggregator;
+import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
@@ -28,6 +31,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
@@ -49,6 +53,8 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -86,6 +92,7 @@ public class KairosDbProxyController extends Controller {
         _mapper = mapper;
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
         _requireAggregators = configuration.getBoolean("kairosdb.proxy.requireAggregators");
+        _addMergeAggregator = configuration.getBoolean("kairosdb.proxy.addMergeAggregator");
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
@@ -158,11 +165,15 @@ public class KairosDbProxyController extends Controller {
      */
     public CompletionStage<Result> queryMetrics() {
         try {
-            final MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
+            MetricsQuery metricsQuery = _mapper.treeToValue(request().body().asJson(), MetricsQuery.class);
             if (_requireAggregators
                     && metricsQuery.getMetrics().stream().anyMatch(metric -> metric.getAggregators().isEmpty())) {
                 return CompletableFuture.completedFuture(
                         Results.badRequest("All queried metrics must have at least one aggregator"));
+            }
+
+            if (_addMergeAggregator) {
+                metricsQuery = checkAndAddMergeAggregator(metricsQuery);
             }
 
             return _kairosService.queryMetrics(metricsQuery)
@@ -171,6 +182,41 @@ public class KairosDbProxyController extends Controller {
         } catch (final IOException e) {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
+    }
+
+    /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
+        final List<Metric> newMetrics = new ArrayList<>();
+        for (final Metric metric : metricsQuery.getMetrics()) {
+            if (needMergeAggregator(metric.getAggregators())) {
+                final List<Aggregator> newAggregators = new ArrayList<>();
+                final Optional<Aggregator> aggregatorWithSampling = metric.getAggregators().stream().filter(
+                        aggregator -> aggregator.getSampling().isPresent()).findFirst();
+                newAggregators.add(aggregatorWithSampling.map(
+                        aggregator -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> {
+                            b.setName("merge");
+                            aggregator.getSampling().ifPresent(b::setSampling);
+                            aggregator.getAlignStartTime().ifPresent(b::setAlignStartTime);
+                            aggregator.getAlignSampling().ifPresent(b::setAlignSampling);
+                            aggregator.getAlignEndTime().ifPresent(b::setAlignEndTime);
+                        })).
+                        orElseGet(() -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> b.setName("merge"))));
+                newAggregators.addAll(metric.getAggregators());
+                final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
+                newMetrics.add(ThreadLocalBuilder.clone(
+                        metric, Metric.Builder.class, b->b.setAggregators(finalNewAggregators)));
+            } else {
+                newMetrics.add(metric);
+            }
+        }
+
+        final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
+        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
+    }
+
+    private Boolean needMergeAggregator(final ImmutableList<Aggregator> aggregators) {
+        return !aggregators.isEmpty()
+                && !(aggregators.get(0).getName().equals("merge"))
+                && aggregators.stream().anyMatch(aggregator -> !NON_HISTOGRAM_AGGREGATORS.contains(aggregator.getName()));
     }
 
     /**
@@ -220,7 +266,10 @@ public class KairosDbProxyController extends Controller {
     private final ObjectMapper _mapper;
     private final boolean _filterRollups;
     private final boolean _requireAggregators;
+    private final boolean _addMergeAggregator;
     private final KairosDbService _kairosService;
+
+    private static final ImmutableSet<String> NON_HISTOGRAM_AGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
 
