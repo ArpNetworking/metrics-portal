@@ -179,12 +179,12 @@ public class KairosDbQueryExecutorTest {
 
         @Test
         public void testPeriodHint() throws Exception {
-            final com.arpnetworking.kairos.client.models.MetricsQuery request = ResourceHelper.loadResourceAs(
+            final String jsonQuery = ResourceHelper.loadResource(
                     KairosDbQueryExecutorTest.class,
-                    testName,
-                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
+                    testName
+            );
             final MetricsQuery query = new DefaultMetricsQuery.Builder()
-                    .setQuery(_objectMapper.writeValueAsString(request))
+                    .setQuery(jsonQuery)
                     .setFormat(MetricsQueryFormat.KAIROS_DB)
                     .build();
             assertThat(_executor.periodHint(query), equalTo(expectedResult));
