@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -540,6 +542,20 @@ public final class TimeSeriesResult {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
+    @JsonTypeInfo(
+            use = JsonTypeInfo.Id.NAME,
+            property = "name"
+    )
+    @JsonSubTypes({
+            @JsonSubTypes.Type(
+                    name = "tag",
+                    value = QueryTagGroupBy.class
+            ),
+            @JsonSubTypes.Type(
+                    name = "type",
+                    value = QueryTypeGroupBy.class
+            )
+    })
     public abstract static class QueryGroupBy {
         /**
          * Creates an internal model from this view model.
