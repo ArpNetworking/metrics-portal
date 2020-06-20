@@ -103,10 +103,10 @@
     <javax.inject.version>1</javax.inject.version>
     <jsr305.version>3.0.2</jsr305.version>
     <logback.steno.version>1.18.3</logback.steno.version>
-    <metrics.client.version>0.10.0</metrics.client.version>
-    <metrics.client.http.version>0.8.2</metrics.client.http.version>
-    <metrics.incubator.extra.verson>0.6.3</metrics.incubator.extra.verson>
-    <metrics.jvm.extra.version>0.7.0</metrics.jvm.extra.version>
+    <metrics.client.version>0.11.1</metrics.client.version>
+    <metrics.client.http.version>0.11.1</metrics.client.http.version>
+    <metrics.incubator.extra.version>0.11.0</metrics.incubator.extra.version>
+    <metrics.jvm.extra.version>0.11.0</metrics.jvm.extra.version>
     <netty.version>3.10.6.Final</netty.version>
     <oval.version>1.90</oval.version>
     <play2.version>2.6.23</play2.version>
@@ -1018,7 +1018,7 @@
     <dependency>
       <groupId>com.arpnetworking.metrics.extras</groupId>
       <artifactId>incubator-extra</artifactId>
-      <version>${metrics.incubator.extra.verson}</version>
+      <version>${metrics.incubator.extra.version}</version>
       <exclusions>
         <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
         <exclusion>

@@ -21,7 +21,6 @@ import akka.actor.Status;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
-import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
@@ -119,7 +118,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
                     _periodicMetrics.recordTimer(
                             "rollup/discovery/metric_names/latency",
                             System.nanoTime() - startTime,
-                            Optional.of(Units.NANOSECOND));
+                            Optional.of(TimeUnit.NANOSECONDS));
                 }),
                 getContext().dispatcher())
                 .to(getSelf());
