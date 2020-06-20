@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
@@ -34,12 +35,12 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.persistence.EntityNotFoundException;
@@ -52,6 +53,7 @@ import javax.persistence.EntityNotFoundException;
 public final class DatabaseAlertExecutionRepository implements AlertExecutionRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAlertExecutionRepository.class);
+    private static final Duration ACTOR_STOP_TIMEOUT = Duration.ofSeconds(5);
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
@@ -138,9 +140,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             throw new IllegalStateException("partitionCreator should be non-null when open");
         }
         try {
-            DailyPartitionCreator.stop(_partitionCreator, Duration.ofSeconds(5));
+            Patterns.gracefulStop(_partitionCreator, ACTOR_STOP_TIMEOUT)
+                    .toCompletableFuture()
+                    .get(ACTOR_STOP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             _partitionCreator = null;
-        } catch (final ExecutionException | InterruptedException e) {
+        } catch (final TimeoutException | ExecutionException | InterruptedException e) {
             throw new RuntimeException("Failed to shutdown partition creator", e);
         }
         _isOpen.set(false);
@@ -244,9 +248,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             throw new IllegalStateException("partitionCreator should be non-null when open");
         }
         try {
-            DailyPartitionCreator.ensurePartitionExistsForDate(
+            DailyPartitionCreator.ensurePartitionExistsForInstant(
                     _partitionCreator,
-                    ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).toLocalDate(),
+                    scheduled,
                     Duration.ofSeconds(1)
             );
         } catch (final InterruptedException e) {

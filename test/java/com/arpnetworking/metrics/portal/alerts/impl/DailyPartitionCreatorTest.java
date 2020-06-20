@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -155,29 +156,30 @@ public class DailyPartitionCreatorTest {
             );
             assertThat("range should start from current date", clockDifference, equalTo(0L));
         }
-        DailyPartitionCreator.stop(ref, MSG_TIMEOUT);
+        Patterns.gracefulStop(ref, MSG_TIMEOUT).toCompletableFuture().get();
         _probe.expectTerminated(ref);
     }
 
     @Test
     public void testCreatePartitionsOnDemand() throws Exception {
-        final LocalDate oneWeekAgo = LocalDate.now().minusDays(7);
+        final ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusDays(7);
+        final LocalDate oneWeekAgoLocal = oneWeekAgo.toLocalDate();
         final ActorRef ref = createActor();
 
         // The actor will tick on startup.
         _probe.expectMsgClass(ExecuteCall.class);
 
-        DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT);
         final ExecuteCall call = _probe.expectMsgClass(ExecuteCall.class);
-        assertThat(call.getStart(), equalTo(oneWeekAgo));
-        assertThat(call.getEnd(), equalTo(oneWeekAgo.plusDays(1)));
+        assertThat(call.getStart(), equalTo(oneWeekAgoLocal));
+        assertThat(call.getEnd(), equalTo(oneWeekAgoLocal.plusDays(1)));
         assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
         assertThat(call.getTable(), equalTo(TEST_TABLE));
 
-        DailyPartitionCreator.ensurePartitionExistsForDate(ref, oneWeekAgo, MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT);
         _probe.expectNoMessage(); // should have been cached
 
-        DailyPartitionCreator.stop(ref, MSG_TIMEOUT);
+        Patterns.gracefulStop(ref, MSG_TIMEOUT).toCompletableFuture().get();
         _probe.expectTerminated(ref);
     }
 
@@ -188,7 +190,7 @@ public class DailyPartitionCreatorTest {
                     throw new PersistenceException("Something went wrong");
                 }
         );
-        DailyPartitionCreator.ensurePartitionExistsForDate(ref, LocalDate.now(), MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, Instant.now(), MSG_TIMEOUT);
     }
 
     /**

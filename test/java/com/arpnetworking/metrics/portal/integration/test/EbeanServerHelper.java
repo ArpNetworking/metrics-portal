@@ -112,6 +112,8 @@ public final class EbeanServerHelper {
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
         serverConfig.addPackage("models.ebean");
         serverConfig.setObjectMapper(SerializationTestUtils.getApiObjectMapper());
+        serverConfig.setDataTimeZone("UTC");
+
         return EbeanServerFactory.create(serverConfig);
     }
 

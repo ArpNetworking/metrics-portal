@@ -54,17 +54,17 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private static final Logger LOGGER = LoggerFactory.getLogger(DailyPartitionCreator.class);
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private static final String TICKER_NAME = "PERIODIC_TICK";
+
     private final EbeanServer _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
+    private final Set<LocalDate> _partitionCache;
 
-    private final int _lookahead;
+    private final int _lookaheadDays;
     private final String _schema;
     private final String _table;
     private final Clock _clock;
     private final Schedule _schedule;
     private Optional<Instant> _lastRun;
-
-    private Set<LocalDate> _partitionCache;
 
     private DailyPartitionCreator(
             final EbeanServer ebeanServer,
@@ -83,12 +83,12 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final String schema,
             final String table,
             final Duration scheduleOffset,
-            final int lookahead,
+            final int lookaheadDays,
             final Clock clock
     ) {
         _ebeanServer = ebeanServer;
         _periodicMetrics = periodicMetrics;
-        _lookahead = lookahead;
+        _lookaheadDays = lookaheadDays;
         _schedule = new PeriodicSchedule.Builder()
                 .setOffset(scheduleOffset)
                 .setPeriod(ChronoUnit.DAYS)
@@ -135,34 +135,22 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     }
 
     /**
-     * Ask the actor referenced by {@code ref} to stop execution.
-     *
-     * @param ref an {@code DailyPartitionCreator}.
-     * @param timeout timeout for the operation
-     * @throws ExecutionException if an exception was thrown during execution.
-     * @throws InterruptedException if the actor does not stop within the allotted timeout, or if the actor thread was
-     * interrupted for other reasons.
-     */
-    public static void stop(final ActorRef ref, final Duration timeout) throws ExecutionException, InterruptedException {
-        Patterns.gracefulStop(ref, timeout).toCompletableFuture().get();
-    }
-
-    /**
      * Ask the actor referenced by {@code ref} to create the partition(s) needed
-     * for the given date.
+     * for the given instant.
      *
      * @param ref an {@code DailyPartitionCreator}.
-     * @param date The partition date
+     * @param instant The instant being recorded
      * @param timeout timeout for the operation
      * @throws ExecutionException if an exception was thrown during execution.
      * @throws InterruptedException if the actor does not respond within the allotted timeout, or if the actor thread was
      * interrupted for other reasons.
      */
-    public static void ensurePartitionExistsForDate(
+    public static void ensurePartitionExistsForInstant(
             final ActorRef ref,
-            final LocalDate date,
+            final Instant instant,
             final Duration timeout
     ) throws ExecutionException, InterruptedException {
+        final LocalDate date = ZonedDateTime.ofInstant(instant, ZoneOffset.UTC).toLocalDate();
         final CreateForRange createPartitions = new CreateForRange.Builder()
                 .setStart(date)
                 .setEnd(date.plusDays(1))
@@ -181,7 +169,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         LOGGER.info().setMessage("Starting execution timer")
                 .addData("schema", _schema)
                 .addData("table", _table)
-                .addData("lookahead", _lookahead)
+                .addData("lookahead", _lookaheadDays)
                 .log();
         getSelf().tell(TICK, getSelf());
         getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
@@ -194,7 +182,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         LOGGER.info().setMessage("Actor was stopped")
                 .addData("schema", _schema)
                 .addData("table", _table)
-                .addData("lookahead", _lookahead)
+                .addData("lookahead", _lookaheadDays)
                 .log();
     }
 
@@ -204,9 +192,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .matchEquals(TICK, msg -> tick())
                 .match(CreateForRange.class, msg -> {
                     final Status.Status resp = execute(msg.getStart(), msg.getEnd());
-                    if (!getSender().equals(getSelf())) {
-                        getSender().tell(resp, getSelf());
-                    }
+                    getSender().tell(resp, getSelf());
                 })
                 .build();
     }
@@ -223,18 +209,25 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
         final Instant now = _clock.instant();
         if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(now)).orElse(true)) {
-            final LocalDate startDate = ZonedDateTime.ofInstant(now, _clock.getZone()).toLocalDate();
-            final LocalDate endDate = startDate.plusDays(_lookahead);
+            final LocalDate startDate = ZonedDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate();
+            final LocalDate endDate = startDate.plusDays(_lookaheadDays);
 
             final CreateForRange createPartitions = new CreateForRange.Builder()
                     .setStart(startDate)
                     .setEnd(endDate)
                     .build();
-            getSelf().tell(createPartitions, getSelf());
+            getSelf().tell(createPartitions, ActorRef.noSender());
         }
     }
 
     private Status.Status execute(final LocalDate startDate, final LocalDate endDate) {
+
+        // Much like other portions of the codebase dealing with time, the dates
+        // used in this class are all fixed to UTC. So while the code in this
+        // method uses a LocalDate, there's an implicit assumption that all
+        // dates are UTC and these conversions happen at the interaction
+        // boundary (tick, ensurePartitionExists).
+
         LocalDate d = startDate;
         boolean allPartitionsExist = true;
         while (!d.equals(endDate)) {

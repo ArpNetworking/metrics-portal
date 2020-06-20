@@ -63,7 +63,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
                 _actorSystem,
                 metricsMock,
                 Duration.ZERO,
-                1
+                5 // Arbitrary, but helps distinguish logs
         );
     }
 

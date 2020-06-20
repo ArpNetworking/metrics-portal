@@ -25,4 +25,7 @@
     <!-- Exclude large nested external data models -->
     <suppress checks="FileLength" files="app/com/arpnetworking/kairos/client/models/MetricsQuery.java"/>
     <suppress checks="FileLength" files="app/com/arpnetworking/kairos/client/models/MetricsQueryResponse.java"/>
+
+    <!-- Exclude guice bindings -->
+    <suppress checks="FileLength" files="app/global/MainModule.java"/>
 </suppressions>
