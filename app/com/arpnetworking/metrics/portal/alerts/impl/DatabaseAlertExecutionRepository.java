@@ -15,11 +15,17 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import akka.actor.Props;
+import akka.pattern.Patterns;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
@@ -27,13 +33,16 @@ import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityNotFoundException;
 
 /**
@@ -44,21 +53,48 @@ import javax.persistence.EntityNotFoundException;
 public final class DatabaseAlertExecutionRepository implements AlertExecutionRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAlertExecutionRepository.class);
+    private static final Duration ACTOR_STOP_TIMEOUT = Duration.ofSeconds(5);
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
+    private static final String ACTOR_NAME = "alertExecutionPartitionCreator";
+    @Nullable
+    private ActorRef _partitionCreator;
+    private final Props _props;
+    private final ActorSystem _actorSystem;
+
     /**
      * Public constructor.
      *
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param portalServer Play's {@code EbeanServer} for this repository.
+     * @param partitionServer Play's {@code EbeanServer} for partition creation.
+     * @param actorSystem The actor system to use.
+     * @param periodicMetrics A metrics instance to record against.
+     * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
+     * @param partitionCreationLookahead How many days of partitions to create
      */
     @Inject
-    public DatabaseAlertExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer) {
-        _ebeanServer = ebeanServer;
+    public DatabaseAlertExecutionRepository(
+            final EbeanServer portalServer,
+            final EbeanServer partitionServer,
+            final ActorSystem actorSystem,
+            final PeriodicMetrics periodicMetrics,
+            final Duration partitionCreationOffset,
+            final int partitionCreationLookahead
+    ) {
+        _ebeanServer = portalServer;
         _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
-
+        _actorSystem = actorSystem;
+        _props = DailyPartitionCreator.props(
+                partitionServer,
+                periodicMetrics,
+                "portal",
+                "alert_executions",
+                partitionCreationOffset,
+                partitionCreationLookahead
+        );
     }
 
     private AlertExecution findOrCreateAlertExecution(
@@ -92,6 +128,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening DatabaseAlertExecutionRepository").log();
+        _partitionCreator = _actorSystem.actorOf(_props);
         _isOpen.set(true);
     }
 
@@ -99,6 +136,17 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     public void close() {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing DatabaseAlertExecutionRepository").log();
+        if (_partitionCreator == null) {
+            throw new IllegalStateException("partitionCreator should be non-null when open");
+        }
+        try {
+            Patterns.gracefulStop(_partitionCreator, ACTOR_STOP_TIMEOUT)
+                    .toCompletableFuture()
+                    .get(ACTOR_STOP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            _partitionCreator = null;
+        } catch (final TimeoutException | ExecutionException | InterruptedException e) {
+            throw new RuntimeException("Failed to shutdown partition creator", e);
+        }
         _isOpen.set(false);
     }
 
@@ -161,6 +209,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     @Override
     public void jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobStarted(alertId, organization, scheduled);
     }
 
@@ -172,12 +221,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobSucceeded(alertId, organization, scheduled, result);
     }
 
     @Override
     public void jobFailed(final UUID alertId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
+        ensurePartition(scheduled);
         _helper.jobFailed(alertId, organization, scheduled, error);
     }
 
@@ -189,6 +240,23 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         if (_isOpen.get() != expectedState) {
             throw new IllegalStateException(String.format("DatabaseAlertExecutionRepository is not %s",
                     expectedState ? "open" : "closed"));
+        }
+    }
+
+    private void ensurePartition(final Instant scheduled) {
+        if (_partitionCreator == null) {
+            throw new IllegalStateException("partitionCreator should be non-null when open");
+        }
+        try {
+            DailyPartitionCreator.ensurePartitionExistsForInstant(
+                    _partitionCreator,
+                    scheduled,
+                    Duration.ofSeconds(1)
+            );
+        } catch (final InterruptedException e) {
+            throw new RuntimeException("partition creation interrupted", e);
+        } catch (final ExecutionException e) {
+            throw new RuntimeException("Could not ensure partition for instant: " + scheduled, e);
         }
     }
 }

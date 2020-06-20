@@ -1187,7 +1187,6 @@
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-play_${scala.package.version}</artifactId>
       <version>${flyway.play.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
