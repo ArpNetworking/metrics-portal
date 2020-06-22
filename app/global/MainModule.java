@@ -181,7 +181,6 @@ public class MainModule extends AbstractModule {
                 .toProvider(ReportExecutionRepositoryProvider.class)
                 .asEagerSingleton();
 
-
         // Background tasks
         bind(ActorRef.class)
                 .annotatedWith(Names.named("JvmMetricsCollector"))
@@ -231,7 +230,6 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
-
     }
 
     @Singleton
@@ -746,7 +744,8 @@ public class MainModule extends AbstractModule {
                 final ActorSystem system,
                 final Injector injector,
                 final OrganizationRepository organizationRepository,
-                @Named("job-execution-shard-region") final ActorRef executorRegion,
+                @Named("job-execution-shard-region")
+                final ActorRef executorRegion,
                 final PeriodicMetrics periodicMetrics) {
             _system = system;
             _injector = injector;
@@ -1039,11 +1038,11 @@ public class MainModule extends AbstractModule {
             final int maxConcurrentRequests = _configuration.getInt("rollup.consistency_checker.max_concurrent_requests");
             final int bufferSize = _configuration.getInt("rollup.consistency_checker.buffer_size");
             return _system.actorOf(ConsistencyChecker.props(
-                    _kairosDbClient,
-                    _metricsFactory,
-                    _periodicMetrics,
-                    maxConcurrentRequests,
-                    bufferSize
+                        _kairosDbClient,
+                        _metricsFactory,
+                        _periodicMetrics,
+                        maxConcurrentRequests,
+                        bufferSize
             ));
         }
 
