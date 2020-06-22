@@ -607,16 +607,41 @@ public class RollupGeneratorTest {
         final RollupGenerator actor = createActor().underlyingActor();
         final Instant startOfCurrentPeriod = _clock.instant().truncatedTo(ChronoUnit.HOURS);
         final Duration hour = Duration.ofHours(1);
-        final Duration minute = Duration.ofMinutes(1);
 
+        // Normal case: minutely data is caught up, but rollup is missing its most recent datapoint.
+        assertEquals(
+                ImmutableSet.of(startOfCurrentPeriod.minus(hour)),
+                actor.getRollupTimes(
+                        Optional.of(startOfCurrentPeriod.minus(hour.multipliedBy(2))),
+                        Optional.of(startOfCurrentPeriod),
+                        RollupPeriod.HOURLY
+                )
+        );
+
+        // Normal case: rollup is missing multiple datapoints.
+        assertEquals(
+                ImmutableSet.of(
+                    startOfCurrentPeriod.minus(hour),
+                    startOfCurrentPeriod.minus(hour.multipliedBy(2))
+                ),
+                actor.getRollupTimes(
+                        Optional.of(startOfCurrentPeriod.minus(hour.multipliedBy(3))),
+                        Optional.of(startOfCurrentPeriod),
+                        RollupPeriod.HOURLY
+                )
+        );
+
+        // Normal case: rollup is already caught up.
         assertEquals(
                 ImmutableSet.of(),
                 actor.getRollupTimes(
                         Optional.of(startOfCurrentPeriod.minus(hour)),
-                        Optional.of(startOfCurrentPeriod.plus(hour)),
+                        Optional.of(startOfCurrentPeriod),
                         RollupPeriod.HOURLY
                 )
         );
+
+        // Uncommon but expected case: there's no rollup data yet.
         assertEquals(
                 Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
                         .limit(MAX_BACKFILL_PERIODS)
@@ -627,6 +652,8 @@ public class RollupGeneratorTest {
                         RollupPeriod.HOURLY
                 )
         );
+
+        // Uncommon but expected case: rollups are _way_ behind, beyond our backfill-horizon.
         assertEquals(
                 Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
                         .limit(MAX_BACKFILL_PERIODS)
@@ -637,13 +664,14 @@ public class RollupGeneratorTest {
                         RollupPeriod.HOURLY
                 )
         );
+
+        // Weird case: minutely data is somehow ahead of the current time.
+        // We should refuse to roll up the current period, though.
         assertEquals(
-                Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
-                        .limit(2)
-                        .collect(ImmutableSet.toImmutableSet()),
+                ImmutableSet.of(),
                 actor.getRollupTimes(
-                        Optional.of(startOfCurrentPeriod.minus(hour.multipliedBy(3))),
-                        Optional.of(startOfCurrentPeriod),
+                        Optional.of(startOfCurrentPeriod.minus(hour)),
+                        Optional.of(startOfCurrentPeriod.plus(hour)),
                         RollupPeriod.HOURLY
                 )
         );
