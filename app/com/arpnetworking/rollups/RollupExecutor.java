@@ -26,7 +26,6 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.logback.annotations.Loggable;
-import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
@@ -42,6 +41,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -86,7 +86,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
                             _metrics.recordTimer(
                                     baseMetricName + "/latency",
                                     System.nanoTime() - startTime,
-                                    Optional.of(Units.NANOSECOND));
+                                    Optional.of(TimeUnit.NANOSECONDS));
                             return ThreadLocalBuilder.build(FinishRollupMessage.Builder.class, b -> b
                                     .setRollupDefinition(rollupDefinition)
                                     .setFailure(failure)
