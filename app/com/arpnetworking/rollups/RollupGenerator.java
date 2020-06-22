@@ -295,36 +295,23 @@ public class RollupGenerator extends AbstractActorWithTimers {
             // the save-as operation, a rollup may see an (incorrect) partial result which this code would then interpret as an OK
             // to execute the next larger rollup, thus propagating the error.
 
-            final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.MIN);
+            final SortedSet<Instant> startTimes = getRollupTimes(message, period);
 
-            final Instant startOfLastEligiblePeriod =
-                message.getSourceLastDataPointTime()
-                        .map(period::recentStartTime)
-                        .orElse(Instant.MIN);
+            final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
+                    .setSourceMetricName(message.getSourceMetricName())
+                    .setDestinationMetricName(rollupMetricName)
+                    .setPeriod(period)
+                    .setAllMetricTags(message.getTags());
 
-            // If the most recent period aligned start time is after the most recent datapoint then
-            // we need to run the rollup, otherwise we can skip this and just send a finish message.
-            if (startOfLastEligiblePeriod.isAfter(lastRollupDataPoint)) {
-                final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);
-
-                final SortedSet<Instant> startTimes = getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
-
-                final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
-                        .setSourceMetricName(message.getSourceMetricName())
-                        .setDestinationMetricName(rollupMetricName)
-                        .setPeriod(period)
-                        .setAllMetricTags(message.getTags());
-
-                for (final Instant startTime : startTimes) {
-                    final RollupDefinition defn = rollupDefBuilder.setStartTime(startTime).build();
-                    _rollupManagerPool.tell(defn, self());
-                    LOGGER.debug()
-                            .setMessage("sent task to _rollupManagerPool")
-                            .addData("task", defn)
-                            .addData("pool", _rollupManagerPool)
-                            .log();
-                    _metrics.recordCounter("rollup/generator/task_sent", 1);
-                }
+            for (final Instant startTime : startTimes) {
+                final RollupDefinition defn = rollupDefBuilder.setStartTime(startTime).build();
+                _rollupManagerPool.tell(defn, self());
+                LOGGER.debug()
+                        .setMessage("sent task to _rollupManagerPool")
+                        .addData("task", defn)
+                        .addData("pool", _rollupManagerPool)
+                        .log();
+                _metrics.recordCounter("rollup/generator/task_sent", 1);
             }
 
             getSelf().tell(
@@ -335,6 +322,19 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     ActorRef.noSender()
             );
         }
+    }
+
+    private SortedSet<Instant> getRollupTimes(
+            final LastDataPointsMessage message,
+            final RollupPeriod period
+    ) {
+        final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.MIN);
+        final Instant startOfLastEligiblePeriod =
+            message.getSourceLastDataPointTime()
+                    .map(period::recentStartTime)
+                    .orElse(Instant.MIN);
+        final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);
+        return getRollupableTimes(period, rollupPeriodStart, startOfLastEligiblePeriod);
     }
 
     private Instant getFirstEligibleBackfillTime(final RollupPeriod period, final Instant lastRollupDataPoint) {
