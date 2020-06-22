@@ -613,10 +613,8 @@ public class RollupGeneratorTest {
         assertEquals(
                 ImmutableSet.of(),
                 actor.getRollupTimes(
-                        TestBeanFactory.createLastDataPointsMessageBuilder()
-                                .setSourceLastDataPointTime(startOfCurrentPeriod.plus(hour))
-                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour))
-                                .build(),
+                        Optional.of(startOfCurrentPeriod.minus(hour)),
+                        Optional.of(startOfCurrentPeriod.plus(hour)),
                         RollupPeriod.HOURLY
                 )
         );
@@ -625,10 +623,8 @@ public class RollupGeneratorTest {
                         .limit(MAX_BACKFILL_PERIODS)
                         .collect(ImmutableSet.toImmutableSet()),
                 actor.getRollupTimes(
-                        TestBeanFactory.createLastDataPointsMessageBuilder()
-                                .setSourceLastDataPointTime(startOfCurrentPeriod)
-                                .setRollupLastDataPointTime(null)
-                                .build(),
+                        Optional.empty(),
+                        Optional.of(startOfCurrentPeriod),
                         RollupPeriod.HOURLY
                 )
         );
@@ -637,10 +633,8 @@ public class RollupGeneratorTest {
                         .limit(MAX_BACKFILL_PERIODS)
                         .collect(ImmutableSet.toImmutableSet()),
                 actor.getRollupTimes(
-                        TestBeanFactory.createLastDataPointsMessageBuilder()
-                                .setSourceLastDataPointTime(startOfCurrentPeriod)
-                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour.multipliedBy(99999)))
-                                .build(),
+                        Optional.of(startOfCurrentPeriod.minus(hour.multipliedBy(99999))),
+                        Optional.of(startOfCurrentPeriod),
                         RollupPeriod.HOURLY
                 )
         );
@@ -649,10 +643,8 @@ public class RollupGeneratorTest {
                         .limit(2)
                         .collect(ImmutableSet.toImmutableSet()),
                 actor.getRollupTimes(
-                        TestBeanFactory.createLastDataPointsMessageBuilder()
-                                .setSourceLastDataPointTime(startOfCurrentPeriod)
-                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour.multipliedBy(3)))
-                                .build(),
+                        Optional.of(startOfCurrentPeriod.minus(hour.multipliedBy(3))),
+                        Optional.of(startOfCurrentPeriod),
                         RollupPeriod.HOURLY
                 )
         );
