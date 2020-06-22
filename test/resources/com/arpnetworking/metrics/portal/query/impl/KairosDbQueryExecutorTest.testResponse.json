@@ -1,0 +1,177 @@
+{
+  "queries": [
+    {
+      "sample_size": 74230,
+      "results": [
+        {
+          "name": "client/samples_sink/submitted_samples",
+          "group_by": [
+            {
+              "name": "tag",
+              "tags": [
+                "os"
+              ],
+              "group": {
+                "os": "linux"
+              }
+            },
+            {
+              "name": "type",
+              "type": "histogram"
+            }
+          ],
+          "tags": {
+            "os": [
+              "linux"
+            ],
+            "environment": [
+              "production",
+              "staging",
+              "test"
+            ]
+          },
+          "values": [
+            [
+              1591831200000,
+              10
+            ],
+            [
+              1591834800000,
+              17
+            ],
+            [
+              1591838400000,
+              11
+            ]
+          ]
+        },
+        {
+          "name": "client/samples_sink/submitted_samples",
+          "group_by": [
+            {
+              "name": "tag",
+              "tags": [
+                "os"
+              ],
+              "group": {
+                "os": "mac"
+              }
+            },
+            {
+              "name": "type",
+              "type": "histogram"
+            }
+          ],
+          "tags": {
+            "os": [
+              "mac"
+            ],
+            "environment": [
+              "production",
+              "staging",
+              "test"
+            ]
+          },
+          "values": [
+            [
+              1591831200000,
+              10
+            ],
+            [
+              1591834800000,
+              17
+            ],
+            [
+              1591838400000,
+              11
+            ]
+          ]
+        },
+        {
+          "name": "client/samples_sink/submitted_samples",
+          "group_by": [
+            {
+              "name": "tag",
+              "tags": [
+                "os"
+              ],
+              "group": {
+                "os": "unknown"
+              }
+            },
+            {
+              "name": "type",
+              "type": "histogram"
+            }
+          ],
+          "tags": {
+            "os": [
+              "unknown"
+            ],
+            "environment": [
+              "production",
+              "staging",
+              "test"
+            ]
+          },
+          "values": [
+            [
+              1591831200000,
+              10
+            ],
+            [
+              1591834800000,
+              17
+            ],
+            [
+              1591838400000,
+              11
+            ]
+          ]
+        },
+        {
+          "name": "client/samples_sink/submitted_samples",
+          "group_by": [
+            {
+              "name": "tag",
+              "tags": [
+                "os"
+              ],
+              "group": {
+                "os": "windows"
+              }
+            },
+            {
+              "name": "type",
+              "type": "histogram"
+            }
+          ],
+          "tags": {
+            "os": [
+              "windows"
+            ],
+            "environment": [
+              "production",
+              "staging",
+              "test"
+            ]
+          },
+          "values": [
+            [
+              1591831200000,
+              10
+            ],
+            [
+              1591834800000,
+              17
+            ],
+            [
+              1591838400000,
+              11
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

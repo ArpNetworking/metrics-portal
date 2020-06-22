@@ -1,0 +1,20 @@
+{
+  "metrics": [
+    {
+      "tags": {},
+      "name": "client/samples_sink/submitted_samples",
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": "1",
+            "unit": "minutes"
+          }
+        },
+        {
+          "name" : "diff"
+        }
+      ]
+    }
+  ]
+}
