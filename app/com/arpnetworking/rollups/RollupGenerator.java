@@ -324,14 +324,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
         }
     }
 
-    private SortedSet<Instant> getRollupTimes(
+    /* package private */ SortedSet<Instant> getRollupTimes(
             final LastDataPointsMessage message,
             final RollupPeriod period
     ) {
         final Instant lastRollupDataPoint = message.getRollupLastDataPointTime().orElse(Instant.MIN);
         final Instant startOfLastEligiblePeriod = lastEligiblePeriodStart(
                 period,
-                message.getRollupLastDataPointTime().orElse(Instant.MIN),
+                message.getSourceLastDataPointTime().orElse(Instant.MIN),
                 _clock.instant()
         );
         final Instant rollupPeriodStart = getFirstEligibleBackfillTime(period, lastRollupDataPoint);

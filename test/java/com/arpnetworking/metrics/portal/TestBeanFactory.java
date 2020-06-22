@@ -25,6 +25,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.rollups.ConsistencyChecker;
+import com.arpnetworking.rollups.LastDataPointsMessage;
 import com.arpnetworking.rollups.RollupDefinition;
 import com.arpnetworking.rollups.RollupPeriod;
 import com.google.common.collect.ImmutableMap;
@@ -240,6 +241,21 @@ public final class TestBeanFactory {
         return new Aggregator.Builder()
                 .setName("count")
                 .setSampling(createSamplingBuilder().build());
+    }
+
+    /**
+     * Factory method for creating a {@link LastDataPointsMessage.Builder}.
+     *
+     * @return the builder.
+     */
+    public static LastDataPointsMessage.Builder createLastDataPointsMessageBuilder() {
+        return new LastDataPointsMessage.Builder()
+                        .setPeriod(RollupPeriod.HOURLY)
+                        .setTags(ImmutableMultimap.of("t", "v"))
+                        .setSourceMetricName("my_metric")
+                        .setRollupMetricName("my_metric_1h")
+                        .setSourceLastDataPointTime(Instant.EPOCH)
+                        .setRollupLastDataPointTime(Instant.EPOCH);
     }
 
     /**

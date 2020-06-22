@@ -17,6 +17,7 @@ package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
@@ -27,9 +28,11 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -47,11 +50,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -131,8 +136,8 @@ public class RollupGeneratorTest {
         _system = null;
     }
 
-    private ActorRef createActor() {
-        return _system.actorOf(GuiceActorCreator.props(_injector, TestRollupGenerator.class));
+    private TestActorRef<RollupGenerator> createActor() {
+        return TestActorRef.create(_system, GuiceActorCreator.props(_injector, TestRollupGenerator.class));
     }
 
     @Test
@@ -554,7 +559,7 @@ public class RollupGeneratorTest {
                         .setRollupMetricName("metric_1h")
                         .setPeriod(RollupPeriod.HOURLY)
                         .setTags(ImmutableMultimap.of("tag1", "val1", "tag2", "val2"))
-                        .setSourceLastDataPointTime(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(periodsBehind)))
+                        .setSourceLastDataPointTime(startTime.plus(RollupPeriod.HOURLY.periodCountToDuration(periodsBehind)).minusMillis(1))
                         .setRollupLastDataPointTime(null)
                         .build(),
                 ActorRef.noSender());
@@ -599,24 +604,56 @@ public class RollupGeneratorTest {
     }
 
     @Test
-    public void testLastEligiblePeriodStart() {
-        final Instant t0 = Instant.parse("2020-01-01T00:00:00Z");
+    public void testGetRollupTimes() {
+        final RollupGenerator actor = createActor().underlyingActor();
+        final Instant startOfCurrentPeriod = _clock.instant().truncatedTo(ChronoUnit.HOURS);
         final Duration hour = Duration.ofHours(1);
         final Duration minute = Duration.ofMinutes(1);
+
         assertEquals(
-                t0,
-                RollupGenerator.lastEligiblePeriodStart(
-                        RollupPeriod.HOURLY,
-                        t0.plus(hour),
-                        t0.plus(hour)
+                ImmutableSet.of(),
+                actor.getRollupTimes(
+                        TestBeanFactory.createLastDataPointsMessageBuilder()
+                                .setSourceLastDataPointTime(startOfCurrentPeriod.plus(hour))
+                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour))
+                                .build(),
+                        RollupPeriod.HOURLY
                 )
         );
         assertEquals(
-                t0,
-                RollupGenerator.lastEligiblePeriodStart(
-                        RollupPeriod.HOURLY,
-                        t0.plus(minute),
-                        t0.plus(hour)
+                Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
+                        .limit(MAX_BACKFILL_PERIODS)
+                        .collect(ImmutableSet.toImmutableSet()),
+                actor.getRollupTimes(
+                        TestBeanFactory.createLastDataPointsMessageBuilder()
+                                .setSourceLastDataPointTime(startOfCurrentPeriod)
+                                .setRollupLastDataPointTime(null)
+                                .build(),
+                        RollupPeriod.HOURLY
+                )
+        );
+        assertEquals(
+                Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
+                        .limit(MAX_BACKFILL_PERIODS)
+                        .collect(ImmutableSet.toImmutableSet()),
+                actor.getRollupTimes(
+                        TestBeanFactory.createLastDataPointsMessageBuilder()
+                                .setSourceLastDataPointTime(startOfCurrentPeriod)
+                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour.multipliedBy(99999)))
+                                .build(),
+                        RollupPeriod.HOURLY
+                )
+        );
+        assertEquals(
+                Stream.iterate(startOfCurrentPeriod.minus(hour), t -> t.minus(hour))
+                        .limit(2)
+                        .collect(ImmutableSet.toImmutableSet()),
+                actor.getRollupTimes(
+                        TestBeanFactory.createLastDataPointsMessageBuilder()
+                                .setSourceLastDataPointTime(startOfCurrentPeriod)
+                                .setRollupLastDataPointTime(startOfCurrentPeriod.minus(hour.multipliedBy(3)))
+                                .build(),
+                        RollupPeriod.HOURLY
                 )
         );
     }
