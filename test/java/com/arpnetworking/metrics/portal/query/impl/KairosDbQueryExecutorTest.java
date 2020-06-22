@@ -88,26 +88,18 @@ public class KairosDbQueryExecutorTest {
 
         @Test
         public void testExecuteQuery() throws IOException {
-            final com.arpnetworking.kairos.client.models.MetricsQuery request = ResourceHelper.loadResourceAs(
-                    KairosDbQueryExecutorTest.class,
-                    "exampleRequest",
-                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
-
             final String responseJSON = ResourceHelper.loadResource(
                     KairosDbQueryExecutorTest.class,
-                    "exampleResponse");
+                    "testResponse");
             final MetricsQueryResponse response = _objectMapper.readValue(responseJSON, MetricsQueryResponse.class);
 
             final ArgumentCaptor<com.arpnetworking.kairos.client.models.MetricsQuery> captor = ArgumentCaptor.forClass(
                     com.arpnetworking.kairos.client.models.MetricsQuery.class);
             when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
-            final BoundedMetricsQuery query = new DefaultBoundedMetricsQuery.Builder()
-                    .setQuery(_objectMapper.writeValueAsString(request))
-                    .setFormat(MetricsQueryFormat.KAIROS_DB)
-                    .setStartTime(QUERY_START_TIME)
-                    .setEndTime(QUERY_END_TIME)
-                    .build();
+            final BoundedMetricsQuery query = loadTestQuery();
+            final com.arpnetworking.kairos.client.models.MetricsQuery parsedQuery =
+                    _objectMapper.readValue(query.getQuery(), com.arpnetworking.kairos.client.models.MetricsQuery.class);
 
             final MetricsQueryResult result;
             try {
@@ -117,11 +109,11 @@ public class KairosDbQueryExecutorTest {
                 return;
             }
 
-            final com.arpnetworking.kairos.client.models.MetricsQuery capturedRequest = captor.getValue();
-            assertThat(capturedRequest.getMetrics(), equalTo(request.getMetrics()));
-            assertThat(capturedRequest.getOtherArgs(), equalTo(request.getOtherArgs()));
-            assertThat(capturedRequest.getStartTime(), equalTo(Optional.of(QUERY_START_TIME.toInstant())));
-            assertThat(capturedRequest.getEndTime(), equalTo(Optional.of(QUERY_END_TIME.toInstant())));
+            final com.arpnetworking.kairos.client.models.MetricsQuery capturedQuery = captor.getValue();
+            assertThat(capturedQuery.getMetrics(), equalTo(parsedQuery.getMetrics()));
+            assertThat(capturedQuery.getOtherArgs(), equalTo(parsedQuery.getOtherArgs()));
+            assertThat(capturedQuery.getStartTime(), equalTo(Optional.of(QUERY_START_TIME.toInstant())));
+            assertThat(capturedQuery.getEndTime(), equalTo(Optional.of(QUERY_END_TIME.toInstant())));
 
             assertThat(result.getErrors(), is(empty()));
             assertThat(result.getWarnings(), is(empty()));
@@ -144,7 +136,8 @@ public class KairosDbQueryExecutorTest {
         @Test(expected = ExecutionException.class)
         public void testKairosDBReturnsError() throws Exception {
             when(_service.queryMetrics(any())).thenThrow(new RuntimeException("boom"));
-            _executor.executeQuery(any()).toCompletableFuture().get();
+            final BoundedMetricsQuery query = loadTestQuery();
+            _executor.executeQuery(query).toCompletableFuture().get();
         }
 
         @Test(expected = ExecutionException.class)
@@ -156,6 +149,19 @@ public class KairosDbQueryExecutorTest {
                     .setEndTime(QUERY_END_TIME)
                     .build();
             _executor.executeQuery(invalidQuery).toCompletableFuture().get();
+        }
+
+        private BoundedMetricsQuery loadTestQuery() throws IOException {
+            final String serializedQuery = ResourceHelper.loadResource(
+                    KairosDbQueryExecutorTest.class,
+                    "testQuery");
+
+            return new DefaultBoundedMetricsQuery.Builder()
+                    .setQuery(serializedQuery)
+                    .setFormat(MetricsQueryFormat.KAIROS_DB)
+                    .setStartTime(QUERY_START_TIME)
+                    .setEndTime(QUERY_END_TIME)
+                    .build();
         }
     }
 
