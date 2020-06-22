@@ -18,10 +18,6 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.persistence.AbstractPersistentActorWithTimers;
-import com.arpnetworking.metrics.Unit;
-import com.arpnetworking.metrics.impl.BaseScale;
-import com.arpnetworking.metrics.impl.BaseUnit;
-import com.arpnetworking.metrics.impl.TsdUnit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.util.PagingIterator;
@@ -38,6 +34,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Coordinates a {@link JobRepository}'s {@link JobExecutorActor}s to ensure that exactly one actor exists for each job.
@@ -200,12 +197,12 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
             _periodicMetrics.recordTimer(
                     "jobs/coordinator/anti_entropy/latency",
                     latencyNanos,
-                    Optional.of(NANOS));
+                    Optional.of(TimeUnit.NANOSECONDS));
 
             _periodicMetrics.recordTimer(
                     String.format("jobs/coordinator/by_type/%s/anti_entropy/latency", repoName),
                     latencyNanos,
-                    Optional.of(NANOS));
+                    Optional.of(TimeUnit.NANOSECONDS));
 
             _periodicMetrics.recordCounter("jobs/coordinator/anti_entropy/success", 1);
             _periodicMetrics.recordCounter(
@@ -275,10 +272,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private static final String ANTI_ENTROPY_PERIODIC_TIMER_NAME = "TICK";
     private static final Duration ANTI_ENTROPY_TICK_INTERVAL = Duration.ofHours(1);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobCoordinator.class);
-    private static final Unit NANOS = new TsdUnit.Builder()
-            .setScale(BaseScale.NANO)
-            .setBaseUnit(BaseUnit.SECOND)
-            .build();
     private static final int JOB_QUERY_PAGE_SIZE = 256;
 
     /**

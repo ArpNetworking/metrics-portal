@@ -51,6 +51,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
@@ -101,6 +102,7 @@ import io.ebean.EbeanServer;
 import models.internal.Features;
 import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
+import org.flywaydb.play.PlayInitializer;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
@@ -109,6 +111,7 @@ import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
@@ -146,6 +149,10 @@ public class MainModule extends AbstractModule {
         bind(EbeanServer.class)
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
+
+        bind(EbeanServer.class)
+                .annotatedWith(Names.named("metrics_portal_ddl"))
+                .toProvider(MetricsPortalDDLEbeanServerProvider.class);
 
         // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
         // statically injecting them. Construction still happens at inject time, however.
@@ -433,18 +440,60 @@ public class MainModule extends AbstractModule {
         );
     }
 
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private DatabaseAlertExecutionRepository provideDatabaseAlertExecutionRepository(
+            final Config config,
+            final PeriodicMetrics periodicMetrics,
+            final ActorSystem actorSystem,
+            @Named("metrics_portal") final EbeanServer portalServer,
+            @Named("metrics_portal_ddl") final EbeanServer ddlServer
+    ) {
+        final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
+
+        final int maxLookAhead = partitionConfig.getInt("lookahead");
+        final Duration offset = ConfigurationHelper.getFiniteDuration(partitionConfig, "offset");
+        return new DatabaseAlertExecutionRepository(
+            portalServer,
+            ddlServer,
+            actorSystem,
+            periodicMetrics,
+            java.time.Duration.ofSeconds(offset.toSeconds()),
+            maxLookAhead
+        );
+    }
+
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
         @Inject
         MetricsPortalEbeanServerProvider(
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
-                final EbeanConfig ebeanConfig) {
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
             // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
         }
 
         @Override
         public EbeanServer get() {
             return Ebean.getServer("metrics_portal");
+        }
+    }
+
+    private static final class MetricsPortalDDLEbeanServerProvider implements Provider<EbeanServer> {
+        @Inject
+        MetricsPortalDDLEbeanServerProvider(
+                final Configuration configuration,
+                final DynamicEvolutions dynamicEvolutions,
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
+            // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
+        }
+
+        @Override
+        public EbeanServer get() {
+            return Ebean.getServer("metrics_portal_ddl");
         }
     }
 
@@ -552,7 +601,8 @@ public class MainModule extends AbstractModule {
                 final Injector injector,
                 final Environment environment,
                 final Config configuration,
-                final ApplicationLifecycle lifecycle) {
+                final ApplicationLifecycle lifecycle
+        ) {
             _injector = injector;
             _environment = environment;
             _configuration = configuration;
