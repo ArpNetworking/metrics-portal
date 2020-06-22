@@ -247,8 +247,8 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @Named("RewrittenQueryConsumer")
-    private Consumer<MetricsQuery> provideWhatever(
+    @Named("RollupReadQueryConsistencyChecker")
+    private Consumer<MetricsQuery> provideRollupReadQueryConsistencyChecker(
             final Config config,
             @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
         // TODO: better flag name

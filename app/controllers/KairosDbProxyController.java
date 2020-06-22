@@ -87,7 +87,7 @@ public class KairosDbProxyController extends Controller {
             final WSClient client,
             final KairosDbClient kairosDbClient,
             final ObjectMapper mapper,
-            @Named("RewrittenQueryConsumer") final Consumer<MetricsQuery> rewrittenQueryConsumer,
+            @Named("RollupReadQueryConsistencyChecker") final Consumer<MetricsQuery> rewrittenQueryConsumer,
             final MetricsFactory metricsFactory,
             final MetricsQueryConfig metricsQueryConfig) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
