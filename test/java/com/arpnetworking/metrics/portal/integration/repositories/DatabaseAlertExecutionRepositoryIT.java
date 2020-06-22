@@ -16,6 +16,9 @@
 
 package com.arpnetworking.metrics.portal.integration.repositories;
 
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
@@ -26,7 +29,9 @@ import io.ebean.EbeanServer;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
+import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.util.UUID;
 
 /**
@@ -35,18 +40,37 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT<AlertEvaluationResult> {
+    private ActorSystem _actorSystem;
+
     @Override
     public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final EbeanServer adminServer = EbeanServerHelper.getAdminMetricsDatabase();
+
+        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
+        // references are not constrained in the underlying execution table.
 
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
 
-        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
-        // references are not constrained in the underlying execution table.
+        _actorSystem = ActorSystem.create();
+        final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
 
-        return new DatabaseAlertExecutionRepository(server);
+        return new DatabaseAlertExecutionRepository(
+                server,
+                adminServer,
+                _actorSystem,
+                metricsMock,
+                Duration.ZERO,
+                5 // Arbitrary, but helps distinguish logs
+        );
+    }
+
+    @Override
+    public void tearDown() {
+        super.tearDown();
+        TestKit.shutdownActorSystem(_actorSystem);
     }
 
     @Override

@@ -20,7 +20,6 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.metrics.Units;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -186,14 +185,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         _periodicMetrics.recordTimer(
                 "jobs/executor/execution_lag",
                 executionLagNanos,
-                Optional.of(Units.NANOSECOND));
+                Optional.of(TimeUnit.NANOSECONDS));
 
         _periodicMetrics.recordTimer(
                 "jobs/executor/by_type/"
                         + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
                         + "/execution_lag",
                 executionLagNanos,
-                Optional.of(Units.NANOSECOND));
+                Optional.of(TimeUnit.NANOSECONDS));
 
         final long startTime = System.nanoTime();
         PatternsCS.pipe(
@@ -202,14 +201,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                             _periodicMetrics.recordTimer(
                                     "jobs/executor/execution_time",
                                     System.nanoTime() - startTime,
-                                    Optional.of(Units.NANOSECOND));
+                                    Optional.of(TimeUnit.NANOSECONDS));
 
                             _periodicMetrics.recordTimer(
                                     "jobs/executor/by_type/"
                                             + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
                                             + "/execution_time",
                                     System.nanoTime() - startTime,
-                                    Optional.of(Units.NANOSECOND));
+                                    Optional.of(TimeUnit.NANOSECONDS));
 
                             return new JobCompleted.Builder<T>()
                                     .setScheduled(scheduled)
