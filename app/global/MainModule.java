@@ -52,8 +52,10 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -100,7 +102,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Ebean;
 import io.ebean.EbeanServer;
 import models.internal.Features;
+import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
+import org.flywaydb.play.PlayInitializer;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
@@ -109,6 +113,7 @@ import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
+import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
@@ -148,6 +153,10 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
 
+        bind(EbeanServer.class)
+                .annotatedWith(Names.named("metrics_portal_ddl"))
+                .toProvider(MetricsPortalDDLEbeanServerProvider.class);
+
         // Ebean initializes the ServerConfig from outside of Play/Guice so we can't hook in any dependencies without
         // statically injecting them. Construction still happens at inject time, however.
         requestStaticInjection(MetricsPortalServerConfigStartup.class);
@@ -185,6 +194,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("ReportJobCoordinator"))
                 .toProvider(ReportRepositoryJobCoordinatorProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("AlertJobCoordinator"))
+                .toProvider(AlertRepositoryJobCoordinatorProvider.class)
                 .asEagerSingleton();
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupMetricsDiscovery"))
@@ -323,14 +336,15 @@ public class MainModule extends AbstractModule {
             final Config configuration,
             final Injector injector,
             final Environment environment) {
-        final ImmutableMap.Builder<String, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
+        final ImmutableMap.Builder<MetricsQueryFormat, QueryExecutor> registryMapBuilder = ImmutableMap.builder();
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
-        for (final String key : keys) {
+        for (final String key: keys) {
+            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
             final Config subconfig = executorsConfig.getConfig(key);
             final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
             final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
-            registryMapBuilder.put(key, childInjector.getInstance(clazz));
+            registryMapBuilder.put(format, childInjector.getInstance(clazz));
         }
         return new QueryExecutorRegistry.Builder()
                 .setExecutors(registryMapBuilder.build())
@@ -445,18 +459,60 @@ public class MainModule extends AbstractModule {
         );
     }
 
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private DatabaseAlertExecutionRepository provideDatabaseAlertExecutionRepository(
+            final Config config,
+            final PeriodicMetrics periodicMetrics,
+            final ActorSystem actorSystem,
+            @Named("metrics_portal") final EbeanServer portalServer,
+            @Named("metrics_portal_ddl") final EbeanServer ddlServer
+    ) {
+        final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
+
+        final int maxLookAhead = partitionConfig.getInt("lookahead");
+        final Duration offset = ConfigurationHelper.getFiniteDuration(partitionConfig, "offset");
+        return new DatabaseAlertExecutionRepository(
+            portalServer,
+            ddlServer,
+            actorSystem,
+            periodicMetrics,
+            java.time.Duration.ofSeconds(offset.toSeconds()),
+            maxLookAhead
+        );
+    }
+
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
         @Inject
         MetricsPortalEbeanServerProvider(
                 final Configuration configuration,
                 final DynamicEvolutions dynamicEvolutions,
-                final EbeanConfig ebeanConfig) {
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
             // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
         }
 
         @Override
         public EbeanServer get() {
             return Ebean.getServer("metrics_portal");
+        }
+    }
+
+    private static final class MetricsPortalDDLEbeanServerProvider implements Provider<EbeanServer> {
+        @Inject
+        MetricsPortalDDLEbeanServerProvider(
+                final Configuration configuration,
+                final DynamicEvolutions dynamicEvolutions,
+                final EbeanConfig ebeanConfig,
+                final PlayInitializer flywayInitializer) {
+            // Constructor arguments injected for dependency resolution only
+            // e.g. requiring migrations to run
+        }
+
+        @Override
+        public EbeanServer get() {
+            return Ebean.getServer("metrics_portal_ddl");
         }
     }
 
@@ -564,7 +620,8 @@ public class MainModule extends AbstractModule {
                 final Injector injector,
                 final Environment environment,
                 final Config configuration,
-                final ApplicationLifecycle lifecycle) {
+                final ApplicationLifecycle lifecycle
+        ) {
             _injector = injector;
             _environment = environment;
             _configuration = configuration;
@@ -724,6 +781,50 @@ public class MainModule extends AbstractModule {
         private final PeriodicMetrics _periodicMetrics;
 
         private static final String ANTI_ENTROPY_ROLE = "report_repository_anti_entropy";
+    }
+
+    private static final class AlertRepositoryJobCoordinatorProvider implements Provider<ActorRef> {
+        @Inject
+        AlertRepositoryJobCoordinatorProvider(
+                final ActorSystem system,
+                final Injector injector,
+                final OrganizationRepository organizationRepository,
+                @Named("job-execution-shard-region")
+                final ActorRef executorRegion,
+                final PeriodicMetrics periodicMetrics) {
+            _system = system;
+            _injector = injector;
+            _organizationRepository = organizationRepository;
+            _executorRegion = executorRegion;
+            _periodicMetrics = periodicMetrics;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_system);
+            // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
+            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+                return _system.actorOf(ClusterSingletonManager.props(
+                        JobCoordinator.props(_injector,
+                                AlertJobRepository.class,
+                                AlertExecutionRepository.class,
+                                _organizationRepository,
+                                _executorRegion,
+                                _periodicMetrics),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
+                        "AlertJobCoordinator");
+            }
+            return null;
+        }
+
+        private final ActorSystem _system;
+        private final Injector _injector;
+        private final OrganizationRepository _organizationRepository;
+        private final ActorRef _executorRegion;
+        private final PeriodicMetrics _periodicMetrics;
+
+        private static final String ANTI_ENTROPY_ROLE = "alert_repository_anti_entropy";
     }
 
     private static final class RollupGeneratorProvider implements Provider<ActorRef> {

@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,12 +52,14 @@ public final class RollupManager extends AbstractActorWithTimers {
     private RollupPartitioner _partitioner;
     private final ActorRef _consistencyChecker;
     private final double _consistencyCheckFractionOfWrites;
+    private Duration _consistencyCheckDelay = Duration.ofSeconds(30);
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
     private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupManager.class);
     private static final Random RANDOM = new Random();
+    private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
      * Creates a {@link Props} for use in Akka.
@@ -142,11 +145,20 @@ public final class RollupManager extends AbstractActorWithTimers {
 
         final RollupDefinition defn = message.getRollupDefinition();
         if (shouldRequestConsistencyCheck(message)) {
-            requestConsistencyCheck(defn);
+            EXECUTOR.schedule(
+                    () -> RollupManager.requestConsistencyCheck(_consistencyChecker, defn),
+                    _consistencyCheckDelay.toMillis(),
+                    TimeUnit.MILLISECONDS
+            );
+            // ^ "Why delay?" Because KairosDB has an internal write-queue that might take a little while
+            //   to flush to Cassandra, so we don't quite have read-after-write consistency.
+            // (example shelldump: https://pastebin.com/dTq8X5et )
+            // Empirically, in simple tests like that, I see discrepancies get resolved in <1sec,
+            //   but waiting is cheap, and large write-batches might take longer to flush,
+            //   so to be safe, we wait much longer than that 1sec.
         }
 
         try (Metrics metrics = _metricsFactory.create()) {
-            metrics.addAnnotation("rollup_metric", definition.getDestinationMetricName());
             metrics.incrementCounter("rollup/manager/executor_finished", 1);
             metrics.setGauge("rollup/manager/executor_finished/latency_sec", latencyNs / 1e9);
 
@@ -199,7 +211,7 @@ public final class RollupManager extends AbstractActorWithTimers {
         return Optional.ofNullable(_rollupDefinitions.pollFirst());
     }
 
-    private void requestConsistencyCheck(final RollupDefinition defn) {
+    private static void requestConsistencyCheck(final ActorRef consistencyChecker, final RollupDefinition defn) {
         final ConsistencyChecker.Task ccTask = ThreadLocalBuilder.build(ConsistencyChecker.Task.Builder.class, b -> b
                 .setSourceMetricName(defn.getSourceMetricName())
                 .setRollupMetricName(defn.getDestinationMetricName())
@@ -208,7 +220,7 @@ public final class RollupManager extends AbstractActorWithTimers {
                 .setFilterTags(defn.getFilterTags())
                 .setTrigger(ConsistencyChecker.Task.Trigger.WRITE_COMPLETED)
         );
-        Patterns.ask(_consistencyChecker, ccTask, Duration.ofSeconds(10))
+        Patterns.ask(consistencyChecker, ccTask, Duration.ofSeconds(10))
                 .whenComplete((response, failure) -> {
                     if (failure == null) {
                         LOGGER.debug()
@@ -233,6 +245,10 @@ public final class RollupManager extends AbstractActorWithTimers {
 
     private boolean shouldRequestConsistencyCheck(final RollupExecutor.FinishRollupMessage message) {
         return !message.isFailure() && RANDOM.nextDouble() < _consistencyCheckFractionOfWrites;
+    }
+
+    public void setConsistencyCheckDelay(final Duration consistencyCheckDelay) {
+        _consistencyCheckDelay = consistencyCheckDelay;
     }
 
     private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {
