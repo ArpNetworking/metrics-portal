@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QueueConsistencyTaskCreatorTest {
+public class QueryConsistencyTaskCreatorTest {
     @Test
     public void periodStreamForInterval() {
         final List<Instant> actual = QueryConsistencyTaskCreator.periodStreamForInterval(
