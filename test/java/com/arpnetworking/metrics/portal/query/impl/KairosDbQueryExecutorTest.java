@@ -64,6 +64,9 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(Enclosed.class)
 public class KairosDbQueryExecutorTest {
+    /**
+     * Shared test setup.
+     */
     public abstract static class BaseTests {
         protected KairosDbService _service;
         protected KairosDbQueryExecutor _executor;
@@ -80,6 +83,9 @@ public class KairosDbQueryExecutorTest {
         }
     }
 
+    /**
+     * Test cases for {@link KairosDbQueryExecutor#executeQuery}.
+     */
     public static final class ExecuteQueryTests extends BaseTests {
         private static final ZonedDateTime QUERY_START_TIME = ZonedDateTime.parse(
                 "2020-06-16T00:00-07:00[America/Los_Angeles]");
@@ -165,13 +171,19 @@ public class KairosDbQueryExecutorTest {
         }
     }
 
+    /**
+     * Test cases for {@link KairosDbQueryExecutor#periodHint(MetricsQuery)}.
+     */
     @RunWith(Parameterized.class)
     public static final class PeriodHintTests extends BaseTests {
-        @Parameterized.Parameter(0)
-        public String testName;
+        public String _testName;
 
-        @Parameterized.Parameter(1)
-        public Optional<ChronoUnit> expectedResult;
+        public Optional<ChronoUnit> _expectedResult;
+
+        public PeriodHintTests(final String testName, final Optional<ChronoUnit> expectedResult) {
+            _testName = testName;
+            _expectedResult = expectedResult;
+        }
 
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
@@ -187,13 +199,13 @@ public class KairosDbQueryExecutorTest {
         public void testPeriodHint() throws Exception {
             final String jsonQuery = ResourceHelper.loadResource(
                     KairosDbQueryExecutorTest.class,
-                    testName
+                    _testName
             );
             final MetricsQuery query = new DefaultMetricsQuery.Builder()
                     .setQuery(jsonQuery)
                     .setFormat(MetricsQueryFormat.KAIROS_DB)
                     .build();
-            assertThat(_executor.periodHint(query), equalTo(expectedResult));
+            assertThat(_executor.periodHint(query), equalTo(_expectedResult));
         }
     }
 }
