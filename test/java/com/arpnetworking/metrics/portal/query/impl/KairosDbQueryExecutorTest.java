@@ -176,9 +176,8 @@ public class KairosDbQueryExecutorTest {
      */
     @RunWith(Parameterized.class)
     public static final class PeriodHintTests extends BaseTests {
-        public String _testName;
-
-        public Optional<ChronoUnit> _expectedResult;
+        private final String _testName;
+        private final Optional<ChronoUnit> _expectedResult;
 
         public PeriodHintTests(final String testName, final Optional<ChronoUnit> expectedResult) {
             _testName = testName;
