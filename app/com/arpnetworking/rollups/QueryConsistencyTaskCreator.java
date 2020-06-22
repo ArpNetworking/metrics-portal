@@ -3,6 +3,9 @@ package com.arpnetworking.rollups;
 import akka.actor.ActorRef;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import controllers.KairosDbProxyController;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -14,6 +17,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryConsistencyTaskCreator.class);
+
     private static final Random RANDOM = new Random();
 
     private final double _checkFraction;
@@ -31,14 +36,25 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         }
 
         if (!query.getStartTime().isPresent()) {
-            // TODO: log
+            LOGGER.trace()
+                    .setMessage("not consistency-checking because no start time present")
+                    .addData("query",query)
+                    .log();
             return;
         }
 
         if (!query.getEndTime().isPresent()) {
-            // TODO: log
+            LOGGER.trace()
+                    .setMessage("not consistency-checking because no end time present")
+                    .addData("query",query)
+                    .log();
             return;
         }
+
+        LOGGER.trace()
+                .setMessage("maybe sending for consistency check?")
+                .addData("query", query)
+                .log();
 
         final Instant startTime = query.getStartTime().get();
         final Instant endTime = query.getEndTime().get();
@@ -50,7 +66,14 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                         rollupMetricMaybe.ifPresent(rollupMetric -> {
                             checkerTasks(startTime, endTime, rollupMetric)
                                     // TODO: wait for consistency checker to process the message before sending more?
-                                    .forEach(task -> _consistencyChecker.tell(task, ActorRef.noSender()));
+                                    .forEach(task -> {
+                                        LOGGER.trace()
+                                                .setMessage("sending for consistency check")
+                                                .addData("task", task)
+                                                .addData("query", query)
+                                                .log();
+                                        _consistencyChecker.tell(task, ActorRef.noSender());
+                                    });
                         })
                 );
 
