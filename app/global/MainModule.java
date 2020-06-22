@@ -251,8 +251,6 @@ public class MainModule extends AbstractModule {
     private Consumer<MetricsQuery> provideRollupReadQueryConsistencyChecker(
             final Config config,
             @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
-        // TODO: better flag name
-        // TODO: default this flag to 10% (or whatever) and remove it from the config files
         final double queryCheckFraction = config.getDouble("rollup.consistency_check.read_fraction");
 
         return new QueryConsistencyTaskCreator(
