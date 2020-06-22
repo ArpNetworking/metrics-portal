@@ -477,11 +477,11 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final Instant lastSourceDataPoint,
             final Instant incompleteAt
     ) {
-        final Instant periodStartContainingLastSourceDataPoint = period.recentEndTime(lastSourceDataPoint);
-        final Instant lastCompletePeriodStart = period.recentStartTime(incompleteAt);
-        return periodStartContainingLastSourceDataPoint.isBefore(lastCompletePeriodStart)
-                ? periodStartContainingLastSourceDataPoint
-                : lastCompletePeriodStart;
+        final Instant lastPeriodWithData = period.recentEndTime(lastSourceDataPoint);
+        final Instant lastCompletePeriod = period.recentEndTime(incompleteAt).minus(period.periodCountToDuration(1));
+        return lastPeriodWithData.isBefore(lastCompletePeriod)
+                ? lastPeriodWithData
+                : lastCompletePeriod;
     }
 
     private final ActorRef _metricsDiscovery;
