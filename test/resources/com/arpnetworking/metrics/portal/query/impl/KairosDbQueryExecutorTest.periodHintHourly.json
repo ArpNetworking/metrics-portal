@@ -17,6 +17,13 @@
             "value": "1",
             "unit": "hours"
           }
+        },
+        {
+          "name": "max",
+          "sampling": {
+            "value": "1",
+            "unit": "minutes"
+          }
         }
       ]
     }
