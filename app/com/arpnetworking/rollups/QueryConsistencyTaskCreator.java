@@ -1,17 +1,19 @@
 package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
+import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import controllers.KairosDbProxyController;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -65,14 +67,28 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .forEach(rollupMetricMaybe ->
                         rollupMetricMaybe.ifPresent(rollupMetric -> {
                             checkerTasks(startTime, endTime, rollupMetric)
-                                    // TODO: wait for consistency checker to process the message before sending more?
                                     .forEach(task -> {
                                         LOGGER.trace()
                                                 .setMessage("sending for consistency check")
                                                 .addData("task", task)
                                                 .addData("query", query)
                                                 .log();
-                                        _consistencyChecker.tell(task, ActorRef.noSender());
+                                        // The consistency checker actor is expected to be running on the same node, to
+                                        // respond ~immediately to a task send, and to drop tasks if there are too many
+                                        // to fit into the queue. Hence, blockingly send them to the checker actor as
+                                        // fast as it'll accept them.
+                                        try {
+                                            Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
+                                        } catch (InterruptedException | ExecutionException e) {
+                                            if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
+                                                LOGGER.error()
+                                                        .setMessage("unexpected exception sending task to consistency checker")
+                                                        .setThrowable(e)
+                                                        .addData("task", task)
+                                                        .addData("query", query)
+                                                        .log();
+                                            }
+                                        }
                                     });
                         })
                 );
