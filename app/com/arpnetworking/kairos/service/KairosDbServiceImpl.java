@@ -498,6 +498,12 @@ public final class KairosDbServiceImpl implements KairosDbService {
             return this;
         }
 
+        /**
+         * Sets the RewrittenQueryConsumer. Cannot be null. Optional.
+         *
+         * @param consumer the consumer
+         * @return this {@link Builder}
+         */
         public Builder setRewrittenQueryConsumer(final Consumer<MetricsQuery> consumer) {
             _rewrittenQueryConsumer = consumer;
             return this;
@@ -512,6 +518,8 @@ public final class KairosDbServiceImpl implements KairosDbService {
         @NotNull
         private MetricsQueryConfig _metricsQueryConfig;
         @NotNull
-        private Consumer<MetricsQuery> _rewrittenQueryConsumer = (query -> {});
+        private Consumer<MetricsQuery> _rewrittenQueryConsumer = query -> {
+
+        };
     }
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2020 Dropbox Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.arpnetworking.rollups;
 
 import akka.actor.ActorRef;
@@ -18,6 +33,11 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+/**
+ * Randomly samples some queries to be forwarded to the rollup consistency checker (if they contain rollups at all).
+ *
+ * @author William Ehlhardt (whale at dropbox dot com)
+ */
 public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryConsistencyTaskCreator.class);
 
@@ -26,13 +46,19 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     private final double _checkFraction;
     private final ActorRef _consistencyChecker;
 
-    public QueryConsistencyTaskCreator(final double _checkFraction, final ActorRef _consistencyChecker) {
-        this._checkFraction = _checkFraction;
-        this._consistencyChecker = _consistencyChecker;
+    /**
+     * Constructor.
+     *
+     * @param checkFraction Fraction of queries to send for checking.
+     * @param consistencyChecker Destination consistency checker actor.
+     */
+    public QueryConsistencyTaskCreator(final double checkFraction, final ActorRef consistencyChecker) {
+        this._checkFraction = checkFraction;
+        this._consistencyChecker = consistencyChecker;
     }
 
     @Override
-    public void accept(MetricsQuery query) {
+    public void accept(final MetricsQuery query) {
         if (RANDOM.nextDouble() > _checkFraction) {
             return;
         }
@@ -40,7 +66,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         if (!query.getStartTime().isPresent()) {
             LOGGER.trace()
                     .setMessage("not consistency-checking because no start time present")
-                    .addData("query",query)
+                    .addData("query", query)
                     .log();
             return;
         }
@@ -48,7 +74,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         if (!query.getEndTime().isPresent()) {
             LOGGER.trace()
                     .setMessage("not consistency-checking because no end time present")
-                    .addData("query",query)
+                    .addData("query", query)
                     .log();
             return;
         }
@@ -79,7 +105,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                                         // fast as it'll accept them.
                                         try {
                                             Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
-                                        } catch (InterruptedException | ExecutionException e) {
+                                        } catch (final InterruptedException | ExecutionException e) {
                                             if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
                                                 LOGGER.error()
                                                         .setMessage("unexpected exception sending task to consistency checker")
@@ -95,7 +121,8 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
 
     }
 
-    private static Stream<ConsistencyChecker.Task> checkerTasks(Instant startTime, Instant endTime, RollupMetric rollupMetric) {
+    private static Stream<ConsistencyChecker.Task> checkerTasks(
+            final Instant startTime, final Instant endTime, final RollupMetric rollupMetric) {
         return periodStreamForInterval(startTime, endTime, rollupMetric.getPeriod())
                 .map(periodStartTime -> new ConsistencyChecker.Task.Builder()
                         .setSourceMetricName(rollupMetric.getBaseMetricName())
@@ -106,25 +133,26 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                         .build());
     }
 
-    static Stream<Instant> periodStreamForInterval(Instant startTime, Instant endTime, RollupPeriod period) {
+    static Stream<Instant> periodStreamForInterval(
+            final Instant startTime, final Instant endTime, final RollupPeriod period) {
         final PeriodIterator periods = new PeriodIterator(startTime, endTime, period);
         return StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(
                         periods,
-                        Spliterator.ORDERED)
-                , false);
+                        Spliterator.ORDERED),
+                false);
     }
 
 
-    static class PeriodIterator implements Iterator<Instant> {
-        Instant _periodStart;
-        final Instant _end;
-        final RollupPeriod _rollupPeriod;
+    private class PeriodIterator implements Iterator<Instant> {
+        private Instant _periodStart;
+        private final Instant _end;
+        private final RollupPeriod _rollupPeriod;
 
-        public PeriodIterator(final Instant _start, final Instant _end, RollupPeriod _rollupPeriod) {
-            this._periodStart = _rollupPeriod.truncate(_start);
-            this._end = _end;
-            this._rollupPeriod = _rollupPeriod;
+        PeriodIterator(final Instant start, final Instant end, final RollupPeriod rollupPeriod) {
+            this._periodStart = rollupPeriod.truncate(start);
+            this._end = end;
+            this._rollupPeriod = rollupPeriod;
         }
 
         @Override
