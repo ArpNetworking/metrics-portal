@@ -144,7 +144,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     }
 
 
-    private class PeriodIterator implements Iterator<Instant> {
+    private static class PeriodIterator implements Iterator<Instant> {
         private Instant _periodStart;
         private final Instant _end;
         private final RollupPeriod _rollupPeriod;
