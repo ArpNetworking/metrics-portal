@@ -248,6 +248,7 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @Named("RollupReadQueryConsistencyChecker")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Consumer<MetricsQuery> provideRollupReadQueryConsistencyChecker(
             final Config config,
             @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
