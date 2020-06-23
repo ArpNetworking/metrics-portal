@@ -150,7 +150,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         private final RollupPeriod _rollupPeriod;
 
         PeriodIterator(final Instant start, final Instant end, final RollupPeriod rollupPeriod) {
-            this._periodStart = rollupPeriod.truncate(start);
+            this._periodStart = rollupPeriod.mostRecentBoundary(start);
             this._end = end;
             this._rollupPeriod = rollupPeriod;
         }
