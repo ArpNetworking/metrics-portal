@@ -91,10 +91,18 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         getSender().tell(new Status.Success(task), getSelf());
                         _maxRecentBufferSize.accumulateAndGet(_queue.size(), Math::max);
                         recordCounter(SUBMIT_SUCCESS_METRIC, 1);
+                        LOGGER.trace()
+                                .setMessage("queued checker task")
+                                .addData("task", task)
+                                .log();
                         tick();
                     } else {
                         getSender().tell(new Status.Failure(BufferFull.getInstance()), getSelf());
                         recordCounter(SUBMIT_SUCCESS_METRIC, 0);
+                        LOGGER.trace()
+                                .setMessage("dropped checker task due to queue overflow")
+                                .addData("task", task)
+                                .log();
                     }
                 })
                 .match(SampleCounts.class, this::sampleCountsReceived)

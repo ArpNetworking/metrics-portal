@@ -1,0 +1,30 @@
+{
+  "metrics": [
+    {
+      "tags": {},
+      "name": "client/samples_sink/submitted_samples",
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": "1",
+            "unit": "hours"
+          }
+        }
+      ]
+    },
+    {
+      "tags": {},
+      "name": "client/samples_sink/downsampled",
+      "aggregators": [
+        {
+          "name": "sum",
+          "sampling": {
+            "value": "1",
+            "unit": "minutes"
+          }
+        }
+      ]
+    }
+  ]
+}

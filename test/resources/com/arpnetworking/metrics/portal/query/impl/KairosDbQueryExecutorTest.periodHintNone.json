@@ -1,0 +1,9 @@
+{
+  "metrics": [
+    {
+      "tags": {},
+      "name": "client/samples_sink/submitted_samples",
+      "aggregators": []
+    }
+  ]
+}
