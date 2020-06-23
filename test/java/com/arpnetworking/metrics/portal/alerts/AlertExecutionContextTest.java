@@ -28,10 +28,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 import models.internal.Organization;
+import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
@@ -113,7 +115,7 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testQueryExecuteError() throws QueryExecutionException, InterruptedException {
+    public void testQueryExecuteError() throws InterruptedException {
         final Throwable queryError = new RuntimeException("Something went wrong");
         final CompletableFuture<MetricsQueryResult> exceptionalCompletionStage = new CompletableFuture<>();
         exceptionalCompletionStage.completeExceptionally(queryError);
@@ -142,9 +144,38 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testSingleSeriesFiring() throws Exception {
-        final MetricsQueryResult mockResult = getTestcase("singleSeriesFiring");
+        final Instant scheduled = Instant.now();
+        final MetricsQueryResult mockResult =
+            new DefaultMetricsQueryResult.Builder()
+                    .setQueryResult(new DefaultTimeSeriesResult.Builder()
+                            .setQueries(ImmutableList.of(
+                                    new DefaultTimeSeriesResult.Query.Builder()
+                                        .setResults(ImmutableList.of(
+                                                new DefaultTimeSeriesResult.Result.Builder()
+                                                    .setName(TEST_METRIC)
+                                                    .setTags(ImmutableMultimap.of(
+                                                            "os", "linux",
+                                                            "os", "windows",
+                                                            "os", "mac"
+                                                    ))
+                                                    .setValues(ImmutableList.of(
+                                                            new DefaultTimeSeriesResult.DataPoint.Builder()
+                                                                .setTime(scheduled)
+                                                                .setValue(1)
+                                                                .build()
+                                                    ))
+                                                    .build()
+                                        ))
+                                        .setSampleSize(1000)
+                                        .build()
+                            ))
+                            .build()
+                    )
+                    .build();
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        final AlertEvaluationResult result = _context.execute(_alert, scheduled)
+                .toCompletableFuture()
+                .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of(ImmutableMap.of())));
@@ -188,9 +219,10 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testGroupBySomeFiring() throws Exception {
+        final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("groupBySomeFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        final AlertEvaluationResult result = _context.execute(_alert, scheduled).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         final ImmutableList<ImmutableMap<String, String>> expectedFiringTags = ImmutableList.of(
                 ImmutableMap.of("os", "mac"),
@@ -298,15 +330,19 @@ public class AlertExecutionContextTest {
     }
 
     private MetricsQueryResult getTestcase(final String name) throws IOException {
-        final String json = ResourceHelper.loadResource(getClass(), "resultTestCases");
+        final String latestDatapoint = Instant.now()
+                .truncatedTo(ChronoUnit.MINUTES)
+                .toEpochMilli() + "";
+        final String json = ResourceHelper.loadResource(getClass(), "resultTestCases")
+                .replace("\"LATEST_DATAPOINT_MS\"", latestDatapoint);
 
-        final Map<String, MetricsQueryResult> testcases;
-        testcases = _objectMapper.readValue(json, new TypeReference<Map<String, MetricsQueryResult>>() {});
+        final Map<String, models.view.MetricsQueryResult> testcases;
+        testcases = _objectMapper.readValue(json, new TypeReference<Map<String, models.view.MetricsQueryResult>>() {});
 
-        final MetricsQueryResult result = testcases.get(name);
+        final models.view.MetricsQueryResult result = testcases.get(name);
         if (result == null) {
             fail("Could not find testcase: " + name);
         }
-        return result;
+        return result.toInternal();
     }
 }

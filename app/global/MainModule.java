@@ -232,7 +232,10 @@ public class MainModule extends AbstractModule {
     @Singleton
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private AlertExecutionContext provideAlertExecutionContext(final Config config) {
+    private AlertExecutionContext provideAlertExecutionContext(
+            final Config config,
+            final QueryExecutor executor
+    ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
         final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
@@ -240,7 +243,7 @@ public class MainModule extends AbstractModule {
                 .setZone(ZoneOffset.UTC)
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
-        return new AlertExecutionContext(defaultAlertSchedule);
+        return new AlertExecutionContext(defaultAlertSchedule, executor);
     }
 
     @Singleton

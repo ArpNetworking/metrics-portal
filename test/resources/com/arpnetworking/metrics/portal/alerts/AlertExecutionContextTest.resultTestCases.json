@@ -55,7 +55,7 @@
             {
               "values": [
                 [
-                  1592443414231,
+                  "LATEST_DATAPOINT_MS",
                   1
                 ]
               ],
@@ -101,7 +101,7 @@
             {
               "values": [
                 [
-                  1592443497836,
+                  "LATEST_DATAPOINT_MS",
                   1
                 ]
               ],
@@ -126,7 +126,7 @@
             {
               "values": [
                 [
-                  1592443497840,
+                  "LATEST_DATAPOINT_MS",
                   1
                 ]
               ],
@@ -255,7 +255,7 @@
               },
               "values": [
                 [
-                  1592443601464,
+                  "LATEST_DATAPOINT_MS",
                   1
                 ]
               ]
