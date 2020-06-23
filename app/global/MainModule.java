@@ -260,7 +260,7 @@ public class MainModule extends AbstractModule {
                 .setServiceName(configuration.getString("metrics.service"))
                 .setSinks(Collections.singletonList(
                         new ApacheHttpSink.Builder()
-                                .setUri(URI.create(configuration.getString("metrics.uri") + "/metrics/v1/application"))
+                                .setUri(URI.create(configuration.getString("metrics.uri") + "/metrics/v3/application"))
                                 .build()
                 ))
                 .build();
