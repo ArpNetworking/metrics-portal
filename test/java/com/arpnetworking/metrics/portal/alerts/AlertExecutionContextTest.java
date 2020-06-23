@@ -205,7 +205,10 @@ public class AlertExecutionContextTest {
         ));
 
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        final AlertEvaluationResult result =
+            _context.execute(_alert, Instant.now())
+                    .toCompletableFuture()
+                    .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of()));
@@ -216,7 +219,10 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("groupBySomeFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        final AlertEvaluationResult result = _context.execute(_alert, scheduled).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        final AlertEvaluationResult result =
+                _context.execute(_alert, scheduled)
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         final ImmutableList<ImmutableMap<String, String>> expectedFiringTags = ImmutableList.of(
                 ImmutableMap.of("os", "mac"),
@@ -231,7 +237,10 @@ public class AlertExecutionContextTest {
     public void testGroupByNoneFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("groupByNoneFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        final AlertEvaluationResult result = _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        final AlertEvaluationResult result =
+                _context.execute(_alert, Instant.now())
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(empty()));
