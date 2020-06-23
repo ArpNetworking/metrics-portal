@@ -28,7 +28,7 @@
   <packaging>play2</packaging>
   <name>Metrics Portal</name>
   <description>Web user interface for managing the metrics stack.</description>
-  <version>0.9.33-SNAPSHOT</version>
+  <version>0.9.34-SNAPSHOT</version>
 
   <licenses>
     <license>
