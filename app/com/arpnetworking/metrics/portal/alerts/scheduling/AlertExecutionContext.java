@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
+import models.internal.Problem;
 import models.internal.TimeSeriesResult;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
@@ -30,7 +31,6 @@ import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.scheduling.Job;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 
@@ -54,6 +55,9 @@ import javax.inject.Inject;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class AlertExecutionContext {
+    private static final String PROBLEM_UNEXPECTED_RESULT = "alert_problem.UNEXPECTED_RESULT";
+    private static final String PROBLEM_QUERY_RETURNED_ERRORS = "alert_problem.QUERY_RETURNED_ERRORS";
+
     private final QueryExecutor _executor;
     private final Schedule _defaultSchedule;
 
@@ -73,6 +77,21 @@ public final class AlertExecutionContext {
     }
 
     /**
+     * Get an evaluation schedule for this alert.
+     * <p>
+     * This will attempt to find the largest possible schedule that will still
+     * guarantee alert evaluation will not fall behind.
+     * <p>
+     * If this is not possible, then a default execution interval will be used.
+     *
+     * @param alert The alert.
+     * @return a schedule
+     */
+    public Schedule getSchedule(final Alert alert) {
+        return _defaultSchedule;
+    }
+
+    /**
      * Evaluate an alert that was scheduled for the given instant.
      *
      * @param alert The alert to evaluate.
@@ -80,83 +99,97 @@ public final class AlertExecutionContext {
      * @return A completion stage containing {@code AlertEvaluationResult}.
      */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
-        return CompletableFuture.completedFuture(null)
-                .thenCompose(ignored -> {
-                    // If we're unable to obtain a period hint then we will not be able to
-                    // correctly window the query, as smaller intervals could miss data.
-                    final MetricsQuery query = alert.getQuery();
-                    final ChronoUnit period = _executor.periodHint(query)
-                            .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
-                    final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
+        try {
+            // If we're unable to obtain a period hint then we will not be able to
+            // correctly window the query, as smaller intervals could miss data.
+            final MetricsQuery query = alert.getQuery();
+            final ChronoUnit period = _executor.periodHint(query)
+                    .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
+            final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
 
-                    return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period));
-                });
+            return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period));
+            // CHECKSTYLE.OFF: IllegalCatch - Exception is propagated into the CompletionStage
+        } catch (final Exception e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            final CompletableFuture<AlertEvaluationResult> future = new CompletableFuture<>();
+            future.completeExceptionally(e);
+            return future;
+        }
     }
 
     private AlertEvaluationResult toAlertResult(
             final MetricsQueryResult queryResult,
             final Instant scheduled,
-            final ChronoUnit period) {
+            final ChronoUnit period
+    ) {
 
         // Query result preconditions:
         //
         // - There is only ever a single query.
-        // - If there are multiple results, each *must* contain a tag group-by.
-        //   Otherwise there is exactly one result, which may or may not contain
+        // - If there are multiple results, each must contain a tag group-by.
+        // - Otherwise there is exactly one result, which may or may not contain
         //   a tag group-by.
         // - The name field of each result should be identical, since the only
         //   difference should be in the grouping.
         if (!queryResult.getErrors().isEmpty()) {
-            // FIXME: Exception type
-            throw new RuntimeException("Encountered query errors");
+            throw newCompletionException(
+                    PROBLEM_QUERY_RETURNED_ERRORS,
+                    "Query executor completed with error",
+                    queryResult.getErrors()
+            );
         }
 
         final ImmutableList<? extends TimeSeriesResult.Query> queries = queryResult.getQueryResult().getQueries();
         if (queries.size() != 1) {
-            throw new IllegalStateException("Expected exactly one query.");
+            throw newCompletionException(
+                    PROBLEM_UNEXPECTED_RESULT,
+                    "Expected exactly one query",
+                    ImmutableList.of(queryResult)
+            );
         }
         final TimeSeriesResult.Query query = queries.get(0);
         final ImmutableList<? extends TimeSeriesResult.Result> results = query.getResults();
         if (results.isEmpty()) {
-            throw new IllegalStateException("Expected at least one result.");
+            throw newCompletionException(
+                    PROBLEM_UNEXPECTED_RESULT,
+                    "Expected at least one result",
+                    ImmutableList.of(queryResult)
+            );
         }
 
         final long uniqueNames = results.stream()
                 .map(TimeSeriesResult.Result::getName)
                 .distinct()
+                .limit(2)
                 .count();
 
-        final String name;
+        final String name = results.get(0).getName();
         if (uniqueNames > 1) {
-            throw new IllegalStateException("Expected identical metric names for each result.");
+            throw newCompletionException(
+                    PROBLEM_UNEXPECTED_RESULT,
+                    "All result metric names must be identical",
+                    ImmutableList.of(queryResult)
+            );
         }
-        name = results.get(0).getName();
 
-        final List<Map<String, String>> firingSeries;
-        if (results.size() == 1 && !getTagGroupBy(results.get(0)).isPresent()) {
-            // There was no group by.
-            if (isFiring(results.get(0).getValues(), period, scheduled)) {
-                firingSeries = ImmutableList.of(ImmutableMap.of());
-            } else {
-                firingSeries = ImmutableList.of();
-            }
-        } else {
-            if (!results.stream().allMatch(res -> getTagGroupBy(res).isPresent())) {
-                throw new IllegalStateException("Expected all results to contain a group-by.");
-            }
-
-            firingSeries =
-                    results
-                        .stream()
-                        .filter(res -> isFiring(res.getValues(), period, scheduled))
-                        .map(res -> getTagGroupBy(res).orElseThrow(() -> new IllegalStateException("Missing tag group-by")))
-                        .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
-                        .collect(ImmutableList.toImmutableList());
+        if (results.size() > 1 && results.stream().anyMatch(res -> !getTagGroup(res).isPresent())) {
+            throw newCompletionException(
+                    PROBLEM_UNEXPECTED_RESULT,
+                    "All results must contain a tag group-by if there are multiple results",
+                    ImmutableList.of(queryResult)
+            );
         }
+
+        final List<Map<String, String>> firingTagGroups =
+                results
+                    .stream()
+                    .filter(res -> isFiring(res.getValues(), period, scheduled))
+                    .map(res -> getTagGroup(res).orElseGet(ImmutableMap::of))
+                    .collect(ImmutableList.toImmutableList());
 
         return new DefaultAlertEvaluationResult.Builder()
                 .setName(name)
-                .setFiringTags(firingSeries)
+                .setFiringTags(firingTagGroups)
                 .build();
     }
 
@@ -172,28 +205,14 @@ public final class AlertExecutionContext {
         return period.between(mostRecentDatapointTime, scheduled) == 0;
     }
 
-    private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
+    private Optional<Map<String, String>> getTagGroup(final TimeSeriesResult.Result result) {
         // We don't expect the tag group-by to be the only value in the stream
         // because the histogram plugin uses its own group-by.
         return result.getGroupBy().stream()
                 .filter(g -> g instanceof TimeSeriesResult.QueryTagGroupBy)
                 .map(g -> (TimeSeriesResult.QueryTagGroupBy) g)
-                .findFirst();
-    }
-
-    /**
-     * Get an evaluation schedule for this alert.
-     * <p>
-     * This will attempt to find the largest possible schedule that will still
-     * guarantee alert evaluation will not fall behind.
-     * <p>
-     * If this is not possible, then a default execution interval will be used.
-     *
-     * @param alert The alert.
-     * @return a schedule
-     */
-    public Schedule getSchedule(final Alert alert) {
-        return _defaultSchedule;
+                .findFirst()
+                .map(TimeSeriesResult.QueryTagGroupBy::getGroup);
     }
 
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
@@ -209,5 +228,21 @@ public final class AlertExecutionContext {
                 .setQuery(query.getQuery())
                 .setFormat(query.getQueryFormat())
                 .build();
+    }
+
+    // Helpers for constructing exceptions.
+
+    private static CompletionException newCompletionException(final String problemCode, final String message) {
+        return newCompletionException(problemCode, message, ImmutableList.of());
+    }
+
+    private static CompletionException newCompletionException(final String problemCode, final String message, final ImmutableList<?> args) {
+        final Problem problem = new Problem.Builder()
+                .setProblemCode(problemCode)
+                .setArgs(ImmutableList.copyOf(args))
+                .build();
+        return new CompletionException(
+                new AlertExecutionException(message, ImmutableList.of(problem))
+        );
     }
 }

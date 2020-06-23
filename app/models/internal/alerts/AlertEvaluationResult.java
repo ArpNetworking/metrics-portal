@@ -26,9 +26,10 @@ import models.internal.scheduling.JobExecution;
 /**
  * The result of evaluating an Alert.
  * <p>
- * This is not useful on its own since it does not expose any event timestamps or alert metadata.
- * It's expected that those values will be obtained from the associated {@link JobExecution} instances
- * along with the alert definition itself.
+ * This is not useful on its own since it does not expose any event timestamps
+ * or alert metadata. It's expected that those values will be obtained from the
+ * associated {@link JobExecution} instances along with the alert definition
+ * itself.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -43,18 +44,23 @@ import models.internal.scheduling.JobExecution;
         )
 )
 public interface AlertEvaluationResult {
-
     /**
      * The series name at the time of evaluation.
+     * <p>
+     * This can be used to distinguish cases where the underlying query changed
+     * between successive evaluations.
      *
-     * @return the tag sets
+     * @return the series name.
      */
-    String getName();
+    String getSeriesName();
 
     /**
      * A list of firing tag-sets at the time of evaluation.
+     * <p>
+     * If a series is considered firing but has no group by, then this list
+     * will contain a single empty map.
      *
-     * @return the tag sets
+     * @return the tag sets.
      */
     ImmutableList<ImmutableMap<String, String>> getFiringTags();
 }

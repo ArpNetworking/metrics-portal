@@ -1,3 +1,9 @@
+// As we would like to specify valid JSON here but also allow for dynamic values,
+// there are some placeholder strings in this file that will be replaced when
+// these testcases are parsed.
+//
+// Placeholders were bound to:
+//   - LATEST_TIMESTAMP_MS: "LATEST_TIMESTAMP_MS"
 {
   "mismatchedNamesInResults": {
     "queryResult": {
@@ -47,7 +53,7 @@
       ]
     }
   },
-  "singleSeriesFiring": {
+  "singleSeriesWithData": {
     "queryResult": {
       "queries": [
         {
@@ -55,7 +61,7 @@
             {
               "values": [
                 [
-                  "LATEST_DATAPOINT_MS",
+                  "LATEST_TIMESTAMP_MS",
                   1
                 ]
               ],
@@ -64,6 +70,42 @@
                   "linux",
                   "mac",
                   "windows"
+                ]
+              },
+              "name": "test_metric"
+            }
+          ],
+          "sample_size": 1000
+        }
+      ]
+    }
+  },
+  "singleSeriesWithGroupByWithData": {
+    "queryResult": {
+      "queries": [
+        {
+          "results": [
+            {
+              "groupBy": [
+                {
+                  "name": "tag",
+                  "group": {
+                    "os": "linux"
+                  },
+                  "tags": [
+                    "os"
+                  ]
+                }
+              ],
+              "values": [
+                [
+                  "LATEST_TIMESTAMP_MS",
+                  1
+                ]
+              ],
+              "tags": {
+                "os": [
+                  "linux"
                 ]
               },
               "name": "test_metric"
@@ -101,7 +143,7 @@
             {
               "values": [
                 [
-                  "LATEST_DATAPOINT_MS",
+                  "LATEST_TIMESTAMP_MS",
                   1
                 ]
               ],
@@ -126,7 +168,7 @@
             {
               "values": [
                 [
-                  "LATEST_DATAPOINT_MS",
+                  "LATEST_TIMESTAMP_MS",
                   1
                 ]
               ],
@@ -255,7 +297,7 @@
               },
               "values": [
                 [
-                  "LATEST_DATAPOINT_MS",
+                  "LATEST_TIMESTAMP_MS",
                   1
                 ]
               ]

@@ -44,7 +44,7 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     }
 
     @Override
-    public String getName() {
+    public String getSeriesName() {
         return _name;
     }
 
