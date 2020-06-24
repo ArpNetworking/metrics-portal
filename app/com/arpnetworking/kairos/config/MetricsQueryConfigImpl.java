@@ -42,8 +42,10 @@ public class MetricsQueryConfigImpl implements MetricsQueryConfig {
      */
     @Inject
     public MetricsQueryConfigImpl(final Config configuration) {
-        _rollupWhitelist = configuration.getStringList("rollup.metric.whitelist").stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
-        _rollupBlacklist = configuration.getStringList("rollup.metric.blacklist").stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
+        _rollupWhitelist = configuration.getStringList("rollup.metric.whitelist")
+                .stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
+        _rollupBlacklist = configuration.getStringList("rollup.metric.blacklist")
+                .stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
         _rollupQueryWhitelist = configuration.getConfigList("kairosdb.proxy.rollups.whitelist")
                 .stream()
                 .map(MetricsQueryConfigImpl::buildWhitelistEntry)
