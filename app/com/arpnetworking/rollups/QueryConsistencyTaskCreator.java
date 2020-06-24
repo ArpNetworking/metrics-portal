@@ -49,7 +49,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     /**
      * Constructor.
      *
-     * @param checkFraction Fraction of queries to send for checking.
+     * @param checkFraction      Fraction of queries to send for checking.
      * @param consistencyChecker Destination consistency checker actor.
      */
     public QueryConsistencyTaskCreator(final double checkFraction, final ActorRef consistencyChecker) {
