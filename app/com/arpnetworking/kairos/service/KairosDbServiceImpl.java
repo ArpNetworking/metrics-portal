@@ -97,12 +97,9 @@ public final class KairosDbServiceImpl implements KairosDbService {
         return getMetricNames(metrics)
                 .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
                 .whenComplete((query, throwable) -> {
-                    if (throwable != null) {
-                        // Something downstream in the pipeline should get the error.
-                        return;
+                    if (throwable == null) {
+                        _rewrittenQueryConsumer.accept(query);
                     }
-
-                    _rewrittenQueryConsumer.accept(query);
                 })
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))

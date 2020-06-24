@@ -85,14 +85,12 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .log();
 
         final Instant startTime = query.getStartTime().get();
-        final Instant endTime = query.getEndTime().get();
+        final Instant endTime = query.getEndTime().orElse(Instant.now());
 
         query.getMetrics().stream()
                 .map(Metric::getName)
                 .map(RollupMetric::fromRollupMetricName)
-                .forEach(rollupMetricMaybe ->
-                        rollupMetricMaybe.ifPresent(rollupMetric -> {
-                            checkerTasks(startTime, endTime, rollupMetric)
+                .flatMap(rollupMetric -> rollupMetric.map(rm -> checkerTasks(startTime, endTime, rm)).orElse(Stream.empty()))
                                     .forEach(task -> {
                                         LOGGER.trace()
                                                 .setMessage("sending for consistency check")
@@ -116,8 +114,6 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                                             }
                                         }
                                     });
-                        })
-                );
 
     }
 
