@@ -42,4 +42,35 @@ public class QueryConsistencyTaskCreatorTest {
                 Instant.parse("2020-06-12T00:00:00Z"),
                 Instant.parse("2020-06-12T01:00:00Z")), actual);
     }
+    @Test
+    public void smokeTest() {
+        final ActorSystem system = ActorSystem.create(
+                "test-" + UUID.randomUUID(),
+                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+        ;
+        final TestKit testKit = new TestKit(system);
+        new QueryConsistencyTaskCreator(1, testKit.getRef())
+                .accept(new MetricsQuery.Builder()
+                        .setStartTime(Instant.parse("2020-06-01T01:02:03Z"))
+                        .setEndTime(Instant.parse("2020-06-01T01:02:03Z"))
+                        .setMetrics(ImmutableList.of(
+                                new Metric.Builder()
+                                        .setName("not_a_rollup")
+                                        .build(),
+                                new Metric.Builder()
+                                        .setName("my_rollup_1h")
+                                        .build()
+                        ))
+                        .build()
+                );
+        testKit.expectMsg(new ConsistencyChecker.Task.Builder()
+                .setSourceMetricName("my_rollup")
+                .setRollupMetricName("my_rollup_1h")
+                .setStartTime(Instant.parse("2020-06-01T01:00:00Z"))
+                .setPeriod(RollupPeriod.HOURLY)
+                .setTrigger(ConsistencyChecker.Task.Trigger.QUERIED)
+                .build()
+        );
+        testKit.expectNoMessage(); // definitely don't want a task for the other metric
+    }
 }
