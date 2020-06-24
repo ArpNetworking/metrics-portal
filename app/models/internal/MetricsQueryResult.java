@@ -15,27 +15,13 @@
  */
 package models.internal;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
-import models.internal.impl.DefaultMetricsQueryResult;
 
 /**
  * Result of a metrics query.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-@JsonTypeInfo(
-       use = JsonTypeInfo.Id.NAME,
-       property = "@type",
-       defaultImpl = DefaultMetricsQueryResult.class
-)
-@JsonSubTypes({
-        @JsonSubTypes.Type(
-                name = "default",
-                value = DefaultMetricsQueryResult.class
-        )
-})
 public interface MetricsQueryResult {
     /**
      * The {@link TimeSeriesResult} containing the results of the query.
