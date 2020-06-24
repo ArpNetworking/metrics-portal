@@ -26,7 +26,6 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import models.internal.BoundedMetricsQuery;
@@ -69,8 +68,11 @@ import static org.mockito.Mockito.when;
  */
 public class AlertExecutionContextTest {
     private static final String LATEST_TIMESTAMP_MS = "LATEST_TIMESTAMP_MS";
-
     private static final String TEST_METRIC = "test_metric";
+
+    private static final TypeReference<Map<String, models.view.MetricsQueryResult>> MAP_TYPE_REFERENCE =
+            new TypeReference<Map<String, models.view.MetricsQueryResult>>() {};
+
     private AlertExecutionContext _context;
     private Alert _alert;
     private Schedule _schedule;
@@ -319,11 +321,12 @@ public class AlertExecutionContextTest {
             );
         }
 
-        final ObjectReader reader =
-                _objectMapper.readerFor(new TypeReference<Map<String, models.view.MetricsQueryResult>>() {})
-                        .withFeatures(JsonReadFeature.ALLOW_JAVA_COMMENTS);
+        final Map<String, models.view.MetricsQueryResult> testcases =
+                _objectMapper.reader()
+                        .withFeatures(JsonReadFeature.ALLOW_JAVA_COMMENTS)
+                        .forType(MAP_TYPE_REFERENCE)
+                        .readValue(json);
 
-        final Map<String, models.view.MetricsQueryResult> testcases = reader.readValue(json);
 
         final models.view.MetricsQueryResult result = testcases.get(name);
         if (result == null) {

@@ -188,7 +188,7 @@ public final class AlertExecutionContext {
                     .collect(ImmutableList.toImmutableList());
 
         return new DefaultAlertEvaluationResult.Builder()
-                .setName(name)
+                .setSeriesName(name)
                 .setFiringTags(firingTagGroups)
                 .build();
     }
@@ -228,12 +228,6 @@ public final class AlertExecutionContext {
                 .setQuery(query.getQuery())
                 .setFormat(query.getQueryFormat())
                 .build();
-    }
-
-    // Helpers for constructing exceptions.
-
-    private static CompletionException newCompletionException(final String problemCode, final String message) {
-        return newCompletionException(problemCode, message, ImmutableList.of());
     }
 
     private static CompletionException newCompletionException(final String problemCode, final String message, final ImmutableList<?> args) {

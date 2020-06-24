@@ -35,17 +35,17 @@ import java.util.Map;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
-    private final String _name;
+    private final String _seriesName;
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
 
     private DefaultAlertEvaluationResult(final Builder builder) {
-        _name = builder._name;
+        _seriesName = builder._seriesName;
         _firingTags = builder._firingTags;
     }
 
     @Override
     public String getSeriesName() {
-        return _name;
+        return _seriesName;
     }
 
     @Override
@@ -73,6 +73,7 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("seriesName", _seriesName)
                 .add("firingTags", _firingTags)
                 .toString();
     }
@@ -85,7 +86,7 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
 
         @NotNull
         @NotBlank
-        private @Nullable String _name;
+        private @Nullable String _seriesName;
 
         /**
          * Default constructor for an empty builder.
@@ -95,13 +96,13 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
         }
 
         /**
-         * Set the name. Required. Cannot be null or empty.
+         * Set the seriesName. Required. Cannot be null or empty.
          *
-         * @param name the series name
+         * @param seriesName the series seriesName
          * @return This instance of {@code Builder}.
          */
-        public Builder setName(@Nullable final String name) {
-            _name = name;
+        public Builder setSeriesName(@Nullable final String seriesName) {
+            _seriesName = seriesName;
             return this;
         }
 
