@@ -251,12 +251,14 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Consumer<MetricsQuery> provideRollupReadQueryConsistencyChecker(
             final Config config,
-            @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker) {
+            @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker,
+            final PeriodicMetrics periodicMetrics) {
         final double queryCheckFraction = config.getDouble("rollup.consistency_check.read_fraction");
 
         return new QueryConsistencyTaskCreator(
                 queryCheckFraction,
-                rollupConsistencyChecker);
+                rollupConsistencyChecker,
+                periodicMetrics);
     }
 
     @Singleton
