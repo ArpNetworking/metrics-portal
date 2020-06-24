@@ -414,6 +414,25 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
+    public void testRollupQueryRewritingDoesNotRewriteDisabled() {
+        final ImmutableList<Aggregator> aggregators = ImmutableList.of(
+                TestBeanFactory.createAggregatorBuilder()
+                        .setSampling(simpleSampling(3, SamplingUnit.HOURS))
+                        .setAlignSampling(true)
+                        .build()
+        );
+        final MetricsQuery original = simpleMetricsQuery("my_metric", aggregators);
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_1h"),
+                original,
+                s -> ImmutableSet.of(),
+                new NoOpMetrics()
+        );
+        final MetricsQuery expected = simpleMetricsQuery("my_metric", aggregators);
+        assertEquals(expected, rewritten);
+    }
+
+    @Test
     public void testGetCoarsestUsableRollupMetric() {
         final RollupMetric hourly = ThreadLocalBuilder.build(RollupMetric.Builder.class, b -> b
                 .setBaseMetricName("my_metric")

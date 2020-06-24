@@ -42,6 +42,8 @@ public class MetricsQueryConfigImpl implements MetricsQueryConfig {
      */
     @Inject
     public MetricsQueryConfigImpl(final Config configuration) {
+        _rollupWhitelist = configuration.getStringList("rollup.metric.whitelist").stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
+        _rollupBlacklist = configuration.getStringList("rollup.metric.blacklist").stream().map(Pattern::compile).collect(ImmutableSet.toImmutableSet());
         _rollupQueryWhitelist = configuration.getConfigList("kairosdb.proxy.rollups.whitelist")
                 .stream()
                 .map(MetricsQueryConfigImpl::buildWhitelistEntry)
@@ -50,6 +52,9 @@ public class MetricsQueryConfigImpl implements MetricsQueryConfig {
 
     @Override
     public Set<SamplingUnit> getQueryEnabledRollups(final String metricName) {
+        if (!areRollupsBeingPopulated(metricName)) {
+            return ImmutableSet.of();
+        }
         return queryWhitelistEntry(metricName)
             .map(RollupQueryWhitelistEntry::getPeriods)
             .orElse(ImmutableSet.of());
@@ -63,6 +68,13 @@ public class MetricsQueryConfigImpl implements MetricsQueryConfig {
                 .findFirst();
     }
 
+    private boolean areRollupsBeingPopulated(final String metricName) {
+        return _rollupWhitelist.stream().anyMatch(pattern -> pattern.matcher(metricName).matches())
+                && _rollupBlacklist.stream().noneMatch(pattern -> pattern.matcher(metricName).matches());
+    }
+
+    private final ImmutableSet<Pattern> _rollupWhitelist;
+    private final ImmutableSet<Pattern> _rollupBlacklist;
     private final List<RollupQueryWhitelistEntry> _rollupQueryWhitelist;
     private static final Set<SamplingUnit> ALL_SAMPLING_UNITS = ImmutableSet.copyOf(SamplingUnit.values());
 
