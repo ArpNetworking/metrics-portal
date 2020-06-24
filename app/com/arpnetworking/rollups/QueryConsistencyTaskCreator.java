@@ -89,15 +89,6 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
             return;
         }
 
-        if (!query.getEndTime().isPresent()) {
-            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY, 1);
-            LOGGER.trace()
-                    .setMessage("not consistency-checking because no end time present")
-                    .addData("query", query)
-                    .log();
-            return;
-        }
-
         LOGGER.trace()
                 .setMessage("maybe sending for consistency check?")
                 .addData("query", query)
