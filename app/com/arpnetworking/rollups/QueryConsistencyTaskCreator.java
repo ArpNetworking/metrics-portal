@@ -48,12 +48,12 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
     private final ActorRef _consistencyChecker;
     private final PeriodicMetrics _periodicMetrics;
 
-    private static final String METRIC_RECEIVED = "rollup/consistency_checker/query_sampling/received";
-    private static final String METRIC_DROPPED_SAMPLING = "rollup/consistency_checker/query_sampling/dropped/sampling";
-    private static final String METRIC_DROPPED_TIME_BOUNDARY = "rollup/consistency_checker/query_sampling/dropped/time_boundary";
-    private static final String METRIC_DROPPED_NO_ROLLUP = "rollup/consistency_checker/query_sampling/dropped/no_rollup";
-    private static final String METRIC_DROPPED_ENQUEUE_FAILURE = "rollup/consistency_checker/query_sampling/dropped/enqueue_failure";
-    private static final String METRIC_SENT_FOR_CHECK = "rollup/consistency_checker/query_sampling/sent_for_check";
+    private static final String QUERY_RECEIVED = "rollup/consistency_checker/query_sampling/query_received";
+    private static final String DROPPED_QUERY_NOT_SAMPLED = "rollup/consistency_checker/query_sampling/dropped/query_not_sampled";
+    private static final String DROPPED_QUERY_NO_TIME_BOUNDARY = "rollup/consistency_checker/query_sampling/dropped/query_no_time_boundary";
+    private static final String DROPPED_METRIC_NOT_ROLLUP = "rollup/consistency_checker/query_sampling/dropped/metric_not_rollup";
+    private static final String DROPPED_TASK_ENQUEUE_FAILED = "rollup/consistency_checker/query_sampling/dropped/task_enqueue_failed";
+    private static final String TASK_SENT_FOR_CHECK = "rollup/consistency_checker/query_sampling/task_sent_for_check";
 
     /**
      * Constructor.
@@ -73,15 +73,15 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
 
     @Override
     public void accept(final MetricsQuery query) {
-        _periodicMetrics.recordCounter(METRIC_RECEIVED, 1);
+        _periodicMetrics.recordCounter(QUERY_RECEIVED, 1);
 
         if (RANDOM.nextDouble() > _checkFraction) {
-            _periodicMetrics.recordCounter(METRIC_DROPPED_SAMPLING, 1);
+            _periodicMetrics.recordCounter(DROPPED_QUERY_NOT_SAMPLED, 1);
             return;
         }
 
         if (!query.getStartTime().isPresent()) {
-            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY, 1);
+            _periodicMetrics.recordCounter(DROPPED_QUERY_NO_TIME_BOUNDARY, 1);
             LOGGER.trace()
                     .setMessage("not consistency-checking because no start time present")
                     .addData("query", query)
@@ -115,9 +115,9 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                                         // fast as it'll accept them.
                                         try {
                                             Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
-                                            _periodicMetrics.recordCounter(METRIC_SENT_FOR_CHECK, 1);
+                                            _periodicMetrics.recordCounter(TASK_SENT_FOR_CHECK, 1);
                                         } catch (final InterruptedException | ExecutionException e) {
-                                            _periodicMetrics.recordCounter(METRIC_DROPPED_ENQUEUE_FAILURE, 1);
+                                            _periodicMetrics.recordCounter(DROPPED_TASK_ENQUEUE_FAILED, 1);
                                             if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
                                                 LOGGER.error()
                                                         .setMessage("unexpected exception sending task to consistency checker")
@@ -131,7 +131,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                         });
 
                         if (!rollupMetricMaybe.isPresent()) {
-                            _periodicMetrics.recordCounter(METRIC_DROPPED_NO_ROLLUP, 1);
+                            _periodicMetrics.recordCounter(DROPPED_METRIC_NOT_ROLLUP, 1);
                         }
                     }
                 );
