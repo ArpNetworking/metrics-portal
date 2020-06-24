@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 
@@ -45,25 +46,42 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
 
     private final double _checkFraction;
     private final ActorRef _consistencyChecker;
+    private final PeriodicMetrics _periodicMetrics;
+
+    private static final String METRIC_RECEIVED = "rollup/consistency_checker/query_sampling/received";
+    private static final String METRIC_DROPPED_SAMPLING = "rollup/consistency_checker/query_sampling/dropped/sampling";
+    private static final String METRIC_DROPPED_TIME_BOUNDARY = "rollup/consistency_checker/query_sampling/dropped/time_boundary";
+    private static final String METRIC_DROPPED_NO_ROLLUP = "rollup/consistency_checker/query_sampling/dropped/no_rollup";
+    private static final String METRIC_DROPPED_ENQUEUE_FAILURE = "rollup/consistency_checker/query_sampling/dropped/enqueue_failure";
+    private static final String METRIC_SENT_FOR_CHECK = "rollup/consistency_checker/query_sampling/sent_for_check";
 
     /**
      * Constructor.
      *
      * @param checkFraction      Fraction of queries to send for checking.
      * @param consistencyChecker Destination consistency checker actor.
+     * @param periodicMetrics Sink to record metrics to
      */
-    public QueryConsistencyTaskCreator(final double checkFraction, final ActorRef consistencyChecker) {
+    public QueryConsistencyTaskCreator(
+            final double checkFraction,
+            final ActorRef consistencyChecker,
+            final PeriodicMetrics periodicMetrics) {
         this._checkFraction = checkFraction;
         this._consistencyChecker = consistencyChecker;
+        this._periodicMetrics = periodicMetrics;
     }
 
     @Override
     public void accept(final MetricsQuery query) {
+        _periodicMetrics.recordCounter(METRIC_RECEIVED, 1);
+
         if (RANDOM.nextDouble() > _checkFraction) {
+            _periodicMetrics.recordCounter(METRIC_DROPPED_SAMPLING, 1);
             return;
         }
 
         if (!query.getStartTime().isPresent()) {
+            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY,1);
             LOGGER.trace()
                     .setMessage("not consistency-checking because no start time present")
                     .addData("query", query)
@@ -72,6 +90,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         }
 
         if (!query.getEndTime().isPresent()) {
+            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY,1);
             LOGGER.trace()
                     .setMessage("not consistency-checking because no end time present")
                     .addData("query", query)
@@ -91,32 +110,40 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
                 .map(Metric::getName)
                 .map(RollupMetric::fromRollupMetricName)
                 .forEach(rollupMetricMaybe ->
-                        rollupMetricMaybe.ifPresent(rollupMetric -> {
-                            checkerTasks(startTime, endTime, rollupMetric)
-                                    .forEach(task -> {
-                                        LOGGER.trace()
-                                                .setMessage("sending for consistency check")
-                                                .addData("task", task)
-                                                .addData("query", query)
-                                                .log();
-                                        // The consistency checker actor is expected to be running on the same node, to
-                                        // respond ~immediately to a task send, and to drop tasks if there are too many
-                                        // to fit into the queue. Hence, blockingly send them to the checker actor as
-                                        // fast as it'll accept them.
-                                        try {
-                                            Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
-                                        } catch (final InterruptedException | ExecutionException e) {
-                                            if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
-                                                LOGGER.error()
-                                                        .setMessage("unexpected exception sending task to consistency checker")
-                                                        .setThrowable(e)
-                                                        .addData("task", task)
-                                                        .addData("query", query)
-                                                        .log();
+                        {
+                            rollupMetricMaybe.ifPresent(rollupMetric -> {
+                                checkerTasks(startTime, endTime, rollupMetric)
+                                        .forEach(task -> {
+                                            LOGGER.trace()
+                                                    .setMessage("sending for consistency check")
+                                                    .addData("task", task)
+                                                    .addData("query", query)
+                                                    .log();
+                                            // The consistency checker actor is expected to be running on the same node, to
+                                            // respond ~immediately to a task send, and to drop tasks if there are too many
+                                            // to fit into the queue. Hence, blockingly send them to the checker actor as
+                                            // fast as it'll accept them.
+                                            try {
+                                                Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
+                                                _periodicMetrics.recordCounter(METRIC_SENT_FOR_CHECK, 1);
+                                            } catch (final InterruptedException | ExecutionException e) {
+                                                _periodicMetrics.recordCounter(METRIC_DROPPED_ENQUEUE_FAILURE, 1);
+                                                if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
+                                                    LOGGER.error()
+                                                            .setMessage("unexpected exception sending task to consistency checker")
+                                                            .setThrowable(e)
+                                                            .addData("task", task)
+                                                            .addData("query", query)
+                                                            .log();
+                                                }
                                             }
-                                        }
-                                    });
-                        })
+                                        });
+                            });
+
+                            if (!rollupMetricMaybe.isPresent()) {
+                                _periodicMetrics.recordCounter(METRIC_DROPPED_NO_ROLLUP, 1);
+                            }
+                        }
                 );
 
     }
