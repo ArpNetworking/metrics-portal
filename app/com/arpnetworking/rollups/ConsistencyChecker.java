@@ -234,7 +234,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final double nSamplesDropped = nOriginalSamples - nRollupSamples;
 
             metrics.incrementCounter("rollup/consistency_checker/original_samples", (long) nOriginalSamples);
-            metrics.incrementCounter("rollup/consistency_checker/dropped_samples", (long) nOriginalSamples);
+            metrics.incrementCounter("rollup/consistency_checker/dropped_samples", (long) Math.max(0, (nOriginalSamples - nRollupSamples)));
 
             final boolean tooManyRollupSamples = nOriginalSamples < nRollupSamples;
             metrics.incrementCounter("rollup/consistency_checker/too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
