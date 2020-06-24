@@ -81,7 +81,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         }
 
         if (!query.getStartTime().isPresent()) {
-            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY,1);
+            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY, 1);
             LOGGER.trace()
                     .setMessage("not consistency-checking because no start time present")
                     .addData("query", query)
@@ -90,7 +90,7 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         }
 
         if (!query.getEndTime().isPresent()) {
-            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY,1);
+            _periodicMetrics.recordCounter(METRIC_DROPPED_TIME_BOUNDARY, 1);
             LOGGER.trace()
                     .setMessage("not consistency-checking because no end time present")
                     .addData("query", query)
@@ -109,41 +109,40 @@ public class QueryConsistencyTaskCreator implements Consumer<MetricsQuery> {
         query.getMetrics().stream()
                 .map(Metric::getName)
                 .map(RollupMetric::fromRollupMetricName)
-                .forEach(rollupMetricMaybe ->
-                        {
-                            rollupMetricMaybe.ifPresent(rollupMetric -> {
-                                checkerTasks(startTime, endTime, rollupMetric)
-                                        .forEach(task -> {
-                                            LOGGER.trace()
-                                                    .setMessage("sending for consistency check")
-                                                    .addData("task", task)
-                                                    .addData("query", query)
-                                                    .log();
-                                            // The consistency checker actor is expected to be running on the same node, to
-                                            // respond ~immediately to a task send, and to drop tasks if there are too many
-                                            // to fit into the queue. Hence, blockingly send them to the checker actor as
-                                            // fast as it'll accept them.
-                                            try {
-                                                Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
-                                                _periodicMetrics.recordCounter(METRIC_SENT_FOR_CHECK, 1);
-                                            } catch (final InterruptedException | ExecutionException e) {
-                                                _periodicMetrics.recordCounter(METRIC_DROPPED_ENQUEUE_FAILURE, 1);
-                                                if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
-                                                    LOGGER.error()
-                                                            .setMessage("unexpected exception sending task to consistency checker")
-                                                            .setThrowable(e)
-                                                            .addData("task", task)
-                                                            .addData("query", query)
-                                                            .log();
-                                                }
+                .forEach(rollupMetricMaybe -> {
+                        rollupMetricMaybe.ifPresent(rollupMetric -> {
+                            checkerTasks(startTime, endTime, rollupMetric)
+                                    .forEach(task -> {
+                                        LOGGER.trace()
+                                                .setMessage("sending for consistency check")
+                                                .addData("task", task)
+                                                .addData("query", query)
+                                                .log();
+                                        // The consistency checker actor is expected to be running on the same node, to
+                                        // respond ~immediately to a task send, and to drop tasks if there are too many
+                                        // to fit into the queue. Hence, blockingly send them to the checker actor as
+                                        // fast as it'll accept them.
+                                        try {
+                                            Patterns.ask(_consistencyChecker, task, Duration.ofSeconds(1)).toCompletableFuture().get();
+                                            _periodicMetrics.recordCounter(METRIC_SENT_FOR_CHECK, 1);
+                                        } catch (final InterruptedException | ExecutionException e) {
+                                            _periodicMetrics.recordCounter(METRIC_DROPPED_ENQUEUE_FAILURE, 1);
+                                            if (!(e.getCause() instanceof ConsistencyChecker.BufferFull)) {
+                                                LOGGER.error()
+                                                        .setMessage("unexpected exception sending task to consistency checker")
+                                                        .setThrowable(e)
+                                                        .addData("task", task)
+                                                        .addData("query", query)
+                                                        .log();
                                             }
-                                        });
-                            });
+                                        }
+                                    });
+                        });
 
-                            if (!rollupMetricMaybe.isPresent()) {
-                                _periodicMetrics.recordCounter(METRIC_DROPPED_NO_ROLLUP, 1);
-                            }
+                        if (!rollupMetricMaybe.isPresent()) {
+                            _periodicMetrics.recordCounter(METRIC_DROPPED_NO_ROLLUP, 1);
                         }
+                    }
                 );
 
     }
