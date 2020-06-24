@@ -19,11 +19,15 @@ import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.ConfigFactory;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -37,6 +41,14 @@ import java.util.stream.Collectors;
  * @author William Ehlhardt (whale at dropbox dot com)
  */
 public class QueryConsistencyTaskCreatorTest {
+    @Mock
+    private PeriodicMetrics _periodicMetrics;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
     @Test
     public void periodStreamForInterval() {
         final List<Instant> actual = QueryConsistencyTaskCreator.periodStreamForInterval(
@@ -57,7 +69,7 @@ public class QueryConsistencyTaskCreatorTest {
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
 
         final TestKit testKit = new TestKit(system);
-        new QueryConsistencyTaskCreator(1, testKit.getRef())
+        new QueryConsistencyTaskCreator(1, testKit.getRef(), _periodicMetrics)
                 .accept(new MetricsQuery.Builder()
                         .setStartTime(Instant.parse("2020-06-01T01:02:03Z"))
                         .setEndTime(Instant.parse("2020-06-01T01:02:03Z"))
