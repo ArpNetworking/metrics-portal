@@ -35,6 +35,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigUtil;
@@ -101,7 +102,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
      *
      * @param configuration play configuration
      * @param metricsDiscovery actor ref to metrics discovery actor
-     * @param rollupManagerPool actor ref for rollup manager pool actor
+     * @param rollupManager actor ref for rollup manager actor
      * @param kairosDbClient kairosdb client
      * @param clock clock to use for time calculations
      * @param metrics periodic metrics instance
@@ -110,12 +111,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     public RollupGenerator(
             final Config configuration,
             @Named("RollupMetricsDiscovery") final ActorRef metricsDiscovery,
-            @Named("RollupManagerPool") final ActorRef rollupManagerPool,
+            @Named("RollupManager") final ActorRef rollupManager,
             final KairosDbClient kairosDbClient,
             final Clock clock,
             final PeriodicMetrics metrics) {
         _metricsDiscovery = metricsDiscovery;
-        _rollupManagerPool = rollupManagerPool;
+        _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
         _clock = clock;
         _metrics = metrics;
@@ -309,11 +310,10 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
             for (final Instant startTime : startTimes) {
                 final RollupDefinition defn = rollupDefBuilder.setStartTime(startTime).build();
-                _rollupManagerPool.tell(defn, self());
+                _rollupManager.tell(defn, self());
                 LOGGER.debug()
-                        .setMessage("sent task to _rollupManagerPool")
+                        .setMessage("sent task to _rollupManager")
                         .addData("task", defn)
-                        .addData("pool", _rollupManagerPool)
                         .log();
                 _metrics.recordCounter("rollup/generator/task_sent", 1);
             }
@@ -485,7 +485,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private final ActorRef _metricsDiscovery;
-    private final ActorRef _rollupManagerPool;
+    private final ActorRef _rollupManager;
     private final KairosDbClient _kairosDbClient;
     private final Map<RollupPeriod, Integer> _maxBackFillByPeriod;
     private final FiniteDuration _fetchBackoff;
