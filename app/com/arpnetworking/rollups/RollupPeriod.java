@@ -51,7 +51,7 @@ public enum RollupPeriod {
      * @return most recent end time for supplied instant
      */
     public Instant recentEndTime(final Instant time) {
-        return time.truncatedTo(_truncationUnit);
+        return mostRecentBoundary(time);
     }
 
     /**
@@ -62,6 +62,16 @@ public enum RollupPeriod {
      */
     public Instant recentStartTime(final Instant time) {
         return recentEndTime(time).minus(1, _truncationUnit);
+    }
+
+    /**
+     * Calculates the time point of the most recent boundary between rollup intervals.
+     *
+     * @param time instant to find the most recent boundary before
+     * @return most recent period boundary
+     */
+    public Instant mostRecentBoundary(final Instant time) {
+        return time.truncatedTo(_truncationUnit);
     }
 
     /**

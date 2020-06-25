@@ -52,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -95,6 +96,11 @@ public final class KairosDbServiceImpl implements KairosDbService {
                 .collect(ImmutableSet.toImmutableSet());
         return getMetricNames(metrics)
                 .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
+                .whenComplete((query, throwable) -> {
+                    if (throwable == null) {
+                        _rewrittenQueryConsumer.accept(query);
+                    }
+                })
                 .thenCompose(_kairosDbClient::queryMetrics)
                 .thenApply(response -> filterExcludedTags(response, requestedTags))
                 .whenComplete((result, error) -> {
@@ -415,18 +421,20 @@ public final class KairosDbServiceImpl implements KairosDbService {
         this._metricsFactory = builder._metricsFactory;
         this._excludedTagNames = builder._excludedTagNames;
         this._metricsQueryConfig = builder._metricsQueryConfig;
+        this._rewrittenQueryConsumer = builder._rewrittenQueryConsumer;
     }
 
     private final KairosDbClient _kairosDbClient;
     private final MetricsFactory _metricsFactory;
     private final ImmutableSet<String> _excludedTagNames;
     private final MetricsQueryConfig _metricsQueryConfig;
+    private final Consumer<MetricsQuery> _rewrittenQueryConsumer;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
     private static final String METRICS_KEY = "METRICNAMES";
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
-    private static final Predicate<String> IS_ROLLUP = s -> s.endsWith("_1h") || s.endsWith("_1d");
+    private static final Predicate<String> IS_ROLLUP = s -> RollupMetric.fromRollupMetricName(s).isPresent();
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbServiceImpl.class);
 
     /**
@@ -487,6 +495,17 @@ public final class KairosDbServiceImpl implements KairosDbService {
             return this;
         }
 
+        /**
+         * Sets the RewrittenQueryConsumer. Cannot be null. Optional.
+         *
+         * @param consumer the consumer
+         * @return this {@link Builder}
+         */
+        public Builder setRewrittenQueryConsumer(final Consumer<MetricsQuery> consumer) {
+            _rewrittenQueryConsumer = consumer;
+            return this;
+        }
+
         @NotNull
         private KairosDbClient _kairosDbClient;
         @NotNull
@@ -495,5 +514,9 @@ public final class KairosDbServiceImpl implements KairosDbService {
         private ImmutableSet<String> _excludedTagNames = ImmutableSet.of();
         @NotNull
         private MetricsQueryConfig _metricsQueryConfig;
+        @NotNull
+        private Consumer<MetricsQuery> _rewrittenQueryConsumer = query -> {
+
+        };
     }
 }

@@ -234,7 +234,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
             final double nSamplesDropped = nOriginalSamples - nRollupSamples;
 
             metrics.incrementCounter("rollup/consistency_checker/original_samples", (long) nOriginalSamples);
-            metrics.incrementCounter("rollup/consistency_checker/dropped_samples", (long) nOriginalSamples);
 
             final boolean tooManyRollupSamples = nOriginalSamples < nRollupSamples;
             metrics.incrementCounter("rollup/consistency_checker/too_many_rollup_samples", tooManyRollupSamples ? 1 : 0);
@@ -246,6 +245,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .log();
             } else if (nOriginalSamples > nRollupSamples) {
                 final double fractionalDataLoss = nSamplesDropped / nOriginalSamples;
+                metrics.incrementCounter("rollup/consistency_checker/dropped_samples", (long) (nOriginalSamples - nRollupSamples));
                 metrics.setGauge(FRACTIONAL_DATA_LOSS_METRIC, fractionalDataLoss);
                 final LogBuilder logBuilder =
                         // This level-thresholding should probably be configurable.
@@ -258,6 +258,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                         .addData("sampleCounts", sampleCounts)
                         .log();
             } else {
+                metrics.incrementCounter("rollup/consistency_checker/dropped_samples", 0);
                 metrics.setGauge(FRACTIONAL_DATA_LOSS_METRIC, 0);
                 LOGGER.trace()
                         .setMessage("no data lost in rollup")
@@ -374,7 +375,10 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Some rollup data finished being written successfully.
              */
             WRITE_COMPLETED,
-            // QUERIED,  // TODO(spencerpearson, OBS-1175)
+            /**
+             * A read request was sampled for consistency checking.
+             */
+            QUERIED,
         }
 
         private Task(final Builder builder) {
