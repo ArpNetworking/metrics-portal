@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.play.configuration;
 
+import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
@@ -62,6 +63,18 @@ public final class ConfigurationHelper {
         return new FiniteDuration(
                 duration.length(),
                 duration.unit());
+    }
+
+    /**
+     * Return the value of a configuration key as a {@code java.time.Duration} instance.
+     *
+     * @param configuration Play {@code Config} instance.
+     * @param key The name of the configuration key to interpret as a {@code FiniteDuration} reference.
+     * @return Instance of {@code FiniteDuration} as defined by key in configuration.
+     */
+    public static java.time.Duration getJavaDuration(final Config configuration, final String key) {
+        final Duration duration = getFiniteDuration(configuration, key);
+        return java.time.Duration.of(duration.length(), TimeAdapters.toChronoUnit(duration.unit()));
     }
 
     /**

@@ -31,6 +31,7 @@ import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.scheduling.Job;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -60,20 +61,24 @@ public final class AlertExecutionContext {
 
     private final QueryExecutor _executor;
     private final Schedule _defaultSchedule;
+    private final Duration _queryOffset;
 
     /**
      * Default constructor.
      *
      * @param defaultSchedule The default alert execution schedule.
      * @param executor The executor to use for alert queries.
+     * @param queryOffset The offset to apply to the query interval.
      */
     @Inject
     public AlertExecutionContext(
             final Schedule defaultSchedule,
-            final QueryExecutor executor
+            final QueryExecutor executor,
+            final Duration queryOffset
     ) {
         _defaultSchedule = defaultSchedule;
         _executor = executor;
+        _queryOffset = queryOffset;
     }
 
     /**
@@ -201,8 +206,9 @@ public final class AlertExecutionContext {
         }
         // The most recent datapoint and scheduled time must belong to the same
         // period.
+        final Instant adjustedScheduled = scheduled.minus(_queryOffset);
         final Instant mostRecentDatapointTime = values.get(values.size() - 1).getTime();
-        return period.between(mostRecentDatapointTime, scheduled) == 0;
+        return period.between(mostRecentDatapointTime, adjustedScheduled) == 0;
     }
 
     private Optional<Map<String, String>> getTagGroup(final TimeSeriesResult.Result result) {
@@ -218,8 +224,10 @@ public final class AlertExecutionContext {
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
                                                final Instant scheduled,
                                                final ChronoUnit period) {
+        final ZonedDateTime adjustedScheduled = scheduled.minus(_queryOffset).atZone(ZoneOffset.UTC);
+
         // We must truncate to avoid dealing with partially aggregated periods.
-        final ZonedDateTime latest = ZonedDateTime.ofInstant(scheduled, ZoneOffset.UTC).truncatedTo(period);
+        final ZonedDateTime latest = adjustedScheduled.truncatedTo(period);
         final ZonedDateTime previous = latest.minus(1, period);
 
         return new DefaultBoundedMetricsQuery.Builder()
@@ -230,7 +238,11 @@ public final class AlertExecutionContext {
                 .build();
     }
 
-    private static CompletionException newCompletionException(final String problemCode, final String message, final ImmutableList<?> args) {
+    private static CompletionException newCompletionException(
+            final String problemCode,
+            final String message,
+            final ImmutableList<?> args
+    ) {
         final Problem problem = new Problem.Builder()
                 .setProblemCode(problemCode)
                 .setArgs(ImmutableList.copyOf(args))

@@ -239,13 +239,15 @@ public class MainModule extends AbstractModule {
             final QueryExecutor executor
     ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
+        final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
+
         final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
                 .setZone(ZoneOffset.UTC)
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
-        return new AlertExecutionContext(defaultAlertSchedule, executor);
+        return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }
 
     @Singleton

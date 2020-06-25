@@ -42,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -93,7 +94,7 @@ public class AlertJobRepositoryTest {
                 .thenReturn(Optional.of(_alert));
 
         final Schedule schedule = NeverSchedule.getInstance();
-        _context = new AlertExecutionContext(schedule, mockExecutor);
+        _context = new AlertExecutionContext(schedule, mockExecutor, Duration.ZERO);
         _jobRepository = new AlertJobRepository(_alertRepository, _context);
     }
 

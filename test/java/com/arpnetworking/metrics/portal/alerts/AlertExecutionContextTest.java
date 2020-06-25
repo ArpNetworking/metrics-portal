@@ -44,8 +44,10 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -104,7 +106,8 @@ public class AlertExecutionContextTest {
         when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.HOURS));
         _context = new AlertExecutionContext(
                 _schedule,
-                _executor
+                _executor,
+                Duration.ZERO
         );
         _objectMapper = SerializationTestUtils.getApiObjectMapper();
     }
@@ -112,6 +115,36 @@ public class AlertExecutionContextTest {
     @Test
     public void testReturnsTheConfiguredSchedule() {
         assertThat(_context.getSchedule(_alert), equalTo(_schedule));
+    }
+
+    @Test
+    public void testAppliesExpectedTimeRangeWithOffset() {
+        final Duration queryOffset = Duration.ofMinutes(3);
+        _context = new AlertExecutionContext(
+                _schedule,
+                _executor,
+                queryOffset
+        );
+        final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
+        final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
+        when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
+
+        final List<ChronoUnit> periodTestCases = ImmutableList.of(ChronoUnit.MINUTES, ChronoUnit.HOURS);
+
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.HOURS);
+
+        for (final ChronoUnit period : periodTestCases) {
+            when(_executor.periodHint(any())).thenReturn(Optional.of(period));
+
+            _context.execute(_alert, scheduled);
+
+            final BoundedMetricsQuery captured = captor.getValue();
+            final Instant expectedStart = scheduled.minus(queryOffset).truncatedTo(period).minus(period.getDuration());
+            final Instant expectedEnd = expectedStart.plus(period.getDuration());
+
+            assertThat(captured.getStartTime().toInstant(), equalTo(expectedStart));
+            assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(expectedEnd)));
+        }
     }
 
     @Test
@@ -130,7 +163,7 @@ public class AlertExecutionContextTest {
         Instant truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
 
         assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
-        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
+        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
 
         // Scheduled for one week ago
 
@@ -141,7 +174,7 @@ public class AlertExecutionContextTest {
         truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
 
         assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
-        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
+        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
 
         // Scheduled for now, hourly
 
@@ -154,7 +187,7 @@ public class AlertExecutionContextTest {
         truncatedScheduled = scheduled.truncatedTo(ChronoUnit.HOURS);
 
         assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
-        assertThat(captured.getEndTime().map(ZonedDateTime::toInstant), equalTo(Optional.of(truncatedScheduled)));
+        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
     }
 
     @Test
@@ -333,5 +366,11 @@ public class AlertExecutionContextTest {
             fail("Could not find testcase: " + name);
         }
         return result.toInternal();
+    }
+
+    private Instant zonedDateTimeToUTC(final ZonedDateTime dateTime) {
+        // We always work with UTC instants but since queries can have other
+        // zones we should not assume UTC in these tests.
+        return dateTime.withZoneSameInstant(ZoneOffset.UTC).toInstant();
     }
 }
