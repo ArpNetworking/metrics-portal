@@ -41,6 +41,7 @@ import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
+import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
@@ -76,6 +77,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
+import com.arpnetworking.rollups.QueryConsistencyTaskCreator;
 import com.arpnetworking.rollups.RollupExecutor;
 import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
@@ -125,6 +127,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -241,6 +244,21 @@ public class MainModule extends AbstractModule {
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule);
+    }
+
+    @Provides
+    @Named("RollupReadQueryConsistencyChecker")
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Consumer<MetricsQuery> provideRollupReadQueryConsistencyChecker(
+            final Config config,
+            @Named("RollupConsistencyChecker") final ActorRef rollupConsistencyChecker,
+            final PeriodicMetrics periodicMetrics) {
+        final double queryCheckFraction = config.getDouble("rollup.consistency_check.read_fraction");
+
+        return new QueryConsistencyTaskCreator(
+                queryCheckFraction,
+                rollupConsistencyChecker,
+                periodicMetrics);
     }
 
     @Singleton

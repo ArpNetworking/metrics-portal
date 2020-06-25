@@ -375,7 +375,10 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
              * Some rollup data finished being written successfully.
              */
             WRITE_COMPLETED,
-            // QUERIED,  // TODO(spencerpearson, OBS-1175)
+            /**
+             * A read request was sampled for consistency checking.
+             */
+            QUERIED,
         }
 
         private Task(final Builder builder) {

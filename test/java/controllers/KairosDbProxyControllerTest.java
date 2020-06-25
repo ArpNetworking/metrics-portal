@@ -45,11 +45,14 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.notNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -73,6 +76,8 @@ public class KairosDbProxyControllerTest {
     private Timer _mockTimer;
     @Mock
     private MetricsQueryConfig _mockMetricsqueryConfig;
+    @Mock
+    private Consumer<MetricsQuery> _mockRewrittenMetricsQueryConsumer;
 
     private KairosDbProxyController _controller;
 
@@ -95,6 +100,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                _mockRewrittenMetricsQueryConsumer,
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );
@@ -163,6 +169,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                _mockRewrittenMetricsQueryConsumer,
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );
@@ -206,6 +213,7 @@ public class KairosDbProxyControllerTest {
                 _mockWSClient,
                 _mockKairosDbClient,
                 OBJECT_MAPPER,
+                _mockRewrittenMetricsQueryConsumer,
                 _mockMetricsFactory,
                 _mockMetricsqueryConfig
         );
@@ -246,6 +254,7 @@ public class KairosDbProxyControllerTest {
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
