@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
 import org.junit.Test;
 
 import java.util.Set;
@@ -29,6 +30,7 @@ import java.util.Set;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -37,27 +39,33 @@ import static org.junit.Assert.assertThat;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class MetricsQueryConfigImplTest {
-    private static final String CONFIG_KEY = "kairosdb.proxy.rollups.whitelist";
+    private static final String QUERY_WHITELIST_CONFIG_KEY = "kairosdb.proxy.rollups.whitelist";
+    private static final String POPULATE_WHITELIST_CONFIG_KEY = "rollup.metric.whitelist";
+    private static final String POPULATE_BLACKLIST_CONFIG_KEY = "rollup.metric.blacklist";
     private static final Config INVALID_PERIODS = ConfigFactory.parseMap(ImmutableMap.of(
-            CONFIG_KEY, ImmutableList.of(
+            QUERY_WHITELIST_CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
                             "pattern", "whitelisted_hourly_.*",
                             "periods", ImmutableList.of("bad value")
                     )
-            )
+            ),
+            POPULATE_WHITELIST_CONFIG_KEY, ImmutableList.of(".*"),
+            POPULATE_BLACKLIST_CONFIG_KEY, ImmutableList.of()
     ));
 
     private static final Config INVALID_PATTERN = ConfigFactory.parseMap(ImmutableMap.of(
-            CONFIG_KEY, ImmutableList.of(
+            QUERY_WHITELIST_CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
                             "pattern", "[",
                             "periods", ImmutableList.of("hours")
                     )
-            )
+            ),
+            POPULATE_WHITELIST_CONFIG_KEY, ImmutableList.of(".*"),
+            POPULATE_BLACKLIST_CONFIG_KEY, ImmutableList.of()
     ));
 
     private static final Config VALID_CONFIG = ConfigFactory.parseMap(ImmutableMap.of(
-            CONFIG_KEY, ImmutableList.of(
+            QUERY_WHITELIST_CONFIG_KEY, ImmutableList.of(
                     ImmutableMap.of(
                             "pattern", "whitelisted_hourly_.*",
                             "periods", ImmutableList.of("hours")
@@ -73,7 +81,9 @@ public class MetricsQueryConfigImplTest {
                             "pattern", "whitelisted_none.*",
                             "periods", ImmutableList.of()
                     )
-            )
+            ),
+            POPULATE_WHITELIST_CONFIG_KEY, ImmutableList.of(".*"),
+            POPULATE_BLACKLIST_CONFIG_KEY, ImmutableList.of()
     ));
 
     private static final Set<SamplingUnit> ALL_SAMPLING_UNITS = ImmutableSet.copyOf(SamplingUnit.values());
@@ -102,5 +112,16 @@ public class MetricsQueryConfigImplTest {
         assertThat(queryConfig.getQueryEnabledRollups("whitelisted_all_foo"), equalTo(ALL_SAMPLING_UNITS));
         assertThat(queryConfig.getQueryEnabledRollups("whitelisted_none_foo"), empty());
         assertThat(queryConfig.getQueryEnabledRollups("no_matches"), empty());
+    }
+
+    @Test
+    public void testNoQueryForUnpopulatedRollups() {
+        final MetricsQueryConfig config = new MetricsQueryConfigImpl(VALID_CONFIG);
+        final MetricsQueryConfig configWithBlacklist = new MetricsQueryConfigImpl(
+                VALID_CONFIG.withValue(POPULATE_BLACKLIST_CONFIG_KEY, ConfigValueFactory.fromAnyRef(ImmutableList.of(".*")))
+        );
+
+        assertThat(config.getQueryEnabledRollups("whitelisted_hourly_foo"), not(empty()));
+        assertThat(configWithBlacklist.getQueryEnabledRollups("whitelisted_hourly_foo"), empty());
     }
 }
