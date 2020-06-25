@@ -69,8 +69,8 @@ public final class ConfigurationHelper {
      * Return the value of a configuration key as a {@code java.time.Duration} instance.
      *
      * @param configuration Play {@code Config} instance.
-     * @param key The name of the configuration key to interpret as a {@code FiniteDuration} reference.
-     * @return Instance of {@code FiniteDuration} as defined by key in configuration.
+     * @param key The name of the configuration key to interpret as a {@code java.time.Duration} reference.
+     * @return Instance of {@code java.time.Duration} as defined by key in configuration.
      */
     public static java.time.Duration getJavaDuration(final Config configuration, final String key) {
         final Duration duration = getFiniteDuration(configuration, key);
