@@ -164,7 +164,7 @@
     <spotbugs.exclude>${project.basedir}/spotbugs.exclude.xml</spotbugs.exclude>
 
     <!-- Code Coverage -->
-    <jacoco.check.line.coverage>0.54</jacoco.check.line.coverage>
+    <jacoco.check.line.coverage>0.52</jacoco.check.line.coverage>
     <jacoco.check.branch.coverage>0.30</jacoco.check.branch.coverage>
 
     <!-- JVM -->
