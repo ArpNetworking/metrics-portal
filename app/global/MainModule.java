@@ -64,6 +64,7 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
+import com.arpnetworking.metrics.portal.query.impl.DelegatingQueryExecutor;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
@@ -84,7 +85,6 @@ import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
-import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -230,20 +230,27 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+
+        bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
     }
 
     @Singleton
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private AlertExecutionContext provideAlertExecutionContext(final Config config) {
+    private AlertExecutionContext provideAlertExecutionContext(
+            final Config config,
+            final QueryExecutor executor
+    ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
+        final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
+
         final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
                 .setZone(ZoneOffset.UTC)
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
-        return new AlertExecutionContext(defaultAlertSchedule);
+        return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }
 
     @Provides
@@ -339,11 +346,11 @@ public class MainModule extends AbstractModule {
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
         for (final String key: keys) {
-            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
             final Config subconfig = executorsConfig.getConfig(key);
-            final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
-            final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
-            registryMapBuilder.put(format, childInjector.getInstance(clazz));
+            final QueryExecutor executor = ConfigurationHelper.toInstance(injector, environment, subconfig);
+
+            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
+            registryMapBuilder.put(format, executor);
         }
         return new QueryExecutorRegistry.Builder()
                 .setExecutors(registryMapBuilder.build())

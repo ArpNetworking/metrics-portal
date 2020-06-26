@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
+import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.google.common.collect.ImmutableList;
@@ -41,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,6 +70,8 @@ public class AlertJobRepositoryTest {
 
     @Before
     public void setUp() {
+        final QueryExecutor mockExecutor = Mockito.mock(QueryExecutor.class);
+
         _organization = TestBeanFactory.createOrganization();
         _id = UUID.randomUUID();
         _alert = new DefaultAlert.Builder()
@@ -90,7 +94,7 @@ public class AlertJobRepositoryTest {
                 .thenReturn(Optional.of(_alert));
 
         final Schedule schedule = NeverSchedule.getInstance();
-        _context = new AlertExecutionContext(schedule);
+        _context = new AlertExecutionContext(schedule, mockExecutor, Duration.ZERO);
         _jobRepository = new AlertJobRepository(_alertRepository, _context);
     }
 
