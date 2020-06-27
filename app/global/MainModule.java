@@ -52,10 +52,12 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.config.ConfigProvider;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
+import com.arpnetworking.metrics.portal.config.ConfigProviderModule;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -117,7 +119,6 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
-import java.nio.file.FileSystems;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -232,6 +233,8 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
 
         bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
+
+        install(new ConfigProviderModule());
     }
 
     @Singleton
@@ -451,16 +454,20 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private FileAlertRepository provideFileSystemAlertRepository(
+    private PluggableAlertRepository providePluggableAlertRepository(
             final ObjectMapper objectMapper,
+            final Injector injector,
+            final Environment environment,
             final Config config
     ) {
-        final String path = config.getString("fileAlertRepository.path");
-        final String uuid = config.getString("fileAlertRepository.organization");
+        final String uuid = config.getString("organization");
+        final Config configLoaderConfig = config.getConfig("configProvider");
+        final ConfigProvider configProvider =
+                ConfigurationHelper.toInstance(injector, environment, configLoaderConfig);
         // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
-        return new FileAlertRepository(
+        return new PluggableAlertRepository(
                 objectMapper,
-                FileSystems.getDefault().getPath(path),
+                configProvider,
                 UUID.fromString(uuid)
         );
     }
@@ -603,8 +610,8 @@ public class MainModule extends AbstractModule {
 
         @Override
         public AlertRepository get() {
-            final AlertRepository alertRepository = _injector.getInstance(
-                    ConfigurationHelper.<AlertRepository>getType(_environment, _configuration, "alertRepository.type"));
+            final Config config = _configuration.getConfig("alertRepository");
+            final AlertRepository alertRepository = ConfigurationHelper.toInstance(_injector, _environment, config);
             alertRepository.open();
             _lifecycle.addStopHook(
                     () -> {

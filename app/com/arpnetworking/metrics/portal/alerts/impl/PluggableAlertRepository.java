@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.config.ConfigProvider;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,11 +43,10 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
- * An alert repository that loads definitions from the filesystem.
+ * An alert repository that loads definitions from a pluggable configuration source.
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  * @apiNote
@@ -65,10 +65,11 @@ import java.util.function.Predicate;
  * This repository is currently tied to the organization given at construction, returning
  * an empty result for any other organization passed in.
  */
-public class FileAlertRepository implements AlertRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileAlertRepository.class);
+public class PluggableAlertRepository implements AlertRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluggableAlertRepository.class);
+    private static final int BUFFER_SIZE = 4096;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final Path _path;
+    private final ConfigProvider _configProvider;
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
@@ -77,17 +78,17 @@ public class FileAlertRepository implements AlertRepository {
      * Default Constructor.
      *
      * @param objectMapper The object mapper to use for alert deserialization.
-     * @param path The file path for the alert definitions.
+     * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
      */
     @Inject
-    public FileAlertRepository(
+    public PluggableAlertRepository(
             final ObjectMapper objectMapper,
-            final Path path,
+            final ConfigProvider configProvider,
             final UUID org
     ) {
         _objectMapper = objectMapper;
-        _path = path;
+        _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
     }
 
@@ -95,7 +96,7 @@ public class FileAlertRepository implements AlertRepository {
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening FileSystemAlertRepository").log();
-        _alerts = loadAlerts();
+        _configProvider.start(this::reload);
         _isOpen.set(true);
     }
 
@@ -103,6 +104,7 @@ public class FileAlertRepository implements AlertRepository {
     public void close() {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log();
+        _configProvider.stop();
         _isOpen.set(false);
     }
 
@@ -173,12 +175,14 @@ public class FileAlertRepository implements AlertRepository {
         throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
     }
 
-    private ImmutableMap<UUID, Alert> loadAlerts() {
+    private void reload(final InputStream stream) {
+        final BufferedInputStream bufferedStream = new BufferedInputStream(
+                stream,
+                BUFFER_SIZE
+        );
         final AlertGroup group;
-        try (Reader reader = Files.newBufferedReader(_path)) {
-            group = _objectMapper.readValue(
-                    reader,
-                    AlertGroup.class);
+        try {
+            group = _objectMapper.readValue(bufferedStream, AlertGroup.class);
         } catch (final IOException e) {
             throw new RuntimeException("Could not load alerts", e);
         }
@@ -215,7 +219,9 @@ public class FileAlertRepository implements AlertRepository {
                             .build();
             mapBuilder.put(uuid, alert);
         }
-        return mapBuilder.build();
+        synchronized (this) {
+            _alerts = mapBuilder.build();
+        }
     }
 
     private UUID computeUUID(final StringArgGenerator uuidGen, final SerializedAlert alert) {

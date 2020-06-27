@@ -19,6 +19,7 @@ import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
@@ -27,6 +28,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Utility methods that provide common patterns when interacting with Play's {@code Config} class.
@@ -123,6 +125,21 @@ public final class ConfigurationHelper {
         return injector
                 .createChildInjector(new ConfigurationOverrideModule(configuration))
                 .getInstance(clazz);
+    }
+
+    public static <T> T toInstanceMapped(
+            final Injector injector,
+            final Environment environment,
+            final Config configuration) {
+        final Class<? extends T> clazz = getType(environment, configuration, "type");
+        final ObjectMapper mapper = injector.getInstance(ObjectMapper.class);
+
+        final String json = configuration.withoutPath("type").root().render(ConfigRenderOptions.concise());
+        try {
+            return mapper.readValue(json, clazz);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
