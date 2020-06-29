@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
@@ -34,7 +35,7 @@ import java.util.function.Consumer;
  */
 public class StaticFileConfigProvider implements ConfigProvider {
     private final Path _path;
-    private boolean _started = false;
+    private final AtomicBoolean _started = new AtomicBoolean(false);
 
     /**
      * Create a provider for the file referenced by {@code path}.
@@ -52,24 +53,23 @@ public class StaticFileConfigProvider implements ConfigProvider {
     @Override
     public void start(final Consumer<InputStream> update) {
         assertStarted(false);
-        _started = true;
-
         try (InputStream stream = Files.newInputStream(_path, StandardOpenOption.READ)) {
             update.accept(stream);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
+        _started.set(true);
     }
 
     @Override
     public void stop() {
         assertStarted(true);
-        _started = false;
+        _started.set(false);
     }
 
-    private void assertStarted(final boolean state) {
-        if (state != _started) {
-            throw new IllegalStateException("Provider is not " + (state ? "started" : "stopped"));
+    private void assertStarted(final boolean expectedState) {
+        if (_started.get() != expectedState) {
+            throw new IllegalStateException("Provider is not " + (expectedState ? "started" : "stopped"));
         }
     }
 }

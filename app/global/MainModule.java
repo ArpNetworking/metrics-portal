@@ -463,7 +463,7 @@ public class MainModule extends AbstractModule {
         final String uuid = config.getString("organization");
         final Config configLoaderConfig = config.getConfig("configProvider");
         final ConfigProvider configProvider =
-                ConfigurationHelper.toInstance(injector, environment, configLoaderConfig);
+                ConfigurationHelper.toInstanceMapped(injector, environment, configLoaderConfig);
         // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
         return new PluggableAlertRepository(
                 objectMapper,
