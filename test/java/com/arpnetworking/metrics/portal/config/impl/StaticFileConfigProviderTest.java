@@ -58,7 +58,7 @@ public class StaticFileConfigProviderTest {
     public void testStaticFileProvider() throws Exception {
         final byte[] expectedContents = Files.readAllBytes(_contentPath);
         final CompletableFuture<byte[]> future = new CompletableFuture<>();
-        _provider.start((stream) -> {
+        _provider.start(stream -> {
             try {
                 future.complete(ByteStreams.toByteArray(stream));
             } catch (final IOException e) {
@@ -74,20 +74,19 @@ public class StaticFileConfigProviderTest {
     public void testInvalidPath() {
         _provider = new StaticFileConfigProvider(Paths.get("thisDoesntExist"));
         try {
-            _provider.start((stream) -> {
-            });
+            _provider.start(stream -> { });
             fail("expected an exception");
+            /* CHECKSTYLE.OFF: IllegalCatch - test */
         } catch (final Exception e) {
+            /* CHECKSTYLE.ON: IllegalCatch */
             assertThat(e.getCause(), isA(NoSuchFileException.class));
         }
     }
 
     @Test(expected = IllegalStateException.class)
     public void testDoubleStart() {
-        _provider.start(stream -> {
-        });
-        _provider.start(stream -> {
-        });
+        _provider.start(stream -> { });
+        _provider.start(stream -> { });
     }
 
     @Test(expected = IllegalStateException.class)
