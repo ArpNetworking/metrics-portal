@@ -32,6 +32,9 @@ public interface ConfigProvider {
     /**
      * Start this config provider with the given {@code update} function.
      * <p>
+     * The {@code InputStream} passed to the update callback is not required to
+     * be buffered.
+     *
      * The frequency and semantics of any updates are left up to the particular implementation.
      *
      * @param update The callback to invoke with the new config.

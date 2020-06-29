@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.file.Paths;
 
@@ -33,6 +34,10 @@ public class ConfigProviderModule extends AbstractModule {
     protected void configure() {}
 
     @Provides
+    @SuppressFBWarnings(
+            value = "UPM_UNCALLED_PRIVATE_METHOD",
+            justification = "Reflectively invoked by Guice"
+    )
     private StaticFileConfigProvider provideStaticFileConfigLoader(
             final Config config
     ) {
