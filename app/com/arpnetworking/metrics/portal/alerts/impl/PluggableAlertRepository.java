@@ -194,13 +194,13 @@ public class PluggableAlertRepository implements AlertRepository {
         // we should enforce the open-before-use invariant rather than immediately
         // throwing on mutations.
         assertIsOpen();
-        throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
+        throw new UnsupportedOperationException("PluggableAlertRepository is read-only");
     }
 
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();
-        throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
+        throw new UnsupportedOperationException("PluggableAlertRepository is read-only");
     }
 
     private void reload(final InputStream stream) {
@@ -247,9 +247,7 @@ public class PluggableAlertRepository implements AlertRepository {
                             .build();
             mapBuilder.put(uuid, alert);
         }
-        synchronized (this) {
-            _alerts = mapBuilder.build();
-        }
+        _alerts = mapBuilder.build();
     }
 
     private UUID computeUUID(final StringArgGenerator uuidGen, final SerializedAlert alert) {
