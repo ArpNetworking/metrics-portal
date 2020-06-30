@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,7 +28,11 @@ import com.fasterxml.uuid.StringArgGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.AlertQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
@@ -42,6 +47,7 @@ import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
+import play.Environment;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -75,13 +81,36 @@ public class PluggableAlertRepository implements AlertRepository {
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
     /**
-     * Default Constructor.
+     * Injection-assisted constructor.
+     *
+     * This binds the configuration to the ordinary constructor.
+     *
+     * @param objectMapper The object mapper to use for alert deserialization.
+     * @param injector The guice injector.
+     * @param environment The play environment.
+     * @param config The application configuration.
+     */
+    @Inject
+    public PluggableAlertRepository(
+            final ObjectMapper objectMapper,
+            final Injector injector,
+            final Environment environment,
+            @Assisted final Config config
+    ) {
+        this(
+                objectMapper,
+                ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
+                UUID.fromString(config.getString("organization"))
+        );
+    }
+
+    /**
+     * Constructor.
      *
      * @param objectMapper The object mapper to use for alert deserialization.
      * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
      */
-    @Inject
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
             final ConfigProvider configProvider,

@@ -53,11 +53,8 @@ import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
-import com.arpnetworking.metrics.portal.config.ConfigProvider;
-import com.arpnetworking.metrics.portal.config.ConfigProviderModule;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -125,7 +122,6 @@ import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -233,8 +229,6 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
 
         bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
-
-        install(new ConfigProviderModule());
     }
 
     @Singleton
@@ -388,6 +382,7 @@ public class MainModule extends AbstractModule {
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         objectMapper.registerModule(customModule);
+
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
@@ -450,26 +445,6 @@ public class MainModule extends AbstractModule {
         final Cluster cluster = Cluster.get(system);
         final ActorRef clusterStatusCache = system.actorOf(ClusterStatusCacheActor.props(cluster, metricsFactory), "cluster-status");
         return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
-    }
-
-    @Provides
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private PluggableAlertRepository providePluggableAlertRepository(
-            final ObjectMapper objectMapper,
-            final Injector injector,
-            final Environment environment,
-            final Config config
-    ) {
-        final String uuid = config.getString("organization");
-        final Config configLoaderConfig = config.getConfig("configProvider");
-        final ConfigProvider configProvider =
-                ConfigurationHelper.toInstanceMapped(injector, environment, configLoaderConfig);
-        // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
-        return new PluggableAlertRepository(
-                objectMapper,
-                configProvider,
-                UUID.fromString(uuid)
-        );
     }
 
     @Provides

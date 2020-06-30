@@ -17,6 +17,8 @@
 package com.arpnetworking.metrics.portal.config.impl;
 
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +47,7 @@ public class StaticFileConfigProvider implements ConfigProvider {
      * @param path The path of the file to read.
      */
     public StaticFileConfigProvider(
-            final Path path
+            @JsonProperty("path") final Path path
     ) {
         _path = path;
     }

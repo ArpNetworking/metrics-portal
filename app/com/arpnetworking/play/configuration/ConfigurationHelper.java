@@ -146,7 +146,6 @@ public final class ConfigurationHelper {
             final Config configuration) {
         final Class<? extends T> clazz = getType(environment, configuration, TYPE_KEY);
         final ObjectMapper mapper = injector.getInstance(ObjectMapper.class);
-
         final String json = configuration.withoutPath(TYPE_KEY).root().render(ConfigRenderOptions.concise());
         try {
             return mapper.readValue(json, clazz);
