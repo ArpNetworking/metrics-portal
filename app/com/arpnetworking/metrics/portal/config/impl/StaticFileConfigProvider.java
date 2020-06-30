@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.config.impl;
 
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.IOException;

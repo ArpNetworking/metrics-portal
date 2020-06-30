@@ -32,7 +32,6 @@ import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.AlertQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
@@ -124,7 +123,7 @@ public class PluggableAlertRepository implements AlertRepository {
     @Override
     public void open() {
         assertIsOpen(false);
-        LOGGER.debug().setMessage("Opening FileSystemAlertRepository").log();
+        LOGGER.debug().setMessage("Opening PluggableAlertRepository").log();
         _configProvider.start(this::reload);
         _isOpen.set(true);
     }
@@ -132,7 +131,7 @@ public class PluggableAlertRepository implements AlertRepository {
     @Override
     public void close() {
         assertIsOpen();
-        LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log();
+        LOGGER.debug().setMessage("Closing PluggableAlertRepository").log();
         _configProvider.stop();
         _isOpen.set(false);
     }
@@ -264,7 +263,7 @@ public class PluggableAlertRepository implements AlertRepository {
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("FileSystemAlertRepository is not %s",
+            throw new IllegalStateException(String.format("PluggableAlertRepository is not %s",
                     expectedState ? "open" : "closed"));
         }
     }
