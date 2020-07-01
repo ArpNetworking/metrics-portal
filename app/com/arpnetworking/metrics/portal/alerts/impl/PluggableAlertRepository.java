@@ -17,6 +17,8 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,6 +28,9 @@ import com.fasterxml.uuid.StringArgGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.assistedinject.Assisted;
+import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
 import models.internal.MetricsQuery;
@@ -41,12 +46,12 @@ import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
+import play.Environment;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.Reader;
+import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 /**
- * An alert repository that loads definitions from the filesystem.
+ * An alert repository that loads definitions from a pluggable configuration source.
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  * @apiNote
@@ -65,44 +70,69 @@ import java.util.function.Predicate;
  * This repository is currently tied to the organization given at construction, returning
  * an empty result for any other organization passed in.
  */
-public class FileAlertRepository implements AlertRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileAlertRepository.class);
+public class PluggableAlertRepository implements AlertRepository {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluggableAlertRepository.class);
+    private static final int BUFFER_SIZE = 4096;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final Path _path;
+    private final ConfigProvider _configProvider;
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
     /**
-     * Default Constructor.
+     * Injection-assisted constructor.
+     *
+     * This binds the configuration to the ordinary constructor.
      *
      * @param objectMapper The object mapper to use for alert deserialization.
-     * @param path The file path for the alert definitions.
-     * @param org The organization to group the alerts under.
+     * @param injector The guice injector.
+     * @param environment The play environment.
+     * @param config The application configuration.
      */
     @Inject
-    public FileAlertRepository(
+    public PluggableAlertRepository(
             final ObjectMapper objectMapper,
-            final Path path,
+            final Injector injector,
+            final Environment environment,
+            @Assisted final Config config
+    ) {
+        this(
+                objectMapper,
+                ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
+                UUID.fromString(config.getString("organization"))
+        );
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param objectMapper The object mapper to use for alert deserialization.
+     * @param configProvider The config loader for the alert definitions.
+     * @param org The organization to group the alerts under.
+     */
+    public PluggableAlertRepository(
+            final ObjectMapper objectMapper,
+            final ConfigProvider configProvider,
             final UUID org
     ) {
         _objectMapper = objectMapper;
-        _path = path;
+        _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
     }
 
     @Override
     public void open() {
         assertIsOpen(false);
-        LOGGER.debug().setMessage("Opening FileSystemAlertRepository").log();
-        _alerts = loadAlerts();
+        LOGGER.debug().setMessage("Opening PluggableAlertRepository").log();
+        _configProvider.start(this::reload);
         _isOpen.set(true);
     }
 
     @Override
     public void close() {
         assertIsOpen();
-        LOGGER.debug().setMessage("Closing FileSystemAlertRepository").log();
+        LOGGER.debug().setMessage("Closing PluggableAlertRepository").log();
+        _configProvider.stop();
         _isOpen.set(false);
     }
 
@@ -164,21 +194,23 @@ public class FileAlertRepository implements AlertRepository {
         // we should enforce the open-before-use invariant rather than immediately
         // throwing on mutations.
         assertIsOpen();
-        throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
+        throw new UnsupportedOperationException("PluggableAlertRepository is read-only");
     }
 
     @Override
     public void addOrUpdateAlert(final Alert alert, final Organization organization) {
         assertIsOpen();
-        throw new UnsupportedOperationException("FilesystemAlertRepository is read-only");
+        throw new UnsupportedOperationException("PluggableAlertRepository is read-only");
     }
 
-    private ImmutableMap<UUID, Alert> loadAlerts() {
+    private void reload(final InputStream stream) {
+        final BufferedInputStream bufferedStream = new BufferedInputStream(
+                stream,
+                BUFFER_SIZE
+        );
         final AlertGroup group;
-        try (Reader reader = Files.newBufferedReader(_path)) {
-            group = _objectMapper.readValue(
-                    reader,
-                    AlertGroup.class);
+        try {
+            group = _objectMapper.readValue(bufferedStream, AlertGroup.class);
         } catch (final IOException e) {
             throw new RuntimeException("Could not load alerts", e);
         }
@@ -215,7 +247,7 @@ public class FileAlertRepository implements AlertRepository {
                             .build();
             mapBuilder.put(uuid, alert);
         }
-        return mapBuilder.build();
+        _alerts = mapBuilder.build();
     }
 
     private UUID computeUUID(final StringArgGenerator uuidGen, final SerializedAlert alert) {
@@ -229,7 +261,7 @@ public class FileAlertRepository implements AlertRepository {
 
     private void assertIsOpen(final boolean expectedState) {
         if (_isOpen.get() != expectedState) {
-            throw new IllegalStateException(String.format("FileSystemAlertRepository is not %s",
+            throw new IllegalStateException(String.format("PluggableAlertRepository is not %s",
                     expectedState ? "open" : "closed"));
         }
     }

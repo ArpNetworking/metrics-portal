@@ -17,6 +17,8 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
@@ -27,8 +29,8 @@ import models.internal.impl.DefaultOrganization;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,30 +50,33 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsMapWithSize.anEmptyMap;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 
 /**
- * Unit Tests for {@link FileAlertRepository}.
+ * Unit Tests for {@link PluggableAlertRepository}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class FileAlertRepositoryTest {
+public class PluggableAlertRepositoryTest {
     private static final UUID ORGANIZATION_ID = UUID.fromString("fb04046e-689a-49a1-9468-e15c44587b4f");
     private static final UUID METADATA_ALERT_ID = UUID.fromString("0eca730a-5f9a-49db-8711-29a49cac98ff");
 
     private Organization _organization;
-    private FileAlertRepository _repository;
+    private PluggableAlertRepository _repository;
 
     @Before
-    public void setUp() throws URISyntaxException {
-        final URL url = ResourceHelper.resourceURL(FileAlertRepositoryTest.class, "Alerts");
+    public void setUp() throws Exception {
+        final URL config = ResourceHelper.resourceURL(PluggableAlertRepositoryTest.class, "Alerts");
+        final Path resourcePath = Paths.get(config.toURI());
 
         // Organization is fixed because alerts IDs are namespaced by org.
         _organization = new DefaultOrganization.Builder()
                 .setId(ORGANIZATION_ID)
                 .build();
-        _repository = new FileAlertRepository(
+        _repository = new PluggableAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
-                Paths.get(url.toURI()),
+                new StaticFileConfigProvider(resourcePath),
                 _organization.getId()
         );
         _repository.open();
@@ -98,12 +103,13 @@ public class FileAlertRepositoryTest {
     }
 
     @Test
-    public void testInvalidPathOnOpen() throws Exception {
-        final Path path = Paths.get("valid_but_nonexistent");
+    public void testFailingConfigLoader() {
+        final ConfigProvider mockConfigProvider = Mockito.mock(ConfigProvider.class);
+        doThrow(new RuntimeException("boom")).when(mockConfigProvider).start(any());
 
-        final FileAlertRepository badRepository = new FileAlertRepository(
+        final PluggableAlertRepository badRepository = new PluggableAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
-                path,
+                mockConfigProvider,
                 _organization.getId()
         );
 
