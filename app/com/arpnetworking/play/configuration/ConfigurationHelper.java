@@ -19,6 +19,7 @@ import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
@@ -27,6 +28,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Utility methods that provide common patterns when interacting with Play's {@code Config} class.
@@ -34,6 +36,8 @@ import java.io.File;
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class ConfigurationHelper {
+
+    private static final String TYPE_KEY = "type";
 
     /**
      * Return the value of a configuration key as a {@code File} instance.
@@ -119,10 +123,35 @@ public final class ConfigurationHelper {
             final Injector injector,
             final Environment environment,
             final Config configuration) {
-        final Class<? extends T> clazz = getType(environment, configuration, "type");
+        final Class<? extends T> clazz = getType(environment, configuration, TYPE_KEY);
         return injector
                 .createChildInjector(new ConfigurationOverrideModule(configuration))
                 .getInstance(clazz);
+    }
+
+    /**
+     * Use Guice to instantiate a POJO from configuration, deserializing directly from the
+     * configuration object.
+     *
+     * @param injector The injector to use to create the object.
+     * @param environment Play {@link Environment} instance.
+     * @param configuration The config to instantiate the object from. (Note that this should almost certainly <i>not</i> be
+     *   the entire Play {@link Config} instance; instead it is some sub-object describing the Java object to instantiate.
+     * @param <T> The type of object to instantiate.
+     * @return The instantiated object.
+     */
+    public static <T> T toInstanceMapped(
+            final Injector injector,
+            final Environment environment,
+            final Config configuration) {
+        final Class<? extends T> clazz = getType(environment, configuration, TYPE_KEY);
+        final ObjectMapper mapper = injector.getInstance(ObjectMapper.class);
+        final String json = configuration.withoutPath(TYPE_KEY).root().render(ConfigRenderOptions.concise());
+        try {
+            return mapper.readValue(json, clazz);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
