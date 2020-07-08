@@ -97,11 +97,11 @@ public class RollupExecutor extends AbstractActorWithTimers {
 
 
     private CompletionStage<MetricsQueryResponse> performRollup(final RollupDefinition rollupDefinition) {
-        final MetricsQuery queryBuilder = buildQueryRollup(rollupDefinition);
+        final MetricsQuery queryBuilder = buildQueryRollup(rollupDefinition, _ttlSeconds);
         return _kairosDbClient.queryMetrics(queryBuilder);
     }
 
-    /* package private */ static MetricsQuery buildQueryRollup(final RollupDefinition rollupDefinition) {
+    /* package private */ static MetricsQuery buildQueryRollup(final RollupDefinition rollupDefinition, final long ttlSeconds) {
         final String rollupMetricName = rollupDefinition.getDestinationMetricName();
         final RollupPeriod period = rollupDefinition.getPeriod();
 
@@ -131,7 +131,8 @@ public class RollupExecutor extends AbstractActorWithTimers {
                             .setName("save_as")
                             .setOtherArgs(ImmutableMap.of(
                                     "metric_name", rollupMetricName,
-                                    "add_saved_from", false
+                                    "add_saved_from", false,
+                                    "ttl", ttlSeconds
                             ))
                             .build(),
                     new Aggregator.Builder()
@@ -182,6 +183,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
         _kairosDbClient = kairosDbClient;
         _metrics = metrics;
         _pollInterval = ConfigurationHelper.getFiniteDuration(configuration, "rollup.executor.pollInterval");
+        _ttlSeconds = ConfigurationHelper.getFiniteDuration(configuration, "rollup.ttl").toSeconds();
     }
 
     private final KairosDbClient _kairosDbClient;
@@ -191,6 +193,7 @@ public class RollupExecutor extends AbstractActorWithTimers {
     private static final String FETCH_TIMER = "rollupFetchTimer";
     static final Object FETCH_ROLLUP = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupExecutor.class);
+    private final long _ttlSeconds;
 
     @Loggable
     static final class FinishRollupMessage extends FailableMessage {

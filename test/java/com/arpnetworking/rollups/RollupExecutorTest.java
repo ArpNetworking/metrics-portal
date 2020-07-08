@@ -86,6 +86,7 @@ public class RollupExecutorTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         when(_config.getString(eq("rollup.executor.pollInterval"))).thenReturn("3sec");
+        when(_config.getString(eq("rollup.ttl"))).thenReturn("0sec");
 
         _system = ActorSystem.create();
 
@@ -228,6 +229,7 @@ public class RollupExecutorTest {
                 .setPeriod(RollupPeriod.HOURLY)
                 .setStartTime(Instant.EPOCH)
                 .build();
+        long ttl = 0;
         assertEquals(
                 new MetricsQuery.Builder()
                         .setMetrics(ImmutableList.of(new Metric.Builder()
@@ -245,7 +247,8 @@ public class RollupExecutorTest {
                                             .setName("save_as")
                                                 .setOtherArgs(ImmutableMap.of(
                                                         "metric_name", "my_metric_1h",
-                                                        "add_saved_from", false
+                                                        "add_saved_from", false,
+                                                        "ttl", ttl
                                                 ))
                                             .build(),
                                         new Aggregator.Builder()
@@ -255,7 +258,7 @@ public class RollupExecutorTest {
                         .setStartTime(Instant.EPOCH)
                         .setEndTime(Instant.EPOCH.plus(Duration.ofHours(1)).minusMillis(1))
                         .build(),
-                RollupExecutor.buildQueryRollup(definition)
+                RollupExecutor.buildQueryRollup(definition, ttl)
         );
 
         definition = new RollupDefinition.Builder()
@@ -265,6 +268,7 @@ public class RollupExecutorTest {
                 .setPeriod(RollupPeriod.DAILY)
                 .setStartTime(Instant.EPOCH)
                 .build();
+        ttl = 1234;
         assertEquals(
                 new MetricsQuery.Builder()
                         .setMetrics(ImmutableList.of(new Metric.Builder()
@@ -282,7 +286,8 @@ public class RollupExecutorTest {
                                                 .setName("save_as")
                                                 .setOtherArgs(ImmutableMap.of(
                                                         "metric_name", "my_metric_1d",
-                                                        "add_saved_from", false
+                                                        "add_saved_from", false,
+                                                        "ttl", ttl
                                                 ))
                                                 .build(),
                                         new Aggregator.Builder()
@@ -292,7 +297,7 @@ public class RollupExecutorTest {
                         .setStartTime(Instant.EPOCH)
                         .setEndTime(Instant.EPOCH.plus(Duration.ofDays(1)).minusMillis(1))
                         .build(),
-                RollupExecutor.buildQueryRollup(definition)
+                RollupExecutor.buildQueryRollup(definition, ttl)
         );
     }
 
