@@ -92,7 +92,7 @@ public final class ResourceHelper {
      * @return The contents of that resource-file.
      * @throws IOException if the resource can't be loaded, or if deserialization fails.
      */
-    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<T> clazz) throws IOException {
+    public static <T> T loadResourceAs(final Class<?> testClass, final String suffix, final Class<? extends T> clazz) throws IOException {
         return ObjectMapperFactory.getInstance().readValue(loadResource(testClass, suffix), clazz);
     }
 

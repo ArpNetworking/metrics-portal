@@ -50,7 +50,6 @@ import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.FileAlertRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -61,6 +60,7 @@ import com.arpnetworking.metrics.portal.hosts.impl.HostProviderFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
+import com.arpnetworking.metrics.portal.query.impl.DelegatingQueryExecutor;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
@@ -80,7 +80,6 @@ import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
-import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,14 +111,12 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
-import java.nio.file.FileSystems;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -221,20 +218,27 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupConsistencyChecker"))
                 .toProvider(RollupConsistencyCheckerProvider.class)
                 .asEagerSingleton();
+
+        bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
     }
 
     @Singleton
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private AlertExecutionContext provideAlertExecutionContext(final Config config) {
+    private AlertExecutionContext provideAlertExecutionContext(
+            final Config config,
+            final QueryExecutor executor
+    ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
+        final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
+
         final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
                 .setZone(ZoneOffset.UTC)
                 .setRunAtAndAfter(Instant.MIN)
                 .build();
-        return new AlertExecutionContext(defaultAlertSchedule);
+        return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }
 
     @Provides
@@ -330,11 +334,11 @@ public class MainModule extends AbstractModule {
         final Config executorsConfig = configuration.getConfig("query.executors");
         final Set<String> keys = executorsConfig.root().keySet();
         for (final String key: keys) {
-            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
             final Config subconfig = executorsConfig.getConfig(key);
-            final Injector childInjector = injector.createChildInjector(new ConfigurationOverrideModule(subconfig));
-            final Class<? extends QueryExecutor> clazz = ConfigurationHelper.getType(environment, subconfig, "type");
-            registryMapBuilder.put(format, childInjector.getInstance(clazz));
+            final QueryExecutor executor = ConfigurationHelper.toInstance(injector, environment, subconfig);
+
+            final MetricsQueryFormat format = MetricsQueryFormat.valueOf(key);
+            registryMapBuilder.put(format, executor);
         }
         return new QueryExecutorRegistry.Builder()
                 .setExecutors(registryMapBuilder.build())
@@ -369,6 +373,7 @@ public class MainModule extends AbstractModule {
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         objectMapper.registerModule(customModule);
+
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
@@ -431,22 +436,6 @@ public class MainModule extends AbstractModule {
         final Cluster cluster = Cluster.get(system);
         final ActorRef clusterStatusCache = system.actorOf(ClusterStatusCacheActor.props(cluster, metricsFactory), "cluster-status");
         return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
-    }
-
-    @Provides
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private FileAlertRepository provideFileSystemAlertRepository(
-            final ObjectMapper objectMapper,
-            final Config config
-    ) {
-        final String path = config.getString("fileAlertRepository.path");
-        final String uuid = config.getString("fileAlertRepository.organization");
-        // This isn't opened since it will be when instantiated via the generic AlertRepositoryProvider.
-        return new FileAlertRepository(
-                objectMapper,
-                FileSystems.getDefault().getPath(path),
-                UUID.fromString(uuid)
-        );
     }
 
     @Provides
@@ -587,8 +576,8 @@ public class MainModule extends AbstractModule {
 
         @Override
         public AlertRepository get() {
-            final AlertRepository alertRepository = _injector.getInstance(
-                    ConfigurationHelper.<AlertRepository>getType(_environment, _configuration, "alertRepository.type"));
+            final Config config = _configuration.getConfig("alertRepository");
+            final AlertRepository alertRepository = ConfigurationHelper.toInstance(_injector, _environment, config);
             alertRepository.open();
             _lifecycle.addStopHook(
                     () -> {

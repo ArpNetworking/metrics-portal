@@ -21,7 +21,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
+import net.sf.oval.constraint.NotBlank;
+import net.sf.oval.constraint.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -32,10 +35,17 @@ import java.util.Map;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
+    private final String _seriesName;
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
 
     private DefaultAlertEvaluationResult(final Builder builder) {
+        _seriesName = builder._seriesName;
         _firingTags = builder._firingTags;
+    }
+
+    @Override
+    public String getSeriesName() {
+        return _seriesName;
     }
 
     @Override
@@ -63,6 +73,7 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
+                .add("seriesName", _seriesName)
                 .add("firingTags", _firingTags)
                 .toString();
     }
@@ -73,11 +84,26 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     public static class Builder extends OvalBuilder<DefaultAlertEvaluationResult> {
         private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 
+        @NotNull
+        @NotBlank
+        private @Nullable String _seriesName;
+
         /**
          * Default constructor for an empty builder.
          */
         public Builder() {
             super(DefaultAlertEvaluationResult::new);
+        }
+
+        /**
+         * Set the seriesName. Required. Cannot be null or empty.
+         *
+         * @param seriesName the series seriesName
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setSeriesName(@Nullable final String seriesName) {
+            _seriesName = seriesName;
+            return this;
         }
 
         /**
