@@ -22,15 +22,12 @@ import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.Cluster;
-import akka.cluster.routing.ClusterRouterPool;
-import akka.cluster.routing.ClusterRouterPoolSettings;
 import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ClusterShardingSettings;
 import akka.cluster.singleton.ClusterSingletonManager;
 import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import akka.cluster.singleton.ClusterSingletonProxy;
 import akka.cluster.singleton.ClusterSingletonProxySettings;
-import akka.routing.ConsistentHashingPool;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
@@ -79,7 +76,6 @@ import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
 import com.arpnetworking.rollups.QueryConsistencyTaskCreator;
 import com.arpnetworking.rollups.RollupExecutor;
-import com.arpnetworking.rollups.RollupForwarder;
 import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
@@ -89,7 +85,6 @@ import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -212,10 +207,6 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
-                .asEagerSingleton();
-        bind(ActorRef.class)
-                .annotatedWith(Names.named("RollupManagerPool"))
-                .toProvider(RollupManagerPoolProvider.class)
                 .asEagerSingleton();
 
         // Reporting
@@ -931,47 +922,21 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                return _system.actorOf(RollupManager.props(
-                        _periodicMetrics,
-                        _metricsFactory,
-                        _partitioner,
-                        _consistencyChecker,
-                        _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
-                ));
-            }
-            return _system.actorOf(Props.create(NoopActor.class));
-        }
-    }
-
-    private static final class RollupManagerPoolProvider implements Provider<ActorRef> {
-        private final boolean _enabled;
-        private final Injector _injector;
-        private final ActorSystem _system;
-        static final String ROLLUP_MANAGER_ROLE = "rollup_manager";
-
-        @Inject
-        RollupManagerPoolProvider(final Injector injector, final ActorSystem system, final Features features) {
-            _enabled = features.isRollupsEnabled();
-            _injector = injector;
-            _system = system;
-        }
-
-        @Override
-        public ActorRef get() {
-            final Cluster cluster = Cluster.get(_system);
-            if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                final Set<String> roles = Sets.newHashSet(ROLLUP_MANAGER_ROLE);
-                return _system.actorOf(new ClusterRouterPool(
-                                new ConsistentHashingPool(0),
-                                new ClusterRouterPoolSettings(
-                                        10000,
-                                        1,
-                                        true,
-                                        roles
-                                ))
-                                .props(GuiceActorCreator.props(_injector, RollupForwarder.class)),
-                        "rollup-manager"
+                final ActorRef manager = _system.actorOf(ClusterSingletonManager.props(
+                        RollupManager.props(
+                                _periodicMetrics,
+                                _metricsFactory,
+                                _partitioner,
+                                _consistencyChecker,
+                                _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+                        ),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_MANAGER_ROLE)),
+                        "rollup-metrics-discovery"
                 );
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        manager.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_system)));
             }
             return _system.actorOf(Props.create(NoopActor.class));
         }
