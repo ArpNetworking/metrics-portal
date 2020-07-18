@@ -192,7 +192,10 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .matchEquals(TICK, msg -> tick())
                 .match(CreateForRange.class, msg -> {
                     final Status.Status resp = execute(msg.getStart(), msg.getEnd());
-                    getSender().tell(resp, getSelf());
+                    final ActorRef sender = getSender();
+                    if (!getSender().equals(getSelf())) {
+                        getSender().tell(resp, getSelf());
+                    }
                 })
                 .build();
     }
@@ -216,7 +219,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     .setStart(startDate)
                     .setEnd(endDate)
                     .build();
-            getSelf().tell(createPartitions, ActorRef.noSender());
+            getSelf().tell(createPartitions, getSelf());
         }
     }
 
