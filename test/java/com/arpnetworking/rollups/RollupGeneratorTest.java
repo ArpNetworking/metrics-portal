@@ -598,7 +598,7 @@ public class RollupGeneratorTest {
                         .build(),
                 ActorRef.noSender());
 
-        // LastDataPointMessage should never be sent.
+        // LastDataPointsMessage should never be sent.
         _probe.expectNoMessage();
     }
 

@@ -294,8 +294,6 @@
             <exclude>controllers/Reverse*.class</exclude>
             <exclude>controllers/javascript/*</exclude>
             <exclude>views/html/*</exclude>
-            <!-- LastDataPointMessage will be removed in the next release.-->
-            <exclude>app/com/arpnetworking/rollups/LastDataPointMessage.java</exclude>
           </excludes>
         </configuration>
       </plugin>

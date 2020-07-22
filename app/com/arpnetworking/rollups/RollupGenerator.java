@@ -75,13 +75,13 @@ public class RollupGenerator extends AbstractActorWithTimers {
      *
      *     1. Retrieve the tag names for this metric (TagNamesMessage)
      *     2. For each period size:
-     *         2a. Query for the last data point given the maximum backfill and set of tags (LastDataPointMessage)
+     *         2a. Query for the last data point given the maximum backfill and set of tags (LastDataPointsMessage)
      *         2b. If this datapoint is in the past, generate a backfill job for the period
      *         furthest in the past, and enqueue it by sending to the RollupManager. (FinishRollupMessage)
      *
      * In particular [2] leaves open the possibility of chunking rollups by tags as a future
      * optimization in order to break down the unit of work. At the moment we forward all tags
-     * within a LastDataPointMessage, meaning that rollups operate on a metric as a whole.
+     * within a LastDataPointsMessage, meaning that rollups operate on a metric as a whole.
      */
 
     @Override
@@ -90,7 +90,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 .matchEquals(FETCH_METRIC, this::requestMetricsFromDiscovery)
                 .match(String.class, this::fetchMetricTags)
                 .match(TagNamesMessage.class, this::handleTagNamesMessage)
-                .match(LastDataPointsMessage.class, this::handleLastDataPointMessage)
+                .match(LastDataPointsMessage.class, this::handleLastDataPointsMessage)
                 .match(FinishRollupMessage.class, this::handleFinishRollupMessage)
                 .match(NoMoreMetrics.class, this::handleNoMoreMetricsMessage)
                 .build();
@@ -250,7 +250,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         return metricName + period.getSuffix();
     }
 
-    private void handleLastDataPointMessage(final LastDataPointsMessage message) {
+    private void handleLastDataPointsMessage(final LastDataPointsMessage message) {
         final String sourceMetricName = message.getSourceMetricName();
         final String rollupMetricName = message.getRollupMetricName();
         final RollupPeriod period = message.getPeriod();
