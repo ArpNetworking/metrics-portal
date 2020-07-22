@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
 import io.ebean.SqlQuery;
 
@@ -151,13 +152,12 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final Duration timeout
     ) throws ExecutionException, InterruptedException {
         final LocalDate date = ZonedDateTime.ofInstant(instant, ZoneOffset.UTC).toLocalDate();
-        final CreateForRange createPartitions = new CreateForRange.Builder()
+        final CreateForRange.Builder createPartitions = new CreateForRange.Builder()
                 .setStart(date)
-                .setEnd(date.plusDays(1))
-                .build();
-        Patterns.ask(
+                .setEnd(date.plusDays(1));
+        Patterns.askWithReplyTo(
                 ref,
-                createPartitions,
+                replyTo -> createPartitions.setReplyTo(replyTo).build(),
                 timeout
         )
         .toCompletableFuture()
@@ -192,7 +192,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .matchEquals(TICK, msg -> tick())
                 .match(CreateForRange.class, msg -> {
                     final Status.Status resp = execute(msg.getStart(), msg.getEnd());
-                    getSender().tell(resp, getSelf());
+                    msg.getReplyTo().ifPresent(replyTo -> getSender().tell(resp, replyTo));
                 })
                 .build();
     }
@@ -216,7 +216,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     .setStart(startDate)
                     .setEnd(endDate)
                     .build();
-            getSelf().tell(createPartitions, ActorRef.noSender());
+            getSelf().tell(createPartitions, getSelf());
         }
     }
 
@@ -315,10 +315,12 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private static final class CreateForRange {
         private final LocalDate _start;
         private final LocalDate _end;
+        private final Optional<ActorRef> _replyTo;
 
         private CreateForRange(final Builder builder) {
             _start = builder._start;
             _end = builder._end;
+            _replyTo = Optional.ofNullable(builder._replyTo);
         }
 
         public LocalDate getStart() {
@@ -329,9 +331,15 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             return _end;
         }
 
+        public Optional<ActorRef> getReplyTo() {
+            return _replyTo;
+        }
+
         static final class Builder extends OvalBuilder<CreateForRange> {
             private LocalDate _start;
             private LocalDate _end;
+            @Nullable
+            private ActorRef _replyTo;
 
             Builder() {
                 super(CreateForRange::new);
@@ -356,6 +364,17 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
              */
             public Builder setEnd(final LocalDate end) {
                 _end = end;
+                return this;
+            }
+
+            /**
+             * Sets the reply to.
+             *
+             * @param replyTo the reply to.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setReplyTo(final ActorRef replyTo) {
+                _replyTo = replyTo;
                 return this;
             }
         }
