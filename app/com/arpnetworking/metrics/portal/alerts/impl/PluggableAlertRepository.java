@@ -204,6 +204,7 @@ public class PluggableAlertRepository implements AlertRepository {
     }
 
     private void reload(final InputStream stream) {
+        LOGGER.debug().setMessage("Received update, reloading alerts").log();
         final BufferedInputStream bufferedStream = new BufferedInputStream(
                 stream,
                 BUFFER_SIZE
@@ -248,6 +249,9 @@ public class PluggableAlertRepository implements AlertRepository {
             mapBuilder.put(uuid, alert);
         }
         _alerts = mapBuilder.build();
+        LOGGER.debug().setMessage("Alerts successfully reloaded")
+                .addData("alertCount", _alerts.size())
+                .log();
     }
 
     private UUID computeUUID(final StringArgGenerator uuidGen, final SerializedAlert alert) {
