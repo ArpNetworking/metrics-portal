@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Dropbox, Inc.
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.arpnetworking.play.metrics.ProblemHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.net.HttpHeaders;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import models.internal.AlertQuery;
@@ -34,7 +33,6 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import models.view.PagedContainer;
 import models.view.Pagination;
-import play.Environment;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -43,22 +41,29 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
- * Metrics portal alert controller. Exposes APIs to query and manipulate alerts.
+ * Metrics portal alert controller. Exposes APIs to query alerts.
  *
  * @author Christian Briones (cbriones at dropbox dot com).
  */
 public class AlertController extends Controller {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
+    private static final Predicate<models.view.alerts.Alert> NOT_FIRING =
+            alert -> alert.getFiringState() == null;
+
+    private static final Predicate<models.view.alerts.Alert> FIRING =
+            alert -> alert.getFiringState() != null;
+
     private final int _maxPageSize;
     private final AlertRepository _alertRepository;
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
-    private final Environment _environment;
+
 
     /**
      * Public constructor.
@@ -67,20 +72,17 @@ public class AlertController extends Controller {
      * @param alertRepository Repository for alerts.
      * @param executionRepository Repository for associated alert executions.
      * @param organizationRepository Repository for organizations.
-     * @param environment The play environment.
      */
     @Inject
     public AlertController(
             final Config config,
             final AlertRepository alertRepository,
             final AlertExecutionRepository executionRepository,
-            final OrganizationRepository organizationRepository,
-            final Environment environment
+            final OrganizationRepository organizationRepository
     ) {
         _alertRepository = alertRepository;
         _executionRepository = executionRepository;
         _organizationRepository = organizationRepository;
-        _environment = environment;
         _maxPageSize = config.getInt("alerts.limit");
     }
 
@@ -138,12 +140,19 @@ public class AlertController extends Controller {
 
         final Map<String, String> conditions = ImmutableMap.of();
 
-        result.etag().ifPresent(etag -> response().setHeader(HttpHeaders.ETAG, etag));
+        // etag won't be correct unless we take the firing state into account.
+        // the QueryResult won't know about this.
+        //
+        // result.etag().ifPresent(etag -> response().setHeader(HttpHeaders.ETAG, etag));
+
+        final Predicate<models.view.alerts.Alert> alertFilter =
+                firingFilter.map(this::createFiringFilter).orElse(alert -> true);
+
         return ok(Json.toJson(new PagedContainer<>(
                 result.values()
                         .stream()
                         .map(alert -> fromInternal(alert, organization))
-                        .filter(alert -> filterFiring(alert, firingFilter))
+                        .filter(alertFilter)
                         .collect(Collectors.toList()),
                 new Pagination(
                         request().path(),
@@ -156,10 +165,10 @@ public class AlertController extends Controller {
 
     private models.view.alerts.Alert fromInternal(final Alert alert, final Organization organization) {
         final Optional<JobExecution.Success<AlertEvaluationResult>> mostRecentEvaluation =
-                _executionRepository.getLastSuccess(alert.getId(), organization).filter(res -> {
-                    // If the name changed since last evaluation it shouldn't be considered firing
-                    return res.getResult().getSeriesName().equals(alert.getName());
-                });
+                _executionRepository.getLastSuccess(alert.getId(), organization);
+    // I think this isn't necessary.
+    //          // If the name changed since last evaluation it shouldn't be considered firing
+    //          .filter(res -> res.getResult().getSeriesName().equals(alert.getName()));
 
         return models.view.alerts.Alert.fromInternal(
                 alert,
@@ -167,8 +176,8 @@ public class AlertController extends Controller {
         );
     }
 
-    private boolean filterFiring(final models.view.alerts.Alert alert, final Optional<Boolean> firingFilter) {
-        return firingFilter.map(f -> f == (alert.getFiringState() != null)).orElse(true);
+    private Predicate<models.view.alerts.Alert> createFiringFilter(final boolean firing) {
+        return firing ? FIRING : NOT_FIRING;
     }
 
     /**

@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.StringArgGenerator;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -117,6 +118,24 @@ public class PluggableAlertRepository implements AlertRepository {
     ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
+        _organization = new DefaultOrganization.Builder().setId(org).build();
+    }
+
+    /**
+     *
+     * @param objectMapper
+     * @param org
+     * @param alerts
+     */
+    @VisibleForTesting
+    public PluggableAlertRepository(
+            final ObjectMapper objectMapper,
+            final UUID org,
+            final Map<UUID, Alert> alerts
+    ) {
+        _objectMapper = objectMapper;
+        _configProvider = NullConfigProvider.getInstance();
+        _alerts = ImmutableMap.copyOf(alerts);
         _organization = new DefaultOrganization.Builder().setId(org).build();
     }
 

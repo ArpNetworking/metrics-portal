@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Groupon.com
+ * Copyright 2020 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public final class Alert {
      *
      * @param internal The internal model for this alert.
      * @param mostRecentEvaluation The most recent evaluation result for this alert.
-     * @return
+     * @return An alert view model.
      */
     public static Alert fromInternal(
             final models.internal.alerts.Alert internal,

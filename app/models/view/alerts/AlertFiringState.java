@@ -23,6 +23,10 @@ import com.google.common.collect.ImmutableMap;
 import java.time.Instant;
 
 /**
+ * Nested view model for an alert's firing state.
+ *
+ * Play view models are mutable.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 @Loggable
@@ -34,29 +38,25 @@ public final class AlertFiringState {
         return _lastEvaluated;
     }
 
-    /**
-     * Sets the last evaluated.
-     *
-     * @param lastEvaluated the last evaluated.
-     * @return This instance of {@code AlertFiringState} for chaining.
-     */
-    public AlertFiringState setLastEvaluated(final Instant lastEvaluated) {
-        _lastEvaluated = lastEvaluated;
-        return this;
-    }
-
     public ImmutableList<ImmutableMap<String, String>> getFiringTagSets() {
         return _firingTagSets;
+    }
+
+    /**
+     * Sets the last evaluated time.
+     *
+     * @param lastEvaluated the instant this alert was last evaluated.
+     */
+    public void setLastEvaluated(final Instant lastEvaluated) {
+        _lastEvaluated = lastEvaluated;
     }
 
     /**
      * Sets the firing tag sets.
      *
      * @param firingTagSets the firing tag sets.
-     * @return This instance of {@code AlertFiringState} for chaining.
      */
-    public AlertFiringState setFiringTagSets(final ImmutableList<ImmutableMap<String, String>> firingTagSets) {
+    public void setFiringTagSets(final ImmutableList<ImmutableMap<String, String>> firingTagSets) {
         _firingTagSets = firingTagSets;
-        return this;
     }
 }
