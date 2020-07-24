@@ -15,17 +15,16 @@
  */
 package controllers;
 
-import akka.actor.ActorSystem;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
-import com.arpnetworking.metrics.portal.integration.controllers.KairosDbProxyControllerIT;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.typesafe.config.ConfigFactory;
 import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -37,19 +36,13 @@ import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import play.Application;
-import play.inject.guice.GuiceApplicationBuilder;
-import play.libs.ws.WSClient;
-import play.libs.ws.WSResponse;
-import play.mvc.Call;
 import play.mvc.Http;
+import play.mvc.Result;
 import play.test.Helpers;
-import play.test.TestServer;
-import play.test.WithServer;
 
-import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -57,21 +50,19 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 /**
- * Functional tests for {@code AlertController}.
+ * Unit tests for {@code AlertController}.
  * <p>
- * This should be refactored into an integration test once we can expose an API for alert creation.
+ * This should be refactored into an integration/functional test once we can expose
+ * an API for alert creation.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class AlertControllerIT {
+public final class AlertControllerTest {
     private static final ObjectMapper objectMapper = SerializationTestUtils.getApiObjectMapper();
-    private static final ActorSystem actorSystem = ActorSystem.create(KairosDbProxyControllerIT.class.getSimpleName());
 
     private Organization organization;
-    private AlertController controller;
-    private Application application;
-    private TestServer server;
     private UUID alertId;
+    private AlertController _controller;
 
     @Before
     public void setUp() {
@@ -94,73 +85,56 @@ public final class AlertControllerIT {
         alertExecutionRepository.open();
         alertRepository.open();
 
-        application = new GuiceApplicationBuilder()
-//                .load(new MainModule())
-                .overrides(binder -> {
-                    binder.bind(OrganizationRepository.class).toInstance(organizationRepository);
-                    binder.bind(AlertRepository.class).toInstance(alertRepository);
-                    binder.bind(AlertExecutionRepository.class).toInstance(alertExecutionRepository);
-                    binder.bind(AlertController.class).asEagerSingleton();
-                })
-                .configure(ImmutableMap.of(
-                        "alerts.limit", 10
-                ))
-                .build();
-
-        server = Helpers.testServer(application);
-        server.start();
-//        controller = new AlertController(
-//                ConfigFactory.empty(),
-//                alertRepository,
-//                alertExecutionRepository,
-//                new DefaultOrganizationRepository()
-//        );
+        _controller = new AlertController(
+                ConfigFactory.parseMap(ImmutableMap.of(
+                        "alerts.limit", 5
+                )),
+                alertRepository,
+                alertExecutionRepository,
+                organizationRepository
+        );
     }
 
     @After
     public void tearDown() {
-        server.stop();
     }
 
     @Test
-    public void testGetAlert() throws Exception {
-        final Http.Request request = Helpers.fakeRequest(controllers.routes.AlertController.get(alertId)).build();
-
-        try (WSClient ws = newClient()) {
-            final WSResponse response = ws.url(request.uri()).get().toCompletableFuture().get();
-            assertThat(response.getStatus(), is(equalTo(HttpStatus.SC_OK)));
-        }
+    public void testGetAlert() {
+        final Http.RequestBuilder request = Helpers.fakeRequest(controllers.routes.AlertController.get(alertId));
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> _controller.get(alertId));
+        assertThat(result.status(), is(equalTo(HttpStatus.SC_OK)));
     }
 
     @Test
-    public void testGetAlertNotFound() throws Exception {
-        final UUID alertId = UUID.randomUUID();
-        final Http.Request request = Helpers.fakeRequest(controllers.routes.AlertController.get(alertId)).build();
-
-        try (WSClient ws = newClient()) {
-            final WSResponse response = ws.url(request.uri()).get().toCompletableFuture().get();
-            assertThat(response.getStatus(), is(equalTo(HttpStatus.SC_NOT_FOUND)));
-        }
+    public void testGetAlertNotFound() {
+        final UUID unknownId = UUID.randomUUID();
+        final Http.RequestBuilder request = Helpers.fakeRequest(controllers.routes.AlertController.get(unknownId));
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> _controller.get(unknownId));
+        assertThat(result.status(), is(equalTo(HttpStatus.SC_NOT_FOUND)));
     }
 
     @Test
     public void testQueryAlerts() {
+        final Http.RequestBuilder request = Helpers.fakeRequest(controllers.routes.AlertController.get(alertId));
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(),
+                () -> _controller.get(alertId)
+        );
+        assertThat(result.status(), is(equalTo(HttpStatus.SC_OK)));
+    }
 
+    @Test
+    public void testQueryAlertsPaginating() {
+        final Http.RequestBuilder request = Helpers.fakeRequest(controllers.routes.AlertController.get(alertId));
+        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(),
+                () -> _controller.get(alertId)
+        );
+        assertThat(result.status(), is(equalTo(HttpStatus.SC_OK)));
     }
 
     @Test
     public void testQueryAlertsFiltered() {
 
-    }
-
-    private WSClient newClient() {
-        final int port = server.getRunningHttpPort().
-                orElseGet(() -> {
-                    return server
-                            .getRunningHttpPort()
-                            .orElseThrow(() -> new IllegalStateException("Could not find test server port"));
-                });
-        return play.test.WSTestClient.newClient(port);
     }
 
     private static class MapExecutionRepository extends MapJobExecutionRepository<AlertEvaluationResult>
