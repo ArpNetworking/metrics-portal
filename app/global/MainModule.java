@@ -932,7 +932,7 @@ public class MainModule extends AbstractModule {
                         ),
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_MANAGER_ROLE)),
-                        "rollup-metrics-discovery"
+                        "rollup-manager"
                 );
                 return _system.actorOf(ClusterSingletonProxy.props(
                         manager.path().toStringWithoutAddress(),
