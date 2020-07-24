@@ -37,7 +37,6 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,17 +52,11 @@ import javax.annotation.Nullable;
 public class AlertController extends Controller {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
-    private static final Predicate<models.view.alerts.Alert> NOT_FIRING =
-            alert -> alert.getFiringState() == null;
-
-    private static final Predicate<models.view.alerts.Alert> FIRING =
-            alert -> alert.getFiringState() != null;
 
     private final int _maxPageSize;
     private final AlertRepository _alertRepository;
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
-
 
     /**
      * Public constructor.
@@ -125,42 +118,34 @@ public class AlertController extends Controller {
                 .limit(argLimit)
                 .offset(argOffset.orElse(0));
 
-        final QueryResult<Alert> result;
-        try {
-            result = query.execute();
-            // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
-        } catch (final Exception e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error()
-                    .setMessage("Alert query failed")
-                    .setThrowable(e)
-                    .log();
-            return internalServerError();
-        }
+        final QueryResult<Alert> queryResult = query.execute();
 
-        final Map<String, String> conditions = ImmutableMap.of();
-
-        // etag won't be correct unless we take the firing state into account.
-        // the QueryResult won't know about this.
-        //
-        // result.etag().ifPresent(etag -> response().setHeader(HttpHeaders.ETAG, etag));
+        // TODO: ETag support requires us to munge the alert model along with
+        // its firing state here in the controller, since they are stored
+        // separately.
 
         final Predicate<models.view.alerts.Alert> alertFilter =
                 firingFilter.map(this::createFiringFilter).orElse(alert -> true);
 
         return ok(Json.toJson(new PagedContainer<>(
-                result.values()
+                queryResult.values()
                         .stream()
                         .map(alert -> fromInternal(alert, organization))
                         .filter(alertFilter)
                         .collect(Collectors.toList()),
+                // FIXME(cbriones): The total here represents the total of all alerts, regardless of the filter.
+                //
+                // We can't get the count of only firing=True, for example, without
+                // walking the entire table for firing alerts and reading the contents
+                // into memory since the state is opaque to the repository.
+                //
                 new Pagination(
                         request().path(),
-                        result.total(),
-                        result.values().size(),
+                        queryResult.total(),
+                        queryResult.values().size(),
                         argLimit,
                         argOffset,
-                        conditions))));
+                        ImmutableMap.of()))));
     }
 
     private models.view.alerts.Alert fromInternal(final Alert alert, final Organization organization) {
@@ -177,7 +162,15 @@ public class AlertController extends Controller {
     }
 
     private Predicate<models.view.alerts.Alert> createFiringFilter(final boolean firing) {
-        return firing ? FIRING : NOT_FIRING;
+        return firing ? this::firing : this::notFiring;
+    }
+
+    private boolean firing(final models.view.alerts.Alert alert) {
+        return alert.getFiringState() != null && !alert.getFiringState().getFiringTags().isEmpty();
+    }
+
+    private boolean notFiring(final models.view.alerts.Alert alert) {
+        return !firing(alert);
     }
 
     /**

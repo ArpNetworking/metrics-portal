@@ -18,7 +18,6 @@ package models.view.alerts;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import models.internal.MetricsQuery;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
@@ -38,7 +37,6 @@ public final class Alert {
     private UUID _id;
     private String _name;
     private String _description;
-    private MetricsQuery _query;
     private boolean _enabled;
     private ImmutableMap<String, Object> _additionalMetadata;
     private @Nullable AlertFiringState _firingState;
@@ -63,12 +61,12 @@ public final class Alert {
         alert._additionalMetadata = internal.getAdditionalMetadata();
 
         mostRecentEvaluation.ifPresent(evaluation -> {
-            final Instant lastEvaluated = evaluation.getCompletedAt();
+            final Instant lastEvaluatedAt = evaluation.getCompletedAt();
             final AlertEvaluationResult result = evaluation.getResult();
 
             final AlertFiringState firingState = new AlertFiringState();
-            firingState.setLastEvaluated(lastEvaluated);
-            firingState.setFiringTagSets(result.getFiringTags());
+            firingState.setLastEvaluatedAt(lastEvaluatedAt);
+            firingState.setFiringTags(result.getFiringTags());
             alert._firingState = firingState;
         });
 
@@ -87,16 +85,37 @@ public final class Alert {
         return _description;
     }
 
-    public MetricsQuery getQuery() {
-        return _query;
-    }
-
     public boolean isEnabled() {
         return _enabled;
     }
 
+    public void setId(final UUID id) {
+        _id = id;
+    }
+
+    public void setName(final String name) {
+        _name = name;
+    }
+
+    public void setDescription(final String description) {
+        _description = description;
+    }
+
+    public void setEnabled(final boolean enabled) {
+        _enabled = enabled;
+    }
+
+    public void setFiringState(@Nullable final AlertFiringState firingState) {
+        _firingState = firingState;
+    }
+
     public ImmutableMap<String, Object> getAdditionalMetadata() {
         return _additionalMetadata;
+    }
+
+
+    public void setAdditionalMetadata(final ImmutableMap<String, Object> value) {
+        _additionalMetadata = value;
     }
 
     @Nullable

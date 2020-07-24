@@ -32,14 +32,14 @@ import java.time.Instant;
 @Loggable
 public final class AlertFiringState {
     private Instant _lastEvaluated;
-    private ImmutableList<ImmutableMap<String, String>> _firingTagSets;
+    private ImmutableList<ImmutableMap<String, String>> _firingTags;
 
     public Instant getLastEvaluated() {
         return _lastEvaluated;
     }
 
-    public ImmutableList<ImmutableMap<String, String>> getFiringTagSets() {
-        return _firingTagSets;
+    public ImmutableList<ImmutableMap<String, String>> getFiringTags() {
+        return _firingTags;
     }
 
     /**
@@ -47,16 +47,16 @@ public final class AlertFiringState {
      *
      * @param lastEvaluated the instant this alert was last evaluated.
      */
-    public void setLastEvaluated(final Instant lastEvaluated) {
+    public void setLastEvaluatedAt(final Instant lastEvaluated) {
         _lastEvaluated = lastEvaluated;
     }
 
     /**
      * Sets the firing tag sets.
      *
-     * @param firingTagSets the firing tag sets.
+     * @param firingFor the firing tag sets.
      */
-    public void setFiringTagSets(final ImmutableList<ImmutableMap<String, String>> firingTagSets) {
-        _firingTagSets = firingTagSets;
+    public void setFiringTags(final ImmutableList<ImmutableMap<String, String>> firingFor) {
+        _firingTags = firingFor;
     }
 }
