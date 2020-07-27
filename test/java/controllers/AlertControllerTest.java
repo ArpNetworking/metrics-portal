@@ -57,11 +57,14 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -102,6 +105,9 @@ public final class AlertControllerTest {
     );
     private static final ObjectMapper objectMapper = SerializationTestUtils.getApiObjectMapper();
 
+    /**
+     * Set up and tear down shared across all test cases.
+     */
     public abstract static class SharedSetup {
         protected Organization organization;
         protected AlertController _controller;
@@ -182,14 +188,44 @@ public final class AlertControllerTest {
 
     }
 
+    /**
+     * Tests for the {@link AlertController#get} endpoint.
+     */
     public static final class TestGetAlert extends SharedSetup {
         @Test
-        public void testGetAlert() {
+        public void testGetNotFiringAlert() throws IOException {
             final UUID alertId = notFiringAlertIds.get(0);
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
                     Helpers.contextComponents(),
                     () -> _controller.get(alertId));
             assertThat(result.status(), is(equalTo(Helpers.OK)));
+
+            final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
+            assertThat(alert.getId(), is(equalTo(alertId)));
+            assertThat(alert.getDescription(), is(notNullValue()));
+            assertThat(alert.getName(), is(notNullValue()));
+            assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
+            assertThat(alert.getFiringState(), is(notNullValue()));
+            assertThat(alert.getFiringState().getFiringTags(), is(empty()));
+            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(lastInterval)));
+        }
+
+        @Test
+        public void testGetFiringAlert() throws IOException {
+            final UUID alertId = firingAlertIds.get(0);
+            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
+                    Helpers.contextComponents(),
+                    () -> _controller.get(alertId));
+            assertThat(result.status(), is(equalTo(Helpers.OK)));
+
+            final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
+            assertThat(alert.getId(), is(equalTo(alertId)));
+            assertThat(alert.getDescription(), is(notNullValue()));
+            assertThat(alert.getName(), is(notNullValue()));
+            assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
+            assertThat(alert.getFiringState(), is(notNullValue()));
+            assertThat(alert.getFiringState().getFiringTags(), is(not(empty())));
+            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(lastInterval)));
         }
 
         @Test
@@ -203,6 +239,11 @@ public final class AlertControllerTest {
 
     }
 
+    /**
+     * Tests for the {@link AlertController#query} endpoint.
+     *
+     * These tests are parameterized by the alert firing filter.
+     */
     @RunWith(Parameterized.class)
     public static final class TestQueryAlerts extends SharedSetup {
 
@@ -221,9 +262,10 @@ public final class AlertControllerTest {
         @Parameterized.Parameters(name = "Query firing={0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    // FIXME: We should be able to return TOTAL based on the firing filter,
-                    // but right now we cannot distinguish that because that would require
-                    // an undetermined number of trips to the database.
+                    // FIXME: This should really have the filtered total as
+                    // another parameter, but  right now we cannot know that value
+                    // up front that since the filter / join is done on the fly
+                    // within AlertController
                     {null, TOTAL_ALERT_COUNT},
                     {true, firingAlertIds.size()},
                     {false, notFiringAlertIds.size()},
@@ -284,7 +326,9 @@ public final class AlertControllerTest {
         }
     }
 
-
+    /**
+     * An AlertExecutionRepository backed by a {@link Map}.
+     */
     private static class MapExecutionRepository extends MapJobExecutionRepository<AlertEvaluationResult>
             implements AlertExecutionRepository {}
 }

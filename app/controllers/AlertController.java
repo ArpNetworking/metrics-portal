@@ -24,7 +24,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.Problem;
 import models.internal.QueryResult;
@@ -80,6 +79,28 @@ public class AlertController extends Controller {
     }
 
     /**
+     * Get a specific alert.
+     *
+     * @param id The identifier of the alert.
+     * @return The alert, if any, otherwise notFound.
+     */
+    public Result get(final UUID id) {
+        final Organization organization;
+        try {
+            organization = _organizationRepository.get(request());
+        } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+        final Optional<Alert> alert = _alertRepository.getAlert(id, organization);
+        return alert
+                .map(a -> ok(Json.toJson(fromInternal(a, organization))))
+                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                        .setProblemCode("alert_problem.NOT_FOUND")
+                        .build()
+                )));
+    }
+
+    /**
      * Query for alerts.
      *
      * @param limit The maximum number of results to return. Optional.
@@ -112,33 +133,30 @@ public class AlertController extends Controller {
             return badRequest("Invalid offset; must be greater than or equal to 0");
         }
 
-        final Optional<Boolean> firingFilter = Optional.ofNullable(firing);
-
-        final AlertQuery query = _alertRepository.createAlertQuery(organization)
+        final QueryResult<Alert> queryResult = _alertRepository.createAlertQuery(organization)
                 .limit(argLimit)
-                .offset(argOffset.orElse(0));
-
-        final QueryResult<Alert> queryResult = query.execute();
+                .offset(argOffset.orElse(0)).execute();
 
         // TODO: ETag support requires us to munge the alert model along with
         // its firing state here in the controller, since they are stored
         // separately.
 
-        final Predicate<models.view.alerts.Alert> alertFilter =
-                firingFilter.map(this::createFiringFilter).orElse(alert -> true);
+        final Predicate<models.view.alerts.Alert> alertFilter = Optional.ofNullable(firing)
+                .map(this::createFiringFilter)
+                .orElse(alert -> true);
 
+        // FIXME(cbriones): The total here represents the total of all alerts, regardless of the filter.
+        //
+        // We can't get the count of only firing=True, for example, without
+        // walking the entire table for firing alerts and reading the contents
+        // into memory since the state is opaque to the repository.
+        //
         return ok(Json.toJson(new PagedContainer<>(
                 queryResult.values()
                         .stream()
                         .map(alert -> fromInternal(alert, organization))
                         .filter(alertFilter)
                         .collect(Collectors.toList()),
-                // FIXME(cbriones): The total here represents the total of all alerts, regardless of the filter.
-                //
-                // We can't get the count of only firing=True, for example, without
-                // walking the entire table for firing alerts and reading the contents
-                // into memory since the state is opaque to the repository.
-                //
                 new Pagination(
                         request().path(),
                         queryResult.total(),
@@ -151,9 +169,6 @@ public class AlertController extends Controller {
     private models.view.alerts.Alert fromInternal(final Alert alert, final Organization organization) {
         final Optional<JobExecution.Success<AlertEvaluationResult>> mostRecentEvaluation =
                 _executionRepository.getLastSuccess(alert.getId(), organization);
-    // I think this isn't necessary.
-    //          // If the name changed since last evaluation it shouldn't be considered firing
-    //          .filter(res -> res.getResult().getSeriesName().equals(alert.getName()));
 
         return models.view.alerts.Alert.fromInternal(
                 alert,
@@ -171,27 +186,5 @@ public class AlertController extends Controller {
 
     private boolean notFiring(final models.view.alerts.Alert alert) {
         return !firing(alert);
-    }
-
-    /**
-     * Get a specific alert.
-     *
-     * @param id The identifier of the alert.
-     * @return The alert, if any, otherwise notFound.
-     */
-    public Result get(final UUID id) {
-        final Organization organization;
-        try {
-            organization = _organizationRepository.get(request());
-        } catch (final NoSuchElementException e) {
-            return internalServerError();
-        }
-        final Optional<Alert> alert = _alertRepository.getAlert(id, organization);
-        return alert
-                .map(a -> ok(Json.toJson(this.fromInternal(a, organization))))
-                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
-                        .setProblemCode("alert_problem.NOT_FOUND")
-                        .build()
-                )));
     }
 }

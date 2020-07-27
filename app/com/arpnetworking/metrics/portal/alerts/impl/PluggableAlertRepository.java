@@ -122,10 +122,14 @@ public class PluggableAlertRepository implements AlertRepository {
     }
 
     /**
+     * Test constructor.
      *
-     * @param objectMapper
-     * @param org
-     * @param alerts
+     * Instantiates a repo with a fixed set of alerts that will never be
+     * updated.
+     *
+     * @param objectMapper The object mapper to use for alert deserialization.
+     * @param org The organization to group the alerts under.
+     * @param alerts The set of alerts to place into this repository.
      */
     @VisibleForTesting
     public PluggableAlertRepository(
