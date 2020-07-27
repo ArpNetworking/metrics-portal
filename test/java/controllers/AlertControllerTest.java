@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
 import javax.annotation.Nullable;
 
 import static org.hamcrest.Matchers.empty;
@@ -78,9 +77,9 @@ import static org.junit.Assert.assertThat;
 @RunWith(Enclosed.class)
 public final class AlertControllerTest {
     private static final int ALERT_PAGE_LIMIT = 1000;
-    private static final Instant lastInterval = Instant.now();
+    private static final Instant LAST_INTERVAL = Instant.now();
 
-    private static final List<UUID> firingAlertIds = Stream.of(
+    private static final List<UUID> FIRING_IDS = Stream.of(
             "1e7acce3-cd88-47be-8312-c61ccf88ba07",
             "d2b1ba49-0819-498c-8089-08b8ff15b5bc",
             "d98798e1-b50d-47c9-ae34-a6aee074dab4",
@@ -88,7 +87,7 @@ public final class AlertControllerTest {
             "bf560372-a853-4a9c-948c-9fe9f0269ad7"
     ).map(UUID::fromString).collect(ImmutableList.toImmutableList());
 
-    private static final List<UUID> notFiringAlertIds = Stream.of(
+    private static final List<UUID> NOT_FIRING_IDS = Stream.of(
             "c6e274d9-d8c6-40e3-aea8-d1146c813c0f",
             "20adb3d5-4c0a-4b60-a4c1-819a86798bb1",
             "11dead9e-e5cc-427d-a3a5-381259353b4d",
@@ -96,20 +95,20 @@ public final class AlertControllerTest {
             "ce7347cd-9d05-44d1-ac36-f868a14b7c49"
     ).map(UUID::fromString).collect(ImmutableList.toImmutableList());
 
-    private static final int TOTAL_ALERT_COUNT = firingAlertIds.size() + notFiringAlertIds.size();
+    private static final int TOTAL_ALERT_COUNT = FIRING_IDS.size() + NOT_FIRING_IDS.size();
 
     private static final Map<String, Object> MOCK_METADATA = ImmutableMap.of(
             "foo", "bar",
             "bar", ImmutableMap.of("baz", "qux"),
             "baz", 1
     );
-    private static final ObjectMapper objectMapper = SerializationTestUtils.getApiObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = SerializationTestUtils.getApiObjectMapper();
 
     /**
      * Set up and tear down shared across all test cases.
      */
     public abstract static class SharedSetup {
-        protected Organization organization;
+        protected Organization _organization;
         protected AlertController _controller;
 
         @Before
@@ -118,16 +117,16 @@ public final class AlertControllerTest {
             organizationRepository.open();
             final QueryResult<Organization> queryResult = organizationRepository.query(organizationRepository.createQuery().limit(
                     1));
-            organization = queryResult.values().stream().findFirst().orElse(null);
-            assertThat(organization, is(notNullValue()));
+            _organization = queryResult.values().stream().findFirst().orElse(null);
+            assertThat(_organization, is(notNullValue()));
 
             final AlertExecutionRepository alertExecutionRepository = new MapExecutionRepository();
             alertExecutionRepository.open();
 
             final Map<UUID, Alert> mockAlerts = populateAlertDatabases(alertExecutionRepository);
             final AlertRepository alertRepository = new PluggableAlertRepository(
-                    objectMapper,
-                    organization.getId(),
+                    OBJECT_MAPPER,
+                    _organization.getId(),
                     mockAlerts
             );
             alertRepository.open();
@@ -144,27 +143,27 @@ public final class AlertControllerTest {
 
         private Map<UUID, Alert> populateAlertDatabases(final AlertExecutionRepository alertExecutionRepository) {
             final Map<UUID, Alert> mockAlerts =
-                    Stream.concat(firingAlertIds.stream(), notFiringAlertIds.stream())
+                    Stream.concat(FIRING_IDS.stream(), NOT_FIRING_IDS.stream())
                             .map(this::mockAlert)
                             .collect(ImmutableMap.toImmutableMap(
                                     Alert::getId,
                                     Function.identity()
                             ));
-            for (UUID firingId : notFiringAlertIds) {
+            for (UUID firingId : NOT_FIRING_IDS) {
                 final Alert alert = mockAlerts.get(firingId);
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of())
                         .build();
-                alertExecutionRepository.jobSucceeded(alert.getId(), organization, lastInterval, firingResult);
+                alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
-            for (UUID firingId : firingAlertIds) {
+            for (UUID firingId : FIRING_IDS) {
                 final Alert alert = mockAlerts.get(firingId);
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of(ImmutableMap.of("tag", "value")))
                         .build();
-                alertExecutionRepository.jobSucceeded(alert.getId(), organization, lastInterval, firingResult);
+                alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
             return mockAlerts;
         }
@@ -175,7 +174,7 @@ public final class AlertControllerTest {
                     .setName("Fake name")
                     .setEnabled(true)
                     .setDescription("fake alert")
-                    .setOrganization(organization)
+                    .setOrganization(_organization)
                     .setQuery(
                             new DefaultMetricsQuery.Builder()
                                     .setFormat(MetricsQueryFormat.KAIROS_DB)
@@ -194,7 +193,7 @@ public final class AlertControllerTest {
     public static final class TestGetAlert extends SharedSetup {
         @Test
         public void testGetNotFiringAlert() throws IOException {
-            final UUID alertId = notFiringAlertIds.get(0);
+            final UUID alertId = NOT_FIRING_IDS.get(0);
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
                     Helpers.contextComponents(),
                     () -> _controller.get(alertId));
@@ -207,12 +206,12 @@ public final class AlertControllerTest {
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
             assertThat(alert.getFiringState(), is(notNullValue()));
             assertThat(alert.getFiringState().getFiringTags(), is(empty()));
-            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(lastInterval)));
+            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
         public void testGetFiringAlert() throws IOException {
-            final UUID alertId = firingAlertIds.get(0);
+            final UUID alertId = FIRING_IDS.get(0);
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
                     Helpers.contextComponents(),
                     () -> _controller.get(alertId));
@@ -225,7 +224,7 @@ public final class AlertControllerTest {
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
             assertThat(alert.getFiringState(), is(notNullValue()));
             assertThat(alert.getFiringState().getFiringTags(), is(not(empty())));
-            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(lastInterval)));
+            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -262,13 +261,13 @@ public final class AlertControllerTest {
         @Parameterized.Parameters(name = "Query firing={0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    // FIXME: This should really have the filtered total as
+                    // TODO(cbriones): This should really have the filtered total as
                     // another parameter, but  right now we cannot know that value
                     // up front that since the filter / join is done on the fly
                     // within AlertController
                     {null, TOTAL_ALERT_COUNT},
-                    {true, firingAlertIds.size()},
-                    {false, notFiringAlertIds.size()},
+                    {true, FIRING_IDS.size()},
+                    {false, NOT_FIRING_IDS.size()},
             });
         }
 
@@ -283,16 +282,16 @@ public final class AlertControllerTest {
             assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
 
             final List<UUID> retrieved =
-                    Stream.of(objectMapper.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
+                    Stream.of(OBJECT_MAPPER.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
                             .map(models.view.alerts.Alert::getId)
                             .collect(ImmutableList.toImmutableList());
 
             assertThat(retrieved.size(), is(equalTo(_expectedAlertCount)));
             if (_filter == null || _filter) {
-                assertThat(firingAlertIds, everyItem(is(in(retrieved))));
+                assertThat(FIRING_IDS, everyItem(is(in(retrieved))));
             }
             if (_filter == null || !_filter) {
-                assertThat(notFiringAlertIds, everyItem(is(in(retrieved))));
+                assertThat(NOT_FIRING_IDS, everyItem(is(in(retrieved))));
             }
         }
 
@@ -310,7 +309,7 @@ public final class AlertControllerTest {
                 final JsonNode page = WebServerHelper.readContentAsJson(result);
                 assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
                 assertThat(page.get("pagination").get("size").asInt(), is(lessThanOrEqualTo(pageSize)));
-                Stream.of(objectMapper.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
+                Stream.of(OBJECT_MAPPER.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
                         .map(models.view.alerts.Alert::getId)
                         .forEach(retrievedBuilder::add);
                 assertThat(result.status(), is(equalTo(Helpers.OK)));
@@ -318,10 +317,10 @@ public final class AlertControllerTest {
             final ImmutableSet<UUID> retrieved = retrievedBuilder.build();
             assertThat(retrieved.size(), is(equalTo(_expectedAlertCount)));
             if (_filter == null || _filter) {
-                assertThat(firingAlertIds, everyItem(is(in(retrieved))));
+                assertThat(FIRING_IDS, everyItem(is(in(retrieved))));
             }
             if (_filter == null || !_filter) {
-                assertThat(notFiringAlertIds, everyItem(is(in(retrieved))));
+                assertThat(NOT_FIRING_IDS, everyItem(is(in(retrieved))));
             }
         }
     }

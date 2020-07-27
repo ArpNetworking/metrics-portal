@@ -137,15 +137,11 @@ public class AlertController extends Controller {
                 .limit(argLimit)
                 .offset(argOffset.orElse(0)).execute();
 
-        // TODO: ETag support requires us to munge the alert model along with
-        // its firing state here in the controller, since they are stored
-        // separately.
-
         final Predicate<models.view.alerts.Alert> alertFilter = Optional.ofNullable(firing)
                 .map(this::createFiringFilter)
                 .orElse(alert -> true);
 
-        // FIXME(cbriones): The total here represents the total of all alerts, regardless of the filter.
+        // TODO(cbriones): The total here represents the total of all alerts, regardless of the filter.
         //
         // We can't get the count of only firing=True, for example, without
         // walking the entire table for firing alerts and reading the contents

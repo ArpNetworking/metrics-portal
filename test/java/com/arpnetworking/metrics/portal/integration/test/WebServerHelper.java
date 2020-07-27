@@ -18,7 +18,6 @@ package com.arpnetworking.metrics.portal.integration.test;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.java.util.function.SingletonSupplier;
 import com.arpnetworking.testing.SerializationTestUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -90,18 +89,7 @@ public final class WebServerHelper {
     }
 
     /**
-     * Return the response content as a {@code byte[]}.
-     *
-     * @param response the {@code CloseableHttpResponse} to read
-     * @return response content as a {@code byte[]}
-     * @throws IOException if reading the response content fails
-     */
-    public static byte[] readContentAsBytes(final CloseableHttpResponse response) throws IOException {
-        return readContent(response).toByteArray();
-    }
-
-    /**
-     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     * Return the response content as a {@code JsonNode}.
      *
      * @param <T> the type of object to deserialize
      * @param response the {@code CloseableHttpResponse} to read
@@ -113,19 +101,27 @@ public final class WebServerHelper {
         return SerializationTestUtils.getApiObjectMapper().readValue(readContentAsString(response), clazz);
     }
 
-    public static <T> T readContentAs(final CloseableHttpResponse response, final TypeReference<T> clazz) throws IOException {
-        return SerializationTestUtils.getApiObjectMapper().readValue(readContentAsString(response), clazz);
-    }
-
+    /**
+     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     *
+     * @param result the play {@code Result} to read
+     * @return response content as a {@code JsonNode}
+     * @throws IOException if reading the response content fails
+     */
     public static JsonNode readContentAsJson(final Result result) throws IOException {
         return SerializationTestUtils.getApiObjectMapper().readTree(Helpers.contentAsString(result));
     }
 
+    /**
+     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     *
+     * @param <T> the type of object to deserialize
+     * @param result the play {@code Result} to read
+     * @param clazz the class to deserialize
+     * @return response content as a {@code T}
+     * @throws IOException if reading the response content fails
+     */
     public static <T> T readContentAs(final Result result, final Class<T> clazz) throws IOException {
-        return SerializationTestUtils.getApiObjectMapper().readValue(Helpers.contentAsString(result), clazz);
-    }
-
-    public static <T> T readContentAs(final Result result, final TypeReference<T> clazz) throws IOException {
         return SerializationTestUtils.getApiObjectMapper().readValue(Helpers.contentAsString(result), clazz);
     }
 
