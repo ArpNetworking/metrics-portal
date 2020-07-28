@@ -23,12 +23,9 @@ import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.testing.SerializationTestUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.typesafe.config.ConfigFactory;
 import models.internal.MetricsQueryFormat;
 import models.internal.Organization;
 import models.internal.QueryResult;
@@ -37,32 +34,32 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
+import models.view.alerts.AlertFiringState;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import play.mvc.Result;
 import play.test.Helpers;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 
+import static controllers.AlertControllerTest.OptionalMatchers.presentAnd;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -76,7 +73,6 @@ import static org.junit.Assert.assertThat;
  */
 @RunWith(Enclosed.class)
 public final class AlertControllerTest {
-    private static final int ALERT_PAGE_LIMIT = 1000;
     private static final Instant LAST_INTERVAL = Instant.now();
 
     private static final List<UUID> FIRING_IDS = Stream.of(
@@ -94,8 +90,6 @@ public final class AlertControllerTest {
             "09d7212f-06b8-4b91-a6f9-384350190cfc",
             "ce7347cd-9d05-44d1-ac36-f868a14b7c49"
     ).map(UUID::fromString).collect(ImmutableList.toImmutableList());
-
-    private static final int TOTAL_ALERT_COUNT = FIRING_IDS.size() + NOT_FIRING_IDS.size();
 
     private static final Map<String, Object> MOCK_METADATA = ImmutableMap.of(
             "foo", "bar",
@@ -123,7 +117,7 @@ public final class AlertControllerTest {
             final AlertExecutionRepository alertExecutionRepository = new MapExecutionRepository();
             alertExecutionRepository.open();
 
-            final Map<UUID, Alert> mockAlerts = populateAlertDatabases(alertExecutionRepository);
+            final Map<UUID, Alert> mockAlerts = populateAlertExecutions(alertExecutionRepository);
             final AlertRepository alertRepository = new PluggableAlertRepository(
                     OBJECT_MAPPER,
                     _organization.getId(),
@@ -132,16 +126,13 @@ public final class AlertControllerTest {
             alertRepository.open();
 
             _controller = new AlertController(
-                    ConfigFactory.parseMap(ImmutableMap.of(
-                            "alerts.limit", ALERT_PAGE_LIMIT
-                    )),
                     alertRepository,
                     alertExecutionRepository,
                     organizationRepository
             );
         }
 
-        private Map<UUID, Alert> populateAlertDatabases(final AlertExecutionRepository alertExecutionRepository) {
+        private Map<UUID, Alert> populateAlertExecutions(final AlertExecutionRepository alertExecutionRepository) {
             final Map<UUID, Alert> mockAlerts =
                     Stream.concat(FIRING_IDS.stream(), NOT_FIRING_IDS.stream())
                             .map(this::mockAlert)
@@ -204,9 +195,8 @@ public final class AlertControllerTest {
             assertThat(alert.getDescription(), is(notNullValue()));
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
-            assertThat(alert.getFiringState(), is(notNullValue()));
-            assertThat(alert.getFiringState().getFiringTags(), is(empty()));
-            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(alert.getFiringState().get().getFiringTags(), is(empty()));
+            assertThat(alert.getFiringState().flatMap(AlertFiringState::getLastEvaluatedAt).get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -222,9 +212,8 @@ public final class AlertControllerTest {
             assertThat(alert.getDescription(), is(notNullValue()));
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
-            assertThat(alert.getFiringState(), is(notNullValue()));
-            assertThat(alert.getFiringState().getFiringTags(), is(not(empty())));
-            assertThat(alert.getFiringState().getLastEvaluatedAt(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(alert.getFiringState().get().getFiringTags(), is(not(empty())));
+            assertThat(alert.getFiringState().flatMap(AlertFiringState::getLastEvaluatedAt).get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -238,90 +227,33 @@ public final class AlertControllerTest {
 
     }
 
-    /**
-     * Tests for the {@link AlertController#query} endpoint.
-     *
-     * These tests are parameterized by the alert firing filter.
-     */
-    @RunWith(Parameterized.class)
-    public static final class TestQueryAlerts extends SharedSetup {
+    public static final class OptionalMatchers {
+        public static <T> Matcher<Optional<T>> present() {
+            return new TypeSafeMatcher<Optional<T>>() {
+                @Override
+                public void describeTo(final Description description) {
+                    description.appendText("present");
+                }
 
-        @Nullable
-        private final Boolean _filter;
-        private final int _expectedAlertCount;
-
-        public TestQueryAlerts(
-                @Nullable final Boolean filter,
-                final int expectedAlertCount
-        ) {
-            _filter = filter;
-            _expectedAlertCount = expectedAlertCount;
+                @Override
+                protected boolean matchesSafely(final Optional<T> t) {
+                    return t.isPresent();
+                }
+            };
         }
 
-        @Parameterized.Parameters(name = "Query firing={0}")
-        public static Collection<Object[]> values() {
-            return Arrays.asList(new Object[][]{
-                    // TODO(cbriones): This should really have the filtered total as
-                    // another parameter, but  right now we cannot know that value
-                    // up front that since the filter / join is done on the fly
-                    // within AlertController
-                    {null, TOTAL_ALERT_COUNT},
-                    {true, FIRING_IDS.size()},
-                    {false, NOT_FIRING_IDS.size()},
-            });
-        }
+        public static <T> Matcher<Optional<T>> presentAnd(final Matcher<T> matcher) {
+            return new TypeSafeMatcher<Optional<T>>() {
+                @Override
+                public void describeTo(final Description description) {
+                    description.appendText("present and");
+                }
 
-        @Test
-        public void testQueryAlertsSinglePage() throws Exception {
-            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                    () -> _controller.query(ALERT_PAGE_LIMIT, 0, _filter)
-            );
-            assertThat(result.status(), is(equalTo(Helpers.OK)));
-            final JsonNode page = WebServerHelper.readContentAsJson(result);
-            assertThat(page.get("pagination").get("size").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
-            assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
-
-            final List<UUID> retrieved =
-                    Stream.of(OBJECT_MAPPER.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
-                            .map(models.view.alerts.Alert::getId)
-                            .collect(ImmutableList.toImmutableList());
-
-            assertThat(retrieved.size(), is(equalTo(_expectedAlertCount)));
-            if (_filter == null || _filter) {
-                assertThat(FIRING_IDS, everyItem(is(in(retrieved))));
-            }
-            if (_filter == null || !_filter) {
-                assertThat(NOT_FIRING_IDS, everyItem(is(in(retrieved))));
-            }
-        }
-
-        @Test
-        public void testQueryAlertsPaginating() throws IOException {
-            final int pageSize = 2;
-            final int numPages = TOTAL_ALERT_COUNT / pageSize + 1;
-
-            final ImmutableSet.Builder<UUID> retrievedBuilder = new ImmutableSet.Builder<>();
-            for (int pageNo = 0; pageNo < numPages; pageNo++) {
-                final int offset = pageNo * pageSize;
-                final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                        () -> _controller.query(pageSize, offset, _filter)
-                );
-                final JsonNode page = WebServerHelper.readContentAsJson(result);
-                assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
-                assertThat(page.get("pagination").get("size").asInt(), is(lessThanOrEqualTo(pageSize)));
-                Stream.of(OBJECT_MAPPER.treeToValue(page.get("data"), models.view.alerts.Alert[].class))
-                        .map(models.view.alerts.Alert::getId)
-                        .forEach(retrievedBuilder::add);
-                assertThat(result.status(), is(equalTo(Helpers.OK)));
-            }
-            final ImmutableSet<UUID> retrieved = retrievedBuilder.build();
-            assertThat(retrieved.size(), is(equalTo(_expectedAlertCount)));
-            if (_filter == null || _filter) {
-                assertThat(FIRING_IDS, everyItem(is(in(retrieved))));
-            }
-            if (_filter == null || !_filter) {
-                assertThat(NOT_FIRING_IDS, everyItem(is(in(retrieved))));
-            }
+                @Override
+                protected boolean matchesSafely(final Optional<T> t) {
+                    return t.isPresent() && matcher.matches(t.get());
+                }
+            };
         }
     }
 

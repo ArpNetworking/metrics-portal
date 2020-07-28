@@ -16,7 +16,6 @@
 package models.view.alerts;
 
 import com.arpnetworking.logback.annotations.Loggable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
@@ -69,11 +68,7 @@ public final class Alert {
             firingState.setLastEvaluatedAt(lastEvaluatedAt);
             firingState.setFiringTags(result.getFiringTags());
             return firingState;
-        }).orElseGet(() -> {
-            final AlertFiringState firingState = new AlertFiringState();
-            firingState.setFiringTags(ImmutableList.of());
-            return firingState;
-        });
+        }).orElseGet(AlertFiringState::new);
 
         return alert;
     }
@@ -123,8 +118,7 @@ public final class Alert {
         _additionalMetadata = value;
     }
 
-    @Nullable
-    public AlertFiringState getFiringState() {
-        return _firingState;
+    public Optional<AlertFiringState> getFiringState() {
+        return Optional.ofNullable(_firingState);
     }
 }

@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.time.Instant;
+import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Nested view model for an alert's firing state.
@@ -31,13 +33,24 @@ import java.time.Instant;
  */
 @Loggable
 public final class AlertFiringState {
+    @Nullable
     private Instant _lastEvaluatedAt;
-    private ImmutableList<ImmutableMap<String, String>> _firingTags;
+    private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 
-    public Instant getLastEvaluatedAt() {
-        return _lastEvaluatedAt;
+    /**
+     * Get the last evaluated time, if any.
+     *
+     * @return lastEvaluated the instant this alert was last evaluated.
+     */
+    public Optional<Instant> getLastEvaluatedAt() {
+        return Optional.ofNullable(_lastEvaluatedAt);
     }
 
+    /**
+     * Get the list of firing tag sets for this alert.
+     *
+     * @return The list of firing tag sets.
+     */
     public ImmutableList<ImmutableMap<String, String>> getFiringTags() {
         return _firingTags;
     }
@@ -47,7 +60,7 @@ public final class AlertFiringState {
      *
      * @param lastEvaluated the instant this alert was last evaluated.
      */
-    public void setLastEvaluatedAt(final Instant lastEvaluated) {
+    public void setLastEvaluatedAt(@Nullable final Instant lastEvaluated) {
         _lastEvaluatedAt = lastEvaluated;
     }
 
