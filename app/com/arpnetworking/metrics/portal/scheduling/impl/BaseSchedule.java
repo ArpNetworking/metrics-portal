@@ -127,6 +127,10 @@ public abstract class BaseSchedule implements Schedule {
 
         /**
          * The earliest time at which the schedule should run. Required. Cannot be null.
+         * <p>
+         * This time cannot be {@link Instant#MIN} since it must correspond to a valid
+         * date. If you need an arbitrary point in the past, you should instead use
+         * {@link Instant#EPOCH}.
          *
          * @param runAtAndAfter The time.
          * @return This instance of {@link Builder}.
@@ -149,7 +153,7 @@ public abstract class BaseSchedule implements Schedule {
 
         @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateRunAtAndAfter(final Instant runAtAndAfter) {
-            return (_runUntil == null) || !runAtAndAfter.isAfter(_runUntil);
+            return !runAtAndAfter.equals(Instant.MIN) && ((_runUntil == null) || !runAtAndAfter.isAfter(_runUntil));
         }
     }
 }
