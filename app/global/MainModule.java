@@ -232,11 +232,16 @@ public class MainModule extends AbstractModule {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
         final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
 
+        // The Epoch start is arbitrary - we can't use Instant.MIN since a ZonedDateTime
+        // cannot be constructed from it.
+        //
+        // All alerts should be unconditionally valid for periodic execution after
+        // some arbitrary point in the past, so the epoch is as good as any.
         final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
                 .setZone(ZoneOffset.UTC)
-                .setRunAtAndAfter(Instant.MIN)
+                .setRunAtAndAfter(Instant.EPOCH)
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }
