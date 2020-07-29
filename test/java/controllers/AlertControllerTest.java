@@ -35,9 +35,6 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
 import models.view.alerts.AlertFiringState;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -47,7 +44,6 @@ import play.test.Helpers;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +51,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static controllers.AlertControllerTest.OptionalMatchers.presentAnd;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -195,8 +190,11 @@ public final class AlertControllerTest {
             assertThat(alert.getDescription(), is(notNullValue()));
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
-            assertThat(alert.getFiringState().get().getFiringTags(), is(empty()));
-            assertThat(alert.getFiringState().flatMap(AlertFiringState::getLastEvaluatedAt).get(), is(greaterThan(LAST_INTERVAL)));
+
+            assertThat(alert.getFiringState().isPresent(), is(true));
+            final AlertFiringState firingState = alert.getFiringState().get();
+            assertThat(firingState.getFiringTags(), is(empty()));
+            assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -212,8 +210,11 @@ public final class AlertControllerTest {
             assertThat(alert.getDescription(), is(notNullValue()));
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
-            assertThat(alert.getFiringState().get().getFiringTags(), is(not(empty())));
-            assertThat(alert.getFiringState().flatMap(AlertFiringState::getLastEvaluatedAt).get(), is(greaterThan(LAST_INTERVAL)));
+
+            assertThat(alert.getFiringState().isPresent(), is(true));
+            final AlertFiringState firingState = alert.getFiringState().get();
+            assertThat(firingState.getFiringTags(), is(not(empty())));
+            assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -225,36 +226,6 @@ public final class AlertControllerTest {
             assertThat(result.status(), is(equalTo(Helpers.NOT_FOUND)));
         }
 
-    }
-
-    public static final class OptionalMatchers {
-        public static <T> Matcher<Optional<T>> present() {
-            return new TypeSafeMatcher<Optional<T>>() {
-                @Override
-                public void describeTo(final Description description) {
-                    description.appendText("present");
-                }
-
-                @Override
-                protected boolean matchesSafely(final Optional<T> t) {
-                    return t.isPresent();
-                }
-            };
-        }
-
-        public static <T> Matcher<Optional<T>> presentAnd(final Matcher<T> matcher) {
-            return new TypeSafeMatcher<Optional<T>>() {
-                @Override
-                public void describeTo(final Description description) {
-                    description.appendText("present and");
-                }
-
-                @Override
-                protected boolean matchesSafely(final Optional<T> t) {
-                    return t.isPresent() && matcher.matches(t.get());
-                }
-            };
-        }
     }
 
     /**
