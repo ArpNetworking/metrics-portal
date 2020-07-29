@@ -135,6 +135,8 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     @Override
     public void preStart() throws Exception {
         super.preStart();
+        // Tick once at startup, then periodically thereafter.
+        self().tell(AntiEntropyTick.INSTANCE, self());
         timers().startPeriodicTimer(
                 ANTI_ENTROPY_PERIODIC_TIMER_NAME,
                 AntiEntropyTick.INSTANCE,
