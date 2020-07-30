@@ -33,9 +33,11 @@ import static org.junit.Assert.assertThat;
 
 /**
  * Unit tests for {@link UnboundedPeriodicSchedule}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class UnboundedPeriodicScheduleTest {
-    private final static Instant CLOCK_START = Instant.parse("2020-07-30T10:00:00Z");
+public final class UnboundedPeriodicScheduleTest {
+    private static final Instant CLOCK_START = Instant.parse("2020-07-30T10:00:00Z");
 
     @Test
     public void testLastRunEmptyOrInThePast() {

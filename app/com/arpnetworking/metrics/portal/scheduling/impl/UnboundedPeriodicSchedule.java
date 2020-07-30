@@ -19,6 +19,8 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 
@@ -80,6 +82,34 @@ public final class UnboundedPeriodicSchedule implements Schedule {
 
     public long getPeriodCount() {
         return _periodCount;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final UnboundedPeriodicSchedule that = (UnboundedPeriodicSchedule) o;
+        return _periodCount == that._periodCount
+                && _period == that._period
+                && Objects.equal(_clock, that._clock);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_period, _periodCount, _clock);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_period", _period)
+                .add("_periodCount", _periodCount)
+                .add("_clock", _clock)
+                .toString();
     }
 
     /**
