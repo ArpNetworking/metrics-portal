@@ -26,7 +26,7 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
-public final class NeverSchedule extends BaseSchedule {
+public final class NeverSchedule extends BoundedSchedule {
 
     /**
      * The only instance of {@code NeverSchedule}, since they're all identical.
@@ -61,7 +61,7 @@ public final class NeverSchedule extends BaseSchedule {
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
-    private static final class Builder extends BaseSchedule.Builder<Builder, NeverSchedule> {
+    private static final class Builder extends BoundedSchedule.Builder<Builder, NeverSchedule> {
 
         private static final Builder INSTANCE = new Builder();
         private Builder() {

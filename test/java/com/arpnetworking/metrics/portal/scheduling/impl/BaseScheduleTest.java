@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Tests for {@link BaseSchedule}.
+ * Tests for {@link BoundedSchedule}.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
@@ -46,7 +46,7 @@ public final class BaseScheduleTest {
 
     private static final Instant T0 = Instant.parse("2018-01-01T00:00:00Z");
 
-    private static final class MinimalSchedule extends BaseSchedule {
+    private static final class MinimalSchedule extends BoundedSchedule {
 
         private MinimalSchedule(final Builder builder) {
             super(builder);
@@ -67,7 +67,7 @@ public final class BaseScheduleTest {
          *
          * @author Spencer Pearson (spencerpearson at dropbox dot com)
          */
-        private static final class Builder extends BaseSchedule.Builder<Builder, MinimalSchedule> {
+        private static final class Builder extends BoundedSchedule.Builder<Builder, MinimalSchedule> {
             private Builder() {
                 super(MinimalSchedule::new);
             }

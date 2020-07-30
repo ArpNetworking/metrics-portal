@@ -35,7 +35,7 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
-public final class PeriodicSchedule extends BaseSchedule {
+public final class PeriodicSchedule extends BoundedSchedule {
 
     private final ChronoUnit _period;
     private final long _periodCount;
@@ -126,7 +126,7 @@ public final class PeriodicSchedule extends BaseSchedule {
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
-    public static final class Builder extends BaseSchedule.Builder<Builder, PeriodicSchedule> {
+    public static final class Builder extends BoundedSchedule.Builder<Builder, PeriodicSchedule> {
         private long _periodCount = 1;
         @NotNull
         private ChronoUnit _period;
