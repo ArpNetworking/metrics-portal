@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -38,6 +39,14 @@ import static org.junit.Assert.assertThat;
  */
 public final class UnboundedPeriodicScheduleTest {
     private static final Instant CLOCK_START = Instant.parse("2020-07-30T10:00:00Z");
+
+    @Test(expected = ConstraintsViolatedException.class)
+    public void testItDisallowsZeroPeriod() {
+        new UnboundedPeriodicSchedule.Builder()
+                .setPeriodCount(0)
+                .setPeriod(ChronoUnit.MINUTES)
+                .build();
+    }
 
     @Test
     public void testLastRunEmptyOrInThePast() {

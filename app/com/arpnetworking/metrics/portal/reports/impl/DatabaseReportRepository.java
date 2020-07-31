@@ -342,10 +342,9 @@ public final class DatabaseReportRepository implements ReportRepository {
             beanOneOff.setRunUntil(internalOneOff.getRunUntil().orElse(null));
             return beanOneOff;
         } else if (internalSchedule instanceof NeverSchedule) {
-            final NeverSchedule internalNever = (NeverSchedule) internalSchedule;
             final ReportSchedule beanNever = new NeverReportSchedule();
             beanNever.setRunAt(Instant.ofEpochSecond(0));
-            beanNever.setRunUntil(internalNever.getRunUntil().orElse(null));
+            beanNever.setRunUntil(null);
             return beanNever;
         }
         throw new IllegalArgumentException("Unsupported internal model: " + internalSchedule.getClass());

@@ -30,8 +30,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Schedule for a job that repeats periodically.
+ * Schedule for a job that repeats periodically within some bounded window of time.
+ * <p>
+ * This schedule respects backfills. If the lastRun is not the most recent period,
+ * the schedule will yield all periods since until it is caught up.
+ * <p>
+ * If this behavior is not required and you only care that a job attempts to execute
+ * periodically, you should instead use a {@code UnboundedPeriodicSchedule}.
  *
+ * @see UnboundedPeriodicSchedule
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable

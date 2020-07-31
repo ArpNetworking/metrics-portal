@@ -28,7 +28,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
- * Abstract base class for {@link Schedule}s.
+ * Abstract base class for {@link Schedule}s whose scheduled run times are bounded on either end.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
@@ -56,7 +56,7 @@ public abstract class BoundedSchedule implements Schedule {
     }
 
     @Override
-    public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
+    public final Optional<Instant> nextRun(final Optional<Instant> lastRun) {
         Optional<Instant> result = unboundedNextRun(lastRun);
         while (result.isPresent() && result.get().isBefore(_runAtAndAfter)) {
             result = unboundedNextRun(result);
