@@ -37,10 +37,12 @@ import java.util.Map;
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
     private final String _seriesName;
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
+    private final ImmutableList<String> _groupBys;
 
     private DefaultAlertEvaluationResult(final Builder builder) {
         _seriesName = builder._seriesName;
         _firingTags = builder._firingTags;
+        _groupBys = builder._groupBys;
     }
 
     @Override
@@ -51,6 +53,11 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     @Override
     public ImmutableList<ImmutableMap<String, String>> getFiringTags() {
         return _firingTags;
+    }
+
+    @Override
+    public ImmutableList<String> getGroupBys() {
+        return _groupBys;
     }
 
     @Override
@@ -87,6 +94,7 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
         @NotNull
         @NotBlank
         private @Nullable String _seriesName;
+        private ImmutableList<String> _groupBys = ImmutableList.of();
 
         /**
          * Default constructor for an empty builder.
@@ -103,6 +111,17 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
          */
         public Builder setSeriesName(@Nullable final String seriesName) {
             _seriesName = seriesName;
+            return this;
+        }
+
+        /**
+         * Set the tag group-bys. Defaults to empty.
+         *
+         * @param groupBys The list of tag group-bys.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setGroupBys(final List<String> groupBys) {
+            _groupBys = ImmutableList.copyOf(groupBys);
             return this;
         }
 

@@ -266,6 +266,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(expectedFiringTags));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
     @Test
@@ -279,6 +280,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
     @Test(expected = ExecutionException.class)

@@ -35,6 +35,7 @@ import javax.annotation.Nullable;
 public final class AlertFiringState {
     @Nullable
     private Instant _lastEvaluatedAt;
+    private ImmutableList<String> _groupBys;
     private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 
     /**
@@ -45,6 +46,16 @@ public final class AlertFiringState {
     public Optional<Instant> getLastEvaluatedAt() {
         return Optional.ofNullable(_lastEvaluatedAt);
     }
+
+    /**
+     * Get the list of firing tag sets for this alert.
+     *
+     * @return The list of firing tag sets.
+     */
+    public ImmutableList<String> getGroupBys() {
+        return _groupBys;
+    }
+
 
     /**
      * Get the list of firing tag sets for this alert.
@@ -62,6 +73,15 @@ public final class AlertFiringState {
      */
     public void setLastEvaluatedAt(@Nullable final Instant lastEvaluated) {
         _lastEvaluatedAt = lastEvaluated;
+    }
+
+    /**
+     * Sets the groupBys.
+     *
+     * @param groupBys the group bys.
+     */
+    public void setGroupBys(final ImmutableList<String> groupBys) {
+        _groupBys = groupBys;
     }
 
     /**

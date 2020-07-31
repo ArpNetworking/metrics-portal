@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
@@ -177,7 +178,7 @@ public final class AlertExecutionContext {
             );
         }
 
-        if (results.size() > 1 && results.stream().anyMatch(res -> !getTagGroup(res).isPresent())) {
+        if (results.size() > 1 && results.stream().anyMatch(res -> !getTagGroupBy(res).isPresent())) {
             throw newCompletionException(
                     PROBLEM_UNEXPECTED_RESULT,
                     "All results must contain a tag group-by if there are multiple results",
@@ -185,15 +186,28 @@ public final class AlertExecutionContext {
             );
         }
 
+        final List<String> groupBys =
+                results.stream()
+                    .map(this::getTagGroupBy)
+                    .flatMap(Streams::stream)
+                    .map(TimeSeriesResult.QueryTagGroupBy::getTags)
+                    .findAny()
+                    .orElse(ImmutableList.of());
+
         final List<Map<String, String>> firingTagGroups =
                 results
                     .stream()
                     .filter(res -> isFiring(res.getValues(), period, scheduled))
-                    .map(res -> getTagGroup(res).orElseGet(ImmutableMap::of))
+                    .map(res ->
+                        getTagGroupBy(res)
+                            .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
+                            .orElseGet(ImmutableMap::of)
+                    )
                     .collect(ImmutableList.toImmutableList());
 
         return new DefaultAlertEvaluationResult.Builder()
                 .setSeriesName(name)
+                .setGroupBys(groupBys)
                 .setFiringTags(firingTagGroups)
                 .build();
     }
@@ -211,14 +225,13 @@ public final class AlertExecutionContext {
         return period.between(mostRecentDatapointTime, adjustedScheduled) == 0;
     }
 
-    private Optional<Map<String, String>> getTagGroup(final TimeSeriesResult.Result result) {
+    private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
         // We don't expect the tag group-by to be the only value in the stream
         // because the histogram plugin uses its own group-by.
         return result.getGroupBy().stream()
                 .filter(g -> g instanceof TimeSeriesResult.QueryTagGroupBy)
                 .map(g -> (TimeSeriesResult.QueryTagGroupBy) g)
-                .findFirst()
-                .map(TimeSeriesResult.QueryTagGroupBy::getGroup);
+                .findFirst();
     }
 
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,

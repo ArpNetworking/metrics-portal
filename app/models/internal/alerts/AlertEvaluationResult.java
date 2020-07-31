@@ -55,6 +55,14 @@ public interface AlertEvaluationResult {
     String getSeriesName();
 
     /**
+     * The list of tag group-bys at the time of evaluation.
+     * <p>
+     * This can be used to distinguish cases where the underlying query changed
+     * between successive evaluations.
+     */
+    ImmutableList<String> getGroupBys();
+
+    /**
      * A list of firing tag-sets at the time of evaluation.
      * <p>
      * If a series is considered firing but has no group by, then this list
