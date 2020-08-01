@@ -17,11 +17,9 @@ package models.view.alerts;
 
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMap;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,7 +37,7 @@ public final class Alert {
     private String _description;
     private boolean _enabled;
     private ImmutableMap<String, Object> _additionalMetadata;
-    private @Nullable AlertFiringState _firingState;
+    private AlertFiringState _firingState;
 
     /**
      * Construct a view model from its internal representation.
@@ -60,16 +58,12 @@ public final class Alert {
         alert._enabled = internal.isEnabled();
         alert._additionalMetadata = internal.getAdditionalMetadata();
 
-        alert._firingState = mostRecentEvaluation.map(evaluation -> {
-            final Instant lastEvaluatedAt = evaluation.getCompletedAt();
-            final AlertEvaluationResult result = evaluation.getResult();
-
-            final AlertFiringState firingState = new AlertFiringState();
-            firingState.setLastEvaluatedAt(lastEvaluatedAt);
-            firingState.setFiringTags(result.getFiringTags());
-            return firingState;
-        }).orElseGet(AlertFiringState::new);
-
+        final AlertFiringState firingState = new AlertFiringState();
+        mostRecentEvaluation.ifPresent(evaluation -> {
+            firingState.setLastEvaluatedAt(evaluation.getCompletedAt());
+            firingState.setFiringTags(evaluation.getResult().getFiringTags());
+        });
+        alert._firingState = firingState;
         return alert;
     }
 
@@ -77,48 +71,47 @@ public final class Alert {
         return _id;
     }
 
-    public String getName() {
-        return _name;
-    }
-
-    public String getDescription() {
-        return _description;
-    }
-
-    public boolean isEnabled() {
-        return _enabled;
-    }
-
     public void setId(final UUID id) {
         _id = id;
+    }
+
+    public String getName() {
+        return _name;
     }
 
     public void setName(final String name) {
         _name = name;
     }
 
+    public String getDescription() {
+        return _description;
+    }
+
     public void setDescription(final String description) {
         _description = description;
+    }
+
+    public boolean isEnabled() {
+        return _enabled;
     }
 
     public void setEnabled(final boolean enabled) {
         _enabled = enabled;
     }
 
-    public void setFiringState(@Nullable final AlertFiringState firingState) {
-        _firingState = firingState;
-    }
-
     public ImmutableMap<String, Object> getAdditionalMetadata() {
         return _additionalMetadata;
     }
-
 
     public void setAdditionalMetadata(final ImmutableMap<String, Object> value) {
         _additionalMetadata = value;
     }
 
-    public Optional<AlertFiringState> getFiringState() {
-        return Optional.ofNullable(_firingState);
+    public AlertFiringState getFiringState() {
+        return _firingState;
+    }
+
+    public void setFiringState(final AlertFiringState firingState) {
+        _firingState = firingState;
     }
 }
