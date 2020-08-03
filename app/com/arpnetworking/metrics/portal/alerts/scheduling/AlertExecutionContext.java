@@ -112,8 +112,15 @@ public final class AlertExecutionContext {
             final ChronoUnit period = _executor.periodHint(query)
                     .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
             final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
+            final Instant queryRangeStart = bounded.getStartTime().toInstant();
+            final Instant queryRangeEnd =
+                    bounded.getEndTime()
+                            .orElseThrow(() ->
+                                    new IllegalStateException("AlertExecutionContext queries must have an explicit end time")
+                            )
+                            .toInstant();
 
-            return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period));
+            return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period, queryRangeStart, queryRangeEnd));
             // CHECKSTYLE.OFF: IllegalCatch - Exception is propagated into the CompletionStage
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -126,7 +133,9 @@ public final class AlertExecutionContext {
     private AlertEvaluationResult toAlertResult(
             final MetricsQueryResult queryResult,
             final Instant scheduled,
-            final ChronoUnit period
+            final ChronoUnit period,
+            final Instant queryRangeStart,
+            final Instant queryRangeEnd
     ) {
 
         // Query result preconditions:
@@ -209,6 +218,8 @@ public final class AlertExecutionContext {
                 .setSeriesName(name)
                 .setGroupBys(groupBys)
                 .setFiringTags(firingTagGroups)
+                .setQueryStartTime(queryRangeStart)
+                .setQueryEndTime(queryRangeEnd)
                 .build();
     }
 
