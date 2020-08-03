@@ -37,6 +37,8 @@ public final class AlertFiringState {
     private Instant _lastEvaluatedAt;
     private ImmutableList<String> _groupBys;
     private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
+    private Instant _queryStartTime;
+    private Instant _queryEndTime;
 
     /**
      * Get the last evaluated time, if any.
@@ -45,6 +47,24 @@ public final class AlertFiringState {
      */
     public Optional<Instant> getLastEvaluatedAt() {
         return Optional.ofNullable(_lastEvaluatedAt);
+    }
+
+    /**
+     * The start of the query time range at the time of last evaluation.
+     *
+     * @return the inclusive start of the query range.
+     */
+    public Instant getQueryStartTime() {
+        return _queryStartTime;
+    }
+
+    /**
+     * The end of the query time range at the time of last evaluation.
+     *
+     * @return the inclusive end of the query range.
+     */
+    public Instant getQueryEndTime() {
+        return _queryEndTime;
     }
 
     /**
@@ -64,6 +84,24 @@ public final class AlertFiringState {
      */
     public ImmutableList<ImmutableMap<String, String>> getFiringTags() {
         return _firingTags;
+    }
+
+    /**
+     * Sets the query start time.
+     *
+     * @param queryStartTime the inclusive start of the query range.
+     */
+    public void setQueryStartTime(final Instant queryStartTime) {
+        _queryStartTime = queryStartTime;
+    }
+
+    /**
+     * Sets the query start time.
+     *
+     * @param queryEndTime the exclusive end of the query range.
+     */
+    public void setQueryEndTime(final Instant queryEndTime) {
+        _queryEndTime = queryEndTime;
     }
 
     /**

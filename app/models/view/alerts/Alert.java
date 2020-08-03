@@ -66,6 +66,8 @@ public final class Alert {
 
             final AlertFiringState firingState = new AlertFiringState();
             firingState.setLastEvaluatedAt(lastEvaluatedAt);
+            firingState.setQueryStartTime(result.getQueryStartTime());
+            firingState.setQueryEndTime(result.getQueryEndTime());
             firingState.setFiringTags(result.getFiringTags());
             return firingState;
         }).orElseGet(AlertFiringState::new);

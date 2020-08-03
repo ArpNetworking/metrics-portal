@@ -68,7 +68,9 @@ import static org.junit.Assert.assertThat;
 @RunWith(Enclosed.class)
 public final class AlertControllerTest {
     private static final Instant LAST_INTERVAL = Instant.now();
-
+    private static final List<String> MOCK_GROUP_BYS = ImmutableList.of("tag");
+    private static final Instant MOCK_QUERY_START = Instant.parse("2020-08-03T10:00:00Z");
+    private static final Instant MOCK_QUERY_END = Instant.parse("2020-08-03T11:00:00Z");
     private static final List<UUID> FIRING_IDS = Stream.of(
             "1e7acce3-cd88-47be-8312-c61ccf88ba07",
             "d2b1ba49-0819-498c-8089-08b8ff15b5bc",
@@ -139,6 +141,9 @@ public final class AlertControllerTest {
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of())
+                        .setGroupBys(MOCK_GROUP_BYS)
+                        .setQueryStartTime(MOCK_QUERY_START)
+                        .setQueryEndTime(MOCK_QUERY_END)
                         .build();
                 alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
@@ -147,6 +152,9 @@ public final class AlertControllerTest {
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of(ImmutableMap.of("tag", "value")))
+                        .setGroupBys(MOCK_GROUP_BYS)
+                        .setQueryStartTime(MOCK_QUERY_START)
+                        .setQueryEndTime(MOCK_QUERY_END)
                         .build();
                 alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
@@ -194,6 +202,9 @@ public final class AlertControllerTest {
             final AlertFiringState firingState = alert.getFiringState().get();
             assertThat(firingState.getFiringTags(), is(empty()));
             assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(firingState.getGroupBys(), is(MOCK_GROUP_BYS));
+            assertThat(firingState.getQueryStartTime(), is(MOCK_QUERY_START));
+            assertThat(firingState.getQueryEndTime(), is(MOCK_QUERY_END));
         }
 
         @Test
@@ -214,6 +225,9 @@ public final class AlertControllerTest {
             final AlertFiringState firingState = alert.getFiringState().get();
             assertThat(firingState.getFiringTags(), is(not(empty())));
             assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(firingState.getGroupBys(), is(MOCK_GROUP_BYS));
+            assertThat(firingState.getQueryStartTime(), is(MOCK_QUERY_START));
+            assertThat(firingState.getQueryEndTime(), is(MOCK_QUERY_END));
         }
 
         @Test
