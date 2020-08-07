@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.scheduling.Schedule;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -26,16 +27,13 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
-public final class NeverSchedule extends BaseSchedule {
-
+public final class NeverSchedule implements Schedule {
     /**
      * The only instance of {@code NeverSchedule}, since they're all identical.
      */
-    private static final NeverSchedule INSTANCE = new NeverSchedule(Builder.INSTANCE);
+    private static final NeverSchedule INSTANCE = new NeverSchedule();
 
-    private NeverSchedule(final Builder builder) {
-        super(builder);
-    }
+    private NeverSchedule() {}
 
     public static NeverSchedule getInstance() {
         return INSTANCE;
@@ -47,30 +45,12 @@ public final class NeverSchedule extends BaseSchedule {
     }
 
     @Override
-    protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
+    public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
         return Optional.empty();
     }
 
     @Override
     public <T> T accept(final Visitor<T> visitor) {
         return visitor.visitNever(this);
-    }
-
-    /**
-     * Implementation of builder pattern for {@link NeverSchedule}.
-     *
-     * @author Spencer Pearson (spencerpearson at dropbox dot com)
-     */
-    private static final class Builder extends BaseSchedule.Builder<Builder, NeverSchedule> {
-
-        private static final Builder INSTANCE = new Builder();
-        private Builder() {
-            super(NeverSchedule::new);
-        }
-
-        @Override
-        protected Builder self() {
-            return this;
-        }
     }
 }

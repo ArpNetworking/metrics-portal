@@ -27,7 +27,7 @@ import java.util.Optional;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 @Loggable
-public final class OneOffSchedule extends BaseSchedule {
+public final class OneOffSchedule extends BoundedSchedule {
 
     private OneOffSchedule(final Builder builder) {
         super(builder);
@@ -62,7 +62,7 @@ public final class OneOffSchedule extends BaseSchedule {
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
-    public static final class Builder extends BaseSchedule.Builder<Builder, OneOffSchedule> {
+    public static final class Builder extends BoundedSchedule.Builder<Builder, OneOffSchedule> {
         /**
          * Public constructor.
          */
