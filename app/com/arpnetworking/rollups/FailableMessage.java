@@ -35,18 +35,19 @@ public abstract class FailableMessage implements Serializable {
      * @param builder subclass builder
      */
     protected FailableMessage(final Builder<?, ?> builder) {
-        _failure = Optional.ofNullable(builder._failure);
+        _failure = builder._failure;
     }
 
     public boolean isFailure() {
-        return _failure.isPresent();
+        return _failure != null;
     }
 
     public Optional<Throwable> getFailure() {
-        return _failure;
+        return Optional.ofNullable(_failure);
     }
 
-    private final Optional<Throwable> _failure;
+    @Nullable
+    private final Throwable _failure;
     private static final long serialVersionUID = -255159605861224426L;
 
 
