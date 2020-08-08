@@ -72,7 +72,9 @@ public final class LastDataPointsMessage extends FailableMessage {
     private final String _rollupMetricName;
     private final RollupPeriod _period;
     private final ImmutableMultimap<String, String> _tags;
+    @Nullable
     private final Instant _sourceLastDataPointTime;
+    @Nullable
     private final Instant _rollupLastDataPointTime;
     private static final long serialVersionUID = 2800761302248621189L;
 

@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -315,6 +316,11 @@ public final class ReportExecutionContext {
 
         public static TimeRangeVisitor getInstance() {
             return INSTANCE;
+        }
+
+        @Override
+        public ChronoUnit visitUnboundedPeriodic(final UnboundedPeriodicSchedule schedule) {
+            throw new UnsupportedOperationException("Schedule type is unsupported by reporting");
         }
 
         @Override
