@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.testkit.javadsl.TestKit;
@@ -127,8 +126,8 @@ public class JobCoordinatorTest {
                 _periodicMetrics);
     }
 
-    private ActorRef makeCoordinatorActor() {
-        return _system.actorOf(makeCoordinatorActorProps());
+    private void makeCoordinatorActor() {
+        _system.actorOf(makeCoordinatorActorProps());
     }
 
     @Test
@@ -146,8 +145,8 @@ public class JobCoordinatorTest {
                 .setResult(456)
                 .build());
 
-        final ActorRef coordinator = makeCoordinatorActor();
-        coordinator.tell(JobCoordinator.AntiEntropyTick.INSTANCE, null);
+        // start the actor which will trigger an initial anti-entropy run.
+        makeCoordinatorActor();
 
         _messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
                         .setJobRef(makeRef(job1))

@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
+import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -28,11 +29,18 @@ import java.util.Optional;
  */
 public final class BaseScheduleTest {
 
-    @Test(expected = net.sf.oval.exception.ConstraintsViolatedException.class)
+    @Test(expected = ConstraintsViolatedException.class)
     public void testBuilderRejectsRunAfterAfterRunUntil() {
         new MinimalSchedule.Builder()
                 .setRunAtAndAfter(T0)
                 .setRunUntil(T0.minus(Duration.ofSeconds(1)))
+                .build();
+    }
+
+    @Test(expected = ConstraintsViolatedException.class)
+    public void testCannotSetRunAtToTheMinInstant() {
+        new MinimalSchedule.Builder()
+                .setRunAtAndAfter(Instant.MIN)
                 .build();
     }
 

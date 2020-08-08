@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 
 /**
  * Nested view model for an alert's firing state.
- *
+ * <p>
  * Play view models are mutable.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
