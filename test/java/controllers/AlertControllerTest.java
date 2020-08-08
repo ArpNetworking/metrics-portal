@@ -17,6 +17,7 @@ package controllers;
 
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.config.impl.PassthroughConfigProvider;
 import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
@@ -46,7 +47,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.empty;
@@ -110,11 +110,15 @@ public final class AlertControllerTest {
             final AlertExecutionRepository alertExecutionRepository = new MapExecutionRepository();
             alertExecutionRepository.open();
 
-            final Map<UUID, Alert> mockAlerts = populateAlertExecutions(alertExecutionRepository);
+            final ImmutableList<Alert> mockAlerts = populateAlertExecutions(alertExecutionRepository);
+            final PassthroughConfigProvider configProvider = new PassthroughConfigProvider(
+                    PluggableAlertRepository.AlertGroup.fromInternal(mockAlerts),
+                    OBJECT_MAPPER
+            );
             final AlertRepository alertRepository = new PluggableAlertRepository(
                     OBJECT_MAPPER,
-                    _organization.getId(),
-                    mockAlerts
+                    configProvider,
+                    _organization.getId()
             );
             alertRepository.open();
 
@@ -125,31 +129,27 @@ public final class AlertControllerTest {
             );
         }
 
-        private Map<UUID, Alert> populateAlertExecutions(final AlertExecutionRepository alertExecutionRepository) {
-            final Map<UUID, Alert> mockAlerts =
-                    Stream.concat(FIRING_IDS.stream(), NOT_FIRING_IDS.stream())
-                            .map(this::mockAlert)
-                            .collect(ImmutableMap.toImmutableMap(
-                                    Alert::getId,
-                                    Function.identity()
-                            ));
-            for (UUID firingId : NOT_FIRING_IDS) {
-                final Alert alert = mockAlerts.get(firingId);
+        private ImmutableList<Alert> populateAlertExecutions(final AlertExecutionRepository alertExecutionRepository) {
+            final ImmutableList.Builder<Alert> mockAlerts = new ImmutableList.Builder<>();
+            for (UUID alertId : NOT_FIRING_IDS) {
+                final Alert alert = mockAlert(alertId);
+                mockAlerts.add(alert);
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of())
                         .build();
                 alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
-            for (UUID firingId : FIRING_IDS) {
-                final Alert alert = mockAlerts.get(firingId);
+            for (UUID alertId : FIRING_IDS) {
+                final Alert alert = mockAlert(alertId);
+                mockAlerts.add(alert);
                 final AlertEvaluationResult firingResult = new DefaultAlertEvaluationResult.Builder()
                         .setSeriesName(alert.getName())
                         .setFiringTags(ImmutableList.of(ImmutableMap.of("tag", "value")))
                         .build();
                 alertExecutionRepository.jobSucceeded(alert.getId(), _organization, LAST_INTERVAL, firingResult);
             }
-            return mockAlerts;
+            return mockAlerts.build();
         }
 
         private Alert mockAlert(final UUID alertId) {

@@ -89,7 +89,7 @@ public final class WebServerHelper {
     }
 
     /**
-     * Return the response content as a {@code JsonNode}.
+     * Return the response content as an arbitrary class, by deserializing with Jackson.
      *
      * @param <T> the type of object to deserialize
      * @param response the {@code CloseableHttpResponse} to read
@@ -102,7 +102,7 @@ public final class WebServerHelper {
     }
 
     /**
-     * Return the response content as an arbitrary class, by deserializing with Jackson.
+     * Return the response content as a {@code JsonNode}.
      *
      * @param result the play {@code Result} to read
      * @return response content as a {@code JsonNode}
