@@ -17,9 +17,11 @@ package models.view.alerts;
 
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMap;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,7 +39,7 @@ public final class Alert {
     private String _description;
     private boolean _enabled;
     private ImmutableMap<String, Object> _additionalMetadata;
-    private AlertFiringState _firingState;
+    private Optional<AlertFiringState> _firingState;
 
     /**
      * Construct a view model from its internal representation.
@@ -58,12 +60,13 @@ public final class Alert {
         alert._enabled = internal.isEnabled();
         alert._additionalMetadata = internal.getAdditionalMetadata();
 
-        final AlertFiringState firingState = new AlertFiringState();
-        mostRecentEvaluation.ifPresent(evaluation -> {
+        alert._firingState = mostRecentEvaluation.map(evaluation -> {
+            final AlertFiringState firingState = new AlertFiringState();
             firingState.setLastEvaluatedAt(evaluation.getCompletedAt());
             firingState.setFiringTags(evaluation.getResult().getFiringTags());
+            return firingState;
         });
-        alert._firingState = firingState;
+
         return alert;
     }
 
@@ -107,11 +110,11 @@ public final class Alert {
         _additionalMetadata = value;
     }
 
-    public AlertFiringState getFiringState() {
+    public Optional<AlertFiringState> getFiringState() {
         return _firingState;
     }
 
-    public void setFiringState(final AlertFiringState firingState) {
+    public void setFiringState(final Optional<AlertFiringState> firingState) {
         _firingState = firingState;
     }
 }

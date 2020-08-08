@@ -35,6 +35,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
+import models.view.alerts.AlertFiringState;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -189,8 +190,10 @@ public final class AlertControllerTest {
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
 
-            assertThat(alert.getFiringState().getFiringTags(), is(empty()));
-            assertThat(alert.getFiringState().getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(alert.getFiringState().isPresent(), is(true));
+            final AlertFiringState firingState = alert.getFiringState().get();
+            assertThat(firingState.getFiringTags(), is(empty()));
+            assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
@@ -207,8 +210,10 @@ public final class AlertControllerTest {
             assertThat(alert.getName(), is(notNullValue()));
             assertThat(alert.getAdditionalMetadata(), is(equalTo(MOCK_METADATA)));
 
-            assertThat(alert.getFiringState().getFiringTags(), is(not(empty())));
-            assertThat(alert.getFiringState().getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
+            assertThat(alert.getFiringState().isPresent(), is(true));
+            final AlertFiringState firingState = alert.getFiringState().get();
+            assertThat(firingState.getFiringTags(), is(not(empty())));
+            assertThat(firingState.getLastEvaluatedAt().get(), is(greaterThan(LAST_INTERVAL)));
         }
 
         @Test
