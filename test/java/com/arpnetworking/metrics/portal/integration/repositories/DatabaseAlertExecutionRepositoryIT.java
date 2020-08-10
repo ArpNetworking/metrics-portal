@@ -32,6 +32,7 @@ import models.internal.impl.DefaultAlertEvaluationResult;
 import org.mockito.Mockito;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -75,9 +76,13 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
 
     @Override
     AlertEvaluationResult newResult() {
+        final Instant queryEnd = Instant.now();
         return new DefaultAlertEvaluationResult.Builder()
                 .setSeriesName("example-series")
                 .setFiringTags(ImmutableList.of(ImmutableMap.of("tag-name", "tag-value")))
+                .setGroupBys(ImmutableList.of("tag-name"))
+                .setQueryStartTime(queryEnd.minus(Duration.ofMinutes(1)))
+                .setQueryEndTime(queryEnd)
                 .build();
     }
 }
