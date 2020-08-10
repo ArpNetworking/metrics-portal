@@ -191,6 +191,26 @@ public class AlertExecutionContextTest {
     }
 
     @Test
+    public void testItSetsTheQueryRangeOnTheResult() throws Exception {
+        final Instant scheduled = Instant.now();
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
+        final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
+        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
+        when(_executor.executeQuery(captor.capture())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result =
+                _context.execute(_alert, scheduled)
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        final BoundedMetricsQuery captured = captor.getValue();
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+        assertThat(result.getQueryStartTime(), equalTo(captured.getStartTime().toInstant()));
+        assertThat(result.getQueryEndTime(), equalTo(captured.getEndTime().get().toInstant()));
+    }
+
+    @Test
     public void testSingleSeriesNotFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
@@ -202,6 +222,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
     }
 
     @Test
@@ -215,6 +236,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of(ImmutableMap.of())));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
     }
 
     @Test
@@ -228,6 +250,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of(ImmutableMap.of("os", "linux"))));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
     @Test
@@ -235,18 +258,20 @@ public class AlertExecutionContextTest {
         final ChronoUnit period = ChronoUnit.HOURS;
         when(_executor.periodHint(any())).thenReturn(Optional.of(period));
 
+        final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
-                LATEST_TIMESTAMP_MS, Instant.now().minus(1, period).toEpochMilli()
+                LATEST_TIMESTAMP_MS, scheduled.minus(1, period).toEpochMilli()
         ));
 
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
-            _context.execute(_alert, Instant.now())
+            _context.execute(_alert, scheduled)
                     .toCompletableFuture()
                     .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(ImmutableList.of()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
     }
 
     @Test
@@ -266,6 +291,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), equalTo(expectedFiringTags));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
     @Test
@@ -279,6 +305,7 @@ public class AlertExecutionContextTest {
 
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
     @Test(expected = ExecutionException.class)

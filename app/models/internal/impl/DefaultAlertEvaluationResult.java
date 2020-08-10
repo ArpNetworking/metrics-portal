@@ -26,6 +26,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import net.sf.oval.constraint.NotBlank;
 import net.sf.oval.constraint.NotNull;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -37,10 +38,16 @@ import java.util.Map;
 public final class DefaultAlertEvaluationResult implements AlertEvaluationResult {
     private final String _seriesName;
     private final ImmutableList<ImmutableMap<String, String>> _firingTags;
+    private final ImmutableList<String> _groupBys;
+    private final Instant _queryEndTime;
+    private final Instant _queryStartTime;
 
     private DefaultAlertEvaluationResult(final Builder builder) {
         _seriesName = builder._seriesName;
         _firingTags = builder._firingTags;
+        _groupBys = builder._groupBys;
+        _queryStartTime = builder._queryStartTime;
+        _queryEndTime = builder._queryEndTime;
     }
 
     @Override
@@ -49,8 +56,23 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
     }
 
     @Override
+    public Instant getQueryStartTime() {
+        return _queryStartTime;
+    }
+
+    @Override
+    public Instant getQueryEndTime() {
+        return _queryEndTime;
+    }
+
+    @Override
     public ImmutableList<ImmutableMap<String, String>> getFiringTags() {
         return _firingTags;
+    }
+
+    @Override
+    public ImmutableList<String> getGroupBys() {
+        return _groupBys;
     }
 
     @Override
@@ -82,11 +104,18 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
      * Builder class for instances of {@code DefaultAlertEvaluationResult}.
      */
     public static class Builder extends OvalBuilder<DefaultAlertEvaluationResult> {
+        @NotNull
+        private Instant _queryStartTime;
+        @NotNull
+        private Instant _queryEndTime;
+        @NotNull
         private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
 
         @NotNull
         @NotBlank
         private @Nullable String _seriesName;
+        @NotNull
+        private ImmutableList<String> _groupBys = ImmutableList.of();
 
         /**
          * Default constructor for an empty builder.
@@ -107,7 +136,40 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
         }
 
         /**
-         * Set the firing tags. Defaults to empty.
+         * Set the tag group-bys. Defaults to empty. Cannot be null.
+         *
+         * @param groupBys The list of tag group-bys.
+         * @return This instance of {@code Builder}.
+         */
+        public Builder setGroupBys(final List<String> groupBys) {
+            _groupBys = ImmutableList.copyOf(groupBys);
+            return this;
+        }
+
+        /**
+         * Sets the inclusive query start time. Required. Cannot be null.
+         *
+         * @param queryStartTime the query start time.
+         * @return This instance of {@code Builder} for chaining.
+         */
+        public Builder setQueryStartTime(final Instant queryStartTime) {
+            _queryStartTime = queryStartTime;
+            return this;
+        }
+
+        /**
+         * Sets the exclusive query end time. Required. Cannot be null.
+         *
+         * @param queryEndTime the query end time.
+         * @return This instance of {@code Builder} for chaining.
+         */
+        public Builder setQueryEndTime(final Instant queryEndTime) {
+            _queryEndTime = queryEndTime;
+            return this;
+        }
+
+        /**
+         * Set the firing tags. Defaults to empty. Cannot be null.
          *
          * @param firingTags The set of firing tags.
          * @return This instance of {@code Builder}.

@@ -61,6 +61,9 @@ public final class Alert {
         alert._firingState = mostRecentEvaluation.map(evaluation -> {
             final AlertFiringState firingState = new AlertFiringState();
             firingState.setLastEvaluatedAt(evaluation.getCompletedAt());
+            firingState.setQueryStartTime(evaluation.getResult().getQueryStartTime());
+            firingState.setQueryEndTime(evaluation.getResult().getQueryEndTime());
+            firingState.setGroupBys(evaluation.getResult().getGroupBys());
             firingState.setFiringTags(evaluation.getResult().getFiringTags());
             return firingState;
         });

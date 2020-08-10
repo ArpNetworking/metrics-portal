@@ -16,12 +16,15 @@
 
 package models.internal.alerts;
 
+import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
+
+import java.time.Instant;
 
 /**
  * The result of evaluating an Alert.
@@ -53,6 +56,40 @@ public interface AlertEvaluationResult {
      * @return the series name.
      */
     String getSeriesName();
+
+    /**
+     * The start of the query time range at the time of evaluation.
+     * <p>
+     * Since {@link AlertExecutionContext} controls the actual range being queried,
+     * this is not simply {@code Instant.now() - queryPeriod}.
+     *
+     * @return The inclusive start of the time range.
+     */
+    Instant getQueryStartTime();
+
+    /**
+     * The end of the query time range at the time of evaluation.
+     * <p>
+     * Since {@link AlertExecutionContext} controls the actual range being queried,
+     * this is not simply {@code Instant.now()}.
+     *
+     * @return The exclusive end of the time range.
+     */
+    Instant getQueryEndTime();
+
+    /**
+     * The list of tag group-bys at the time of evaluation.
+     * <p>
+     * Since alert queries are not parsed until evaluation, this can be used to
+     * determine which tags were actually queried.
+     * <p>
+     * It also enables distinguishing series which differ by a group-by.
+     * Otherwise, all non-firing variants of the same query would be identical
+     * since their firingTag sets would each be empty.
+     *
+     * @return The tag group bys.
+     */
+    ImmutableList<String> getGroupBys();
 
     /**
      * A list of firing tag-sets at the time of evaluation.

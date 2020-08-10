@@ -35,7 +35,10 @@ import javax.annotation.Nullable;
 public final class AlertFiringState {
     @Nullable
     private Instant _lastEvaluatedAt;
+    private ImmutableList<String> _groupBys;
     private ImmutableList<ImmutableMap<String, String>> _firingTags = ImmutableList.of();
+    private Instant _queryStartTime;
+    private Instant _queryEndTime;
 
     /**
      * Get the last evaluated time, if any.
@@ -47,6 +50,34 @@ public final class AlertFiringState {
     }
 
     /**
+     * The start of the query time range at the time of last evaluation.
+     *
+     * @return the inclusive start of the query range.
+     */
+    public Instant getQueryStartTime() {
+        return _queryStartTime;
+    }
+
+    /**
+     * The end of the query time range at the time of last evaluation.
+     *
+     * @return the inclusive end of the query range.
+     */
+    public Instant getQueryEndTime() {
+        return _queryEndTime;
+    }
+
+    /**
+     * Get the list of firing tag sets for this alert.
+     *
+     * @return The list of firing tag sets.
+     */
+    public ImmutableList<String> getGroupBys() {
+        return _groupBys;
+    }
+
+
+    /**
      * Get the list of firing tag sets for this alert.
      *
      * @return The list of firing tag sets.
@@ -56,12 +87,39 @@ public final class AlertFiringState {
     }
 
     /**
+     * Sets the query start time.
+     *
+     * @param queryStartTime the inclusive start of the query range.
+     */
+    public void setQueryStartTime(final Instant queryStartTime) {
+        _queryStartTime = queryStartTime;
+    }
+
+    /**
+     * Sets the query start time.
+     *
+     * @param queryEndTime the exclusive end of the query range.
+     */
+    public void setQueryEndTime(final Instant queryEndTime) {
+        _queryEndTime = queryEndTime;
+    }
+
+    /**
      * Sets the last evaluated time.
      *
      * @param lastEvaluated the instant this alert was last evaluated.
      */
     public void setLastEvaluatedAt(@Nullable final Instant lastEvaluated) {
         _lastEvaluatedAt = lastEvaluated;
+    }
+
+    /**
+     * Sets the groupBys.
+     *
+     * @param groupBys the group bys.
+     */
+    public void setGroupBys(final ImmutableList<String> groupBys) {
+        _groupBys = groupBys;
     }
 
     /**
