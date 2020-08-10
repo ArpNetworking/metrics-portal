@@ -80,9 +80,12 @@ public interface AlertEvaluationResult {
     /**
      * The list of tag group-bys at the time of evaluation.
      * <p>
-     * This can be used to distinguish determining which tags were queried at the
-     * time of evaluation. Otherwise, all non-firing variants of the same query
-     * would be identical since their firingTag sets would each be empty.
+     * Since alert queries are not parsed until evaluation, this can be used to
+     * determine which tags were actually queried.
+     * <p>
+     * It also enables distinguishing series which differ by a group-by.
+     * Otherwise, all non-firing variants of the same query would be identical
+     * since their firingTag sets would each be empty.
      *
      * @return The tag group bys.
      */
