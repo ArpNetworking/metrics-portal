@@ -21,10 +21,10 @@ import com.arpnetworking.metrics.portal.config.ConfigProvider;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.uuid.Generators;
 import com.fasterxml.uuid.StringArgGenerator;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -73,6 +73,7 @@ import java.util.function.Predicate;
 public class PluggableAlertRepository implements AlertRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluggableAlertRepository.class);
     private static final int BUFFER_SIZE = 4096;
+    private static final int LATEST_SERIALIZATION_VERSION = 0;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final ConfigProvider _configProvider;
     private final ObjectMapper _objectMapper;
@@ -227,9 +228,9 @@ public class PluggableAlertRepository implements AlertRepository {
             //    query - Queries are KairosDB JSON requests.
 
             final MetricsQuery query;
-            if (group.getVersion() == 0) {
+            if (group.getVersion() == LATEST_SERIALIZATION_VERSION) {
                 query = new DefaultMetricsQuery.Builder()
-                        .setQuery(fsAlert.getQuery().toString())
+                        .setQuery(fsAlert.getQuery())
                         .setFormat(MetricsQueryFormat.KAIROS_DB)
                         .build();
             } else {
@@ -270,13 +271,44 @@ public class PluggableAlertRepository implements AlertRepository {
         }
     }
 
-    private static final class AlertGroup {
+    /**
+     * The serialized form of alerts as expected by this repository.
+     */
+    public static final class AlertGroup {
         private final List<SerializedAlert> _alerts;
         private final long _version;
 
         private AlertGroup(final Builder builder) {
             _alerts = builder._alerts;
             _version = builder._version;
+        }
+
+        /**
+         * Create an alert group from a collection of internal alerts.
+         *
+         * @param alerts the alerts
+         * @return an alert group.
+         */
+        public static AlertGroup fromInternal(final ImmutableCollection<Alert> alerts) {
+            final ImmutableList.Builder<SerializedAlert> serializedAlerts =
+                 new ImmutableList.Builder<>();
+
+            for (final Alert alert : alerts) {
+                final SerializedAlert serialized =
+                    new SerializedAlert.Builder()
+                        .setName(alert.getName())
+                        .setAdditionalMetadata(alert.getAdditionalMetadata())
+                        .setUuid(alert.getId())
+                        .setDescription(alert.getDescription())
+                        .setEnabled(alert.isEnabled())
+                        .setQuery(alert.getQuery().getQuery())
+                        .build();
+                serializedAlerts.add(serialized);
+            }
+            return new AlertGroup.Builder()
+                    .setAlerts(serializedAlerts.build())
+                    .setVersion(LATEST_SERIALIZATION_VERSION)
+                    .build();
         }
 
         public long getVersion() {
@@ -321,7 +353,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private static final class SerializedAlert {
         private final String _name;
         private final String _description;
-        private final JsonNode _query;
+        private final String _query;
         private final boolean _enabled;
         private final ImmutableMap<String, Object> _additionalMetadata;
         private final Optional<UUID> _uuid;
@@ -351,7 +383,7 @@ public class PluggableAlertRepository implements AlertRepository {
             return _description;
         }
 
-        public JsonNode getQuery() {
+        public String getQuery() {
             return _query;
         }
 
@@ -377,7 +409,7 @@ public class PluggableAlertRepository implements AlertRepository {
 
             @NotNull
             @NotEmpty
-            private JsonNode _query;
+            private String _query;
 
             @NotNull
             @Nullable
@@ -428,7 +460,7 @@ public class PluggableAlertRepository implements AlertRepository {
              * @param query the query.
              * @return This instance of {@code Builder} for chaining.
              */
-            public Builder setQuery(final JsonNode query) {
+            public Builder setQuery(final String query) {
                 _query = query;
                 return this;
             }

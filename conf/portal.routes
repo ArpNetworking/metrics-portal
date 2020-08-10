@@ -40,6 +40,9 @@ GET        /v1/reports/:id                      controllers.ReportController.get
 DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID)
 PUT        /v1/reports                          controllers.ReportController.addOrUpdate
 
+# Alerts
+GET        /v1/alerts/:id                       controllers.AlertController.get(id: java.util.UUID)
+
 # Rollups
 # vvv This endpoint is currently intended only for debugging purposes. Do not rely on it.
 POST        /v1/rollups/check_consistency       controllers.RollupController.enqueueConsistencyCheck()
