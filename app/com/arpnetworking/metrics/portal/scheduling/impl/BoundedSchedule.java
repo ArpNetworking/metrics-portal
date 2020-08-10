@@ -28,11 +28,11 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
- * Abstract base class for {@link Schedule}s.
+ * Abstract base class for {@link Schedule}s whose scheduled run times are bounded on either end.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public abstract class BaseSchedule implements Schedule {
+public abstract class BoundedSchedule implements Schedule {
 
     private final Instant _runAtAndAfter;
     private final Optional<Instant> _runUntil;
@@ -42,7 +42,7 @@ public abstract class BaseSchedule implements Schedule {
      *
      * @param builder Instance of {@link Builder}.
      */
-    protected BaseSchedule(final Builder<?, ?> builder) {
+    protected BoundedSchedule(final Builder<?, ?> builder) {
         _runAtAndAfter = builder._runAtAndAfter;
         _runUntil = Optional.ofNullable(builder._runUntil);
     }
@@ -56,7 +56,7 @@ public abstract class BaseSchedule implements Schedule {
     }
 
     @Override
-    public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
+    public final Optional<Instant> nextRun(final Optional<Instant> lastRun) {
         Optional<Instant> result = unboundedNextRun(lastRun);
         while (result.isPresent() && result.get().isBefore(_runAtAndAfter)) {
             result = unboundedNextRun(result);
@@ -84,7 +84,7 @@ public abstract class BaseSchedule implements Schedule {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final BaseSchedule that = (BaseSchedule) o;
+        final BoundedSchedule that = (BoundedSchedule) o;
         return Objects.equals(getRunAtAndAfter(), that.getRunAtAndAfter())
                 && Objects.equals(getRunUntil(), that.getRunUntil());
     }
@@ -95,14 +95,14 @@ public abstract class BaseSchedule implements Schedule {
     }
 
     /**
-     * Builder implementation for {@link BaseSchedule} subclasses.
+     * Builder implementation for {@link BoundedSchedule} subclasses.
      *
      * @param <B> type of the builder
      * @param <S> type of the object to be built
      *
      * @author Spencer Pearson (spencerpearson at dropbox dot com)
      */
-    protected abstract static class Builder<B extends Builder<B, S>, S extends BaseSchedule> extends OvalBuilder<S> {
+    protected abstract static class Builder<B extends Builder<B, S>, S extends BoundedSchedule> extends OvalBuilder<S> {
         @NotNull
         @ValidateWithMethod(methodName = "validateRunAtAndAfter", parameterType = Instant.class)
         protected Instant _runAtAndAfter;

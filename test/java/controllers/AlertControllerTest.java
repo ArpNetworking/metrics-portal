@@ -17,8 +17,8 @@ package controllers;
 
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.config.impl.PassthroughConfigProvider;
 import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
+import com.arpnetworking.metrics.portal.config.impl.PassthroughConfigProvider;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
@@ -71,6 +71,7 @@ public final class AlertControllerTest {
     private static final List<String> MOCK_GROUP_BYS = ImmutableList.of("tag");
     private static final Instant MOCK_QUERY_START = Instant.parse("2020-08-03T10:00:00Z");
     private static final Instant MOCK_QUERY_END = Instant.parse("2020-08-03T11:00:00Z");
+
     private static final List<UUID> FIRING_IDS = Stream.of(
             "1e7acce3-cd88-47be-8312-c61ccf88ba07",
             "d2b1ba49-0819-498c-8089-08b8ff15b5bc",

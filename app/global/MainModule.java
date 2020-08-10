@@ -70,7 +70,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
@@ -112,8 +112,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -232,16 +230,9 @@ public class MainModule extends AbstractModule {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
         final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
 
-        // The Epoch start is arbitrary - we can't use Instant.MIN since a ZonedDateTime
-        // cannot be constructed from it.
-        //
-        // All alerts should be unconditionally valid for periodic execution after
-        // some arbitrary point in the past, so the epoch is as good as any.
-        final Schedule defaultAlertSchedule = new PeriodicSchedule.Builder()
+        final Schedule defaultAlertSchedule = new UnboundedPeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
-                .setZone(ZoneOffset.UTC)
-                .setRunAtAndAfter(Instant.EPOCH)
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }

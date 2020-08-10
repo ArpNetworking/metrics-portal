@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
+import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -59,6 +60,14 @@ public interface Schedule {
          * @return The result of applying the visitor.
          */
         public abstract T visitPeriodic(PeriodicSchedule schedule);
+
+        /**
+         * Visit a {@link UnboundedPeriodicSchedule}.
+         *
+         * @param schedule The schedule to visit.
+         * @return The result of applying the visitor.
+         */
+        public abstract T visitUnboundedPeriodic(UnboundedPeriodicSchedule schedule);
 
         /**
          * Visit a {@link OneOffSchedule}.
