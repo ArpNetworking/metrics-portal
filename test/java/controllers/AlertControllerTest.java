@@ -17,8 +17,8 @@ package controllers;
 
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.config.impl.PassthroughConfigProvider;
 import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
+import com.arpnetworking.metrics.portal.config.impl.PassthroughConfigProvider;
 import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
