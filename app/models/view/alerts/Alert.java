@@ -17,11 +17,9 @@ package models.view.alerts;
 
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMap;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
