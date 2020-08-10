@@ -163,7 +163,7 @@ public final class AlertControllerTest {
                     .setQuery(
                             new DefaultMetricsQuery.Builder()
                                     .setFormat(MetricsQueryFormat.KAIROS_DB)
-                                    .setQuery("<not evaluated>")
+                                    .setQuery("{\"test query\": \"not evaluated\"}")
                                     .build()
                     )
                     .setAdditionalMetadata(MOCK_METADATA)
