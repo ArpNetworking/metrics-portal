@@ -19,12 +19,19 @@ import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.play.metrics.ProblemHelper;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.typesafe.config.Config;
 import models.internal.Organization;
 import models.internal.Problem;
+import models.internal.QueryResult;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
+import models.view.PagedContainer;
+import models.view.Pagination;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -32,6 +39,8 @@ import play.mvc.Result;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Metrics portal alert controller. Exposes APIs to query alerts.
@@ -40,6 +49,9 @@ import java.util.UUID;
  */
 public class AlertController extends Controller {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
+
+    private final int _maxPageSize;
     private final AlertRepository _alertRepository;
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
@@ -47,12 +59,14 @@ public class AlertController extends Controller {
     /**
      * Public constructor.
      *
+     * @param config Configuration instance.
      * @param alertRepository Repository for alerts.
      * @param executionRepository Repository for associated alert executions.
      * @param organizationRepository Repository for organizations.
      */
     @Inject
     public AlertController(
+            final Config config,
             final AlertRepository alertRepository,
             final AlertExecutionRepository executionRepository,
             final OrganizationRepository organizationRepository
@@ -60,6 +74,7 @@ public class AlertController extends Controller {
         _alertRepository = alertRepository;
         _executionRepository = executionRepository;
         _organizationRepository = organizationRepository;
+        _maxPageSize = config.getInt("alerts.limit");
     }
 
     /**
@@ -82,6 +97,57 @@ public class AlertController extends Controller {
                         .setProblemCode("alert_problem.NOT_FOUND")
                         .build()
                 )));
+    }
+
+    /**
+     * Query for alerts.
+     *
+     * @param limit The maximum number of results to return. Optional.
+     * @param offset The number of results to skip. Optional.
+     * @return {@link Result} paginated matching alerts.
+     */
+    public Result query(
+            @Nullable final Integer limit,
+            @Nullable final Integer offset
+    ) {
+        final Organization organization;
+        try {
+            organization = _organizationRepository.get(request());
+        } catch (final NoSuchElementException e) {
+            return internalServerError();
+        }
+
+        // Convert and validate parameters
+        final int argLimit = Optional.ofNullable(limit)
+                .map(l -> Math.min(l, _maxPageSize))
+                .orElse(_maxPageSize);
+        if (argLimit < 0) {
+            return badRequest("Invalid limit; must be greater than or equal to 0");
+        }
+
+        final Optional<Integer> argOffset = Optional.ofNullable(offset);
+        if (argOffset.isPresent() && argOffset.get() < 0) {
+            return badRequest("Invalid offset; must be greater than or equal to 0");
+        }
+
+        final QueryResult<Alert> queryResult =
+            _alertRepository.createAlertQuery(organization)
+                .limit(argLimit)
+                .offset(argOffset.orElse(0))
+                .execute();
+
+        return ok(Json.toJson(new PagedContainer<>(
+                queryResult.values()
+                        .stream()
+                        .map(alert -> fromInternal(alert, organization))
+                        .collect(Collectors.toList()),
+                new Pagination(
+                        request().path(),
+                        queryResult.total(),
+                        queryResult.values().size(),
+                        argLimit,
+                        argOffset,
+                        ImmutableMap.of()))));
     }
 
     private models.view.alerts.Alert fromInternal(final Alert alert, final Organization organization) {
