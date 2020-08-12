@@ -54,10 +54,12 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -78,6 +80,8 @@ public class KairosDbServiceImplTest {
     private Metrics _mockMetrics;
     @Mock
     private MetricsQueryConfig _mockQueryConfig;
+    @Mock
+    private Consumer<MetricsQuery> _mockRewrittenMetricsQueryConsumer;
 
     private KairosDbServiceImpl _service;
 
@@ -90,6 +94,7 @@ public class KairosDbServiceImplTest {
                 .setMetricsFactory(_mockMetricsFactory)
                 .setExcludedTagNames(ImmutableSet.of("host"))
                 .setMetricsQueryConfig(_mockQueryConfig)
+                .setRewrittenQueryConsumer(_mockRewrittenMetricsQueryConsumer)
                 .build();
         when(_mockClient.queryMetricNames())
                 .thenReturn(CompletableFuture.completedFuture(new MetricNamesResponse.Builder()
@@ -160,6 +165,7 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
@@ -186,6 +192,7 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
@@ -212,6 +219,7 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo_1h", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
@@ -240,6 +248,7 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("expect to use hourly rollup when daily is disabled", "foo_1h", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
@@ -266,6 +275,7 @@ public class KairosDbServiceImplTest {
         assertEquals(1, request.getMetrics().size());
         final Metric metric = request.getMetrics().get(0);
         assertEquals("foo", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
