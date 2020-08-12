@@ -42,6 +42,8 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
+import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
@@ -85,6 +87,7 @@ import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -455,6 +458,27 @@ public class MainModule extends AbstractModule {
             java.time.Duration.ofSeconds(offset.toSeconds()),
             maxLookAhead
         );
+    }
+
+    @Singleton
+    @Provides
+    private KairosDbService provideKairosDbService(
+            final KairosDbClient kairosDbClient,
+            final MetricsQueryConfig metricsQueryConfig,
+            final MetricsFactory metricsFactory,
+            @Named("RollupReadQueryConsistencyChecker") final Consumer<MetricsQuery> rewrittenQueryConsumer,
+            final Config configuration
+    ) {
+        final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
+                configuration.getStringList("kairosdb.proxy.excludedTagNames"));
+
+        return new KairosDbServiceImpl.Builder()
+                .setKairosDbClient(kairosDbClient)
+                .setMetricsFactory(metricsFactory)
+                .setExcludedTagNames(excludedTagNames)
+                .setMetricsQueryConfig(metricsQueryConfig)
+                .setRewrittenQueryConsumer(rewrittenQueryConsumer)
+                .build();
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {

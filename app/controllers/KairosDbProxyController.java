@@ -17,15 +17,11 @@ package controllers;
 
 import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
-import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
-import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.service.KairosDbService;
-import com.arpnetworking.kairos.service.KairosDbServiceImpl;
-import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -59,10 +55,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * KairosDb proxy controller.
@@ -75,21 +69,15 @@ public class KairosDbProxyController extends Controller {
      * Public constructor.
      * @param configuration Play configuration to configure the proxy
      * @param client ws client to use
-     * @param kairosDbClient a KairosDBClient
      * @param mapper ObjectMapper to use for JSON serialization
-     * @param rewrittenQueryConsumer Consumer to tee post-rollup-rewrite queries to.
-     * @param metricsFactory MetricsFactory for recording request metrics
-     * @param metricsQueryConfig Configuration for proxied metrics queries
+     * @param kairosService The KairosDb service to proxy requests to
      */
     @Inject
     public KairosDbProxyController(
             final Config configuration,
             final WSClient client,
-            final KairosDbClient kairosDbClient,
             final ObjectMapper mapper,
-            @Named("RollupReadQueryConsistencyChecker") final Consumer<MetricsQuery> rewrittenQueryConsumer,
-            final MetricsFactory metricsFactory,
-            final MetricsQueryConfig metricsQueryConfig) {
+            final KairosDbService kairosService) {
         final URI kairosURL = URI.create(configuration.getString("kairosdb.uri"));
         _client = new ProxyClient(kairosURL, client);
         _mapper = mapper;
@@ -100,13 +88,7 @@ public class KairosDbProxyController extends Controller {
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
 
-        _kairosService = new KairosDbServiceImpl.Builder()
-                .setKairosDbClient(kairosDbClient)
-                .setMetricsFactory(metricsFactory)
-                .setExcludedTagNames(excludedTagNames)
-                .setMetricsQueryConfig(metricsQueryConfig)
-                .setRewrittenQueryConsumer(rewrittenQueryConsumer)
-                .build();
+        _kairosService = kairosService;
     }
 
     /**
