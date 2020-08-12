@@ -462,6 +462,7 @@ public class MainModule extends AbstractModule {
 
     @Singleton
     @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private KairosDbService provideKairosDbService(
             final KairosDbClient kairosDbClient,
             final MetricsQueryConfig metricsQueryConfig,
