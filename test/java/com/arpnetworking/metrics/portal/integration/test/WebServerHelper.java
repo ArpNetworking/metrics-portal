@@ -20,6 +20,7 @@ import com.arpnetworking.commons.java.util.function.SingletonSupplier;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -55,15 +56,23 @@ public final class WebServerHelper {
      * @return the full uri
      */
     public static String getUri(final String path) {
-        final StringBuilder urlBuilder = new StringBuilder("http://");
-        urlBuilder.append(getEnvOrDefault("METRICS_PORTAL_HOST", "localhost"));
-        urlBuilder.append(":");
-        urlBuilder.append(getEnvOrDefault("METRICS_PORTAL_PORT", "8080"));
-        if (!path.startsWith("/")) {
-            urlBuilder.append("/");
-        }
-        urlBuilder.append(path);
-        return urlBuilder.toString();
+        return getUriBuilder(path).toString();
+    }
+
+    /**
+     * Return a new URIBuilder for a given path to the web server instance under test.
+     *
+     * @param path the relative path
+     * @return the full uri
+     */
+    public static URIBuilder getUriBuilder(final String path) {
+        final String portString = getEnvOrDefault("METRICS_PORTAL_PORT", "8080");
+        final int port = Integer.parseInt(portString);
+        return new URIBuilder()
+                .setScheme("http")
+                .setHost(getEnvOrDefault("METRICS_PORTAL_HOST", "localhost"))
+                .setPort(port)
+                .setPath(path);
     }
 
     /**

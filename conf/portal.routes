@@ -41,6 +41,7 @@ DELETE     /v1/reports/:id                      controllers.ReportController.del
 PUT        /v1/reports                          controllers.ReportController.addOrUpdate
 
 # Alerts
+GET        /v1/alerts/query                     controllers.AlertController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
 GET        /v1/alerts/:id                       controllers.AlertController.get(id: java.util.UUID)
 
 # Rollups
