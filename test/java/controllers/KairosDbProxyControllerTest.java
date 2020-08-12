@@ -15,7 +15,6 @@
  */
 package controllers;
 
-import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
@@ -23,10 +22,7 @@ import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
-import com.arpnetworking.kairos.config.MetricsQueryConfig;
-import com.arpnetworking.metrics.Metrics;
-import com.arpnetworking.metrics.MetricsFactory;
-import com.arpnetworking.metrics.Timer;
+import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,14 +41,12 @@ import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.notNull;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -67,17 +61,7 @@ public class KairosDbProxyControllerTest {
     @Mock
     private WSClient _mockWSClient;
     @Mock
-    private KairosDbClient _mockKairosDbClient;
-    @Mock
-    private MetricsFactory _mockMetricsFactory;
-    @Mock
-    private Metrics _mockMetrics;
-    @Mock
-    private Timer _mockTimer;
-    @Mock
-    private MetricsQueryConfig _mockMetricsqueryConfig;
-    @Mock
-    private Consumer<MetricsQuery> _mockRewrittenMetricsQueryConsumer;
+    private KairosDbService _mockKairosDbService;
 
     private KairosDbProxyController _controller;
 
@@ -87,22 +71,16 @@ public class KairosDbProxyControllerTest {
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(true);
-        when(_mockMetricsFactory.create()).thenReturn(_mockMetrics);
-        when(_mockMetrics.createTimer(any())).thenReturn(_mockTimer);
-        when(_mockKairosDbClient.queryMetricNames()).thenReturn(CompletableFuture.completedFuture(
+        when(_mockKairosDbService.queryMetricNames(any(), any(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(
                 new MetricNamesResponse.Builder()
                         .setResults(ImmutableList.of("metric1", "metric2"))
                         .build()
         ));
-
         _controller = new KairosDbProxyController(
                 _mockConfig,
                 _mockWSClient,
-                _mockKairosDbClient,
                 OBJECT_MAPPER,
-                _mockRewrittenMetricsQueryConsumer,
-                _mockMetricsFactory,
-                _mockMetricsqueryConfig
+                _mockKairosDbService
         );
     }
 
@@ -147,7 +125,7 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
 
-        when(_mockKairosDbClient.queryMetrics(any())).thenReturn(
+        when(_mockKairosDbService.queryMetrics(any())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
@@ -167,11 +145,8 @@ public class KairosDbProxyControllerTest {
         final KairosDbProxyController controller = new KairosDbProxyController(
                 _mockConfig,
                 _mockWSClient,
-                _mockKairosDbClient,
                 OBJECT_MAPPER,
-                _mockRewrittenMetricsQueryConsumer,
-                _mockMetricsFactory,
-                _mockMetricsqueryConfig
+                _mockKairosDbService
         );
 
         final Metric.Builder metric1Builder = new Metric.Builder()
@@ -211,11 +186,8 @@ public class KairosDbProxyControllerTest {
         final KairosDbProxyController controller = new KairosDbProxyController(
                 _mockConfig,
                 _mockWSClient,
-                _mockKairosDbClient,
                 OBJECT_MAPPER,
-                _mockRewrittenMetricsQueryConsumer,
-                _mockMetricsFactory,
-                _mockMetricsqueryConfig
+                _mockKairosDbService
         );
 
         final Metric metric1 = new Metric.Builder()
@@ -242,7 +214,7 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
 
-        when(_mockKairosDbClient.queryMetrics(newMetricsQuery)).thenReturn(
+        when(_mockKairosDbService.queryMetrics(newMetricsQuery)).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
@@ -254,7 +226,6 @@ public class KairosDbProxyControllerTest {
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
-        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
     }
 
     @Test
