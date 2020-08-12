@@ -35,7 +35,7 @@ import java.util.Optional;
  * for the last completed time.
  * <p>
  * The next run for a unbounded periodic schedule is always the start of the
- * most recent period of the schedule, as aligned with the start of the epoch.
+ * next period of the schedule, as aligned with the start of the epoch.
  * <p>
  * <b>WARNING:</b>
  * This behavior means that jobs with this schedule will ignore previously missed runs
@@ -58,10 +58,11 @@ public final class UnboundedPeriodicSchedule implements Schedule {
     @Override
     public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
         final Instant now = _clock.instant();
+
         final Instant start = lastRun
-                .filter(run -> run.compareTo(now) >= 0)
-                .map(run -> run.plus(_fullPeriod)) // Avoid repeating the same period.
-                .orElse(now);
+                .filter(run -> run.isAfter(now))
+                .orElse(now)
+                .plus(_fullPeriod); // Avoid repeating the same period
 
         final long excessMillis = start.toEpochMilli() % _fullPeriod.toMillis();
         return Optional.of(start.minusMillis(excessMillis));

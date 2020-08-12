@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -39,6 +40,7 @@ import static org.junit.Assert.assertThat;
  */
 public final class UnboundedPeriodicScheduleTest {
     private static final Instant CLOCK_START = Instant.parse("2020-07-30T10:00:00Z");
+    private static final Instant FIRST_RUN = Instant.parse("2020-07-30T10:30:00Z");
 
     @Test(expected = ConstraintsViolatedException.class)
     public void testItDisallowsZeroPeriod() {
@@ -60,15 +62,15 @@ public final class UnboundedPeriodicScheduleTest {
 
         Optional<Instant> nextScheduled = schedule.nextRun(Optional.empty());
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN));
 
         nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.minus(1, ChronoUnit.DAYS)));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN));
 
         nextScheduled = schedule.nextRun(Optional.of(Instant.EPOCH));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN));
     }
 
     @Test
@@ -85,12 +87,12 @@ public final class UnboundedPeriodicScheduleTest {
         clock.tick();
         Optional<Instant> nextScheduled = schedule.nextRun(Optional.of(CLOCK_START));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START.plus(fullPeriod)));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fullPeriod)));
 
         clock.tick();
         nextScheduled = schedule.nextRun(Optional.empty());
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START.plus(fullPeriod.multipliedBy(2))));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fullPeriod.multipliedBy(2))));
     }
 
     @Test
@@ -106,15 +108,37 @@ public final class UnboundedPeriodicScheduleTest {
 
         Optional<Instant> nextScheduled = schedule.nextRun(Optional.of(CLOCK_START));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START.plus(fullPeriod)));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN));
 
-        nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.plus(1, ChronoUnit.SECONDS)));
+        nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.plus(fullPeriod)));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START.plus(fullPeriod)));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fullPeriod)));
 
         final Duration fivePeriods = fullPeriod.multipliedBy(5);
         nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.plus(fivePeriods)));
         assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(CLOCK_START.plus(fivePeriods).plus(fullPeriod)));
+        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fivePeriods)));
+    }
+
+    @Test
+    public void testNoFixedPoints() {
+        // Now being exactly on an interval should still return a time in the future.
+        final Clock clock = Clock.fixed(CLOCK_START, ZoneOffset.UTC);
+        final Schedule schedule =
+                new UnboundedPeriodicSchedule.Builder()
+                        .setClock(clock)
+                        .setPeriodCount(30)
+                        .setPeriod(ChronoUnit.MINUTES)
+                        .build();
+
+        Optional<Instant> nextScheduled = schedule.nextRun(Optional.empty());
+        assertThat(nextScheduled.isPresent(), is(true));
+        assertThat(nextScheduled.get(), greaterThan(CLOCK_START));
+
+        // lastRun being exactly on an interval should still return a time after it.
+        final Instant lastRun = Instant.parse("2020-08-12T00:30:30Z");
+        nextScheduled = schedule.nextRun(Optional.of(lastRun));
+        assertThat(nextScheduled.isPresent(), is(true));
+        assertThat(nextScheduled.get(), greaterThan(lastRun));
     }
 }
