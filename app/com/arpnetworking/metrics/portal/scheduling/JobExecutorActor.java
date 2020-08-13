@@ -73,6 +73,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final PeriodicMetrics _periodicMetrics;
     private boolean _currentlyExecuting = false;
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
+    private Optional<Instant> _nextRun = Optional.empty();
 
     /**
      * Props factory.
@@ -243,8 +244,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         + "/tick",
                 1);
 
-        final Optional<Instant> nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
-        if (!nextRun.isPresent()) {
+        if (!_nextRun.isPresent()) {
+            // First tick since clearing next run, refresh.
+            _nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
+        }
+        if (!_nextRun.isPresent()) {
             LOGGER.info()
                     .setMessage("job has no more scheduled runs")
                     .addData("cachedJob", cachedJob)
@@ -253,18 +257,22 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             return;
         }
 
-        if (_clock.instant().isBefore(nextRun.get().minus(EXECUTION_SLOP))) {
-            scheduleTickFor(nextRun.get());
+        if (_clock.instant().isBefore(_nextRun.get().minus(EXECUTION_SLOP))) {
+            scheduleTickFor(_nextRun.get());
         } else {
             try {
-                attemptExecuteAndUpdateRepository(nextRun.get());
+                attemptExecuteAndUpdateRepository(_nextRun.get());
             } catch (final NoSuchJobException error) {
                 LOGGER.warn()
                         .setMessage("attempted to start executing job, but job no longer exists in repository")
                         .addData("ref", cachedJob.getRef())
-                        .addData("scheduled", nextRun.get())
+                        .addData("scheduled", _nextRun.get())
                         .log();
                 killSelf();
+            } finally {
+                // This run was attempted so we should clear it and recompute
+                // the scheduled time on the next tick.
+                _nextRun = Optional.empty();
             }
         }
     }
