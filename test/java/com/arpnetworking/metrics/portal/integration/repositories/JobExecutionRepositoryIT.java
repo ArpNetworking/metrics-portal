@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -172,6 +173,22 @@ public abstract class JobExecutionRepositoryIT<T> {
                 return 0;
             }
         }).apply(lastRun.get());
+    }
+
+    @Test
+    public void testJobScheduledInThePast() {
+        final T result = newResult();
+        final Instant scheduled = Instant.parse("2019-01-01T00:00:00Z");
+
+        _repository.jobStarted(_jobId, _organization, scheduled);
+        _repository.jobSucceeded(_jobId, _organization, scheduled, result);
+
+        final Optional<JobExecution.Success<T>> lastRun = _repository.getLastSuccess(_jobId, _organization);
+        if (!lastRun.isPresent()) {
+            fail("Expected a non-empty success to be returned.");
+        }
+        assertThat(lastRun.get().getScheduled(), is(scheduled));
+        assertThat(lastRun.get().getResult(), is(result));
     }
 
     @Test
