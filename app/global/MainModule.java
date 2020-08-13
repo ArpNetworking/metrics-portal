@@ -228,7 +228,8 @@ public class MainModule extends AbstractModule {
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private AlertExecutionContext provideAlertExecutionContext(
             final Config config,
-            final QueryExecutor executor
+            final QueryExecutor executor,
+            final PeriodicMetrics metrics
     ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
         final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
@@ -236,6 +237,9 @@ public class MainModule extends AbstractModule {
         final Schedule defaultAlertSchedule = new UnboundedPeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
+                .setOverrunReporter(overrunPeriodCount -> {
+                    metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount);
+                })
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
     }

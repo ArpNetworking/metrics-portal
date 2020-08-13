@@ -17,7 +17,10 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -29,17 +32,30 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * A schedule for a job that repeats periodically, without any bounds or regard
  * for the last completed time.
  * <p>
- * The next run for a unbounded periodic schedule is always the start of the
- * most recent period of the schedule, as aligned with the start of the epoch.
+ * The next run for a unbounded periodic schedule is always the next period of the
+ * schedule, edge-aligned as measured from the start of the epoch.
  * <p>
  * <b>WARNING:</b>
- * This behavior means that jobs with this schedule will ignore previously missed runs
- * - if you need backfills you should instead use a standard {@code PeriodicSchedule}.
+ * This behavior means that jobs with this schedule will ignore previously missed runs.
+ * If you need backfills you should instead use a standard {@code PeriodicSchedule}.
+ * <p>
+ * If this behavior is still acceptable, you have to watch out for the potential for
+ * skipping a period for a variety of reasons:
+ * <ul>
+ *     <li> The {@link JobExecutorActor} tied to this schedule is moved among hosts,
+ *     and this operation takes longer than an interval.
+ *     <li> The system clock jumps forward longer than an interval.
+ *     <li> The execution pool becomes saturated, and evaluating all jobs at for a
+ *     particular interval overruns that interval.
+ *     <li> Any combination of the above resulting in a delay longer than a period.
+ * </ul>
+ *
  *
  * @see PeriodicSchedule
  * @author Christian Briones (cbriones at dropbox dot com)
@@ -47,24 +63,51 @@ import java.util.Optional;
 @Loggable
 public final class UnboundedPeriodicSchedule implements Schedule {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnboundedPeriodicSchedule.class);
+
     private final Duration _fullPeriod;
     private final Clock _clock;
+    private final Consumer<Long> _overrunReporter;
 
     private UnboundedPeriodicSchedule(final Builder builder) {
         _fullPeriod = Duration.of(builder._periodCount, builder._period);
         _clock = builder._clock;
+        _overrunReporter = builder._overrunReporter;
     }
 
     @Override
     public Optional<Instant> nextRun(final Optional<Instant> lastRun) {
         final Instant now = _clock.instant();
-        final Instant start = lastRun
-                .filter(run -> run.compareTo(now) >= 0)
-                .map(run -> run.plus(_fullPeriod)) // Avoid repeating the same period.
-                .orElse(now);
+        final Instant nextRun = truncateToPeriod(now).plus(_fullPeriod);
 
-        final long excessMillis = start.toEpochMilli() % _fullPeriod.toMillis();
-        return Optional.of(start.minusMillis(excessMillis));
+        lastRun.ifPresent(run -> checkForSkippedPeriods(run, nextRun));
+
+        return Optional.of(nextRun);
+    }
+
+    private void checkForSkippedPeriods(final Instant lastRun, final Instant nextRun) {
+        final Instant lastRunTruncated = truncateToPeriod(lastRun);
+
+        final Duration elapsedBetweenRuns = Duration.between(lastRunTruncated, nextRun);
+        if (elapsedBetweenRuns.compareTo(_fullPeriod) <= 0) {
+            return;
+        }
+        // Elapsed time is greater than a period, which means the caller of
+        // Schedule#nextRun will skip all periods in between.
+
+        // We don't need anything better than second precision.
+        final long periodsSkipped = elapsedBetweenRuns.getSeconds() / _fullPeriod.getSeconds();
+        LOGGER.warn()
+            .setMessage("Possible job overrun detected")
+            .addData("periodsSkipped", periodsSkipped)
+            .setThrowable(new RuntimeException("Possible job overrun detected"))
+            .log();
+        _overrunReporter.accept(periodsSkipped - 1);
+    }
+
+    private Instant truncateToPeriod(final Instant instant) {
+        final long excessMillis = instant.toEpochMilli() % _fullPeriod.toMillis();
+        return instant.minusMillis(excessMillis);
     }
 
     @Override
@@ -111,6 +154,8 @@ public final class UnboundedPeriodicSchedule implements Schedule {
         private ChronoUnit _period;
         @NotNull
         private Clock _clock = Clock.systemUTC();
+        @NotNull
+        private Consumer<Long> _overrunReporter = doNothing -> { };
 
         /**
          * Default constructor.
@@ -138,6 +183,21 @@ public final class UnboundedPeriodicSchedule implements Schedule {
          */
         public Builder setPeriodCount(final long periodCount) {
             _periodCount = periodCount;
+            return this;
+        }
+
+        /**
+         * Add a reporter for any interval overruns / skipped periods. Optional.
+         * <p>
+         * The reporter will receive the number of skipped periods if the caller has
+         * given a lastRun time sufficiently far in the past. In order to avoid false
+         * positives, the user of the schedule should only poll it once per interval.
+         *
+         * @param overrunReporter The reporter for any interval overruns.
+         * @return This instance of Builder.
+         */
+        public Builder setOverrunReporter(final Consumer<Long> overrunReporter) {
+            _overrunReporter = overrunReporter;
             return this;
         }
 
