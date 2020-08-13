@@ -19,6 +19,8 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
@@ -61,6 +63,8 @@ import java.util.function.Consumer;
 @Loggable
 public final class UnboundedPeriodicSchedule implements Schedule {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnboundedPeriodicSchedule.class);
+
     private final Duration _fullPeriod;
     private final Clock _clock;
     private final Consumer<Long> _overrunReporter;
@@ -93,6 +97,11 @@ public final class UnboundedPeriodicSchedule implements Schedule {
 
         // We don't need anything better than second precision.
         final long periodsSkipped = elapsedBetweenRuns.getSeconds() / _fullPeriod.getSeconds();
+        LOGGER.warn()
+            .setMessage("Possible job overrun detected")
+            .addData("periodsSkipped", periodsSkipped)
+            .setThrowable(new RuntimeException("Possible job overrun detected"))
+            .log();
         _overrunReporter.accept(periodsSkipped - 1);
     }
 
