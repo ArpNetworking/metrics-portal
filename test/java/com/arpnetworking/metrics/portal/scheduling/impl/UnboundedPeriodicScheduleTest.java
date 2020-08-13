@@ -20,6 +20,7 @@ import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import net.sf.oval.exception.ConstraintsViolatedException;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -27,11 +28,17 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * Unit tests for {@link UnboundedPeriodicSchedule}.
@@ -96,31 +103,6 @@ public final class UnboundedPeriodicScheduleTest {
     }
 
     @Test
-    public void testWhenLastRunIsAlreadyAfterNextScheduled() {
-        final Clock clock = Clock.fixed(CLOCK_START, ZoneOffset.UTC);
-        final Schedule schedule =
-                new UnboundedPeriodicSchedule.Builder()
-                        .setClock(clock)
-                        .setPeriodCount(30)
-                        .setPeriod(ChronoUnit.MINUTES)
-                        .build();
-        final Duration fullPeriod = Duration.of(30, ChronoUnit.MINUTES);
-
-        Optional<Instant> nextScheduled = schedule.nextRun(Optional.of(CLOCK_START));
-        assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(FIRST_RUN));
-
-        nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.plus(fullPeriod)));
-        assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fullPeriod)));
-
-        final Duration fivePeriods = fullPeriod.multipliedBy(5);
-        nextScheduled = schedule.nextRun(Optional.of(CLOCK_START.plus(fivePeriods)));
-        assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), equalTo(FIRST_RUN.plus(fivePeriods)));
-    }
-
-    @Test
     public void testNoFixedPoints() {
         // Now being exactly on an interval should still return a time in the future.
         final Clock clock = Clock.fixed(CLOCK_START, ZoneOffset.UTC);
@@ -131,14 +113,40 @@ public final class UnboundedPeriodicScheduleTest {
                         .setPeriod(ChronoUnit.MINUTES)
                         .build();
 
-        Optional<Instant> nextScheduled = schedule.nextRun(Optional.empty());
+        final Optional<Instant> nextScheduled = schedule.nextRun(Optional.empty());
         assertThat(nextScheduled.isPresent(), is(true));
         assertThat(nextScheduled.get(), greaterThan(CLOCK_START));
+    }
 
-        // lastRun being exactly on an interval should still return a time after it.
-        final Instant lastRun = Instant.parse("2020-08-12T00:30:30Z");
-        nextScheduled = schedule.nextRun(Optional.of(lastRun));
-        assertThat(nextScheduled.isPresent(), is(true));
-        assertThat(nextScheduled.get(), greaterThan(lastRun));
+    @Test
+    public void testReportingOverrun() {
+        final Instant start = Instant.parse("2020-08-12T10:15:00Z");
+
+        @SuppressWarnings("unchecked")
+        final Consumer<Long> overrunReporter = (Consumer<Long>) Mockito.mock(Consumer.class);
+        final Clock clock = Clock.fixed(start, ZoneOffset.UTC);
+        final Schedule schedule =
+                new UnboundedPeriodicSchedule.Builder()
+                        .setClock(clock)
+                        .setPeriodCount(30)
+                        .setPeriod(ChronoUnit.MINUTES)
+                        .setOverrunReporter(overrunReporter)
+                        .build();
+
+        // nothing run, nothing to miss.
+        schedule.nextRun(Optional.empty());
+        verify(overrunReporter, never()).accept(any());
+
+        // nothing missed.
+        schedule.nextRun(Optional.of(Instant.parse("2020-08-12T10:05:00Z")));
+        verify(overrunReporter, never()).accept(any());
+
+        // We're possibly missing the execution at 10:00:00Z
+        schedule.nextRun(Optional.of(Instant.parse("2020-08-12T09:55:00Z")));
+        verify(overrunReporter, times(1)).accept(eq(1L));
+
+        // We're possibly missing the executions at 09:30:00Z, 10:00:00Z
+        schedule.nextRun(Optional.of(Instant.parse("2020-08-12T09:25:00Z")));
+        verify(overrunReporter, times(1)).accept(eq(1L));
     }
 }
