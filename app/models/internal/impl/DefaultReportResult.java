@@ -17,6 +17,7 @@
 package models.internal.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.google.common.base.MoreObjects;
 import models.internal.reports.Report;
 
 
@@ -31,4 +32,23 @@ public final class DefaultReportResult implements Report.Result {
      * Default Constructor.
      */
     public DefaultReportResult() {}
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        return o != null && getClass() == o.getClass();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .toString();
+    }
 }

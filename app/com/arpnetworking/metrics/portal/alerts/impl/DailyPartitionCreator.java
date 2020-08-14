@@ -31,8 +31,11 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
-import io.ebean.SqlQuery;
+import io.ebean.Transaction;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -208,7 +211,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         recordCounter("tick", 1);
 
         final Instant now = _clock.instant();
-        if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(now)).orElse(true)) {
+        final Optional<Instant> nextRun = _schedule.nextRun(_lastRun);
+        if (nextRun.isPresent() && nextRun.get().compareTo(now) <= 0) {
             final LocalDate startDate = ZonedDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate();
             final LocalDate endDate = startDate.plusDays(_lookaheadDays);
 
@@ -230,7 +234,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
         LocalDate d = startDate;
         boolean allPartitionsExist = true;
-        while (!d.equals(endDate)) {
+        while (d.compareTo(endDate) <= 0) {
             if (!_partitionCache.contains(d)) {
                 allPartitionsExist = false;
                 break;
@@ -279,7 +283,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     private void updateCache(final LocalDate start, final LocalDate end) {
         LocalDate date = start;
-        while (!date.equals(end)) {
+        while (date.compareTo(end) <= 0) {
             _partitionCache.add(date);
             date = date.plusDays(1);
         }
@@ -299,17 +303,28 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final LocalDate startDate,
             final LocalDate endDate
     ) {
-        // While this query does not return anything meaningful semantically,
-        // it still returns a "non-empty" void result and so we can't use the
-        // ordinarily more appropriate SqlUpdate type.
-        final SqlQuery sql = _ebeanServer.createSqlQuery(
-                "select * from create_daily_partition(?::text, ?::text, ?::date, ?::date)")
-                .setParameter(1, schema)
-                .setParameter(2, table)
-                .setParameter(3, startDate)
-                .setParameter(4, endDate);
-
-        sql.findOneOrEmpty().orElseThrow(() -> new PersistenceException("Expected a single empty result."));
+        // The closest thing Ebean provides to executing raw sql is SqlQuery, or SqlUpdate.
+        // Neither works for table creation, and Ebean's recommendation in these
+        // cases is just to use the raw JDBC connection.
+        //
+        // SQLQuery was originally used but does not actually allow for any writes,
+        // while SQLUpdate does not allow for SELECT statements.
+        //
+        // https://ebean.io/docs/intro/queries/jdbc-query
+        final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
+        try (Transaction tx = _ebeanServer.beginTransaction()) {
+            final Connection conn = tx.getConnection();
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, schema);
+                stmt.setString(2, table);
+                stmt.setDate(3, java.sql.Date.valueOf(startDate));
+                stmt.setDate(4, java.sql.Date.valueOf(endDate));
+                stmt.execute();
+            }
+            tx.commit();
+        } catch (final SQLException e) {
+            throw new PersistenceException("Could not create daily partitions", e);
+        }
     }
 
     private static final class CreateForRange {
