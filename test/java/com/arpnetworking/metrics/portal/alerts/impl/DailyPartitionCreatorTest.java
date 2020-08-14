@@ -238,4 +238,4 @@ public class DailyPartitionCreatorTest {
                     .toString();
         }
     }
-
+}
