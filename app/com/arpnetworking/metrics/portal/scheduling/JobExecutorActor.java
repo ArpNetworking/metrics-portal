@@ -270,9 +270,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         .addData("scheduled", _nextRun.get())
                         .log();
                 killSelf();
-            } finally {
-                // This run was attempted so we should reset it
-                _nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
             }
         }
     }
@@ -307,6 +304,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void jobCompleted(final JobCompleted<?> message) {
         _currentlyExecuting = false;
+        _nextRun = Optional.empty();
         if (!_cachedJob.isPresent()) {
             LOGGER.warn()
                     .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
