@@ -127,7 +127,7 @@ public class DailyPartitionCreatorTest {
         final ActorRef ref = createActor();
 
         // The actor will tick on startup.
-        ExecuteCall call = _probe.expectMsgClass(Duration.ofMinutes(5), ExecuteCall.class);
+        ExecuteCall call = _probe.expectMsgClass(ExecuteCall.class);
         long clockDifference = ChronoUnit.DAYS.between(
                 call.getStart(),
                 ZonedDateTime.ofInstant(_clock.instant(), _clock.getZone())
@@ -144,7 +144,7 @@ public class DailyPartitionCreatorTest {
             // Clock moved 1 day
             _clock.tick();
             ref.tell(DailyPartitionCreator.TICK, _probe.getRef());
-            call = _probe.expectMsgClass(Duration.ofMinutes(5), ExecuteCall.class);
+            call = _probe.expectMsgClass(ExecuteCall.class);
 
             assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
             assertThat(call.getTable(), equalTo(TEST_TABLE));
@@ -238,4 +238,4 @@ public class DailyPartitionCreatorTest {
                     .toString();
         }
     }
-}
+
