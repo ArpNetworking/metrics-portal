@@ -31,13 +31,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
-import io.ebean.RawSql;
-import io.ebean.RawSqlBuilder;
-import io.ebean.SqlQuery;
-import io.ebean.SqlRow;
-import io.ebean.SqlUpdate;
 import io.ebean.Transaction;
-import io.ebean.config.dbplatform.SqlExceptionTranslator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -217,7 +211,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         recordCounter("tick", 1);
 
         final Instant now = _clock.instant();
-        if (_schedule.nextRun(_lastRun).map(run -> run.isBefore(now)).orElse(true)) {
+        final Optional<Instant> nextRun = _schedule.nextRun(_lastRun);
+        if (nextRun.isPresent() && nextRun.get().compareTo(now) <= 0) {
             final LocalDate startDate = ZonedDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate();
             final LocalDate endDate = startDate.plusDays(_lookaheadDays);
 
@@ -288,7 +283,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     private void updateCache(final LocalDate start, final LocalDate end) {
         LocalDate date = start;
-        while (!date.equals(end)) {
+        while (date.compareTo(end) <= 0) {
             _partitionCache.add(date);
             date = date.plusDays(1);
         }
