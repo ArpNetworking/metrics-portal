@@ -303,7 +303,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         // it still returns a "non-empty" void result and so we can't use the
         // ordinarily more appropriate SqlUpdate type.
         final SqlQuery sql = _ebeanServer.createSqlQuery(
-                "select * from portal.create_daily_partition(?::text, ?::text, ?::date, ?::date)")
+                "select * from create_daily_partition(?::text, ?::text, ?::date, ?::date)")
                 .setParameter(1, schema)
                 .setParameter(2, table)
                 .setParameter(3, startDate)
