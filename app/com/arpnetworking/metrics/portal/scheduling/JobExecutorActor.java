@@ -245,11 +245,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 1);
 
         if (!_nextRun.isPresent()) {
-            // This could be the first time we're running
             _nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
         }
         if (!_nextRun.isPresent()) {
-            // The schedule is definitely not present.
             LOGGER.info()
                     .setMessage("job has no more scheduled runs")
                     .addData("cachedJob", cachedJob)
