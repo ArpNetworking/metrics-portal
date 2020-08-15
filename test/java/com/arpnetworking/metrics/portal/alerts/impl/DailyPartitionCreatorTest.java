@@ -57,6 +57,8 @@ public class DailyPartitionCreatorTest {
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
     private static final long TEST_LOOKAHEAD = 7;
 
+    private static final Instant CLOCK_START = Instant.parse("2020-08-13T00:00:00Z");
+
     private ManualClock _clock;
 
     // Unused Mocks
@@ -71,7 +73,7 @@ public class DailyPartitionCreatorTest {
     public void setUp() {
         _server = Mockito.mock(EbeanServer.class);
         _metrics = Mockito.mock(PeriodicMetrics.class);
-        _clock = new ManualClock(Instant.now(), Duration.ofDays(1), ZoneOffset.UTC);
+        _clock = new ManualClock(CLOCK_START, Duration.ofDays(1), ZoneOffset.UTC);
 
         _actorSystem = ActorSystem.create();
         _probe = new TestKit(_actorSystem);
@@ -162,7 +164,8 @@ public class DailyPartitionCreatorTest {
 
     @Test
     public void testCreatePartitionsOnDemand() throws Exception {
-        final ZonedDateTime oneWeekAgo = ZonedDateTime.now().minusDays(7);
+        final ZonedDateTime clockStart = ZonedDateTime.ofInstant(CLOCK_START, ZoneOffset.UTC);
+        final ZonedDateTime oneWeekAgo = clockStart.minusDays(7);
         final LocalDate oneWeekAgoLocal = oneWeekAgo.toLocalDate();
         final ActorRef ref = createActor();
 
@@ -190,7 +193,7 @@ public class DailyPartitionCreatorTest {
                     throw new PersistenceException("Something went wrong");
                 }
         );
-        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, Instant.now(), MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, CLOCK_START, MSG_TIMEOUT);
     }
 
     /**

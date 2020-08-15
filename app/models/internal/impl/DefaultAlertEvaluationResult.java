@@ -84,19 +84,26 @@ public final class DefaultAlertEvaluationResult implements AlertEvaluationResult
             return false;
         }
         final DefaultAlertEvaluationResult that = (DefaultAlertEvaluationResult) o;
-        return Objects.equal(_firingTags, that._firingTags);
+        return Objects.equal(_seriesName, that._seriesName)
+                && Objects.equal(_firingTags, that._firingTags)
+                && Objects.equal(_groupBys, that._groupBys)
+                && Objects.equal(_queryEndTime, that._queryEndTime)
+                && Objects.equal(_queryStartTime, that._queryStartTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(_firingTags);
+        return Objects.hashCode(_seriesName, _firingTags, _groupBys, _queryEndTime, _queryStartTime);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("seriesName", _seriesName)
-                .add("firingTags", _firingTags)
+                .add("_seriesName", _seriesName)
+                .add("_firingTags", _firingTags)
+                .add("_groupBys", _groupBys)
+                .add("_queryEndTime", _queryEndTime)
+                .add("_queryStartTime", _queryStartTime)
                 .toString();
     }
 
