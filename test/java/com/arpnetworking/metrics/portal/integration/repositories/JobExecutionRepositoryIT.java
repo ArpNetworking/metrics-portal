@@ -61,6 +61,13 @@ public abstract class JobExecutionRepositoryIT<T> {
 
     /**
      * Construct a <b>closed</b> instance of the Repository to be tested.
+     *
+     * @return The repository.
+     */
+    abstract JobExecutionRepository<T> setUpRepository(Organization organization);
+
+    /**
+     * Ensure that a job with the given id is valid.
      * <p>
      * The organization and job id for the given test case are provided as some repositories may validate
      * that these objects exist when fetching the associated executions. Each test suite may want to ensure
@@ -68,13 +75,14 @@ public abstract class JobExecutionRepositoryIT<T> {
      *
      * @return The repository.
      */
-    abstract JobExecutionRepository<T> setUpRepository(Organization organization, UUID jobId);
+    abstract void ensureJobExists(Organization organization, UUID jobId);
 
     @Before
     public void setUpRepository() {
         _jobId = UUID.randomUUID();
         _organization = TestBeanFactory.createOrganization();
-        _repository = setUpRepository(_organization, _jobId);
+        _repository = setUpRepository(_organization);
+        ensureJobExists(_organization, _jobId);
         _repository.open();
     }
 
@@ -247,6 +255,28 @@ public abstract class JobExecutionRepositoryIT<T> {
                 t0.plus(dt.multipliedBy(3)),
                 _repository.getLastCompleted(_jobId, _organization).get().getScheduled()
         );
+    }
+
+    @Test
+    public void testSanityCheckRunningMultipleJobsWithDistinctResults() {
+        final T firstResult = newResult();
+        final T secondResult = newResult();
+        final Instant scheduled = Instant.now();
+
+        _repository.jobStarted(_jobId, _organization, scheduled);
+        _repository.jobSucceeded(_jobId, _organization, scheduled, firstResult);
+
+        JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization).get();
+        assertThat(execution.getResult(), is(firstResult));
+
+        final UUID secondJob = UUID.randomUUID();
+        ensureJobExists(_organization, secondJob);
+
+        _repository.jobStarted(secondJob, _organization, scheduled);
+        _repository.jobSucceeded(secondJob, _organization, scheduled, secondResult);
+
+        execution = _repository.getLastSuccess(secondJob, _organization).get();
+        assertThat(execution.getResult(), is(secondResult));
     }
 
     @Test
