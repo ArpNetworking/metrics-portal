@@ -34,12 +34,23 @@ import java.util.UUID;
  */
 public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryIT<Report.Result> {
     @Override
-    JobExecutionRepository<Report.Result> setUpRepository(final Organization organization, final UUID jobId) {
+    JobExecutionRepository<Report.Result> setUpRepository(final Organization organization) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
         final DatabaseReportExecutionRepository repository = new DatabaseReportExecutionRepository(server);
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);
+
+        return repository;
+    }
+
+    @Override
+    void ensureJobExists(final Organization organization, final UUID jobId) {
+        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final models.ebean.Organization ebeanOrganization = models.ebean.Organization.findByOrganization(
+                server,
+                organization
+        ).orElseThrow(() -> new IllegalStateException("developer error: test organization must exist"));
 
         final models.ebean.Report ebeanReport = TestBeanFactory.createEbeanReport(ebeanOrganization);
         ebeanReport.setUuid(jobId);
@@ -48,8 +59,6 @@ public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryI
         server.save(ebeanReport.getSchedule());
         server.save(ebeanReport.getReportSource());
         server.save(ebeanReport);
-
-        return repository;
     }
 
     @Override

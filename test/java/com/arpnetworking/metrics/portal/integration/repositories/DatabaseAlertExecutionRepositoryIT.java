@@ -44,12 +44,9 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     private ActorSystem _actorSystem;
 
     @Override
-    public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization, final UUID jobId) {
+    public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
         final EbeanServer adminServer = EbeanServerHelper.getAdminMetricsDatabase();
-
-        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
-        // references are not constrained in the underlying execution table.
 
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
@@ -69,6 +66,12 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     }
 
     @Override
+    public void ensureJobExists(final Organization organization, final UUID jobId) {
+        // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
+        // references are not constrained in the underlying execution table.
+    }
+
+    @Override
     public void tearDown() {
         super.tearDown();
         TestKit.shutdownActorSystem(_actorSystem);
@@ -79,7 +82,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         final Instant queryEnd = Instant.now();
         return new DefaultAlertEvaluationResult.Builder()
                 .setSeriesName("example-series")
-                .setFiringTags(ImmutableList.of(ImmutableMap.of("tag-name", "tag-value")))
+                .setFiringTags(ImmutableList.of(ImmutableMap.of("tag-name", UUID.randomUUID().toString())))
                 .setGroupBys(ImmutableList.of("tag-name"))
                 .setQueryStartTime(queryEnd.minus(Duration.ofMinutes(1)))
                 .setQueryEndTime(queryEnd)

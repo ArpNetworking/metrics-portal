@@ -115,6 +115,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                         .where()
                         .eq("organization.uuid", org.get().getUuid())
                         .eq("scheduled", scheduled)
+                        .eq("alert_id", jobId)
                         .findOneOrEmpty()
         );
         final AlertExecution newOrUpdatedExecution = existingExecution.orElseGet(AlertExecution::new);
