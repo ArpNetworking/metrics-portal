@@ -214,7 +214,11 @@ public class PluggableAlertRepository implements AlertRepository {
         try {
             group = _objectMapper.readValue(bufferedStream, AlertGroup.class);
         } catch (final IOException e) {
-            throw new RuntimeException("Could not load alerts", e);
+            LOGGER.error()
+                .setMessage("Could not load alert definitions")
+                .setThrowable(e)
+                .log();
+            return;
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
         for (final SerializedAlert fsAlert : group.getAlerts()) {
@@ -323,7 +327,7 @@ public class PluggableAlertRepository implements AlertRepository {
             private List<SerializedAlert> _alerts;
             @NotNull
             @NotNegative
-            private Long _version;
+            private Long _version = 0L;
 
             /**
              * Default constructor.
@@ -413,7 +417,7 @@ public class PluggableAlertRepository implements AlertRepository {
 
             @NotNull
             @Nullable
-            private Boolean _enabled;
+            private Boolean _enabled = false;
 
             private ImmutableMap<String, Object> _additionalMetadata = ImmutableMap.of();
 
