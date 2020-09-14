@@ -308,6 +308,20 @@ public class AlertExecutionContextTest {
         assertThat(result.getGroupBys(), equalTo(ImmutableList.of("os")));
     }
 
+    @Test
+    public void testEmptyResult() throws Exception {
+        final MetricsQueryResult mockResult = getTestcase("emptyResult");
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result =
+                _context.execute(_alert, Instant.now())
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), is(empty()));
+    }
+
     @Test(expected = ExecutionException.class)
     public void testQueryExecuteError() throws Exception {
         final Throwable queryError = new RuntimeException("Something went wrong");

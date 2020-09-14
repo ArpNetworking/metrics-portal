@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -71,6 +72,9 @@ import java.util.function.Predicate;
  * an empty result for any other organization passed in.
  */
 public class PluggableAlertRepository implements AlertRepository {
+    private static final String RELOAD_SUCCESS_COUNTER = "alerts/pluggable_repository/reload/success";
+    private static final String RELOAD_GAUGE = "alerts/pluggable_repository/reload/alerts";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(PluggableAlertRepository.class);
     private static final int BUFFER_SIZE = 4096;
     private static final int LATEST_SERIALIZATION_VERSION = 0;
@@ -78,6 +82,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private final ConfigProvider _configProvider;
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
+    private final PeriodicMetrics _periodicMetrics;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
     /**
@@ -86,6 +91,7 @@ public class PluggableAlertRepository implements AlertRepository {
      * This binds the configuration to the ordinary constructor.
      *
      * @param objectMapper The object mapper to use for alert deserialization.
+     * @param periodicMetrics A metrics instance to record against.
      * @param injector The guice injector.
      * @param environment The play environment.
      * @param config The application configuration.
@@ -93,12 +99,14 @@ public class PluggableAlertRepository implements AlertRepository {
     @Inject
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
+            final PeriodicMetrics periodicMetrics,
             final Injector injector,
             final Environment environment,
             @Assisted final Config config
     ) {
         this(
                 objectMapper,
+                periodicMetrics,
                 ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
                 UUID.fromString(config.getString("organization"))
         );
@@ -108,17 +116,20 @@ public class PluggableAlertRepository implements AlertRepository {
      * Constructor.
      *
      * @param objectMapper The object mapper to use for alert deserialization.
+     * @param periodicMetrics A metrics instance to record against.
      * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
      */
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
+            final PeriodicMetrics periodicMetrics,
             final ConfigProvider configProvider,
             final UUID org
     ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
+        _periodicMetrics = periodicMetrics;
     }
 
     @Override
@@ -218,6 +229,7 @@ public class PluggableAlertRepository implements AlertRepository {
                 .setMessage("Could not load alert definitions")
                 .setThrowable(e)
                 .log();
+            _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 0);
             return;
         }
         final ImmutableMap.Builder<UUID, Alert> mapBuilder = ImmutableMap.builder();
@@ -231,15 +243,19 @@ public class PluggableAlertRepository implements AlertRepository {
             // Version 0
             //    query - Queries are KairosDB JSON requests.
 
-            final MetricsQuery query;
-            if (group.getVersion() == LATEST_SERIALIZATION_VERSION) {
-                query = new DefaultMetricsQuery.Builder()
-                        .setQuery(fsAlert.getQuery())
-                        .setFormat(MetricsQueryFormat.KAIROS_DB)
-                        .build();
-            } else {
-                throw new IllegalArgumentException(String.format("Unhandled alert version %d", group.getVersion()));
+            if (group.getVersion() != LATEST_SERIALIZATION_VERSION) {
+                final Throwable e = new IllegalArgumentException(String.format("Unhandled alert version %d", group.getVersion()));
+                LOGGER.error()
+                        .setMessage("Could not load alert definitions")
+                        .setThrowable(e)
+                        .log();
+                _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 0);
+                return;
             }
+            final MetricsQuery query = new DefaultMetricsQuery.Builder()
+                    .setQuery(fsAlert.getQuery())
+                    .setFormat(MetricsQueryFormat.KAIROS_DB)
+                    .build();
 
             final Alert alert =
                     new DefaultAlert.Builder()
@@ -254,6 +270,8 @@ public class PluggableAlertRepository implements AlertRepository {
             mapBuilder.put(uuid, alert);
         }
         _alerts = mapBuilder.build();
+        _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 1);
+        _periodicMetrics.recordGauge(RELOAD_GAUGE, _alerts.size());
         LOGGER.debug().setMessage("Alerts successfully reloaded")
                 .addData("alertCount", _alerts.size())
                 .log();

@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.PluggableAlertRepository;
@@ -43,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import play.mvc.Result;
 import play.test.Helpers;
 
@@ -131,6 +133,7 @@ public final class AlertControllerTest {
             );
             final AlertRepository alertRepository = new PluggableAlertRepository(
                     OBJECT_MAPPER,
+                    Mockito.mock(PeriodicMetrics.class),
                     configProvider,
                     _organization.getId()
             );
