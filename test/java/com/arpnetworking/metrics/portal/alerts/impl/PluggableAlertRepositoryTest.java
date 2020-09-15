@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
 import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
@@ -76,6 +77,7 @@ public class PluggableAlertRepositoryTest {
                 .build();
         _repository = new PluggableAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
+                Mockito.mock(PeriodicMetrics.class),
                 new StaticFileConfigProvider(resourcePath),
                 _organization.getId()
         );
@@ -109,6 +111,7 @@ public class PluggableAlertRepositoryTest {
 
         final PluggableAlertRepository badRepository = new PluggableAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
+                Mockito.mock(PeriodicMetrics.class),
                 mockConfigProvider,
                 _organization.getId()
         );
