@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
@@ -35,6 +37,7 @@ import org.mockito.Mockito;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -65,11 +68,16 @@ public class PluggableAlertRepositoryTest {
 
     private Organization _organization;
     private PluggableAlertRepository _repository;
+    private ActorSystem _actorSystem;
+    private TestKit _probe;
 
     @Before
     public void setUp() throws Exception {
         final URL config = ResourceHelper.resourceURL(PluggableAlertRepositoryTest.class, "Alerts");
         final Path resourcePath = Paths.get(config.toURI());
+
+        _actorSystem = ActorSystem.create();
+        _probe = new TestKit(_actorSystem);
 
         // Organization is fixed because alerts IDs are namespaced by org.
         _organization = new DefaultOrganization.Builder()
@@ -79,14 +87,19 @@ public class PluggableAlertRepositoryTest {
                 SerializationTestUtils.getApiObjectMapper(),
                 Mockito.mock(PeriodicMetrics.class),
                 new StaticFileConfigProvider(resourcePath),
-                _organization.getId()
+                _organization.getId(),
+                Optional.of(_probe.getRef())
         );
         _repository.open();
+
+        // Ensure the probe receives the message from the alerts being loaded.
+        _probe.expectMsgAnyClassOf(String.class);
     }
 
     @After
     public void tearDown() {
         _repository.close();
+        TestKit.shutdownActorSystem(_actorSystem);
     }
 
     @Test
@@ -113,7 +126,8 @@ public class PluggableAlertRepositoryTest {
                 SerializationTestUtils.getApiObjectMapper(),
                 Mockito.mock(PeriodicMetrics.class),
                 mockConfigProvider,
-                _organization.getId()
+                _organization.getId(),
+                Optional.of(_probe.getRef())
         );
 
         try {
@@ -124,6 +138,7 @@ public class PluggableAlertRepositoryTest {
             // CHECKSTYLE.ON: IllegalCatch
             // expected
         }
+        _probe.expectNoMessage(Duration.ofSeconds(1));
     }
 
     @Test

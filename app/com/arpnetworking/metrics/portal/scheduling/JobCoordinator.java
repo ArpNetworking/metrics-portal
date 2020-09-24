@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import akka.persistence.AbstractPersistentActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
@@ -51,8 +52,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private final OrganizationRepository _organizationRepository;
     private final ActorRef _jobExecutorRegion;
     private final PeriodicMetrics _periodicMetrics;
-
-    private boolean _currentlyExecuting = false;
 
     /**
      * Props factory.
@@ -136,11 +135,24 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     public void preStart() throws Exception {
         super.preStart();
         // Tick once at startup, then periodically thereafter.
-        self().tell(AntiEntropyTick.INSTANCE, self());
+        self().tell(ANTI_ENTROPY_TICK, self());
         timers().startPeriodicTimer(
                 ANTI_ENTROPY_PERIODIC_TIMER_NAME,
-                AntiEntropyTick.INSTANCE,
+                ANTI_ENTROPY_TICK,
                 scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
+    }
+
+    /**
+     * Tell the JobCoordinator at the given actor ref to reload all jobs.
+     * <p>
+     * This is often too broad and disruptive if your intent is to propagate an update to a single job.
+     * In those cases, you should instead notify the {@link JobExecutorActor} directly.
+     *
+     * @param ref The actor ref for the running JobCoordinator.
+     * @param timeout The request timeout.
+     */
+    public static void runAntiEntropy(final ActorRef ref, final Duration timeout) {
+        Patterns.ask(ref, ANTI_ENTROPY_TICK, timeout.toMillis());
     }
 
     private static <T> Iterator<? extends Job<T>> getAllJobs(final JobRepository<T> repo, final Organization organization) {
@@ -153,7 +165,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                 .build();
     }
 
-    private void runAntiEntropy() {
+    private void runAntiEntropyInternal() {
         final ActorRef coordinator = self();
         final String repoName = simpleTypeName(_repositoryType);
         try {
@@ -225,7 +237,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
                     0);
             throw e;
         } finally {
-            coordinator.tell(AntiEntropyFinished.INSTANCE, coordinator);
+            coordinator.tell(ANTI_ENTROPY_FINISHED, coordinator);
         }
     }
 
@@ -237,23 +249,17 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(AntiEntropyTick.class, message -> {
+                .matchEquals(ANTI_ENTROPY_TICK, message -> {
 
                     LOGGER.debug()
                             .setMessage("ticking")
                             .addData("repositoryType", _repositoryType)
                             .log();
-                    if (_currentlyExecuting) {
-                        return;
-                    }
 
                     getContext().getSystem().scheduler().scheduleOnce(
-                            scala.concurrent.duration.Duration.Zero(),
-                            this::runAntiEntropy,
+                            Duration.ZERO,
+                            this::runAntiEntropyInternal,
                             getContext().dispatcher());
-                })
-                .match(AntiEntropyFinished.class, message -> {
-                    _currentlyExecuting = false;
                 })
                 .build();
     }
@@ -276,18 +282,6 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
     private static final Logger LOGGER = LoggerFactory.getLogger(JobCoordinator.class);
     private static final int JOB_QUERY_PAGE_SIZE = 256;
 
-    /**
-     * Internal message, telling the scheduler to run any necessary jobs.
-     */
-    /* package private */ static final class AntiEntropyTick {
-        /* package private */ static final AntiEntropyTick INSTANCE = new AntiEntropyTick();
-    }
-
-    /**
-     * Internal message, telling the scheduler that its anti-entropy routine has finished asynchronously running.
-     */
-    /* package private */ static final class AntiEntropyFinished {
-        /* package private */ static final AntiEntropyFinished INSTANCE = new AntiEntropyFinished();
-    }
-
+    private static final String ANTI_ENTROPY_TICK = "ANTI_ENTROPY_TICK";
+    private static final String ANTI_ENTROPY_FINISHED = "ANTI_ENTROPY_FINISHED";
 }

@@ -15,10 +15,12 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -31,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
@@ -53,6 +56,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,6 +87,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private final PeriodicMetrics _periodicMetrics;
+    private final Optional<ActorRef> _alertJobCoordinator;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
     /**
@@ -94,6 +99,7 @@ public class PluggableAlertRepository implements AlertRepository {
      * @param periodicMetrics A metrics instance to record against.
      * @param injector The guice injector.
      * @param environment The play environment.
+     * @param alertJobCoordinator A reference to the alert job coordinator.
      * @param config The application configuration.
      */
     @Inject
@@ -102,13 +108,16 @@ public class PluggableAlertRepository implements AlertRepository {
             final PeriodicMetrics periodicMetrics,
             final Injector injector,
             final Environment environment,
+            @Named("AlertJobCoordinator")
+            final ActorRef alertJobCoordinator,
             @Assisted final Config config
     ) {
         this(
                 objectMapper,
                 periodicMetrics,
                 ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
-                UUID.fromString(config.getString("organization"))
+                UUID.fromString(config.getString("organization")),
+                Optional.of(alertJobCoordinator)
         );
     }
 
@@ -119,17 +128,20 @@ public class PluggableAlertRepository implements AlertRepository {
      * @param periodicMetrics A metrics instance to record against.
      * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
+     * @param alertJobCoordinator A reference to the alert job coordinator.
      */
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
             final PeriodicMetrics periodicMetrics,
             final ConfigProvider configProvider,
-            final UUID org
+            final UUID org,
+            final Optional<ActorRef> alertJobCoordinator
     ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
         _periodicMetrics = periodicMetrics;
+        _alertJobCoordinator = alertJobCoordinator;
     }
 
     @Override
@@ -272,6 +284,17 @@ public class PluggableAlertRepository implements AlertRepository {
         _alerts = mapBuilder.build();
         _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 1);
         _periodicMetrics.recordGauge(RELOAD_GAUGE, _alerts.size());
+
+        // Immediately kick the coordinator to pick up any job changes so that we
+        // don't have to wait for anti-entropy to begin.
+        //
+        // NOTE: Since nodes have their own copy of this repository, this will
+        // effectively kick the coordinator N times on every reload, where N is
+        // the number of coordinators in the cluster.
+        _alertJobCoordinator.ifPresent(ref -> {
+            JobCoordinator.runAntiEntropy(ref, Duration.ofSeconds(5));
+        });
+
         LOGGER.debug().setMessage("Alerts successfully reloaded")
                 .addData("alertCount", _alerts.size())
                 .log();
