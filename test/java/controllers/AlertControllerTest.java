@@ -15,6 +15,8 @@
  */
 package controllers;
 
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
@@ -40,6 +42,7 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
 import models.view.alerts.AlertFiringState;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -53,7 +56,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -115,9 +117,13 @@ public final class AlertControllerTest {
     public abstract static class SharedSetup {
         protected Organization _organization;
         protected AlertController _controller;
+        private ActorSystem _actorSystem;
 
         @Before
         public void setUp() {
+            _actorSystem = ActorSystem.create();
+            final TestKit probe = new TestKit(_actorSystem);
+
             final OrganizationRepository organizationRepository = new DefaultOrganizationRepository();
             organizationRepository.open();
             final QueryResult<Organization> queryResult = organizationRepository.query(organizationRepository.createQuery().limit(
@@ -139,7 +145,7 @@ public final class AlertControllerTest {
                     configProvider,
                     _organization.getId(),
                     Duration.ofSeconds(1),
-                    Optional.empty()
+                    probe.getRef()
             );
             alertRepository.open();
 
@@ -151,6 +157,11 @@ public final class AlertControllerTest {
                     alertExecutionRepository,
                     organizationRepository
             );
+        }
+
+        @After
+        public void tearDown() {
+            TestKit.shutdownActorSystem(_actorSystem);
         }
 
         private ImmutableList<Alert> populateAlertExecutions(final AlertExecutionRepository alertExecutionRepository) {

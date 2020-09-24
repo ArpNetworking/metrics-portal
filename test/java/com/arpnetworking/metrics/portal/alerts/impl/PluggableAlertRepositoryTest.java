@@ -90,7 +90,7 @@ public class PluggableAlertRepositoryTest {
                 new StaticFileConfigProvider(resourcePath),
                 _organization.getId(),
                 Duration.ofSeconds(1),
-                Optional.of(_probe.getRef())
+                _probe.getRef()
         );
         _repository.open();
 
@@ -130,7 +130,7 @@ public class PluggableAlertRepositoryTest {
                 mockConfigProvider,
                 _organization.getId(),
                 Duration.ofSeconds(1),
-                Optional.of(_probe.getRef())
+                _probe.getRef()
         );
 
         try {
@@ -229,9 +229,9 @@ public class PluggableAlertRepositoryTest {
                 new NullConfigProvider(),
                 _organization.getId(),
                 Duration.ofSeconds(1),
-                Optional.of(_probe.getRef())
+                _probe.getRef()
         );
-        repository.open();
+        repository.open(); // should trigger a timeout.
     }
 
     @Test(expected = UnsupportedOperationException.class)

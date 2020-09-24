@@ -91,7 +91,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private final PeriodicMetrics _periodicMetrics;
-    private final Optional<ActorRef> _alertJobCoordinator;
+    private final ActorRef _alertJobCoordinator;
     private final Duration _openTimeout;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
@@ -123,7 +123,7 @@ public class PluggableAlertRepository implements AlertRepository {
                 ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
                 UUID.fromString(config.getString("organization")),
                 config.getDuration("openTimeout"),
-                Optional.of(alertJobCoordinator)
+                alertJobCoordinator
         );
     }
 
@@ -143,7 +143,7 @@ public class PluggableAlertRepository implements AlertRepository {
             final ConfigProvider configProvider,
             final UUID org,
             final Duration openTimeout,
-            final Optional<ActorRef> alertJobCoordinator
+            final ActorRef alertJobCoordinator
     ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
@@ -158,11 +158,21 @@ public class PluggableAlertRepository implements AlertRepository {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening PluggableAlertRepository").log();
         final CompletableFuture<Void> initialReload = new CompletableFuture<>();
+        // We wrap the subscriber with two operations:
+        // 1. A hook to guarantee the repository has loaded before we mark it as open.
+        // 2. A hook to run anti-entropy after every reload.
         _configProvider.start(stream -> {
             reload(stream);
             if (!initialReload.isDone()) {
                 initialReload.complete(null);
             }
+            // Immediately kick the coordinator to pick up any job changes so that we
+            // don't have to wait for anti-entropy to begin.
+            //
+            // NOTE: Since nodes have their own copy of this repository, this will
+            // effectively kick the coordinator N times on every reload, where N is
+            // the number of nodes in the cluster.
+            JobCoordinator.runAntiEntropy(_alertJobCoordinator, Duration.ofSeconds(5));
         });
         try {
             initialReload.get(_openTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -304,16 +314,6 @@ public class PluggableAlertRepository implements AlertRepository {
         _alerts = mapBuilder.build();
         _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 1);
         _periodicMetrics.recordGauge(RELOAD_GAUGE, _alerts.size());
-
-        // Immediately kick the coordinator to pick up any job changes so that we
-        // don't have to wait for anti-entropy to begin.
-        //
-        // NOTE: Since nodes have their own copy of this repository, this will
-        // effectively kick the coordinator N times on every reload, where N is
-        // the number of nodes in the cluster.
-        _alertJobCoordinator.ifPresent(ref -> {
-            JobCoordinator.runAntiEntropy(ref, Duration.ofSeconds(5));
-        });
 
         LOGGER.debug().setMessage("Alerts successfully reloaded")
                 .addData("alertCount", _alerts.size())
