@@ -21,6 +21,7 @@ import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.metrics.portal.config.impl.NullConfigProvider;
 import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
@@ -88,6 +89,7 @@ public class PluggableAlertRepositoryTest {
                 Mockito.mock(PeriodicMetrics.class),
                 new StaticFileConfigProvider(resourcePath),
                 _organization.getId(),
+                Duration.ofSeconds(1),
                 Optional.of(_probe.getRef())
         );
         _repository.open();
@@ -127,6 +129,7 @@ public class PluggableAlertRepositoryTest {
                 Mockito.mock(PeriodicMetrics.class),
                 mockConfigProvider,
                 _organization.getId(),
+                Duration.ofSeconds(1),
                 Optional.of(_probe.getRef())
         );
 
@@ -216,6 +219,19 @@ public class PluggableAlertRepositoryTest {
     @Test
     public void testGetAlertCount() {
         assertThat(_repository.getAlertCount(_organization), equalTo(6L));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testWaitsForInitialReloadTimeout() {
+        final PluggableAlertRepository repository = new PluggableAlertRepository(
+                SerializationTestUtils.getApiObjectMapper(),
+                Mockito.mock(PeriodicMetrics.class),
+                new NullConfigProvider(),
+                _organization.getId(),
+                Duration.ofSeconds(1),
+                Optional.of(_probe.getRef())
+        );
+        repository.open();
     }
 
     @Test(expected = UnsupportedOperationException.class)

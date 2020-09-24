@@ -49,6 +49,7 @@ import play.mvc.Result;
 import play.test.Helpers;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -137,6 +138,7 @@ public final class AlertControllerTest {
                     Mockito.mock(PeriodicMetrics.class),
                     configProvider,
                     _organization.getId(),
+                    Duration.ofSeconds(1),
                     Optional.empty()
             );
             alertRepository.open();

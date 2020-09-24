@@ -61,6 +61,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
@@ -88,6 +92,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private final Organization _organization;
     private final PeriodicMetrics _periodicMetrics;
     private final Optional<ActorRef> _alertJobCoordinator;
+    private final Duration _openTimeout;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
     /**
@@ -117,6 +122,7 @@ public class PluggableAlertRepository implements AlertRepository {
                 periodicMetrics,
                 ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
                 UUID.fromString(config.getString("organization")),
+                config.getDuration("openTimeout"),
                 Optional.of(alertJobCoordinator)
         );
     }
@@ -128,6 +134,7 @@ public class PluggableAlertRepository implements AlertRepository {
      * @param periodicMetrics A metrics instance to record against.
      * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
+     * @param openTimeout The timeout to use when waiting for the first update at open.
      * @param alertJobCoordinator A reference to the alert job coordinator.
      */
     public PluggableAlertRepository(
@@ -135,12 +142,14 @@ public class PluggableAlertRepository implements AlertRepository {
             final PeriodicMetrics periodicMetrics,
             final ConfigProvider configProvider,
             final UUID org,
+            final Duration openTimeout,
             final Optional<ActorRef> alertJobCoordinator
     ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
         _periodicMetrics = periodicMetrics;
+        _openTimeout = openTimeout;
         _alertJobCoordinator = alertJobCoordinator;
     }
 
@@ -148,7 +157,18 @@ public class PluggableAlertRepository implements AlertRepository {
     public void open() {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening PluggableAlertRepository").log();
-        _configProvider.start(this::reload);
+        final CompletableFuture<Void> initialReload = new CompletableFuture<>();
+        _configProvider.start(stream -> {
+            reload(stream);
+            if (!initialReload.isDone()) {
+                initialReload.complete(null);
+            }
+        });
+        try {
+            initialReload.get(_openTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException("failed waiting for initial reload", e);
+        }
         _isOpen.set(true);
     }
 
