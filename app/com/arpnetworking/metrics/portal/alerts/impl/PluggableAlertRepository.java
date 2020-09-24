@@ -290,7 +290,7 @@ public class PluggableAlertRepository implements AlertRepository {
         //
         // NOTE: Since nodes have their own copy of this repository, this will
         // effectively kick the coordinator N times on every reload, where N is
-        // the number of coordinators in the cluster.
+        // the number of nodes in the cluster.
         _alertJobCoordinator.ifPresent(ref -> {
             JobCoordinator.runAntiEntropy(ref, Duration.ofSeconds(5));
         });
