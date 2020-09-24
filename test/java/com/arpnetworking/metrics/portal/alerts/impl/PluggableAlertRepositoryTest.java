@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.metrics.portal.config.impl.NullConfigProvider;
 import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
@@ -35,6 +36,7 @@ import org.mockito.Mockito;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +81,8 @@ public class PluggableAlertRepositoryTest {
                 SerializationTestUtils.getApiObjectMapper(),
                 Mockito.mock(PeriodicMetrics.class),
                 new StaticFileConfigProvider(resourcePath),
-                _organization.getId()
+                _organization.getId(),
+                Duration.ofSeconds(1)
         );
         _repository.open();
     }
@@ -113,7 +116,8 @@ public class PluggableAlertRepositoryTest {
                 SerializationTestUtils.getApiObjectMapper(),
                 Mockito.mock(PeriodicMetrics.class),
                 mockConfigProvider,
-                _organization.getId()
+                _organization.getId(),
+                Duration.ofSeconds(1)
         );
 
         try {
@@ -201,6 +205,18 @@ public class PluggableAlertRepositoryTest {
     @Test
     public void testGetAlertCount() {
         assertThat(_repository.getAlertCount(_organization), equalTo(6L));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testWaitsForInitialReloadTimeoout() {
+        final PluggableAlertRepository repository = new PluggableAlertRepository(
+                SerializationTestUtils.getApiObjectMapper(),
+                Mockito.mock(PeriodicMetrics.class),
+                new NullConfigProvider(),
+                _organization.getId(),
+                Duration.ofSeconds(1)
+        );
+        repository.open();
     }
 
     @Test(expected = UnsupportedOperationException.class)
