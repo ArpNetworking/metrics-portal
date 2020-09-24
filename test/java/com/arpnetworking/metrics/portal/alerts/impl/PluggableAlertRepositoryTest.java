@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import akka.actor.ActorSystem;
+import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
@@ -67,11 +69,16 @@ public class PluggableAlertRepositoryTest {
 
     private Organization _organization;
     private PluggableAlertRepository _repository;
+    private ActorSystem _actorSystem;
+    private TestKit _probe;
 
     @Before
     public void setUp() throws Exception {
         final URL config = ResourceHelper.resourceURL(PluggableAlertRepositoryTest.class, "Alerts");
         final Path resourcePath = Paths.get(config.toURI());
+
+        _actorSystem = ActorSystem.create();
+        _probe = new TestKit(_actorSystem);
 
         // Organization is fixed because alerts IDs are namespaced by org.
         _organization = new DefaultOrganization.Builder()
@@ -82,14 +89,19 @@ public class PluggableAlertRepositoryTest {
                 Mockito.mock(PeriodicMetrics.class),
                 new StaticFileConfigProvider(resourcePath),
                 _organization.getId(),
-                Duration.ofSeconds(1)
+                Duration.ofSeconds(1),
+                _probe.getRef()
         );
         _repository.open();
+
+        // Ensure the probe receives the message from the alerts being loaded.
+        _probe.expectMsgAnyClassOf(String.class);
     }
 
     @After
     public void tearDown() {
         _repository.close();
+        TestKit.shutdownActorSystem(_actorSystem);
     }
 
     @Test
@@ -117,7 +129,8 @@ public class PluggableAlertRepositoryTest {
                 Mockito.mock(PeriodicMetrics.class),
                 mockConfigProvider,
                 _organization.getId(),
-                Duration.ofSeconds(1)
+                Duration.ofSeconds(1),
+                _probe.getRef()
         );
 
         try {
@@ -128,6 +141,7 @@ public class PluggableAlertRepositoryTest {
             // CHECKSTYLE.ON: IllegalCatch
             // expected
         }
+        _probe.expectNoMessage(Duration.ofSeconds(1));
     }
 
     @Test
@@ -208,15 +222,16 @@ public class PluggableAlertRepositoryTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testWaitsForInitialReloadTimeoout() {
+    public void testWaitsForInitialReloadTimeout() {
         final PluggableAlertRepository repository = new PluggableAlertRepository(
                 SerializationTestUtils.getApiObjectMapper(),
                 Mockito.mock(PeriodicMetrics.class),
                 new NullConfigProvider(),
                 _organization.getId(),
-                Duration.ofSeconds(1)
+                Duration.ofSeconds(1),
+                _probe.getRef()
         );
-        repository.open();
+        repository.open(); // should trigger a timeout.
     }
 
     @Test(expected = UnsupportedOperationException.class)

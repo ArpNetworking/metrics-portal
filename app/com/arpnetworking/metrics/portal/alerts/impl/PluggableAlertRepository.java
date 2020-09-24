@@ -15,10 +15,12 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
+import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
+import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -31,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import models.internal.AlertQuery;
@@ -88,6 +91,7 @@ public class PluggableAlertRepository implements AlertRepository {
     private final ObjectMapper _objectMapper;
     private final Organization _organization;
     private final PeriodicMetrics _periodicMetrics;
+    private final ActorRef _alertJobCoordinator;
     private final Duration _openTimeout;
     private ImmutableMap<UUID, Alert> _alerts = ImmutableMap.of();
 
@@ -100,6 +104,7 @@ public class PluggableAlertRepository implements AlertRepository {
      * @param periodicMetrics A metrics instance to record against.
      * @param injector The guice injector.
      * @param environment The play environment.
+     * @param alertJobCoordinator A reference to the alert job coordinator.
      * @param config The application configuration.
      */
     @Inject
@@ -108,6 +113,8 @@ public class PluggableAlertRepository implements AlertRepository {
             final PeriodicMetrics periodicMetrics,
             final Injector injector,
             final Environment environment,
+            @Named("AlertJobCoordinator")
+            final ActorRef alertJobCoordinator,
             @Assisted final Config config
     ) {
         this(
@@ -115,7 +122,8 @@ public class PluggableAlertRepository implements AlertRepository {
                 periodicMetrics,
                 ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
                 UUID.fromString(config.getString("organization")),
-                config.getDuration("openTimeout")
+                config.getDuration("openTimeout"),
+                alertJobCoordinator
         );
     }
 
@@ -127,19 +135,22 @@ public class PluggableAlertRepository implements AlertRepository {
      * @param configProvider The config loader for the alert definitions.
      * @param org The organization to group the alerts under.
      * @param openTimeout The timeout to use when waiting for the first update at open.
+     * @param alertJobCoordinator A reference to the alert job coordinator.
      */
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
             final PeriodicMetrics periodicMetrics,
             final ConfigProvider configProvider,
             final UUID org,
-            final Duration openTimeout
-            ) {
+            final Duration openTimeout,
+            final ActorRef alertJobCoordinator
+    ) {
         _objectMapper = objectMapper;
         _configProvider = configProvider;
         _organization = new DefaultOrganization.Builder().setId(org).build();
         _periodicMetrics = periodicMetrics;
         _openTimeout = openTimeout;
+        _alertJobCoordinator = alertJobCoordinator;
     }
 
     @Override
@@ -147,11 +158,21 @@ public class PluggableAlertRepository implements AlertRepository {
         assertIsOpen(false);
         LOGGER.debug().setMessage("Opening PluggableAlertRepository").log();
         final CompletableFuture<Void> initialReload = new CompletableFuture<>();
+        // We wrap the subscriber with two operations:
+        // 1. A hook to guarantee the repository has loaded before we mark it as open.
+        // 2. A hook to run anti-entropy after every reload.
         _configProvider.start(stream -> {
             reload(stream);
             if (!initialReload.isDone()) {
                 initialReload.complete(null);
             }
+            // Immediately kick the coordinator to pick up any job changes so that we
+            // don't have to wait for anti-entropy to begin.
+            //
+            // NOTE: Since nodes have their own copy of this repository, this will
+            // effectively kick the coordinator N times on every reload, where N is
+            // the number of nodes in the cluster.
+            JobCoordinator.runAntiEntropy(_alertJobCoordinator, Duration.ofSeconds(5));
         });
         try {
             initialReload.get(_openTimeout.toMillis(), TimeUnit.MILLISECONDS);
@@ -293,6 +314,7 @@ public class PluggableAlertRepository implements AlertRepository {
         _alerts = mapBuilder.build();
         _periodicMetrics.recordCounter(RELOAD_SUCCESS_COUNTER, 1);
         _periodicMetrics.recordGauge(RELOAD_GAUGE, _alerts.size());
+
         LOGGER.debug().setMessage("Alerts successfully reloaded")
                 .addData("alertCount", _alerts.size())
                 .log();
