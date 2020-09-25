@@ -729,11 +729,15 @@ public class MainModule extends AbstractModule {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(INDEXER_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.props(
+                final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         _hostProviderProps,
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(INDEXER_ROLE)),
                         "host-provider-scheduler");
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        managerRef.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_system).withRole(INDEXER_ROLE)
+                ));
             }
             return null;
         }
@@ -765,7 +769,7 @@ public class MainModule extends AbstractModule {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.props(
+                final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 ReportRepository.class,
                                 ReportExecutionRepository.class,
@@ -775,6 +779,10 @@ public class MainModule extends AbstractModule {
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
                         "ReportJobCoordinator");
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        managerRef.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_system).withRole(ANTI_ENTROPY_ROLE)
+                ));
             }
             return null;
         }
@@ -807,9 +815,8 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
             if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
-                return _system.actorOf(ClusterSingletonManager.props(
+                final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 AlertJobRepository.class,
                                 AlertExecutionRepository.class,
@@ -819,6 +826,10 @@ public class MainModule extends AbstractModule {
                         PoisonPill.getInstance(),
                         ClusterSingletonManagerSettings.create(_system).withRole(ANTI_ENTROPY_ROLE)),
                         "AlertJobCoordinator");
+                return _system.actorOf(ClusterSingletonProxy.props(
+                        managerRef.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_system).withRole(ANTI_ENTROPY_ROLE)
+                ));
             }
             return null;
         }
