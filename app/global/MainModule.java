@@ -736,7 +736,7 @@ public class MainModule extends AbstractModule {
                         "host-provider-scheduler");
                 return _system.actorOf(ClusterSingletonProxy.props(
                         managerRef.path().toStringWithoutAddress(),
-                        ClusterSingletonProxySettings.create(_system).withRole(INDEXER_ROLE)
+                        ClusterSingletonProxySettings.create(_system)
                 ));
             }
             return null;
@@ -781,7 +781,7 @@ public class MainModule extends AbstractModule {
                         "ReportJobCoordinator");
                 return _system.actorOf(ClusterSingletonProxy.props(
                         managerRef.path().toStringWithoutAddress(),
-                        ClusterSingletonProxySettings.create(_system).withRole(ANTI_ENTROPY_ROLE)
+                        ClusterSingletonProxySettings.create(_system)
                 ));
             }
             return null;
@@ -828,7 +828,7 @@ public class MainModule extends AbstractModule {
                         "AlertJobCoordinator");
                 return _system.actorOf(ClusterSingletonProxy.props(
                         managerRef.path().toStringWithoutAddress(),
-                        ClusterSingletonProxySettings.create(_system).withRole(ANTI_ENTROPY_ROLE)
+                        ClusterSingletonProxySettings.create(_system)
                 ));
             }
             return null;
