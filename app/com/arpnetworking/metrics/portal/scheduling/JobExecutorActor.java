@@ -74,6 +74,19 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private boolean _currentlyExecuting = false;
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
     private Optional<Instant> _nextRun = Optional.empty();
+    private final JobRefSerializer _refSerializer;
+
+    private JobExecutorActor(
+            final Injector injector,
+            final Clock clock,
+            final PeriodicMetrics periodicMetrics,
+            final JobRefSerializer refSerializer
+    ) {
+        _injector = injector;
+        _clock = clock;
+        _periodicMetrics = periodicMetrics;
+        _refSerializer = refSerializer;
+    }
 
     /**
      * Props factory.
@@ -81,16 +94,38 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
+     * @param refSerializer The JobRefSerializer that this actor will use reconstruct its JobRef at startup.
      * @return A new props to create this actor.
      */
-    public static Props props(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, periodicMetrics));
+    public static Props props(
+            final Injector injector,
+            final Clock clock,
+            final PeriodicMetrics periodicMetrics,
+            final JobRefSerializer refSerializer
+    ) {
+        return Props.create(JobExecutorActor.class,
+                () -> new JobExecutorActor<>(injector, clock, periodicMetrics, refSerializer));
     }
 
-    private JobExecutorActor(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
-        _injector = injector;
-        _clock = clock;
-        _periodicMetrics = periodicMetrics;
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
+
+        final String actorName = getSelf().path().name();
+        final Optional<JobRef<?>> ref = _refSerializer.entityIDtoJobRef(actorName);
+        if (ref.isPresent()) {
+            final JobRef<T> castRef = unsafeJobRefCast(ref.get());
+            LOGGER.info()
+                    .setMessage("inferred job ref from name, triggering reload")
+                    .addData("jobRef", castRef.toString())
+                    .log();
+            reload(new Reload.Builder<T>().setJobRef(castRef).build());
+            return;
+        }
+        LOGGER.warn()
+                .setMessage("could not infer job ref from name, refSerializer could be configured incorrectly.")
+                .addData("actorName", actorName)
+                .log();
     }
 
     @Override
@@ -334,6 +369,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 LOGGER.info()
                         .setMessage("marking job as successful")
                         .addData("ref", ref)
+                        .addData("actorName", getSelf().path().name())
                         .addData("scheduled", message.getScheduled())
                         .log();
                 repo.jobSucceeded(

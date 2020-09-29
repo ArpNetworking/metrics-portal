@@ -16,6 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.cluster.sharding.ShardRegion;
+import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
 
@@ -25,18 +26,24 @@ import javax.annotation.Nullable;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
+    private final JobRefSerializer _refSerializer;
+
     /**
      * Public constructor.
+     *
+     * @param refSerializer the serializer to use to construct the entity ID from each job ref.
      */
-    public JobMessageExtractor() {
+    @Inject
+    public JobMessageExtractor(final JobRefSerializer refSerializer) {
         super(NUM_SHARDS);
+        _refSerializer = refSerializer;
     }
 
     @Override
     @Nullable
     public String entityId(final Object message) {
         if (message instanceof JobExecutorActor.Reload) {
-            return jobRefToUId(((JobExecutorActor.Reload) message).getJobRef());
+            return _refSerializer.jobRefToEntityID(((JobExecutorActor.Reload) message).getJobRef());
         }
         return null;
     }
@@ -45,14 +52,6 @@ public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtrac
     @Nullable
     public Object entityMessage(final Object message) {
         return message;
-    }
-
-    private static String jobRefToUId(final JobRef<?> ref) {
-        return String.join(
-                "_",
-                ref.getRepositoryType().getCanonicalName(),
-                ref.getOrganization().getId().toString(),
-                ref.getJobId().toString());
     }
 
     private static final int NUM_SHARDS = 3000;

@@ -112,6 +112,10 @@ public final class JobRef<T> implements Serializable {
         return _repositoryType;
     }
 
+    public Class<? extends JobExecutionRepository<T>> getExecutionRepositoryType() {
+        return _execRepositoryType;
+    }
+
     public UUID getJobId() {
         return _jobId;
     }

@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepositor
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -111,7 +112,11 @@ public final class JobExecutorActorTest {
     }
 
     private Props makeExecutorActorProps() {
-        return JobExecutorActor.props(_injector, _clock, _periodicMetrics);
+        return JobExecutorActor.props(_injector, _clock, _periodicMetrics, new OneWayJobRefSerializer());
+    }
+
+    private Props makeExecutorActorProps(final JobRefSerializer refSerializer) {
+        return JobExecutorActor.props(_injector, _clock, _periodicMetrics, refSerializer);
     }
 
     private ActorRef makeExecutorActor() {
@@ -176,6 +181,42 @@ public final class JobExecutorActorTest {
         Mockito.verify(_execRepo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testAutoReloadWhenJobRefIsInferrable() {
+        final JobRefSerializer refSerializer = new TwoWayJobRefSerializer(
+                ImmutableList.of(MockableIntJobRepository.class),
+                ImmutableList.of(MockableIntJobExecutionRepository.class)
+        );
+
+        final ChronoUnit period = ChronoUnit.SECONDS;
+        final Instant startAt = T_0.minus(period.getDuration());
+        final Job<Integer> j = addJobToRepo(
+                new DummyJob.Builder<Integer>()
+                        .setSchedule(new PeriodicSchedule.Builder()
+                                .setRunAtAndAfter(startAt)
+                                .setZone(ZoneId.of("UTC"))
+                                .setPeriod(period)
+                                .setPeriodCount(5)
+                                .build())
+                        .setTimeout(Duration.ofSeconds(30))
+                        .setResult(123)
+                        .build());
+
+        final JobRef<Integer> jobRef = new JobRef.Builder<Integer>()
+                .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
+                .setId(j.getId())
+                .setOrganization(ORGANIZATION)
+                .build();
+
+        final String actorName = refSerializer.jobRefToEntityID(jobRef);
+        final Props props = makeExecutorActorProps(refSerializer);
+        _system.actorOf(props, actorName);
+
+        // Actor should have started ticking on its own.
+        Mockito.verify(_execRepo, Mockito.after(1000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test

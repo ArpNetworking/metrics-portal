@@ -34,7 +34,7 @@ public final class JobMessageExtractorTest {
 
     @Test
     public void testEntityId() {
-        final JobMessageExtractor extractor = new JobMessageExtractor();
+        final JobMessageExtractor extractor = new JobMessageExtractor(new OneWayJobRefSerializer());
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .setOrganization(ORGANIZATION)
@@ -42,12 +42,7 @@ public final class JobMessageExtractorTest {
                 .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
                 .build();
         assertEquals(
-                String.join(
-                        "_",
-
-                        "com.arpnetworking.metrics.portal.scheduling.JobMessageExtractorTest.MockableIntJobRepository",
-                        "00000000-0000-0000-0000-000000000000",
-                        "11111111-1111-1111-1111-111111111111"),
+                "11111111-1111-1111-1111-111111111111",
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
 

@@ -71,7 +71,9 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
+import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
+import com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
@@ -86,6 +88,7 @@ import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -394,6 +397,18 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private JobRefSerializer provideJobRefSerializer() {
+        // This must match the configuration of each JobCoordinator, or else
+        // we will not be able to guarantee that job actors will run after
+        // a shard moves within the cluster.
+        return new TwoWayJobRefSerializer(
+                ImmutableList.of(AlertJobRepository.class, ReportRepository.class),
+                ImmutableList.of(AlertExecutionRepository.class, ReportExecutionRepository.class)
+        );
+    }
+
+    @Provides
     @Singleton
     @Named("job-execution-shard-region")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
@@ -402,11 +417,12 @@ public class MainModule extends AbstractModule {
             final Injector injector,
             final JobMessageExtractor extractor,
             final Clock clock,
-            final PeriodicMetrics periodicMetrics) {
+            final PeriodicMetrics periodicMetrics,
+            final JobRefSerializer refSerializer) {
         final ClusterSharding clusterSharding = ClusterSharding.get(system);
         return clusterSharding.start(
                 "JobExecutor",
-                JobExecutorActor.props(injector, clock, periodicMetrics),
+                JobExecutorActor.props(injector, clock, periodicMetrics, refSerializer),
                 ClusterShardingSettings.create(system).withRememberEntities(true),
                 extractor,
                 new ParallelLeastShardAllocationStrategy(
