@@ -73,7 +73,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializer;
+import com.arpnetworking.metrics.portal.scheduling.DefaultJobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
@@ -88,7 +88,6 @@ import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -402,10 +401,7 @@ public class MainModule extends AbstractModule {
         // This must match the configuration of each JobCoordinator, or else
         // we will not be able to guarantee that job actors will run after
         // a shard moves within the cluster.
-        return new TwoWayJobRefSerializer(
-                ImmutableList.of(AlertJobRepository.class, ReportRepository.class),
-                ImmutableList.of(AlertExecutionRepository.class, ReportExecutionRepository.class)
-        );
+        return new DefaultJobRefSerializer();
     }
 
     @Provides

@@ -43,7 +43,7 @@ public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtrac
     @Nullable
     public String entityId(final Object message) {
         if (message instanceof JobExecutorActor.Reload) {
-            return _refSerializer.jobRefToEntityID(((JobExecutorActor.Reload) message).getJobRef());
+            return _refSerializer.serialize(((JobExecutorActor.Reload) message).getJobRef());
         }
         return null;
     }

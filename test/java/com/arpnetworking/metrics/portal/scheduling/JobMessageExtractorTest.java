@@ -34,7 +34,7 @@ public final class JobMessageExtractorTest {
 
     @Test
     public void testEntityId() {
-        final JobMessageExtractor extractor = new JobMessageExtractor(new OneWayJobRefSerializer());
+        final JobMessageExtractor extractor = new JobMessageExtractor(new DefaultJobRefSerializer());
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .setOrganization(ORGANIZATION)

@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.arpnetworking.metrics.portal.scheduling;
-
-import com.arpnetworking.commons.serialization.Deserializer;
-import com.arpnetworking.commons.serialization.Serializer;
+package com.arpnetworking.commons.serialization;
 
 /**
- * A serializer that provides a way to map entity ids to job refs and vice-versa.
- * <p>
- * This is used as somewhat of a crutch for the lack of dynamic props in Akka's
- * classic actor clustering, and would be unnecessary if we later move to typed
- * actors.
- * <p>
- * See <a href=https://stackoverflow.com/a/26524666>this SO post</a> for more details. This is Option A.
+ * An object that can serialize a structured value into a string.
  *
+ * @param <T> the input type
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface JobRefSerializer extends Serializer<JobRef<?>>, Deserializer<JobRef<?>> {}
+public interface Serializer<T> {
+    /**
+     * Serialize the given value into a string.
+     *
+     * @param value the string to serialize
+     * @return the serialized form of this value
+     */
+    String serialize(T value);
+}

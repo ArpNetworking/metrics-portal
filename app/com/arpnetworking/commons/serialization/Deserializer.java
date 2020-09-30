@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.metrics.portal.scheduling;
-
-import java.util.Optional;
+package com.arpnetworking.commons.serialization;
 
 /**
- * A {@link JobRefSerializer} that just extracts the Job ID from the ref, making no attempt
- * to preserve enough information for later reconstruction (hence "one-way").
+ * An object that can deserialize a structured value from a string.
  *
+ * @param <T> the output type
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class OneWayJobRefSerializer implements JobRefSerializer {
-    @Override
-    public String jobRefToEntityID(final JobRef<?> ref) {
-        return ref.getJobId().toString();
-    }
-
-    @Override
-    public Optional<JobRef<?>> entityIDtoJobRef(final String id) {
-        return Optional.empty();
-    }
+public interface Deserializer<T> {
+    /**
+     * Deserialize a value from the given string.
+     *
+     * @param value the string to deserialize
+     * @return the value stored within the string
+     * @throws DeserializationException if unable to deserialize
+     */
+    T deserialize(String value) throws DeserializationException;
 }

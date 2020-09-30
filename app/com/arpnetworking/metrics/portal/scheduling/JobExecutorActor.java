@@ -20,6 +20,8 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.serialization.DeserializationException;
+import com.arpnetworking.commons.serialization.Deserializer;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -74,18 +76,18 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private boolean _currentlyExecuting = false;
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
     private Optional<Instant> _nextRun = Optional.empty();
-    private final JobRefSerializer _refSerializer;
+    private final Deserializer<JobRef<?>> _refDeserializer;
 
     private JobExecutorActor(
             final Injector injector,
             final Clock clock,
             final PeriodicMetrics periodicMetrics,
-            final JobRefSerializer refSerializer
+            final Deserializer<JobRef<?>> refDeserializer
     ) {
         _injector = injector;
         _clock = clock;
         _periodicMetrics = periodicMetrics;
-        _refSerializer = refSerializer;
+        _refDeserializer = refDeserializer;
     }
 
     /**
@@ -94,17 +96,17 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
-     * @param refSerializer The JobRefSerializer that this actor will use reconstruct its JobRef at startup.
+     * @param refDeserializer The JobRefSerializer that this actor will use reconstruct its JobRef at startup.
      * @return A new props to create this actor.
      */
     public static Props props(
             final Injector injector,
             final Clock clock,
             final PeriodicMetrics periodicMetrics,
-            final JobRefSerializer refSerializer
+            final Deserializer<JobRef<?>> refDeserializer
     ) {
         return Props.create(JobExecutorActor.class,
-                () -> new JobExecutorActor<>(injector, clock, periodicMetrics, refSerializer));
+                () -> new JobExecutorActor<>(injector, clock, periodicMetrics, refDeserializer));
     }
 
     @Override
@@ -112,20 +114,21 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         super.preStart();
 
         final String actorName = getSelf().path().name();
-        final Optional<JobRef<?>> ref = _refSerializer.entityIDtoJobRef(actorName);
-        if (ref.isPresent()) {
-            final JobRef<T> castRef = unsafeJobRefCast(ref.get());
+        try {
+            final JobRef<T> ref = unsafeJobRefCast(_refDeserializer.deserialize(actorName));
             LOGGER.info()
                     .setMessage("inferred job ref from name, triggering reload")
-                    .addData("jobRef", castRef.toString())
+                    .addData("jobRef", ref.toString())
                     .log();
-            reload(new Reload.Builder<T>().setJobRef(castRef).build());
-            return;
+            getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
+        } catch (final DeserializationException e) {
+            LOGGER.warn()
+                    .setMessage("could not infer job ref from name, refDeserializer could be configured incorrectly.")
+                    .setThrowable(e)
+                    .addData("actorName", actorName)
+                    .log();
+            // FIXME: If I kill the job here, it will cause all the tests to fail unless the name is correct.
         }
-        LOGGER.warn()
-                .setMessage("could not infer job ref from name, refSerializer could be configured incorrectly.")
-                .addData("actorName", actorName)
-                .log();
     }
 
     @Override
@@ -369,7 +372,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 LOGGER.info()
                         .setMessage("marking job as successful")
                         .addData("ref", ref)
-                        .addData("actorName", getSelf().path().name())
                         .addData("scheduled", message.getScheduled())
                         .log();
                 repo.jobSucceeded(

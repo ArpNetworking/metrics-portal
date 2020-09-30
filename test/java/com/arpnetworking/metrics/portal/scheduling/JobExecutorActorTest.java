@@ -19,6 +19,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import com.arpnetworking.commons.java.time.ManualClock;
+import com.arpnetworking.commons.serialization.Deserializer;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -29,7 +30,6 @@ import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepositor
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.arpnetworking.metrics.portal.scheduling.mocks.DummyJob;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -112,10 +112,10 @@ public final class JobExecutorActorTest {
     }
 
     private Props makeExecutorActorProps() {
-        return JobExecutorActor.props(_injector, _clock, _periodicMetrics, new OneWayJobRefSerializer());
+        return JobExecutorActor.props(_injector, _clock, _periodicMetrics, new DefaultJobRefSerializer());
     }
 
-    private Props makeExecutorActorProps(final JobRefSerializer refSerializer) {
+    private Props makeExecutorActorProps(final Deserializer<JobRef<?>> refSerializer) {
         return JobExecutorActor.props(_injector, _clock, _periodicMetrics, refSerializer);
     }
 
@@ -185,10 +185,7 @@ public final class JobExecutorActorTest {
 
     @Test
     public void testAutoReloadWhenJobRefIsInferrable() {
-        final JobRefSerializer refSerializer = new TwoWayJobRefSerializer(
-                ImmutableList.of(MockableIntJobRepository.class),
-                ImmutableList.of(MockableIntJobExecutionRepository.class)
-        );
+        final JobRefSerializer refSerializer = new DefaultJobRefSerializer();
 
         final ChronoUnit period = ChronoUnit.SECONDS;
         final Instant startAt = T_0.minus(period.getDuration());
@@ -211,7 +208,7 @@ public final class JobExecutorActorTest {
                 .setOrganization(ORGANIZATION)
                 .build();
 
-        final String actorName = refSerializer.jobRefToEntityID(jobRef);
+        final String actorName = refSerializer.serialize(jobRef);
         final Props props = makeExecutorActorProps(refSerializer);
         _system.actorOf(props, actorName);
 
