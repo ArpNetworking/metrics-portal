@@ -123,11 +123,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
         } catch (final DeserializationException e) {
             LOGGER.warn()
-                    .setMessage("could not infer job ref from name, refDeserializer could be configured incorrectly.")
+                    .setMessage("could not infer job ref from name, the actor could have been started incorrectly.")
                     .setThrowable(e)
                     .addData("actorName", actorName)
                     .log();
-            // FIXME: If I kill the job here, it will cause all the tests to fail unless the name is correct.
+            killSelf();
         }
     }
 

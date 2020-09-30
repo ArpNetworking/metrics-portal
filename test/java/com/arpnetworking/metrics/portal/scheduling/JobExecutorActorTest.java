@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.commons.serialization.Deserializer;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -70,6 +71,7 @@ public final class JobExecutorActorTest {
     private ManualClock _clock;
     private PeriodicMetrics _periodicMetrics;
     private ActorSystem _system;
+    private TestKit _probe;
 
     @Before
     public void setUp() {
@@ -99,11 +101,12 @@ public final class JobExecutorActorTest {
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
                 ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+        _probe = new TestKit(_system);
     }
 
     @After
     public void tearDown() {
-        _system.terminate();
+        TestKit.shutdownActorSystem(_system);
     }
 
     private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {
@@ -115,12 +118,8 @@ public final class JobExecutorActorTest {
         return JobExecutorActor.props(_injector, _clock, _periodicMetrics, new DefaultJobRefSerializer());
     }
 
-    private Props makeExecutorActorProps(final Deserializer<JobRef<?>> refSerializer) {
-        return JobExecutorActor.props(_injector, _clock, _periodicMetrics, refSerializer);
-    }
-
-    private ActorRef makeExecutorActor() {
-        return _system.actorOf(makeExecutorActorProps());
+    private ActorRef makeExecutorActor(final String name) {
+        return _system.actorOf(makeExecutorActorProps(), name);
     }
 
     private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
@@ -130,7 +129,8 @@ public final class JobExecutorActorTest {
                 .setId(job.getId())
                 .setOrganization(ORGANIZATION)
                 .build();
-        final ActorRef result = makeExecutorActor();
+        final String name = (new DefaultJobRefSerializer()).serialize(ref);
+        final ActorRef result = makeExecutorActor(name);
         result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
         return result;
     }
@@ -184,9 +184,7 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    public void testAutoReloadWhenJobRefIsInferrable() {
-        final JobRefSerializer refSerializer = new DefaultJobRefSerializer();
-
+    public void testJobTicksAfterStartup() {
         final ChronoUnit period = ChronoUnit.SECONDS;
         final Instant startAt = T_0.minus(period.getDuration());
         final Job<Integer> j = addJobToRepo(
@@ -200,20 +198,16 @@ public final class JobExecutorActorTest {
                         .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
-
-        final JobRef<Integer> jobRef = new JobRef.Builder<Integer>()
-                .setRepositoryType(MockableIntJobRepository.class)
-                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
-                .setId(j.getId())
-                .setOrganization(ORGANIZATION)
-                .build();
-
-        final String actorName = refSerializer.serialize(jobRef);
-        final Props props = makeExecutorActorProps(refSerializer);
-        _system.actorOf(props, actorName);
-
+        makeAndInitializeExecutorActor(j);
         // Actor should have started ticking on its own.
         Mockito.verify(_execRepo, Mockito.after(1000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testActorIsStoppedWhenNameIsInvalid() {
+        final ActorRef ref = makeExecutorActor("some-name");
+        _probe.watch(ref);
+        _probe.expectTerminated(ref);
     }
 
     @Test
