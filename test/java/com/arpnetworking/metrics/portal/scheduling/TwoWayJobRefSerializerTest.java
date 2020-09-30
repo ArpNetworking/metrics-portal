@@ -16,9 +16,9 @@
 
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.google.common.collect.ImmutableList;
 import models.internal.Organization;
-import models.internal.impl.DefaultOrganization;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,9 +36,9 @@ import static org.hamcrest.Matchers.is;
  */
 public class TwoWayJobRefSerializerTest {
 
-    private final static UUID JOB_ID = UUID.fromString("72a0e49c-d0e3-445a-b7d2-bd1012125a30");
-    private final static Organization ORGANIZATION = new DefaultOrganization.Builder().setId(UUID.fromString(
-            "885d4ed6-093b-4570-b766-fd30040af67e")).build();
+    private static final UUID JOB_ID = UUID.fromString("72a0e49c-d0e3-445a-b7d2-bd1012125a30");
+    private static final Organization ORGANIZATION =
+            TestBeanFactory.organizationFrom(UUID.fromString("885d4ed6-093b-4570-b766-fd30040af67e"));
     private JobRefSerializer _refSerializer;
 
     @Before
