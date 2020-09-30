@@ -20,13 +20,14 @@ import com.arpnetworking.commons.serialization.Deserializer;
 import com.arpnetworking.commons.serialization.Serializer;
 
 /**
- * A serializer that provides a way to map entity ids to job refs and vice-versa.
+ * A type that allows for both serialization and deserialization of JobRefs.
  * <p>
- * This is used as somewhat of a crutch for the lack of dynamic props in Akka's
- * classic actor clustering, and would be unnecessary if we later move to typed
- * actors.
+ * Alongside a {@link JobMessageExtractor}, this can be used as a workaround
+ * for the lack of dynamic props in Akka's classic cluster sharding.
  * <p>
  * See <a href=https://stackoverflow.com/a/26524666>this SO post</a> for more details. This is Option A.
+ * <p>
+ * This type is intended for use as a Guice binding type-token.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */

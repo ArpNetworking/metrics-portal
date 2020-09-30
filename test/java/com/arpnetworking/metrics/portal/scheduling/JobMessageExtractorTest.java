@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.commons.serialization.Serializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import models.internal.Organization;
@@ -34,7 +35,7 @@ public final class JobMessageExtractorTest {
 
     @Test
     public void testEntityId() {
-        final JobMessageExtractor extractor = new JobMessageExtractor(new DefaultJobRefSerializer());
+        final JobMessageExtractor extractor = new JobMessageExtractor(new PasshthroughIdSerializer());
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .setOrganization(ORGANIZATION)
@@ -52,4 +53,12 @@ public final class JobMessageExtractorTest {
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
     private static class MockableIntJobExecutionRepository extends MapJobExecutionRepository<Integer> {}
+
+    // A mock serializer that just passes through the job ID
+    private static final class PasshthroughIdSerializer implements Serializer<JobRef<?>> {
+        @Override
+        public String serialize(final JobRef<?> value) {
+            return value.getJobId().toString();
+        }
+    }
 }

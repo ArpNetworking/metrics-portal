@@ -68,12 +68,12 @@ import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DefaultDevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
+import com.arpnetworking.metrics.portal.scheduling.DefaultJobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import com.arpnetworking.metrics.portal.scheduling.DefaultJobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
@@ -211,6 +211,7 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
                 .asEagerSingleton();
+        bind(JobRefSerializer.class).to(DefaultJobRefSerializer.class);
 
         // Reporting
         bind(ReportExecutionContext.class).asEagerSingleton();
@@ -397,11 +398,9 @@ public class MainModule extends AbstractModule {
 
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private JobRefSerializer provideJobRefSerializer() {
-        // This must match the configuration of each JobCoordinator, or else
-        // we will not be able to guarantee that job actors will run after
-        // a shard moves within the cluster.
-        return new DefaultJobRefSerializer();
+    private JobMessageExtractor provideJobMessageExtractor(final JobRefSerializer serializer) {
+        // This binding exists to avoid needing a generic token for Serializer<JobRef>
+        return new JobMessageExtractor(serializer);
     }
 
     @Provides

@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.cluster.sharding.ShardRegion;
-import com.google.inject.Inject;
+import com.arpnetworking.commons.serialization.Serializer;
 
 import javax.annotation.Nullable;
 
@@ -26,15 +26,14 @@ import javax.annotation.Nullable;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobMessageExtractor extends ShardRegion.HashCodeMessageExtractor {
-    private final JobRefSerializer _refSerializer;
+    private final Serializer<JobRef<?>> _refSerializer;
 
     /**
      * Public constructor.
      *
      * @param refSerializer the serializer to use to construct the entity ID from each job ref.
      */
-    @Inject
-    public JobMessageExtractor(final JobRefSerializer refSerializer) {
+    public JobMessageExtractor(final Serializer<JobRef<?>> refSerializer) {
         super(NUM_SHARDS);
         _refSerializer = refSerializer;
     }
