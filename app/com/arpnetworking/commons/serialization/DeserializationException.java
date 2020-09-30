@@ -23,6 +23,8 @@ package com.arpnetworking.commons.serialization;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DeserializationException extends Exception {
+    private static final long serialVersionUID = -5048033108034169465L;
+
     /**
      * Construct a DeserializationException with the given message.
      *
@@ -39,15 +41,5 @@ public class DeserializationException extends Exception {
      */
     public DeserializationException(final Throwable cause) {
         super(cause);
-    }
-
-    /**
-     * Construct a SerializationException with the given message and cause.
-     *
-     * @param message the error message
-     * @param cause the direct cause of this exception
-     */
-    public DeserializationException(final String message, final Throwable cause) {
-        super(message, cause);
     }
 }

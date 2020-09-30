@@ -17,8 +17,6 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import com.arpnetworking.commons.serialization.DeserializationException;
-import com.arpnetworking.steno.Logger;
-import com.arpnetworking.steno.LoggerFactory;
 import models.internal.impl.DefaultOrganization;
 
 import java.util.Arrays;
@@ -34,7 +32,6 @@ import java.util.UUID;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class DefaultJobRefSerializer implements JobRefSerializer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultJobRefSerializer.class);
     private static final String DELIMETER = "&";
 
     /**
