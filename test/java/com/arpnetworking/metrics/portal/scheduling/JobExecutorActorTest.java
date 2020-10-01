@@ -43,6 +43,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -58,7 +61,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobExecutorActorTest {
-
 
     private static final Instant T_0 = Instant.ofEpochMilli(0);
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
@@ -128,7 +130,14 @@ public final class JobExecutorActorTest {
                 .setId(job.getId())
                 .setOrganization(ORGANIZATION)
                 .build();
-        final String name = (new DefaultJobRefSerializer()).serialize(ref);
+        final String name;
+        try {
+            // Akka can be inconsistent in the times it applies URL encoding to the actor name.
+            // To at least ensure this is handled in the actor, we always encode here in the test.
+            name = URLEncoder.encode((new DefaultJobRefSerializer()).serialize(ref), StandardCharsets.UTF_8.name());
+        } catch (final UnsupportedEncodingException e) {
+            throw new IllegalStateException("Should never happen but predates StandardCharsets", e);
+        }
         final ActorRef result = makeExecutorActor(name);
         result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
         return result;
