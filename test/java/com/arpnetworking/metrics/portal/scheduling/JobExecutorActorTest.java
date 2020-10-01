@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.sharding.ShardRegion;
 import akka.testkit.javadsl.TestKit;
@@ -56,10 +55,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests for {@link JobExecutorActor}.
@@ -129,7 +124,7 @@ public final class JobExecutorActorTest {
         return _probe.childActorOf(makeExecutorActorProps(), name);
     }
 
-    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
+    private ActorRef makeExecutorActor(final Job<Integer> job) {
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setRepositoryType(MockableIntJobRepository.class)
                 .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
@@ -144,7 +139,17 @@ public final class JobExecutorActorTest {
         } catch (final UnsupportedEncodingException e) {
             throw new IllegalStateException("Should never happen but predates StandardCharsets", e);
         }
-        final ActorRef result = makeExecutorActor(name);
+        return makeExecutorActor(name);
+    }
+
+    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
+        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
+                .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
+                .setId(job.getId())
+                .setOrganization(ORGANIZATION)
+                .build();
+        final ActorRef result = makeExecutorActor(job);
         result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
         return result;
     }
@@ -219,9 +224,11 @@ public final class JobExecutorActorTest {
 
     @Test
     public void testActorRequestsStopWhenNameIsInvalid() {
-        makeExecutorActor("some-name");
+        final ActorRef ref = makeExecutorActor("some-name");
+        _probe.watch(ref);
         final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
-        assertThat(msg.stopMessage(), is(instanceOf(PoisonPill.class)));
+        ref.tell(msg.stopMessage(), _probe.getRef());
+        _probe.expectTerminated(ref);
     }
 
     @Test
@@ -231,10 +238,11 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setResult(123)
                 .build();
-        makeAndInitializeExecutorActor(j);
-        makeExecutorActor("some-name");
+        final ActorRef ref = makeExecutorActor(j);
+        _probe.watch(ref);
         final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
-        assertThat(msg.stopMessage(), is(instanceOf(PoisonPill.class)));
+        ref.tell(msg.stopMessage(), _probe.getRef());
+        _probe.expectTerminated(ref);
     }
 
     @Test
