@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.cluster.sharding.ShardRegion;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.serialization.DeserializationException;
@@ -149,10 +150,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     private void killSelf() {
-        // TODO(spencerpearson): Per https://doc.akka.io/docs/akka/2.5.4/java/cluster-sharding.html#remembering-entities ,
-        //   might we need to send a Passivate message to our parent?
-        //   Relevant: https://github.com/ArpNetworking/metrics-portal/pull/150#discussion_r251037350
-        getSelf().tell(PoisonPill.getInstance(), getSelf());
+        getContext().getParent().tell(new ShardRegion.Passivate(PoisonPill.getInstance()), getSelf());
     }
 
     /**

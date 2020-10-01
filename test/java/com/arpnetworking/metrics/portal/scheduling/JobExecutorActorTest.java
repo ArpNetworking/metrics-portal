@@ -17,7 +17,9 @@ package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.cluster.sharding.ShardRegion;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -54,6 +56,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Tests for {@link JobExecutorActor}.
@@ -120,7 +126,7 @@ public final class JobExecutorActorTest {
     }
 
     private ActorRef makeExecutorActor(final String name) {
-        return _system.actorOf(makeExecutorActorProps(), name);
+        return _probe.childActorOf(makeExecutorActorProps(), name);
     }
 
     private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
@@ -212,10 +218,23 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    public void testActorIsStoppedWhenNameIsInvalid() {
-        final ActorRef ref = makeExecutorActor("some-name");
-        _probe.watch(ref);
-        _probe.expectTerminated(ref);
+    public void testActorRequestsStopWhenNameIsInvalid() {
+        makeExecutorActor("some-name");
+        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
+        assertThat(msg.stopMessage(), is(instanceOf(PoisonPill.class)));
+    }
+
+    @Test
+    public void testActorRequestsStopWhenJobNoLongerExists() {
+        final DummyJob<Integer> j = new DummyJob.Builder<Integer>()
+                .setOneOffSchedule(T_0)
+                .setTimeout(Duration.ofSeconds(30))
+                .setResult(123)
+                .build();
+        makeAndInitializeExecutorActor(j);
+        makeExecutorActor("some-name");
+        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
+        assertThat(msg.stopMessage(), is(instanceOf(PoisonPill.class)));
     }
 
     @Test
