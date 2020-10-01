@@ -69,16 +69,16 @@ public class DefaultJobRefSerializerTest {
 
     @Test(expected = DeserializationException.class)
     public void testFailureWhenRepositoryIsInvalid() throws DeserializationException {
-        final String entityID = "UnknownRepository&" +
-                "com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializerTest$MockJobExecutionRepository&" +
-                "885d4ed6-093b-4570-b766-fd30040af67e&72a0e49c-d0e3-445a-b7d2-bd1012125a30";
+        final String entityID = "UnknownRepository&"
+                + "com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializerTest$MockJobExecutionRepository&"
+                + "885d4ed6-093b-4570-b766-fd30040af67e&72a0e49c-d0e3-445a-b7d2-bd1012125a30";
         _refSerializer.deserialize(entityID);
     }
 
     @Test(expected = DeserializationException.class)
     public void testFailureWhenExecutionRepositoryIsInvalid() throws DeserializationException {
-        final String entityID = "com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializerTest$MockJobRepository&" +
-                "UnknownRepository&885d4ed6-093b-4570-b766-fd30040af67e&72a0e49c-d0e3-445a-b7d2-bd1012125a30";
+        final String entityID = "com.arpnetworking.metrics.portal.scheduling.TwoWayJobRefSerializerTest$MockJobRepository&"
+                + "UnknownRepository&885d4ed6-093b-4570-b766-fd30040af67e&72a0e49c-d0e3-445a-b7d2-bd1012125a30";
         _refSerializer.deserialize(entityID);
     }
 
