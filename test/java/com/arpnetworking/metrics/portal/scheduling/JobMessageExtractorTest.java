@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.commons.serialization.Serializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
 import models.internal.Organization;
@@ -34,7 +35,7 @@ public final class JobMessageExtractorTest {
 
     @Test
     public void testEntityId() {
-        final JobMessageExtractor extractor = new JobMessageExtractor();
+        final JobMessageExtractor extractor = new JobMessageExtractor(new PassthroughIdSerializer());
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setId(UUID.fromString("11111111-1111-1111-1111-111111111111"))
                 .setOrganization(ORGANIZATION)
@@ -42,12 +43,7 @@ public final class JobMessageExtractorTest {
                 .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
                 .build();
         assertEquals(
-                String.join(
-                        "_",
-
-                        "com.arpnetworking.metrics.portal.scheduling.JobMessageExtractorTest.MockableIntJobRepository",
-                        "00000000-0000-0000-0000-000000000000",
-                        "11111111-1111-1111-1111-111111111111"),
+                "11111111-1111-1111-1111-111111111111",
                 extractor.entityId(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build()));
     }
 
@@ -57,4 +53,12 @@ public final class JobMessageExtractorTest {
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {}
     private static class MockableIntJobExecutionRepository extends MapJobExecutionRepository<Integer> {}
+
+    // A mock serializer that just passes through the job ID
+    private static final class PassthroughIdSerializer implements Serializer<JobRef<?>> {
+        @Override
+        public String serialize(final JobRef<?> value) {
+            return value.getJobId().toString();
+        }
+    }
 }

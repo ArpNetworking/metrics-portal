@@ -20,6 +20,8 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.serialization.DeserializationException;
+import com.arpnetworking.commons.serialization.Deserializer;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -74,6 +76,19 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private boolean _currentlyExecuting = false;
     private Optional<CachedJob<T>> _cachedJob = Optional.empty();
     private Optional<Instant> _nextRun = Optional.empty();
+    private final Deserializer<JobRef<?>> _refDeserializer;
+
+    private JobExecutorActor(
+            final Injector injector,
+            final Clock clock,
+            final PeriodicMetrics periodicMetrics,
+            final Deserializer<JobRef<?>> refDeserializer
+    ) {
+        _injector = injector;
+        _clock = clock;
+        _periodicMetrics = periodicMetrics;
+        _refDeserializer = refDeserializer;
+    }
 
     /**
      * Props factory.
@@ -81,16 +96,39 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param injector The Guice injector to use to load the {@link JobRepository} referenced by the {@link JobRef}.
      * @param clock The clock the scheduler will use, when it ticks, to determine whether it's time to run the next job(s) yet.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
+     * @param refDeserializer The JobRefSerializer that this actor will use reconstruct its JobRef at startup.
      * @return A new props to create this actor.
      */
-    public static Props props(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
-        return Props.create(JobExecutorActor.class, () -> new JobExecutorActor<>(injector, clock, periodicMetrics));
+    public static Props props(
+            final Injector injector,
+            final Clock clock,
+            final PeriodicMetrics periodicMetrics,
+            final Deserializer<JobRef<?>> refDeserializer
+    ) {
+        return Props.create(JobExecutorActor.class,
+                () -> new JobExecutorActor<>(injector, clock, periodicMetrics, refDeserializer));
     }
 
-    private JobExecutorActor(final Injector injector, final Clock clock, final PeriodicMetrics periodicMetrics) {
-        _injector = injector;
-        _clock = clock;
-        _periodicMetrics = periodicMetrics;
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
+
+        final String actorName = getSelf().path().name();
+        try {
+            final JobRef<T> ref = unsafeJobRefCast(_refDeserializer.deserialize(actorName));
+            LOGGER.info()
+                    .setMessage("inferred job ref from name, triggering reload")
+                    .addData("jobRef", ref.toString())
+                    .log();
+            getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
+        } catch (final DeserializationException e) {
+            LOGGER.warn()
+                    .setMessage("could not infer job ref from name, the actor could have been started incorrectly.")
+                    .setThrowable(e)
+                    .addData("actorName", actorName)
+                    .log();
+            killSelf();
+        }
     }
 
     @Override

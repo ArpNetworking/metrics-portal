@@ -68,9 +68,11 @@ import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import com.arpnetworking.metrics.portal.reports.ReportRepository;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DefaultDevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
+import com.arpnetworking.metrics.portal.scheduling.DefaultJobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.JobCoordinator;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutorActor;
 import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
+import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -209,6 +211,7 @@ public class MainModule extends AbstractModule {
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
                 .asEagerSingleton();
+        bind(JobRefSerializer.class).to(DefaultJobRefSerializer.class);
 
         // Reporting
         bind(ReportExecutionContext.class).asEagerSingleton();
@@ -394,6 +397,13 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private JobMessageExtractor provideJobMessageExtractor(final JobRefSerializer serializer) {
+        // This binding exists to avoid needing a generic token for Serializer<JobRef>
+        return new JobMessageExtractor(serializer);
+    }
+
+    @Provides
     @Singleton
     @Named("job-execution-shard-region")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
@@ -402,11 +412,12 @@ public class MainModule extends AbstractModule {
             final Injector injector,
             final JobMessageExtractor extractor,
             final Clock clock,
-            final PeriodicMetrics periodicMetrics) {
+            final PeriodicMetrics periodicMetrics,
+            final JobRefSerializer refSerializer) {
         final ClusterSharding clusterSharding = ClusterSharding.get(system);
         return clusterSharding.start(
                 "JobExecutor",
-                JobExecutorActor.props(injector, clock, periodicMetrics),
+                JobExecutorActor.props(injector, clock, periodicMetrics, refSerializer),
                 ClusterShardingSettings.create(system).withRememberEntities(true),
                 extractor,
                 new ParallelLeastShardAllocationStrategy(
