@@ -36,6 +36,8 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -115,7 +117,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         final String actorName = getSelf().path().name();
         try {
-            final JobRef<T> ref = unsafeJobRefCast(_refDeserializer.deserialize(actorName));
+            final String decodedActorName = URLDecoder.decode(actorName, StandardCharsets.UTF_8.name());
+            final JobRef<T> ref = unsafeJobRefCast(_refDeserializer.deserialize(decodedActorName));
             LOGGER.info()
                     .setMessage("inferred job ref from name, triggering reload")
                     .addData("jobRef", ref.toString())
