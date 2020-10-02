@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.cluster.sharding.ShardRegion;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -120,10 +121,10 @@ public final class JobExecutorActorTest {
     }
 
     private ActorRef makeExecutorActor(final String name) {
-        return _system.actorOf(makeExecutorActorProps(), name);
+        return _probe.childActorOf(makeExecutorActorProps(), name);
     }
 
-    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
+    private ActorRef makeExecutorActor(final Job<Integer> job) {
         final JobRef<Integer> ref = new JobRef.Builder<Integer>()
                 .setRepositoryType(MockableIntJobRepository.class)
                 .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
@@ -138,7 +139,17 @@ public final class JobExecutorActorTest {
         } catch (final UnsupportedEncodingException e) {
             throw new IllegalStateException("Should never happen but predates StandardCharsets", e);
         }
-        final ActorRef result = makeExecutorActor(name);
+        return makeExecutorActor(name);
+    }
+
+    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
+        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
+                .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
+                .setId(job.getId())
+                .setOrganization(ORGANIZATION)
+                .build();
+        final ActorRef result = makeExecutorActor(job);
         result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
         return result;
     }
@@ -212,9 +223,25 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    public void testActorIsStoppedWhenNameIsInvalid() {
+    public void testActorRequestsStopWhenNameIsInvalid() {
         final ActorRef ref = makeExecutorActor("some-name");
         _probe.watch(ref);
+        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
+        ref.tell(msg.stopMessage(), _probe.getRef());
+        _probe.expectTerminated(ref);
+    }
+
+    @Test
+    public void testActorRequestsStopWhenJobNoLongerExists() {
+        final DummyJob<Integer> j = new DummyJob.Builder<Integer>()
+                .setOneOffSchedule(T_0)
+                .setTimeout(Duration.ofSeconds(30))
+                .setResult(123)
+                .build();
+        final ActorRef ref = makeExecutorActor(j);
+        _probe.watch(ref);
+        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
+        ref.tell(msg.stopMessage(), _probe.getRef());
         _probe.expectTerminated(ref);
     }
 
