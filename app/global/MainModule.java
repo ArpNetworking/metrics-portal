@@ -45,6 +45,7 @@ import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.metrics.Sink;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -117,7 +118,9 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -273,16 +276,59 @@ public class MainModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private MetricsFactory getMetricsFactory(final Config configuration) {
+    private MetricsFactory getMetricsFactory(final Config configuration, final ObjectMapper mapper) {
+        if (configuration.hasPath("metrics.uri")) {
+            // Legacy self-instrumentation configuration
+            return new TsdMetricsFactory.Builder()
+                    .setClusterName(configuration.getString("metrics.cluster"))
+                    .setServiceName(configuration.getString("metrics.service"))
+                    .setSinks(Collections.singletonList(
+                            new ApacheHttpSink.Builder()
+                                    .setUri(URI.create(configuration.getString("metrics.uri") + "/metrics/v3/application"))
+                                    .build()
+                    ))
+                    .build();
+        }
+
+        // New sinks configuration
+        final List<com.arpnetworking.metrics.Sink> monitoringSinks =
+                createMonitoringSinks(configuration.getConfigList("metrics.sinks"), mapper);
         return new TsdMetricsFactory.Builder()
                 .setClusterName(configuration.getString("metrics.cluster"))
                 .setServiceName(configuration.getString("metrics.service"))
-                .setSinks(Collections.singletonList(
-                        new ApacheHttpSink.Builder()
-                                .setUri(URI.create(configuration.getString("metrics.uri") + "/metrics/v3/application"))
-                                .build()
-                ))
+                .setSinks(monitoringSinks)
                 .build();
+    }
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
+    static List<Sink> createMonitoringSinks(
+            final List<? extends Config> monitoringSinksConfig,
+            final ObjectMapper mapper) {
+        // Until we implement the Commons Builder pattern in the metrics client
+        // library we need to resort to a more brute-force deserialization
+        // style. The benefit of this approach is that it will be forwards
+        // compatible with the Commons Builder approach. The drawbacks are
+        // the ugly way the configuration is deserialized.
+        final List<com.arpnetworking.metrics.Sink> sinks = new ArrayList<>();
+        for (final Config sinkConfig : monitoringSinksConfig) {
+            try {
+                if (sinkConfig.hasPath("class")) {
+                    final String classNode = sinkConfig.getString("class");
+                    final Class<?> builderClass = Class.forName(classNode + "$Builder");
+
+                    final Object builder = mapper.convertValue(sinkConfig.root().unwrapped(), builderClass);
+                    @SuppressWarnings("unchecked")
+                    final com.arpnetworking.metrics.Sink sink =
+                            (com.arpnetworking.metrics.Sink) builderClass.getMethod("build").invoke(builder);
+                    sinks.add(sink);
+                }
+                // CHECKSTYLE.OFF: IllegalCatch - There are so many ways this hack can fail!
+            } catch (final Exception e) {
+                // CHECKSTYLE.ON: IllegalCatch
+                throw new RuntimeException("Unable to create sink from: " + sinkConfig.toString(), e);
+            }
+        }
+        return sinks;
     }
 
     @Provides
