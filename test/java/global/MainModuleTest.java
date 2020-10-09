@@ -60,7 +60,7 @@ public final class MainModuleTest {
         assertEquals(URI.create("http://test.example.com:7090/some/path"), getField(sink, "_uri"));
     }
 
-    private static final Object getField(final Object target, final String fieldName) {
+    private static Object getField(final Object target, final String fieldName) {
         try {
             final Field field = target.getClass().getDeclaredField(fieldName);
             field.setAccessible(true);
