@@ -67,7 +67,9 @@ public final class MainModuleTest {
                 "global/MainModuleTest.testCreateMonitoringSinksDoesNotExist.conf");
         try {
             MainModule.createMonitoringSinks(sinkConfigs.getConfigList("sinks"), OBJECT_MAPPER);
+            // CHECKSTYLE.OFF: IllegalCatch - Need to interrogate the cause
         } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
             assertTrue(e.getCause() instanceof ClassNotFoundException);
         }
     }
