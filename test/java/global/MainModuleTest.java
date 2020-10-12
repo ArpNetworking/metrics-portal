@@ -60,6 +60,18 @@ public final class MainModuleTest {
         assertEquals(URI.create("http://test.example.com:7090/some/path"), getField(sink, "_uri"));
     }
 
+    @Test
+    public void testCreateMonitoringSinksDoesNotExist() {
+        final Config sinkConfigs = ConfigFactory.parseResourcesAnySyntax(
+                this.getClass().getClassLoader(),
+                "global/MainModuleTest.testCreateMonitoringSinksDoesNotExist.conf");
+        try {
+            MainModule.createMonitoringSinks(sinkConfigs.getConfigList("sinks"), OBJECT_MAPPER);
+        } catch (final RuntimeException e) {
+            assertTrue(e.getCause() instanceof ClassNotFoundException);
+        }
+    }
+
     private static Object getField(final Object target, final String fieldName) {
         try {
             final Field field = target.getClass().getDeclaredField(fieldName);
