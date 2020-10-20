@@ -35,7 +35,6 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -691,7 +690,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
 
         // This "should" be a MetricsQueryResponse, but that class isn't Serializable.
         // ("Why isn't it?" Several of the data-models contain Optional values, and Optional isn't Serializable.)
-        private final JsonNode _response;
+        private final String _response;
 
         /**
          * Public constructor.
@@ -701,7 +700,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final Throwable cause, final MetricsQueryResponse response) {
             super(cause);
-            _response = MAPPER.valueToTree(response);
+            try {
+                _response = MAPPER.writeValueAsString(response);
+            } catch (final IOException e) {
+                throw new RuntimeException("somehow failed to serialize MetricsQueryResponse", e);
+            }
         }
 
         /**
@@ -712,7 +715,11 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MalformedSampleCountResponse(final String message, final MetricsQueryResponse response) {
             super(message);
-            _response = MAPPER.valueToTree(response);
+            try {
+                _response = MAPPER.writeValueAsString(response);
+            } catch (final IOException e) {
+                throw new RuntimeException("somehow failed to serialize MetricsQueryResponse", e);
+            }
         }
 
         /**
@@ -722,7 +729,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
          */
         public MetricsQueryResponse getResponse() {
             try {
-                return MAPPER.treeToValue(_response, MetricsQueryResponse.class);
+                return MAPPER.readValue(_response, MetricsQueryResponse.class);
             } catch (final IOException err) {
                 throw new RuntimeException("somehow failed to deserialize a serialized MetricsQueryResponse", err);
             }
