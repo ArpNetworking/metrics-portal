@@ -21,7 +21,6 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
@@ -33,6 +32,7 @@ import models.internal.TimeSeriesResult;
 import models.internal.impl.DefaultMetricsQueryResult;
 import models.internal.impl.DefaultTimeSeriesResult;
 
+import java.io.IOException;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -80,7 +80,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         try {
             metricsQuery = _objectMapper.readValue(query.getQuery(),
                     com.arpnetworking.kairos.client.models.MetricsQuery.class);
-        } catch (final JsonProcessingException e) {
+        } catch (final IOException e) {
             throw new RuntimeException("Could not parse query", e);
         }
         // The period hint of the query is the smallest of each metric within
@@ -106,7 +106,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         try {
             metricsQueryBuilder = _objectMapper.readValue(query.getQuery(),
                     com.arpnetworking.kairos.client.models.MetricsQuery.Builder.class);
-        } catch (final JsonProcessingException e) {
+        } catch (final IOException e) {
             throw new RuntimeException("Could not parse query", e);
         }
         metricsQueryBuilder.setStartTime(query.getStartTime().toInstant());

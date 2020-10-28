@@ -23,7 +23,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -381,12 +381,10 @@ public class AlertExecutionContextTest {
             );
         }
 
+        final ObjectMapper objectMapperWithComments = SerializationTestUtils.createApiObjectMapper()
+                .configure(Feature.ALLOW_COMMENTS, true);
         final Map<String, models.view.MetricsQueryResult> testcases =
-                _objectMapper.reader()
-                        .withFeatures(JsonReadFeature.ALLOW_JAVA_COMMENTS)
-                        .forType(MAP_TYPE_REFERENCE)
-                        .readValue(json);
-
+                objectMapperWithComments.reader().forType(MAP_TYPE_REFERENCE).readValue(json);
 
         final models.view.MetricsQueryResult result = testcases.get(name);
         if (result == null) {

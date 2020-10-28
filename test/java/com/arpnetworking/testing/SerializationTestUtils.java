@@ -38,9 +38,15 @@ public final class SerializationTestUtils {
 
     // TODO(spencerpearson): allow the ObjectMapper to get passed in, if ever necessary
     // IMPORTANT: The configuration here must match that in MainModule for testing REST APIs
-    private static final ObjectMapper OBJECT_MAPPER;
+    private static final ObjectMapper OBJECT_MAPPER = createApiObjectMapper();
 
-    static {
+    /**
+     * Create a new configured {@link ObjectMapper} instance for use cases which require
+     * additional customization.
+     *
+     * @return new configured {@link ObjectMapper} instance
+     */
+    public static ObjectMapper createApiObjectMapper() {
         final SimpleModule customModule = new SimpleModule();
         customModule.addDeserializer(
                 TimeUnit.class,
@@ -57,10 +63,11 @@ public final class SerializationTestUtils {
                 EnumerationDeserializer.newInstance(
                         Metric.Order.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
-        OBJECT_MAPPER = ObjectMapperFactory.createInstance();
-        OBJECT_MAPPER.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
-        OBJECT_MAPPER.registerModule(customModule);
+        final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
+        objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
+        objectMapper.registerModule(customModule);
         // NOTE: AkkaModule not registered since it requires an actor system
+        return objectMapper;
     }
 
     /**
