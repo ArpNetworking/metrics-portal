@@ -103,7 +103,8 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         _executor = Mockito.mock(QueryExecutor.class);
-        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.HOURS));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofHours(1));
+        when(_executor.evaluationPeriodHint(any())).thenReturn(Optional.empty());
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor,
@@ -129,18 +130,28 @@ public class AlertExecutionContextTest {
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
         when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
 
-        final List<ChronoUnit> periodTestCases = ImmutableList.of(ChronoUnit.MINUTES, ChronoUnit.HOURS);
+        final List<Duration> periodTestCases = ImmutableList.of(
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(15),
+                Duration.ofHours(1),
+                Duration.ofHours(3),
+                Duration.ofHours(6),
+                Duration.ofHours(12)
+        );
 
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.HOURS);
 
-        for (final ChronoUnit period : periodTestCases) {
-            when(_executor.periodHint(any())).thenReturn(Optional.of(period));
+        for (final Duration period : periodTestCases) {
+            when(_executor.lookbackPeriod(any())).thenReturn(period);
 
             _context.execute(_alert, scheduled);
 
             final BoundedMetricsQuery captured = captor.getValue();
-            final Instant expectedStart = scheduled.minus(queryOffset).truncatedTo(period).minus(period.getDuration());
-            final Instant expectedEnd = expectedStart.plus(period.getDuration());
+
+            final long excessMs = scheduled.minus(queryOffset).toEpochMilli() % period.toMillis();
+
+            final Instant expectedStart = scheduled.minus(queryOffset).minusMillis(excessMs).minus(period);
+            final Instant expectedEnd = expectedStart.plus(period);
 
             assertThat(captured.getStartTime().toInstant(), equalTo(expectedStart));
             assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(expectedEnd)));
@@ -152,7 +163,7 @@ public class AlertExecutionContextTest {
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
         when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
-        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
 
         // Scheduled for now, minutely
 
@@ -165,7 +176,7 @@ public class AlertExecutionContextTest {
         assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
         assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
 
-        // Scheduled for one week ago
+        // Scheduled for one week ago, minutely
 
         scheduled = Instant.now().minus(Duration.ofDays(7));
         _context.execute(_alert, scheduled);
@@ -178,7 +189,7 @@ public class AlertExecutionContextTest {
 
         // Scheduled for now, hourly
 
-        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.HOURS));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofHours(1));
 
         scheduled = Instant.now();
         _context.execute(_alert, scheduled);
@@ -195,7 +206,7 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
-        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
         when(_executor.executeQuery(captor.capture())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, scheduled)
@@ -213,7 +224,7 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleSeriesNotFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
-        when(_executor.periodHint(any())).thenReturn(Optional.of(ChronoUnit.MINUTES));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -255,12 +266,12 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testSingleSeriesDatapointTooOld() throws Exception {
-        final ChronoUnit period = ChronoUnit.HOURS;
-        when(_executor.periodHint(any())).thenReturn(Optional.of(period));
+        final Duration period = Duration.ofHours(1);
+        when(_executor.lookbackPeriod(any())).thenReturn(period);
 
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
-                LATEST_TIMESTAMP_MS, scheduled.minus(1, period).toEpochMilli()
+                LATEST_TIMESTAMP_MS, scheduled.minus(period).toEpochMilli()
         ));
 
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -352,13 +363,6 @@ public class AlertExecutionContextTest {
     public void testNoResults() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("noResults");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
-        _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-    }
-
-    @Test(expected = ExecutionException.class)
-    public void testMissingPeriodHint() throws Exception {
-        when(_executor.periodHint(any())).thenReturn(Optional.empty());
-        when(_executor.executeQuery(any())).thenReturn(new CompletableFuture<>());
         _context.execute(_alert, Instant.now()).toCompletableFuture().get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
     }
 
