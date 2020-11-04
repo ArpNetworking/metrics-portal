@@ -116,7 +116,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         } catch (final IOException e) {
             throw new RuntimeException("Could not parse query", e);
         }
-        // The period hint of the query is the smallest of each metric within
+        // The lookback period of the query is the largest of each metric within
         return metricsQuery.getMetrics()
                 .stream()
                 .map(this::lookbackPeriod)
@@ -128,7 +128,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     private Optional<Duration> lookbackPeriod(final Metric metric) {
         // NOTE: This makes no assumption on alignment, and so since the actual
         // periods aggregated can change between unaligned queries, the period
-        // hint is the most granular used anywhere in the chain.
+        // hint is the least granular used anywhere in the chain.
         return metric.getAggregators()
                 .stream()
                 .flatMap(agg -> Streams.stream(agg.getSampling()))

@@ -30,7 +30,6 @@ import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
 import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.impl.DefaultMetricsQuery;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -42,7 +41,6 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
@@ -251,7 +249,9 @@ public class KairosDbQueryExecutorTest {
                 try {
                     _executor.lookbackPeriod(query);
                     fail("Expected exception to be thrown");
+                    // CHECKSTYLE.OFF: IllegalCatch
                 } catch (final Exception e) {
+                    // CHECKSTYLE.ON: IllegalCatch
                     assertThat(e, instanceOf(IllegalArgumentException.class));
                 }
             }
