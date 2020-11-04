@@ -30,6 +30,7 @@ import models.internal.MetricsQueryResult;
 import models.internal.TimeSeriesResult;
 import models.internal.impl.DefaultBoundedMetricsQuery;
 import models.internal.impl.DefaultMetricsQuery;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -39,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -51,6 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
@@ -172,14 +175,14 @@ public class KairosDbQueryExecutorTest {
     }
 
     /**
-     * Test cases for {@link KairosDbQueryExecutor#periodHint(MetricsQuery)}.
+     * Test cases for {@link KairosDbQueryExecutor#evaluationPeriodHint(MetricsQuery)}.
      */
     @RunWith(Parameterized.class)
-    public static final class PeriodHintTests extends BaseTests {
+    public static final class EvaluationPeriodHintTests extends BaseTests {
         private final String _testName;
-        private final Optional<ChronoUnit> _expectedResult;
+        private final Optional<Duration> _expectedResult;
 
-        public PeriodHintTests(final String testName, final Optional<ChronoUnit> expectedResult) {
+        public EvaluationPeriodHintTests(final String testName, final Optional<Duration> expectedResult) {
             _testName = testName;
             _expectedResult = expectedResult;
         }
@@ -187,10 +190,10 @@ public class KairosDbQueryExecutorTest {
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    {"periodHintMinutely", Optional.of(ChronoUnit.MINUTES)},
-                    {"periodHintHourly", Optional.of(ChronoUnit.HOURS)},
+                    {"periodHintMinutely", Optional.of(Duration.ofMinutes(1))},
+                    {"periodHintHourly", Optional.of(Duration.ofMinutes(1))},
                     {"periodHintNone", Optional.empty()},
-                    {"periodHintMultipleMetrics", Optional.of(ChronoUnit.MINUTES)}
+                    {"periodHintMultipleMetrics", Optional.of(Duration.ofMinutes(1))}
             });
         }
 
@@ -204,7 +207,54 @@ public class KairosDbQueryExecutorTest {
                     .setQuery(jsonQuery)
                     .setFormat(MetricsQueryFormat.KAIROS_DB)
                     .build();
-            assertThat(_executor.periodHint(query), equalTo(_expectedResult));
+            assertThat(_executor.evaluationPeriodHint(query), equalTo(_expectedResult));
+        }
+    }
+
+    /**
+     * Test cases for {@link KairosDbQueryExecutor#lookbackPeriod(MetricsQuery)}.
+     */
+    @RunWith(Parameterized.class)
+    public static final class LookbackPeriodTests extends BaseTests {
+        private final String _testName;
+        private final Optional<Duration> _expectedResult;
+
+        public LookbackPeriodTests(final String testName, final Optional<Duration> expectedResult) {
+            _testName = testName;
+            _expectedResult = expectedResult;
+        }
+
+        @Parameterized.Parameters(name = "{0}")
+        public static Collection<Object[]> values() {
+            return Arrays.asList(new Object[][]{
+                    {"periodHintMinutely", Optional.of(Duration.ofMinutes(1))},
+                    {"periodHintHourly", Optional.of(Duration.ofHours(1))},
+                    {"periodHintNone", Optional.empty()},
+                    {"periodHintMultipleMetrics", Optional.of(Duration.ofHours(1))}
+            });
+        }
+
+        @Test
+        public void testPeriodHint() throws Exception {
+            final String jsonQuery = ResourceHelper.loadResource(
+                    KairosDbQueryExecutorTest.class,
+                    _testName
+            );
+            final MetricsQuery query = new DefaultMetricsQuery.Builder()
+                    .setQuery(jsonQuery)
+                    .setFormat(MetricsQueryFormat.KAIROS_DB)
+                    .build();
+            if (_expectedResult.isPresent()) {
+                final Duration result = _expectedResult.get();
+                assertThat(_executor.lookbackPeriod(query), equalTo(result));
+            } else {
+                try {
+                    _executor.lookbackPeriod(query);
+                    fail("Expected exception to be thrown");
+                } catch (final Exception e) {
+                    assertThat(e, instanceOf(IllegalArgumentException.class));
+                }
+            }
         }
     }
 }

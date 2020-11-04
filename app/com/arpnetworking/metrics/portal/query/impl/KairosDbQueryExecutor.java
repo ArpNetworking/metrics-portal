@@ -33,6 +33,7 @@ import models.internal.impl.DefaultMetricsQueryResult;
 import models.internal.impl.DefaultTimeSeriesResult;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -74,7 +75,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public Optional<ChronoUnit> periodHint(final MetricsQuery query) {
+    public Optional<Duration> evaluationPeriodHint(final MetricsQuery query) {
         assertFormatIsSupported(query.getQueryFormat());
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
         try {
@@ -86,18 +87,56 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         // The period hint of the query is the smallest of each metric within
         return metricsQuery.getMetrics()
                 .stream()
-                .map(this::periodHint)
+                .map(this::evaluationPeriodHint)
                 .flatMap(Streams::stream)
-                .min(ChronoUnit::compareTo);
+                .min(Duration::compareTo);
     }
 
-    private Optional<ChronoUnit> periodHint(final Metric metric) {
-        // The period hint is the coarsest aggregator used anywhere in the chain.
+    private Optional<Duration> evaluationPeriodHint(final Metric metric) {
+        // NOTE: This makes no assumption on alignment, and so since the actual
+        // periods aggregated can change between unaligned queries, the period
+        // hint is the most granular used anywhere in the chain.
         return metric.getAggregators()
                 .stream()
                 .flatMap(agg -> Streams.stream(agg.getSampling()))
-                .map(sampling -> SamplingUnit.toChronoUnit(sampling.getUnit()))
-                .max(ChronoUnit::compareTo);
+                .map(sampling -> {
+                    final ChronoUnit unit = SamplingUnit.toChronoUnit(sampling.getUnit());
+                    return Duration.of(sampling.getValue(), unit);
+                })
+                .min(Duration::compareTo);
+    }
+
+    @Override
+    public Duration lookbackPeriod(final MetricsQuery query) {
+        assertFormatIsSupported(query.getQueryFormat());
+        final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
+        try {
+            metricsQuery = _objectMapper.readValue(query.getQuery(),
+                    com.arpnetworking.kairos.client.models.MetricsQuery.class);
+        } catch (final IOException e) {
+            throw new RuntimeException("Could not parse query", e);
+        }
+        // The period hint of the query is the smallest of each metric within
+        return metricsQuery.getMetrics()
+                .stream()
+                .map(this::lookbackPeriod)
+                .flatMap(Streams::stream)
+                .max(Duration::compareTo)
+                .orElseThrow(() -> new IllegalArgumentException("Query did not specify any range aggregators"));
+    }
+
+    private Optional<Duration> lookbackPeriod(final Metric metric) {
+        // NOTE: This makes no assumption on alignment, and so since the actual
+        // periods aggregated can change between unaligned queries, the period
+        // hint is the most granular used anywhere in the chain.
+        return metric.getAggregators()
+                .stream()
+                .flatMap(agg -> Streams.stream(agg.getSampling()))
+                .map(sampling -> {
+                    final ChronoUnit unit = SamplingUnit.toChronoUnit(sampling.getUnit());
+                    return Duration.of(sampling.getValue(), unit);
+                })
+                .max(Duration::compareTo);
     }
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final BoundedMetricsQuery query) {

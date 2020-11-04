@@ -19,7 +19,7 @@ import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -53,7 +53,19 @@ public interface QueryExecutor {
      * @param query The query
      * @return The minimum polling period necessary to avoid missing data.
      */
-    default Optional<ChronoUnit> periodHint(final MetricsQuery query) {
+    default Optional<Duration> evaluationPeriodHint(final MetricsQuery query) {
         return Optional.empty();
     }
+
+    /**
+     * Return a minimum lookback period size for this query, if any.
+     *
+     * This is the minimal range necessary to query starting from the current timestamp
+     * in order to guarantee data for at least one aggregation period is returned,
+     * if it is available.
+     *
+     * @param query The query
+     * @return The minimum lookback period necessary for data.
+     */
+    Duration lookbackPeriod(MetricsQuery query);
 }

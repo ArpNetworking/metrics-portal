@@ -19,9 +19,11 @@ import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.google.common.collect.ImmutableList;
 import models.internal.BoundedMetricsQuery;
+import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
 import models.internal.Problem;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Singleton;
@@ -39,5 +41,10 @@ public class NoQueryExecutor implements QueryExecutor {
         final CompletableFuture<MetricsQueryResult> cs = new CompletableFuture<>();
         cs.completeExceptionally(new QueryExecutionException("Queries are not enabled", ImmutableList.of(notEnabledProblem)));
         return cs;
+    }
+
+    @Override
+    public Duration lookbackPeriod(final MetricsQuery query) {
+        return Duration.ZERO;
     }
 }

@@ -36,7 +36,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -94,6 +93,8 @@ public final class AlertExecutionContext {
      * @return a schedule
      */
     public Schedule getSchedule(final Alert alert) {
+        // QueryExecutor#evaluationPeriodHint could be used here to reduce query
+        // frequency if there are a large proportion of period-aligned queries.
         return _defaultSchedule;
     }
 
@@ -109,8 +110,7 @@ public final class AlertExecutionContext {
             // If we're unable to obtain a period hint then we will not be able to
             // correctly window the query, as smaller intervals could miss data.
             final MetricsQuery query = alert.getQuery();
-            final ChronoUnit period = _executor.periodHint(query)
-                    .orElseThrow(() -> new IllegalArgumentException("Unable to obtain period hint for query"));
+            final Duration period = _executor.lookbackPeriod(query);
             final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
             final Instant queryRangeStart = bounded.getStartTime().toInstant();
             final Instant queryRangeEnd =
@@ -133,7 +133,7 @@ public final class AlertExecutionContext {
     private AlertEvaluationResult toAlertResult(
             final MetricsQueryResult queryResult,
             final Instant scheduled,
-            final ChronoUnit period,
+            final Duration period,
             final Instant queryRangeStart,
             final Instant queryRangeEnd
     ) {
@@ -224,7 +224,7 @@ public final class AlertExecutionContext {
     }
 
     private boolean isFiring(final List<? extends TimeSeriesResult.DataPoint> values,
-                             final ChronoUnit period,
+                             final Duration period,
                              final Instant scheduled) {
         if (values.isEmpty()) {
             return false;
@@ -233,7 +233,8 @@ public final class AlertExecutionContext {
         // period.
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
         final Instant mostRecentDatapointTime = values.get(values.size() - 1).getTime();
-        return period.between(mostRecentDatapointTime, adjustedScheduled) == 0;
+
+        return Duration.between(mostRecentDatapointTime, adjustedScheduled).compareTo(period) < 0;
     }
 
     private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {
@@ -247,12 +248,14 @@ public final class AlertExecutionContext {
 
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
                                                final Instant scheduled,
-                                               final ChronoUnit period) {
-        final ZonedDateTime adjustedScheduled = scheduled.minus(_queryOffset).atZone(ZoneOffset.UTC);
-
+                                               final Duration period) {
         // We must truncate to avoid dealing with partially aggregated periods.
-        final ZonedDateTime latest = adjustedScheduled.truncatedTo(period);
-        final ZonedDateTime previous = latest.minus(1, period);
+        final Instant adjustedScheduled = scheduled.minus(_queryOffset);
+        final long excessMillis = adjustedScheduled.toEpochMilli() % period.toMillis();
+        final Instant truncatedScheduled = adjustedScheduled.minusMillis(excessMillis);
+
+        final ZonedDateTime latest = truncatedScheduled.atZone(ZoneOffset.UTC);
+        final ZonedDateTime previous = latest.minus(period);
 
         return new DefaultBoundedMetricsQuery.Builder()
                 .setStartTime(previous)

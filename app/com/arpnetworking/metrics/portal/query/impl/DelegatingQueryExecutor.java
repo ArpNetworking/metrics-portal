@@ -24,7 +24,7 @@ import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
 import models.internal.MetricsQueryResult;
 
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -54,15 +54,23 @@ public class DelegatingQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public Optional<ChronoUnit> periodHint(final MetricsQuery query) {
-        return _executors.getExecutor(query.getQueryFormat()).flatMap(exec -> exec.periodHint(query));
+    public Optional<Duration> evaluationPeriodHint(final MetricsQuery query) {
+        return _executors.getExecutor(query.getQueryFormat()).flatMap(exec -> exec.evaluationPeriodHint(query));
     }
 
     private CompletionStage<MetricsQueryResult> executeQueryInner(final BoundedMetricsQuery query) {
         final MetricsQueryFormat format = query.getQueryFormat();
         final QueryExecutor executor =  _executors.getExecutor(format).orElseThrow(() ->
-                new UnsupportedOperationException("No registered executor for format: " + format)
+                new IllegalArgumentException("No registered executor for format: " + format)
         );
         return executor.executeQuery(query);
+    }
+
+    @Override
+    public Duration lookbackPeriod(final MetricsQuery query) {
+        final MetricsQueryFormat format = query.getQueryFormat();
+        return _executors.getExecutor(query.getQueryFormat())
+                .map(exec -> exec.lookbackPeriod(query))
+                .orElseThrow(() -> new IllegalArgumentException("No registered executor for format: " + format));
     }
 }
