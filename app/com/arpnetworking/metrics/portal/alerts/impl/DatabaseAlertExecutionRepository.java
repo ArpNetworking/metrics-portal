@@ -213,8 +213,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         // 4 Nov 2020
         // Using EXPLAIN ANALYZE, 1000 job IDs and 1 day lookback.
         //
-        // Planning time: 67.873 ms
-        // Execution time: 220.937 ms
+        // Planning time: 64.001 ms
+        // Execution time: 135.614 ms
 
         // Attempting to join against portal.organizations results in Postgres
         // using a Nested Loop Join for certain sizes of jobIds which can make
