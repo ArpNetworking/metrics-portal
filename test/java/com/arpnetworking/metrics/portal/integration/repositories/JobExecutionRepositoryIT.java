@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
@@ -368,7 +367,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                 .build();
 
         final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
-        Map<UUID, JobExecution.Success<T>> successes =
+        final Map<UUID, JobExecution.Success<T>> successes =
                 _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
         for (final UUID jobId : existingJobIds) {
             assertThat(successes, hasKey(jobId));
@@ -376,8 +375,5 @@ public abstract class JobExecutionRepositoryIT<T> {
         }
         assertThat("did not expect extra job id", successes, not(hasKey(extraJobId)));
         assertThat("did not expect a result for nonexistent id", successes, not(hasKey(nonexistentId)));
-
-        successes = _repository.getLastSuccessBatch(jobIds, _organization, currentDate.plusDays(1));
-        assertThat(successes.entrySet(), empty());
     }
 }

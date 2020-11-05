@@ -69,7 +69,7 @@ public interface JobExecutionRepository<T> {
     Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException;
 
     /**
-     * Get the last successful executions for all ids, if any.
+     * Get the last successful execution for each ID, if any.
      *
      * It is possible for the returned list to be smaller than the number of IDs
      * given if some jobs have not been executed at query time.

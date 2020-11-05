@@ -64,7 +64,7 @@ public class AlertController extends Controller {
     private static final String CONFIG_EXECUTIONS_LOOKBACK_DAYS = "alerts.executions.lookbackDays";
 
     private static final int DEFAULT_EXECUTIONS_BATCH_SIZE = 500;
-    private static final int DEFAULT_EXECUTIONS_LOOKBACK_DAYS = 7;
+    private static final int DEFAULT_EXECUTIONS_LOOKBACK_DAYS = 1;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
 
@@ -74,6 +74,7 @@ public class AlertController extends Controller {
     private final int _executionsBatchSize;
     // The number of days back to check for executions.
     private final int _executionsLookbackDays;
+
     private final AlertRepository _alertRepository;
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
