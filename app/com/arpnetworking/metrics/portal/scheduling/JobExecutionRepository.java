@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import models.internal.Organization;
@@ -80,10 +79,14 @@ public interface JobExecutionRepository<T> {
      *
      * @param jobIds The UUIDs of the jobs to fetch.
      * @param organization The organization owning the jobs.
-     * @param maxLookback The farthest date in the past to check for executions.
+     * @param maxLookback The farthest date (UTC) in the past to check for executions.
      * @return The last successful executions for each job.
      */
-    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(List<UUID> jobIds, Organization organization, LocalDate maxLookback) {
+    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(
+            List<UUID> jobIds,
+            Organization organization,
+            LocalDate maxLookback
+    ) {
         return jobIds.stream()
             .map(id -> getLastSuccess(id, organization))
             .flatMap(Streams::stream)

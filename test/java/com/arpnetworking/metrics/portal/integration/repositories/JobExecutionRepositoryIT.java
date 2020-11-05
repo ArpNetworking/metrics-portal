@@ -368,7 +368,8 @@ public abstract class JobExecutionRepositoryIT<T> {
                 .build();
 
         final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
-        Map<UUID, JobExecution.Success<T>> successes = _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
+        Map<UUID, JobExecution.Success<T>> successes =
+                _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
         for (final UUID jobId : existingJobIds) {
             assertThat(successes, hasKey(jobId));
             assertThat(successes.get(jobId).getScheduled(), is(truncatedNow));
