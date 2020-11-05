@@ -38,6 +38,9 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -198,45 +201,54 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     @Override
     public ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> getLastSuccessBatch(
             final List<UUID> jobIds,
-            final Organization organization
+            final Organization organization,
+            final LocalDate maxLookback
     ) throws NoSuchElementException {
         assertIsOpen();
 
-        final Optional<models.ebean.Organization> beanOrganization =
-                models.ebean.Organization.findByOrganization(_ebeanServer, organization);
-
-        if (!beanOrganization.isPresent()) {
-            return ImmutableMap.of();
-        }
-
-        // Due to the complexities around joins / aggregate functions, we opt for
-        // manually specifying the query here. Unfortunately, this does result
-        // in hardcoding the column and table names.
+        // Ebean doesn't play well with nested queries or aggregate functions, let
+        // alone both. As such we opt for manually specifying the query here.
+        //
+        // This query performs fairly well when the number of indices is bounded,
+        // otherwise Postgres will attempt to scan all of them individually.
+        //
+        // 4 Nov 2020
+        // Results of EXPLAIN ANALYZE in a local development env:
+        //    len(jobIds) == 1000
+        //    maxLookback == 30 days
+        //
+        // Planning time: 71.873 ms
+        // Execution time: 60.937 ms
 
         final String query =
-                  " SELECT a.organization_id, a.alert_id, a.scheduled, a.started_at, a.completed_at, a.state, a.result"
-                + " FROM portal.alert_executions a"
+                  " SELECT t1.organization_id, t1.alert_id, t1.scheduled, t1.started_at, t1.completed_at, t1.state, t1.result"
+                + " FROM portal.alert_executions t1"
                 + " JOIN (SELECT alert_id, max(completed_at) completed_at"
                 + "         FROM portal.alert_executions"
-                + "         GROUP BY alert_id) b"
-                + " ON a.alert_id = b.alert_id AND a.completed_at = b.completed_at";
+                + "         WHERE scheduled >= :scheduled"
+                + "         GROUP BY alert_id) t2"
+                + " ON t1.alert_id = t2.alert_id AND t1.completed_at = t2.completed_at"
+                + " JOIN portal.organizations o"
+                + " ON o.id = t1.organization_id";
 
         final RawSql rawSql = RawSqlBuilder
                 .parse(query)
-                .columnMapping("a.organization_id", "organization.id")
-                .columnMapping("a.alert_id", "alertId")
-                .columnMapping("a.scheduled", "scheduled")
-                .columnMapping("a.started_at", "started_at")
-                .columnMapping("a.completed_at", "completed_at")
-                .columnMapping("a.state", "state")
-                .columnMapping("a.result", "result")
+                .columnMapping("t1.organization_id", "organization.id")
+                .columnMapping("t1.alert_id", "alertId")
+                .columnMapping("t1.scheduled", "scheduled")
+                .columnMapping("t1.started_at", "started_at")
+                .columnMapping("t1.completed_at", "completed_at")
+                .columnMapping("t1.state", "state")
+                .columnMapping("t1.result", "result")
                 .create();
 
         final List<AlertExecution> rows =
             _ebeanServer.find(AlertExecution.class)
                     .setRawSql(rawSql)
+                    .setParameter("scheduled", maxLookback)
                     .where()
-                    .eq("organization.id", beanOrganization.get().getId())
+                    .eq("o.uuid", organization.getId())
+                    .gt("scheduled", maxLookback)
                     .in("alertId", jobIds)
                     .findList();
 

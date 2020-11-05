@@ -39,6 +39,8 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -55,8 +57,10 @@ public class AlertController extends Controller {
 
     private static final String CONFIG_LIMIT = "alerts.limit";
     private static final String CONFIG_EXECUTIONS_BATCH_SIZE = "alerts.executions.batchSize";
+    private static final String CONFIG_EXECUTIONS_LOOKBACK_DAYS = "alerts.executions.lookbackDays";
 
     private static final int DEFAULT_EXECUTIONS_BATCH_SIZE = 500;
+    private static final int DEFAULT_EXECUTIONS_LOOKBACK_DAYS = 7;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertController.class);
 
@@ -64,6 +68,8 @@ public class AlertController extends Controller {
     private final int _maxPageSize;
     // The maximum number of executions to fetch per batch.
     private final int _executionsBatchSize;
+    // The number of days back to check for executions.
+    private final int _executionsLookbackDays;
     private final AlertRepository _alertRepository;
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
@@ -92,6 +98,11 @@ public class AlertController extends Controller {
             _executionsBatchSize = config.getInt(CONFIG_EXECUTIONS_BATCH_SIZE);
         } else {
             _executionsBatchSize = DEFAULT_EXECUTIONS_BATCH_SIZE;
+        }
+        if (config.hasPath(CONFIG_EXECUTIONS_LOOKBACK_DAYS)) {
+            _executionsLookbackDays = config.getInt(CONFIG_EXECUTIONS_LOOKBACK_DAYS);
+        } else {
+            _executionsLookbackDays = DEFAULT_EXECUTIONS_LOOKBACK_DAYS;
         }
     }
 
@@ -176,12 +187,13 @@ public class AlertController extends Controller {
     }
 
     private ImmutableList<models.view.alerts.Alert> fromInternal(final List<? extends Alert> alerts, final Organization organization) {
+        final LocalDate maxLookback = ZonedDateTime.now().minusDays(_executionsLookbackDays).toLocalDate();
         final ImmutableList<UUID> jobIds = alerts.stream().map(Alert::getId).collect(ImmutableList.toImmutableList());
 
         final Map<UUID, JobExecution.Success<AlertEvaluationResult>> executions = Maps.newHashMapWithExpectedSize(alerts.size());
         for (final List<UUID> jobIdBatch : Lists.partition(jobIds, _executionsBatchSize)) {
             final ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> executionsBatch =
-                    _executionRepository.getLastSuccessBatch(jobIdBatch, organization);
+                    _executionRepository.getLastSuccessBatch(jobIdBatch, organization, maxLookback);
             executions.putAll(executionsBatch);
         }
 

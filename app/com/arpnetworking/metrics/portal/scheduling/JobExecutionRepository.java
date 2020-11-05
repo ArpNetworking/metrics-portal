@@ -23,6 +23,7 @@ import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -79,9 +80,10 @@ public interface JobExecutionRepository<T> {
      *
      * @param jobIds The UUIDs of the jobs to fetch.
      * @param organization The organization owning the jobs.
+     * @param maxLookback The farthest date in the past to check for executions.
      * @return The last successful executions for each job.
      */
-    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(List<UUID> jobIds, Organization organization) {
+    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(List<UUID> jobIds, Organization organization, LocalDate maxLookback) {
         return jobIds.stream()
             .map(id -> getLastSuccess(id, organization))
             .flatMap(Streams::stream)

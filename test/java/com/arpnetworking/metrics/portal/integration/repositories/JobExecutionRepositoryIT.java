@@ -29,6 +29,9 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
@@ -341,15 +345,10 @@ public abstract class JobExecutionRepositoryIT<T> {
         final Instant truncatedNow = Instant.now().truncatedTo(ChronoUnit.DAYS);
 
         // Create several jobs, each with several runs.
-        //
-        // The most recent scheduled jobs are staggered so that they the returned
-        // values don't correspond to the same instant.
-        for (int i = 0; i < runsPerJob; i++) {
-            final Instant start = truncatedNow.minus(Duration.ofDays(runsPerJob - 1));
-            for (int j = 0; j < numJobs; j++) {
-                final UUID jobId = existingJobIds.get(j);
+        for (final UUID jobId : existingJobIds) {
+            for (int i = 0; i < runsPerJob; i++) {
                 final T result = newResult();
-                final Instant scheduled = start.minus(Duration.ofDays(j)).plus(Duration.ofDays(i));
+                final Instant scheduled = truncatedNow.minus(Duration.ofDays(runsPerJob - 1 - i));
                 _repository.jobStarted(jobId, _organization, scheduled);
                 _repository.jobSucceeded(jobId, _organization, scheduled, result);
             }
@@ -368,15 +367,16 @@ public abstract class JobExecutionRepositoryIT<T> {
                 .add(nonexistentId)
                 .build();
 
-        final Map<UUID, JobExecution.Success<T>> successes = _repository.getLastSuccessBatch(jobIds, _organization);
-        for (int j = 0; j < numJobs; j++) {
-            final UUID jobId = existingJobIds.get(j);
-            final Instant expectedStart = truncatedNow.minus(Duration.ofDays(j));
-
+        final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
+        Map<UUID, JobExecution.Success<T>> successes = _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
+        for (final UUID jobId : existingJobIds) {
             assertThat(successes, hasKey(jobId));
-            assertThat(successes.get(jobId).getScheduled(), is(expectedStart));
+            assertThat(successes.get(jobId).getScheduled(), is(truncatedNow));
         }
         assertThat("did not expect extra job id", successes, not(hasKey(extraJobId)));
         assertThat("did not expect a result for nonexistent id", successes, not(hasKey(nonexistentId)));
+
+        successes = _repository.getLastSuccessBatch(jobIds, _organization, currentDate.plusDays(1));
+        assertThat(successes.entrySet(), empty());
     }
 }
