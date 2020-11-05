@@ -155,7 +155,8 @@ public final class AlertControllerTest {
                     )),
                     alertRepository,
                     alertExecutionRepository,
-                    organizationRepository
+                    organizationRepository,
+                    Mockito.mock(PeriodicMetrics.class)
             );
         }
 
