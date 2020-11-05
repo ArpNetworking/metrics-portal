@@ -216,19 +216,6 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         // Planning time: 64.001 ms
         // Execution time: 135.614 ms
 
-        // Attempting to join against portal.organizations results in Postgres
-        // using a Nested Loop Join for certain sizes of jobIds which can make
-        // the query very slow.
-        //
-        // So we fetch the bean organization id first and filter on that.
-        // This does not cost us a DB lookup in practice due to Ebean's caching.
-        final Optional<models.ebean.Organization> beanOrganization =
-                models.ebean.Organization.findByOrganization(_ebeanServer, organization);
-
-        if (!beanOrganization.isPresent()) {
-            return ImmutableMap.of();
-        }
-
         final String query =
                   " SELECT t1.organization_id, t1.alert_id, t1.scheduled, t1.started_at, t1.completed_at, t1.state, t1.result"
                 + " FROM portal.alert_executions t1"
@@ -236,7 +223,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 + "         FROM portal.alert_executions"
                 + "         WHERE scheduled >= :scheduled"
                 + "         GROUP BY alert_id) t2"
-                + " ON t1.alert_id = t2.alert_id AND t1.completed_at = t2.completed_at";
+                + " ON t1.alert_id = t2.alert_id AND t1.completed_at = t2.completed_at"
+                + " WHERE t1.organization_id = (SELECT id FROM portal.organizations WHERE uuid = :organization_uuid)";
 
         final RawSql rawSql = RawSqlBuilder
                 .parse(query)
@@ -253,8 +241,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             _ebeanServer.find(AlertExecution.class)
                     .setRawSql(rawSql)
                     .setParameter("scheduled", maxLookback)
+                    .setParameter("organization_uuid", organization.getId())
                     .where()
-                    .eq("organization_id", beanOrganization.get().getId())
                     .eq("state", AlertExecution.State.SUCCESS)
                     .gt("scheduled", maxLookback)
                     .in("alertId", jobIds)
