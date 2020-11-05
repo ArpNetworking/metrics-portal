@@ -25,8 +25,11 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
+import io.ebean.RawSql;
+import io.ebean.RawSqlBuilder;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
@@ -35,6 +38,7 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -189,6 +193,68 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             );
         }
         return Optional.empty();
+    }
+
+    @Override
+    public ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> getLastSuccessBatch(
+            final List<UUID> jobIds,
+            final Organization organization
+    ) throws NoSuchElementException {
+        assertIsOpen();
+
+        final Optional<models.ebean.Organization> beanOrganization =
+                models.ebean.Organization.findByOrganization(_ebeanServer, organization);
+
+        if (!beanOrganization.isPresent()) {
+            return ImmutableMap.of();
+        }
+
+        // Due to the complexities around joins / aggregate functions, we opt for
+        // manually specifying the query here. Unfortunately, this does result
+        // in hardcoding the column and table names.
+
+        final String query =
+                  " SELECT a.organization_id, a.alert_id, a.scheduled, a.started_at, a.completed_at, a.state, a.result"
+                + " FROM portal.alert_executions a"
+                + " JOIN (SELECT alert_id, max(completed_at) completed_at"
+                + "         FROM portal.alert_executions"
+                + "         GROUP BY alert_id) b"
+                + " ON a.alert_id = b.alert_id AND a.completed_at = b.completed_at";
+
+        final RawSql rawSql = RawSqlBuilder
+                .parse(query)
+                .columnMapping("a.organization_id", "organization.id")
+                .columnMapping("a.alert_id", "alertId")
+                .columnMapping("a.scheduled", "scheduled")
+                .columnMapping("a.started_at", "started_at")
+                .columnMapping("a.completed_at", "completed_at")
+                .columnMapping("a.state", "state")
+                .columnMapping("a.result", "result")
+                .create();
+
+        final List<AlertExecution> rows =
+            _ebeanServer.find(AlertExecution.class)
+                    .setRawSql(rawSql)
+                    .where()
+                    .eq("organization.id", beanOrganization.get().getId())
+                    .in("alertId", jobIds)
+                    .findList();
+
+        return rows
+                .stream()
+                .map(DatabaseExecutionHelper::toInternalModel)
+                .map(result -> {
+                    if (result instanceof JobExecution.Success) {
+                        return (JobExecution.Success<AlertEvaluationResult>) result;
+                    }
+                    throw new IllegalStateException(
+                        String.format("execution returned was not a success when specified by the query: %s", result)
+                    );
+                })
+                .collect(ImmutableMap.toImmutableMap(
+                        JobExecution::getJobId,
+                        execution -> execution
+                ));
     }
 
     @Override
