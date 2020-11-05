@@ -359,7 +359,7 @@ public abstract class JobExecutionRepositoryIT<T> {
         _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult());
         // Create an additional job with a failure.
         final UUID failedJobId = UUID.randomUUID();
-        ensureJobExists(_organization, extraJobId);
+        ensureJobExists(_organization, failedJobId);
         _repository.jobStarted(extraJobId, _organization, truncatedNow);
         _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"));
 
