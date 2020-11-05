@@ -355,15 +355,20 @@ public abstract class JobExecutionRepositoryIT<T> {
         // Create an additional job that we don't care about.
         final UUID extraJobId = UUID.randomUUID();
         ensureJobExists(_organization, extraJobId);
-        final Instant extraScheduled = Instant.now().truncatedTo(ChronoUnit.DAYS);
-        _repository.jobStarted(extraJobId, _organization, extraScheduled);
-        _repository.jobSucceeded(extraJobId, _organization, extraScheduled, newResult());
+        _repository.jobStarted(extraJobId, _organization, truncatedNow);
+        _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult());
+        // Create an additional job with a failure.
+        final UUID failedJobId = UUID.randomUUID();
+        ensureJobExists(_organization, extraJobId);
+        _repository.jobStarted(extraJobId, _organization, truncatedNow);
+        _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"));
 
         // Request an ID that doesn't exist.
         final UUID nonexistentId = UUID.randomUUID();
         final ImmutableList<UUID> jobIds = new ImmutableList.Builder<UUID>()
                 .addAll(existingJobIds)
                 .add(nonexistentId)
+                .add(failedJobId)
                 .build();
 
         final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
@@ -375,5 +380,6 @@ public abstract class JobExecutionRepositoryIT<T> {
         }
         assertThat("did not expect extra job id", successes, not(hasKey(extraJobId)));
         assertThat("did not expect a result for nonexistent id", successes, not(hasKey(nonexistentId)));
+        assertThat("did not a expect a result for a failed job", successes, not(hasKey(failedJobId)));
     }
 }

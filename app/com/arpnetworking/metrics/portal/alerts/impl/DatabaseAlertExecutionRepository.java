@@ -255,6 +255,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                     .setParameter("scheduled", maxLookback)
                     .where()
                     .eq("organization_id", beanOrganization.get().getId())
+                    .eq("state", AlertExecution.State.SUCCESS)
                     .gt("scheduled", maxLookback)
                     .in("alertId", jobIds)
                     .findList();
