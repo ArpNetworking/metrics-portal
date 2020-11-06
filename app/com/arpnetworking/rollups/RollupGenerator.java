@@ -28,6 +28,8 @@ import com.arpnetworking.kairos.client.models.MetricTags;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
@@ -41,6 +43,7 @@ import com.typesafe.config.ConfigUtil;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +68,6 @@ import javax.inject.Named;
  *
  */
 public class RollupGenerator extends AbstractActorWithTimers {
-
     /*
      * The Generator flow is as follows:
      *
@@ -105,6 +107,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
      * @param kairosDbClient kairosdb client
      * @param clock clock to use for time calculations
      * @param metrics periodic metrics instance
+     * @param metricsFactory metrics factory instance for instrumentation
      */
     @Inject
     public RollupGenerator(
@@ -113,12 +116,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
             @Named("RollupManager") final ActorRef rollupManager,
             final KairosDbClient kairosDbClient,
             final Clock clock,
-            final PeriodicMetrics metrics) {
+            final PeriodicMetrics metrics,
+            final MetricsFactory metricsFactory
+    ) {
         _metricsDiscovery = metricsDiscovery;
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
         _clock = clock;
         _metrics = metrics;
+        _metricsFactory = metricsFactory;
         _fetchBackoff = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.backoff");
 
         final ImmutableMap.Builder<RollupPeriod, Integer> maxBackFillByPeriod = ImmutableMap.builder();
@@ -300,6 +306,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     message.getSourceLastDataPointTime(),
                     period
             );
+
+            try (Metrics metrics = _metricsFactory.create()) {
+                final String metricNamespace = getNamespace(message.getSourceMetricName()).orElse("<unknown>");
+                metrics.addAnnotation("namespace", metricNamespace);
+
+                final String periodName = period.name().toLowerCase(Locale.getDefault());
+                final Duration backfillAge = Duration.between(startTimes.first(), Instant.now());
+                metrics.setGauge("rollup/generator/backfill_age/" + periodName, backfillAge.toMillis());
+            }
 
             final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
                     .setSourceMetricName(message.getSourceMetricName())
@@ -483,6 +498,14 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 : lastCompletePeriod;
     }
 
+    private Optional<String> getNamespace(final String metricName) {
+        final String[] parts = metricName.split("/", 2);
+        if (parts.length < 2) {
+            return Optional.empty();
+        }
+        return Optional.of(parts[0]);
+    }
+
     private final ActorRef _metricsDiscovery;
     private final ActorRef _rollupManager;
     private final KairosDbClient _kairosDbClient;
@@ -490,6 +513,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private final FiniteDuration _fetchBackoff;
     private final Clock _clock;
     private final PeriodicMetrics _metrics;
+    private final MetricsFactory _metricsFactory;
     private List<RollupPeriod> _periodsInFlight = Collections.emptyList();
 
     static final Object FETCH_METRIC = new Object();
