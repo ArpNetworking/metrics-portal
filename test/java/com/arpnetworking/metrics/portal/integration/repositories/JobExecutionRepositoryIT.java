@@ -19,6 +19,7 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Organization;
 import models.internal.scheduling.JobExecution;
@@ -28,10 +29,18 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -319,5 +328,58 @@ public abstract class JobExecutionRepositoryIT<T> {
                 return 0;
             }
         }).apply(updatedExecution);
+    }
+
+    @Test
+    public void testGetLastSuccessBatch() {
+        final int runsPerJob = 3;
+        final int numJobs = 5;
+
+        final List<UUID> existingJobIds = new ArrayList<>();
+        for (int i = 0; i < numJobs; i++) {
+            final UUID jobId = UUID.randomUUID();
+            ensureJobExists(_organization, jobId);
+            existingJobIds.add(jobId);
+        }
+        final Instant truncatedNow = Instant.now().truncatedTo(ChronoUnit.DAYS);
+
+        // Create several jobs, each with several runs.
+        for (final UUID jobId : existingJobIds) {
+            for (int i = 0; i < runsPerJob; i++) {
+                final T result = newResult();
+                final Instant scheduled = truncatedNow.minus(Duration.ofDays(runsPerJob - 1 - i));
+                _repository.jobStarted(jobId, _organization, scheduled);
+                _repository.jobSucceeded(jobId, _organization, scheduled, result);
+            }
+        }
+        // Create an additional job that we don't care about.
+        final UUID extraJobId = UUID.randomUUID();
+        ensureJobExists(_organization, extraJobId);
+        _repository.jobStarted(extraJobId, _organization, truncatedNow);
+        _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult());
+        // Create an additional job with a failure.
+        final UUID failedJobId = UUID.randomUUID();
+        ensureJobExists(_organization, failedJobId);
+        _repository.jobStarted(extraJobId, _organization, truncatedNow);
+        _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"));
+
+        // Request an ID that doesn't exist.
+        final UUID nonexistentId = UUID.randomUUID();
+        final ImmutableList<UUID> jobIds = new ImmutableList.Builder<UUID>()
+                .addAll(existingJobIds)
+                .add(nonexistentId)
+                .add(failedJobId)
+                .build();
+
+        final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
+        final Map<UUID, JobExecution.Success<T>> successes =
+                _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
+        for (final UUID jobId : existingJobIds) {
+            assertThat(successes, hasKey(jobId));
+            assertThat(successes.get(jobId).getScheduled(), is(truncatedNow));
+        }
+        assertThat("did not expect extra job id", successes, not(hasKey(extraJobId)));
+        assertThat("did not expect a result for nonexistent id", successes, not(hasKey(nonexistentId)));
+        assertThat("did not a expect a result for a failed job", successes, not(hasKey(failedJobId)));
     }
 }

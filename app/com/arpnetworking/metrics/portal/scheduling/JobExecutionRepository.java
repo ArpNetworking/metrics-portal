@@ -15,11 +15,15 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,6 +67,34 @@ public interface JobExecutionRepository<T> {
      * @throws NoSuchElementException if no job has the given UUID.
      */
     Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException;
+
+    /**
+     * Get the last successful execution for each ID, if any.
+     *
+     * It is possible for the returned list to be smaller than the number of IDs
+     * given if some jobs have not been executed at query time.
+     *
+     * The default behavior is identical to repeated calls to `getLastSuccess`, but
+     * implementations may specialize this method for performance reasons.
+     *
+     * @param jobIds The UUIDs of the jobs to fetch.
+     * @param organization The organization owning the jobs.
+     * @param maxLookback The farthest date (UTC) in the past to check for executions.
+     * @return The last successful executions for each job.
+     */
+    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(
+            List<UUID> jobIds,
+            Organization organization,
+            LocalDate maxLookback
+    ) {
+        return jobIds.stream()
+            .map(id -> getLastSuccess(id, organization))
+            .flatMap(Streams::stream)
+            .collect(ImmutableMap.toImmutableMap(
+                    JobExecution::getJobId,
+                    execution -> execution
+            ));
+    }
 
     /**
      * Get the last completed execution, regardless of if it succeeded.

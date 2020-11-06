@@ -25,8 +25,11 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
+import io.ebean.RawSql;
+import io.ebean.RawSqlBuilder;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
@@ -35,6 +38,8 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -189,6 +194,75 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             );
         }
         return Optional.empty();
+    }
+
+    @Override
+    public ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> getLastSuccessBatch(
+            final List<UUID> jobIds,
+            final Organization organization,
+            final LocalDate maxLookback
+    ) throws NoSuchElementException {
+        assertIsOpen();
+
+        // Ebean doesn't play well with nested queries or aggregate functions, let
+        // alone both. As such we opt for manually specifying the query here.
+        //
+        // This query performs fairly well when the number of indices is bounded,
+        // otherwise Postgres will attempt to scan all of them individually.
+        //
+        // 4 Nov 2020
+        // Using EXPLAIN ANALYZE, 1000 job IDs and 1 day lookback.
+        //
+        // Planning time: 64.001 ms
+        // Execution time: 135.614 ms
+
+        final String query =
+                  " SELECT t1.organization_id, t1.alert_id, t1.scheduled, t1.started_at, t1.completed_at, t1.state, t1.result"
+                + " FROM portal.alert_executions t1"
+                + " JOIN (SELECT alert_id, max(completed_at) completed_at"
+                + "         FROM portal.alert_executions"
+                + "         WHERE scheduled >= :scheduled"
+                + "         GROUP BY alert_id) t2"
+                + " ON t1.alert_id = t2.alert_id AND t1.completed_at = t2.completed_at"
+                + " WHERE t1.organization_id = (SELECT id FROM portal.organizations WHERE uuid = :organization_uuid)";
+
+        final RawSql rawSql = RawSqlBuilder
+                .parse(query)
+                .columnMapping("t1.organization_id", "organization.id")
+                .columnMapping("t1.alert_id", "alertId")
+                .columnMapping("t1.scheduled", "scheduled")
+                .columnMapping("t1.started_at", "started_at")
+                .columnMapping("t1.completed_at", "completed_at")
+                .columnMapping("t1.state", "state")
+                .columnMapping("t1.result", "result")
+                .create();
+
+        final List<AlertExecution> rows =
+            _ebeanServer.find(AlertExecution.class)
+                    .setRawSql(rawSql)
+                    .setParameter("scheduled", maxLookback)
+                    .setParameter("organization_uuid", organization.getId())
+                    .where()
+                    .eq("state", AlertExecution.State.SUCCESS)
+                    .gt("scheduled", maxLookback)
+                    .in("alertId", jobIds)
+                    .findList();
+
+        return rows
+                .stream()
+                .map(DatabaseExecutionHelper::toInternalModel)
+                .map(result -> {
+                    if (result instanceof JobExecution.Success) {
+                        return (JobExecution.Success<AlertEvaluationResult>) result;
+                    }
+                    throw new IllegalStateException(
+                        String.format("execution returned was not a success when specified by the query: %s", result)
+                    );
+                })
+                .collect(ImmutableMap.toImmutableMap(
+                        JobExecution::getJobId,
+                        execution -> execution
+                ));
     }
 
     @Override
