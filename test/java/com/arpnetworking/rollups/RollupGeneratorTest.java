@@ -26,6 +26,8 @@ import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
@@ -83,6 +85,10 @@ public class RollupGeneratorTest {
     private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+    @Mock
+    private MetricsFactory _metricsFactory;
+    @Mock
+    private Metrics _metrics;
 
     private TestKit _probe;
     private ActorRef _testManager;
@@ -102,6 +108,7 @@ public class RollupGeneratorTest {
         when(_config.hasPath(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(true);
         when(_config.hasPath(eq("rollup.maxBackFill.periods.daily"))).thenReturn(true);
 
+        when(_metricsFactory.create()).thenReturn(_metrics);
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
@@ -124,6 +131,7 @@ public class RollupGeneratorTest {
                         .toInstance(_probe.getRef());
                 bind(Clock.class).toInstance(_clock);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
+                bind(MetricsFactory.class).toInstance(_metricsFactory);
             }
         });
 
@@ -786,8 +794,9 @@ public class RollupGeneratorTest {
                 @Named("RollupManager") final ActorRef rollupManager,
                 final KairosDbClient kairosDbClient,
                 final Clock clock,
-                final PeriodicMetrics metrics) {
-            super(configuration, testActor, rollupManager, kairosDbClient, clock, metrics);
+                final PeriodicMetrics metrics,
+                final MetricsFactory metricsFactory) {
+            super(configuration, testActor, rollupManager, kairosDbClient, clock, metrics, metricsFactory);
             _self = testActor;
         }
 

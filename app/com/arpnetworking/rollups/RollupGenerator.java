@@ -307,13 +307,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
                     period
             );
 
-            try (Metrics metrics = _metricsFactory.create()) {
-                final String metricNamespace = getNamespace(message.getSourceMetricName()).orElse("<unknown>");
-                metrics.addAnnotation("namespace", metricNamespace);
+            if (!startTimes.isEmpty()) {
+                try (Metrics metrics = _metricsFactory.create()) {
+                    final String metricNamespace = getNamespace(message.getSourceMetricName()).orElse("<unknown>");
+                    metrics.addAnnotation("namespace", metricNamespace);
 
-                final String periodName = period.name().toLowerCase(Locale.getDefault());
-                final Duration backfillAge = Duration.between(startTimes.first(), Instant.now());
-                metrics.setGauge("rollup/generator/backfill_age/" + periodName, backfillAge.toMillis());
+                    final String periodName = period.name().toLowerCase(Locale.getDefault());
+                    final Duration backfillAge = Duration.between(startTimes.first(), Instant.now());
+                    metrics.setGauge("rollup/generator/backfill_age/" + periodName, backfillAge.toMillis());
+                }
             }
 
             final RollupDefinition.Builder rollupDefBuilder = new RollupDefinition.Builder()
