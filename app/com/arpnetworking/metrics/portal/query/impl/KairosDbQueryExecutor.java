@@ -16,10 +16,13 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
-import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
+import com.arpnetworking.kairos.service.DefaultQueryContext;
+import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.QueryContext;
+import com.arpnetworking.kairos.service.QueryOrigin;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -46,18 +49,18 @@ import javax.inject.Inject;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class KairosDbQueryExecutor implements QueryExecutor {
-    private final KairosDbClient _client;
+    private final KairosDbService _service;
     private final ObjectMapper _objectMapper;
 
     /**
      * Default Constructor.
      *
-     * @param client The KairosDB client used to execute queries.
+     * @param service The KairosDBService used to execute queries.
      * @param objectMapper The objectMapper used to parse queries.
      */
     @Inject
-    public KairosDbQueryExecutor(final KairosDbClient client, final ObjectMapper objectMapper) {
-        _client = client;
+    public KairosDbQueryExecutor(final KairosDbService service, final ObjectMapper objectMapper) {
+        _service = service;
         _objectMapper = objectMapper;
     }
 
@@ -153,13 +156,18 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                 metricsQueryBuilder.setEndTime(endTime.toInstant())
         );
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery = metricsQueryBuilder.build();
+
+        final QueryContext context = new DefaultQueryContext.Builder()
+                .setOrigin(QueryOrigin.ALERT_EVALUATION)
+                .build();
+
         // TODO(cbriones):
         // This will not propagate the structured error information from KairosDB
-        // until the client provides that capability.
+        // until _service provides that capability.
         //
-        // However, since the client call will still resolve with an exception
+        // However, since the service call will still resolve with an exception
         // this is mostly an issue of debuggability.
-        return _client.queryMetrics(metricsQuery).thenApply(this::toInternal);
+        return _service.queryMetrics(context, metricsQuery).thenApply(this::toInternal);
     }
 
     private MetricsQueryResult toInternal(final MetricsQueryResponse kairosDbResult) {

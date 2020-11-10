@@ -16,8 +16,10 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
-import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
+import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.QueryContext;
+import com.arpnetworking.kairos.service.QueryOrigin;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,16 +71,16 @@ public class KairosDbQueryExecutorTest {
      * Shared test setup.
      */
     public abstract static class BaseTests {
-        protected KairosDbClient _client;
+        protected KairosDbService _service;
         protected KairosDbQueryExecutor _executor;
         protected ObjectMapper _objectMapper;
 
         @Before
         public void setUp() {
-            _client = Mockito.mock(KairosDbClient.class);
+            _service = Mockito.mock(KairosDbService.class);
             _objectMapper = SerializationTestUtils.getApiObjectMapper();
             _executor = new KairosDbQueryExecutor(
-                    _client,
+                    _service,
                     _objectMapper
             );
         }
@@ -100,9 +102,10 @@ public class KairosDbQueryExecutorTest {
                     "testResponse");
             final MetricsQueryResponse response = _objectMapper.readValue(responseJSON, MetricsQueryResponse.class);
 
+            final ArgumentCaptor<QueryContext> contextCaptor = ArgumentCaptor.forClass(QueryContext.class);
             final ArgumentCaptor<com.arpnetworking.kairos.client.models.MetricsQuery> captor = ArgumentCaptor.forClass(
                     com.arpnetworking.kairos.client.models.MetricsQuery.class);
-            when(_client.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
+            when(_service.queryMetrics(contextCaptor.capture(), captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
             final BoundedMetricsQuery query = loadTestQuery();
             final com.arpnetworking.kairos.client.models.MetricsQuery parsedQuery =
@@ -115,6 +118,9 @@ public class KairosDbQueryExecutorTest {
                 fail("Unexpected exception: " + e);
                 return;
             }
+
+            final QueryContext capturedContext = contextCaptor.getValue();
+            assertThat(capturedContext.getOrigin(), equalTo(QueryOrigin.ALERT_EVALUATION));
 
             final com.arpnetworking.kairos.client.models.MetricsQuery capturedQuery = captor.getValue();
             assertThat(capturedQuery.getMetrics(), equalTo(parsedQuery.getMetrics()));
@@ -142,7 +148,7 @@ public class KairosDbQueryExecutorTest {
 
         @Test(expected = ExecutionException.class)
         public void testKairosDBReturnsError() throws Exception {
-            when(_client.queryMetrics(any())).thenThrow(new RuntimeException("boom"));
+            when(_service.queryMetrics(any(), any())).thenThrow(new RuntimeException("boom"));
             final BoundedMetricsQuery query = loadTestQuery();
             _executor.executeQuery(query).toCompletableFuture().get();
         }

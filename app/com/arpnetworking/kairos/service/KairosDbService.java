@@ -42,10 +42,11 @@ public interface KairosDbService {
     /**
      * Executes a query for datapoints from KairosDB.
      *
+     * @param context the context associated with this query
      * @param query the metrics query
      * @return the response
      */
-    CompletionStage<MetricsQueryResponse> queryMetrics(MetricsQuery query);
+    CompletionStage<MetricsQueryResponse> queryMetrics(QueryContext context, MetricsQuery query);
 
     /**
      * Queries KairosDB for metric names.

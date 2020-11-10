@@ -51,6 +51,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -71,6 +72,10 @@ public class KairosDbServiceImplTest {
     private static final String CLASS_NAME = KairosDbServiceImplTest.class.getSimpleName();
 
     private static final ObjectMapper OBJECT_MAPPER = SerializationTestUtils.getApiObjectMapper();
+
+    private static final QueryContext TEST_CONTEXT = new DefaultQueryContext.Builder()
+            .setOrigin(QueryOrigin.EXTERNAL_REQUEST)
+            .build();
 
     @Mock
     private KairosDbClient _mockClient;
@@ -95,6 +100,7 @@ public class KairosDbServiceImplTest {
                 .setExcludedTagNames(ImmutableSet.of("host"))
                 .setMetricsQueryConfig(_mockQueryConfig)
                 .setRewrittenQueryConsumer(_mockRewrittenMetricsQueryConsumer)
+                .setRollupEnabledOrigins(EnumSet.of(QueryOrigin.EXTERNAL_REQUEST))
                 .build();
         when(_mockClient.queryMetricNames())
                 .thenReturn(CompletableFuture.completedFuture(new MetricNamesResponse.Builder()
@@ -153,6 +159,7 @@ public class KairosDbServiceImplTest {
 
 
         _service.queryMetrics(
+                TEST_CONTEXT,
                 OBJECT_MAPPER.readValue(
                         readResource("testSelectsRollupMetricsBasedOnAggregate.request"),
                         MetricsQuery.class)
@@ -169,6 +176,38 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
+    public void testOnlyUsesRollupsWhenEnabledForOrigin() throws Exception {
+        when(_mockClient.queryMetrics(any())).thenReturn(
+                CompletableFuture.completedFuture(
+                        OBJECT_MAPPER.readValue(
+                                readResource("testSelectsRollupMetricsBasedOnAggregate.backend_response"),
+                                MetricsQueryResponse.class)
+                )
+        );
+
+        final QueryContext context = new DefaultQueryContext.Builder()
+                .setOrigin(QueryOrigin.ALERT_EVALUATION)
+                .build();
+
+        _service.queryMetrics(
+                context,
+                OBJECT_MAPPER.readValue(
+                        readResource("testSelectsRollupMetricsBasedOnAggregate.request"),
+                        MetricsQuery.class)
+        );
+
+        final ArgumentCaptor<MetricsQuery> captor = ArgumentCaptor.forClass(MetricsQuery.class);
+        verify(_mockClient, times(1)).queryMetrics(captor.capture());
+        final MetricsQuery request = captor.getValue();
+        assertEquals(Optional.of(Instant.ofEpochMilli(1)), request.getStartTime());
+        assertEquals(1, request.getMetrics().size());
+        final Metric metric = request.getMetrics().get(0);
+        assertEquals("foo", metric.getName());
+        verify(_mockRewrittenMetricsQueryConsumer).accept(notNull());
+
+    }
+
+    @Test
     public void testIgnoresRollupsForUnalignedAggregate() throws Exception {
         when(_mockClient.queryMetrics(any())).thenReturn(
                 CompletableFuture.completedFuture(
@@ -180,6 +219,7 @@ public class KairosDbServiceImplTest {
         );
 
         _service.queryMetrics(
+                TEST_CONTEXT,
                 OBJECT_MAPPER.readValue(
                         readResource("testIgnoresRollupsForUnalignedAggregate.request"),
                         MetricsQuery.class)
@@ -207,6 +247,7 @@ public class KairosDbServiceImplTest {
         );
 
         _service.queryMetrics(
+                TEST_CONTEXT,
                 OBJECT_MAPPER.readValue(
                         readResource("testSelectsSmallestRollupBasedOnAggregate.request"),
                         MetricsQuery.class)
@@ -236,6 +277,7 @@ public class KairosDbServiceImplTest {
         when(_mockQueryConfig.getQueryEnabledRollups(any())).thenReturn(ImmutableSet.of(SamplingUnit.HOURS));
 
         _service.queryMetrics(
+                TEST_CONTEXT,
                 OBJECT_MAPPER.readValue(
                         readResource("testIgnoresBlacklistedRollups.request"),
                         MetricsQuery.class)
@@ -263,6 +305,7 @@ public class KairosDbServiceImplTest {
         );
 
         _service.queryMetrics(
+                TEST_CONTEXT,
                 OBJECT_MAPPER.readValue(
                         readResource("testIgnoresRollupsForSpecialCase.request"),
                         MetricsQuery.class)
