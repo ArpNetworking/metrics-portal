@@ -45,6 +45,7 @@ import com.arpnetworking.kairos.config.MetricsQueryConfig;
 import com.arpnetworking.kairos.config.MetricsQueryConfigImpl;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.KairosDbServiceImpl;
+import com.arpnetworking.kairos.service.QueryOrigin;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.Sink;
 import com.arpnetworking.metrics.impl.ApacheHttpSink;
@@ -121,6 +122,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -535,12 +537,19 @@ public class MainModule extends AbstractModule {
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
 
+        final ImmutableSet<QueryOrigin> rollupEnabledOrigins =
+                configuration.getStringList("kairosdb.proxy.rollups.enabledOrigins")
+                    .stream()
+                    .map(QueryOrigin::valueOf)
+                    .collect(ImmutableSet.toImmutableSet());
+
         return new KairosDbServiceImpl.Builder()
                 .setKairosDbClient(kairosDbClient)
                 .setMetricsFactory(metricsFactory)
                 .setExcludedTagNames(excludedTagNames)
                 .setMetricsQueryConfig(metricsQueryConfig)
                 .setRewrittenQueryConsumer(rewrittenQueryConsumer)
+                .setRollupEnabledOrigins(EnumSet.copyOf(rollupEnabledOrigins))
                 .build();
     }
 
