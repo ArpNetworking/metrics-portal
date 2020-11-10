@@ -42,6 +42,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import javax.inject.Inject;
 
 /**
@@ -56,6 +58,8 @@ import javax.inject.Inject;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class AlertExecutionContext {
+    private static final Duration ONE_MINUTE = Duration.ofMinutes(1);
+
     private static final String PROBLEM_UNEXPECTED_RESULT = "alert_problem.UNEXPECTED_RESULT";
     private static final String PROBLEM_QUERY_RETURNED_ERRORS = "alert_problem.QUERY_RETURNED_ERRORS";
 
@@ -226,15 +230,32 @@ public final class AlertExecutionContext {
     private boolean isFiring(final List<? extends TimeSeriesResult.DataPoint> values,
                              final Duration period,
                              final Instant scheduled) {
-        if (values.isEmpty()) {
-            return false;
-        }
-        // The most recent datapoint and scheduled time must belong to the same
-        // period.
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
-        final Instant mostRecentDatapointTime = values.get(values.size() - 1).getTime();
 
-        return Duration.between(mostRecentDatapointTime, adjustedScheduled).compareTo(period) < 0;
+        // values has at most two datapoints per series, one for each endpoint in
+        // the query interval.
+        //
+        // If the lookback period is minutely, then we're safe grabbing the most recently
+        // aggregated value since it is complete.
+        // -> ts age in [0, T)
+        //
+        // If it is larger (e.g. hourly, daily), we need to grab the previous period since
+        // the most recent value will only be partially aggregated.
+        // -> ts age in [T, 2T)
+        //
+        // This is because each datapoint for a period > PT1M represents all minutes
+        // after that timestamp up to the next period.
+        final Duration minAge = period.equals(ONE_MINUTE) ? Duration.ZERO : period;
+        final Duration maxAge = period.equals(ONE_MINUTE) ? period : period.multipliedBy(2);
+
+        return IntStream.range(0, values.size())
+                .mapToObj(i -> values.get(values.size() - 1 - i).getTime()) // grab times in reverse
+                .map(t -> Duration.between(t, adjustedScheduled))
+                .anyMatch(inRangeExcludingEnd(minAge, maxAge));
+    }
+
+    private <T extends Comparable<T>> Predicate<T> inRangeExcludingEnd(final T minInclusive, final T maxExclusive) {
+        return x -> x.compareTo(minInclusive) >= 0 && x.compareTo(maxExclusive) < 0;
     }
 
     private Optional<TimeSeriesResult.QueryTagGroupBy> getTagGroupBy(final TimeSeriesResult.Result result) {

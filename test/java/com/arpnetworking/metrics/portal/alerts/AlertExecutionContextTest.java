@@ -69,7 +69,9 @@ import static org.mockito.Mockito.when;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class AlertExecutionContextTest {
-    private static final String LATEST_TIMESTAMP_MS = "LATEST_TIMESTAMP_MS";
+    private static final String LATEST_PERIOD_MS = "LATEST_PERIOD_MS";
+    private static final String LATEST_HOUR_MS = "LATEST_HOUR_MS";
+    private static final String PREVIOUS_PERIOD_MS = "PREVIOUS_PERIOD_MS";
     private static final String TEST_METRIC = "test_metric";
 
     private static final TypeReference<Map<String, models.view.MetricsQueryResult>> MAP_TYPE_REFERENCE =
@@ -103,7 +105,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         _executor = Mockito.mock(QueryExecutor.class);
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofHours(1));
+        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
         when(_executor.evaluationPeriodHint(any())).thenReturn(Optional.empty());
         _context = new AlertExecutionContext(
                 _schedule,
@@ -222,7 +224,66 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testSingleSeriesNotFiring() throws Exception {
+    public void testSingleHourlySeriesNotFiring() throws Exception {
+        final Duration period = Duration.ofHours(1);
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring", period);
+        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result =
+                _context.execute(_alert, Instant.now())
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), is(empty()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+    }
+
+    @Test
+    public void testSingleHourlySeriesDatapointTooOld() throws Exception {
+        final Duration period = Duration.ofHours(1);
+        when(_executor.lookbackPeriod(any())).thenReturn(period);
+
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+        final Instant latestPeriod = scheduled.truncatedTo(ChronoUnit.HOURS);
+        final Instant twoHoursAgo = latestPeriod.minus(period.multipliedBy(2));
+
+        // We should ignore the latest datapoint because it's incomplete
+        // and the previous period because it's too old.
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
+                LATEST_PERIOD_MS, latestPeriod.toEpochMilli(),
+                PREVIOUS_PERIOD_MS, twoHoursAgo.toEpochMilli()
+        ));
+
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result =
+                _context.execute(_alert, scheduled)
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), equalTo(ImmutableList.of()));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+    }
+
+    @Test
+    public void testSingleHourlySeriesFiring() throws Exception {
+        final Duration period = Duration.ofHours(1);
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", period);
+        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+        final AlertEvaluationResult result =
+                _context.execute(_alert, Instant.now())
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), is(ImmutableList.of(ImmutableMap.of())));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+    }
+
+    @Test
+    public void testSingleMinutelySeriesNotFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -237,7 +298,7 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testSingleSeriesFiring() throws Exception {
+    public void testSingleMinutelySeriesFiring() throws Exception {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -251,7 +312,7 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testSingleSeriesWithGroupFiring() throws Exception {
+    public void testSingleMinutelySeriesWithGroupFiring() throws Exception {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithGroupByWithData");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -265,13 +326,14 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testSingleSeriesDatapointTooOld() throws Exception {
-        final Duration period = Duration.ofHours(1);
+    public void testSingleMinutelySeriesDatapointTooOld() throws Exception {
+        final Duration period = Duration.ofMinutes(1);
         when(_executor.lookbackPeriod(any())).thenReturn(period);
 
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
-                LATEST_TIMESTAMP_MS, scheduled.minus(period).toEpochMilli()
+                LATEST_PERIOD_MS, scheduled.minus(period).toEpochMilli(),
+                PREVIOUS_PERIOD_MS, scheduled.minus(period.multipliedBy(2)).toEpochMilli()
         ));
 
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -286,7 +348,7 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testGroupBySomeFiring() throws Exception {
+    public void testMinutelyGroupBySomeFiring() throws Exception {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("groupBySomeFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
@@ -306,7 +368,7 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testGroupByNoneFiring() throws Exception {
+    public void testMinutelyGroupByNoneFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("groupByNoneFiring");
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
@@ -367,12 +429,18 @@ public class AlertExecutionContextTest {
     }
 
     private MetricsQueryResult getTestcase(final String name) throws IOException {
-        final long latestDatapointMs = Instant.now()
-                .truncatedTo(ChronoUnit.MINUTES)
-                .toEpochMilli();
+        return getTestcase(name, Duration.ofMinutes(1));
+    }
+
+    private MetricsQueryResult getTestcase(final String name, final Duration period) throws IOException {
+        final Instant now = Instant.now();
+
+        final Instant latestDatapoint = Instant.now().minusMillis(now.toEpochMilli() % period.toMillis());
+        final Instant previousPeriod = latestDatapoint.minus(period);
 
         return getTestcase(name, ImmutableMap.of(
-                LATEST_TIMESTAMP_MS, latestDatapointMs
+                LATEST_PERIOD_MS, latestDatapoint.toEpochMilli(),
+                PREVIOUS_PERIOD_MS, previousPeriod.toEpochMilli()
         ));
     }
 

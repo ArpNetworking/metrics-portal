@@ -3,7 +3,8 @@
 // these testcases are parsed.
 //
 // Placeholders were bound to:
-//   - LATEST_TIMESTAMP_MS: "LATEST_TIMESTAMP_MS"
+//   - LATEST_PERIOD_MS: "LATEST_PERIOD_MS"
+//   - PREVIOUS_PERIOD_MS: "PREVIOUS_PERIOD_MS"
 {
   "mismatchedNamesInResults": {
     "queryResult": {
@@ -61,7 +62,11 @@
             {
               "values": [
                 [
-                  "LATEST_TIMESTAMP_MS",
+                  "PREVIOUS_PERIOD_MS",
+                  1
+                ],
+                [
+                  "LATEST_PERIOD_MS",
                   1
                 ]
               ],
@@ -99,7 +104,11 @@
               ],
               "values": [
                 [
-                  "LATEST_TIMESTAMP_MS",
+                  "PREVIOUS_PERIOD_MS",
+                  1
+                ],
+                [
+                  "LATEST_PERIOD_MS",
                   1
                 ]
               ],
@@ -143,7 +152,7 @@
             {
               "values": [
                 [
-                  "LATEST_TIMESTAMP_MS",
+                  "LATEST_PERIOD_MS",
                   1
                 ]
               ],
@@ -168,7 +177,7 @@
             {
               "values": [
                 [
-                  "LATEST_TIMESTAMP_MS",
+                  "LATEST_PERIOD_MS",
                   1
                 ]
               ],
@@ -297,7 +306,7 @@
               },
               "values": [
                 [
-                  "LATEST_TIMESTAMP_MS",
+                  "LATEST_PERIOD_MS",
                   1
                 ]
               ]
