@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
+import com.arpnetworking.commons.tagger.Tagger;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.DataPoint;
@@ -106,26 +107,30 @@ public class RollupGenerator extends AbstractActorWithTimers {
      * @param rollupManager actor ref for rollup manager actor
      * @param kairosDbClient kairosdb client
      * @param clock clock to use for time calculations
-     * @param metrics periodic metrics instance
+     * @param periodicMetrics periodic metrics instance
      * @param metricsFactory metrics factory instance for instrumentation
+     * @param tagger tagger instance for instrumentation
      */
     @Inject
+    // CHECKSTYLE.OFF: ParameterNumber
     public RollupGenerator(
             final Config configuration,
             @Named("RollupMetricsDiscovery") final ActorRef metricsDiscovery,
             @Named("RollupManager") final ActorRef rollupManager,
             final KairosDbClient kairosDbClient,
             final Clock clock,
-            final PeriodicMetrics metrics,
-            final MetricsFactory metricsFactory
+            final PeriodicMetrics periodicMetrics,
+            final MetricsFactory metricsFactory,
+            @Named("RollupGeneratorTagger") final Tagger tagger
     ) {
         _metricsDiscovery = metricsDiscovery;
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
         _clock = clock;
-        _metrics = metrics;
+        _periodicMetrics = periodicMetrics;
         _metricsFactory = metricsFactory;
         _fetchBackoff = ConfigurationHelper.getFiniteDuration(configuration, "rollup.fetch.backoff");
+        _tagger = tagger;
 
         final ImmutableMap.Builder<RollupPeriod, Integer> maxBackFillByPeriod = ImmutableMap.builder();
         for (RollupPeriod period : RollupPeriod.values()) {
@@ -137,6 +142,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
         }
         _maxBackFillByPeriod = maxBackFillByPeriod.build();
     }
+    // CHECKSTYLE.ON: ParameterNumber
 
     @Override
     public void preStart() {
@@ -144,12 +150,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void requestMetricsFromDiscovery(final Object fetch) {
-        _metrics.recordCounter("rollup/generator/metric_names/requested", 1);
+        _periodicMetrics.recordCounter("rollup/generator/metric_names/requested", 1);
         _metricsDiscovery.tell(MetricFetch.getInstance(), getSelf());
     }
 
     private void fetchMetricTags(final String metricName) {
-        _metrics.recordCounter("rollup/generator/metric_names_message/received", 1);
+        _periodicMetrics.recordCounter("rollup/generator/metric_names_message/received", 1);
         final long startTime = System.nanoTime();
         Patterns.pipe(_kairosDbClient.queryMetricTags(
                 new TagsQuery.Builder()
@@ -159,8 +165,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         ))
                         .build()).handle((response, failure) -> {
                     final String baseMetricName = "rollup/generator/tag_names";
-                    _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
-                    _metrics.recordTimer(
+                    _periodicMetrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
+                    _periodicMetrics.recordTimer(
                             baseMetricName + "/latency",
                             System.nanoTime() - startTime,
                             Optional.of(TimeUnit.NANOSECONDS));
@@ -189,8 +195,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void handleTagNamesMessage(final TagNamesMessage message) {
-        _metrics.recordCounter("rollup/generator/tag_names_message/received", 1);
-        _metrics.recordCounter("rollup/generator/tag_names_message/success", message.isFailure() ? 0 : 1);
+        _periodicMetrics.recordCounter("rollup/generator/tag_names_message/received", 1);
+        _periodicMetrics.recordCounter("rollup/generator/tag_names_message/success", message.isFailure() ? 0 : 1);
         if (message.isFailure()) {
             LOGGER.warn()
                     .setMessage("Failed to get tag names for metric.")
@@ -215,8 +221,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .handle((response, failure) -> {
                             final String baseMetricName = "rollup/generator/last_data_point_"
                                     + period.name().toLowerCase(Locale.getDefault());
-                            _metrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
-                            _metrics.recordTimer(
+                            _periodicMetrics.recordCounter(baseMetricName + "/success", failure == null ? 1 : 0);
+                            _periodicMetrics.recordTimer(
                                  baseMetricName + "/latency",
                                  System.nanoTime() - startTime,
                                 Optional.of(TimeUnit.NANOSECONDS)
@@ -261,8 +267,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
         final String rollupMetricName = message.getRollupMetricName();
         final RollupPeriod period = message.getPeriod();
 
-        _metrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
-        _metrics.recordCounter("rollup/generator/last_data_point_message/success", message.isFailure() ? 0 : 1);
+        _periodicMetrics.recordCounter("rollup/generator/last_data_point_message/received", 1);
+        _periodicMetrics.recordCounter("rollup/generator/last_data_point_message/success", message.isFailure() ? 0 : 1);
         if (message.isFailure()) {
             final Throwable throwable = message.getFailure().orElse(new RuntimeException("Received Failure"));
 
@@ -309,8 +315,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
             if (!startTimes.isEmpty()) {
                 try (Metrics metrics = _metricsFactory.create()) {
-                    final String metricNamespace = getNamespace(message.getSourceMetricName()).orElse("<unknown>");
-                    metrics.addAnnotation("namespace", metricNamespace);
+                    metrics.addAnnotations(_tagger.getTags(message.getSourceMetricName()));
 
                     final String periodName = period.name().toLowerCase(Locale.getDefault());
                     final Duration backfillAge = Duration.between(startTimes.first(), Instant.now());
@@ -331,7 +336,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
                         .setMessage("sent task to _rollupManager")
                         .addData("task", defn)
                         .log();
-                _metrics.recordCounter("rollup/generator/task_sent", 1);
+                _periodicMetrics.recordCounter("rollup/generator/task_sent", 1);
             }
 
             getSelf().tell(
@@ -392,7 +397,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void handleFinishRollupMessage(final FinishRollupMessage message) {
-        _metrics.recordCounter("rollup/generator/finish_rollup_message/received", 1);
+        _periodicMetrics.recordCounter("rollup/generator/finish_rollup_message/received", 1);
         _periodsInFlight.remove(message.getPeriod());
         if (_periodsInFlight.isEmpty()) {
             getSelf().tell(FETCH_METRIC, ActorRef.noSender());
@@ -400,8 +405,8 @@ public class RollupGenerator extends AbstractActorWithTimers {
     }
 
     private void handleNoMoreMetricsMessage(final NoMoreMetrics message) {
-        _metrics.recordCounter("rollup/generator/metric_names/no_more", 1);
-        _metrics.recordGauge("rollup/generator/metric_names/next_refresh", message.getNextRefreshMillis());
+        _periodicMetrics.recordCounter("rollup/generator/metric_names/no_more", 1);
+        _periodicMetrics.recordGauge("rollup/generator/metric_names/next_refresh", message.getNextRefreshMillis());
         timers().startSingleTimer("sleepTimer", FETCH_METRIC, _fetchBackoff);
     }
 
@@ -500,22 +505,15 @@ public class RollupGenerator extends AbstractActorWithTimers {
                 : lastCompletePeriod;
     }
 
-    private Optional<String> getNamespace(final String metricName) {
-        final String[] parts = metricName.split("/", 2);
-        if (parts.length < 2) {
-            return Optional.empty();
-        }
-        return Optional.of(parts[0]);
-    }
-
     private final ActorRef _metricsDiscovery;
     private final ActorRef _rollupManager;
     private final KairosDbClient _kairosDbClient;
     private final Map<RollupPeriod, Integer> _maxBackFillByPeriod;
     private final FiniteDuration _fetchBackoff;
     private final Clock _clock;
-    private final PeriodicMetrics _metrics;
+    private final PeriodicMetrics _periodicMetrics;
     private final MetricsFactory _metricsFactory;
+    private final Tagger _tagger;
     private List<RollupPeriod> _periodsInFlight = Collections.emptyList();
 
     static final Object FETCH_METRIC = new Object();

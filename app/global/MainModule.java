@@ -35,6 +35,7 @@ import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrateg
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.commons.java.time.TimeAdapters;
+import com.arpnetworking.commons.tagger.Tagger;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -541,6 +542,18 @@ public class MainModule extends AbstractModule {
                 .setMetricsQueryConfig(metricsQueryConfig)
                 .setRewrittenQueryConsumer(rewrittenQueryConsumer)
                 .build();
+    }
+
+    @Named("RollupGeneratorTagger")
+    @Provides
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private Tagger provideRollupGeneratorTagger(
+            final Injector injector,
+            final Environment environment,
+            final Config config
+    ) {
+        final Config taggerConfig = config.getConfig("rollup.generator.tagger");
+        return ConfigurationHelper.toInstanceMapped(injector, environment, config);
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
