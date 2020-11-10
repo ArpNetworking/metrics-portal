@@ -52,7 +52,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     /**
      * Default Constructor.
      *
-     * @param client The KairosDBService used to execute queries.
+     * @param client The KairosDB client used to execute queries.
      * @param objectMapper The objectMapper used to parse queries.
      */
     @Inject
@@ -155,9 +155,9 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery = metricsQueryBuilder.build();
         // TODO(cbriones):
         // This will not propagate the structured error information from KairosDB
-        // until _service provides that capability.
+        // until the client provides that capability.
         //
-        // However, since the service call will still resolve with an exception
+        // However, since the client call will still resolve with an exception
         // this is mostly an issue of debuggability.
         return _client.queryMetrics(metricsQuery).thenApply(this::toInternal);
     }
