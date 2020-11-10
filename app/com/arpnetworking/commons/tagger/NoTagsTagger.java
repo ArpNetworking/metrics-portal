@@ -34,7 +34,7 @@ public final class NoTagsTagger implements Tagger {
     }
 
     /**
-     * A builder for instances of {@NoTagsTagger}.
+     * A builder for instances of {@link NoTagsTagger}.
      */
     public static final class Builder {
         /**
