@@ -16,8 +16,8 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
+import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
-import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,16 +69,16 @@ public class KairosDbQueryExecutorTest {
      * Shared test setup.
      */
     public abstract static class BaseTests {
-        protected KairosDbService _service;
+        protected KairosDbClient _client;
         protected KairosDbQueryExecutor _executor;
         protected ObjectMapper _objectMapper;
 
         @Before
         public void setUp() {
-            _service = Mockito.mock(KairosDbService.class);
+            _client = Mockito.mock(KairosDbClient.class);
             _objectMapper = SerializationTestUtils.getApiObjectMapper();
             _executor = new KairosDbQueryExecutor(
-                    _service,
+                    _client,
                     _objectMapper
             );
         }
@@ -102,7 +102,7 @@ public class KairosDbQueryExecutorTest {
 
             final ArgumentCaptor<com.arpnetworking.kairos.client.models.MetricsQuery> captor = ArgumentCaptor.forClass(
                     com.arpnetworking.kairos.client.models.MetricsQuery.class);
-            when(_service.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
+            when(_client.queryMetrics(captor.capture())).thenReturn(CompletableFuture.completedFuture(response));
 
             final BoundedMetricsQuery query = loadTestQuery();
             final com.arpnetworking.kairos.client.models.MetricsQuery parsedQuery =
@@ -142,7 +142,7 @@ public class KairosDbQueryExecutorTest {
 
         @Test(expected = ExecutionException.class)
         public void testKairosDBReturnsError() throws Exception {
-            when(_service.queryMetrics(any())).thenThrow(new RuntimeException("boom"));
+            when(_client.queryMetrics(any())).thenThrow(new RuntimeException("boom"));
             final BoundedMetricsQuery query = loadTestQuery();
             _executor.executeQuery(query).toCompletableFuture().get();
         }

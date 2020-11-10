@@ -16,10 +16,10 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
+import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
-import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -46,18 +46,18 @@ import javax.inject.Inject;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class KairosDbQueryExecutor implements QueryExecutor {
-    private final KairosDbService _service;
+    private final KairosDbClient _client;
     private final ObjectMapper _objectMapper;
 
     /**
      * Default Constructor.
      *
-     * @param service The KairosDBService used to execute queries.
+     * @param client The KairosDBService used to execute queries.
      * @param objectMapper The objectMapper used to parse queries.
      */
     @Inject
-    public KairosDbQueryExecutor(final KairosDbService service, final ObjectMapper objectMapper) {
-        _service = service;
+    public KairosDbQueryExecutor(final KairosDbClient client, final ObjectMapper objectMapper) {
+        _client = client;
         _objectMapper = objectMapper;
     }
 
@@ -159,7 +159,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
         //
         // However, since the service call will still resolve with an exception
         // this is mostly an issue of debuggability.
-        return _service.queryMetrics(metricsQuery).thenApply(this::toInternal);
+        return _client.queryMetrics(metricsQuery).thenApply(this::toInternal);
     }
 
     private MetricsQueryResult toInternal(final MetricsQueryResponse kairosDbResult) {
