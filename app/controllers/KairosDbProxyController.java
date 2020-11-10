@@ -21,7 +21,10 @@ import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.kairos.service.DefaultQueryContext;
 import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.QueryContext;
+import com.arpnetworking.kairos.service.QueryOrigin;
 import com.arpnetworking.play.ProxyClient;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -179,7 +182,11 @@ public class KairosDbProxyController extends Controller {
                 metricsQuery = checkAndAddMergeAggregator(metricsQuery);
             }
 
-            return _kairosService.queryMetrics(metricsQuery)
+            final QueryContext context = new DefaultQueryContext.Builder()
+                    .setOrigin(QueryOrigin.EXTERNAL_REQUEST)
+                    .build();
+
+            return _kairosService.queryMetrics(context, metricsQuery)
                     .<JsonNode>thenApply(_mapper::valueToTree)
                     .thenApply(Results::ok);
         } catch (final IOException e) {

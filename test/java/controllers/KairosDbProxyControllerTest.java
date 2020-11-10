@@ -23,6 +23,8 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.service.KairosDbService;
+import com.arpnetworking.kairos.service.QueryContext;
+import com.arpnetworking.kairos.service.QueryOrigin;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import play.libs.ws.WSClient;
@@ -125,7 +128,7 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
 
-        when(_mockKairosDbService.queryMetrics(any())).thenReturn(
+        when(_mockKairosDbService.queryMetrics(any(), any())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
@@ -158,7 +161,7 @@ public class KairosDbProxyControllerTest {
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
-        mockQueryMetrics(controller, builder.build(), any());
+        mockQueryMetrics(controller, builder.build(), builder.build());
     }
 
     @Test
@@ -206,7 +209,8 @@ public class KairosDbProxyControllerTest {
         mockQueryMetrics(controller, metricsQuery, metricsQuery);
     }
 
-    private void mockQueryMetrics(final KairosDbProxyController controller, final MetricsQuery metricsQuery,
+    private void mockQueryMetrics(final KairosDbProxyController controller,
+                                  final MetricsQuery metricsQuery,
                                   final MetricsQuery newMetricsQuery) {
         final Http.RequestBuilder request = play.test.Helpers.fakeRequest()
                 .method(play.test.Helpers.POST)
@@ -214,7 +218,8 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
 
-        when(_mockKairosDbService.queryMetrics(newMetricsQuery)).thenReturn(
+        final ArgumentCaptor<QueryContext> contextCaptor = ArgumentCaptor.forClass(QueryContext.class);
+        when(_mockKairosDbService.queryMetrics(contextCaptor.capture(), eq(newMetricsQuery))).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
@@ -226,6 +231,7 @@ public class KairosDbProxyControllerTest {
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
+        assertEquals(contextCaptor.getValue().getOrigin(), QueryOrigin.EXTERNAL_REQUEST);
     }
 
     @Test

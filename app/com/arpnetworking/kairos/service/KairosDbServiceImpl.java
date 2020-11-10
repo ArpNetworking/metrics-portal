@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import net.sf.oval.constraint.NotNull;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -87,15 +88,20 @@ public final class KairosDbServiceImpl implements KairosDbService {
     }
 
     @Override
-    public CompletionStage<MetricsQueryResponse> queryMetrics(final MetricsQuery metricsQuery) {
+    public CompletionStage<MetricsQueryResponse> queryMetrics(final QueryContext context, final MetricsQuery metricsQuery) {
         final Metrics metrics = _metricsFactory.create();
+        metrics.addAnnotation("origin", context.getOrigin().toString());
         final Timer timer = metrics.createTimer("kairosService/queryMetrics/request");
         final ImmutableSet<String> requestedTags = metricsQuery.getMetrics()
                 .stream()
                 .flatMap(m -> m.getTags().keySet().stream())
                 .collect(ImmutableSet.toImmutableSet());
+
+        final boolean rollupsEnabledForOrigin = _rollupEnabledOrigins.contains(context.getOrigin());
         return getMetricNames(metrics)
-                .thenApply(names -> useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics))
+                .thenApply(names -> rollupsEnabledForOrigin
+                        ? useAvailableRollups(names, metricsQuery, _metricsQueryConfig, metrics)
+                        : metricsQuery)
                 .whenComplete((query, throwable) -> {
                     if (throwable == null) {
                         _rewrittenQueryConsumer.accept(query);
@@ -422,6 +428,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         this._excludedTagNames = builder._excludedTagNames;
         this._metricsQueryConfig = builder._metricsQueryConfig;
         this._rewrittenQueryConsumer = builder._rewrittenQueryConsumer;
+        this._rollupEnabledOrigins = builder._rollupEnabledOrigins;
     }
 
     private final KairosDbClient _kairosDbClient;
@@ -431,6 +438,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
     private final Consumer<MetricsQuery> _rewrittenQueryConsumer;
     private final Cache<String, List<String>> _cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
     private final AtomicReference<List<String>> _metricsList = new AtomicReference<>(null);
+    private final EnumSet<QueryOrigin> _rollupEnabledOrigins;
     private static final String METRICS_KEY = "METRICNAMES";
     private static final String ROLLUP_OVERRIDE = "_!";
     private static final Predicate<String> IS_PT1M = s -> s.startsWith("PT1M/");
@@ -506,6 +514,17 @@ public final class KairosDbServiceImpl implements KairosDbService {
             return this;
         }
 
+        /**
+         * Sets the RollupEnabledOrigins. Cannot be null. Optional. Default is an empty set.
+         *
+         * @param origins the origins which should use rollups
+         * @return this {@link Builder}
+         */
+        public Builder setRollupEnabledOrigins(final EnumSet<QueryOrigin> origins) {
+            _rollupEnabledOrigins = origins;
+            return this;
+        }
+
         @NotNull
         private KairosDbClient _kairosDbClient;
         @NotNull
@@ -518,5 +537,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
         private Consumer<MetricsQuery> _rewrittenQueryConsumer = query -> {
 
         };
+        @NotNull
+        private EnumSet<QueryOrigin> _rollupEnabledOrigins = EnumSet.noneOf(QueryOrigin.class);
     }
 }
