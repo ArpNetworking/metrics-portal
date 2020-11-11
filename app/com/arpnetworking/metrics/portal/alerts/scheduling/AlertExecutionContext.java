@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
+import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
@@ -114,8 +116,8 @@ public final class AlertExecutionContext {
             // If we're unable to obtain a period hint then we will not be able to
             // correctly window the query, as smaller intervals could miss data.
             final MetricsQuery query = alert.getQuery();
-            final Duration period = _executor.lookbackPeriod(query);
-            final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, period);
+            final LookbackPeriod lookback = _executor.lookbackPeriod(query);
+            final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, lookback);
             final Instant queryRangeStart = bounded.getStartTime().toInstant();
             final Instant queryRangeEnd =
                     bounded.getEndTime()
@@ -124,7 +126,9 @@ public final class AlertExecutionContext {
                             )
                             .toInstant();
 
-            return _executor.executeQuery(bounded).thenApply(res -> toAlertResult(res, scheduled, period, queryRangeStart, queryRangeEnd));
+            return _executor
+                    .executeQuery(bounded)
+                    .thenApply(res -> toAlertResult(res, scheduled, lookback, queryRangeStart, queryRangeEnd));
             // CHECKSTYLE.OFF: IllegalCatch - Exception is propagated into the CompletionStage
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -137,7 +141,7 @@ public final class AlertExecutionContext {
     private AlertEvaluationResult toAlertResult(
             final MetricsQueryResult queryResult,
             final Instant scheduled,
-            final Duration period,
+            final LookbackPeriod lookback,
             final Instant queryRangeStart,
             final Instant queryRangeEnd
     ) {
@@ -210,7 +214,7 @@ public final class AlertExecutionContext {
         final List<Map<String, String>> firingTagGroups =
                 results
                     .stream()
-                    .filter(res -> isFiring(res.getValues(), period, scheduled))
+                    .filter(res -> isFiring(res.getValues(), lookback.getPeriod(), scheduled))
                     .map(res ->
                         getTagGroupBy(res)
                             .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
@@ -269,14 +273,23 @@ public final class AlertExecutionContext {
 
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
                                                final Instant scheduled,
-                                               final Duration period) {
-        // We must truncate to avoid dealing with partially aggregated periods.
+                                               final LookbackPeriod lookback) {
+
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
-        final long excessMillis = adjustedScheduled.toEpochMilli() % period.toMillis();
-        final Instant truncatedScheduled = adjustedScheduled.minusMillis(excessMillis);
+
+        final QueryAlignment alignment = lookback.getAlignment();
+        final Instant truncatedScheduled;
+        if (alignment.equals(QueryAlignment.PERIOD)) {
+            final long excessMillis = adjustedScheduled.toEpochMilli() % lookback.getPeriod().toMillis();
+            truncatedScheduled = adjustedScheduled.minusMillis(excessMillis);
+        } else if (alignment.equals(QueryAlignment.END)) {
+            truncatedScheduled = adjustedScheduled;
+        } else {
+            throw new IllegalArgumentException("Unsupported or unimplemented alignment type: " + alignment);
+        }
 
         final ZonedDateTime latest = truncatedScheduled.atZone(ZoneOffset.UTC);
-        final ZonedDateTime previous = latest.minus(period);
+        final ZonedDateTime previous = latest.minus(lookback.getPeriod());
 
         return new DefaultBoundedMetricsQuery.Builder()
                 .setStartTime(previous)

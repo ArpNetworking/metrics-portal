@@ -239,7 +239,7 @@ public class KairosDbQueryExecutorTest {
         }
 
         @Test
-        public void testPeriodHint() throws Exception {
+        public void testLookbackPeriod() throws Exception {
             final String jsonQuery = ResourceHelper.loadResource(
                     KairosDbQueryExecutorTest.class,
                     _testName

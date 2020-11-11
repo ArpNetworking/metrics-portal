@@ -67,5 +67,5 @@ public interface QueryExecutor {
      * @param query The query
      * @return The minimum lookback period necessary for data.
      */
-    Duration lookbackPeriod(MetricsQuery query);
+    LookbackPeriod lookbackPeriod(MetricsQuery query);
 }

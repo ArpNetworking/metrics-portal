@@ -18,7 +18,10 @@ package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
+import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.impl.DefaultLookbackPeriod;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.testing.SerializationTestUtils;
@@ -70,9 +73,13 @@ import static org.mockito.Mockito.when;
  */
 public class AlertExecutionContextTest {
     private static final String LATEST_PERIOD_MS = "LATEST_PERIOD_MS";
-    private static final String LATEST_HOUR_MS = "LATEST_HOUR_MS";
     private static final String PREVIOUS_PERIOD_MS = "PREVIOUS_PERIOD_MS";
     private static final String TEST_METRIC = "test_metric";
+
+    private static final LookbackPeriod MINUTELY_ALIGNED_LOOKBACK = new DefaultLookbackPeriod.Builder()
+            .setAlignment(QueryAlignment.PERIOD)
+            .setPeriod(Duration.ofMinutes(1))
+            .build();
 
     private static final TypeReference<Map<String, models.view.MetricsQueryResult>> MAP_TYPE_REFERENCE =
             new TypeReference<Map<String, models.view.MetricsQueryResult>>() {};
@@ -105,7 +112,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         _executor = Mockito.mock(QueryExecutor.class);
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
+        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.evaluationPeriodHint(any())).thenReturn(Optional.empty());
         _context = new AlertExecutionContext(
                 _schedule,
@@ -141,10 +148,14 @@ public class AlertExecutionContextTest {
                 Duration.ofHours(12)
         );
 
-        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.HOURS);
+        final Instant scheduled = Instant.parse("2020-11-10T23:05:00Z");
 
         for (final Duration period : periodTestCases) {
-            when(_executor.lookbackPeriod(any())).thenReturn(period);
+            final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                    .setAlignment(QueryAlignment.PERIOD)
+                    .setPeriod(period)
+                    .build();
+            when(_executor.lookbackPeriod(any())).thenReturn(lookback);
 
             _context.execute(_alert, scheduled);
 
@@ -161,46 +172,45 @@ public class AlertExecutionContextTest {
     }
 
     @Test
-    public void testAppliesExpectedTimeRange() {
+    public void testAppliesExpectedTimeRangeWithOffsetEndAligned() {
+        final Duration queryOffset = Duration.ofMinutes(3);
+        _context = new AlertExecutionContext(
+                _schedule,
+                _executor,
+                queryOffset
+        );
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
         when(_executor.executeQuery(captor.capture())).thenReturn(pendingResponse);
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
 
-        // Scheduled for now, minutely
+        final List<Duration> periodTestCases = ImmutableList.of(
+                Duration.ofMinutes(1),
+                Duration.ofMinutes(15),
+                Duration.ofHours(1),
+                Duration.ofHours(3),
+                Duration.ofHours(6),
+                Duration.ofHours(12)
+        );
 
-        Instant scheduled = Instant.now();
-        _context.execute(_alert, scheduled);
+        final Instant scheduled = Instant.parse("2020-11-10T23:05:00Z");
 
-        BoundedMetricsQuery captured = captor.getValue();
-        Instant truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
+        for (final Duration period : periodTestCases) {
+            final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                    .setAlignment(QueryAlignment.END)
+                    .setPeriod(period)
+                    .build();
+            when(_executor.lookbackPeriod(any())).thenReturn(lookback);
 
-        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
-        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
+            _context.execute(_alert, scheduled);
 
-        // Scheduled for one week ago, minutely
+            final BoundedMetricsQuery captured = captor.getValue();
 
-        scheduled = Instant.now().minus(Duration.ofDays(7));
-        _context.execute(_alert, scheduled);
+            final Instant expectedStart = scheduled.minus(queryOffset).minus(period);
+            final Instant expectedEnd = scheduled.minus(queryOffset);
 
-        captured = captor.getValue();
-        truncatedScheduled = scheduled.truncatedTo(ChronoUnit.MINUTES);
-
-        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofMinutes(1))));
-        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
-
-        // Scheduled for now, hourly
-
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofHours(1));
-
-        scheduled = Instant.now();
-        _context.execute(_alert, scheduled);
-
-        captured = captor.getValue();
-        truncatedScheduled = scheduled.truncatedTo(ChronoUnit.HOURS);
-
-        assertThat(captured.getStartTime().toInstant(), equalTo(truncatedScheduled.minus(Duration.ofHours(1))));
-        assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(truncatedScheduled)));
+            assertThat(captured.getStartTime().toInstant(), equalTo(expectedStart));
+            assertThat(captured.getEndTime().map(this::zonedDateTimeToUTC), equalTo(Optional.of(expectedEnd)));
+        }
     }
 
     @Test
@@ -208,7 +218,7 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
+        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.executeQuery(captor.capture())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, scheduled)
@@ -224,10 +234,39 @@ public class AlertExecutionContextTest {
     }
 
     @Test
+    public void testEndAlignedHourlySeriesFiring() throws Exception {
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                .setPeriod(Duration.ofHours(1))
+                .setAlignment(QueryAlignment.END)
+                .build();
+        // An end-aligned query will return data that is not on an hour boundary.
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
+                LATEST_PERIOD_MS, scheduled.toEpochMilli(),
+                PREVIOUS_PERIOD_MS, scheduled.minus(lookback.getPeriod()).toEpochMilli()
+        ));
+        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+        when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
+
+        final AlertEvaluationResult result =
+                _context.execute(_alert, scheduled)
+                        .toCompletableFuture()
+                        .get(TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+
+
+        assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
+        assertThat(result.getFiringTags(), is(ImmutableList.of(ImmutableMap.of())));
+        assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+    }
+
+    @Test
     public void testSingleHourlySeriesNotFiring() throws Exception {
-        final Duration period = Duration.ofHours(1);
-        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring", period);
-        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                .setPeriod(Duration.ofHours(1))
+                .setAlignment(QueryAlignment.PERIOD)
+                .build();
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring", lookback.getPeriod());
+        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -242,7 +281,11 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleHourlySeriesDatapointTooOld() throws Exception {
         final Duration period = Duration.ofHours(1);
-        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                .setPeriod(period)
+                .setAlignment(QueryAlignment.PERIOD)
+                .build();
+        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
 
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         final Instant latestPeriod = scheduled.truncatedTo(ChronoUnit.HOURS);
@@ -269,8 +312,12 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleHourlySeriesFiring() throws Exception {
         final Duration period = Duration.ofHours(1);
+        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+                .setPeriod(period)
+                .setAlignment(QueryAlignment.PERIOD)
+                .build();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", period);
-        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -285,7 +332,7 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleMinutelySeriesNotFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
-        when(_executor.lookbackPeriod(any())).thenReturn(Duration.ofMinutes(1));
+        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -328,7 +375,7 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleMinutelySeriesDatapointTooOld() throws Exception {
         final Duration period = Duration.ofMinutes(1);
-        when(_executor.lookbackPeriod(any())).thenReturn(period);
+        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
 
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
