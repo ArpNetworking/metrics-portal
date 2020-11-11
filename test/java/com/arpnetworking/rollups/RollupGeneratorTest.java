@@ -20,12 +20,16 @@ import akka.actor.ActorSystem;
 import akka.testkit.TestActorRef;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.tagger.NoTagsTagger;
+import com.arpnetworking.commons.tagger.Tagger;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.DataPoint;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.TagsQuery;
+import com.arpnetworking.metrics.Metrics;
+import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
@@ -83,6 +87,10 @@ public class RollupGeneratorTest {
     private Config _config;
     @Mock
     private PeriodicMetrics _periodicMetrics;
+    @Mock
+    private MetricsFactory _metricsFactory;
+    @Mock
+    private Metrics _metrics;
 
     private TestKit _probe;
     private ActorRef _testManager;
@@ -102,6 +110,7 @@ public class RollupGeneratorTest {
         when(_config.hasPath(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(true);
         when(_config.hasPath(eq("rollup.maxBackFill.periods.daily"))).thenReturn(true);
 
+        when(_metricsFactory.create()).thenReturn(_metrics);
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
@@ -124,6 +133,10 @@ public class RollupGeneratorTest {
                         .toInstance(_probe.getRef());
                 bind(Clock.class).toInstance(_clock);
                 bind(PeriodicMetrics.class).toInstance(_periodicMetrics);
+                bind(MetricsFactory.class).toInstance(_metricsFactory);
+                bind(Tagger.class)
+                        .annotatedWith(Names.named("RollupGeneratorTagger"))
+                        .toInstance(new NoTagsTagger.Builder().build());
             }
         });
 
@@ -779,6 +792,7 @@ public class RollupGeneratorTest {
      * can be intercepted.
      */
     public static final class TestRollupGenerator extends RollupGenerator {
+        // CHECKSTYLE.OFF: ParameterNumber
         @Inject
         public TestRollupGenerator(
                 final Config configuration,
@@ -786,10 +800,14 @@ public class RollupGeneratorTest {
                 @Named("RollupManager") final ActorRef rollupManager,
                 final KairosDbClient kairosDbClient,
                 final Clock clock,
-                final PeriodicMetrics metrics) {
-            super(configuration, testActor, rollupManager, kairosDbClient, clock, metrics);
+                final PeriodicMetrics metrics,
+                final MetricsFactory metricsFactory,
+                @Named("RollupGeneratorTagger") final Tagger tagger
+        ) {
+            super(configuration, testActor, rollupManager, kairosDbClient, clock, metrics, metricsFactory, tagger);
             _self = testActor;
         }
+        // CHECKSTYLE.ON: ParameterNumber
 
         @Override
         public ActorRef getSelf() {
