@@ -562,7 +562,7 @@ public class MainModule extends AbstractModule {
             final Config config
     ) {
         final Config taggerConfig = config.getConfig("rollup.generator.tagger");
-        return ConfigurationHelper.toInstanceMapped(injector, environment, config);
+        return ConfigurationHelper.toInstanceMapped(injector, environment, taggerConfig);
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
