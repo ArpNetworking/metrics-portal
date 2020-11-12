@@ -236,7 +236,7 @@ public final class AlertExecutionContext {
                              final Instant scheduled) {
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
 
-        // Since the query window is the exactly of the query period, there will
+        // Since the query window is the exactly the length of the query period, there will
         // be at most two datapoints per series - one for each query window endpoint.
         //
         // If the lookback period is minutely, then we're safe grabbing the most recently
