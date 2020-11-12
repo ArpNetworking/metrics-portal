@@ -17,26 +17,26 @@
 package com.arpnetworking.metrics.portal.query.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 
 import java.time.Duration;
 
 /**
- * Default implementation for {@link LookbackPeriod}.
+ * Default implementation for {@link QueryWindow}.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class DefaultLookbackPeriod implements LookbackPeriod {
+public final class DefaultQueryWindow implements QueryWindow {
     private final Duration _period;
     private final QueryAlignment _alignment;
 
-    private DefaultLookbackPeriod(final Builder builder) {
+    private DefaultQueryWindow(final Builder builder) {
         _period = builder._period;
         _alignment = builder._alignment;
     }
 
-    public Duration getPeriod() {
+    public Duration getLookbackPeriod() {
         return _period;
     }
 
@@ -45,9 +45,9 @@ public final class DefaultLookbackPeriod implements LookbackPeriod {
     }
 
     /**
-     * A builder for instances of {@link DefaultLookbackPeriod}.
+     * A builder for instances of {@link DefaultQueryWindow}.
      */
-    public static final class Builder extends OvalBuilder<DefaultLookbackPeriod> {
+    public static final class Builder extends OvalBuilder<DefaultQueryWindow> {
 
         private QueryAlignment _alignment;
         private Duration _period;
@@ -56,7 +56,7 @@ public final class DefaultLookbackPeriod implements LookbackPeriod {
          * Construct a new default Builder.
          */
         public Builder() {
-            super(DefaultLookbackPeriod::new);
+            super(DefaultQueryWindow::new);
         }
 
         /**

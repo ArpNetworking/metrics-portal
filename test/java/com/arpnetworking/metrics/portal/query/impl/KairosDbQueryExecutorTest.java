@@ -216,7 +216,7 @@ public class KairosDbQueryExecutorTest {
     }
 
     /**
-     * Test cases for {@link KairosDbQueryExecutor#lookbackPeriod(MetricsQuery)}.
+     * Test cases for {@link KairosDbQueryExecutor#queryWindow(MetricsQuery)}.
      */
     @RunWith(Parameterized.class)
     public static final class LookbackPeriodTests extends BaseTests {
@@ -250,10 +250,10 @@ public class KairosDbQueryExecutorTest {
                     .build();
             if (_expectedResult.isPresent()) {
                 final Duration result = _expectedResult.get();
-                assertThat(_executor.lookbackPeriod(query), equalTo(result));
+                assertThat(_executor.queryWindow(query), equalTo(result));
             } else {
                 try {
-                    _executor.lookbackPeriod(query);
+                    _executor.queryWindow(query);
                     fail("Expected exception to be thrown");
                     // CHECKSTYLE.OFF: IllegalCatch
                 } catch (final Exception e) {

@@ -16,7 +16,7 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
@@ -116,8 +116,8 @@ public final class AlertExecutionContext {
             // If we're unable to obtain a period hint then we will not be able to
             // correctly window the query, as smaller intervals could miss data.
             final MetricsQuery query = alert.getQuery();
-            final LookbackPeriod lookback = _executor.lookbackPeriod(query);
-            final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, lookback);
+            final QueryWindow window = _executor.queryWindow(query);
+            final BoundedMetricsQuery bounded = applyTimeRange(query, scheduled, window);
             final Instant queryRangeStart = bounded.getStartTime().toInstant();
             final Instant queryRangeEnd =
                     bounded.getEndTime()
@@ -128,7 +128,7 @@ public final class AlertExecutionContext {
 
             return _executor
                     .executeQuery(bounded)
-                    .thenApply(res -> toAlertResult(res, scheduled, lookback, queryRangeStart, queryRangeEnd));
+                    .thenApply(res -> toAlertResult(res, scheduled, window, queryRangeStart, queryRangeEnd));
             // CHECKSTYLE.OFF: IllegalCatch - Exception is propagated into the CompletionStage
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -141,7 +141,7 @@ public final class AlertExecutionContext {
     private AlertEvaluationResult toAlertResult(
             final MetricsQueryResult queryResult,
             final Instant scheduled,
-            final LookbackPeriod lookback,
+            final QueryWindow window,
             final Instant queryRangeStart,
             final Instant queryRangeEnd
     ) {
@@ -214,7 +214,7 @@ public final class AlertExecutionContext {
         final List<Map<String, String>> firingTagGroups =
                 results
                     .stream()
-                    .filter(res -> isFiring(res.getValues(), lookback.getPeriod(), scheduled))
+                    .filter(res -> isFiring(res.getValues(), window.getLookbackPeriod(), scheduled))
                     .map(res ->
                         getTagGroupBy(res)
                             .map(TimeSeriesResult.QueryTagGroupBy::getGroup)
@@ -236,8 +236,8 @@ public final class AlertExecutionContext {
                              final Instant scheduled) {
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
 
-        // values has at most two datapoints per series, one for each endpoint in
-        // the query interval.
+        // Since the query window is the exactly of the query period, there will
+        // be at most two datapoints per series - one for each query window endpoint.
         //
         // If the lookback period is minutely, then we're safe grabbing the most recently
         // aggregated value since it is complete.
@@ -249,6 +249,11 @@ public final class AlertExecutionContext {
         //
         // This is because each datapoint for a period > PT1M represents all minutes
         // after that timestamp up to the next period.
+        //
+        // Note: In the special case of end alignment, the timestamps returned will
+        // ALWAYS be a subset of {now - T,  now}, which means the age of each
+        // point is always either 0 or T. Since these are equal to the lower bound
+        // depending on the period, it's still handled correctly.
         final Duration minAge = period.equals(ONE_MINUTE) ? Duration.ZERO : period;
         final Duration maxAge = period.equals(ONE_MINUTE) ? period : period.multipliedBy(2);
 
@@ -273,27 +278,31 @@ public final class AlertExecutionContext {
 
     private BoundedMetricsQuery applyTimeRange(final MetricsQuery query,
                                                final Instant scheduled,
-                                               final LookbackPeriod lookback) {
+                                               final QueryWindow window) {
 
         final Instant adjustedScheduled = scheduled.minus(_queryOffset);
 
-        final QueryAlignment alignment = lookback.getAlignment();
+        final QueryAlignment alignment = window.getAlignment();
         final Instant truncatedScheduled;
         if (alignment.equals(QueryAlignment.PERIOD)) {
-            final long excessMillis = adjustedScheduled.toEpochMilli() % lookback.getPeriod().toMillis();
+            // period-alignment means the window should span the most recent period,
+            // so we need to truncate the current time, effectively shifting the window.
+            final long excessMillis = adjustedScheduled.toEpochMilli() % window.getLookbackPeriod().toMillis();
             truncatedScheduled = adjustedScheduled.minusMillis(excessMillis);
         } else if (alignment.equals(QueryAlignment.END)) {
+            // end-alignment means the end of the window should be the current time.
+            // no modification is required.
             truncatedScheduled = adjustedScheduled;
         } else {
             throw new IllegalArgumentException("Unsupported or unimplemented alignment type: " + alignment);
         }
 
-        final ZonedDateTime latest = truncatedScheduled.atZone(ZoneOffset.UTC);
-        final ZonedDateTime previous = latest.minus(lookback.getPeriod());
+        final ZonedDateTime endTime = truncatedScheduled.atZone(ZoneOffset.UTC);
+        final ZonedDateTime previous = endTime.minus(window.getLookbackPeriod());
 
         return new DefaultBoundedMetricsQuery.Builder()
                 .setStartTime(previous)
-                .setEndTime(latest)
+                .setEndTime(endTime)
                 .setQuery(query.getQuery())
                 .setFormat(query.getQueryFormat())
                 .build();

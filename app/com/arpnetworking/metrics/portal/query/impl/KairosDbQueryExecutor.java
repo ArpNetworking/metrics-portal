@@ -23,7 +23,7 @@ import com.arpnetworking.kairos.service.DefaultQueryContext;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.QueryContext;
 import com.arpnetworking.kairos.service.QueryOrigin;
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,7 +112,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public LookbackPeriod lookbackPeriod(final MetricsQuery query) {
+    public QueryWindow queryWindow(final MetricsQuery query) {
         assertFormatIsSupported(query.getQueryFormat());
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
         try {
@@ -129,7 +129,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                 .max(Duration::compareTo)
                 .orElseThrow(() -> new IllegalArgumentException("Query did not specify any range aggregators"));
 
-        return new DefaultLookbackPeriod.Builder()
+        return new DefaultQueryWindow.Builder()
                 .setPeriod(period)
                 .setAlignment(getAlignment(metricsQuery))
                 .build();

@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.query.impl;
 
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
@@ -46,8 +46,8 @@ public class NoQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public LookbackPeriod lookbackPeriod(final MetricsQuery query) {
-        return new DefaultLookbackPeriod.Builder()
+    public QueryWindow queryWindow(final MetricsQuery query) {
+        return new DefaultQueryWindow.Builder()
                 .setPeriod(Duration.ZERO)
                 .setAlignment(QueryAlignment.PERIOD) // arbitrary
                 .build();

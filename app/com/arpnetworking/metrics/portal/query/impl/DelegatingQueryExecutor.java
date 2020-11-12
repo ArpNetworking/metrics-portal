@@ -16,7 +16,7 @@
 
 package com.arpnetworking.metrics.portal.query.impl;
 
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.google.inject.Inject;
@@ -68,10 +68,10 @@ public class DelegatingQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public LookbackPeriod lookbackPeriod(final MetricsQuery query) {
+    public QueryWindow queryWindow(final MetricsQuery query) {
         final MetricsQueryFormat format = query.getQueryFormat();
         return _executors.getExecutor(query.getQueryFormat())
-                .map(exec -> exec.lookbackPeriod(query))
+                .map(exec -> exec.queryWindow(query))
                 .orElseThrow(() -> new IllegalArgumentException("No registered executor for format: " + format));
     }
 }

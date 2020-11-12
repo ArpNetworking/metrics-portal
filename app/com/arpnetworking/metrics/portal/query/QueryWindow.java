@@ -19,19 +19,19 @@ package com.arpnetworking.metrics.portal.query;
 import java.time.Duration;
 
 /**
- * Lookback period encapsulates the information required to determine the minimal
- * evaluation window for a query.
+ * QueryWindow encapsulates the information required to determine the minimal
+ * evaluation window for a query, given its start time.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface LookbackPeriod {
+public interface QueryWindow {
     /**
-     * The length of the lookback period. This is the minimum query window required
-     * to obtain a datapoint.
+     * The length of the query window. This is the length required
+     * to obtain at least one datapoint.
      *
-     * @return The length of the lookback window
+     * @return The length of the query window
      */
-    Duration getPeriod();
+    Duration getLookbackPeriod();
 
     /**
      * The query alignment. Depending on alignment, the query window may need to

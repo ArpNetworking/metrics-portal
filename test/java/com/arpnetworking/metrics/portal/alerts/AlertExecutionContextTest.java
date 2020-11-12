@@ -18,10 +18,10 @@ package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
-import com.arpnetworking.metrics.portal.query.LookbackPeriod;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
-import com.arpnetworking.metrics.portal.query.impl.DefaultLookbackPeriod;
+import com.arpnetworking.metrics.portal.query.impl.DefaultQueryWindow;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;
 import com.arpnetworking.testing.SerializationTestUtils;
@@ -76,7 +76,7 @@ public class AlertExecutionContextTest {
     private static final String PREVIOUS_PERIOD_MS = "PREVIOUS_PERIOD_MS";
     private static final String TEST_METRIC = "test_metric";
 
-    private static final LookbackPeriod MINUTELY_ALIGNED_LOOKBACK = new DefaultLookbackPeriod.Builder()
+    private static final QueryWindow MINUTELY_ALIGNED_LOOKBACK = new DefaultQueryWindow.Builder()
             .setAlignment(QueryAlignment.PERIOD)
             .setPeriod(Duration.ofMinutes(1))
             .build();
@@ -112,7 +112,7 @@ public class AlertExecutionContextTest {
                 )
                 .build();
         _executor = Mockito.mock(QueryExecutor.class);
-        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
+        when(_executor.queryWindow(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.evaluationPeriodHint(any())).thenReturn(Optional.empty());
         _context = new AlertExecutionContext(
                 _schedule,
@@ -151,11 +151,11 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.parse("2020-11-10T23:05:00Z");
 
         for (final Duration period : periodTestCases) {
-            final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+            final QueryWindow lookback = new DefaultQueryWindow.Builder()
                     .setAlignment(QueryAlignment.PERIOD)
                     .setPeriod(period)
                     .build();
-            when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+            when(_executor.queryWindow(any())).thenReturn(lookback);
 
             _context.execute(_alert, scheduled);
 
@@ -195,11 +195,11 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.parse("2020-11-10T23:05:00Z");
 
         for (final Duration period : periodTestCases) {
-            final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+            final QueryWindow lookback = new DefaultQueryWindow.Builder()
                     .setAlignment(QueryAlignment.END)
                     .setPeriod(period)
                     .build();
-            when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+            when(_executor.queryWindow(any())).thenReturn(lookback);
 
             _context.execute(_alert, scheduled);
 
@@ -218,7 +218,7 @@ public class AlertExecutionContextTest {
         final Instant scheduled = Instant.now();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
-        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
+        when(_executor.queryWindow(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.executeQuery(captor.capture())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, scheduled)
@@ -236,16 +236,16 @@ public class AlertExecutionContextTest {
     @Test
     public void testEndAlignedHourlySeriesFiring() throws Exception {
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
-        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+        final QueryWindow lookback = new DefaultQueryWindow.Builder()
                 .setPeriod(Duration.ofHours(1))
                 .setAlignment(QueryAlignment.END)
                 .build();
         // An end-aligned query will return data that is not on an hour boundary.
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
                 LATEST_PERIOD_MS, scheduled.toEpochMilli(),
-                PREVIOUS_PERIOD_MS, scheduled.minus(lookback.getPeriod()).toEpochMilli()
+                PREVIOUS_PERIOD_MS, scheduled.minus(lookback.getLookbackPeriod()).toEpochMilli()
         ));
-        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+        when(_executor.queryWindow(any())).thenReturn(lookback);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
 
         final AlertEvaluationResult result =
@@ -261,12 +261,12 @@ public class AlertExecutionContextTest {
 
     @Test
     public void testSingleHourlySeriesNotFiring() throws Exception {
-        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+        final QueryWindow lookback = new DefaultQueryWindow.Builder()
                 .setPeriod(Duration.ofHours(1))
                 .setAlignment(QueryAlignment.PERIOD)
                 .build();
-        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring", lookback.getPeriod());
-        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+        final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring", lookback.getLookbackPeriod());
+        when(_executor.queryWindow(any())).thenReturn(lookback);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -281,11 +281,11 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleHourlySeriesDatapointTooOld() throws Exception {
         final Duration period = Duration.ofHours(1);
-        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+        final QueryWindow lookback = new DefaultQueryWindow.Builder()
                 .setPeriod(period)
                 .setAlignment(QueryAlignment.PERIOD)
                 .build();
-        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+        when(_executor.queryWindow(any())).thenReturn(lookback);
 
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         final Instant latestPeriod = scheduled.truncatedTo(ChronoUnit.HOURS);
@@ -312,12 +312,12 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleHourlySeriesFiring() throws Exception {
         final Duration period = Duration.ofHours(1);
-        final LookbackPeriod lookback = new DefaultLookbackPeriod.Builder()
+        final QueryWindow lookback = new DefaultQueryWindow.Builder()
                 .setPeriod(period)
                 .setAlignment(QueryAlignment.PERIOD)
                 .build();
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", period);
-        when(_executor.lookbackPeriod(any())).thenReturn(lookback);
+        when(_executor.queryWindow(any())).thenReturn(lookback);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -332,7 +332,7 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleMinutelySeriesNotFiring() throws Exception {
         final MetricsQueryResult mockResult = getTestcase("singleSeriesNotFiring");
-        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
+        when(_executor.queryWindow(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.executeQuery(any())).thenReturn(CompletableFuture.completedFuture(mockResult));
         final AlertEvaluationResult result =
                 _context.execute(_alert, Instant.now())
@@ -375,7 +375,7 @@ public class AlertExecutionContextTest {
     @Test
     public void testSingleMinutelySeriesDatapointTooOld() throws Exception {
         final Duration period = Duration.ofMinutes(1);
-        when(_executor.lookbackPeriod(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
+        when(_executor.queryWindow(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
 
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MINUTES);
         final MetricsQueryResult mockResult = getTestcase("singleSeriesWithData", ImmutableMap.of(
