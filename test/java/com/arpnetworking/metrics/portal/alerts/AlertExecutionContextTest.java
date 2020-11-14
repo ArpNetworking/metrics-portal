@@ -18,9 +18,9 @@ package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
-import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.impl.DefaultQueryWindow;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.NeverSchedule;

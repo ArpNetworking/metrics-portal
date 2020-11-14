@@ -17,8 +17,8 @@
 package com.arpnetworking.metrics.portal.query.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 
 import java.time.Duration;
 

@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.query.impl;
 
-import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.google.common.collect.ImmutableList;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;

@@ -16,9 +16,9 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
-import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -298,10 +298,10 @@ public final class AlertExecutionContext {
         }
 
         final ZonedDateTime endTime = truncatedScheduled.atZone(ZoneOffset.UTC);
-        final ZonedDateTime previous = endTime.minus(window.getLookbackPeriod());
+        final ZonedDateTime startTime = endTime.minus(window.getLookbackPeriod());
 
         return new DefaultBoundedMetricsQuery.Builder()
-                .setStartTime(previous)
+                .setStartTime(startTime)
                 .setEndTime(endTime)
                 .setQuery(query.getQuery())
                 .setFormat(query.getQueryFormat())
