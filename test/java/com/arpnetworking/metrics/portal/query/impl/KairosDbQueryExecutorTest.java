@@ -195,10 +195,11 @@ public class KairosDbQueryExecutorTest {
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    {"periodHintMinutely", Optional.of(Duration.ofMinutes(1))},
-                    {"periodHintHourly", Optional.of(Duration.ofMinutes(1))},
-                    {"periodHintNone", Optional.empty()},
-                    {"periodHintMultipleMetrics", Optional.of(Duration.ofMinutes(1))}
+                    // We reuse the testcases from the query window tests.
+                    {"queryWindowMinutely", Optional.of(Duration.ofMinutes(1))},
+                    {"queryWindowHourly", Optional.of(Duration.ofMinutes(1))},
+                    {"queryWindowNoRangeAggregators", Optional.empty()},
+                    {"queryWindowMultipleMetrics", Optional.of(Duration.ofMinutes(1))}
             });
         }
 
