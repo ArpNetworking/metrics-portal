@@ -23,7 +23,9 @@ import com.arpnetworking.kairos.service.DefaultQueryContext;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.QueryContext;
 import com.arpnetworking.kairos.service.QueryOrigin;
+import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
@@ -110,7 +112,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public Duration lookbackPeriod(final MetricsQuery query) {
+    public QueryWindow queryWindow(final MetricsQuery query) {
         assertFormatIsSupported(query.getQueryFormat());
         final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery;
         try {
@@ -120,12 +122,27 @@ public class KairosDbQueryExecutor implements QueryExecutor {
             throw new RuntimeException("Could not parse query", e);
         }
         // The lookback period of the query is the largest of each metric within
-        return metricsQuery.getMetrics()
+        final Duration period = metricsQuery.getMetrics()
                 .stream()
                 .map(this::lookbackPeriod)
                 .flatMap(Streams::stream)
                 .max(Duration::compareTo)
-                .orElseThrow(() -> new IllegalArgumentException("Query did not specify any range aggregators"));
+                .orElse(Duration.ofMinutes(1));
+
+        return new DefaultQueryWindow.Builder()
+                .setPeriod(period)
+                .setAlignment(getAlignment(metricsQuery))
+                .build();
+    }
+
+    private QueryAlignment getAlignment(final com.arpnetworking.kairos.client.models.MetricsQuery metricsQuery) {
+        final boolean anyEndAligned = metricsQuery.getMetrics()
+                .stream()
+                .flatMap(m -> m.getAggregators().stream())
+                .flatMap(agg -> Streams.stream(agg.getAlignEndTime()))
+                .anyMatch(endAligned -> endAligned);
+
+        return anyEndAligned ? QueryAlignment.END : QueryAlignment.PERIOD;
     }
 
     private Optional<Duration> lookbackPeriod(final Metric metric) {

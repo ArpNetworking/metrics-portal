@@ -58,7 +58,7 @@ public interface QueryExecutor {
     }
 
     /**
-     * Return a minimum lookback period size for this query, if any.
+     * Return the windowing information for this query.
      *
      * This is the minimal range necessary to query starting from the current timestamp
      * in order to guarantee data for at least one aggregation period is returned,
@@ -67,5 +67,5 @@ public interface QueryExecutor {
      * @param query The query
      * @return The minimum lookback period necessary for data.
      */
-    Duration lookbackPeriod(MetricsQuery query);
+    QueryWindow queryWindow(MetricsQuery query);
 }

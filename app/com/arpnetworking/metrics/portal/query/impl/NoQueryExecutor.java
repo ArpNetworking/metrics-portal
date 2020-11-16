@@ -15,8 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.query.impl;
 
+import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.google.common.collect.ImmutableList;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
@@ -44,7 +46,10 @@ public class NoQueryExecutor implements QueryExecutor {
     }
 
     @Override
-    public Duration lookbackPeriod(final MetricsQuery query) {
-        return Duration.ZERO;
+    public QueryWindow queryWindow(final MetricsQuery query) {
+        return new DefaultQueryWindow.Builder()
+                .setPeriod(Duration.ZERO)
+                .setAlignment(QueryAlignment.PERIOD) // arbitrary
+                .build();
     }
 }

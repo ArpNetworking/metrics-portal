@@ -20,6 +20,8 @@ import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.service.KairosDbService;
 import com.arpnetworking.kairos.service.QueryContext;
 import com.arpnetworking.kairos.service.QueryOrigin;
+import com.arpnetworking.metrics.portal.query.QueryAlignment;
+import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,7 +55,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
@@ -194,10 +195,11 @@ public class KairosDbQueryExecutorTest {
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    {"periodHintMinutely", Optional.of(Duration.ofMinutes(1))},
-                    {"periodHintHourly", Optional.of(Duration.ofMinutes(1))},
-                    {"periodHintNone", Optional.empty()},
-                    {"periodHintMultipleMetrics", Optional.of(Duration.ofMinutes(1))}
+                    // We reuse the testcases from the query window tests.
+                    {"queryWindowMinutely", Optional.of(Duration.ofMinutes(1))},
+                    {"queryWindowHourly", Optional.of(Duration.ofMinutes(1))},
+                    {"queryWindowNoRangeAggregators", Optional.empty()},
+                    {"queryWindowMultipleMetrics", Optional.of(Duration.ofMinutes(1))}
             });
         }
 
@@ -216,14 +218,14 @@ public class KairosDbQueryExecutorTest {
     }
 
     /**
-     * Test cases for {@link KairosDbQueryExecutor#lookbackPeriod(MetricsQuery)}.
+     * Test cases for {@link KairosDbQueryExecutor#queryWindow(MetricsQuery)}.
      */
     @RunWith(Parameterized.class)
-    public static final class LookbackPeriodTests extends BaseTests {
+    public static final class QueryWindowTests extends BaseTests {
         private final String _testName;
-        private final Optional<Duration> _expectedResult;
+        private final QueryWindow _expectedResult;
 
-        public LookbackPeriodTests(final String testName, final Optional<Duration> expectedResult) {
+        public QueryWindowTests(final String testName, final QueryWindow expectedResult) {
             _testName = testName;
             _expectedResult = expectedResult;
         }
@@ -231,15 +233,41 @@ public class KairosDbQueryExecutorTest {
         @Parameterized.Parameters(name = "{0}")
         public static Collection<Object[]> values() {
             return Arrays.asList(new Object[][]{
-                    {"periodHintMinutely", Optional.of(Duration.ofMinutes(1))},
-                    {"periodHintHourly", Optional.of(Duration.ofHours(1))},
-                    {"periodHintNone", Optional.empty()},
-                    {"periodHintMultipleMetrics", Optional.of(Duration.ofHours(1))}
+                    {"queryWindowMinutely",
+                            new DefaultQueryWindow.Builder()
+                                    .setPeriod(Duration.ofMinutes(1))
+                                    .setAlignment(QueryAlignment.PERIOD)
+                                    .build()
+                    },
+                    {"queryWindowHourly",
+                            new DefaultQueryWindow.Builder()
+                                    .setPeriod(Duration.ofHours(1))
+                                    .setAlignment(QueryAlignment.PERIOD)
+                                    .build()
+                    },
+                    {"queryWindowNoRangeAggregators",
+                            new DefaultQueryWindow.Builder()
+                                    .setPeriod(Duration.ofMinutes(1))
+                                    .setAlignment(QueryAlignment.PERIOD)
+                                    .build()
+                    },
+                    {"queryWindowMultipleMetrics",
+                            new DefaultQueryWindow.Builder()
+                                    .setPeriod(Duration.ofHours(1))
+                                    .setAlignment(QueryAlignment.PERIOD)
+                                    .build()
+                    },
+                    {"queryWindowEndAligned",
+                            new DefaultQueryWindow.Builder()
+                                    .setPeriod(Duration.ofHours(6))
+                                    .setAlignment(QueryAlignment.END)
+                                    .build()
+                    }
             });
         }
 
         @Test
-        public void testPeriodHint() throws Exception {
+        public void testQueryWindow() throws Exception {
             final String jsonQuery = ResourceHelper.loadResource(
                     KairosDbQueryExecutorTest.class,
                     _testName
@@ -248,19 +276,7 @@ public class KairosDbQueryExecutorTest {
                     .setQuery(jsonQuery)
                     .setFormat(MetricsQueryFormat.KAIROS_DB)
                     .build();
-            if (_expectedResult.isPresent()) {
-                final Duration result = _expectedResult.get();
-                assertThat(_executor.lookbackPeriod(query), equalTo(result));
-            } else {
-                try {
-                    _executor.lookbackPeriod(query);
-                    fail("Expected exception to be thrown");
-                    // CHECKSTYLE.OFF: IllegalCatch
-                } catch (final Exception e) {
-                    // CHECKSTYLE.ON: IllegalCatch
-                    assertThat(e, instanceOf(IllegalArgumentException.class));
-                }
-            }
+            assertThat(_executor.queryWindow(query), equalTo(_expectedResult));
         }
     }
 }
