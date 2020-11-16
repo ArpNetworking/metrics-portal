@@ -19,6 +19,8 @@ package com.arpnetworking.metrics.portal.query.impl;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryWindow;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 
 import java.time.Duration;
 
@@ -42,6 +44,32 @@ public final class DefaultQueryWindow implements QueryWindow {
 
     public QueryAlignment getAlignment() {
         return _alignment;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final DefaultQueryWindow that = (DefaultQueryWindow) o;
+        return Objects.equal(_period, that._period)
+                && _alignment == that._alignment;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(_period, _alignment);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("_period", _period)
+                .add("_alignment", _alignment)
+                .toString();
     }
 
     /**

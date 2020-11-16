@@ -127,7 +127,7 @@ public class KairosDbQueryExecutor implements QueryExecutor {
                 .map(this::lookbackPeriod)
                 .flatMap(Streams::stream)
                 .max(Duration::compareTo)
-                .orElseThrow(() -> new IllegalArgumentException("Query did not specify any range aggregators"));
+                .orElse(Duration.ofMinutes(1));
 
         return new DefaultQueryWindow.Builder()
                 .setPeriod(period)
