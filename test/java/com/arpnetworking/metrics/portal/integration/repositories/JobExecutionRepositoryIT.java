@@ -362,6 +362,9 @@ public abstract class JobExecutionRepositoryIT<T> {
         ensureJobExists(_organization, failedJobId);
         _repository.jobStarted(extraJobId, _organization, truncatedNow);
         _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"));
+        // Create a failure for one of the requested Job IDs
+        _repository.jobStarted(existingJobIds.get(0), _organization, truncatedNow);
+        _repository.jobFailed(existingJobIds.get(0), _organization, truncatedNow, new Throwable("an error"));
 
         // Request an ID that doesn't exist.
         final UUID nonexistentId = UUID.randomUUID();

@@ -222,6 +222,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 + " JOIN (SELECT alert_id, max(completed_at) completed_at"
                 + "         FROM portal.alert_executions"
                 + "         WHERE scheduled >= :scheduled"
+                + "           AND state = :state"
                 + "         GROUP BY alert_id) t2"
                 + " ON t1.alert_id = t2.alert_id AND t1.completed_at = t2.completed_at"
                 + " WHERE t1.organization_id = (SELECT id FROM portal.organizations WHERE uuid = :organization_uuid)";
@@ -242,8 +243,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                     .setRawSql(rawSql)
                     .setParameter("scheduled", maxLookback)
                     .setParameter("organization_uuid", organization.getId())
+                    .setParameter("state", AlertExecution.State.SUCCESS)
                     .where()
-                    .eq("state", AlertExecution.State.SUCCESS)
                     .gt("scheduled", maxLookback)
                     .in("alertId", jobIds)
                     .findList();
