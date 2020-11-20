@@ -352,11 +352,17 @@ public abstract class JobExecutionRepositoryIT<T> {
                 _repository.jobSucceeded(jobId, _organization, scheduled, result);
             }
         }
+        // Create a failed execution in the "future" for one job id
+        final Instant futureRun = truncatedNow.plus(Duration.ofDays(1));
+        _repository.jobStarted(existingJobIds.get(0), _organization, futureRun);
+        _repository.jobFailed(existingJobIds.get(0), _organization, futureRun, new Throwable("an error"));
+
         // Create an additional job that we don't care about.
         final UUID extraJobId = UUID.randomUUID();
         ensureJobExists(_organization, extraJobId);
         _repository.jobStarted(extraJobId, _organization, truncatedNow);
         _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult());
+
         // Create an additional job with a failure.
         final UUID failedJobId = UUID.randomUUID();
         ensureJobExists(_organization, failedJobId);
