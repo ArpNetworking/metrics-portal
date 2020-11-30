@@ -395,9 +395,23 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             }
         } catch (final NoSuchElementException error) {
             LOGGER.warn()
-                    .setMessage("tried to job as complete, but job no longer exists in repository")
+                    .setMessage("tried to mark job as complete, but job no longer exists in repository")
                     .addData("ref", ref)
                     .addData("scheduled", message.getScheduled())
+                    .log();
+            killSelf();
+            return;
+            // CHECKSTYLE.OFF: IllegalCatch - Without logging we won't know which
+            // job was correlated with this exception. We still restart the actor
+            // as if the exception were left uncaught.
+        } catch (final RuntimeException e) {
+            // CHECKSTYLE.ON: IllegalCatch
+            LOGGER.error()
+                    .setMessage("Failed to mark job as complete")
+                    .setThrowable(e)
+                    .addData("ref", ref)
+                    .addData("scheduled", message.getScheduled())
+                    .addData("jobError", message.getError())
                     .log();
             killSelf();
             return;
