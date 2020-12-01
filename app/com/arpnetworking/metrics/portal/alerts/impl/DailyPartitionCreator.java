@@ -46,6 +46,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import javax.persistence.PersistenceException;
 
 /**
@@ -205,6 +206,11 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         _periodicMetrics.recordCounter(fullMetric, value);
     }
 
+    private void recordTimer(final String metricName, final Duration duration) {
+        final String fullMetric = String.format("partition_creator/%s/%s", _table, metricName);
+        _periodicMetrics.recordTimer(fullMetric, duration.toMillis(), Optional.of(TimeUnit.MILLISECONDS));
+    }
+
     // Message handlers
 
     private void tick() {
@@ -261,6 +267,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .log();
 
         Status.Status status = new Status.Success(null);
+        final Instant start = Instant.now();
         try {
             execute(_schema, _table, startDate, endDate);
             _lastRun = Optional.of(_clock.instant());
@@ -276,6 +283,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     .setThrowable(e)
                     .log();
         } finally {
+            recordTimer("create_latency", Duration.between(start, Instant.now()));
             recordCounter("create", status instanceof Status.Success ? 0 : 1);
         }
         return status;
