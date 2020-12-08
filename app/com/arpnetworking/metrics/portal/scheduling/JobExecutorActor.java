@@ -420,7 +420,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             //
             // We do this instead of reload directly because our supervisor will rate limit
             // the resurrection of our actor, whereas reloading directly could lead to
-            // a tight retry loop.
+            // a tight retry loop if the DB issue is not transient.
             throw e;
         }
 
