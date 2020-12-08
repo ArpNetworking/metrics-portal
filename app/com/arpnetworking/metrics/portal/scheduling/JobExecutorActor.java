@@ -131,7 +131,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setThrowable(e)
                     .addData("actorName", actorName)
                     .log();
-            killSelf();
+            killSelfPermanently();
         }
     }
 
@@ -149,7 +149,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, delta);
     }
 
-    private void killSelf() {
+    private void killSelfPermanently() {
         getContext().getParent().tell(new ShardRegion.Passivate(PoisonPill.getInstance()), getSelf());
     }
 
@@ -291,7 +291,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("job has no more scheduled runs")
                     .addData("cachedJob", cachedJob)
                     .log();
-            killSelf();
+            killSelfPermanently();
             return;
         }
 
@@ -306,7 +306,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         .addData("ref", cachedJob.getRef())
                         .addData("scheduled", _nextRun.get())
                         .log();
-                killSelf();
+                killSelfPermanently();
             }
         }
     }
@@ -332,7 +332,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("tried to reload job, but job no longer exists in repository")
                     .addData("ref", message.getJobRef())
                     .log();
-            killSelf();
+            killSelfPermanently();
             return;
         }
         timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
@@ -399,7 +399,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .addData("ref", ref)
                     .addData("scheduled", message.getScheduled())
                     .log();
-            killSelf();
+            killSelfPermanently();
             return;
             // CHECKSTYLE.OFF: IllegalCatch - Without logging we won't know which
             // job was correlated with this exception. We still restart the actor
