@@ -413,8 +413,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .addData("scheduled", message.getScheduled())
                     .addData("jobError", message.getError())
                     .log();
-            killSelf();
-            return;
+
+            // Rethrow to crash the actor.
+            //
+            // This will indirectly trigger a reload anyway (see JobExecutorActor#preStart).
+            //
+            // We do this instead of reload directly because our supervisor will rate limit
+            // the resurrection of our actor, whereas reloading directly could lead to
+            // a tight retry loop.
+            throw e;
         }
 
         getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
