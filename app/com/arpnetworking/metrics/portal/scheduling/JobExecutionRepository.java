@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
+import com.arpnetworking.commons.java.util.concurrent.CompletableFutures;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import models.internal.Organization;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A storage medium for {@link JobExecution}s.
@@ -56,7 +59,7 @@ public interface JobExecutionRepository<T> {
      * @return The most recently scheduled execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<JobExecution<T>> getLastScheduled(UUID jobId, Organization organization);
+    CompletableFuture<Optional<JobExecution<T>>> getLastScheduled(UUID jobId, Organization organization);
 
     /**
      * Get the last successful execution, if any.
@@ -66,7 +69,8 @@ public interface JobExecutionRepository<T> {
      * @return The last successful execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<JobExecution.Success<T>> getLastSuccess(UUID jobId, Organization organization) throws NoSuchElementException;
+    CompletableFuture<Optional<JobExecution.Success<T>>> getLastSuccess(UUID jobId, Organization organization)
+            throws NoSuchElementException;
 
     /**
      * Get the last successful execution for each ID, if any.
@@ -82,18 +86,23 @@ public interface JobExecutionRepository<T> {
      * @param maxLookback The farthest date (UTC) in the past to check for executions.
      * @return The last successful executions for each job.
      */
-    default ImmutableMap<UUID, JobExecution.Success<T>> getLastSuccessBatch(
+    default CompletableFuture<ImmutableMap<UUID, JobExecution.Success<T>>> getLastSuccessBatch(
             List<UUID> jobIds,
             Organization organization,
             LocalDate maxLookback
     ) {
-        return jobIds.stream()
+        final List<CompletableFuture<Optional<JobExecution.Success<T>>>> futures = jobIds.stream()
             .map(id -> getLastSuccess(id, organization))
-            .flatMap(Streams::stream)
-            .collect(ImmutableMap.toImmutableMap(
-                    JobExecution::getJobId,
-                    execution -> execution
-            ));
+            .collect(ImmutableList.toImmutableList());
+
+        return CompletableFutures.allOf(futures)
+                .thenApply(ignore -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .flatMap(Streams::stream)
+                        .collect(ImmutableMap.toImmutableMap(
+                                JobExecution::getJobId,
+                                execution -> execution
+                        )));
     }
 
     /**
@@ -104,7 +113,7 @@ public interface JobExecutionRepository<T> {
      * @return The last completed execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    Optional<JobExecution<T>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
+    CompletableFuture<Optional<JobExecution<T>>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.
@@ -112,8 +121,10 @@ public interface JobExecutionRepository<T> {
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
      * @param scheduled The time that the job started running for.
+     *
+     * @return a future that completes when the operation does.
      */
-    void jobStarted(UUID jobId, Organization organization, Instant scheduled);
+    CompletableFuture<Void> jobStarted(UUID jobId, Organization organization, Instant scheduled);
 
     /**
      * Notify the repository that a job finished executing successfully.
@@ -122,8 +133,10 @@ public interface JobExecutionRepository<T> {
      * @param organization The organization owning the job.
      * @param scheduled The time that the completed job-run was scheduled for.
      * @param result The result that the job computed.
+     *
+     * @return a future that completes when the operation does.
      */
-    void jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
+    CompletableFuture<Void> jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
 
     /**
      * Notify the repository that a job encountered an error and aborted execution.
@@ -132,6 +145,8 @@ public interface JobExecutionRepository<T> {
      * @param organization The organization owning the job.
      * @param scheduled The time that the failed job-run was scheduled for.
      * @param error The exception that caused the job to fail.
+     *
+     * @return a future that completes when the operation does.
      */
-    void jobFailed(UUID jobId, Organization organization, Instant scheduled, Throwable error);
+    CompletableFuture<Void> jobFailed(UUID jobId, Organization organization, Instant scheduled, Throwable error);
 }

@@ -15,6 +15,7 @@
  */
 package controllers;
 
+import com.arpnetworking.commons.java.util.concurrent.CompletableFutures;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
@@ -25,7 +26,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import models.internal.Organization;
@@ -44,11 +44,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -144,7 +147,7 @@ public class AlertController extends Controller {
      * @param offset The number of results to skip. Optional.
      * @return {@link Result} paginated matching alerts.
      */
-    public Result query(
+    public CompletionStage<Result> query(
             @Nullable final Integer limit,
             @Nullable final Integer offset
     ) {
@@ -152,7 +155,7 @@ public class AlertController extends Controller {
         try {
             organization = _organizationRepository.get(request());
         } catch (final NoSuchElementException e) {
-            return internalServerError();
+            return CompletableFuture.completedFuture(internalServerError());
         }
 
         // Convert and validate parameters
@@ -160,12 +163,12 @@ public class AlertController extends Controller {
                 .map(l -> Math.min(l, _maxPageSize))
                 .orElse(_maxPageSize);
         if (argLimit < 0) {
-            return badRequest("Invalid limit; must be greater than or equal to 0");
+            return CompletableFuture.completedFuture(badRequest("Invalid limit; must be greater than or equal to 0"));
         }
 
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
         if (argOffset.isPresent() && argOffset.get() < 0) {
-            return badRequest("Invalid offset; must be greater than or equal to 0");
+            return CompletableFuture.completedFuture(badRequest("Invalid limit; must be greater than or equal to 0"));
         }
 
         final Instant queryStart = Instant.now();
@@ -180,56 +183,74 @@ public class AlertController extends Controller {
                 Optional.of(TimeUnit.MILLISECONDS)
         );
 
-        return ok(Json.toJson(new PagedContainer<>(
-                fromInternal(queryResult.values(), organization),
-                new Pagination(
-                        request().path(),
-                        queryResult.total(),
-                        queryResult.values().size(),
-                        argLimit,
-                        argOffset,
-                        ImmutableMap.of()))));
-    }
+        return fromInternal(queryResult.values(), organization).thenApplyAsync(alerts ->
+            ok(Json.toJson(new PagedContainer<>(
+                    alerts,
+                    new Pagination(
+                            request().path(),
+                            queryResult.total(),
+                            queryResult.values().size(),
+                            argLimit,
+                            argOffset,
+                            ImmutableMap.of()))))
 
-    private models.view.alerts.Alert fromInternal(final Alert alert, final Organization organization) {
-        final Optional<JobExecution.Success<AlertEvaluationResult>> mostRecentEvaluation =
-                _executionRepository.getLastSuccess(alert.getId(), organization);
-
-        return models.view.alerts.Alert.fromInternal(
-                alert,
-                mostRecentEvaluation
         );
     }
 
-    private ImmutableList<models.view.alerts.Alert> fromInternal(final List<? extends Alert> alerts, final Organization organization) {
+    private CompletionStage<models.view.alerts.Alert> fromInternal(final Alert alert, final Organization organization) {
+        final CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> mostRecentEvaluation =
+                _executionRepository.getLastSuccess(alert.getId(), organization);
+
+        return mostRecentEvaluation.thenApply(mre -> models.view.alerts.Alert.fromInternal(
+                alert,
+                mre
+        ));
+    }
+
+    private CompletableFuture<ImmutableList<models.view.alerts.Alert>> fromInternal(
+            final List<? extends Alert> alerts,
+            final Organization organization
+    ) {
 
         final LocalDate maxLookback = ZonedDateTime.now().minusDays(_executionsLookbackDays).toLocalDate();
         final ImmutableList<UUID> jobIds = alerts.stream().map(Alert::getId).collect(ImmutableList.toImmutableList());
 
         final Instant lookupStart = Instant.now();
-        final Map<UUID, JobExecution.Success<AlertEvaluationResult>> executions = Maps.newHashMapWithExpectedSize(alerts.size());
+
+        final List<CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>>> batchFutures =
+                new ArrayList<>();
+
         for (final List<UUID> jobIdBatch : Lists.partition(jobIds, _executionsBatchSize)) {
             final Instant batchLookupStart = Instant.now();
-            final ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> executionsBatch =
+            CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> batchFut =
                     _executionRepository.getLastSuccessBatch(jobIdBatch, organization, maxLookback);
-            _periodicMetrics.recordTimer(
+            batchFut = batchFut.whenComplete((result, error) -> _periodicMetrics.recordTimer(
                     "alerts/controller/from_internal_latency/batch",
                     ChronoUnit.MILLIS.between(batchLookupStart, Instant.now()),
                     Optional.of(TimeUnit.MILLISECONDS)
+            ));
+            batchFutures.add(batchFut);
+        }
+        return CompletableFutures.allOf(batchFutures).thenApply(ignore -> {
+            _periodicMetrics.recordTimer(
+                    "alerts/controller/from_internal_latency/total",
+                    ChronoUnit.MILLIS.between(lookupStart, Instant.now()),
+                    Optional.of(TimeUnit.MILLISECONDS)
             );
-            executions.putAll(executionsBatch);
-        }
-        _periodicMetrics.recordTimer(
-                "alerts/controller/from_internal_latency/total",
-                ChronoUnit.MILLIS.between(lookupStart, Instant.now()),
-                Optional.of(TimeUnit.MILLISECONDS)
-        );
-
-        final ImmutableList.Builder<models.view.alerts.Alert> results = new ImmutableList.Builder<>();
-        for (final Alert alert : alerts) {
-            final Optional<JobExecution.Success<AlertEvaluationResult>> execution = Optional.ofNullable(executions.get(alert.getId()));
-            results.add(models.view.alerts.Alert.fromInternal(alert, execution));
-        }
-        return results.build();
+            final Map<UUID, JobExecution.Success<AlertEvaluationResult>> executions =
+                batchFutures.stream()
+                        .map(fut -> fut.toCompletableFuture().join())
+                        .flatMap(batch -> batch.entrySet().stream())
+                        .collect(ImmutableMap.toImmutableMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue
+                        ));
+            final ImmutableList.Builder<models.view.alerts.Alert> results = new ImmutableList.Builder<>();
+            for (final Alert alert : alerts) {
+                final Optional<JobExecution.Success<AlertEvaluationResult>> execution = Optional.ofNullable(executions.get(alert.getId()));
+                results.add(models.view.alerts.Alert.fromInternal(alert, execution));
+            }
+            return results.build();
+        });
     }
 }

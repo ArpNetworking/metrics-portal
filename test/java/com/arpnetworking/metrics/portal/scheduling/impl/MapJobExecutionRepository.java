@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -59,13 +60,15 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public Optional<JobExecution<T>> getLastScheduled(final UUID jobId, final Organization organization) {
-        return Optional.ofNullable(_lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId));
+    public CompletableFuture<Optional<JobExecution<T>>> getLastScheduled(final UUID jobId, final Organization organization) {
+        return CompletableFuture.completedFuture(
+                Optional.ofNullable(_lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId))
+        );
     }
 
     @Override
-    public Optional<JobExecution.Success<T>> getLastSuccess(final UUID jobId, final Organization organization) {
-        return getLastCompleted(jobId, organization).flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
+    public CompletableFuture<Optional<JobExecution.Success<T>>> getLastSuccess(final UUID jobId, final Organization organization) {
+        final Optional<JobExecution.Success<T>> result = getLastCompletedInner(jobId, organization).flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
             @Override
             public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
                 return Optional.empty();
@@ -81,10 +84,15 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
                 return Optional.empty();
             }
         });
+        return CompletableFuture.completedFuture(result);
     }
 
     @Override
-    public Optional<JobExecution<T>> getLastCompleted(final UUID jobId, final Organization organization) {
+    public CompletableFuture<Optional<JobExecution<T>>> getLastCompleted(final UUID jobId, final Organization organization) {
+        return CompletableFuture.completedFuture(getLastCompletedInner(jobId, organization));
+    }
+
+    private Optional<JobExecution<T>> getLastCompletedInner(final UUID jobId, final Organization organization) {
         @Nullable final JobExecution<T> execution = _lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId);
         if (execution == null) {
             return Optional.empty();
@@ -108,7 +116,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public void jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
+    public CompletableFuture<Void> jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
         final JobExecution.Started<T> execution = new JobExecution.Started.Builder<T>()
                 .setJobId(id)
                 .setScheduled(scheduled)
@@ -118,10 +126,11 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
                 .compute(id, (id0, t1) -> (t1 == null) ? execution : t1.getScheduled().isAfter(scheduled) ? t1 : execution);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public void jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
+    public CompletableFuture<Void> jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
         final JobExecution.Success<T> execution = new JobExecution.Success.Builder<T>()
                 .setJobId(jobId)
                 .setScheduled(scheduled)
@@ -133,10 +142,11 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
                 .compute(jobId, (id0, t1) -> (t1 == null) ? execution : t1.getScheduled().isAfter(scheduled) ? t1 : execution);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public void jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletableFuture<Void> jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
         final JobExecution.Failure<T> execution = new JobExecution.Failure.Builder<T>()
                 .setJobId(jobId)
                 .setScheduled(scheduled)
@@ -148,6 +158,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
                 .compute(jobId, (id0, t1) -> (t1 == null) ? execution : t1.getScheduled().isAfter(scheduled) ? t1 : execution);
+        return CompletableFuture.completedFuture(null);
     }
 
     private void assertIsOpen() {

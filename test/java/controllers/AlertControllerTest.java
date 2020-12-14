@@ -57,6 +57,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -281,7 +282,7 @@ public final class AlertControllerTest {
         @Test
         public void testQueryAlertsSinglePage() throws Exception {
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                    () -> _controller.query(ALERT_PAGE_LIMIT, 0)
+                    () -> _controller.query(ALERT_PAGE_LIMIT, 0).toCompletableFuture().get(1, TimeUnit.SECONDS)
             );
             assertThat(result.status(), is(equalTo(Helpers.OK)));
             final JsonNode page = WebServerHelper.readContentAsJson(result);
@@ -325,7 +326,7 @@ public final class AlertControllerTest {
             for (int pageNo = 0; pageNo < numPages; pageNo++) {
                 final int offset = pageNo * pageSize;
                 final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                        () -> _controller.query(pageSize, offset)
+                        () -> _controller.query(pageSize, offset).toCompletableFuture().get(1, TimeUnit.SECONDS)
                 );
                 final JsonNode page = WebServerHelper.readContentAsJson(result);
                 assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));

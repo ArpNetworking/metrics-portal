@@ -16,9 +16,11 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.sharding.ShardRegion;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.serialization.DeserializationException;
@@ -45,6 +47,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
@@ -356,75 +359,78 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         @SuppressWarnings("unchecked")
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
         final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
-        try {
-            final int successMetricValue = message.getError() == null ? 1 : 0;
-            _periodicMetrics.recordCounter(
-                    "jobs/executor/execution_success",
-                    successMetricValue);
-            _periodicMetrics.recordCounter(
-                    "jobs/executor/by_type/"
-                    + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
-                    + "/execution_success",
-                    successMetricValue);
-            if (message.getError() == null) {
-                if (typedMessage.getResult() == null) {
-                    throw new IllegalArgumentException(String.format("JobCompleted message for %s has null error *and* result", ref));
-                }
-                LOGGER.info()
-                        .setMessage("marking job as successful")
-                        .addData("ref", ref)
-                        .addData("scheduled", message.getScheduled())
-                        .log();
-                repo.jobSucceeded(
-                        ref.getJobId(),
-                        ref.getOrganization(),
-                        message.getScheduled(),
-                        typedMessage.getResult());
-            } else {
-                LOGGER.error()
-                        .setMessage("marking job as failed")
-                        .addData("ref", ref)
-                        .addData("scheduled", message.getScheduled())
-                        .setThrowable(message.getError())
-                        .log();
-                repo.jobFailed(
-                        ref.getJobId(),
-                        ref.getOrganization(),
-                        message.getScheduled(),
-                        typedMessage.getError());
-            }
-        } catch (final NoSuchElementException error) {
-            LOGGER.warn()
-                    .setMessage("tried to mark job as complete, but job no longer exists in repository")
-                    .addData("ref", ref)
-                    .addData("scheduled", message.getScheduled())
-                    .log();
-            killSelfPermanently();
-            return;
-            // CHECKSTYLE.OFF: IllegalCatch - Without logging we won't know which
-            // job was correlated with this exception. We still restart the actor
-            // as if the exception were left uncaught.
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatch
-            LOGGER.error()
-                    .setMessage("Failed to mark job as complete")
-                    .setThrowable(e)
-                    .addData("ref", ref)
-                    .addData("scheduled", message.getScheduled())
-                    .addData("jobError", message.getError())
-                    .log();
 
-            // Rethrow to crash the actor.
-            //
-            // This will indirectly trigger a reload anyway (see JobExecutorActor#preStart).
-            //
-            // We do this instead of reload directly because our supervisor will rate limit
-            // the resurrection of our actor, whereas reloading directly could lead to
-            // a tight retry loop if the DB issue is not transient.
-            throw e;
+        final CompletableFuture<Void> updateFut;
+        final int successMetricValue = message.getError() == null ? 1 : 0;
+        _periodicMetrics.recordCounter(
+                "jobs/executor/execution_success",
+                successMetricValue);
+        _periodicMetrics.recordCounter(
+                "jobs/executor/by_type/"
+                + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                + "/execution_success",
+                successMetricValue);
+        if (message.getError() == null) {
+            if (typedMessage.getResult() == null) {
+                throw new IllegalArgumentException(String.format("JobCompleted message for %s has null error *and* result", ref));
+            }
+            LOGGER.info()
+                    .setMessage("marking job as successful")
+                    .addData("ref", ref)
+                    .addData("scheduled", message.getScheduled())
+                    .log();
+            updateFut = repo.jobSucceeded(
+                    ref.getJobId(),
+                    ref.getOrganization(),
+                    message.getScheduled(),
+                    typedMessage.getResult());
+        } else {
+            LOGGER.error()
+                    .setMessage("marking job as failed")
+                    .addData("ref", ref)
+                    .addData("scheduled", message.getScheduled())
+                    .setThrowable(message.getError())
+                    .log();
+            updateFut = repo.jobFailed(
+                    ref.getJobId(),
+                    ref.getOrganization(),
+                    message.getScheduled(),
+                    typedMessage.getError());
         }
 
-        getSelf().tell(new Reload.Builder<T>().setJobRef(ref).build(), getSelf());
+        final ActorRef self = getSelf();
+        PatternsCS.pipe(
+            updateFut.whenComplete((ignored, error) -> {
+                if (error == null) {
+                    return;
+                }
+                if (error instanceof NoSuchElementException) {
+                    LOGGER.warn()
+                            .setMessage("tried to mark job as complete, but job no longer exists in repository")
+                            .addData("ref", ref)
+                            .addData("scheduled", message.getScheduled())
+                            .log();
+                    killSelfPermanently(); // FIXME: this needs to run in the same actor context
+                    return;
+                }
+                LOGGER.error()
+                        .setMessage("Failed to mark job as complete")
+                        .setThrowable(error)
+                        .addData("ref", ref)
+                        .addData("scheduled", message.getScheduled())
+                        .addData("jobError", message.getError())
+                        .log();
+                // This will indirectly trigger a reload anyway (see JobExecutorActor#preStart).
+                //
+                // We do this instead of reload directly because our supervisor will rate limit
+                // the resurrection of our actor, whereas reloading directly could lead to
+                // a tight retry loop if the DB issue is not transient.
+                // FIXME: propagate failure.
+            }).thenApply(ignore -> {
+                return new Reload.Builder<T>().setJobRef(ref).build();
+            }),
+            getContext()
+        );
     }
 
     @Override

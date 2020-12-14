@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -105,12 +108,13 @@ public abstract class JobExecutionRepositoryIT<T> {
             value = "SIC_INNER_SHOULD_BE_STATIC_ANON",
             justification = "The 'this' reference is the test class and I'm not concerned about it potentially living too long."
     )
-    public void testJobStarted() {
+    public void testJobStarted() throws Exception {
         final Instant scheduled = Instant.now();
 
         _repository.jobStarted(_jobId, _organization, scheduled);
 
-        final Optional<JobExecution<T>> executionResult = _repository.getLastScheduled(_jobId, _organization);
+        final Optional<JobExecution<T>> executionResult = _repository.getLastScheduled(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS);
 
         assertTrue(executionResult.isPresent());
         final JobExecution<T> execution = executionResult.get();
@@ -144,14 +148,15 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testJobSucceeded() {
+    public void testJobSucceeded() throws Exception{
         final T result = newResult();
         final Instant scheduled = Instant.now();
 
         _repository.jobStarted(_jobId, _organization, scheduled);
         _repository.jobSucceeded(_jobId, _organization, scheduled, result);
 
-        final Optional<JobExecution.Success<T>> executionResult = _repository.getLastSuccess(_jobId, _organization);
+        final Optional<JobExecution.Success<T>> executionResult = _repository.getLastSuccess(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS);
 
         assertTrue(executionResult.isPresent());
 
@@ -164,7 +169,8 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         // If we get the last completed run, it should retrieve the same execution.
 
-        final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization);
+        final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
         (new JobExecution.Visitor<T, Integer>() {
@@ -193,14 +199,15 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testJobScheduledInThePast() {
+    public void testJobScheduledInThePast() throws Exception {
         final T result = newResult();
         final Instant scheduled = Instant.parse("2019-01-01T00:00:00Z");
 
         _repository.jobStarted(_jobId, _organization, scheduled);
         _repository.jobSucceeded(_jobId, _organization, scheduled, result);
 
-        final Optional<JobExecution.Success<T>> lastRun = _repository.getLastSuccess(_jobId, _organization);
+        final Optional<JobExecution.Success<T>> lastRun = _repository.getLastSuccess(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS);
         if (!lastRun.isPresent()) {
             fail("Expected a non-empty success to be returned.");
         }
@@ -209,14 +216,15 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testJobFailed() {
+    public void testJobFailed() throws Exception {
         final Instant scheduled = Instant.now();
         final Throwable error = new RuntimeException("something went wrong.");
 
         _repository.jobStarted(_jobId, _organization, scheduled);
         _repository.jobFailed(_jobId, _organization, scheduled, error);
 
-        final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization);
+        final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
         (new JobExecution.Visitor<T, Integer>() {
@@ -246,7 +254,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testJobMultipleRuns() {
+    public void testJobMultipleRuns() throws Exception {
         final Instant t0 = Instant.now();
         final Duration dt = Duration.ofHours(1);
 
@@ -262,12 +270,12 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         assertEquals(
                 t0.plus(dt.multipliedBy(3)),
-                _repository.getLastCompleted(_jobId, _organization).get().getScheduled()
+                _repository.getLastCompleted(_jobId, _organization).get(1, TimeUnit.SECONDS).get().getScheduled()
         );
     }
 
     @Test
-    public void testSanityCheckRunningMultipleJobsWithDistinctResults() {
+    public void testSanityCheckRunningMultipleJobsWithDistinctResults() throws Exception {
         final T firstResult = newResult();
         final T secondResult = newResult();
         final Instant scheduled = Instant.now();
@@ -275,7 +283,9 @@ public abstract class JobExecutionRepositoryIT<T> {
         _repository.jobStarted(_jobId, _organization, scheduled);
         _repository.jobSucceeded(_jobId, _organization, scheduled, firstResult);
 
-        JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization).get();
+        JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS)
+                .get();
         assertThat(execution.getResult(), is(firstResult));
 
         final UUID secondJob = UUID.randomUUID();
@@ -284,12 +294,14 @@ public abstract class JobExecutionRepositoryIT<T> {
         _repository.jobStarted(secondJob, _organization, scheduled);
         _repository.jobSucceeded(secondJob, _organization, scheduled, secondResult);
 
-        execution = _repository.getLastSuccess(secondJob, _organization).get();
+        execution = _repository.getLastSuccess(secondJob, _organization)
+                .get(1, TimeUnit.SECONDS)
+                .get();
         assertThat(execution.getResult(), is(secondResult));
     }
 
     @Test
-    public void testStateChange() {
+    public void testStateChange() throws Exception {
         final T result = newResult();
         final Instant scheduled = Instant.now();
         final Throwable error = new RuntimeException("something went wrong.");
@@ -297,12 +309,16 @@ public abstract class JobExecutionRepositoryIT<T> {
         _repository.jobStarted(_jobId, _organization, scheduled);
         _repository.jobSucceeded(_jobId, _organization, scheduled, result);
 
-        final JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization).get();
+        final JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS)
+                .get();
         assertThat(execution.getResult(), not(nullValue()));
 
         // A failed updated should *not* clear the start time but it should clear the result
         _repository.jobFailed(_jobId, _organization, scheduled, error);
-        final JobExecution<T> updatedExecution = _repository.getLastCompleted(_jobId, _organization).get();
+        final JobExecution<T> updatedExecution = _repository.getLastCompleted(_jobId, _organization)
+                .get(1, TimeUnit.SECONDS)
+                .get();
 
         (new JobExecution.Visitor<T, Integer>() {
             @Override
@@ -331,7 +347,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testGetLastSuccessBatch() {
+    public void testGetLastSuccessBatch() throws Exception {
         final int runsPerJob = 3;
         final int numJobs = 5;
 
@@ -379,7 +395,9 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
         final Map<UUID, JobExecution.Success<T>> successes =
-                _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob));
+                _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob))
+                        .get(1, TimeUnit.SECONDS);
+
         for (final UUID jobId : existingJobIds) {
             assertThat(successes, hasKey(jobId));
             assertThat(successes.get(jobId).getScheduled(), is(truncatedNow));
