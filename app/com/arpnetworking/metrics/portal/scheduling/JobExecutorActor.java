@@ -16,12 +16,10 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.sharding.ShardRegion;
 import akka.pattern.Patterns;
-import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.serialization.DeserializationException;
 import com.arpnetworking.commons.serialization.Deserializer;
@@ -33,6 +31,7 @@ import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.scheduling.Job;
+import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 import scala.concurrent.duration.Duration;
@@ -48,7 +47,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 
 /**
@@ -80,7 +83,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
     private boolean _currentlyExecuting = false;
-    private Optional<CachedJob<T>> _cachedJob = Optional.empty();
+
+    private Optional<JobRef<T>> _ref = Optional.empty();
+    private Optional<Job<T>> _cachedJob = Optional.empty();
+    private Optional<Instant> _lastRun = Optional.empty();
+
     private Optional<Instant> _nextRun = Optional.empty();
     private final Deserializer<JobRef<?>> _refDeserializer;
 
@@ -160,26 +167,29 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * Initializes the actor with the given JobRef (if uninitialized), or ensure the the given ref equals the one already initialized with.
      *
      * @param ref The JobRef to initialize with.
-     * @return The {@link CachedJob} the actor is initialized to.
-     *   (Guaranteed to equal {@code _cachedJob.get()}; this return value is purely for the typechecker's sake.)
      * @throws IllegalStateException If the actor was already initialized with a different JobRef.
      * @throws NoSuchJobException If the actor attempts to initialize itself but can't load the referenced job.
      */
-    private CachedJob<T> initializeOrEnsureRefMatch(final JobRef<T> ref) throws IllegalStateException, NoSuchJobException {
+    private void initializeOrEnsureRefMatch(final JobRef<T> ref) throws IllegalStateException, NoSuchJobException {
+        if (_ref.isPresent() && !ref.equals(_ref.get())) {
+            LOGGER.error().setMessage("refs no longer match").log();
+            killSelfPermanently();
+        }
+        _ref = Optional.of(ref);
         if (!_cachedJob.isPresent()) {
             LOGGER.info()
                     .setMessage("initializing")
                     .addData("ref", ref)
                     .log();
-            _cachedJob = Optional.of(CachedJob.createAndLoad(_injector, ref, _periodicMetrics));
-        }
 
-        final JobRef<T> oldRef = _cachedJob.get().getRef();
-        if (!oldRef.equals(ref)) {
-            throw new IllegalStateException(String.format("got JobRef %s, but already initialized with %s", ref, oldRef));
+            final Optional<Job<T>> loaded = ref.get(_injector);
+            if (!loaded.isPresent()) {
+                _periodicMetrics.recordCounter("cached_job_reload_success", 0);
+                throw new NoSuchJobException(ref.toString());
+            }
+            _periodicMetrics.recordCounter("cached_job_reload_success", 1);
+            _cachedJob = loaded;
         }
-
-        return _cachedJob.get();
     }
 
 
@@ -196,69 +206,78 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *
      * @param scheduled The time that the job was scheduled for.
      * @throws ActorNotInitializedException If the actor has never been given a {@link JobRef}, and therefore has nothing to execute.
-     * @throws NoSuchJobException If the repository doesn't recognize the job.
      */
-    private void attemptExecuteAndUpdateRepository(final Instant scheduled) throws ActorNotInitializedException, NoSuchJobException {
-        if (!_cachedJob.isPresent()) {
+    @SuppressWarnings("checkstyle:UnnecessaryParentheses")
+    private void attemptExecuteAndUpdateRepository(final Instant scheduled) throws ActorNotInitializedException {
+        if (!_cachedJob.isPresent() || !_ref.isPresent()) {
             throw new ActorNotInitializedException("unable to execute: executor is not initialized");
         }
 
-        final CachedJob<T> cachedJob = _cachedJob.get();
-
-        final JobRef<T> ref = cachedJob.getRef();
-        final Job<T> job = cachedJob.getJob();
+        final JobRef<T> ref = _ref.get();
+        final Job<T> job = _cachedJob.get();
         final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
 
+        // FIXME: Is this going to reset correctly?
         if (_currentlyExecuting) {
             return;
         }
         _currentlyExecuting = true;
 
-        try {
-            repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled);
-        } catch (final NoSuchElementException error) {
-            _currentlyExecuting = false;
-            throw new NoSuchJobException("job no longer exists in repository", error);
-        }
+        final CompletionStage<Object> executionFut = repo.jobStarted(ref.getJobId(), ref.getOrganization(), scheduled)
+                .thenCompose(ignored -> {
+                    // Ideally we could use the same start time defined below instead of
+                    // Instant.now but because System.nanoTime does not return wall-clock
+                    // time it can't be compared to an Instant.
+                    final long executionLagNanos = ChronoUnit.NANOS.between(scheduled, Instant.now());
+                    _periodicMetrics.recordTimer(
+                            "jobs/executor/execution_lag",
+                            executionLagNanos,
+                            Optional.of(TimeUnit.NANOSECONDS));
 
-        // Ideally we could use the same start time defined below instead of
-        // Instant.now but because System.nanoTime does not return wall-clock
-        // time it can't be compared to an Instant.
-        final long executionLagNanos = ChronoUnit.NANOS.between(scheduled, Instant.now());
-        _periodicMetrics.recordTimer(
-                "jobs/executor/execution_lag",
-                executionLagNanos,
-                Optional.of(TimeUnit.NANOSECONDS));
+                    _periodicMetrics.recordTimer(
+                            "jobs/executor/by_type/"
+                                    + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
+                                    + "/execution_lag",
+                            executionLagNanos,
+                            Optional.of(TimeUnit.NANOSECONDS));
 
-        _periodicMetrics.recordTimer(
-                "jobs/executor/by_type/"
-                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
-                        + "/execution_lag",
-                executionLagNanos,
-                Optional.of(TimeUnit.NANOSECONDS));
+                    final long startTime = System.nanoTime();
+                    return job.execute(_injector, scheduled).handle((result, error) -> {
+                        _periodicMetrics.recordTimer(
+                                "jobs/executor/execution_time",
+                                System.nanoTime() - startTime,
+                                Optional.of(TimeUnit.NANOSECONDS));
 
-        final long startTime = System.nanoTime();
-        PatternsCS.pipe(
-                job.execute(_injector, scheduled)
-                        .handle((result, error) -> {
-                            _periodicMetrics.recordTimer(
-                                    "jobs/executor/execution_time",
-                                    System.nanoTime() - startTime,
-                                    Optional.of(TimeUnit.NANOSECONDS));
+                        _periodicMetrics.recordTimer(
+                                "jobs/executor/by_type/"
+                                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
+                                        + "/execution_time",
+                                System.nanoTime() - startTime,
+                                Optional.of(TimeUnit.NANOSECONDS));
+                        return new JobCompleted.Builder<T>()
+                                .setScheduled(scheduled)
+                                .setError(error)
+                                .setResult(result)
+                                .build();
+                    }).handle((result, error) -> {
+                        if (error == null) {
+                            return result;
+                        }
+                        if (error instanceof NoSuchElementException) {
+                            LOGGER.warn()
+                                    .setMessage("attempted to execute job, but job no longer exists in repository")
+                                    .addData("ref", ref)
+                                    .addData("scheduled", scheduled)
+                                    .log();
+                            return REQUEST_PERMANENT_SHUTDOWN;
+                        }
+                        // Propagate any other error to restart the actor
+                        throw new CompletionException(error);
+                    });
+                });
 
-                            _periodicMetrics.recordTimer(
-                                    "jobs/executor/by_type/"
-                                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, job.getClass().getSimpleName())
-                                            + "/execution_time",
-                                    System.nanoTime() - startTime,
-                                    Optional.of(TimeUnit.NANOSECONDS));
-
-                            return new JobCompleted.Builder<T>()
-                                    .setScheduled(scheduled)
-                                    .setError(error)
-                                    .setResult(result)
-                                    .build();
-                        }),
+        Patterns.pipe(
+                executionFut,
                 getContext().dispatcher()
         ).to(getSelf());
     }
@@ -278,21 +297,21 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         if (!_cachedJob.isPresent()) {
             throw new ActorNotInitializedException("somehow, uninitialized JobExecutorActor is trying to tick");
         }
-        final CachedJob<T> cachedJob = _cachedJob.get();
-
         _periodicMetrics.recordCounter(
                 "jobs/executor/by_type/"
-                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                        + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, _cachedJob.get().getClass().getSimpleName())
                         + "/tick",
                 1);
 
         if (!_nextRun.isPresent()) {
-            _nextRun = cachedJob.getSchedule().nextRun(cachedJob.getLastRun());
+            _nextRun = _cachedJob.get().getSchedule().nextRun(_lastRun);
         }
         if (!_nextRun.isPresent()) {
             LOGGER.info()
                     .setMessage("job has no more scheduled runs")
-                    .addData("cachedJob", cachedJob)
+                    .addData("job", _cachedJob)
+                    .addData("ref", _ref)
+                    .addData("lastRun", _lastRun)
                     .log();
             killSelfPermanently();
             return;
@@ -301,51 +320,66 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         if (_clock.instant().isBefore(_nextRun.get().minus(EXECUTION_SLOP))) {
             scheduleTickFor(_nextRun.get());
         } else {
-            try {
-                attemptExecuteAndUpdateRepository(_nextRun.get());
-            } catch (final NoSuchJobException error) {
-                LOGGER.warn()
-                        .setMessage("attempted to start executing job, but job no longer exists in repository")
-                        .addData("ref", cachedJob.getRef())
-                        .addData("scheduled", _nextRun.get())
-                        .log();
-                killSelfPermanently();
-            }
+            attemptExecuteAndUpdateRepository(_nextRun.get());
         }
     }
 
     private void reload(final Reload<T> message) {
         final Optional<String> eTag = message.getETag();
-        final CachedJob<T> cachedJob;
+        final boolean needsUpdate = _cachedJob
+                .flatMap(Job::getETag)
+                .flatMap(e -> eTag.map(e2 -> !e.equals(e2)))
+                .orElse(true);
+
+        _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", needsUpdate ? 1 : 0);
+        if (!needsUpdate) {
+            return;
+        }
+        LOGGER.debug()
+                .setMessage("job is stale; reloading")
+                .addData("jobRef", _ref)
+                .addData("oldETag", _cachedJob.flatMap(Job::getETag))
+                .addData("newETag", eTag)
+                .log();
         _periodicMetrics.recordCounter("jobs/executor/reload", 1);
+        final JobRef<T> ref = unsafeJobRefCast(message.getJobRef());
         try {
-            cachedJob = initializeOrEnsureRefMatch(unsafeJobRefCast(message.getJobRef()));
-            if (eTag.isPresent()) {
-                cachedJob.reloadIfOutdated(_injector, eTag.get());
-            } else {
-                cachedJob.reload(_injector);
-            }
+            initializeOrEnsureRefMatch(ref);
             _periodicMetrics.recordCounter(
                     "jobs/executor/by_type/"
-                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, _cachedJob.getClass().getSimpleName())
                             + "/reload",
                     1);
         } catch (final NoSuchJobException error) {
             LOGGER.warn()
                     .setMessage("tried to reload job, but job no longer exists in repository")
-                    .addData("ref", message.getJobRef())
+                    .addData("ref", ref)
                     .log();
             killSelfPermanently();
             return;
         }
-        timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
-        getSelf().tell(Tick.INSTANCE, getSelf());
+        // At this point we can use "ref" since it's guaranteed to be valid, otherwise
+        // initialization would have failed above.
+        final RestartTicker lastRunFut;
+        try {
+            lastRunFut = ref.getExecutionRepository(_injector)
+                    .getLastCompleted(ref.getJobId(), ref.getOrganization())
+                    .thenApply(exec -> exec.map(JobExecution::getScheduled))
+                    .thenApply(RestartTicker::new)
+                    .get(2, TimeUnit.SECONDS);
+            self().tell(lastRunFut, self());
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+
+//        Patterns.pipe(
+//                lastRunFut,
+//                getContext().getDispatcher()
+//        );
     }
 
     private void jobCompleted(final JobCompleted<?> message) {
-        _currentlyExecuting = false;
-        _nextRun = Optional.empty();
-        if (!_cachedJob.isPresent()) {
+        if (!_cachedJob.isPresent() || !_ref.isPresent()) {
             LOGGER.warn()
                     .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
                     .addData("scheduled", message.getScheduled())
@@ -353,9 +387,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .log();
             return;
         }
-        final CachedJob<T> cachedJob = _cachedJob.get();
-        final JobRef<T> ref = cachedJob.getRef();
+        final JobRef<T> ref = _ref.get();
 
+        _currentlyExecuting = false;
+        _nextRun = Optional.empty();
         @SuppressWarnings("unchecked")
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
         final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
@@ -367,7 +402,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 successMetricValue);
         _periodicMetrics.recordCounter(
                 "jobs/executor/by_type/"
-                + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, cachedJob.getJob().getClass().getSimpleName())
+                + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, _cachedJob.get().getClass().getSimpleName())
                 + "/execution_success",
                 successMetricValue);
         if (message.getError() == null) {
@@ -397,12 +432,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     message.getScheduled(),
                     typedMessage.getError());
         }
-
-        final ActorRef self = getSelf();
-        PatternsCS.pipe(
-            updateFut.whenComplete((ignored, error) -> {
+        Patterns.pipe(
+            updateFut.handle((ignored, error) -> {
                 if (error == null) {
-                    return;
+                    return new Reload.Builder<T>().setJobRef(ref).build();
                 }
                 if (error instanceof NoSuchElementException) {
                     LOGGER.warn()
@@ -410,8 +443,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                             .addData("ref", ref)
                             .addData("scheduled", message.getScheduled())
                             .log();
-                    killSelfPermanently(); // FIXME: this needs to run in the same actor context
-                    return;
+                    return REQUEST_PERMANENT_SHUTDOWN;
                 }
                 LOGGER.error()
                         .setMessage("Failed to mark job as complete")
@@ -420,16 +452,16 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         .addData("scheduled", message.getScheduled())
                         .addData("jobError", message.getError())
                         .log();
+                // Propagate the exception.
+                //
                 // This will indirectly trigger a reload anyway (see JobExecutorActor#preStart).
                 //
                 // We do this instead of reload directly because our supervisor will rate limit
                 // the resurrection of our actor, whereas reloading directly could lead to
                 // a tight retry loop if the DB issue is not transient.
-                // FIXME: propagate failure.
-            }).thenApply(ignore -> {
-                return new Reload.Builder<T>().setJobRef(ref).build();
+                throw new CompletionException(error);
             }),
-            getContext()
+            getContext().dispatcher()
         );
     }
 
@@ -447,6 +479,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
                     this.jobCompleted(typedMessage);
                 })
+                .match(RestartTicker.class, message -> {
+                    _lastRun = message.getLastRun();
+                    timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
+                    getSelf().tell(Tick.INSTANCE, getSelf());
+                })
+                .matchEquals(REQUEST_PERMANENT_SHUTDOWN, message -> killSelfPermanently())
                 .build();
     }
 
@@ -459,6 +497,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      */
     private static final java.time.Duration EXECUTION_SLOP = java.time.Duration.ofMillis(500);
     private static final Logger LOGGER = LoggerFactory.getLogger(JobExecutorActor.class);
+
+    /**
+     * Internal message telling the actor to request a permanent shutdown.
+     * This exists because it is unsafe to call `killSelfPermanently` from inside
+     * a CompletionStage, since we could be outside an Akka dispatcher thread.
+     */
+    private static final String REQUEST_PERMANENT_SHUTDOWN = "REQUEST_SHUTDOWN";
 
     /**
      * Internal message, telling the scheduler to run any necessary jobs.
@@ -559,6 +604,18 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 _eTag = eTag;
                 return this;
             }
+        }
+    }
+
+    private static final class RestartTicker {
+        private final Optional<Instant> _lastRun;
+
+        RestartTicker(final Optional<Instant> lastRun) {
+            _lastRun = lastRun;
+        }
+
+        public Optional<Instant> getLastRun() {
+            return _lastRun;
         }
     }
 

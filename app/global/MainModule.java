@@ -230,6 +230,7 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
 
         bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
+        bind(DatabaseExecutionContext.class).asEagerSingleton();
     }
 
     @Singleton
@@ -508,7 +509,8 @@ public class MainModule extends AbstractModule {
             final PeriodicMetrics periodicMetrics,
             final ActorSystem actorSystem,
             @Named("metrics_portal") final EbeanServer portalServer,
-            @Named("metrics_portal_ddl") final EbeanServer ddlServer
+            @Named("metrics_portal_ddl") final EbeanServer ddlServer,
+            final DatabaseExecutionContext executionContext
     ) {
         final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
 
@@ -520,7 +522,8 @@ public class MainModule extends AbstractModule {
             actorSystem,
             periodicMetrics,
             java.time.Duration.ofSeconds(offset.toSeconds()),
-            maxLookAhead
+            maxLookAhead,
+            executionContext
         );
     }
 

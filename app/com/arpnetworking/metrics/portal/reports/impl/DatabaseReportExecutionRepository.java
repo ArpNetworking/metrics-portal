@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -49,6 +50,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
     private final DatabaseExecutionHelper<Report.Result, ReportExecution> _executionHelper;
+    private final Executor _executor;
 
     /**
      * Public constructor.
@@ -56,9 +58,10 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
      * @param ebeanServer Play's {@code EbeanServer} for this repository.
      */
     @Inject
-    public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer) {
+    public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer, final Executor executor) {
         _ebeanServer = ebeanServer;
-        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution);
+        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution, executor);
+        _executor = executor;
 
     }
 
@@ -95,7 +98,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
             newOrUpdatedExecution.setReport(report.get());
             newOrUpdatedExecution.setScheduled(scheduled);
             return newOrUpdatedExecution;
-        });
+        }, _executor);
     }
 
     private ExpressionList<ReportExecution> findExecutions(final UUID jobId, final Organization organization) {
@@ -129,7 +132,8 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
                 .orderBy()
                 .desc("scheduled")
                 .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel)
+                .map(DatabaseExecutionHelper::toInternalModel),
+            _executor
         );
     }
 
@@ -155,7 +159,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
                 );
             }
             return Optional.empty();
-        });
+        }, _executor);
     }
 
     @Override
@@ -169,7 +173,8 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
                     .desc("completed_at")
                     .setMaxRows(1)
                     .findOneOrEmpty()
-                    .map(DatabaseExecutionHelper::toInternalModel)
+                    .map(DatabaseExecutionHelper::toInternalModel),
+            _executor
         );
     }
 

@@ -28,6 +28,7 @@ import models.internal.scheduling.JobExecution;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.persistence.PersistenceException;
@@ -47,6 +48,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
     private final EbeanServer _ebeanServer;
     private final ExecutionAdapter<T, E> _adapter;
     private final Logger _logger;
+    private Executor _executor;
 
     /**
      * Public constructor.
@@ -58,11 +60,13 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
     public DatabaseExecutionHelper(
             final Logger logger,
             final EbeanServer ebeanServer,
-            final ExecutionAdapter<T, E> adapter
+            final ExecutionAdapter<T, E> adapter,
+            final Executor executor
     ) {
         _ebeanServer = ebeanServer;
         _adapter = adapter;
         _logger = logger;
+        _executor = executor;
     }
 
     /**
@@ -198,7 +202,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                 .log();
         final Transaction transaction = _ebeanServer.beginTransaction();
         return _adapter.findOrCreateExecution(jobId, organization, scheduled)
-                .thenAccept(e -> {
+                .thenAcceptAsync(e -> {
                     update.accept(e);
                     e.setState(state);
                     _ebeanServer.save(e);
@@ -209,9 +213,9 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                             .addData("scheduled", scheduled)
                             .addData("state", state)
                             .log();
-                }).whenComplete((ignored, error) -> {
-                    transaction.close();
+                }, _executor).whenCompleteAsync((ignored, error) -> {
                     if (error != null) {
+                        transaction.rollback();
                         _logger.error()
                                 .setMessage("Failed to job report executions")
                                 .addData("job.uuid", jobId)
@@ -221,7 +225,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                                 .log();
                         throw new PersistenceException("Failed to upsert job executions", error);
                     }
-                });
+                }, _executor);
     }
 
     /**

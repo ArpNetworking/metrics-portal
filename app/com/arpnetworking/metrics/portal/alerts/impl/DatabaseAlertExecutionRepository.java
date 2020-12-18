@@ -46,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,6 +68,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
     private static final String ACTOR_NAME = "alertExecutionPartitionCreator";
+    private final Executor _executor;
     @Nullable
     private ActorRef _partitionCreator;
     private ConcurrentHashMap<LocalDate, Boolean> _partitionCache = new ConcurrentHashMap<>();
@@ -82,6 +84,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      * @param periodicMetrics A metrics instance to record against.
      * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
      * @param partitionCreationLookahead How many days of partitions to create
+     * @param executor The executor to use for the DB operations
      */
     @Inject
     public DatabaseAlertExecutionRepository(
@@ -90,11 +93,13 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final ActorSystem actorSystem,
             final PeriodicMetrics periodicMetrics,
             final Duration partitionCreationOffset,
-            final int partitionCreationLookahead
+            final int partitionCreationLookahead,
+            final Executor executor
     ) {
         _ebeanServer = portalServer;
-        _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
+        _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution, executor);
         _actorSystem = actorSystem;
+        _executor = executor;
         _props = DailyPartitionCreator.props(
                 partitionServer,
                 periodicMetrics,
@@ -133,7 +138,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             newOrUpdatedExecution.setOrganization(org.get());
             newOrUpdatedExecution.setScheduled(scheduled);
             return newOrUpdatedExecution;
-        });
+        }, _executor);
     }
 
     @Override
@@ -177,8 +182,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                     .orderBy()
                     .desc("scheduled")
                     .findOneOrEmpty()
-                    .map(DatabaseExecutionHelper::toInternalModel)
-        );
+                    .map(DatabaseExecutionHelper::toInternalModel),
+                _executor);
     }
 
     @Override
@@ -207,7 +212,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 );
             }
             return Optional.empty();
-        });
+        }, _executor);
     }
 
     @Override
@@ -279,7 +284,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                             JobExecution::getJobId,
                             execution -> execution
                     ));
-        });
+        }, _executor);
     }
 
     @Override
@@ -297,7 +302,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 .orderBy()
                 .desc("completed_at")
                 .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel));
+                .map(DatabaseExecutionHelper::toInternalModel),
+                _executor);
     }
 
     @Override

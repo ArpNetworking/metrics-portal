@@ -26,6 +26,8 @@ import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
 
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Integration tests for {@link DatabaseReportExecutionRepository}.
@@ -36,7 +38,9 @@ public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryI
     @Override
     JobExecutionRepository<Report.Result> setUpRepository(final Organization organization) {
         final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
-        final DatabaseReportExecutionRepository repository = new DatabaseReportExecutionRepository(server);
+        final Executor executor = Executors.newSingleThreadExecutor();
+
+        final DatabaseReportExecutionRepository repository = new DatabaseReportExecutionRepository(server, executor);
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
         server.save(ebeanOrganization);

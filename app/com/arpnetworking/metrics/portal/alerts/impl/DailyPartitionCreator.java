@@ -319,6 +319,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         // while SQLUpdate does not allow for SELECT statements.
         //
         // https://ebean.io/docs/intro/queries/jdbc-query
+
+        // FIXME: Move DB operation off the default thread pool.
         final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
         try (Transaction tx = _ebeanServer.beginTransaction()) {
             final Connection conn = tx.getConnection();
