@@ -20,6 +20,7 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.sharding.ShardRegion;
 import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.serialization.DeserializationException;
 import com.arpnetworking.commons.serialization.Deserializer;
@@ -46,12 +47,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 
 /**
@@ -65,7 +63,7 @@ import javax.annotation.Nullable;
  *          <p>It leaves this state when it receives a {@link Reload} message.</p>
  *     </li>
  *     <li>
- *         <p><b>Initialized.</b> The actor will intermittently wake up to execute / reload its {@link CachedJob}.</p>
+ *         <p><b>Initialized.</b> The actor will intermittently wake up to execute / reload its {@link Job}.</p>
  *         <p>It enters this state when it receives a {@link Reload} message.</p>
  *         <p>It never leaves this state (except when it dies and is resurrected).</p>
  *         <p>Once the actor is initialized, all subsequent {@link Reload} messages <i>must</i> reference the same {@link JobRef}.
@@ -82,6 +80,11 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private final Injector _injector;
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
+
+    /**
+     * Flag to ensure that we only ever execute one job at a time.
+     * Once a tick is received, this flag will not be reset until another reload occurs.
+     */
     private boolean _currentlyExecuting = false;
 
     private Optional<JobRef<T>> _ref = Optional.empty();
@@ -217,8 +220,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final Job<T> job = _cachedJob.get();
         final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
 
-        // FIXME: Is this going to reset correctly?
         if (_currentlyExecuting) {
+            LOGGER.debug()
+                .setMessage("ignoring extra tick received mid-execution")
+                .addData("job", job)
+                .addData("ref", ref)
+                .addData("lastRun", _lastRun)
+                .log();
             return;
         }
         _currentlyExecuting = true;
@@ -360,22 +368,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
         // At this point we can use "ref" since it's guaranteed to be valid, otherwise
         // initialization would have failed above.
-        final RestartTicker lastRunFut;
-        try {
-            lastRunFut = ref.getExecutionRepository(_injector)
-                    .getLastCompleted(ref.getJobId(), ref.getOrganization())
-                    .thenApply(exec -> exec.map(JobExecution::getScheduled))
-                    .thenApply(RestartTicker::new)
-                    .get(2, TimeUnit.SECONDS);
-            self().tell(lastRunFut, self());
-        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException(e);
-        }
-
-//        Patterns.pipe(
-//                lastRunFut,
-//                getContext().getDispatcher()
-//        );
+        Patterns.pipe(
+                ref.getExecutionRepository(_injector)
+                        .getLastCompleted(ref.getJobId(), ref.getOrganization())
+                        .thenApply(exec -> exec.map(JobExecution::getScheduled))
+                        .thenApply(RestartTicker::new),
+                getContext().getDispatcher()
+        ).to(self());
     }
 
     private void jobCompleted(final JobCompleted<?> message) {
@@ -389,13 +388,12 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
         final JobRef<T> ref = _ref.get();
 
-        _currentlyExecuting = false;
         _nextRun = Optional.empty();
         @SuppressWarnings("unchecked")
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
         final JobExecutionRepository<T> repo = ref.getExecutionRepository(_injector);
 
-        final CompletableFuture<Void> updateFut;
+        final CompletionStage<Void> updateFut;
         final int successMetricValue = message.getError() == null ? 1 : 0;
         _periodicMetrics.recordCounter(
                 "jobs/executor/execution_success",
@@ -432,6 +430,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     message.getScheduled(),
                     typedMessage.getError());
         }
+
         Patterns.pipe(
             updateFut.handle((ignored, error) -> {
                 if (error == null) {
@@ -460,9 +459,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 // the resurrection of our actor, whereas reloading directly could lead to
                 // a tight retry loop if the DB issue is not transient.
                 throw new CompletionException(error);
-            }),
-            getContext().dispatcher()
-        );
+            }).toCompletableFuture(),
+            getContext().getDispatcher()
+        ).to(self());
     }
 
     @Override
@@ -470,6 +469,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         return receiveBuilder()
                 .match(Tick.class, this::tick)
                 .match(Reload.class, message -> {
+                    _currentlyExecuting = false;
                     @SuppressWarnings("unchecked")
                     final Reload<T> typedMessage = (Reload<T>) message;
                     this.reload(typedMessage);

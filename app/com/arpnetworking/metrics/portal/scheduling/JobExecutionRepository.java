@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A storage medium for {@link JobExecution}s.
@@ -59,7 +59,7 @@ public interface JobExecutionRepository<T> {
      * @return The most recently scheduled execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    CompletableFuture<Optional<JobExecution<T>>> getLastScheduled(UUID jobId, Organization organization);
+    CompletionStage<Optional<JobExecution<T>>> getLastScheduled(UUID jobId, Organization organization);
 
     /**
      * Get the last successful execution, if any.
@@ -69,7 +69,7 @@ public interface JobExecutionRepository<T> {
      * @return The last successful execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    CompletableFuture<Optional<JobExecution.Success<T>>> getLastSuccess(UUID jobId, Organization organization)
+    CompletionStage<Optional<JobExecution.Success<T>>> getLastSuccess(UUID jobId, Organization organization)
             throws NoSuchElementException;
 
     /**
@@ -86,18 +86,18 @@ public interface JobExecutionRepository<T> {
      * @param maxLookback The farthest date (UTC) in the past to check for executions.
      * @return The last successful executions for each job.
      */
-    default CompletableFuture<ImmutableMap<UUID, JobExecution.Success<T>>> getLastSuccessBatch(
+    default CompletionStage<ImmutableMap<UUID, JobExecution.Success<T>>> getLastSuccessBatch(
             List<UUID> jobIds,
             Organization organization,
             LocalDate maxLookback
     ) {
-        final List<CompletableFuture<Optional<JobExecution.Success<T>>>> futures = jobIds.stream()
+        final List<CompletionStage<Optional<JobExecution.Success<T>>>> futures = jobIds.stream()
             .map(id -> getLastSuccess(id, organization))
             .collect(ImmutableList.toImmutableList());
 
         return CompletableFutures.allOf(futures)
                 .thenApply(ignore -> futures.stream()
-                        .map(CompletableFuture::join)
+                        .map(fut -> fut.toCompletableFuture().join())
                         .flatMap(Streams::stream)
                         .collect(ImmutableMap.toImmutableMap(
                                 JobExecution::getJobId,
@@ -113,7 +113,7 @@ public interface JobExecutionRepository<T> {
      * @return The last completed execution.
      * @throws NoSuchElementException if no job has the given UUID.
      */
-    CompletableFuture<Optional<JobExecution<T>>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
+    CompletionStage<Optional<JobExecution<T>>> getLastCompleted(UUID jobId, Organization organization) throws NoSuchElementException;
 
     /**
      * Notify the repository that a job has started executing.
@@ -124,7 +124,7 @@ public interface JobExecutionRepository<T> {
      *
      * @return a future that completes when the operation does.
      */
-    CompletableFuture<Void> jobStarted(UUID jobId, Organization organization, Instant scheduled);
+    CompletionStage<Void> jobStarted(UUID jobId, Organization organization, Instant scheduled);
 
     /**
      * Notify the repository that a job finished executing successfully.
@@ -136,7 +136,7 @@ public interface JobExecutionRepository<T> {
      *
      * @return a future that completes when the operation does.
      */
-    CompletableFuture<Void> jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
+    CompletionStage<Void> jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
 
     /**
      * Notify the repository that a job encountered an error and aborted execution.
@@ -148,5 +148,5 @@ public interface JobExecutionRepository<T> {
      *
      * @return a future that completes when the operation does.
      */
-    CompletableFuture<Void> jobFailed(UUID jobId, Organization organization, Instant scheduled, Throwable error);
+    CompletionStage<Void> jobFailed(UUID jobId, Organization organization, Instant scheduled, Throwable error);
 }

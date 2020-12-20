@@ -84,8 +84,6 @@ public abstract class JobExecutionRepositoryIT<T> {
      * The organization and job id for the given test case are provided as some repositories may validate
      * that these objects exist when fetching the associated executions. Each test suite may want to ensure
      * that these IDs reference valid objects before the test is run.
-     *
-     * @return The repository.
      */
     abstract void ensureJobExists(Organization organization, UUID jobId);
 
@@ -111,9 +109,12 @@ public abstract class JobExecutionRepositoryIT<T> {
     public void testJobStarted() throws Exception {
         final Instant scheduled = Instant.now();
 
-        _repository.jobStarted(_jobId, _organization, scheduled).get(1, TimeUnit.SECONDS);
+        _repository.jobStarted(_jobId, _organization, scheduled)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
 
         final Optional<JobExecution<T>> executionResult = _repository.getLastScheduled(_jobId, _organization)
+                .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS);
 
         assertTrue(executionResult.isPresent());
@@ -122,7 +123,9 @@ public abstract class JobExecutionRepositoryIT<T> {
         assertThat(execution.getJobId(), equalTo(_jobId));
         assertThat(execution.getScheduled(), equalTo(scheduled));
 
-        assertThat(_repository.getLastCompleted(_jobId, _organization).get(1, TimeUnit.SECONDS), equalTo(Optional.empty()));
+        assertThat(_repository.getLastCompleted(_jobId, _organization)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS), equalTo(Optional.empty()));
 
         // TODO(cbriones): This doesn't actually require an integer, but spotbugs complains that we're returning null if we use Void.
         // Of course, in that case there's nothing else we can possibly return. The visitors below should also be changed.
@@ -171,6 +174,7 @@ public abstract class JobExecutionRepositoryIT<T> {
         // If we get the last completed run, it should retrieve the same execution.
 
         final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization)
+                .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
@@ -278,7 +282,11 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         assertEquals(
                 t0.plus(dt.multipliedBy(3)),
-                _repository.getLastCompleted(_jobId, _organization).get(1, TimeUnit.SECONDS).get().getScheduled()
+                _repository.getLastCompleted(_jobId, _organization)
+                        .toCompletableFuture()
+                        .get(1, TimeUnit.SECONDS)
+                        .get()
+                        .getScheduled()
         );
     }
 
@@ -321,17 +329,25 @@ public abstract class JobExecutionRepositoryIT<T> {
         final Instant scheduled = Instant.now();
         final Throwable error = new RuntimeException("something went wrong.");
 
-        _repository.jobStarted(_jobId, _organization, scheduled).get(1, TimeUnit.SECONDS);
-        _repository.jobSucceeded(_jobId, _organization, scheduled, result).get(1, TimeUnit.SECONDS);
+        _repository.jobStarted(_jobId, _organization, scheduled)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        _repository.jobSucceeded(_jobId, _organization, scheduled, result)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
 
         final JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization)
+                .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS)
                 .get();
         assertThat(execution.getResult(), not(nullValue()));
 
         // A failed updated should *not* clear the start time but it should clear the result
-        _repository.jobFailed(_jobId, _organization, scheduled, error).get(1, TimeUnit.SECONDS);
+        _repository.jobFailed(_jobId, _organization, scheduled, error)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
         final JobExecution<T> updatedExecution = _repository.getLastCompleted(_jobId, _organization)
+                .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS)
                 .get();
 
@@ -379,8 +395,12 @@ public abstract class JobExecutionRepositoryIT<T> {
             for (int i = 0; i < runsPerJob; i++) {
                 final T result = newResult();
                 final Instant scheduled = truncatedNow.minus(Duration.ofDays(runsPerJob - 1 - i));
-                _repository.jobStarted(jobId, _organization, scheduled).get(1, TimeUnit.SECONDS);
-                _repository.jobSucceeded(jobId, _organization, scheduled, result).get(1, TimeUnit.SECONDS);
+                _repository.jobStarted(jobId, _organization, scheduled)
+                        .toCompletableFuture()
+                        .get(1, TimeUnit.SECONDS);
+                _repository.jobSucceeded(jobId, _organization, scheduled, result)
+                        .toCompletableFuture()
+                        .get(1, TimeUnit.SECONDS);
             }
         }
         // Create a failed execution in the "future" for one job id
@@ -391,14 +411,22 @@ public abstract class JobExecutionRepositoryIT<T> {
         // Create an additional job that we don't care about.
         final UUID extraJobId = UUID.randomUUID();
         ensureJobExists(_organization, extraJobId);
-        _repository.jobStarted(extraJobId, _organization, truncatedNow).get(1, TimeUnit.SECONDS);
-        _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult()).get(1, TimeUnit.SECONDS);
+        _repository.jobStarted(extraJobId, _organization, truncatedNow)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult())
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
 
         // Create an additional job with a failure.
         final UUID failedJobId = UUID.randomUUID();
         ensureJobExists(_organization, failedJobId);
-        _repository.jobStarted(extraJobId, _organization, truncatedNow).get(1, TimeUnit.SECONDS);
-        _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error")).get(1, TimeUnit.SECONDS);
+        _repository.jobStarted(extraJobId, _organization, truncatedNow)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
+        _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"))
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
 
         // Request an ID that doesn't exist.
         final UUID nonexistentId = UUID.randomUUID();
@@ -411,6 +439,7 @@ public abstract class JobExecutionRepositoryIT<T> {
         final LocalDate currentDate = ZonedDateTime.ofInstant(truncatedNow, ZoneOffset.UTC).toLocalDate();
         final Map<UUID, JobExecution.Success<T>> successes =
                 _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob))
+                        .toCompletableFuture()
                         .get(1, TimeUnit.SECONDS);
 
         for (final UUID jobId : existingJobIds) {

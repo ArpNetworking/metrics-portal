@@ -66,7 +66,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
 
     }
 
-    private CompletableFuture<ReportExecution> findOrCreateReportExecution(
+    private CompletionStage<ReportExecution> findOrCreateReportExecution(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled
@@ -124,7 +124,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<Report.Result>>> getLastScheduled(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         return CompletableFuture.supplyAsync(() ->
@@ -139,7 +139,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution.Success<Report.Result>>> getLastSuccess(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution.Success<Report.Result>>> getLastSuccess(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         return CompletableFuture.supplyAsync(() -> {
@@ -164,7 +164,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<Report.Result>>> getLastCompleted(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastCompleted(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
         return CompletableFuture.supplyAsync(() ->
@@ -180,21 +180,21 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletableFuture<Void> jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        return _executionHelper.jobStarted(reportId, organization, scheduled).toCompletableFuture();
+        return _executionHelper.jobStarted(reportId, organization, scheduled);
     }
 
     @Override
-    public CompletableFuture<Void> jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
+    public CompletionStage<Void> jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
         return _executionHelper.jobSucceeded(reportId, organization, scheduled, result).toCompletableFuture();
     }
 
     @Override
-    public CompletableFuture<Void> jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        return _executionHelper.jobFailed(reportId, organization, scheduled, error).toCompletableFuture();
+        return _executionHelper.jobFailed(reportId, organization, scheduled, error);
     }
 
     private void assertIsOpen() {

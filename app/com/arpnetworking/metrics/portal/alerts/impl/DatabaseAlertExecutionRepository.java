@@ -109,7 +109,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         );
     }
 
-    private CompletableFuture<AlertExecution> findOrCreateAlertExecution(
+    private CompletionStage<AlertExecution> findOrCreateAlertExecution(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled
@@ -167,7 +167,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<AlertEvaluationResult>>> getLastScheduled(
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastScheduled(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
@@ -186,7 +186,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
+    public CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
@@ -215,7 +215,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> getLastSuccessBatch(
+    public CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> getLastSuccessBatch(
             final List<UUID> jobIds,
             final Organization organization,
             final LocalDate maxLookback
@@ -287,7 +287,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<AlertEvaluationResult>>> getLastCompleted(
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastCompleted(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
@@ -306,7 +306,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<Void> jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
                 ignore -> _helper.jobStarted(alertId, organization, scheduled)
@@ -314,7 +314,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletableFuture<Void> jobSucceeded(
+    public CompletionStage<Void> jobSucceeded(
             final UUID alertId,
             final Organization organization,
             final Instant scheduled,
@@ -323,11 +323,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
                 ignore -> _helper.jobSucceeded(alertId, organization, scheduled, result)
-        ).toCompletableFuture();
+        );
     }
 
     @Override
-    public CompletableFuture<Void> jobFailed(
+    public CompletionStage<Void> jobFailed(
             final UUID alertId,
             final Organization organization,
             final Instant scheduled,
@@ -336,7 +336,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
             ignore -> _helper.jobFailed(alertId, organization, scheduled, error)
-        ).toCompletableFuture();
+        );
     }
 
     private void assertIsOpen() {

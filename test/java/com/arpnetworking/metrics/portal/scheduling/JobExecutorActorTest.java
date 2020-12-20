@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class JobExecutorActorTest {
 
-    private static final Instant T_0 = Instant.ofEpochMilli(0);
+    private static final Instant T_0 = Instant.parse("2020-01-01T00:00:00Z");
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
     private static final Organization ORGANIZATION = TestBeanFactory.organizationFrom(TestBeanFactory.createEbeanOrganization());
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -150,7 +150,7 @@ public final class JobExecutorActorTest {
                 .setOrganization(ORGANIZATION)
                 .build();
         final ActorRef result = makeExecutorActor(job);
-        result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
+        // result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
         return result;
     }
 
@@ -255,6 +255,7 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setSchedule(new PeriodicSchedule.Builder()
                         .setRunAtAndAfter(startAt)
+                        .setRunUntil(T_0.plus(period.getDuration()))
                         .setZone(ZoneId.of("UTC"))
                         .setPeriod(period)
                         .build())
@@ -282,20 +283,17 @@ public final class JobExecutorActorTest {
                 Mockito.eq(ORGANIZATION),
                 Mockito.any());
 
+        // Once we unblock the job, it will continue to execute until it's caught up to runUntil
         blocker.complete(null);
 
         // NOW we should be able to run again; the necessary tick should have been triggered by job completion
-        executor.tell(JobExecutorActor.Tick.INSTANCE, null);
-        Mockito.verify(_execRepo, Mockito.timeout(1000))
+        Mockito.verify(_execRepo, Mockito.timeout(2000))
                 .jobStarted(job.getId(), ORGANIZATION, job.getSchedule().nextRun(Optional.of(startAt)).get());
-//        Mockito.verify(_execRepo, Mockito.after(1000).never()).jobSucceeded(
-//                Mockito.any(),
-//                Mockito.any(),
-//                Mockito.any(),
-//                Mockito.any());
-//        // ...but still, only two executions should ever have started (one for T_0, one for T_0+period i.e. now)
-//        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
-//                .jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
+        // ...but still, only two executions should ever have started (one for T_0, one for T_0+period i.e. now)
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
+                .jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
+                .jobSucceeded(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any(), Mockito.any());
     }
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {
