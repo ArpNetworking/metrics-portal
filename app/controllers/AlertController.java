@@ -37,6 +37,7 @@ import models.internal.scheduling.JobExecution;
 import models.view.PagedContainer;
 import models.view.Pagination;
 import play.libs.Json;
+import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -73,6 +74,7 @@ public class AlertController extends Controller {
 
     // The maximum page size. Any requests larger than this amount will be truncated.
     private final int _maxPageSize;
+    private final HttpExecutionContext _httpContext;
     // The maximum number of executions to fetch per batch.
     private final int _executionsBatchSize;
     // The number of days back to check for executions.
@@ -91,6 +93,7 @@ public class AlertController extends Controller {
      * @param executionRepository Repository for associated alert executions.
      * @param organizationRepository Repository for organizations.
      * @param periodicMetrics Metrics instance for instrumentation.
+     * @param httpContext The current context of execution.
      */
     @Inject
     public AlertController(
@@ -98,13 +101,15 @@ public class AlertController extends Controller {
             final AlertRepository alertRepository,
             final AlertExecutionRepository executionRepository,
             final OrganizationRepository organizationRepository,
-            final PeriodicMetrics periodicMetrics
+            final PeriodicMetrics periodicMetrics,
+            final HttpExecutionContext httpContext
     ) {
         _alertRepository = alertRepository;
         _executionRepository = executionRepository;
         _organizationRepository = organizationRepository;
 
         _maxPageSize = config.getInt(CONFIG_LIMIT);
+        _httpContext = httpContext;
         if (config.hasPath(CONFIG_EXECUTIONS_BATCH_SIZE)) {
             _executionsBatchSize = config.getInt(CONFIG_EXECUTIONS_BATCH_SIZE);
         } else {
@@ -124,20 +129,21 @@ public class AlertController extends Controller {
      * @param id The identifier of the alert.
      * @return The alert, if any, otherwise notFound.
      */
-    public Result get(final UUID id) {
+    public CompletionStage<Result> get(final UUID id) {
         final Organization organization;
         try {
             organization = _organizationRepository.get(request());
         } catch (final NoSuchElementException e) {
-            return internalServerError();
+            return CompletableFuture.completedFuture(internalServerError());
         }
         final Optional<Alert> alert = _alertRepository.getAlert(id, organization);
         return alert
-                .map(a -> ok(Json.toJson(fromInternal(a, organization))))
-                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                .map(a -> fromInternal(a, organization).thenApplyAsync(viewAlert -> ok(Json.toJson(viewAlert)),
+                        _httpContext.current()).toCompletableFuture())
+                .orElseGet(() -> CompletableFuture.completedFuture(notFound(ProblemHelper.createErrorJson(new Problem.Builder()
                         .setProblemCode("alert_problem.NOT_FOUND")
                         .build()
-                )));
+                ))));
     }
 
     /**
@@ -192,9 +198,9 @@ public class AlertController extends Controller {
                             queryResult.values().size(),
                             argLimit,
                             argOffset,
-                            ImmutableMap.of()))))
-
-        );
+                            ImmutableMap.of())))
+            ),
+            _httpContext.current());
     }
 
     private CompletionStage<models.view.alerts.Alert> fromInternal(final Alert alert, final Organization organization) {

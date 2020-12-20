@@ -48,6 +48,8 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import play.libs.concurrent.HttpExecutionContext;
+import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 
@@ -57,6 +59,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -157,7 +160,8 @@ public final class AlertControllerTest {
                     alertRepository,
                     alertExecutionRepository,
                     organizationRepository,
-                    Mockito.mock(PeriodicMetrics.class)
+                    Mockito.mock(PeriodicMetrics.class),
+                    new HttpExecutionContext(_actorSystem.getDispatcher())
             );
         }
 
@@ -219,11 +223,15 @@ public final class AlertControllerTest {
      */
     public static final class TestGetAlert extends SharedSetup {
         @Test
-        public void testGetNotFiringAlert() throws IOException {
+        public void testGetNotFiringAlert() throws Exception {
             final UUID alertId = NOT_FIRING_IDS.get(0);
-            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
+            final Result result = Helpers.invokeWithContext(
+                    Helpers.fakeRequest(),
                     Helpers.contextComponents(),
-                    () -> _controller.get(alertId));
+                    () -> _controller.get(alertId)
+            )
+            .toCompletableFuture()
+            .get();
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -242,11 +250,13 @@ public final class AlertControllerTest {
         }
 
         @Test
-        public void testGetFiringAlert() throws IOException {
+        public void testGetFiringAlert() throws Exception {
             final UUID alertId = FIRING_IDS.get(0);
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
                     Helpers.contextComponents(),
-                    () -> _controller.get(alertId));
+                    () -> _controller.get(alertId))
+                    .toCompletableFuture()
+                    .get();
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -265,11 +275,13 @@ public final class AlertControllerTest {
         }
 
         @Test
-        public void testGetAlertNotFound() {
+        public void testGetAlertNotFound() throws Exception {
             final UUID unknownId = UUID.randomUUID();
             final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
                     Helpers.contextComponents(),
-                    () -> _controller.get(unknownId));
+                    () -> _controller.get(unknownId))
+                    .toCompletableFuture()
+                    .get();
             assertThat(result.status(), is(equalTo(Helpers.NOT_FOUND)));
         }
 
@@ -281,9 +293,12 @@ public final class AlertControllerTest {
     public static class PaginationTests extends SharedSetup {
         @Test
         public void testQueryAlertsSinglePage() throws Exception {
-            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                    () -> _controller.query(ALERT_PAGE_LIMIT, 0).toCompletableFuture().get(1, TimeUnit.SECONDS)
-            );
+            final Result result = Helpers.invokeWithContext(
+                    Helpers.fakeRequest(),
+                    Helpers.contextComponents(),
+                    () -> _controller.query(ALERT_PAGE_LIMIT, 0)
+            ).toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
             final JsonNode page = WebServerHelper.readContentAsJson(result);
             assertThat(page.get("pagination").get("size").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
@@ -318,16 +333,18 @@ public final class AlertControllerTest {
         }
 
         @Test
-        public void testQueryAlertsPaginating() throws IOException {
+        public void testQueryAlertsPaginating() throws Exception {
             final int pageSize = 2;
             final int numPages = TOTAL_ALERT_COUNT / pageSize + 1;
 
             final ImmutableMap.Builder<UUID, models.view.alerts.Alert> retrievedBuilder = new ImmutableMap.Builder<>();
             for (int pageNo = 0; pageNo < numPages; pageNo++) {
                 final int offset = pageNo * pageSize;
-                final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(), Helpers.contextComponents(),
-                        () -> _controller.query(pageSize, offset).toCompletableFuture().get(1, TimeUnit.SECONDS)
-                );
+                final Result result = Helpers.invokeWithContext(
+                        Helpers.fakeRequest(),
+                        Helpers.contextComponents(),
+                        () -> _controller.query(pageSize, offset)
+                ).toCompletableFuture().get(1, TimeUnit.SECONDS);
                 final JsonNode page = WebServerHelper.readContentAsJson(result);
                 assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
                 assertThat(page.get("pagination").get("size").asInt(), is(lessThanOrEqualTo(pageSize)));

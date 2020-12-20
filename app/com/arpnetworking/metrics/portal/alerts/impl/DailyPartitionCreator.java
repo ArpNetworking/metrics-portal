@@ -146,7 +146,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param ref an {@code DailyPartitionCreator}.
      * @param instant The instant being recorded
      * @param timeout timeout for the operation
-     * interrupted for other reasons.
+     *
+     * @return A future that completes when the operation does.
      */
     public static CompletionStage<Void> ensurePartitionExistsForInstant(
             final ActorRef ref,
@@ -316,7 +317,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         //
         // https://ebean.io/docs/intro/queries/jdbc-query
         //
-        // FIXME: Move DB operation off the dispatcher thread pool.
+        // TODO(cbriones): Move DB operation off the dispatcher thread pool.
         final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
         final Transaction tx = _ebeanServer.beginTransaction();
         try {

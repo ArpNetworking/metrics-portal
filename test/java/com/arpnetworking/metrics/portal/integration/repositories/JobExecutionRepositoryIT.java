@@ -151,7 +151,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    public void testJobSucceeded() throws Exception{
+    public void testJobSucceeded() throws Exception {
         final T result = newResult();
         final Instant scheduled = Instant.now();
 

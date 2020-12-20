@@ -56,6 +56,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @param logger The logger for the repository.
      * @param ebeanServer An ebean server.
      * @param adapter The execution adapter for the repository.
+     * @param executor The executor to spawn futures onto.
      */
     public DatabaseExecutionHelper(
             final Logger logger,

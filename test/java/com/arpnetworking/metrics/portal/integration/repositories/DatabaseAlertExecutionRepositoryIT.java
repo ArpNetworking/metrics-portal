@@ -25,13 +25,11 @@ import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import global.DatabaseExecutionContext;
 import io.ebean.EbeanServer;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import org.mockito.Mockito;
-import scala.concurrent.ExecutionContext;
 
 import java.time.Duration;
 import java.time.Instant;

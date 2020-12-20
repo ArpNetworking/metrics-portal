@@ -27,6 +27,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -53,13 +54,16 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<AlertEvaluationResult>>> getLastScheduled(final UUID jobId, final Organization organization) {
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastScheduled(
+            final UUID jobId,
+            final Organization organization
+    ) {
         assertIsOpen();
         return CompletableFuture.completedFuture(Optional.empty());
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
+    public CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
             final UUID jobId, final Organization organization
     ) throws NoSuchElementException {
         assertIsOpen();
@@ -67,7 +71,7 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<AlertEvaluationResult>>> getLastCompleted(
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastCompleted(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
@@ -76,13 +80,17 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletableFuture<Void> jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled
+    ) {
         assertIsOpen();
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Void> jobSucceeded(
+    public CompletionStage<Void> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -93,7 +101,12 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletableFuture<Void> jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
         assertIsOpen();
         return CompletableFuture.completedFuture(null);
     }

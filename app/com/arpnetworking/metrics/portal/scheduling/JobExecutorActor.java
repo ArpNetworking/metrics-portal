@@ -20,7 +20,6 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.cluster.sharding.ShardRegion;
 import akka.pattern.Patterns;
-import akka.pattern.PatternsCS;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.serialization.DeserializationException;
 import com.arpnetworking.commons.serialization.Deserializer;

@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -60,35 +61,39 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<T>>> getLastScheduled(final UUID jobId, final Organization organization) {
+    public CompletionStage<Optional<JobExecution<T>>> getLastScheduled(final UUID jobId, final Organization organization) {
         return CompletableFuture.completedFuture(
                 Optional.ofNullable(_lastRuns.getOrDefault(organization, Collections.emptyMap()).get(jobId))
         );
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution.Success<T>>> getLastSuccess(final UUID jobId, final Organization organization) {
-        final Optional<JobExecution.Success<T>> result = getLastCompletedInner(jobId, organization).flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
-            @Override
-            public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
-                return Optional.empty();
-            }
+    public CompletionStage<Optional<JobExecution.Success<T>>> getLastSuccess(
+            final UUID jobId,
+            final Organization organization
+    ) {
+        final Optional<JobExecution.Success<T>> result = getLastCompletedInner(jobId, organization)
+                .flatMap(new JobExecution.Visitor<T, Optional<JobExecution.Success<T>>>() {
+                    @Override
+                    public Optional<JobExecution.Success<T>> visit(final JobExecution.Started<T> state) {
+                        return Optional.empty();
+                    }
 
-            @Override
-            public Optional<JobExecution.Success<T>> visit(final JobExecution.Success<T> state) {
-                return Optional.of(state);
-            }
+                    @Override
+                    public Optional<JobExecution.Success<T>> visit(final JobExecution.Success<T> state) {
+                        return Optional.of(state);
+                    }
 
-            @Override
-            public Optional<JobExecution.Success<T>> visit(final JobExecution.Failure<T> state) {
-                return Optional.empty();
-            }
-        });
+                    @Override
+                    public Optional<JobExecution.Success<T>> visit(final JobExecution.Failure<T> state) {
+                        return Optional.empty();
+                    }
+                });
         return CompletableFuture.completedFuture(result);
     }
 
     @Override
-    public CompletableFuture<Optional<JobExecution<T>>> getLastCompleted(final UUID jobId, final Organization organization) {
+    public CompletionStage<Optional<JobExecution<T>>> getLastCompleted(final UUID jobId, final Organization organization) {
         return CompletableFuture.completedFuture(getLastCompletedInner(jobId, organization));
     }
 
@@ -116,7 +121,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public CompletableFuture<Void> jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID id, final Organization organization, final Instant scheduled) {
         final JobExecution.Started<T> execution = new JobExecution.Started.Builder<T>()
                 .setJobId(id)
                 .setScheduled(scheduled)
@@ -130,7 +135,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public CompletableFuture<Void> jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
+    public CompletionStage<Void> jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
         final JobExecution.Success<T> execution = new JobExecution.Success.Builder<T>()
                 .setJobId(jobId)
                 .setScheduled(scheduled)
@@ -146,7 +151,12 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public CompletableFuture<Void> jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
         final JobExecution.Failure<T> execution = new JobExecution.Failure.Builder<T>()
                 .setJobId(jobId)
                 .setScheduled(scheduled)

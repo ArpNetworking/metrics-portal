@@ -57,6 +57,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
      * Public constructor.
      *
      * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param executor The executor to spawn futures onto.
      */
     @Inject
     public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer, final Executor executor) {
@@ -186,13 +187,23 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
+    public CompletionStage<Void> jobSucceeded(
+            final UUID reportId,
+            final Organization organization,
+            final Instant scheduled,
+            final Report.Result result
+    ) {
         assertIsOpen();
         return _executionHelper.jobSucceeded(reportId, organization, scheduled, result).toCompletableFuture();
     }
 
     @Override
-    public CompletionStage<Void> jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID reportId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
         assertIsOpen();
         return _executionHelper.jobFailed(reportId, organization, scheduled, error);
     }

@@ -38,6 +38,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -158,7 +159,7 @@ public class DailyPartitionCreatorTest {
             );
             assertThat("range should start from current date", clockDifference, equalTo(0L));
         }
-        Patterns.gracefulStop(ref, MSG_TIMEOUT).toCompletableFuture().get();
+        Patterns.gracefulStop(ref, MSG_TIMEOUT).toCompletableFuture().get(1, TimeUnit.SECONDS);
         _probe.expectTerminated(ref);
     }
 
@@ -171,15 +172,19 @@ public class DailyPartitionCreatorTest {
 
         // The actor will tick on startup.
         _probe.expectMsgClass(ExecuteCall.class);
-
-        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT);
+;
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
         final ExecuteCall call = _probe.expectMsgClass(ExecuteCall.class);
         assertThat(call.getStart(), equalTo(oneWeekAgoLocal));
         assertThat(call.getEnd(), equalTo(oneWeekAgoLocal.plusDays(1)));
         assertThat(call.getSchema(), equalTo(TEST_SCHEMA));
         assertThat(call.getTable(), equalTo(TEST_TABLE));
 
-        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, oneWeekAgo.toInstant(), MSG_TIMEOUT)
+                .toCompletableFuture()
+                .get(1, TimeUnit.SECONDS);
         _probe.expectNoMessage(); // should have been cached
 
         Patterns.gracefulStop(ref, MSG_TIMEOUT).toCompletableFuture().get();
@@ -193,7 +198,9 @@ public class DailyPartitionCreatorTest {
                     throw new PersistenceException("Something went wrong");
                 }
         );
-        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, CLOCK_START, MSG_TIMEOUT);
+        DailyPartitionCreator.ensurePartitionExistsForInstant(ref, CLOCK_START, MSG_TIMEOUT)
+            .toCompletableFuture()
+            .get(1, TimeUnit.SECONDS);
     }
 
     /**
