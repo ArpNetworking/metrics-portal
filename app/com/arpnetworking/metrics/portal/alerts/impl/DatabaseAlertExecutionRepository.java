@@ -44,7 +44,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +71,6 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private final Executor _executor;
     @Nullable
     private ActorRef _partitionCreator;
-    private ConcurrentHashMap<LocalDate, Boolean> _partitionCache = new ConcurrentHashMap<>();
     private final Props _props;
     private final ActorSystem _actorSystem;
 
@@ -309,8 +308,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     @Override
     public CompletableFuture<Void> jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        return _helper.jobStarted(alertId, organization, scheduled);
+        return ensurePartition(scheduled).thenCompose(
+                ignore -> _helper.jobStarted(alertId, organization, scheduled)
+        ).toCompletableFuture();
     }
 
     @Override
@@ -321,8 +321,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        return _helper.jobSucceeded(alertId, organization, scheduled, result);
+        return ensurePartition(scheduled).thenCompose(
+                ignore -> _helper.jobSucceeded(alertId, organization, scheduled, result)
+        ).toCompletableFuture();
     }
 
     @Override
@@ -333,8 +334,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final Throwable error
     ) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        return _helper.jobFailed(alertId, organization, scheduled, error);
+        return ensurePartition(scheduled).thenCompose(
+            ignore -> _helper.jobFailed(alertId, organization, scheduled, error)
+        ).toCompletableFuture();
     }
 
     private void assertIsOpen() {
@@ -348,20 +350,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         }
     }
 
-    private void ensurePartition(final Instant scheduled) {
+    private CompletionStage<Void> ensurePartition(final Instant scheduled) {
         if (_partitionCreator == null) {
             throw new IllegalStateException("partitionCreator should be non-null when open");
         }
-        try {
-            DailyPartitionCreator.ensurePartitionExistsForInstant(
-                    _partitionCreator,
-                    scheduled,
-                    Duration.ofSeconds(1)
-            );
-        } catch (final InterruptedException e) {
-            throw new RuntimeException("partition creation interrupted", e);
-        } catch (final ExecutionException e) {
-            throw new RuntimeException("Could not ensure partition for instant: " + scheduled, e);
-        }
+        return DailyPartitionCreator.ensurePartitionExistsForInstant(
+                _partitionCreator,
+                scheduled,
+                Duration.ofSeconds(1)
+        );
     }
 }

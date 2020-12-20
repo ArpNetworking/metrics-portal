@@ -32,6 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
@@ -181,19 +182,19 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     @Override
     public CompletableFuture<Void> jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        return _executionHelper.jobStarted(reportId, organization, scheduled);
+        return _executionHelper.jobStarted(reportId, organization, scheduled).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
         assertIsOpen();
-        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
+        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result).toCompletableFuture();
     }
 
     @Override
     public CompletableFuture<Void> jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
         assertIsOpen();
-        return _executionHelper.jobFailed(reportId, organization, scheduled, error);
+        return _executionHelper.jobFailed(reportId, organization, scheduled, error).toCompletableFuture();
     }
 
     private void assertIsOpen() {

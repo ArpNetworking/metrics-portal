@@ -155,7 +155,7 @@ public abstract class JobExecutionRepositoryIT<T> {
         final Optional<JobExecution.Success<T>> executionResult =
             _repository.jobStarted(_jobId, _organization, scheduled)
                 .thenCompose(ignored -> _repository.jobSucceeded(_jobId, _organization, scheduled, result))
-                .thenCompose(ignore -> _repository.getLastSuccess(_jobId, _organization))
+                .thenCompose(ignored -> _repository.getLastSuccess(_jobId, _organization))
                 .toCompletableFuture()
                 .get(1, TimeUnit.SECONDS);
 
@@ -270,16 +270,11 @@ public abstract class JobExecutionRepositoryIT<T> {
             markedStarted.add(_repository.jobStarted(_jobId, _organization, t0.plus(dt.multipliedBy(i))));
         }
         CompletableFutures.allOf(markedStarted)
-                .thenCompose(ignore ->
-                        CompletableFutures.allOf(ImmutableList.of(
-                                _repository.jobFailed(_jobId, _organization, t0.plus(dt.multipliedBy(0)), new IllegalStateException()),
-                                _repository.jobFailed(_jobId, _organization, t0.plus(dt.multipliedBy(1)), new IllegalStateException()),
-                                _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(2)), newResult()),
-                                _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(3)), newResult())
-
-                        ))
-                )
-                .get(1, TimeUnit.SECONDS);
+            .thenCompose(ignore -> _repository.jobFailed(_jobId, _organization, t0.plus(dt.multipliedBy(0)), new IllegalStateException()))
+            .thenCompose(ignore -> _repository.jobFailed(_jobId, _organization, t0.plus(dt.multipliedBy(1)), new IllegalStateException()))
+            .thenCompose(ignore -> _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(2)), newResult()))
+            .thenCompose(ignore -> _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(3)), newResult()))
+            .get(1, TimeUnit.SECONDS);
 
         assertEquals(
                 t0.plus(dt.multipliedBy(3)),

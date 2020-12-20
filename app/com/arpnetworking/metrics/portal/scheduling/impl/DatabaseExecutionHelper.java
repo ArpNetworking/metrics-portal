@@ -27,7 +27,7 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
@@ -119,7 +119,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      *
      * @return a future that completes when the update does
      */
-    public CompletableFuture<Void> jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
         return updateExecutionState(
                 jobId,
                 organization,
@@ -141,7 +141,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      *
      * @return a future that completes when the update does
      */
-    public CompletableFuture<Void> jobSucceeded(
+    public CompletionStage<Void> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -169,7 +169,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      *
      * @return a future that completes when the update does
      */
-    public CompletableFuture<Void> jobFailed(
+    public CompletionStage<Void> jobFailed(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -187,7 +187,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
         );
     }
 
-    private CompletableFuture<Void> updateExecutionState(
+    private CompletionStage<Void> updateExecutionState(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -200,13 +200,14 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                 .addData("scheduled", scheduled)
                 .addData("state", state)
                 .log();
-        final Transaction transaction = _ebeanServer.beginTransaction();
         return _adapter.findOrCreateExecution(jobId, organization, scheduled)
                 .thenAcceptAsync(e -> {
-                    update.accept(e);
-                    e.setState(state);
-                    _ebeanServer.save(e);
-                    transaction.commit();
+                    try (Transaction tx = _ebeanServer.beginTransaction()) {
+                        update.accept(e);
+                        e.setState(state);
+                        _ebeanServer.save(e);
+                        tx.commit();
+                    }
                     _logger.debug()
                             .setMessage("Upserted job execution")
                             .addData("job.uuid", jobId)
@@ -214,17 +215,17 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                             .addData("state", state)
                             .log();
                 }, _executor).whenCompleteAsync((ignored, error) -> {
-                    if (error != null) {
-                        transaction.rollback();
-                        _logger.error()
-                                .setMessage("Failed to job report executions")
-                                .addData("job.uuid", jobId)
-                                .addData("scheduled", scheduled)
-                                .addData("state", state)
-                                .setThrowable(error)
-                                .log();
-                        throw new PersistenceException("Failed to upsert job executions", error);
+                    if (error == null) {
+                        return;
                     }
+                    _logger.error()
+                            .setMessage("Failed to job report executions")
+                            .addData("job.uuid", jobId)
+                            .addData("scheduled", scheduled)
+                            .addData("state", state)
+                            .setThrowable(error)
+                            .log();
+                    throw new PersistenceException("Failed to upsert job executions", error);
                 }, _executor);
     }
 
@@ -244,6 +245,6 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
          * @param scheduled The time the execution was scheduled.
          * @return An execution.
          */
-        CompletableFuture<E> findOrCreateExecution(UUID jobId, Organization organization, Instant scheduled);
+        CompletionStage<E> findOrCreateExecution(UUID jobId, Organization organization, Instant scheduled);
     }
 }
