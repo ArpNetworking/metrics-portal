@@ -146,18 +146,6 @@ public final class JobExecutorActorTest {
         return makeExecutorActor(name);
     }
 
-    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
-        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
-                .setRepositoryType(MockableIntJobRepository.class)
-                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
-                .setId(job.getId())
-                .setOrganization(ORGANIZATION)
-                .build();
-        final ActorRef result = makeExecutorActor(job);
-        // result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
-        return result;
-    }
-
     @Test
     public void testJobSuccess() {
         final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>()
@@ -165,7 +153,7 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setResult(123)
                 .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000)).jobSucceeded(
                 j.getId(),
@@ -182,7 +170,7 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setError(error)
                 .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000)).jobFailed(
                 Mockito.eq(j.getId()),
@@ -199,7 +187,7 @@ public final class JobExecutorActorTest {
                         .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -221,7 +209,7 @@ public final class JobExecutorActorTest {
                         .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
         // Actor should have started ticking on its own.
         Mockito.verify(_execRepo, Mockito.after(1000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
@@ -265,7 +253,7 @@ public final class JobExecutorActorTest {
                 .setBlocker(blocker)
                 .build());
 
-        final ActorRef ref = makeAndInitializeExecutorActor(job);
+        final ActorRef ref = makeExecutorActor(job);
         _probe.watch(ref);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
@@ -304,7 +292,7 @@ public final class JobExecutorActorTest {
                 .setBlocker(blocker)
                 .build());
 
-        final ActorRef executor = makeAndInitializeExecutorActor(job);
+        final ActorRef executor = makeExecutorActor(job);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
 

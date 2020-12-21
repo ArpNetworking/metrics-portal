@@ -215,7 +215,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                             .addData("scheduled", scheduled)
                             .addData("state", state)
                             .log();
-                }, _executor).whenCompleteAsync((ignored, error) -> {
+                }, _executor).whenComplete((ignored, error) -> {
                     if (error == null) {
                         return;
                     }
@@ -227,7 +227,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                             .setThrowable(error)
                             .log();
                     throw new PersistenceException("Failed to upsert job executions", error);
-                }, _executor);
+                });
     }
 
     /**

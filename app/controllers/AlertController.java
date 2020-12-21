@@ -174,7 +174,7 @@ public class AlertController extends Controller {
 
         final Optional<Integer> argOffset = Optional.ofNullable(offset);
         if (argOffset.isPresent() && argOffset.get() < 0) {
-            return CompletableFuture.completedFuture(badRequest("Invalid limit; must be greater than or equal to 0"));
+            return CompletableFuture.completedFuture(badRequest("Invalid offset; must be greater than or equal to 0"));
         }
 
         final Instant queryStart = Instant.now();

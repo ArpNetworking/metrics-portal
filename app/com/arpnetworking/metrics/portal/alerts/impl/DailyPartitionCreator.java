@@ -319,8 +319,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         //
         // TODO(cbriones): Move DB operation off the dispatcher thread pool.
         final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
-        final Transaction tx = _ebeanServer.beginTransaction();
-        try {
+        try (Transaction tx = _ebeanServer.beginTransaction()) {
             final Connection conn = tx.getConnection();
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, schema);
@@ -332,8 +331,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             tx.commit();
         } catch (final SQLException e) {
             throw new PersistenceException("Could not create daily partitions", e);
-        } finally {
-            tx.end();
         }
     }
 
