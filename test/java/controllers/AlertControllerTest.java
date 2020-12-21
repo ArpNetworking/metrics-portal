@@ -49,17 +49,14 @@ import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import play.libs.concurrent.HttpExecutionContext;
-import play.mvc.Http;
 import play.mvc.Result;
 import play.test.Helpers;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;

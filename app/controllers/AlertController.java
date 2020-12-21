@@ -139,7 +139,7 @@ public class AlertController extends Controller {
         final Optional<Alert> alert = _alertRepository.getAlert(id, organization);
         return alert
                 .map(a -> fromInternal(a, organization).thenApplyAsync(viewAlert -> ok(Json.toJson(viewAlert)),
-                        _httpContext.current()).toCompletableFuture())
+                        _httpContext.current()))
                 .orElseGet(() -> CompletableFuture.completedFuture(notFound(ProblemHelper.createErrorJson(new Problem.Builder()
                         .setProblemCode("alert_problem.NOT_FOUND")
                         .build()

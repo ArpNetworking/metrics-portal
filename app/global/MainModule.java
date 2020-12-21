@@ -230,7 +230,7 @@ public class MainModule extends AbstractModule {
                 .asEagerSingleton();
 
         bind(QueryExecutor.class).to(DelegatingQueryExecutor.class).asEagerSingleton();
-        bind(DatabaseExecutionContext.class).asEagerSingleton();
+        bind(BlockingIOExecutionContext.class).asEagerSingleton();
     }
 
     @Singleton
@@ -510,7 +510,7 @@ public class MainModule extends AbstractModule {
             final ActorSystem actorSystem,
             @Named("metrics_portal") final EbeanServer portalServer,
             @Named("metrics_portal_ddl") final EbeanServer ddlServer,
-            final DatabaseExecutionContext executionContext
+            final BlockingIOExecutionContext executionContext
     ) {
         final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
 

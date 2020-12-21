@@ -178,20 +178,19 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             killSelfPermanently();
         }
         _ref = Optional.of(ref);
-        if (!_cachedJob.isPresent()) {
-            LOGGER.info()
-                    .setMessage("initializing")
-                    .addData("ref", ref)
-                    .log();
 
-            final Optional<Job<T>> loaded = ref.get(_injector);
-            if (!loaded.isPresent()) {
-                _periodicMetrics.recordCounter("cached_job_reload_success", 0);
-                throw new NoSuchJobException(ref.toString());
-            }
-            _periodicMetrics.recordCounter("cached_job_reload_success", 1);
-            _cachedJob = loaded;
+        LOGGER.info()
+                .setMessage("initializing")
+                .addData("ref", ref)
+                .log();
+
+        final Optional<Job<T>> loaded = ref.get(_injector);
+        if (!loaded.isPresent()) {
+            _periodicMetrics.recordCounter("cached_job_reload_success", 0);
+            throw new NoSuchJobException(ref.toString());
         }
+        _periodicMetrics.recordCounter("cached_job_reload_success", 1);
+        _cachedJob = loaded;
     }
 
 
@@ -209,7 +208,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * @param scheduled The time that the job was scheduled for.
      * @throws ActorNotInitializedException If the actor has never been given a {@link JobRef}, and therefore has nothing to execute.
      */
-    @SuppressWarnings("checkstyle:UnnecessaryParentheses")
     private void attemptExecuteAndUpdateRepository(final Instant scheduled) throws ActorNotInitializedException {
         if (!_cachedJob.isPresent() || !_ref.isPresent()) {
             throw new ActorNotInitializedException("unable to execute: executor is not initialized");
@@ -335,7 +333,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         final Optional<String> eTag = message.getETag();
         final boolean needsUpdate = _cachedJob
                 .flatMap(Job::getETag)
-                .flatMap(e -> eTag.map(e2 -> !e.equals(e2)))
+                .flatMap(currentTag -> eTag.map(e -> !e.equals(currentTag)))
                 .orElse(true);
 
         _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", needsUpdate ? 1 : 0);
@@ -499,6 +497,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     /**
      * Internal message telling the actor to request a permanent shutdown.
+     *
      * This exists because it is unsafe to call `killSelfPermanently` from inside
      * a CompletionStage, since we could be outside an Akka dispatcher thread.
      */
@@ -606,6 +605,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
     }
 
+    /**
+     * Indicates that a reload has completed, and so we can begin ticking again with both the latest cachedJob
+     * and lastRun.
+     */
     private static final class RestartTicker {
         private final Optional<Instant> _lastRun;
 
@@ -615,6 +618,13 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         public Optional<Instant> getLastRun() {
             return _lastRun;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("_lastRun", _lastRun)
+                    .toString();
         }
     }
 

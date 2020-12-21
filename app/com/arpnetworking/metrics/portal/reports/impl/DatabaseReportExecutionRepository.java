@@ -194,7 +194,7 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
             final Report.Result result
     ) {
         assertIsOpen();
-        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result).toCompletableFuture();
+        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
     }
 
     @Override

@@ -310,7 +310,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
                 ignore -> _helper.jobStarted(alertId, organization, scheduled)
-        ).toCompletableFuture();
+        );
     }
 
     @Override

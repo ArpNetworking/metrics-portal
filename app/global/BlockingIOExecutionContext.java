@@ -21,15 +21,23 @@ import com.google.inject.Inject;
 import play.libs.concurrent.CustomExecutionContext;
 
 /**
+ * An execution context for handling execution of blocking operations.
+ * <br>
+ * This should be used when an operation could potentially block the actor dispatcher thread.
+ * In particular, most database operations which use Ebean will be blocking and should be
+ * executed here.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public class DatabaseExecutionContext extends CustomExecutionContext {
+public class BlockingIOExecutionContext extends CustomExecutionContext {
 
     /**
-     * @param actorSystem
+     * Constructor.
+     *
+     * @param actorSystem the actor system used in this application.
      */
     @Inject
-    public DatabaseExecutionContext(final ActorSystem actorSystem) {
-        super(actorSystem, "database-dispatcher");
+    public BlockingIOExecutionContext(final ActorSystem actorSystem) {
+        super(actorSystem, "blocking-io-dispatcher");
     }
 }
