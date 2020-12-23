@@ -20,7 +20,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.pattern.Patterns;
-import akka.pattern.PatternsCS;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -85,7 +84,7 @@ public class DailyPartitionCreatorTest {
 
         _actorSystem = ActorSystem.create();
         _probe = new TestKit(_actorSystem);
-        _executor = Executors.newFixedThreadPool(4);
+        _executor = Executors.newSingleThreadExecutor();
     }
 
     private ActorRef createActor() {
@@ -129,6 +128,7 @@ public class DailyPartitionCreatorTest {
     @After
     public void tearDown() {
         TestKit.shutdownActorSystem(_actorSystem);
+        _executor.shutdown();
     }
 
     @Test
@@ -210,7 +210,7 @@ public class DailyPartitionCreatorTest {
         );
         DailyPartitionCreator.ensurePartitionExistsForInstant(ref, CLOCK_START, MSG_TIMEOUT)
             .toCompletableFuture()
-            .get(5, TimeUnit.SECONDS);
+            .get(1, TimeUnit.SECONDS);
     }
 
     /**

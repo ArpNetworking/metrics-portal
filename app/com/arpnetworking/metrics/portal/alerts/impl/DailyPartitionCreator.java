@@ -87,7 +87,9 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         this(ebeanServer, periodicMetrics, schema, table, scheduleOffset, lookahead, Clock.systemUTC(), executor);
     }
 
-    /* package private */ DailyPartitionCreator(
+    /* CHECKSTYLE.OFF: ParameterNumber */
+    /* package private */
+    DailyPartitionCreator(
             final EbeanServer ebeanServer,
             final PeriodicMetrics periodicMetrics,
             final String schema,
@@ -123,6 +125,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param table The parent table name
      * @param scheduleOffset Execution offset from midnight
      * @param lookahead maximum number of partitions to create in advance
+     * @param executor executor for performing the actual partition creation
      * @return A new Props.
      */
     public static Props props(
@@ -147,6 +150,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 )
         );
     }
+    /* CHECKSTYLE.ON: ParameterNumber */
 
     /**
      * Ask the actor referenced by {@code ref} to create the partition(s) needed
@@ -201,6 +205,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     public Receive createReceive() {
         return new ReceiveBuilder()
                 .matchEquals(TICK, msg -> tick())
+                .match(CreateForRange.class, this::execute)
                 .match(CreateForRangeComplete.class, msg -> {
                     _lastRun = Optional.of(msg.getExecutedAt());
                     updateCache(msg.getRequest().getStart(), msg.getRequest().getEnd());
@@ -213,7 +218,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                         replyTo.tell(resp, self());
                     });
                 })
-                .match(CreateForRange.class, this::execute)
                 .build();
     }
 
@@ -230,7 +234,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     // Message handlers
 
     private void tick() {
-        LOGGER.info("tick");
         recordCounter("tick", 1);
 
         final Instant now = _clock.instant();
@@ -246,11 +249,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             getSelf().tell(createPartitions, getSelf());
             return;
         }
-        LOGGER.info()
-            .setMessage("tick received too soon, skipping.")
-            .addData("nextRun", nextRun)
-            .addData("lastRun", _lastRun)
-            .log();
     }
 
     private void execute(final CreateForRange msg) {
@@ -298,8 +296,10 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         final CompletionStage<CreateForRangeComplete> messageFut =
             execute(_schema, _table, startDate, endDate)
                     .handle((ignore, error) -> {
-                        // The system clock is thread-safe, although the safety of
-                        // any other implementations is unclear.
+                        // The system clock is thread-safe, although we should
+                        // take care with using any other implementation in testing.
+                        //
+                        // While unobservable in testing, this read could potentially race.
                         final Instant completedAt = _clock.instant();
                         recordTimer("create_latency", Duration.between(start, completedAt));
                         recordCounter("create", error == null ? 1 : 0);
@@ -354,8 +354,6 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         // while SQLUpdate does not allow for SELECT statements.
         //
         // https://ebean.io/docs/intro/queries/jdbc-query
-        //
-        // TODO(cbriones): Move DB operation off the dispatcher thread pool.
         return CompletableFuture.runAsync(() -> {
             final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
             try (Transaction tx = _ebeanServer.beginTransaction()) {
