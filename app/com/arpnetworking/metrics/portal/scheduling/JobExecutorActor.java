@@ -352,7 +352,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             initializeOrEnsureRefMatch(ref);
             _periodicMetrics.recordCounter(
                     "jobs/executor/by_type/"
-                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, _cachedJob.getClass().getSimpleName())
+                            + CaseFormat.UPPER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, _cachedJob.get().getClass().getSimpleName())
                             + "/reload",
                     1);
         } catch (final NoSuchJobException error) {
