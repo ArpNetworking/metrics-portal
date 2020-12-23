@@ -56,6 +56,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 /**
  * Tests for {@link JobExecutorActor}.
  *
@@ -63,7 +66,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class JobExecutorActorTest {
 
-    private static final Instant T_0 = Instant.ofEpochMilli(0);
+    private static final Instant T_0 = Instant.parse("2020-01-01T00:00:00Z");
     private static final java.time.Duration TICK_SIZE = java.time.Duration.ofSeconds(1);
     private static final Organization ORGANIZATION = TestBeanFactory.organizationFrom(TestBeanFactory.createEbeanOrganization());
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
@@ -142,18 +145,6 @@ public final class JobExecutorActorTest {
         return makeExecutorActor(name);
     }
 
-    private ActorRef makeAndInitializeExecutorActor(final Job<Integer> job) {
-        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
-                .setRepositoryType(MockableIntJobRepository.class)
-                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
-                .setId(job.getId())
-                .setOrganization(ORGANIZATION)
-                .build();
-        final ActorRef result = makeExecutorActor(job);
-        result.tell(new JobExecutorActor.Reload.Builder<Integer>().setJobRef(ref).build(), null);
-        return result;
-    }
-
     @Test
     public void testJobSuccess() {
         final DummyJob<Integer> j = addJobToRepo(new DummyJob.Builder<Integer>()
@@ -161,7 +152,7 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setResult(123)
                 .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000)).jobSucceeded(
                 j.getId(),
@@ -178,7 +169,7 @@ public final class JobExecutorActorTest {
                 .setTimeout(Duration.ofSeconds(30))
                 .setError(error)
                 .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000)).jobFailed(
                 Mockito.eq(j.getId()),
@@ -195,7 +186,7 @@ public final class JobExecutorActorTest {
                         .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
 
         Mockito.verify(_execRepo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -217,7 +208,7 @@ public final class JobExecutorActorTest {
                         .setTimeout(Duration.ofSeconds(30))
                         .setResult(123)
                         .build());
-        makeAndInitializeExecutorActor(j);
+        makeExecutorActor(j);
         // Actor should have started ticking on its own.
         Mockito.verify(_execRepo, Mockito.after(1000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
@@ -246,8 +237,7 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
-    public void testOnlyExecutesOneAtATime() {
+    public void testActorRequestsStopWhenJobIsDeletedBetweenRuns() {
         final ChronoUnit period = ChronoUnit.MINUTES;
         final Instant startAt = T_0.minus(period.getDuration());
         final CompletableFuture<Void> blocker = new CompletableFuture<>();
@@ -262,7 +252,46 @@ public final class JobExecutorActorTest {
                 .setBlocker(blocker)
                 .build());
 
-        final ActorRef executor = makeAndInitializeExecutorActor(job);
+        final ActorRef ref = makeExecutorActor(job);
+        _probe.watch(ref);
+
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
+
+        // Delete the job definition, and then allow the previous one to complete.
+        assertThat(_repo.removeJob(job.getId(), ORGANIZATION), is(true));
+        blocker.complete(null);
+
+        // We should get a completion from the previous run, but then the job should terminate.
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1))
+                .jobSucceeded(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any(), Mockito.any());
+
+        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
+        ref.tell(msg.stopMessage(), _probe.getRef());
+        _probe.expectTerminated(ref);
+
+        // It should not have started a second run.
+        Mockito.verify(_execRepo, Mockito.times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
+    }
+
+    @Test
+    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
+    public void testOnlyExecutesOneAtATime() {
+        final ChronoUnit period = ChronoUnit.MINUTES;
+        final Instant startAt = T_0.minus(period.getDuration());
+        final CompletableFuture<Void> blocker = new CompletableFuture<>();
+        final DummyJob<Integer> job = addJobToRepo(new DummyJob.Builder<Integer>()
+                .setTimeout(Duration.ofSeconds(30))
+                .setSchedule(new PeriodicSchedule.Builder()
+                        .setRunAtAndAfter(startAt)
+                        .setRunUntil(T_0.plus(period.getDuration()))
+                        .setZone(ZoneId.of("UTC"))
+                        .setPeriod(period)
+                        .build())
+                .setResult(123)
+                .setBlocker(blocker)
+                .build());
+
+        final ActorRef executor = makeExecutorActor(job);
 
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
 
@@ -282,14 +311,17 @@ public final class JobExecutorActorTest {
                 Mockito.eq(ORGANIZATION),
                 Mockito.any());
 
+        // Once we unblock the job, it will continue to execute until it's caught up to runUntil
         blocker.complete(null);
 
         // NOW we should be able to run again; the necessary tick should have been triggered by job completion
-        Mockito.verify(_execRepo, Mockito.timeout(1000))
+        Mockito.verify(_execRepo, Mockito.timeout(2000))
                 .jobStarted(job.getId(), ORGANIZATION, job.getSchedule().nextRun(Optional.of(startAt)).get());
         // ...but still, only two executions should ever have started (one for T_0, one for T_0+period i.e. now)
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
                 .jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
+                .jobSucceeded(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any(), Mockito.any());
     }
 
     private static class MockableIntJobRepository extends MapJobRepository<Integer> {

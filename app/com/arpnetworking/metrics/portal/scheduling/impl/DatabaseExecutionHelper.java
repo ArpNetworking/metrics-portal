@@ -27,6 +27,8 @@ import models.internal.scheduling.JobExecution;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.persistence.PersistenceException;
@@ -46,6 +48,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
     private final EbeanServer _ebeanServer;
     private final ExecutionAdapter<T, E> _adapter;
     private final Logger _logger;
+    private Executor _executor;
 
     /**
      * Public constructor.
@@ -53,15 +56,18 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @param logger The logger for the repository.
      * @param ebeanServer An ebean server.
      * @param adapter The execution adapter for the repository.
+     * @param executor The executor to spawn futures onto.
      */
     public DatabaseExecutionHelper(
             final Logger logger,
             final EbeanServer ebeanServer,
-            final ExecutionAdapter<T, E> adapter
+            final ExecutionAdapter<T, E> adapter,
+            final Executor executor
     ) {
         _ebeanServer = ebeanServer;
         _adapter = adapter;
         _logger = logger;
+        _executor = executor;
     }
 
     /**
@@ -111,9 +117,11 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @param jobId The UUID of the job that completed.
      * @param organization The organization owning the job.
      * @param scheduled The time that the job started running for.
+     *
+     * @return a future that completes when the update does
      */
-    public void jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
-        updateExecutionState(
+    public CompletionStage<Void> jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
+        return updateExecutionState(
                 jobId,
                 organization,
                 scheduled,
@@ -131,9 +139,16 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @param organization The organization owning the job.
      * @param scheduled The time that the completed job-run was scheduled for.
      * @param result The result that the job computed.
+     *
+     * @return a future that completes when the update does
      */
-    public void jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
-        updateExecutionState(
+    public CompletionStage<Void> jobSucceeded(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final T result
+    ) {
+        return updateExecutionState(
                 jobId,
                 organization,
                 scheduled,
@@ -152,9 +167,16 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      * @param organization The organization owning the job.
      * @param scheduled The time that the failed job-run was scheduled for.
      * @param error The exception that caused the job to fail.
+     *
+     * @return a future that completes when the update does
      */
-    public void jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
-        updateExecutionState(
+    public CompletionStage<Void> jobFailed(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
+        return updateExecutionState(
                 jobId,
                 organization,
                 scheduled,
@@ -166,7 +188,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
         );
     }
 
-    private void updateExecutionState(
+    private CompletionStage<Void> updateExecutionState(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -179,31 +201,33 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                 .addData("scheduled", scheduled)
                 .addData("state", state)
                 .log();
-        try (Transaction transaction = _ebeanServer.beginTransaction()) {
-            final E newOrUpdatedExecution = _adapter.findOrCreateExecution(jobId, organization, scheduled);
-            update.accept(newOrUpdatedExecution);
-            newOrUpdatedExecution.setState(state);
-            _ebeanServer.save(newOrUpdatedExecution);
-
-            _logger.debug()
-                    .setMessage("Upserted job execution")
-                    .addData("job.uuid", jobId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .log();
-            transaction.commit();
-            // CHECKSTYLE.OFF: IllegalCatchCheck
-        } catch (final RuntimeException e) {
-            // CHECKSTYLE.ON: IllegalCatchCheck
-            _logger.error()
-                    .setMessage("Failed to job report executions")
-                    .addData("job.uuid", jobId)
-                    .addData("scheduled", scheduled)
-                    .addData("state", state)
-                    .setThrowable(e)
-                    .log();
-            throw new PersistenceException("Failed to upsert job executions", e);
-        }
+        return _adapter.findOrCreateExecution(jobId, organization, scheduled)
+                .thenAcceptAsync(e -> {
+                    try (Transaction tx = _ebeanServer.beginTransaction()) {
+                        update.accept(e);
+                        e.setState(state);
+                        _ebeanServer.save(e);
+                        tx.commit();
+                    }
+                    _logger.debug()
+                            .setMessage("Upserted job execution")
+                            .addData("job.uuid", jobId)
+                            .addData("scheduled", scheduled)
+                            .addData("state", state)
+                            .log();
+                }, _executor).whenComplete((ignored, error) -> {
+                    if (error == null) {
+                        return;
+                    }
+                    _logger.error()
+                            .setMessage("Failed to job report executions")
+                            .addData("job.uuid", jobId)
+                            .addData("scheduled", scheduled)
+                            .addData("state", state)
+                            .setThrowable(error)
+                            .log();
+                    throw new PersistenceException("Failed to upsert job executions", error);
+                });
     }
 
     /**
@@ -222,6 +246,6 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
          * @param scheduled The time the execution was scheduled.
          * @return An execution.
          */
-        E findOrCreateExecution(UUID jobId, Organization organization, Instant scheduled);
+        CompletionStage<E> findOrCreateExecution(UUID jobId, Organization organization, Instant scheduled);
     }
 }

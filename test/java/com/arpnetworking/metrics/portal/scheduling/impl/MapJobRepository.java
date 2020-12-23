@@ -77,6 +77,19 @@ public class MapJobRepository<T> implements JobRepository<T> {
         _jobs.computeIfAbsent(organization, o -> Maps.newHashMap()).put(job.getId(), job);
     }
 
+    /**
+     * Remove a job for an organization.
+     *
+     * @param id job id to remove
+     * @param organization organization to update
+     * @return true if the job was removed, false if it doesn't exist
+     */
+    public boolean removeJob(final UUID id, final Organization organization) {
+        assertIsOpen();
+        final Map<UUID, Job<T>> orgJobs = _jobs.get(organization);
+        return orgJobs != null && orgJobs.remove(id) != null;
+    }
+
     @Override
     public Optional<Job<T>> getJob(final UUID id, final Organization organization) {
         assertIsOpen();

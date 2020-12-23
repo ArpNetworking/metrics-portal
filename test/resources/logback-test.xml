@@ -30,13 +30,15 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
   <logger name="com.arpnetworking" level="DEBUG" />
-  <logger name="com.arpnetworking.metrics" level="INFO" />
+  <logger name="com.arpnetworking.metrics" level="DEBUG" />
+  <logger name="com.arpnetworking.portal.alerts" level="DEBUG" />
   <logger name="controllers" level="DEBUG" />
   <logger name="global" level="DEBUG" />
   <logger name="models" level="DEBUG" />
   <logger name="org.reflections.Reflections" level="ERROR" />
   <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
   <logger name="io.ebean" level="TRACE" />
+  <logger name="io.akka" level="TRACE" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalLogger" />

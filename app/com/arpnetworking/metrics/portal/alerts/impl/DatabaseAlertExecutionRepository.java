@@ -43,7 +43,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -65,6 +68,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
     private static final String ACTOR_NAME = "alertExecutionPartitionCreator";
+    private final Executor _executor;
     @Nullable
     private ActorRef _partitionCreator;
     private final Props _props;
@@ -79,6 +83,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      * @param periodicMetrics A metrics instance to record against.
      * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
      * @param partitionCreationLookahead How many days of partitions to create
+     * @param executor The executor to use for the DB operations
      */
     @Inject
     public DatabaseAlertExecutionRepository(
@@ -87,11 +92,13 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final ActorSystem actorSystem,
             final PeriodicMetrics periodicMetrics,
             final Duration partitionCreationOffset,
-            final int partitionCreationLookahead
+            final int partitionCreationLookahead,
+            final Executor executor
     ) {
         _ebeanServer = portalServer;
-        _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution);
+        _helper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateAlertExecution, executor);
         _actorSystem = actorSystem;
+        _executor = executor;
         _props = DailyPartitionCreator.props(
                 partitionServer,
                 periodicMetrics,
@@ -102,32 +109,35 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         );
     }
 
-    private AlertExecution findOrCreateAlertExecution(
+    private CompletionStage<AlertExecution> findOrCreateAlertExecution(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled
     ) {
-        final Optional<models.ebean.Organization> org = models.ebean.Organization.findByOrganization(_ebeanServer, organization);
-        if (!org.isPresent()) {
-            final String message = String.format(
-                    "Could not find org with organization.uuid=%s",
-                    organization.getId()
+        return CompletableFuture.supplyAsync(() -> {
+            final Optional<models.ebean.Organization> org = models.ebean.Organization.findByOrganization(_ebeanServer,
+                    organization);
+            if (!org.isPresent()) {
+                final String message = String.format(
+                        "Could not find org with organization.uuid=%s",
+                        organization.getId()
+                );
+                throw new EntityNotFoundException(message);
+            }
+            final Optional<AlertExecution> existingExecution = org.flatMap(r ->
+                    _ebeanServer.createQuery(AlertExecution.class)
+                            .where()
+                            .eq("organization.uuid", org.get().getUuid())
+                            .eq("scheduled", scheduled)
+                            .eq("alert_id", jobId)
+                            .findOneOrEmpty()
             );
-            throw new EntityNotFoundException(message);
-        }
-        final Optional<AlertExecution> existingExecution = org.flatMap(r ->
-                _ebeanServer.createQuery(AlertExecution.class)
-                        .where()
-                        .eq("organization.uuid", org.get().getUuid())
-                        .eq("scheduled", scheduled)
-                        .eq("alert_id", jobId)
-                        .findOneOrEmpty()
-        );
-        final AlertExecution newOrUpdatedExecution = existingExecution.orElseGet(AlertExecution::new);
-        newOrUpdatedExecution.setAlertId(jobId);
-        newOrUpdatedExecution.setOrganization(org.get());
-        newOrUpdatedExecution.setScheduled(scheduled);
-        return newOrUpdatedExecution;
+            final AlertExecution newOrUpdatedExecution = existingExecution.orElseGet(AlertExecution::new);
+            newOrUpdatedExecution.setAlertId(jobId);
+            newOrUpdatedExecution.setOrganization(org.get());
+            newOrUpdatedExecution.setScheduled(scheduled);
+            return newOrUpdatedExecution;
+        }, _executor);
     }
 
     @Override
@@ -157,47 +167,55 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public Optional<JobExecution<AlertEvaluationResult>> getLastScheduled(final UUID jobId, final Organization organization)
-            throws NoSuchElementException {
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastScheduled(
+            final UUID jobId,
+            final Organization organization
+    ) throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(AlertExecution.class)
-                .where()
-                .eq("alert_id", jobId)
-                .eq("organization.uuid", organization.getId())
-                .setMaxRows(1)
-                .orderBy()
-                .desc("scheduled")
-                .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel);
+        return CompletableFuture.supplyAsync(() ->
+            _ebeanServer.find(AlertExecution.class)
+                    .where()
+                    .eq("alert_id", jobId)
+                    .eq("organization.uuid", organization.getId())
+                    .setMaxRows(1)
+                    .orderBy()
+                    .desc("scheduled")
+                    .findOneOrEmpty()
+                    .map(DatabaseExecutionHelper::toInternalModel),
+                _executor);
     }
 
     @Override
-    public Optional<JobExecution.Success<AlertEvaluationResult>> getLastSuccess(final UUID jobId, final Organization organization)
-            throws NoSuchElementException {
+    public CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
+            final UUID jobId,
+            final Organization organization
+    ) throws NoSuchElementException {
         assertIsOpen();
-        final Optional<AlertExecution> row = _ebeanServer.find(AlertExecution.class)
-                .where()
-                .eq("alert_id", jobId)
-                .eq("organization.uuid", organization.getId())
-                .eq("state", AlertExecution.State.SUCCESS)
-                .setMaxRows(1)
-                .orderBy()
-                .desc("completed_at")
-                .findOneOrEmpty();
-        if (row.isPresent()) {
-            final JobExecution<AlertEvaluationResult> execution = DatabaseExecutionHelper.toInternalModel(row.get());
-            if (execution instanceof JobExecution.Success) {
-                return Optional.of((JobExecution.Success<AlertEvaluationResult>) execution);
+        return CompletableFuture.supplyAsync(() -> {
+            final Optional<AlertExecution> row = _ebeanServer.find(AlertExecution.class)
+                    .where()
+                    .eq("alert_id", jobId)
+                    .eq("organization.uuid", organization.getId())
+                    .eq("state", AlertExecution.State.SUCCESS)
+                    .setMaxRows(1)
+                    .orderBy()
+                    .desc("completed_at")
+                    .findOneOrEmpty();
+            if (row.isPresent()) {
+                final JobExecution<AlertEvaluationResult> execution = DatabaseExecutionHelper.toInternalModel(row.get());
+                if (execution instanceof JobExecution.Success) {
+                    return Optional.of((JobExecution.Success<AlertEvaluationResult>) execution);
+                }
+                throw new IllegalStateException(
+                        String.format("execution returned was not a success when specified by the query: %s", row.get())
+                );
             }
-            throw new IllegalStateException(
-                    String.format("execution returned was not a success when specified by the query: %s", row.get())
-            );
-        }
-        return Optional.empty();
+            return Optional.empty();
+        }, _executor);
     }
 
     @Override
-    public ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>> getLastSuccessBatch(
+    public CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> getLastSuccessBatch(
             final List<UUID> jobIds,
             final Organization organization,
             final LocalDate maxLookback
@@ -238,39 +256,43 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 .columnMapping("t1.result", "result")
                 .create();
 
-        final List<AlertExecution> rows =
-            _ebeanServer.find(AlertExecution.class)
-                    .setRawSql(rawSql)
-                    .setParameter("scheduled", maxLookback)
-                    .setParameter("organization_uuid", organization.getId())
-                    .setParameter("state", AlertExecution.State.SUCCESS)
-                    .where()
-                    .gt("scheduled", maxLookback)
-                    .in("alertId", jobIds)
-                    .findList();
 
-        return rows
-                .stream()
-                .map(DatabaseExecutionHelper::toInternalModel)
-                .map(result -> {
-                    if (result instanceof JobExecution.Success) {
-                        return (JobExecution.Success<AlertEvaluationResult>) result;
-                    }
-                    throw new IllegalStateException(
-                        String.format("execution returned was not a success when specified by the query: %s", result)
-                    );
-                })
-                .collect(ImmutableMap.toImmutableMap(
-                        JobExecution::getJobId,
-                        execution -> execution
-                ));
+        return CompletableFuture.supplyAsync(() -> {
+            final List<AlertExecution> rows =
+                    _ebeanServer.find(AlertExecution.class)
+                            .setRawSql(rawSql)
+                            .setParameter("scheduled", maxLookback)
+                            .setParameter("organization_uuid", organization.getId())
+                            .setParameter("state", AlertExecution.State.SUCCESS)
+                            .where()
+                            .gt("scheduled", maxLookback)
+                            .in("alertId", jobIds)
+                            .findList();
+            return rows
+                    .stream()
+                    .map(DatabaseExecutionHelper::toInternalModel)
+                    .map(result -> {
+                        if (result instanceof JobExecution.Success) {
+                            return (JobExecution.Success<AlertEvaluationResult>) result;
+                        }
+                        throw new IllegalStateException(
+                                String.format("execution returned was not a success when specified by the query: %s", result)
+                        );
+                    })
+                    .collect(ImmutableMap.toImmutableMap(
+                            JobExecution::getJobId,
+                            execution -> execution
+                    ));
+        }, _executor);
     }
 
     @Override
-    public Optional<JobExecution<AlertEvaluationResult>> getLastCompleted(final UUID jobId, final Organization organization)
-            throws NoSuchElementException {
+    public CompletionStage<Optional<JobExecution<AlertEvaluationResult>>> getLastCompleted(
+            final UUID jobId,
+            final Organization organization
+    ) throws NoSuchElementException {
         assertIsOpen();
-        return _ebeanServer.find(AlertExecution.class)
+        return CompletableFuture.supplyAsync(() -> _ebeanServer.find(AlertExecution.class)
                 .where()
                 .eq("alert_id", jobId)
                 .eq("organization.uuid", organization.getId())
@@ -279,33 +301,42 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 .orderBy()
                 .desc("completed_at")
                 .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel),
+                _executor);
     }
 
     @Override
-    public void jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID alertId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        _helper.jobStarted(alertId, organization, scheduled);
+        return ensurePartition(scheduled).thenCompose(
+                ignore -> _helper.jobStarted(alertId, organization, scheduled)
+        );
     }
 
     @Override
-    public void jobSucceeded(
+    public CompletionStage<Void> jobSucceeded(
             final UUID alertId,
             final Organization organization,
             final Instant scheduled,
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        _helper.jobSucceeded(alertId, organization, scheduled, result);
+        return ensurePartition(scheduled).thenCompose(
+                ignore -> _helper.jobSucceeded(alertId, organization, scheduled, result)
+        );
     }
 
     @Override
-    public void jobFailed(final UUID alertId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID alertId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
         assertIsOpen();
-        ensurePartition(scheduled);
-        _helper.jobFailed(alertId, organization, scheduled, error);
+        return ensurePartition(scheduled).thenCompose(
+            ignore -> _helper.jobFailed(alertId, organization, scheduled, error)
+        );
     }
 
     private void assertIsOpen() {
@@ -319,20 +350,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         }
     }
 
-    private void ensurePartition(final Instant scheduled) {
+    private CompletionStage<Void> ensurePartition(final Instant scheduled) {
         if (_partitionCreator == null) {
             throw new IllegalStateException("partitionCreator should be non-null when open");
         }
-        try {
-            DailyPartitionCreator.ensurePartitionExistsForInstant(
-                    _partitionCreator,
-                    scheduled,
-                    Duration.ofSeconds(1)
-            );
-        } catch (final InterruptedException e) {
-            throw new RuntimeException("partition creation interrupted", e);
-        } catch (final ExecutionException e) {
-            throw new RuntimeException("Could not ensure partition for instant: " + scheduled, e);
-        }
+        return DailyPartitionCreator.ensurePartitionExistsForInstant(
+                _partitionCreator,
+                scheduled,
+                Duration.ofSeconds(1)
+        );
     }
 }

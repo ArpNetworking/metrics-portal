@@ -24,6 +24,8 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * An empty {@code ReportExecutionRepository}.
@@ -42,38 +44,51 @@ public final class NoReportExecutionRepository implements ReportExecutionReposit
     }
 
     @Override
-    public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization) {
-        return Optional.empty();
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastScheduled(final UUID jobId, final Organization organization) {
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 
     @Override
-    public Optional<JobExecution.Success<Report.Result>> getLastSuccess(
+    public CompletionStage<Optional<JobExecution.Success<Report.Result>>> getLastSuccess(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
-        return Optional.empty();
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 
     @Override
-    public Optional<JobExecution<Report.Result>> getLastCompleted(
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastCompleted(
             final UUID jobId,
             final Organization organization
     ) throws NoSuchElementException {
-        return Optional.empty();
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 
     @Override
-    public void jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID jobId, final Organization organization, final Instant scheduled) {
 
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public void jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final Report.Result result) {
+    public CompletionStage<Void> jobSucceeded(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final Report.Result result
+    ) {
 
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public void jobFailed(final UUID jobId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
 
+        return CompletableFuture.completedFuture(null);
     }
 }

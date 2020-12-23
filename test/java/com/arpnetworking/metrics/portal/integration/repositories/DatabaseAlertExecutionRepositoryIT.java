@@ -33,7 +33,9 @@ import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 /**
  * Integration tests for {@link DatabaseAlertExecutionRepository}.
@@ -61,7 +63,8 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
                 _actorSystem,
                 metricsMock,
                 Duration.ZERO,
-                5 // Arbitrary, but helps distinguish logs
+                5, // Arbitrary, but helps distinguish logs
+                Executors.newSingleThreadExecutor()
         );
     }
 
@@ -69,6 +72,11 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     public void ensureJobExists(final Organization organization, final UUID jobId) {
         // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
         // references are not constrained in the underlying execution table.
+        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final Optional<models.ebean.Organization> org = models.ebean.Organization.findByOrganization(server, organization);
+        if (!org.isPresent()) {
+            throw new IllegalStateException("organization not found: " + organization);
+        }
     }
 
     @Override

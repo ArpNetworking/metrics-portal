@@ -45,7 +45,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import javax.persistence.PersistenceException;
 
@@ -146,26 +146,23 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param ref an {@code DailyPartitionCreator}.
      * @param instant The instant being recorded
      * @param timeout timeout for the operation
-     * @throws ExecutionException if an exception was thrown during execution.
-     * @throws InterruptedException if the actor does not respond within the allotted timeout, or if the actor thread was
-     * interrupted for other reasons.
+     *
+     * @return A future that completes when the operation does.
      */
-    public static void ensurePartitionExistsForInstant(
+    public static CompletionStage<Void> ensurePartitionExistsForInstant(
             final ActorRef ref,
             final Instant instant,
             final Duration timeout
-    ) throws ExecutionException, InterruptedException {
+    ) {
         final LocalDate date = ZonedDateTime.ofInstant(instant, ZoneOffset.UTC).toLocalDate();
         final CreateForRange.Builder createPartitions = new CreateForRange.Builder()
                 .setStart(date)
                 .setEnd(date.plusDays(1));
-        Patterns.askWithReplyTo(
+        return Patterns.askWithReplyTo(
                 ref,
                 replyTo -> createPartitions.setReplyTo(replyTo).build(),
                 timeout
-        )
-        .toCompletableFuture()
-        .get();
+        ).thenApply(ignore -> null);
     }
 
     @Override
@@ -319,6 +316,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         // while SQLUpdate does not allow for SELECT statements.
         //
         // https://ebean.io/docs/intro/queries/jdbc-query
+        //
+        // TODO(cbriones): Move DB operation off the dispatcher thread pool.
         final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
         try (Transaction tx = _ebeanServer.beginTransaction()) {
             final Connection conn = tx.getConnection();

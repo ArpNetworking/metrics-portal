@@ -31,6 +31,9 @@ import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -48,50 +51,56 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
     private final EbeanServer _ebeanServer;
     private final DatabaseExecutionHelper<Report.Result, ReportExecution> _executionHelper;
+    private final Executor _executor;
 
     /**
      * Public constructor.
      *
      * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param executor The executor to spawn futures onto.
      */
     @Inject
-    public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer) {
+    public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer, final Executor executor) {
         _ebeanServer = ebeanServer;
-        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution);
+        _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution, executor);
+        _executor = executor;
 
     }
 
-    private ReportExecution findOrCreateReportExecution(
+    private CompletionStage<ReportExecution> findOrCreateReportExecution(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled
     ) {
-        final Optional<models.ebean.Report> report = models.ebean.Organization.findByOrganization(_ebeanServer, organization)
-                .flatMap(beanOrg -> models.ebean.Report.findByUUID(
-                        _ebeanServer,
-                        beanOrg,
-                        jobId
-                ));
-        if (!report.isPresent()) {
-            final String message = String.format(
-                    "Could not find report with uuid=%s, organization.uuid=%s",
-                    jobId,
-                    organization.getId()
-            );
-            throw new EntityNotFoundException(message);
-        }
+        return CompletableFuture.supplyAsync(() -> {
+            final Optional<models.ebean.Report> report = models.ebean.Organization.findByOrganization(_ebeanServer,
+                    organization)
+                    .flatMap(beanOrg -> models.ebean.Report.findByUUID(
+                            _ebeanServer,
+                            beanOrg,
+                            jobId
+                    ));
+            if (!report.isPresent()) {
+                final String message = String.format(
+                        "Could not find report with uuid=%s, organization.uuid=%s",
+                        jobId,
+                        organization.getId()
+                );
+                throw new EntityNotFoundException(message);
+            }
 
-        final Optional<ReportExecution> existingExecution = report.flatMap(r ->
-                _ebeanServer.createQuery(ReportExecution.class)
-                        .where()
-                        .eq("report", r)
-                        .eq("scheduled", scheduled)
-                        .findOneOrEmpty()
-        );
-        final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
-        newOrUpdatedExecution.setReport(report.get());
-        newOrUpdatedExecution.setScheduled(scheduled);
-        return newOrUpdatedExecution;
+            final Optional<ReportExecution> existingExecution = report.flatMap(r ->
+                    _ebeanServer.createQuery(ReportExecution.class)
+                            .where()
+                            .eq("report", r)
+                            .eq("scheduled", scheduled)
+                            .findOneOrEmpty()
+            );
+            final ReportExecution newOrUpdatedExecution = existingExecution.orElse(new ReportExecution());
+            newOrUpdatedExecution.setReport(report.get());
+            newOrUpdatedExecution.setScheduled(scheduled);
+            return newOrUpdatedExecution;
+        }, _executor);
     }
 
     private ExpressionList<ReportExecution> findExecutions(final UUID jobId, final Organization organization) {
@@ -116,69 +125,87 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public Optional<JobExecution<Report.Result>> getLastScheduled(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastScheduled(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return findExecutions(jobId, organization)
+        return CompletableFuture.supplyAsync(() ->
+            findExecutions(jobId, organization)
                 .setMaxRows(1)
                 .orderBy()
                 .desc("scheduled")
                 .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel);
+                .map(DatabaseExecutionHelper::toInternalModel),
+            _executor
+        );
     }
 
     @Override
-    public Optional<JobExecution.Success<Report.Result>> getLastSuccess(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution.Success<Report.Result>>> getLastSuccess(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        final Optional<ReportExecution> row =
-            findExecutions(jobId, organization)
-                .eq("state", ReportExecution.State.SUCCESS)
-                .orderBy()
-                .desc("completed_at")
-                .setMaxRows(1)
-                .findOneOrEmpty();
-        if (row.isPresent()) {
-            final JobExecution<Report.Result> execution = DatabaseExecutionHelper.toInternalModel(row.get());
-            if (execution instanceof JobExecution.Success) {
-                return Optional.of((JobExecution.Success<Report.Result>) execution);
+        return CompletableFuture.supplyAsync(() -> {
+            final Optional<ReportExecution> row =
+                    findExecutions(jobId, organization)
+                            .eq("state", ReportExecution.State.SUCCESS)
+                            .orderBy()
+                            .desc("completed_at")
+                            .setMaxRows(1)
+                            .findOneOrEmpty();
+            if (row.isPresent()) {
+                final JobExecution<Report.Result> execution = DatabaseExecutionHelper.toInternalModel(row.get());
+                if (execution instanceof JobExecution.Success) {
+                    return Optional.of((JobExecution.Success<Report.Result>) execution);
+                }
+                throw new IllegalStateException(
+                        String.format("execution returned was not a success when specified by the query: %s", row.get())
+                );
             }
-            throw new IllegalStateException(
-                    String.format("execution returned was not a success when specified by the query: %s", row.get())
-            );
-        }
-        return Optional.empty();
+            return Optional.empty();
+        }, _executor);
     }
 
     @Override
-    public Optional<JobExecution<Report.Result>> getLastCompleted(final UUID jobId, final Organization organization)
+    public CompletionStage<Optional<JobExecution<Report.Result>>> getLastCompleted(final UUID jobId, final Organization organization)
             throws NoSuchElementException {
         assertIsOpen();
-        return findExecutions(jobId, organization)
-                .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
-                .orderBy()
-                .desc("completed_at")
-                .setMaxRows(1)
-                .findOneOrEmpty()
-                .map(DatabaseExecutionHelper::toInternalModel);
+        return CompletableFuture.supplyAsync(() ->
+            findExecutions(jobId, organization)
+                    .in("state", ReportExecution.State.SUCCESS, ReportExecution.State.FAILURE)
+                    .orderBy()
+                    .desc("completed_at")
+                    .setMaxRows(1)
+                    .findOneOrEmpty()
+                    .map(DatabaseExecutionHelper::toInternalModel),
+            _executor
+        );
     }
 
     @Override
-    public void jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
+    public CompletionStage<Void> jobStarted(final UUID reportId, final Organization organization, final Instant scheduled) {
         assertIsOpen();
-        _executionHelper.jobStarted(reportId, organization, scheduled);
+        return _executionHelper.jobStarted(reportId, organization, scheduled);
     }
 
     @Override
-    public void jobSucceeded(final UUID reportId, final Organization organization, final Instant scheduled, final Report.Result result) {
+    public CompletionStage<Void> jobSucceeded(
+            final UUID reportId,
+            final Organization organization,
+            final Instant scheduled,
+            final Report.Result result
+    ) {
         assertIsOpen();
-        _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
+        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
     }
 
     @Override
-    public void jobFailed(final UUID reportId, final Organization organization, final Instant scheduled, final Throwable error) {
+    public CompletionStage<Void> jobFailed(
+            final UUID reportId,
+            final Organization organization,
+            final Instant scheduled,
+            final Throwable error
+    ) {
         assertIsOpen();
-        _executionHelper.jobFailed(reportId, organization, scheduled, error);
+        return _executionHelper.jobFailed(reportId, organization, scheduled, error);
     }
 
     private void assertIsOpen() {
