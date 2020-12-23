@@ -20,6 +20,7 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -37,8 +38,13 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import javax.persistence.PersistenceException;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -69,6 +75,7 @@ public class DailyPartitionCreatorTest {
     // ActorSystem fields
     private ActorSystem _actorSystem;
     private TestKit _probe;
+    private ExecutorService _executor;
 
     @Before
     public void setUp() {
@@ -78,14 +85,15 @@ public class DailyPartitionCreatorTest {
 
         _actorSystem = ActorSystem.create();
         _probe = new TestKit(_actorSystem);
+        _executor = Executors.newFixedThreadPool(4);
     }
 
     private ActorRef createActor() {
-        return createActor(() -> { });
+        return createActor(() -> CompletableFuture.completedFuture(null));
     }
 
     @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
-    private ActorRef createActor(final Runnable onExecute) {
+    private ActorRef createActor(final Supplier<CompletionStage<Void>> onExecute) {
         // Create an actor with the db execution behavior mocked out.
         final Props props = Props.create(
                 DailyPartitionCreator.class,
@@ -96,20 +104,20 @@ public class DailyPartitionCreatorTest {
                         TEST_TABLE,
                         Duration.ZERO,
                         (int) TEST_LOOKAHEAD,
-                        _clock
+                        _clock,
+                        _executor
                 ) {
                     @Override
-                    protected void execute(
+                    protected CompletionStage<Void> execute(
                             final String schema,
                             final String table,
                             final LocalDate startDate,
                             final LocalDate endDate
                     ) {
-                        onExecute.run();
-                        _probe.getRef().tell(
-                                new ExecuteCall(schema, table, startDate, endDate),
-                                _probe.getRef()
-                        );
+                        return onExecute.get()
+                                .whenComplete((ignore, error) -> {
+                                    _probe.getRef().tell(new ExecuteCall(schema, table, startDate, endDate), ActorRef.noSender());
+                                });
                     }
                 }
         );
@@ -195,12 +203,14 @@ public class DailyPartitionCreatorTest {
     public void testExecutionError() throws Exception {
         final ActorRef ref = createActor(
                 () -> {
-                    throw new PersistenceException("Something went wrong");
+                    final CompletableFuture<Void> fut = new CompletableFuture<>();
+                    fut.completeExceptionally(new PersistenceException("Something went wrong"));
+                    return fut;
                 }
         );
         DailyPartitionCreator.ensurePartitionExistsForInstant(ref, CLOCK_START, MSG_TIMEOUT)
             .toCompletableFuture()
-            .get(1, TimeUnit.SECONDS);
+            .get(5, TimeUnit.SECONDS);
     }
 
     /**
