@@ -106,7 +106,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 "alert_executions",
                 partitionCreationOffset,
                 partitionCreationLookahead,
-                _actorSystem.getDispatcher()
+                _executor
         );
     }
 
