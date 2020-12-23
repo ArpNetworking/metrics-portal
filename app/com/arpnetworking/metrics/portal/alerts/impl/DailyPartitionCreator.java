@@ -203,9 +203,9 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .matchEquals(TICK, msg -> tick())
                 .match(CreateForRangeComplete.class, msg -> {
                     _lastRun = Optional.of(msg.getExecutedAt());
-                    updateCache(msg.getStart(), msg.getEnd());
+                    updateCache(msg.getRequest().getStart(), msg.getRequest().getEnd());
 
-                    msg.getReplyTo().ifPresent(replyTo -> {
+                    msg.getRequest().getReplyTo().ifPresent(replyTo -> {
                         final Status.Status resp = msg.getError()
                                 .map(err -> (Status.Status) new Status.Failure(err))
                                 .orElseGet(() -> new Status.Success(null));
@@ -213,9 +213,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                         replyTo.tell(resp, self());
                     });
                 })
-                .match(CreateForRange.class, msg -> {
-                    execute(msg.getStart(), msg.getEnd(), msg.getReplyTo());
-                })
+                .match(CreateForRange.class, this::execute)
                 .build();
     }
 
@@ -255,13 +253,16 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             .log();
     }
 
-    private void execute(final LocalDate startDate, final LocalDate endDate, final Optional<ActorRef> replyTo) {
+    private void execute(final CreateForRange msg) {
 
         // Much like other portions of the codebase dealing with time, the dates
         // used in this class are all fixed to UTC. So while the code in this
         // method uses a LocalDate, there's an implicit assumption that all
         // dates are UTC and these conversions happen at the interaction
         // boundary (tick, ensurePartitionExists).
+
+        final LocalDate startDate = msg.getStart();
+        final LocalDate endDate = msg.getEnd();
 
         LocalDate d = startDate;
         boolean allPartitionsExist = true;
@@ -281,7 +282,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     .addData("endDate", endDate)
                     .log();
             // Just reply directly instead of going through CreateForRangeComplete
-            replyTo.ifPresent(ref -> ref.tell(new Status.Success(null), self()));
+            msg.getReplyTo().ifPresent(ref -> ref.tell(new Status.Success(null), self()));
             return;
         }
 
@@ -312,13 +313,11 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                                     .setThrowable(error)
                                     .log();
                         }
-                        final CreateForRangeComplete.Builder msgBuilder = new CreateForRangeComplete.Builder()
-                                .setStart(startDate)
-                                .setEnd(endDate)
+                        return new CreateForRangeComplete.Builder()
+                                .setRequest(msg)
                                 .setError(error)
-                                .setExecutedAt(completedAt);
-                        replyTo.ifPresent(msgBuilder::setReplyTo);
-                        return msgBuilder.build();
+                                .setExecutedAt(completedAt)
+                                .build();
                     });
         Patterns.pipe(messageFut, getContext().getDispatcher()).to(self());
     }
@@ -444,30 +443,18 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     }
 
     private static final class CreateForRangeComplete {
-        private final LocalDate _start;
-        private final LocalDate _end;
-        private final Optional<ActorRef> _replyTo;
+        private final CreateForRange _request;
         private final Instant _executedAt;
         private final Optional<Throwable> _error;
 
         private CreateForRangeComplete(final CreateForRangeComplete.Builder builder) {
-            _start = builder._start;
-            _end = builder._end;
-            _replyTo = Optional.ofNullable(builder._replyTo);
+            _request = builder._request;
             _executedAt = builder._executedAt;
             _error = Optional.ofNullable(builder._error);
         }
 
-        public LocalDate getStart() {
-            return _start;
-        }
-
-        public LocalDate getEnd() {
-            return _end;
-        }
-
-        public Optional<ActorRef> getReplyTo() {
-            return _replyTo;
+        public CreateForRange getRequest() {
+            return _request;
         }
 
         public Instant getExecutedAt() {
@@ -481,10 +468,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         static final class Builder extends OvalBuilder<CreateForRangeComplete> {
             @Nullable
             private Throwable _error;
-            private LocalDate _start;
-            private LocalDate _end;
-            @Nullable
-            private ActorRef _replyTo;
+            @NotNull
+            private CreateForRange _request;
             @NotNull
             private Instant _executedAt;
 
@@ -493,35 +478,13 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             }
 
             /**
-             * Sets the start.
+             * Sets the original request.
              *
-             * @param start the start.
+             * @param request the original request.
              * @return This instance of {@code Builder} for chaining.
              */
-            public Builder setStart(final LocalDate start) {
-                _start = start;
-                return this;
-            }
-
-            /**
-             * Sets the end.
-             *
-             * @param end the end.
-             * @return This instance of {@code Builder} for chaining.
-             */
-            public Builder setEnd(final LocalDate end) {
-                _end = end;
-                return this;
-            }
-
-            /**
-             * Sets the reply to.
-             *
-             * @param replyTo the reply to.
-             * @return This instance of {@code Builder} for chaining.
-             */
-            public Builder setReplyTo(final ActorRef replyTo) {
-                _replyTo = replyTo;
+            public Builder setRequest(final CreateForRange request) {
+                _request = request;
                 return this;
             }
 
