@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import models.internal.Organization;
+import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
 import models.internal.scheduling.JobExecution;
 
@@ -71,14 +72,19 @@ public final class NoReportExecutionRepository implements ReportExecutionReposit
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<Report.Result>> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
             final Report.Result result
     ) {
-
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(new JobExecution.Success.Builder<Report.Result>()
+                .setJobId(jobId)
+                .setStartedAt(scheduled)
+                .setCompletedAt(scheduled)
+                .setScheduled(scheduled)
+                .setResult(new DefaultReportResult())
+                .build());
     }
 
     @Override

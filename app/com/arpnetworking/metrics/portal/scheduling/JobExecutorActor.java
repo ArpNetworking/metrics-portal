@@ -413,7 +413,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     ref.getJobId(),
                     ref.getOrganization(),
                     message.getScheduled(),
-                    typedMessage.getResult());
+                    typedMessage.getResult()
+                ).thenApply(ignore -> null);
         } else {
             LOGGER.error()
                     .setMessage("marking job as failed")

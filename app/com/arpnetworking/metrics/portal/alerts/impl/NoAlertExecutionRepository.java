@@ -90,7 +90,7 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<AlertEvaluationResult>> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
