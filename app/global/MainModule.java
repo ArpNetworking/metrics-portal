@@ -54,6 +54,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.CacheActor;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -182,6 +183,7 @@ public class MainModule extends AbstractModule {
         bind(ReportExecutionRepository.class)
                 .toProvider(ReportExecutionRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(AlertExecutionCacheProvider.class);
 
         // Background tasks
         bind(ActorRef.class)
@@ -217,6 +219,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("AlertExecutionCache"))
+                .toProvider(AlertExecutionCacheProvider.class)
                 .asEagerSingleton();
         bind(JobRefSerializer.class).to(DefaultJobRefSerializer.class);
 
@@ -1022,6 +1028,29 @@ public class MainModule extends AbstractModule {
                     _partitioner,
                     _consistencyChecker,
                     _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+            );
+        }
+    }
+
+    private static final class AlertExecutionCacheProvider extends ClusterSingletonProvider {
+        private static final String ROLE_NAME = "alert_execution_cache";
+        private final PeriodicMetrics _periodicMetrics;
+
+        @Inject
+        AlertExecutionCacheProvider(
+                final ActorSystem system,
+                final Features features,
+                final PeriodicMetrics periodicMetrics
+        ) {
+            super(system, true, ROLE_NAME, "alert-execution-cache");
+            _periodicMetrics = periodicMetrics;
+        }
+
+        @Override
+        public Props getProps() {
+            return CacheActor.props(
+                    "alert-execution-cache",
+                    _periodicMetrics
             );
         }
     }
