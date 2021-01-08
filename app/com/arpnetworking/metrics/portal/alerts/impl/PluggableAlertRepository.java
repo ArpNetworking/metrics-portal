@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
@@ -50,7 +49,6 @@ import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
-import play.Environment;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -102,8 +100,6 @@ public class PluggableAlertRepository implements AlertRepository {
      *
      * @param objectMapper The object mapper to use for alert deserialization.
      * @param periodicMetrics A metrics instance to record against.
-     * @param injector The guice injector.
-     * @param environment The play environment.
      * @param alertJobCoordinator A reference to the alert job coordinator.
      * @param config The application configuration.
      */
@@ -111,8 +107,6 @@ public class PluggableAlertRepository implements AlertRepository {
     public PluggableAlertRepository(
             final ObjectMapper objectMapper,
             final PeriodicMetrics periodicMetrics,
-            final Injector injector,
-            final Environment environment,
             @Named("AlertJobCoordinator")
             final ActorRef alertJobCoordinator,
             @Assisted final Config config
@@ -120,7 +114,7 @@ public class PluggableAlertRepository implements AlertRepository {
         this(
                 objectMapper,
                 periodicMetrics,
-                ConfigurationHelper.toInstanceMapped(injector, environment, config.getConfig("configProvider")),
+                ConfigurationHelper.toInstanceMapped(ConfigProvider.class, objectMapper, config.getConfig("configProvider")),
                 UUID.fromString(config.getString("organization")),
                 config.getDuration("openTimeout"),
                 alertJobCoordinator

@@ -19,14 +19,18 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.pattern.Patterns;
+import com.arpnetworking.commons.builder.OvalBuilder;
+import com.arpnetworking.commons.java.time.TimeAdapters;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import global.BlockingIOExecutionContext;
 import io.ebean.EbeanServer;
 import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
@@ -35,6 +39,8 @@ import models.internal.Organization;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
+import net.sf.oval.constraint.NotNull;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,7 +56,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.persistence.EntityNotFoundException;
 
 /**
@@ -106,6 +114,18 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 "alert_executions",
                 partitionCreationOffset,
                 partitionCreationLookahead
+        );
+    }
+
+    private DatabaseAlertExecutionRepository(final Builder builder) {
+        this(
+            builder._portalServer,
+            builder._ddlServer,
+            builder._actorSystem,
+            builder._periodicMetrics,
+            builder._partitionConfig.getOffset(),
+            builder._partitionConfig.getLookahead(),
+            builder._context
         );
     }
 
@@ -314,7 +334,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<AlertEvaluationResult>> jobSucceeded(
             final UUID alertId,
             final Organization organization,
             final Instant scheduled,
@@ -323,7 +343,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
                 ignore -> _helper.jobSucceeded(alertId, organization, scheduled, result)
-        );
+        )
+        .thenApply(DatabaseExecutionHelper::toInternalModel)
+        .thenApply(e -> {
+            if (!(e instanceof JobExecution.Success)) {
+                throw new IllegalStateException("not a success");
+            }
+            return (JobExecution.Success<AlertEvaluationResult>) e;
+        });
     }
 
     @Override
@@ -360,4 +387,97 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 Duration.ofSeconds(1)
         );
     }
+
+    /**
+     * Builder for instances of {@link DatabaseAlertExecutionRepository}.
+     */
+    public static final class Builder extends OvalBuilder<DatabaseAlertExecutionRepository> {
+        @NotNull
+        private PartitionConfig _partitionConfig;
+
+        @NotNull
+        @JacksonInject
+        private BlockingIOExecutionContext _context;
+        @NotNull
+        @JacksonInject
+        private PeriodicMetrics _periodicMetrics;
+        @NotNull
+        @JacksonInject
+        @Named("metrics_portal")
+        private EbeanServer _portalServer;
+        @NotNull
+        @JacksonInject
+        @Named("metrics_portal_ddl")
+        private EbeanServer _ddlServer;
+        @NotNull
+        @JacksonInject
+        private ActorSystem _actorSystem;
+
+        /**
+         * Construct a Builder with default values.
+         */
+        public Builder() {
+            super((Function<Builder, DatabaseAlertExecutionRepository>) DatabaseAlertExecutionRepository::new);
+        }
+
+        /**
+         * Sets the partition config. Required. Cannot be null.
+         *
+         * @param partitionConfig the partition config.
+         * @return This instance of {@code Builder} for chaining.
+         */
+        Builder setPartitionConfig(final PartitionConfig partitionConfig) {
+            _partitionConfig = partitionConfig;
+            return this;
+        }
+    }
+
+    static final class PartitionConfig {
+        private final Integer _lookahead;
+        private final Duration _offset;
+
+        private PartitionConfig(final Builder builder) {
+            _lookahead = builder._lookahead;
+            _offset = Duration.of(builder._offset.length(), TimeAdapters.toChronoUnit(builder._offset.unit()));
+        }
+
+        public Duration getOffset() {
+            return _offset;
+        }
+
+        public Integer getLookahead() {
+            return _lookahead;
+        }
+
+        static final class Builder extends OvalBuilder<PartitionConfig> {
+            @NotNull
+            private Integer _lookahead = 7;
+            private scala.concurrent.duration.Duration _offset = FiniteDuration.apply(0, TimeUnit.SECONDS);
+
+            Builder() {
+                super(PartitionConfig::new);
+            }
+
+            /**
+             * Set the lookahead. Optional. Defaults to 7.
+             * @param lookahead The lookahead.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setLookahead(final int lookahead) {
+                _lookahead = lookahead;
+                return this;
+            }
+
+            /**
+             * Set the offset. Optional. Defaults to 0.
+             * @param offset The offset.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setOffset(final String offset) {
+                _offset = FiniteDuration.apply(offset);
+                return this;
+            }
+        }
+    }
+
 }
