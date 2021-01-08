@@ -123,8 +123,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             builder._ddlServer,
             builder._actorSystem,
             builder._periodicMetrics,
-            builder._partitionConfig.getOffset(),
-            builder._partitionConfig.getLookahead(),
+            builder._partitionManager.getOffset(),
+            builder._partitionManager.getLookahead(),
             builder._context
         );
     }
@@ -386,7 +386,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      */
     public static final class Builder extends OvalBuilder<DatabaseAlertExecutionRepository> {
         @NotNull
-        private PartitionConfig _partitionConfig;
+        private PartitionManager _partitionManager;
 
         @NotNull
         @JacksonInject
@@ -416,20 +416,20 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         /**
          * Sets the partition config. Required. Cannot be null.
          *
-         * @param partitionConfig the partition config.
+         * @param partitionManager the partition config.
          * @return This instance of {@code Builder} for chaining.
          */
-        Builder setPartitionConfig(final PartitionConfig partitionConfig) {
-            _partitionConfig = partitionConfig;
+        Builder setPartitionManager(final PartitionManager partitionManager) {
+            _partitionManager = partitionManager;
             return this;
         }
     }
 
-    static final class PartitionConfig {
+    static final class PartitionManager {
         private final Integer _lookahead;
         private final Duration _offset;
 
-        private PartitionConfig(final Builder builder) {
+        private PartitionManager(final Builder builder) {
             _lookahead = builder._lookahead;
             _offset = Duration.of(builder._offset.length(), TimeAdapters.toChronoUnit(builder._offset.unit()));
         }
@@ -442,13 +442,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             return _lookahead;
         }
 
-        static final class Builder extends OvalBuilder<PartitionConfig> {
+        static final class Builder extends OvalBuilder<PartitionManager> {
             @NotNull
             private Integer _lookahead = 7;
+            @NotNull
             private scala.concurrent.duration.Duration _offset = FiniteDuration.apply(0, TimeUnit.SECONDS);
 
             Builder() {
-                super(PartitionConfig::new);
+                super(PartitionManager::new);
             }
 
             /**
