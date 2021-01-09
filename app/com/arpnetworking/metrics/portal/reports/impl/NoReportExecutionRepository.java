@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.reports.impl;
 
 import com.arpnetworking.metrics.portal.reports.ReportExecutionRepository;
 import models.internal.Organization;
-import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
 import models.internal.scheduling.JobExecution;
 
@@ -83,7 +82,7 @@ public final class NoReportExecutionRepository implements ReportExecutionReposit
                 .setStartedAt(scheduled)
                 .setCompletedAt(scheduled)
                 .setScheduled(scheduled)
-                .setResult(new DefaultReportResult())
+                .setResult(result)
                 .build());
     }
 

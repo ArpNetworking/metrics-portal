@@ -97,7 +97,13 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(new JobExecution.Success.Builder<AlertEvaluationResult>()
+                .setJobId(jobId)
+                .setStartedAt(scheduled)
+                .setCompletedAt(scheduled)
+                .setScheduled(scheduled)
+                .setResult(result)
+                .build());
     }
 
     @Override
