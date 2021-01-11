@@ -16,6 +16,7 @@
 
 package com.arpnetworking.commons.tagger;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableMap;
 
 /**
@@ -27,6 +28,10 @@ import com.google.common.collect.ImmutableMap;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        property = "type"
+)
 public interface Tagger {
     /**
      * Return the tags to apply.

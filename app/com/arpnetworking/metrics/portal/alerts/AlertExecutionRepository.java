@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 
@@ -29,6 +30,10 @@ import models.internal.scheduling.JobExecution;
  * This class is intended for use as a type-token so that Guice can reflectively instantiate
  * the {@code JobExecutionRepository} at runtime. Scheduling code should be using a generic {@code JobExecutionRepository}.
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        property = "type"
+)
 public interface AlertExecutionRepository extends JobExecutionRepository<AlertEvaluationResult> {
 }
 

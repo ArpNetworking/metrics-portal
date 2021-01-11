@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.config;
 
 import com.arpnetworking.metrics.portal.config.impl.StaticFileConfigProvider;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.io.InputStream;
 import java.util.function.Consumer;
@@ -28,6 +29,10 @@ import java.util.function.Consumer;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        property = "type"
+)
 public interface ConfigProvider {
     /**
      * Start this config provider with the given {@code update} function.

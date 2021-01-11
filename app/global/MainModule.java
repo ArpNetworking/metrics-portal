@@ -54,7 +54,6 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -90,7 +89,10 @@ import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
+import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -115,7 +117,6 @@ import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
 import play.libs.Json;
-import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
@@ -407,6 +408,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ObjectMapper provideObjectMapper(
+            final Injector injector,
             final ApplicationLifecycle lifecycle,
             final ActorSystem actorSystem) {
         final SimpleModule customModule = new SimpleModule();
@@ -430,6 +432,8 @@ public class MainModule extends AbstractModule {
         objectMapper.registerModule(new AkkaModule(actorSystem));
         objectMapper.registerModule(customModule);
 
+        configureMapperForInjection(objectMapper, injector);
+
         Json.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
@@ -437,6 +441,24 @@ public class MainModule extends AbstractModule {
         });
 
         return objectMapper;
+    }
+
+    /**
+     * Configure the ObjectMapper to pull injectable values from Guice as well as respect
+     * JSR-305 binding annotations.
+     *
+     * This is essentially the code from jackson-module-guice's ObjectMapperProvider,
+     * only manually specified since we have our own mapper configuration.
+     *
+     * See {@link com.fasterxml.jackson.module.guice.ObjectMapperModule}
+     */
+    private void configureMapperForInjection(final ObjectMapper mapper, final Injector injector) {
+        final GuiceAnnotationIntrospector guiceInspector = new GuiceAnnotationIntrospector();
+        mapper.setInjectableValues(new GuiceInjectableValues(injector));
+        mapper.setAnnotationIntrospectors(
+               new AnnotationIntrospectorPair(guiceInspector, mapper.getSerializationConfig().getAnnotationIntrospector()),
+                new AnnotationIntrospectorPair(guiceInspector, mapper.getDeserializationConfig().getAnnotationIntrospector())
+        );
     }
 
     @Provides
@@ -502,31 +524,6 @@ public class MainModule extends AbstractModule {
         return system.actorOf(StatusActor.props(cluster, clusterStatusCache), "status");
     }
 
-    @Provides
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
-    private DatabaseAlertExecutionRepository provideDatabaseAlertExecutionRepository(
-            final Config config,
-            final PeriodicMetrics periodicMetrics,
-            final ActorSystem actorSystem,
-            @Named("metrics_portal") final EbeanServer portalServer,
-            @Named("metrics_portal_ddl") final EbeanServer ddlServer,
-            final BlockingIOExecutionContext executionContext
-    ) {
-        final Config partitionConfig = config.getObject("alertExecutionRepository.partitionManager").toConfig();
-
-        final int maxLookAhead = partitionConfig.getInt("lookahead");
-        final Duration offset = ConfigurationHelper.getFiniteDuration(partitionConfig, "offset");
-        return new DatabaseAlertExecutionRepository(
-            portalServer,
-            ddlServer,
-            actorSystem,
-            periodicMetrics,
-            java.time.Duration.ofSeconds(offset.toSeconds()),
-            maxLookAhead,
-            executionContext
-        );
-    }
-
     @Singleton
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
@@ -560,12 +557,11 @@ public class MainModule extends AbstractModule {
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private Tagger provideRollupGeneratorTagger(
-            final Injector injector,
-            final Environment environment,
+            final ObjectMapper mapper,
             final Config config
     ) {
         final Config taggerConfig = config.getConfig("rollup.generator.tagger");
-        return ConfigurationHelper.toInstanceMapped(injector, environment, taggerConfig);
+        return ConfigurationHelper.toInstanceMapped(Tagger.class, mapper, taggerConfig);
     }
 
     private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
@@ -703,21 +699,23 @@ public class MainModule extends AbstractModule {
     private static final class AlertExecutionRepositoryProvider implements Provider<AlertExecutionRepository> {
         @Inject
         AlertExecutionRepositoryProvider(
-                final Injector injector,
-                final Environment environment,
+                final ObjectMapper mapper,
                 final Config configuration,
                 final ApplicationLifecycle lifecycle
         ) {
-            _injector = injector;
-            _environment = environment;
+            _mapper = mapper;
             _configuration = configuration;
             _lifecycle = lifecycle;
         }
 
         @Override
         public AlertExecutionRepository get() {
-            final AlertExecutionRepository executionRepository = _injector.getInstance(
-                    ConfigurationHelper.<AlertExecutionRepository>getType(_environment, _configuration, "alertExecutionRepository.type"));
+            final AlertExecutionRepository executionRepository =
+                    ConfigurationHelper.toInstanceMapped(
+                            AlertExecutionRepository.class,
+                            _mapper,
+                            _configuration.getConfig("alertExecutionRepository")
+                    );
             executionRepository.open();
             _lifecycle.addStopHook(
                     () -> {
@@ -727,10 +725,9 @@ public class MainModule extends AbstractModule {
             return executionRepository;
         }
 
-        private final Injector _injector;
-        private final Environment _environment;
         private final Config _configuration;
         private final ApplicationLifecycle _lifecycle;
+        private final ObjectMapper _mapper;
     }
 
     private static final class ReportRepositoryProvider implements Provider<ReportRepository> {
@@ -956,38 +953,22 @@ public class MainModule extends AbstractModule {
         private final boolean _enabled;
     }
 
-    private static final class RollupMetricsDiscoveryProvider implements Provider<ActorRef> {
+    private static final class RollupMetricsDiscoveryProvider extends ClusterSingletonProvider {
         @Inject
         RollupMetricsDiscoveryProvider(
                 final Injector injector,
                 final ActorSystem system,
                 final Features features) {
-            _enabled = features.isRollupsEnabled();
+            super(system, features.isRollupsEnabled(), ROLLUP_METRICS_DISCOVERY_ROLE, "rollup-metrics-discovery");
             _injector = injector;
-            _system = system;
         }
 
         @Override
-        public ActorRef get() {
-            final Cluster cluster = Cluster.get(_system);
-            if (_enabled && cluster.selfRoles().contains(ROLLUP_METRICS_DISCOVERY_ROLE)) {
-                final ActorRef manager = _system.actorOf(ClusterSingletonManager.props(
-                        GuiceActorCreator.props(_injector, MetricsDiscovery.class),
-                        PoisonPill.getInstance(),
-                        ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_METRICS_DISCOVERY_ROLE)),
-                        "rollup-metrics-discovery"
-                );
-                return _system.actorOf(ClusterSingletonProxy.props(
-                        manager.path().toStringWithoutAddress(),
-                        ClusterSingletonProxySettings.create(_system)));
-            }
-            return _system.actorOf(Props.create(NoopActor.class));
+        public Props getProps() {
+            return GuiceActorCreator.props(_injector, MetricsDiscovery.class);
         }
 
-        private final boolean _enabled;
         private final Injector _injector;
-        private final ActorSystem _system;
-
         static final String ROLLUP_METRICS_DISCOVERY_ROLE = "rollup_metrics_discovery";
     }
 
@@ -1007,9 +988,7 @@ public class MainModule extends AbstractModule {
         private final ActorSystem _system;
     }
 
-    private static final class RollupManagerProvider implements Provider<ActorRef> {
-        private final boolean _enabled;
-        private final ActorSystem _system;
+    private static final class RollupManagerProvider extends ClusterSingletonProvider {
         private final PeriodicMetrics _periodicMetrics;
         private final MetricsFactory _metricsFactory;
         private final RollupPartitioner _partitioner;
@@ -1027,8 +1006,7 @@ public class MainModule extends AbstractModule {
                 final Config config,
                 final Features features
         ) {
-            _enabled = features.isRollupsEnabled();
-            _system = system;
+            super(system, features.isRollupsEnabled(), ROLLUP_MANAGER_ROLE, "rollup-manager");
             _periodicMetrics = periodicMetrics;
             _metricsFactory = metricsFactory;
             _partitioner = partitioner;
@@ -1037,27 +1015,54 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
-        public ActorRef get() {
-            final Cluster cluster = Cluster.get(_system);
-            if (_enabled && cluster.selfRoles().contains(ROLLUP_MANAGER_ROLE)) {
-                final ActorRef manager = _system.actorOf(ClusterSingletonManager.props(
-                        RollupManager.props(
-                                _periodicMetrics,
-                                _metricsFactory,
-                                _partitioner,
-                                _consistencyChecker,
-                                _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
-                        ),
-                        PoisonPill.getInstance(),
-                        ClusterSingletonManagerSettings.create(_system).withRole(ROLLUP_MANAGER_ROLE)),
-                        "rollup-manager"
-                );
-                return _system.actorOf(ClusterSingletonProxy.props(
-                        manager.path().toStringWithoutAddress(),
-                        ClusterSingletonProxySettings.create(_system)));
-            }
-            return _system.actorOf(Props.create(NoopActor.class));
+        public Props getProps() {
+            return RollupManager.props(
+                    _periodicMetrics,
+                    _metricsFactory,
+                    _partitioner,
+                    _consistencyChecker,
+                    _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+            );
         }
+    }
+
+    private abstract static class ClusterSingletonProvider implements Provider<ActorRef> {
+        private final boolean _enabled;
+        private final ActorSystem _actorSystem;
+        private final String _role;
+        private final String _name;
+
+        @Inject
+        ClusterSingletonProvider(
+                final ActorSystem system,
+                final boolean enabled,
+                final String role,
+                final String actorName
+        ) {
+            _enabled = enabled;
+            _actorSystem = system;
+            _role = role;
+            _name = actorName;
+        }
+
+        @Override
+        public ActorRef get() {
+            final Cluster cluster = Cluster.get(_actorSystem);
+            if (_enabled && cluster.selfRoles().contains(_role)) {
+                final ActorRef manager = _actorSystem.actorOf(ClusterSingletonManager.props(
+                        getProps(),
+                        PoisonPill.getInstance(),
+                        ClusterSingletonManagerSettings.create(_actorSystem).withRole(_role)),
+                        _name
+                );
+                return _actorSystem.actorOf(ClusterSingletonProxy.props(
+                        manager.path().toStringWithoutAddress(),
+                        ClusterSingletonProxySettings.create(_actorSystem)));
+            }
+            return _actorSystem.actorOf(Props.create(NoopActor.class));
+        }
+
+        public abstract Props getProps();
     }
 
     private static final class RollupExecutorProvider implements Provider<ActorRef> {

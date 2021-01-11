@@ -132,21 +132,24 @@ public final class ConfigurationHelper {
     /**
      * Use Guice to instantiate a POJO from configuration, deserializing directly from the
      * configuration object.
+     * <br>
+     * If you need more than one level of polymorphic deserialization, such as with
+     * objects constructed via composition, you will need to ensure the interface
+     * type is properly annotated with {@link com.fasterxml.jackson.annotation.JsonTypeInfo}.
+     * If not, Jackson will be unable to resolve the inner type.
      *
-     * @param injector The injector to use to create the object.
-     * @param environment Play {@link Environment} instance.
+     * @param mapper The object mapper instance.
+     * @param clazz The type to deserialize
      * @param configuration The config to instantiate the object from. (Note that this should almost certainly <i>not</i> be
      *   the entire Play {@link Config} instance; instead it is some sub-object describing the Java object to instantiate.
      * @param <T> The type of object to instantiate.
      * @return The instantiated object.
      */
     public static <T> T toInstanceMapped(
-            final Injector injector,
-            final Environment environment,
+            final Class<T> clazz,
+            final ObjectMapper mapper,
             final Config configuration) {
-        final Class<? extends T> clazz = getType(environment, configuration, TYPE_KEY);
-        final ObjectMapper mapper = injector.getInstance(ObjectMapper.class);
-        final String json = configuration.withoutPath(TYPE_KEY).root().render(ConfigRenderOptions.concise());
+        final String json = configuration.root().render(ConfigRenderOptions.concise());
         try {
             return mapper.readValue(json, clazz);
         } catch (final IOException e) {
