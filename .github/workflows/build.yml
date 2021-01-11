@@ -1,0 +1,36 @@
+name: build
+on:
+  pull_request:
+  push:
+    branches:
+      - "!*"
+    tags:
+      - "!metrics-portal-*"
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # See Maven profile displayPluginUpdates in parent pom
+    env:
+      TRAVIS: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+      - name: Cache JDK
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
+        with:
+          path: ~/.jdk
+          key: ${{ runner.os }}-jdk-${{ hashFiles('.jdkw', 'jdk-wrapper.sh') }}
+      - name: Cache Maven
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+      - name: Maven Verify
+        run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
+# To Do:
+# 1) Standard Github Actions upload release asset does not accept wildcards.
+#    Doc: https://github.com/actions/upload-release-asset
+#    Issue: https://github.com/actions/upload-release-asset/issues/47
