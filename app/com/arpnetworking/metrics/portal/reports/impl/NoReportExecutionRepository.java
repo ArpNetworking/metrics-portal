@@ -71,14 +71,19 @@ public final class NoReportExecutionRepository implements ReportExecutionReposit
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<Report.Result>> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
             final Report.Result result
     ) {
-
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(new JobExecution.Success.Builder<Report.Result>()
+                .setJobId(jobId)
+                .setStartedAt(scheduled)
+                .setCompletedAt(scheduled)
+                .setScheduled(scheduled)
+                .setResult(result)
+                .build());
     }
 
     @Override

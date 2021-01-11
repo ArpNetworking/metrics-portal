@@ -187,14 +187,21 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<Report.Result>> jobSucceeded(
             final UUID reportId,
             final Organization organization,
             final Instant scheduled,
             final Report.Result result
     ) {
         assertIsOpen();
-        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result);
+        return _executionHelper.jobSucceeded(reportId, organization, scheduled, result)
+            .thenApply(DatabaseExecutionHelper::toInternalModel)
+            .thenApply(e -> {
+                if (!(e instanceof JobExecution.Success)) {
+                    throw new IllegalStateException("not a success");
+                }
+                return (JobExecution.Success<Report.Result>) e;
+            });
     }
 
     @Override

@@ -129,7 +129,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                 execution -> {
                     execution.setStartedAt(Instant.now());
                 }
-        );
+        ).thenApply(e -> null);
     }
 
     /**
@@ -142,7 +142,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      *
      * @return a future that completes when the update does
      */
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<E> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -185,10 +185,10 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                     execution.setError(Throwables.getStackTraceAsString(error));
                     execution.setCompletedAt(Instant.now());
                 }
-        );
+        ).thenApply(exec -> null);
     }
 
-    private CompletionStage<Void> updateExecutionState(
+    private CompletionStage<E> updateExecutionState(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
@@ -202,7 +202,10 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
                 .addData("state", state)
                 .log();
         return _adapter.findOrCreateExecution(jobId, organization, scheduled)
-                .thenAcceptAsync(e -> {
+                .whenCompleteAsync((e, error) -> {
+                    if (error != null) {
+                        return;
+                    }
                     try (Transaction tx = _ebeanServer.beginTransaction()) {
                         update.accept(e);
                         e.setState(state);

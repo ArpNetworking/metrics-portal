@@ -334,7 +334,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<AlertEvaluationResult>> jobSucceeded(
             final UUID alertId,
             final Organization organization,
             final Instant scheduled,
@@ -343,7 +343,14 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         assertIsOpen();
         return ensurePartition(scheduled).thenCompose(
                 ignore -> _helper.jobSucceeded(alertId, organization, scheduled, result)
-        );
+        )
+        .thenApply(DatabaseExecutionHelper::toInternalModel)
+        .thenApply(e -> {
+            if (!(e instanceof JobExecution.Success)) {
+                throw new IllegalStateException("not a success");
+            }
+            return (JobExecution.Success<AlertEvaluationResult>) e;
+        });
     }
 
     @Override

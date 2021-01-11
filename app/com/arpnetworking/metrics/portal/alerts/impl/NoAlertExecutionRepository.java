@@ -90,14 +90,20 @@ public final class NoAlertExecutionRepository implements AlertExecutionRepositor
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(
+    public CompletionStage<JobExecution.Success<AlertEvaluationResult>> jobSucceeded(
             final UUID jobId,
             final Organization organization,
             final Instant scheduled,
             final AlertEvaluationResult result
     ) {
         assertIsOpen();
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(new JobExecution.Success.Builder<AlertEvaluationResult>()
+                .setJobId(jobId)
+                .setStartedAt(scheduled)
+                .setCompletedAt(scheduled)
+                .setScheduled(scheduled)
+                .setResult(result)
+                .build());
     }
 
     @Override

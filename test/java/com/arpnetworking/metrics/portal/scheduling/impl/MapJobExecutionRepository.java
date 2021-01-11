@@ -135,7 +135,12 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     }
 
     @Override
-    public CompletionStage<Void> jobSucceeded(final UUID jobId, final Organization organization, final Instant scheduled, final T result) {
+    public CompletionStage<JobExecution.Success<T>> jobSucceeded(
+            final UUID jobId,
+            final Organization organization,
+            final Instant scheduled,
+            final T result
+    ) {
         final JobExecution.Success<T> execution = new JobExecution.Success.Builder<T>()
                 .setJobId(jobId)
                 .setScheduled(scheduled)
@@ -147,7 +152,7 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
         assertIsOpen();
         _lastRuns.computeIfAbsent(organization, o -> Maps.newHashMap())
                 .compute(jobId, (id0, t1) -> (t1 == null) ? execution : t1.getScheduled().isAfter(scheduled) ? t1 : execution);
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(execution);
     }
 
     @Override
