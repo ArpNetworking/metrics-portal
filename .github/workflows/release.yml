@@ -18,12 +18,14 @@ jobs:
         with:
           path: ~/.jdk
           key: ${{ runner.os }}-jdk-${{ hashFiles('.jdkw', 'jdk-wrapper.sh') }}
-      - name: Cache Maven
+      - name: Cache Dependencies (Maven + SBT)
         uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-
+          path: |
+            ~/.m2
+            ~/.sbt
+          key: ${{ runner.os }}-m2-sbt-${{ hashFiles('pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-sbt-
       - name: Build and Release
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

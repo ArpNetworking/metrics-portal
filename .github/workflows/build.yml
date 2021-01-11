@@ -6,6 +6,8 @@ on:
     #   - "!*"
     tags:
       - "!metrics-portal-*"
+  workflow_dispatch:
+
 jobs:
   build:
     name: Build
@@ -21,12 +23,14 @@ jobs:
         with:
           path: ~/.jdk
           key: ${{ runner.os }}-jdk-${{ hashFiles('.jdkw', 'jdk-wrapper.sh') }}
-      - name: Cache Maven
+      - name: Cache Dependencies (Maven + SBT)
         uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
         with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-
+          path: |
+            ~/.m2
+            ~/.sbt
+          key: ${{ runner.os }}-m2-sbt-${{ hashFiles('pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-sbt-
       - name: Maven Verify
         run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
