@@ -1,11 +1,7 @@
 name: build
 on:
   pull_request:
-  push:
-    # branches:
-    #   - "!*"
-    tags:
-      - "!metrics-portal-*"
+  # If we ever want a sanity check this allows us to run the build from the UI
   workflow_dispatch:
 
 jobs:
@@ -30,12 +26,7 @@ jobs:
             ~/.ivy2
             ~/.m2
             ~/.sbt
-          key: ${{ runner.os }}-m2-sbt-ivy-${{ hashFiles('pom.xml') }}
+          key: ${{ runner.os }}-m2-sbt-ivy-${{ hashFiles('pom.xml', '**/*.sbt', 'project/build.properties') }}
           restore-keys: ${{ runner.os }}-m2-sbt-ivy-
       - name: Maven Verify
         run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
-
-# To Do:
-# 1) Standard Github Actions upload release asset does not accept wildcards.
-#    Doc: https://github.com/actions/upload-release-asset
-#    Issue: https://github.com/actions/upload-release-asset/issues/47
