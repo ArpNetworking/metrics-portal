@@ -27,10 +27,11 @@ jobs:
         uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
         with:
           path: |
+            ~/.ivy2
             ~/.m2
             ~/.sbt
-          key: ${{ runner.os }}-m2-sbt-${{ hashFiles('pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2-sbt-
+          key: ${{ runner.os }}-m2-sbt-ivy-${{ hashFiles('pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-sbt-ivy-
       - name: Maven Verify
         run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
