@@ -136,7 +136,7 @@ public interface JobExecutionRepository<T> {
      *
      * @return a future that completes when the operation does.
      */
-    CompletionStage<Void> jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
+    CompletionStage<JobExecution.Success<T>> jobSucceeded(UUID jobId, Organization organization, Instant scheduled, T result);
 
     /**
      * Notify the repository that a job encountered an error and aborted execution.
