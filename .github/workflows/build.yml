@@ -2,8 +2,8 @@ name: build
 on:
   pull_request:
   push:
-    branches:
-      - "!*"
+    # branches:
+    #   - "!*"
     tags:
       - "!metrics-portal-*"
 jobs:
