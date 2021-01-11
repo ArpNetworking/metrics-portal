@@ -1,0 +1,32 @@
+name: build
+on:
+  pull_request:
+  # If we ever want a sanity check this allows us to run the build from the UI
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    # See Maven profile displayPluginUpdates in parent pom
+    env:
+      TRAVIS: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f
+      - name: Cache JDK
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
+        with:
+          path: ~/.jdk
+          key: ${{ runner.os }}-jdk-${{ hashFiles('.jdkw', 'jdk-wrapper.sh') }}
+      - name: Cache Dependencies (Maven + SBT)
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a
+        with:
+          path: |
+            ~/.ivy2
+            ~/.m2
+            ~/.sbt
+          key: ${{ runner.os }}-m2-sbt-ivy-${{ hashFiles('pom.xml', '**/*.sbt', 'project/build.properties') }}
+          restore-keys: ${{ runner.os }}-m2-sbt-ivy-
+      - name: Maven Verify
+        run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
