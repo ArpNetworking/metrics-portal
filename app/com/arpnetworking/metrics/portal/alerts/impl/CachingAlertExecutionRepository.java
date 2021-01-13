@@ -18,13 +18,11 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.commons.java.time.TimeAdapters;
-import com.arpnetworking.commons.java.util.concurrent.CompletableFutures;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
@@ -39,10 +37,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.inject.Named;
 
@@ -58,12 +53,12 @@ import javax.inject.Named;
 public final class CachingAlertExecutionRepository implements AlertExecutionRepository {
     private final AlertExecutionRepository _inner;
     private final ActorRef _successCache;
-    private final Duration _cacheTimeout;
+    private final Duration _cacheOperationTimeout;
 
     private CachingAlertExecutionRepository(final Builder builder) {
         _inner = builder._inner;
         _successCache = builder._actorRef;
-        _cacheTimeout = builder._timeout;
+        _cacheOperationTimeout = builder._timeout;
     }
 
     @Override
@@ -89,7 +84,8 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     ) throws NoSuchElementException {
         final String key = cacheKey(jobId, organization.getId());
         return
-            CacheActor.<String, JobExecution.Success<AlertEvaluationResult>>get(_successCache, key, _cacheTimeout)
+            CacheActor.<String, JobExecution.Success<AlertEvaluationResult>>get(_successCache, key,
+                    _cacheOperationTimeout)
                 .thenCompose(res -> {
                     if (res.isPresent()) {
                         return CompletableFuture.completedFuture(res);
@@ -99,7 +95,8 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
                             if (!res2.isPresent()) {
                                 return CompletableFuture.completedFuture(res2);
                             }
-                            return CacheActor.put(_successCache, key, res2.get(), _cacheTimeout).thenApply(ignore -> res2);
+                            return CacheActor.put(_successCache, key, res2.get(),
+                                    _cacheOperationTimeout).thenApply(ignore -> res2);
                         });
                 });
     }
@@ -111,28 +108,9 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
         final LocalDate maxLookback
     ) throws NoSuchElementException {
         // Attempt to get all ids from cache
-        final List<CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>>> futures =
-            jobIds.stream()
-                .map(id -> cacheKey(id, organization.getId()))
-                .map(key -> CacheActor.<String, JobExecution.Success<AlertEvaluationResult>>get(_successCache, key, _cacheTimeout))
-                .collect(ImmutableList.toImmutableList());
-        // Accumulate the cache responses into a map.
         final CompletableFuture<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> cached =
-            CompletableFutures.allOf(futures)
-                .thenApply(ignored ->
-                    futures.stream().map(f -> {
-                        try {
-                            return f.toCompletableFuture().get();
-                        } catch (final InterruptedException | ExecutionException e) {
-                            throw new CompletionException(e);
-                        }
-                    })
-                    .flatMap(Streams::stream)
-                    .collect(ImmutableMap.toImmutableMap(
-                        JobExecution::getJobId,
-                        Function.identity()
-                    ))
-                );
+                CacheActor.multiget(_successCache, jobIds, _cacheOperationTimeout);
+
         return cached.thenCompose(hits -> {
             // Check for any cache misses and fetch those from the inner
             // repository.
@@ -145,7 +123,12 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
             }
             return _inner
                 .getLastSuccessBatch(misses, organization, maxLookback)
-                .thenCompose(rest -> writeBatchToCache(rest, organization).thenApply(ignore -> rest))
+                .whenComplete((rest, error) -> {
+                    if (error != null) {
+                        return;
+                    }
+                    writeBatchToCache(rest, organization);
+                })
                 .thenApply(rest -> {
                     // Merge the cache hits / misses into a single map.
                     return Stream.concat(
@@ -156,18 +139,15 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
         });
     }
 
-    private CompletableFuture<Void> writeBatchToCache(
+    private void writeBatchToCache(
         final Map<UUID, JobExecution.Success<AlertEvaluationResult>> batch,
         final Organization organization
     ) {
-        final ImmutableList<CompletionStage<Void>> writeFutures = batch.values()
-            .stream()
-            .map(e -> {
+        batch.values()
+            .forEach(e -> {
                 final String key = cacheKey(e.getJobId(), organization.getId());
-                return CacheActor.put(_successCache, key, e, _cacheTimeout);
-            })
-            .collect(ImmutableList.toImmutableList());
-        return CompletableFutures.allOf(writeFutures).thenApply(ignore -> null);
+                CacheActor.put(_successCache, key, e, _cacheOperationTimeout);
+            });
     }
 
     @Override
@@ -192,7 +172,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     ) {
         final String key = cacheKey(jobId, organization.getId());
         return _inner.jobSucceeded(jobId, organization, scheduled, result)
-            .thenCompose(e -> CacheActor.put(_successCache, key, e, _cacheTimeout).thenApply(ignore -> e));
+            .thenCompose(e -> CacheActor.put(_successCache, key, e, _cacheOperationTimeout).thenApply(ignore -> e));
     }
 
     @Override

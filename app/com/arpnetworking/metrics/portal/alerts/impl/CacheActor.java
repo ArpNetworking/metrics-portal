@@ -23,9 +23,12 @@ import akka.pattern.Patterns;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+import java.io.Serializable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -40,7 +43,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class CacheActor<K, V> extends AbstractActor {
+public final class CacheActor<K extends Serializable, V extends Serializable> extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheActor.class);
 
     private final PeriodicMetrics _metrics;
@@ -75,12 +78,39 @@ public final class CacheActor<K, V> extends AbstractActor {
      * @return A CompletionStage which contains the value, if any.
      */
     @SuppressWarnings("unchecked")
-    public static <K, V> CompletionStage<Optional<V>> get(final ActorRef ref, final K key, final Duration timeout) {
+    public static <K extends Serializable, V extends Serializable> CompletionStage<Optional<V>> get(
+            final ActorRef ref,
+            final K key,
+            final Duration timeout
+    ) {
         return Patterns.askWithReplyTo(
             ref,
             replyTo -> new CacheGet<>(key, replyTo),
             timeout
         ).thenApply(resp -> (Optional<V>) resp);
+    }
+
+    /**
+     * Retrieve a the values associated with a set of keys.
+     *
+     * @param ref The CacheActor ref.
+     * @param keys The keys to retrieve.
+     * @param timeout The operation timeout.
+     * @param <K> The type of key.
+     * @param <V> The type of value.
+     * @return A CompletionStage which contains the values, if any.
+     */
+    @SuppressWarnings("unchecked")
+    public static <K extends Serializable, V extends Serializable> CompletionStage<ImmutableMap<K, V>> multiget(
+            final ActorRef ref,
+            final Collection<? extends K> keys,
+            final Duration timeout
+    ) {
+        return Patterns.askWithReplyTo(
+                ref,
+                replyTo -> new CacheMultiGet<>(keys, replyTo),
+                timeout
+        ).thenApply(resp -> (ImmutableMap<K, V>) resp);
     }
 
     /**
@@ -94,12 +124,35 @@ public final class CacheActor<K, V> extends AbstractActor {
      * @param <V> The type of value.
      * @return A completion stage to await for the write to complete.
      */
-    public static <K, V> CompletionStage<Void> put(final ActorRef ref, final K key, final V value, final Duration timeout) {
+    public static <K extends Serializable, V extends Serializable> CompletionStage<Void> put(
+            final ActorRef ref,
+            final K key,
+            final V value,
+            final Duration timeout
+    ) {
         return Patterns.askWithReplyTo(
             ref,
-            replyTo -> new CachePut<>(key, value, replyTo),
+            replyTo -> new CachePut<>(key, value, Optional.of(replyTo)),
             timeout
         ).thenApply(resp -> null);
+    }
+
+    /**
+     * Put a Key-Value pair into the cache, without waiting for a reply.
+     *
+     * @param ref The CacheActor ref.
+     * @param key The key to update.
+     * @param value The associated value.
+     * @param <K> The type of key.
+     * @param <V> The type of value.
+     */
+    public static <K extends Serializable, V extends Serializable> void putAsync(
+            final ActorRef ref,
+            final K key,
+            final V value
+    ) {
+        final CachePut<K, V> msg = new CachePut<>(key, value, Optional.empty());
+        ref.tell(msg, ActorRef.noSender());
     }
 
     @Override
@@ -108,26 +161,35 @@ public final class CacheActor<K, V> extends AbstractActor {
         return receiveBuilder()
             .match(CacheGet.class, msg -> {
                 final CacheGet<K> castMsg = (CacheGet<K>) msg;
-                _metrics.recordCounter("cache/get", 1);
                 final Optional<V> value = Optional.ofNullable(_cache.get(castMsg.getKey()));
-                if (value.isPresent()) {
-                    _metrics.recordCounter(String.format("cache/%s/get/hit", _cacheName), 1);
-                } else {
-                    _metrics.recordCounter(String.format("cache/%s/get/hit", _cacheName), 0);
-                }
+                _metrics.recordCounter(String.format("cache/%s/get", _cacheName), value.isPresent() ? 1 : 0);
                 castMsg.getReplyTo().tell(value, getSelf());
+            })
+            .match(CacheMultiGet.class, msg -> {
+                final CacheMultiGet<K> castMsg = (CacheMultiGet<K>) msg;
+                final ImmutableMap.Builder<K, V> results = new ImmutableMap.Builder<>();
+                int hits = 0;
+                for (final K key : castMsg.getKeys()) {
+                    final Optional<V> value = Optional.ofNullable(_cache.get(key));
+                    if (value.isPresent()) {
+                        hits += 1;
+                        results.put(key, value.get());
+                    }
+                }
+                _metrics.recordCounter(String.format("cache/%s/multiget", _cacheName), hits);
+                castMsg.getReplyTo().tell(results, getSelf());
             })
             .match(CachePut.class, msg -> {
                 _metrics.recordCounter(String.format("cache/%s/put", _cacheName), 1);
                 final CachePut<K, V> putMsg = (CachePut<K, V>) msg;
                 final ActorRef self = getSelf();
                 _cache.put(putMsg.getKey(), putMsg.getValue());
-                msg.getReplyTo().tell(new Status.Success(null), self);
+                putMsg.getReplyTo().ifPresent(ref -> ref.tell(new Status.Success(null), self));
             })
             .build();
     }
 
-    private static final class CacheGet<K> {
+    private static final class CacheGet<K extends Serializable> {
         private final K _key;
         private final ActorRef _replyTo;
 
@@ -151,10 +213,34 @@ public final class CacheActor<K, V> extends AbstractActor {
         }
     }
 
-    private static final class CachePut<K, V> {
+    private static final class CacheMultiGet<K extends Serializable> {
+        private final Collection<? extends K> _keys;
+        private final ActorRef _replyTo;
+
+        /**
+         * Constructor.
+         *
+         * @param keys The keys to retrieve.
+         * @param replyTo The address to reply to with the value, if any.
+         */
+        CacheMultiGet(final Collection<? extends K> keys, final ActorRef replyTo) {
+            _keys = keys;
+            _replyTo = replyTo;
+        }
+
+        public Collection<? extends K> getKeys() {
+            return _keys;
+        }
+
+        public ActorRef getReplyTo() {
+            return _replyTo;
+        }
+    }
+
+    private static final class CachePut<K extends Serializable, V extends Serializable> {
         private final K _key;
         private final V _value;
-        private final ActorRef _replyTo;
+        private final Optional<ActorRef> _replyTo;
 
         /**
          * Constructor.
@@ -163,7 +249,7 @@ public final class CacheActor<K, V> extends AbstractActor {
          * @param value The value to associate with this key.
          * @param replyTo The address to reply to.
          */
-        CachePut(final K key, final V value, final ActorRef replyTo) {
+        CachePut(final K key, final V value, final Optional<ActorRef> replyTo) {
             _key = key;
             _value = value;
             _replyTo = replyTo;
@@ -177,7 +263,7 @@ public final class CacheActor<K, V> extends AbstractActor {
             return _value;
         }
 
-        public ActorRef getReplyTo() {
+        public Optional<ActorRef> getReplyTo() {
             return _replyTo;
         }
     }
