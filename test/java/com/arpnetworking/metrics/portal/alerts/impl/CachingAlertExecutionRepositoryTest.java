@@ -19,7 +19,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.akka.JacksonSerializer;
-import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
@@ -38,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -70,14 +70,11 @@ public class CachingAlertExecutionRepositoryTest {
     @Before
     public void setUp() {
         final PeriodicMetrics metrics = Mockito.mock(PeriodicMetrics.class);
-        final ObjectMapper mapper = SerializationTestUtils.getApiObjectMapper();
-        JacksonSerializer.setObjectMapper(mapper);
         _actorSystem = ActorSystem.create("TestCacheSystem", ConfigFactory.parseMap(
                 // Force serialization, since this cache is intended to
                 // be used across the network.
                 ImmutableMap.of(
                         "akka.actor.serialize-messages", "on",
-                        "akka.actor.allow-java-serialization", "off",
                         "akka.actor.serializers", ImmutableMap.of(
                                 "jackson-json", "com.arpnetworking.commons.akka.JacksonSerializer"
                         ),
@@ -86,14 +83,15 @@ public class CachingAlertExecutionRepositoryTest {
                         )
                 )
         ));
-        mapper.registerModule(new AkkaModule(_actorSystem));
-        final ActorRef cacheActor = _actorSystem.actorOf(CacheActor.props("testCache", metrics));
+        final ObjectMapper mapper = SerializationTestUtils.createApiObjectMapper(_actorSystem);
+        JacksonSerializer.setObjectMapper(mapper);
+        final ActorRef cacheActor = _actorSystem.actorOf(AlertExecutionCacheActor.props(metrics, 100, Duration.ofMinutes(1)));
 
         _inner = Mockito.spy(new TestAlertExecutionRepository());
         _repo = new CachingAlertExecutionRepository.Builder()
                 .setInner(_inner)
                 .setActorRef(cacheActor)
-                .setTimeout("1s")
+                .setTimeout("3s")
                 .build();
         _repo.open();
         _organization = new DefaultOrganization.Builder()

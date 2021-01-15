@@ -15,14 +15,17 @@
  */
 package com.arpnetworking.testing;
 
+import akka.actor.ActorSystem;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.junit.Assert;
 import play.api.libs.json.JsonParserSettings;
 import play.api.libs.json.jackson.PlayJsonModule;
@@ -47,6 +50,10 @@ public final class SerializationTestUtils {
      * @return new configured {@link ObjectMapper} instance
      */
     public static ObjectMapper createApiObjectMapper() {
+        return createApiObjectMapper(null);
+    }
+
+    public static ObjectMapper createApiObjectMapper(@Nullable final ActorSystem actorSystem) {
         final SimpleModule customModule = new SimpleModule();
         customModule.addDeserializer(
                 TimeUnit.class,
@@ -66,7 +73,9 @@ public final class SerializationTestUtils {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(customModule);
-        // NOTE: AkkaModule not registered since it requires an actor system
+        if (actorSystem != null) {
+            objectMapper.registerModule(new AkkaModule(actorSystem));
+        }
         return objectMapper;
     }
 

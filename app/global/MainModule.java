@@ -54,7 +54,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
-import com.arpnetworking.metrics.portal.alerts.impl.CacheActor;
+import com.arpnetworking.metrics.portal.alerts.impl.AlertExecutionCacheActor;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -122,6 +122,7 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -1048,9 +1049,10 @@ public class MainModule extends AbstractModule {
 
         @Override
         public Props getProps() {
-            return CacheActor.props(
-                    "alert-execution-cache",
-                    _periodicMetrics
+            return AlertExecutionCacheActor.props(
+                    _periodicMetrics,
+                    1000,
+                    Duration.ofMinutes(5)
             );
         }
     }

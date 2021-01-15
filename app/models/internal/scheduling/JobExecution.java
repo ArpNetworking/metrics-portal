@@ -254,7 +254,7 @@ public abstract class JobExecution<T> {
      *
      * @param <T> The result type of this execution.
      */
-    public static class Success<T> extends JobExecution<T> {
+    public static final class Success<T> extends JobExecution<T> {
         private final Instant _startedAt;
         private final Instant _completedAt;
         private final T _result;

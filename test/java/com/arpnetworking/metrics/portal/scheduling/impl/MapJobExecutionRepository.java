@@ -49,14 +49,14 @@ public class MapJobExecutionRepository<T> implements JobExecutionRepository<T> {
     @Override
     public void open() {
         assertIsOpen(false);
-        LOGGER.debug().setMessage("opening JobRepository").log();
+        LOGGER.debug().setMessage("opening MapJobExecutionRepository").log();
         _open.set(true);
     }
 
     @Override
     public void close() {
         assertIsOpen();
-        LOGGER.debug().setMessage("opening JobRepository").log();
+        LOGGER.debug().setMessage("closing MapJobExecutionRepository").log();
         _open.set(false);
     }
 

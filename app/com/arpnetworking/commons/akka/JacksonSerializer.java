@@ -22,24 +22,37 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class JacksonSerializer extends JSerializer {
     private static final Logger LOGGER = LoggerFactory.getLogger(JacksonSerializer.class);
-    private static ObjectMapper gObjectMapper;
+    private static @Nullable ObjectMapper gObjectMapper;
 
-    public JacksonSerializer(final ExtendedActorSystem ignored) {
-        if (gObjectMapper == null) {
-            throw new IllegalStateException("ObjectMapper not registered before instantiation.");
-        }
-    }
+    /**
+     * Constructor used by Akka upon system initialization.
+     *
+     * @param ignored the actor system
+     */
+    public JacksonSerializer(final ExtendedActorSystem ignored) {}
 
+    /**
+     * Set the object mapper to be used by all instances.
+     * <br>
+     * This should only be called once, before initialization. This method exists
+     * because Akka does not provide any initialization hooks for serializers outside
+     * of passing the configuration object.
+     * <br>
+     * Since we don't want to definte the ObjectMapper twice (once in guice, the other in the
+     * configuration) we instead use this hack.
+     *
+     * @param objectMapper the ObjectMapper to use.
+     */
     public static void setObjectMapper(final ObjectMapper objectMapper) {
         if (gObjectMapper != null) {
             LOGGER.warn("ObjectMapper was already registered.");
@@ -49,13 +62,8 @@ public class JacksonSerializer extends JSerializer {
 
     @Override
     public Object fromBinaryJava(final byte[] bytes, @Nullable final Class<?> manifest) {
-        if (manifest == null) {
-            throw new IllegalArgumentException("Cannot deserialize with null manifest");
-        }
-        LOGGER.info()
-                .addData("manifest", manifest)
-                .addData("bytes", new String(bytes, StandardCharsets.UTF_8))
-                .log();
+        Preconditions.checkNotNull(manifest, "Jackson deserialization requires a manifest.");
+        Preconditions.checkNotNull(gObjectMapper, "The mapper was not configured at startup.");
         try {
             return gObjectMapper.readValue(bytes, manifest);
         } catch (final IOException e) {
@@ -66,11 +74,13 @@ public class JacksonSerializer extends JSerializer {
     @Override
     public int identifier() {
         // Can be any integer >40.
+        // Randomly generated from IDE.
         return 564_386_063;
     }
 
     @Override
     public byte[] toBinary(final Object o) {
+        Preconditions.checkNotNull(gObjectMapper, "The mapper was not configured at startup.");
         try {
             return gObjectMapper.writeValueAsBytes(o);
         } catch (final JsonProcessingException e) {

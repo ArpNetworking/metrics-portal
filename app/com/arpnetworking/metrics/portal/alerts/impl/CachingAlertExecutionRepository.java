@@ -84,7 +84,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     ) throws NoSuchElementException {
 //        final String key = cacheKey(jobId, organization.getId());
         return
-            CacheActor.get(_successCache, jobId, _cacheOperationTimeout)
+            AlertExecutionCacheActor.get(_successCache, jobId, _cacheOperationTimeout)
                 .thenCompose(res -> {
                     if (res.isPresent()) {
                         return CompletableFuture.completedFuture(res);
@@ -94,8 +94,12 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
                             if (!res2.isPresent()) {
                                 return CompletableFuture.completedFuture(res2);
                             }
-                            return CacheActor.put(_successCache, jobId, res2.get(),
-                                    _cacheOperationTimeout).thenApply(ignore -> res2);
+                            return AlertExecutionCacheActor.put(
+                                    _successCache,
+                                    jobId,
+                                    res2.get(),
+                                    _cacheOperationTimeout
+                            ).thenApply(ignore -> res2);
                         });
                 });
     }
@@ -108,7 +112,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     ) throws NoSuchElementException {
         // Attempt to get all ids from cache
         final CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> cached =
-                CacheActor.multiget(
+                AlertExecutionCacheActor.multiget(
                     _successCache,
                     jobIds,
                     _cacheOperationTimeout
@@ -149,7 +153,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
         batch.values()
             .forEach(e -> {
 //                final String key = cacheKey(e.getJobId(), organization.getId());
-                CacheActor.put(_successCache, e.getJobId(), e, _cacheOperationTimeout);
+                AlertExecutionCacheActor.put(_successCache, e.getJobId(), e, _cacheOperationTimeout);
             });
     }
 
@@ -175,7 +179,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     ) {
 //        final String key = cacheKey(jobId, organization.getId());
         return _inner.jobSucceeded(jobId, organization, scheduled, result)
-            .thenCompose(e -> CacheActor.put(_successCache, e.getJobId(), e, _cacheOperationTimeout).thenApply(ignore -> e));
+            .thenCompose(e -> AlertExecutionCacheActor.put(_successCache, e.getJobId(), e, _cacheOperationTimeout).thenApply(ignore -> e));
     }
 
     @Override
