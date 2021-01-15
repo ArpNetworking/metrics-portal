@@ -20,17 +20,22 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.pattern.Patterns;
+import com.arpnetworking.commons.akka.AkkaJsonSerializable;
+import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import models.internal.alerts.AlertEvaluationResult;
+import models.internal.scheduling.JobExecution;
+import net.sf.oval.constraint.NotNull;
 
-import java.io.Serializable;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -38,22 +43,26 @@ import java.util.concurrent.CompletionStage;
  * by starting as a cluster singleton, or as a building-block for a more complex cache
  * by using it as a member within a ClusterSharding pool.
  *
- * @param <K> The type of key.
- * @param <V> The type of the associated value.
- *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class CacheActor<K extends Serializable, V extends Serializable> extends AbstractActor {
+public final class CacheActor extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheActor.class);
 
     private final PeriodicMetrics _metrics;
     private final String _cacheName;
-    private final HashMap<K, V> _cache;
+    private final Map<UUID, JobExecution.Success<AlertEvaluationResult>> _cache;
+//    private final Cache<UUID, JobExecution.Success<AlertEvaluationResult>> _cache;
 
-    private CacheActor(final String cacheName, final PeriodicMetrics metrics) {
+    private CacheActor(
+            final String cacheName,
+            final PeriodicMetrics metrics) {
         _cacheName = cacheName;
         _metrics = metrics;
         _cache = Maps.newHashMap();
+//        _cache = CacheBuilder.newBuilder()
+//                    .expireAfterAccess(2, TimeUnit.MINUTES)
+//                    .maximumSize(2000)
+//                    .build();
     }
 
     /**
@@ -64,7 +73,7 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
      * @return props to instantiate the actor
      */
     public static Props props(final String cacheName, final PeriodicMetrics metrics) {
-        return Props.create(CacheActor.class, () -> new CacheActor<>(cacheName, metrics));
+        return Props.create(CacheActor.class, () -> new CacheActor(cacheName, metrics));
     }
 
     /**
@@ -73,21 +82,19 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
      * @param ref The CacheActor ref.
      * @param key The key to retrieve.
      * @param timeout The operation timeout.
-     * @param <K> The type of key.
-     * @param <V> The type of value.
      * @return A CompletionStage which contains the value, if any.
      */
     @SuppressWarnings("unchecked")
-    public static <K extends Serializable, V extends Serializable> CompletionStage<Optional<V>> get(
+    public static CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> get(
             final ActorRef ref,
-            final K key,
+            final UUID key,
             final Duration timeout
     ) {
         return Patterns.askWithReplyTo(
             ref,
-            replyTo -> new CacheGet<>(key, replyTo),
+            replyTo -> new CacheGet.Builder().setKey(key).setReplyTo(Optional.of(replyTo)).build(),
             timeout
-        ).thenApply(resp -> (Optional<V>) resp);
+        ).thenApply(resp -> (Optional<JobExecution.Success<AlertEvaluationResult>>) resp);
     }
 
     /**
@@ -96,21 +103,19 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
      * @param ref The CacheActor ref.
      * @param keys The keys to retrieve.
      * @param timeout The operation timeout.
-     * @param <K> The type of key.
-     * @param <V> The type of value.
      * @return A CompletionStage which contains the values, if any.
      */
     @SuppressWarnings("unchecked")
-    public static <K extends Serializable, V extends Serializable> CompletionStage<ImmutableMap<K, V>> multiget(
+    public static CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> multiget(
             final ActorRef ref,
-            final Collection<? extends K> keys,
+            final Collection<UUID> keys,
             final Duration timeout
     ) {
         return Patterns.askWithReplyTo(
                 ref,
-                replyTo -> new CacheMultiGet<>(keys, replyTo),
+                replyTo -> new CacheMultiGet(keys, replyTo),
                 timeout
-        ).thenApply(resp -> (ImmutableMap<K, V>) resp);
+        ).thenApply(resp -> (ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>) resp);
     }
 
     /**
@@ -120,19 +125,17 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
      * @param key The key to update.
      * @param value The associated value.
      * @param timeout The operation timeout.
-     * @param <K> The type of key.
-     * @param <V> The type of value.
      * @return A completion stage to await for the write to complete.
      */
-    public static <K extends Serializable, V extends Serializable> CompletionStage<Void> put(
+    public static CompletionStage<Void> put(
             final ActorRef ref,
-            final K key,
-            final V value,
+            final UUID key,
+            final JobExecution.Success<AlertEvaluationResult> value,
             final Duration timeout
     ) {
         return Patterns.askWithReplyTo(
             ref,
-            replyTo -> new CachePut<>(key, value, Optional.of(replyTo)),
+            replyTo -> new CachePut.Builder().setKey(key).setValue(value).build(),
             timeout
         ).thenApply(resp -> null);
     }
@@ -143,15 +146,13 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
      * @param ref The CacheActor ref.
      * @param key The key to update.
      * @param value The associated value.
-     * @param <K> The type of key.
-     * @param <V> The type of value.
      */
-    public static <K extends Serializable, V extends Serializable> void putAsync(
+    public static void putAsync(
             final ActorRef ref,
-            final K key,
-            final V value
+            final UUID key,
+            final JobExecution.Success<AlertEvaluationResult> value
     ) {
-        final CachePut<K, V> msg = new CachePut<>(key, value, Optional.empty());
+        final CachePut msg = new CachePut.Builder().setKey(key).setValue(value).build();
         ref.tell(msg, ActorRef.noSender());
     }
 
@@ -160,61 +161,76 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
     public Receive createReceive() {
         return receiveBuilder()
             .match(CacheGet.class, msg -> {
-                final CacheGet<K> castMsg = (CacheGet<K>) msg;
-                final Optional<V> value = Optional.ofNullable(_cache.get(castMsg.getKey()));
+                final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.get(msg.getKey()));
                 _metrics.recordCounter(String.format("cache/%s/get", _cacheName), value.isPresent() ? 1 : 0);
-                castMsg.getReplyTo().tell(value, getSelf());
+                msg.getReplyTo().tell(value, getSelf());
             })
             .match(CacheMultiGet.class, msg -> {
-                final CacheMultiGet<K> castMsg = (CacheMultiGet<K>) msg;
-                final ImmutableMap.Builder<K, V> results = new ImmutableMap.Builder<>();
+                final ImmutableMap.Builder<UUID, JobExecution.Success<AlertEvaluationResult>> results = new ImmutableMap.Builder<>();
                 int hits = 0;
-                for (final K key : castMsg.getKeys()) {
-                    final Optional<V> value = Optional.ofNullable(_cache.get(key));
+                for (final UUID key : msg.getKeys()) {
+                    final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.get(key));
                     if (value.isPresent()) {
                         hits += 1;
                         results.put(key, value.get());
                     }
                 }
                 _metrics.recordCounter(String.format("cache/%s/multiget", _cacheName), hits);
-                castMsg.getReplyTo().tell(results, getSelf());
+                msg.getReplyTo().tell(results, getSelf());
             })
             .match(CachePut.class, msg -> {
                 _metrics.recordCounter(String.format("cache/%s/put", _cacheName), 1);
-                final CachePut<K, V> putMsg = (CachePut<K, V>) msg;
                 final ActorRef self = getSelf();
-                _cache.put(putMsg.getKey(), putMsg.getValue());
-                putMsg.getReplyTo().ifPresent(ref -> ref.tell(new Status.Success(null), self));
+                _cache.put(msg.getKey(), msg.getValue());
+                msg.getReplyTo().ifPresent(ref -> ref.tell(new Status.Success(null), self));
             })
             .build();
     }
 
-    private static final class CacheGet<K extends Serializable> {
-        private final K _key;
+    private static final class CacheGet implements AkkaJsonSerializable {
+        private final UUID _key;
         private final ActorRef _replyTo;
 
         /**
          * Constructor.
-         *
-         * @param key The key to retrieve.
-         * @param replyTo The address to reply to with the value, if any.
          */
-        CacheGet(final K key, final ActorRef replyTo) {
-            _key = key;
-            _replyTo = replyTo;
+        private CacheGet(final Builder builder) {
+            _key = builder._key;
+            _replyTo = builder._replyTo;
         }
 
-        public K getKey() {
+        public UUID getKey() {
             return _key;
         }
 
         public ActorRef getReplyTo() {
             return _replyTo;
         }
+
+        public static final class Builder extends OvalBuilder<CacheGet> {
+            @NotNull
+            private UUID _key;
+            @NotNull
+            private ActorRef _replyTo;
+
+            Builder() {
+                super(CacheGet::new);
+            }
+
+            public Builder setKey(final UUID key) {
+                _key = key;
+                return this;
+            }
+
+            public Builder setReplyTo(final Optional<ActorRef> actorRef) {
+                _replyTo = actorRef.orElse(null);
+                return this;
+            }
+        }
     }
 
-    private static final class CacheMultiGet<K extends Serializable> {
-        private final Collection<? extends K> _keys;
+    private static final class CacheMultiGet {
+        private final Collection<UUID> _keys;
         private final ActorRef _replyTo;
 
         /**
@@ -223,12 +239,12 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
          * @param keys The keys to retrieve.
          * @param replyTo The address to reply to with the value, if any.
          */
-        CacheMultiGet(final Collection<? extends K> keys, final ActorRef replyTo) {
+        CacheMultiGet(final Collection<UUID> keys, final ActorRef replyTo) {
             _keys = keys;
             _replyTo = replyTo;
         }
 
-        public Collection<? extends K> getKeys() {
+        public Collection<UUID> getKeys() {
             return _keys;
         }
 
@@ -237,34 +253,55 @@ public final class CacheActor<K extends Serializable, V extends Serializable> ex
         }
     }
 
-    private static final class CachePut<K extends Serializable, V extends Serializable> {
-        private final K _key;
-        private final V _value;
+    private static final class CachePut implements AkkaJsonSerializable {
+        private final UUID _key;
+        private final JobExecution.Success<AlertEvaluationResult> _value;
         private final Optional<ActorRef> _replyTo;
 
-        /**
-         * Constructor.
-         *
-         * @param key The key to store.
-         * @param value The value to associate with this key.
-         * @param replyTo The address to reply to.
-         */
-        CachePut(final K key, final V value, final Optional<ActorRef> replyTo) {
-            _key = key;
-            _value = value;
-            _replyTo = replyTo;
+        private CachePut(final Builder builder) {
+            _key = builder._key;
+            _value = builder._value;
+            _replyTo = builder._replyTo;
         }
 
-        public K getKey() {
+        public UUID getKey() {
             return _key;
         }
 
-        public V getValue() {
+        public JobExecution.Success<AlertEvaluationResult> getValue() {
             return _value;
         }
 
         public Optional<ActorRef> getReplyTo() {
             return _replyTo;
+        }
+
+        public static final class Builder extends OvalBuilder<CachePut> {
+            @NotNull
+            private UUID _key;
+            @NotNull
+            private JobExecution.Success<AlertEvaluationResult> _value;
+
+            private Optional<ActorRef> _replyTo = Optional.empty();
+
+            Builder() {
+                super(CachePut::new);
+            }
+
+            public Builder setKey(final UUID key) {
+                _key = key;
+                return this;
+            }
+
+            public Builder setValue(final JobExecution.Success<AlertEvaluationResult> value) {
+                _value = value;
+                return this;
+            }
+
+            public Builder setReplyTo(final Optional<ActorRef> actorRef) {
+                _replyTo = actorRef;
+                return this;
+            }
         }
     }
 }

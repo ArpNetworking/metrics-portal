@@ -18,10 +18,16 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
+import com.arpnetworking.commons.akka.JacksonSerializer;
+import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
+import com.arpnetworking.testing.SerializationTestUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
@@ -64,8 +70,25 @@ public class CachingAlertExecutionRepositoryTest {
     @Before
     public void setUp() {
         final PeriodicMetrics metrics = Mockito.mock(PeriodicMetrics.class);
-        _actorSystem = ActorSystem.create("TestCacheSystem");
+        final ObjectMapper mapper = SerializationTestUtils.getApiObjectMapper();
+        JacksonSerializer.setObjectMapper(mapper);
+        _actorSystem = ActorSystem.create("TestCacheSystem", ConfigFactory.parseMap(
+                // Force serialization, since this cache is intended to
+                // be used across the network.
+                ImmutableMap.of(
+                        "akka.actor.serialize-messages", "on",
+                        "akka.actor.allow-java-serialization", "off",
+                        "akka.actor.serializers", ImmutableMap.of(
+                                "jackson-json", "com.arpnetworking.commons.akka.JacksonSerializer"
+                        ),
+                        "akka.actor.serialization-bindings", ImmutableMap.of(
+                                "\"com.arpnetworking.commons.akka.AkkaJsonSerializable\"", "jackson-json"
+                        )
+                )
+        ));
+        mapper.registerModule(new AkkaModule(_actorSystem));
         final ActorRef cacheActor = _actorSystem.actorOf(CacheActor.props("testCache", metrics));
+
         _inner = Mockito.spy(new TestAlertExecutionRepository());
         _repo = new CachingAlertExecutionRepository.Builder()
                 .setInner(_inner)
@@ -135,6 +158,8 @@ public class CachingAlertExecutionRepositoryTest {
                 .get();
 
         assertThat(innerResult.isPresent(), is(true));
+
+        assertThat("cached and direct access should agree", innerResult, is(equalTo(cachedResult)));
         assertThat("cached and direct access should agree", innerResult, is(equalTo(cachedResult)));
     }
 
