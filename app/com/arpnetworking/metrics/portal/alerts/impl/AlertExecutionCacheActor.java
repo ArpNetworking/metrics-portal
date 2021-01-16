@@ -25,10 +25,12 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
@@ -51,7 +53,7 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutionCacheActor.class);
 
     private final PeriodicMetrics _metrics;
-    private final Cache<UUID, JobExecution.Success<AlertEvaluationResult>> _cache;
+    private final Cache<CacheKey, JobExecution.Success<AlertEvaluationResult>> _cache;
 
     private AlertExecutionCacheActor(
             final PeriodicMetrics metrics,
@@ -86,6 +88,7 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      * Retrieve the execution associated with this job id.
      *
      * @param ref The CacheActor ref.
+     * @param organization the organization containing this job id
      * @param jobId The job to retrieve.
      * @param timeout The operation timeout.
      * @return A CompletionStage which contains the execution, if any.
@@ -93,12 +96,16 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     @SuppressWarnings("unchecked")
     public static CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> get(
             final ActorRef ref,
+            final Organization organization,
             final UUID jobId,
             final Duration timeout
     ) {
         return Patterns.ask(
             ref,
-            new CacheGet.Builder().setKey(jobId).build(),
+            new CacheGet.Builder()
+                    .setJobId(jobId)
+                    .setOrganizationId(organization.getId())
+                    .build(),
             timeout
         ).thenApply(resp -> ((Optional<SuccessfulAlertExecution>) resp).map(SuccessfulAlertExecution::toJobExecution));
     }
@@ -107,6 +114,7 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      * Retrieve the executions associated with these jobIds.
      *
      * @param ref The CacheActor ref.
+     * @param organization the organization containing these job ids.
      * @param jobIds The jobs to retrieve.
      * @param timeout The operation timeout.
      * @return A CompletionStage which contains the executions, if any.
@@ -114,12 +122,16 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     @SuppressWarnings("unchecked")
     public static CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> multiget(
             final ActorRef ref,
+            final Organization organization,
             final Collection<UUID> jobIds,
             final Duration timeout
     ) {
         return Patterns.ask(
                 ref,
-                new CacheMultiGet.Builder().setKeys(ImmutableList.copyOf(jobIds)).build(),
+                new CacheMultiGet.Builder()
+                        .setJobIds(ImmutableList.copyOf(jobIds))
+                        .setOrganizationId(organization.getId())
+                        .build(),
                 timeout
         ).thenApply(resp ->
             ((ImmutableMap<UUID, SuccessfulAlertExecution>) resp).entrySet()
@@ -135,20 +147,23 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      * Put an execution into the cache.
      *
      * @param ref The CacheActor ref.
-     * @param key The key to update.
+     * @param organization The organization.
      * @param value The execution.
      * @param timeout The operation timeout.
      * @return A completion stage to await for the write to complete.
      */
     public static CompletionStage<Void> put(
             final ActorRef ref,
-            final UUID key,
+            final Organization organization,
             final JobExecution.Success<AlertEvaluationResult> value,
             final Duration timeout
     ) {
         return Patterns.ask(
             ref,
-            new CachePut.Builder().setExecution(SuccessfulAlertExecution.Builder.copyJobExecution(value).build()).build(),
+            new CachePut.Builder()
+                    .setExecution(SuccessfulAlertExecution.Builder.copyJobExecution(value).build())
+                    .setOrganizationId(organization.getId())
+                    .build(),
             timeout
         ).thenApply(resp -> null);
     }
@@ -173,8 +188,9 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
             .match(CacheGet.class, msg -> {
+                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), msg.getJobId());
                 final Optional<SuccessfulAlertExecution> value =
-                        Optional.ofNullable(_cache.getIfPresent(msg.getKey()))
+                        Optional.ofNullable(_cache.getIfPresent(cacheKey))
                             .map(e -> SuccessfulAlertExecution.Builder.copyJobExecution(e).build());
                 _metrics.recordCounter("cache/alert-execution-cache/get", value.isPresent() ? 1 : 0);
                 sender().tell(value, getSelf());
@@ -182,11 +198,12 @@ public final class AlertExecutionCacheActor extends AbstractActor {
             .match(CacheMultiGet.class, msg -> {
                 final ImmutableMap.Builder<UUID, SuccessfulAlertExecution> results = new ImmutableMap.Builder<>();
                 int hits = 0;
-                for (final UUID key : msg.getKeys()) {
-                    final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.getIfPresent(key));
+                for (final UUID jobId : msg.getJobIds()) {
+                    final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), jobId);
+                    final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.getIfPresent(cacheKey));
                     if (value.isPresent()) {
                         hits += 1;
-                        results.put(key, SuccessfulAlertExecution.Builder.copyJobExecution(value.get()).build());
+                        results.put(jobId, SuccessfulAlertExecution.Builder.copyJobExecution(value.get()).build());
                     }
                 }
                 _metrics.recordCounter("cache/alert-execution-cache/multiget", hits);
@@ -196,62 +213,118 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                 _metrics.recordCounter("cache/alert-execution-cache/put", 1);
                 final ActorRef self = getSelf();
                 final JobExecution.Success<AlertEvaluationResult> value = msg.getExecution().toJobExecution();
-                _cache.put(value.getJobId(), value);
+                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), value.getJobId());
+                _cache.put(cacheKey, value);
                 sender().tell(new Status.Success(null), self);
             })
             .build();
     }
 
+    private static final class CacheKey {
+        private final UUID _organizationId;
+        private final UUID _jobId;
+
+        private CacheKey(final UUID organizationId, final UUID jobId) {
+            _organizationId = organizationId;
+            _jobId = jobId;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final CacheKey cacheKey = (CacheKey) o;
+            return Objects.equal(_organizationId, cacheKey._organizationId)
+                    && Objects.equal(_jobId, cacheKey._jobId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(_organizationId, _jobId);
+        }
+    }
+
     private static final class CacheGet implements AkkaJsonSerializable {
-        private final UUID _key;
+        private final UUID _jobId;
+        private final UUID _organizationId;
 
         /**
          * Constructor.
          */
         private CacheGet(final Builder builder) {
-            _key = builder._key;
+            _jobId = builder._jobId;
+            _organizationId = builder._organizationId;
         }
 
-        public UUID getKey() {
-            return _key;
+        public UUID getJobId() {
+            return _jobId;
+        }
+
+        public UUID getOrganizationId() {
+            return _organizationId;
         }
 
         public static final class Builder extends OvalBuilder<CacheGet> {
             @NotNull
-            private UUID _key;
+            private UUID _jobId;
+            @NotNull
+            private UUID _organizationId;
 
             Builder() {
                 super(CacheGet::new);
             }
 
-            public Builder setKey(final UUID key) {
-                _key = key;
+            public Builder setJobId(final UUID jobId) {
+                _jobId = jobId;
+                return this;
+            }
+
+            public Builder setOrganizationId(final UUID organizationId) {
+                _organizationId = organizationId;
                 return this;
             }
         }
     }
 
     private static final class CacheMultiGet implements AkkaJsonSerializable {
-        private final Collection<UUID> _keys;
+        private final Collection<UUID> _jobIds;
+        private final UUID _organizationId;
 
         private CacheMultiGet(final Builder builder) {
-            _keys = builder._keys;
+            _jobIds = builder._jobIds;
+            _organizationId = builder._organizationId;
         }
 
-        public Collection<UUID> getKeys() {
-            return _keys;
+        public Collection<UUID> getJobIds() {
+            return _jobIds;
+        }
+
+        public UUID getOrganizationId() {
+            return _organizationId;
         }
 
         private static final class Builder extends OvalBuilder<CacheMultiGet> {
             @NotNull
-            private ImmutableList<UUID> _keys;
+            private ImmutableList<UUID> _jobIds;
+
+            @NotNull
+            private UUID _organizationId;
 
             Builder() {
                 super(CacheMultiGet::new);
             }
 
-            public Builder setKeys(final ImmutableList<UUID> keys) {
-                _keys = keys;
+            public Builder setJobIds(final ImmutableList<UUID> jobIds) {
+                _jobIds = jobIds;
+                return this;
+            }
+
+            public Builder setOrganizationId(final UUID organizationId) {
+                _organizationId = organizationId;
                 return this;
             }
         }
@@ -259,17 +332,26 @@ public final class AlertExecutionCacheActor extends AbstractActor {
 
     private static final class CachePut implements AkkaJsonSerializable {
         private final SuccessfulAlertExecution _execution;
+        private final UUID _organizationId;
 
         private CachePut(final Builder builder) {
             _execution = builder._execution;
+            _organizationId = builder._organizationId;
         }
 
         public SuccessfulAlertExecution getExecution() {
             return _execution;
         }
 
+        public UUID getOrganizationId() {
+            return _organizationId;
+        }
+
         public static final class Builder extends OvalBuilder<CachePut> {
+            @NotNull
             private SuccessfulAlertExecution _execution;
+            @NotNull
+            private UUID _organizationId;
 
             Builder() {
                 super(CachePut::new);
@@ -277,6 +359,11 @@ public final class AlertExecutionCacheActor extends AbstractActor {
 
             public Builder setExecution(final SuccessfulAlertExecution execution) {
                 _execution = execution;
+                return this;
+            }
+
+            public Builder setOrganizationId(final UUID organizationId) {
+                _organizationId = organizationId;
                 return this;
             }
         }
@@ -335,10 +422,15 @@ public final class AlertExecutionCacheActor extends AbstractActor {
         }
 
         private static final class Builder extends OvalBuilder<SuccessfulAlertExecution> {
+            @NotNull
             private UUID _jobId;
+            @NotNull
             private Instant _scheduled;
+            @NotNull
             private Instant _startedAt;
+            @NotNull
             private Instant _completedAt;
+            @NotNull
             private AlertEvaluationResult _result;
 
             Builder() {
