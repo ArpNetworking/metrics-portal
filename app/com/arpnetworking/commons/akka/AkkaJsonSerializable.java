@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.arpnetworking.commons.akka;
 
 /**
+ * Marker interface for message types to indicate they should be serialized using
+ * {@link JacksonSerializer}.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public interface AkkaJsonSerializable {
-}
+public interface AkkaJsonSerializable { }

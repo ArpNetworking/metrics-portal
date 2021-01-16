@@ -83,7 +83,7 @@ public class CachingAlertExecutionRepositoryTest {
                         )
                 )
         ));
-        final ObjectMapper mapper = SerializationTestUtils.createApiObjectMapper(_actorSystem);
+        final ObjectMapper mapper = SerializationTestUtils.createApiObjectMapper();
         JacksonSerializer.setObjectMapper(mapper);
         final ActorRef cacheActor = _actorSystem.actorOf(AlertExecutionCacheActor.props(metrics, 100, Duration.ofMinutes(1)));
 

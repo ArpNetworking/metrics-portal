@@ -28,6 +28,11 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import java.io.IOException;
 
 /**
+ * Serializer for Akka using Jackson.
+ * <br>
+ * This should be replaced with akka-jackson-serialization once this project is
+ * is on Scala 2.12+ and Akka 2.6+.
+ *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public class JacksonSerializer extends JSerializer {
@@ -48,8 +53,8 @@ public class JacksonSerializer extends JSerializer {
      * because Akka does not provide any initialization hooks for serializers outside
      * of passing the configuration object.
      * <br>
-     * Since we don't want to definte the ObjectMapper twice (once in guice, the other in the
-     * configuration) we instead use this hack.
+     * Since we don't want to define the ObjectMapper twice (once in Guice, the other in the
+     * configuration) we use this hack instead.
      *
      * @param objectMapper the ObjectMapper to use.
      */

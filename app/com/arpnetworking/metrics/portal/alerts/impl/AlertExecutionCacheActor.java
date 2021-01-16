@@ -56,12 +56,12 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     private AlertExecutionCacheActor(
             final PeriodicMetrics metrics,
             final int maxSize,
-            final Duration ttlOnAccess
+            final Duration expireAfterAccess
     ) {
         _metrics = metrics;
         _cache = CacheBuilder.newBuilder()
-            .maximumSize(1000)
-            .expireAfterAccess(ttlOnAccess.getSeconds(), TimeUnit.SECONDS)
+            .maximumSize(maxSize)
+            .expireAfterAccess(expireAfterAccess.getSeconds(), TimeUnit.SECONDS)
             .build();
     }
 
@@ -70,56 +70,56 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      *
      * @param metrics A metrics instance to record against.
      * @param maxSize the maximum cache size
-     * @param ttlOnAccess expiry time for values starting from last access
+     * @param expireAfterAccess expiry time for values starting from last access
      *
      * @return props to instantiate the actor
      */
     public static Props props(
             final PeriodicMetrics metrics,
             final int maxSize,
-            final Duration ttlOnAccess
+            final Duration expireAfterAccess
     ) {
-        return Props.create(AlertExecutionCacheActor.class, () -> new AlertExecutionCacheActor(metrics, maxSize, ttlOnAccess));
+        return Props.create(AlertExecutionCacheActor.class, () -> new AlertExecutionCacheActor(metrics, maxSize, expireAfterAccess));
     }
 
     /**
-     * Retrieve the value associated with this key.
+     * Retrieve the execution associated with this job id.
      *
      * @param ref The CacheActor ref.
-     * @param key The key to retrieve.
+     * @param jobId The job to retrieve.
      * @param timeout The operation timeout.
-     * @return A CompletionStage which contains the value, if any.
+     * @return A CompletionStage which contains the execution, if any.
      */
     @SuppressWarnings("unchecked")
     public static CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> get(
             final ActorRef ref,
-            final UUID key,
+            final UUID jobId,
             final Duration timeout
     ) {
         return Patterns.ask(
             ref,
-            new CacheGet.Builder().setKey(key).build(),
+            new CacheGet.Builder().setKey(jobId).build(),
             timeout
         ).thenApply(resp -> ((Optional<SuccessfulAlertExecution>) resp).map(SuccessfulAlertExecution::toJobExecution));
     }
 
     /**
-     * Retrieve the values associated with a set of keys.
+     * Retrieve the executions associated with these jobIds.
      *
      * @param ref The CacheActor ref.
-     * @param keys The keys to retrieve.
+     * @param jobIds The jobs to retrieve.
      * @param timeout The operation timeout.
-     * @return A CompletionStage which contains the values, if any.
+     * @return A CompletionStage which contains the executions, if any.
      */
     @SuppressWarnings("unchecked")
     public static CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> multiget(
             final ActorRef ref,
-            final Collection<UUID> keys,
+            final Collection<UUID> jobIds,
             final Duration timeout
     ) {
         return Patterns.ask(
                 ref,
-                new CacheMultiGet.Builder().setKeys(ImmutableList.copyOf(keys)).build(),
+                new CacheMultiGet.Builder().setKeys(ImmutableList.copyOf(jobIds)).build(),
                 timeout
         ).thenApply(resp ->
             ((ImmutableMap<UUID, SuccessfulAlertExecution>) resp).entrySet()
@@ -132,11 +132,11 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     }
 
     /**
-     * Put a Key-Value pair into the cache.
+     * Put an execution into the cache.
      *
      * @param ref The CacheActor ref.
      * @param key The key to update.
-     * @param value The associated value.
+     * @param value The execution.
      * @param timeout The operation timeout.
      * @return A completion stage to await for the write to complete.
      */

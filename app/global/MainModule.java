@@ -122,7 +122,6 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -1036,23 +1035,26 @@ public class MainModule extends AbstractModule {
     private static final class AlertExecutionCacheProvider extends ClusterSingletonProvider {
         private static final String ROLE_NAME = "alert_execution_cache";
         private final PeriodicMetrics _periodicMetrics;
+        private final Config _config;
 
         @Inject
         AlertExecutionCacheProvider(
                 final ActorSystem system,
                 final Features features,
-                final PeriodicMetrics periodicMetrics
+                final PeriodicMetrics periodicMetrics,
+                final Config config
         ) {
-            super(system, true, ROLE_NAME, "alert-execution-cache");
+            super(system, config.getBoolean("alertExecutionCache.enabled"), ROLE_NAME, "alert-execution-cache");
             _periodicMetrics = periodicMetrics;
+            _config = config;
         }
 
         @Override
         public Props getProps() {
             return AlertExecutionCacheActor.props(
                     _periodicMetrics,
-                    1000,
-                    Duration.ofMinutes(5)
+                    _config.getInt("alertExecutionCache.maxSize"),
+                    ConfigurationHelper.getJavaDuration(_config, "alertExecutionCache.expireAfterAccess")
             );
         }
     }
