@@ -168,6 +168,35 @@ public final class AlertExecutionCacheActor extends AbstractActor {
         ).thenApply(resp -> null);
     }
 
+    /**
+     * Put several executions into the cache.
+     *
+     * @param ref The CacheActor ref.
+     * @param organization The organization.
+     * @param executions The executions.
+     * @param timeout The operation timeout.
+     * @return A completion stage to await for the write to complete.
+     */
+    public static CompletionStage<Void> multiput(
+            final ActorRef ref,
+            final Organization organization,
+            final Collection<JobExecution.Success<AlertEvaluationResult>> executions,
+            final Duration timeout
+    ) {
+        final ImmutableList<SuccessfulAlertExecution> msgExecutions =
+                executions.stream()
+                        .map(e -> SuccessfulAlertExecution.Builder.copyJobExecution(e).build())
+                        .collect(ImmutableList.toImmutableList());
+        return Patterns.ask(
+                ref,
+                new CacheMultiPut.Builder()
+                        .setExecutions(msgExecutions)
+                        .setOrganizationId(organization.getId())
+                        .build(),
+                timeout
+        ).thenApply(resp -> null);
+    }
+
     @Override
     public void preStart() throws Exception {
         super.preStart();
@@ -197,25 +226,29 @@ public final class AlertExecutionCacheActor extends AbstractActor {
             })
             .match(CacheMultiGet.class, msg -> {
                 final ImmutableMap.Builder<UUID, SuccessfulAlertExecution> results = new ImmutableMap.Builder<>();
-                int hits = 0;
                 for (final UUID jobId : msg.getJobIds()) {
                     final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), jobId);
                     final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.getIfPresent(cacheKey));
-                    if (value.isPresent()) {
-                        hits += 1;
-                        results.put(jobId, SuccessfulAlertExecution.Builder.copyJobExecution(value.get()).build());
-                    }
+                    value.ifPresent(alertEvaluationResultSuccess ->
+                            results.put(jobId, SuccessfulAlertExecution.Builder.copyJobExecution(alertEvaluationResultSuccess).build())
+                    );
+                    _metrics.recordCounter("cache/alert-execution-cache/get", value.isPresent() ? 1 : 0);
                 }
-                _metrics.recordCounter("cache/alert-execution-cache/multiget", hits);
                 sender().tell(results.build(), getSelf());
+            })
+            .match(CacheMultiPut.class, msg -> {
+                for (final SuccessfulAlertExecution execution : msg.getExecutions()) {
+                    final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), execution.getJobId());
+                    _metrics.recordCounter("cache/alert-execution-cache/put", 1);
+                    _cache.put(cacheKey, execution.toJobExecution());
+                }
+                sender().tell(new Status.Success(null), getSelf());
             })
             .match(CachePut.class, msg -> {
                 _metrics.recordCounter("cache/alert-execution-cache/put", 1);
-                final ActorRef self = getSelf();
-                final JobExecution.Success<AlertEvaluationResult> value = msg.getExecution().toJobExecution();
-                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), value.getJobId());
-                _cache.put(cacheKey, value);
-                sender().tell(new Status.Success(null), self);
+                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), msg.getExecution().getJobId());
+                _cache.put(cacheKey, msg.getExecution().toJobExecution());
+                sender().tell(new Status.Success(null), getSelf());
             })
             .build();
     }
@@ -325,6 +358,45 @@ public final class AlertExecutionCacheActor extends AbstractActor {
 
             public Builder setOrganizationId(final UUID organizationId) {
                 _organizationId = organizationId;
+                return this;
+            }
+        }
+    }
+
+    private static final class CacheMultiPut implements AkkaJsonSerializable {
+        private final UUID _organizationId;
+        private final Collection<SuccessfulAlertExecution> _executions;
+
+        private CacheMultiPut(final Builder builder) {
+            _executions = builder._executions;
+            _organizationId = builder._organizationId;
+        }
+
+        public UUID getOrganizationId() {
+            return _organizationId;
+        }
+
+        public Collection<SuccessfulAlertExecution> getExecutions() {
+            return _executions;
+        }
+
+        private static final class Builder extends OvalBuilder<CacheMultiPut> {
+            @NotNull
+            private UUID _organizationId;
+            @NotNull
+            private ImmutableList<SuccessfulAlertExecution> _executions;
+
+            Builder() {
+                super(CacheMultiPut::new);
+            }
+
+            public Builder setOrganizationId(final UUID organizationId) {
+                _organizationId = organizationId;
+                return this;
+            }
+
+            public Builder setExecutions(final ImmutableList<SuccessfulAlertExecution> executions) {
+                _executions = executions;
                 return this;
             }
         }

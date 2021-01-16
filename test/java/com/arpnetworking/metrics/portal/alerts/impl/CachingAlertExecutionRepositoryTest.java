@@ -91,7 +91,7 @@ public class CachingAlertExecutionRepositoryTest {
         _repo = new CachingAlertExecutionRepository.Builder()
                 .setInner(_inner)
                 .setActorRef(cacheActor)
-                .setTimeout("3s")
+                .setOperationTimeout("3s")
                 .build();
         _repo.open();
         _organization = new DefaultOrganization.Builder()

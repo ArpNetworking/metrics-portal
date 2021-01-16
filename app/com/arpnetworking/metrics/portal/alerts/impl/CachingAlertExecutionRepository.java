@@ -58,7 +58,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     private CachingAlertExecutionRepository(final Builder builder) {
         _inner = builder._inner;
         _successCache = builder._actorRef;
-        _cacheOperationTimeout = builder._timeout;
+        _cacheOperationTimeout = builder._operationTimeout;
     }
 
     @Override
@@ -82,7 +82,6 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     public CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> getLastSuccess(
         final UUID jobId, final Organization organization
     ) throws NoSuchElementException {
-//        final String key = cacheKey(jobId, organization.getId());
         return
             AlertExecutionCacheActor.get(_successCache, organization, jobId, _cacheOperationTimeout)
                 .thenCompose(res -> {
@@ -135,7 +134,10 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
                     if (error != null) {
                         return;
                     }
-                    writeBatchToCache(rest, organization);
+                    // Write back to cache.
+                    //
+                    // Note that we do not block on the cache update.
+                    AlertExecutionCacheActor.multiput(_successCache, organization, rest.values(), _cacheOperationTimeout);
                 })
                 .thenApply(rest -> {
                     // Merge the cache hits / misses into a single map.
@@ -145,17 +147,6 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
                     ).collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
                 });
         });
-    }
-
-    private void writeBatchToCache(
-        final Map<UUID, JobExecution.Success<AlertEvaluationResult>> batch,
-        final Organization organization
-    ) {
-        batch.values()
-            .forEach(e -> {
-//                final String key = cacheKey(e.getJobId(), organization.getId());
-                AlertExecutionCacheActor.put(_successCache, organization, e, _cacheOperationTimeout);
-            });
     }
 
     @Override
@@ -178,7 +169,6 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
     public CompletionStage<JobExecution.Success<AlertEvaluationResult>> jobSucceeded(
         final UUID jobId, final Organization organization, final Instant scheduled, final AlertEvaluationResult result
     ) {
-//        final String key = cacheKey(jobId, organization.getId());
         return _inner.jobSucceeded(jobId, organization, scheduled, result)
             .thenCompose(e -> AlertExecutionCacheActor.put(_successCache, organization, e, _cacheOperationTimeout).thenApply(ignore -> e));
     }
@@ -197,7 +187,7 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
         @NotNull
         private AlertExecutionRepository _inner;
         @NotNull
-        private Duration _timeout = Duration.ofSeconds(5);
+        private Duration _operationTimeout = Duration.ofSeconds(5);
         @NotNull
         private ActorRef _actorRef;
 
@@ -219,13 +209,14 @@ public final class CachingAlertExecutionRepository implements AlertExecutionRepo
         }
 
         /**
-         * Sets the cache timeout. Optional. Default is 5 seconds.
+         * Sets the cache operation timeout. Optional. Default is 5 seconds.
+         *
          * @param timeout The cache timeout in FiniteDuration form
          * @return This instance of {@code Builder} for chaining.
          */
-        public Builder setTimeout(final String timeout) {
+        public Builder setOperationTimeout(final String timeout) {
             final scala.concurrent.duration.Duration scalaDuration = scala.concurrent.duration.Duration.apply(timeout);
-            _timeout = Duration.of(scalaDuration.length(), TimeAdapters.toChronoUnit(scalaDuration.unit()));
+            _operationTimeout = Duration.of(scalaDuration.length(), TimeAdapters.toChronoUnit(scalaDuration.unit()));
             return this;
         }
 
