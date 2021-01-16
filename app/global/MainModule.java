@@ -29,6 +29,7 @@ import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import akka.cluster.singleton.ClusterSingletonProxy;
 import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.akka.JacksonSerializer;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
@@ -441,6 +442,7 @@ public class MainModule extends AbstractModule {
         configureMapperForInjection(objectMapper, injector);
 
         Json.setObjectMapper(objectMapper);
+        JacksonSerializer.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
             return CompletableFuture.completedFuture(null);
