@@ -65,8 +65,9 @@ public class JacksonSerializer extends JSerializer {
         gObjectMapper = objectMapper;
     }
 
+
     @Override
-    public Object fromBinaryJava(final byte[] bytes, @Nullable final Class<?> manifest) {
+    public Object fromBinaryJava(final byte[] bytes, final Class<?> manifest) {
         Preconditions.checkNotNull(manifest, "Jackson deserialization requires a manifest.");
         Preconditions.checkNotNull(gObjectMapper, "The mapper was not configured at startup.");
         try {
@@ -78,7 +79,7 @@ public class JacksonSerializer extends JSerializer {
 
     @Override
     public int identifier() {
-        // Can be any integer >40.
+        // Akka allows for this to be any integer >40.
         // Randomly generated from IDE.
         return 564_386_063;
     }
