@@ -29,6 +29,7 @@ import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import akka.cluster.singleton.ClusterSingletonProxy;
 import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.akka.JacksonSerializer;
 import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
@@ -54,6 +55,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
+import com.arpnetworking.metrics.portal.alerts.impl.AlertExecutionCacheActor;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertJobRepository;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
@@ -182,6 +184,7 @@ public class MainModule extends AbstractModule {
         bind(ReportExecutionRepository.class)
                 .toProvider(ReportExecutionRepositoryProvider.class)
                 .asEagerSingleton();
+        bind(AlertExecutionCacheProvider.class);
 
         // Background tasks
         bind(ActorRef.class)
@@ -217,6 +220,10 @@ public class MainModule extends AbstractModule {
         bind(ActorRef.class)
                 .annotatedWith(Names.named("RollupExecutor"))
                 .toProvider(RollupExecutorProvider.class)
+                .asEagerSingleton();
+        bind(ActorRef.class)
+                .annotatedWith(Names.named("AlertExecutionCache"))
+                .toProvider(AlertExecutionCacheProvider.class)
                 .asEagerSingleton();
         bind(JobRefSerializer.class).to(DefaultJobRefSerializer.class);
 
@@ -435,6 +442,7 @@ public class MainModule extends AbstractModule {
         configureMapperForInjection(objectMapper, injector);
 
         Json.setObjectMapper(objectMapper);
+        JacksonSerializer.setObjectMapper(objectMapper);
         lifecycle.addStopHook(() -> {
             Json.setObjectMapper(null);
             return CompletableFuture.completedFuture(null);
@@ -1022,6 +1030,33 @@ public class MainModule extends AbstractModule {
                     _partitioner,
                     _consistencyChecker,
                     _config.getDouble("rollup.manager.consistency_check_fraction_of_writes")
+            );
+        }
+    }
+
+    private static final class AlertExecutionCacheProvider extends ClusterSingletonProvider {
+        private static final String ROLE_NAME = "alert_execution_cache";
+        private final PeriodicMetrics _periodicMetrics;
+        private final Config _config;
+
+        @Inject
+        AlertExecutionCacheProvider(
+                final ActorSystem system,
+                final Features features,
+                final PeriodicMetrics periodicMetrics,
+                final Config config
+        ) {
+            super(system, config.getBoolean("alertExecutionCache.enabled"), ROLE_NAME, "alert-execution-cache");
+            _periodicMetrics = periodicMetrics;
+            _config = config;
+        }
+
+        @Override
+        public Props getProps() {
+            return AlertExecutionCacheActor.props(
+                    _periodicMetrics,
+                    _config.getInt("alertExecutionCache.maxSize"),
+                    ConfigurationHelper.getJavaDuration(_config, "alertExecutionCache.expireAfterAccess")
             );
         }
     }
