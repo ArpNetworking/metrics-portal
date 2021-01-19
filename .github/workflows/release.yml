@@ -36,7 +36,7 @@ jobs:
           OSSRH_USER: ${{ secrets.OSSRH_USER }}
         run: |
           gpg --batch --import arpnetworking.key
-          ./jdk-wrapper.sh ./mvnw clean deploy -P release --settings settings.xml -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+          ./jdk-wrapper.sh ./mvnw clean deploy -P release --settings settings.xml -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
       - name: Create Github Release
         id: create_github_release
         uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e

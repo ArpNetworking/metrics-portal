@@ -29,4 +29,4 @@ jobs:
           key: ${{ runner.os }}-m2-sbt-ivy-${{ hashFiles('pom.xml', '**/*.sbt', 'project/build.properties') }}
           restore-keys: ${{ runner.os }}-m2-sbt-ivy-
       - name: Maven Verify
-        run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: ./jdk-wrapper.sh ./mvnw clean verify -P rpm -U -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
