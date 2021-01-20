@@ -93,7 +93,6 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      * @param timeout The operation timeout.
      * @return A CompletionStage which contains the execution, if any.
      */
-    @SuppressWarnings("unchecked")
     public static CompletionStage<Optional<JobExecution.Success<AlertEvaluationResult>>> get(
             final ActorRef ref,
             final Organization organization,
@@ -107,7 +106,7 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                     .setOrganizationId(organization.getId())
                     .build(),
             timeout
-        ).thenApply(resp -> ((Optional<SuccessfulAlertExecution>) resp).map(SuccessfulAlertExecution::toJobExecution));
+        ).thenApply(resp -> ((CacheGetResponse) resp).getExecution().map(SuccessfulAlertExecution::toJobExecution));
     }
 
     /**
@@ -119,7 +118,6 @@ public final class AlertExecutionCacheActor extends AbstractActor {
      * @param timeout The operation timeout.
      * @return A CompletionStage which contains the executions, if any.
      */
-    @SuppressWarnings("unchecked")
     public static CompletionStage<ImmutableMap<UUID, JobExecution.Success<AlertEvaluationResult>>> multiget(
             final ActorRef ref,
             final Organization organization,
@@ -134,7 +132,9 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                         .build(),
                 timeout
         ).thenApply(resp ->
-            ((ImmutableMap<UUID, SuccessfulAlertExecution>) resp).entrySet()
+            ((CacheMultiGetResponse) resp)
+                    .getExecutions()
+                    .entrySet()
                     .stream()
                     .collect(ImmutableMap.toImmutableMap(
                             Map.Entry::getKey,
@@ -222,7 +222,8 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                         Optional.ofNullable(_cache.getIfPresent(cacheKey))
                             .map(e -> SuccessfulAlertExecution.Builder.copyJobExecution(e).build());
                 _metrics.recordCounter("cache/alert-execution-cache/get", value.isPresent() ? 1 : 0);
-                sender().tell(value, getSelf());
+                final CacheGetResponse resp = new CacheGetResponse.Builder().setExecution(value).build();
+                sender().tell(resp, getSelf());
             })
             .match(CacheMultiGet.class, msg -> {
                 final ImmutableMap.Builder<UUID, SuccessfulAlertExecution> results = new ImmutableMap.Builder<>();
@@ -234,7 +235,8 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                     );
                     _metrics.recordCounter("cache/alert-execution-cache/get", value.isPresent() ? 1 : 0);
                 }
-                sender().tell(results.build(), getSelf());
+                final CacheMultiGetResponse resp = new CacheMultiGetResponse.Builder().setExecutions(results.build()).build();
+                sender().tell(resp, getSelf());
             })
             .match(CacheMultiPut.class, msg -> {
                 for (final SuccessfulAlertExecution execution : msg.getExecutions()) {
@@ -323,6 +325,33 @@ public final class AlertExecutionCacheActor extends AbstractActor {
         }
     }
 
+    private static final class CacheGetResponse implements AkkaJsonSerializable {
+        private final Optional<SuccessfulAlertExecution> _execution;
+
+        public Optional<SuccessfulAlertExecution> getExecution() {
+            return _execution;
+        }
+
+        private CacheGetResponse(final Builder builder) {
+            _execution = builder._execution;
+        }
+
+        private static final class Builder extends OvalBuilder<CacheGetResponse> {
+            @NotNull
+            private Optional<SuccessfulAlertExecution> _execution;
+
+            Builder() {
+                super(CacheGetResponse::new);
+            }
+
+            public Builder setExecution(final Optional<SuccessfulAlertExecution> execution) {
+                _execution = execution;
+                return this;
+            }
+        }
+
+    }
+
     private static final class CacheMultiGet implements AkkaJsonSerializable {
         private final Collection<UUID> _jobIds;
         private final UUID _organizationId;
@@ -361,6 +390,33 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                 return this;
             }
         }
+    }
+
+    private static final class CacheMultiGetResponse implements AkkaJsonSerializable {
+        private final ImmutableMap<UUID, SuccessfulAlertExecution> _executions;
+
+        public ImmutableMap<UUID, SuccessfulAlertExecution> getExecutions() {
+            return _executions;
+        }
+
+        private CacheMultiGetResponse(final Builder builder) {
+            _executions = builder._executions;
+        }
+
+        private static final class Builder extends OvalBuilder<CacheMultiGetResponse> {
+            @NotNull
+            private ImmutableMap<UUID, SuccessfulAlertExecution> _executions;
+
+            Builder() {
+                super(CacheMultiGetResponse::new);
+            }
+
+            public Builder setExecutions(final ImmutableMap<UUID, SuccessfulAlertExecution> executions) {
+                _executions = executions;
+                return this;
+            }
+        }
+
     }
 
     private static final class CacheMultiPut implements AkkaJsonSerializable {
