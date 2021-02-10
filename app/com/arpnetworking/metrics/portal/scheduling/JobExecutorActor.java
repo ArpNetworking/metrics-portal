@@ -95,9 +95,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *                          |          ^
      *               restart    v          |   execution complete          ^ Uninitialized  ^
      *         +----<------<----+          +-------<-------<-------        ------------------
-     *         |     ticker                                       ^        V  Initialized   V
+     *         |     ticker                                       ^        v  Initialized   v
      *         |                                                  |
-     *         V                                                  |
+     *         v                                                  |
      * +-------------+         +--------------+   job       +-----+--------+
      * | Initialized |  tick   |      job     |  complete   |  record job  |
      * |  (ticking)  +-------->+   executing  +------------>+   results    |
@@ -364,6 +364,14 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private void reload(final Reload<T> message) {
         if (_currentlyExecuting || _currentlyReloading) {
+            final String reason = _currentlyExecuting ? "already executing" : "already reloading";
+            LOGGER.debug()
+                    .setMessage("ignoring extra reload message")
+                    .addData("jobRef", message.getJobRef())
+                    .addData("ignoreReason", reason)
+                    .addData("lastRun", _lastRun)
+                    .addData("actorRef", self())
+                    .log();
             return;
         }
         final Optional<String> eTag = message.getETag();
@@ -422,7 +430,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .log();
             return;
         }
-        final JobRef<T> ref = _ref.get();
+        final JobRef<T> ref = assertInitialized();
 
         _nextRun = Optional.empty();
         @SuppressWarnings("unchecked")
@@ -470,6 +478,15 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     typedMessage.getError());
         }
 
+        handleJobCompletedUpdate(updateFut, message.getScheduled(), message.getError());
+    }
+
+    private void handleJobCompletedUpdate(
+            final CompletionStage<Void> updateFut,
+            final Instant scheduled,
+            @Nullable final Throwable jobError
+    ) {
+        final JobRef<T> ref = assertInitialized();
         Patterns.pipe(
             updateFut.handle((ignored, error) -> {
                 if (error == null) {
@@ -479,7 +496,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     LOGGER.warn()
                             .setMessage("tried to mark job as complete, but job no longer exists in repository")
                             .addData("ref", ref)
-                            .addData("scheduled", message.getScheduled())
+                            .addData("scheduled", scheduled)
                             .addData("actorRef", self())
                             .log();
                     return REQUEST_PERMANENT_SHUTDOWN;
@@ -488,8 +505,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         .setMessage("Failed to mark job as complete")
                         .setThrowable(error)
                         .addData("ref", ref)
-                        .addData("scheduled", message.getScheduled())
-                        .addData("jobError", message.getError())
+                        .addData("scheduled", scheduled)
+                        .addData("jobError", jobError)
                         .addData("actorRef", self())
                         .log();
                 // Propagate the exception.
@@ -503,6 +520,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
             }).toCompletableFuture(),
             getContext().getDispatcher()
         ).to(self());
+    }
+
+    private JobRef<T> assertInitialized() {
+        return _ref.orElseThrow(() -> new IllegalStateException("expected ref to be initialized"));
     }
 
     @Override
