@@ -665,7 +665,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     /**
      * Newtype wrapper around a {@link Reload} to mark its origin as the completion
      * of a job, vs an anti-entropy tick or restart tick.
-     * @param <T>
+     *
+     * @param <T> The type of the result computed by the referenced {@link Job}.
      */
     private static final class ExecutionCompleted<T> {
         private final Reload<T> _reload;
