@@ -181,6 +181,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         super.postRestart(reason);
         LOGGER.info()
                 .setMessage("restarting after error")
+                .addData("actorRef", self())
                 .setThrowable(reason)
                 .log();
     }
@@ -210,6 +211,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
         LOGGER.info()
                 .setMessage("initializing")
+                .addData("actorRef", self())
                 .addData("ref", ref)
                 .log();
 
@@ -252,6 +254,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .addData("job", job)
                 .addData("ref", ref)
                 .addData("lastRun", _lastRun)
+                .addData("actorRef", self())
                 .log();
             return;
         }
@@ -346,6 +349,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .addData("job", _cachedJob)
                     .addData("ref", _ref)
                     .addData("lastRun", _lastRun)
+                    .addData("actorRef", self())
                     .log();
             killSelfPermanently();
             return;
@@ -378,6 +382,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .addData("jobRef", _ref)
                 .addData("oldETag", _cachedJob.flatMap(Job::getETag))
                 .addData("newETag", eTag)
+                .addData("actorRef", self())
                 .log();
         _periodicMetrics.recordCounter("jobs/executor/reload", 1);
         final JobRef<T> ref = unsafeJobRefCast(message.getJobRef());
@@ -413,6 +418,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("uninitialized, but got completion message (perhaps from previous life?)")
                     .addData("scheduled", message.getScheduled())
                     .addData("error", message.getError())
+                    .addData("actorRef", self())
                     .log();
             return;
         }
@@ -441,6 +447,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("marking job as successful")
                     .addData("ref", ref)
                     .addData("scheduled", message.getScheduled())
+                    .addData("actorRef", self())
                     .log();
             updateFut = repo.jobSucceeded(
                     ref.getJobId(),
@@ -453,6 +460,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     .setMessage("marking job as failed")
                     .addData("ref", ref)
                     .addData("scheduled", message.getScheduled())
+                    .addData("actorRef", self())
                     .setThrowable(message.getError())
                     .log();
             updateFut = repo.jobFailed(
@@ -472,6 +480,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                             .setMessage("tried to mark job as complete, but job no longer exists in repository")
                             .addData("ref", ref)
                             .addData("scheduled", message.getScheduled())
+                            .addData("actorRef", self())
                             .log();
                     return REQUEST_PERMANENT_SHUTDOWN;
                 }
@@ -481,6 +490,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                         .addData("ref", ref)
                         .addData("scheduled", message.getScheduled())
                         .addData("jobError", message.getError())
+                        .addData("actorRef", self())
                         .log();
                 // Propagate the exception.
                 //
