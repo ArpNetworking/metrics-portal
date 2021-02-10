@@ -75,6 +75,34 @@ import javax.annotation.Nullable;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class JobExecutorActor<T> extends AbstractActorWithTimers {
+    /**
+     * high-level actor state diagram.
+     *
+     * arrows are messages that transition between states.
+     * boxes are internal states of execution.
+     *
+     * We assume the following invariants wrt reloads:
+     * - If multiple Reload messages occur, ones received while in the process
+     *   of reloading or executing are ignored.
+     * - If multiple Tick messages occur, ones received while in the process of
+     *   executing are ignored.
+     * - Execution completion always triggers a reload, even if we would otherwise tick.
+     *
+     *     +---------+  reload  +----------+  reload  +--------------+
+     *     |  actor  +--------->+  reload  +<---------+  antientropy |
+     *     |  start  |          |   job    |          |     tick     |
+     *     +---------+          +----------+          +--------------+
+     *                          |          ^
+     *               restart    v          |   execution complete          ^ Uninitialized  ^
+     *         +----<------<----+          +-------<-------<-------        ------------------
+     *         |     ticker                                       ^        V  Initialized   V
+     *         |                                                  |
+     *         V                                                  |
+     * +-------------+         +--------------+   job       +-----+--------+
+     * | Initialized |  tick   |      job     |  complete   |  record job  |
+     * |  (ticking)  +-------->+   executing  +------------>+   results    |
+     * +-------------+         +--------------+             +--------------+
+     */
 
     private final Injector _injector;
     private final Clock _clock;
@@ -85,6 +113,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * Once a tick is received, this flag will not be reset until another reload occurs.
      */
     private boolean _currentlyExecuting = false;
+    private boolean _currentlyReloading = false;
 
     private Optional<JobRef<T>> _ref = Optional.empty();
     private Optional<Job<T>> _cachedJob = Optional.empty();
@@ -330,6 +359,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     private void reload(final Reload<T> message) {
+        if (_currentlyExecuting || _currentlyReloading) {
+            return;
+        }
         final Optional<String> eTag = message.getETag();
         final boolean needsUpdate = _cachedJob
                 .flatMap(Job::getETag)
@@ -340,8 +372,9 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         if (!needsUpdate) {
             return;
         }
+        _currentlyReloading = true;
         LOGGER.debug()
-                .setMessage("job is stale; reloading")
+                .setMessage("reloading job")
                 .addData("jobRef", _ref)
                 .addData("oldETag", _cachedJob.flatMap(Job::getETag))
                 .addData("newETag", eTag)
@@ -432,7 +465,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         Patterns.pipe(
             updateFut.handle((ignored, error) -> {
                 if (error == null) {
-                    return new Reload.Builder<T>().setJobRef(ref).build();
+                    return new ExecutionCompleted<>(new Reload.Builder<T>().setJobRef(ref).build());
                 }
                 if (error instanceof NoSuchElementException) {
                     LOGGER.warn()
@@ -465,11 +498,23 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(Tick.class, this::tick)
+                // Messages that can be sent from outside the actor.
                 .match(Reload.class, message -> {
-                    _currentlyExecuting = false;
                     @SuppressWarnings("unchecked")
                     final Reload<T> typedMessage = (Reload<T>) message;
+                    this.reload(typedMessage);
+                })
+                // Messages that always originate from inside the actor
+                .match(Tick.class, this::tick)
+                .match(ExecutionCompleted.class, message -> {
+                    _currentlyExecuting = false;
+                    // We invoke the reload handler directly instead of forwarding
+                    // to avoid racing the next tick.
+                    //
+                    // i.e. the timer could tick before we could forward our
+                    // message which would prevent a reload.
+                    @SuppressWarnings("unchecked")
+                    final Reload<T> typedMessage = (Reload<T>) message.getReload();
                     this.reload(typedMessage);
                 })
                 .match(JobCompleted.class, message -> {
@@ -478,6 +523,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     this.jobCompleted(typedMessage);
                 })
                 .match(RestartTicker.class, message -> {
+                    _currentlyReloading = false;
                     _lastRun = message.getLastRun();
                     timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
                     getSelf().tell(Tick.INSTANCE, getSelf());
@@ -603,6 +649,23 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 _eTag = eTag;
                 return this;
             }
+        }
+    }
+
+    /**
+     * Newtype wrapper around a {@link Reload} to mark its origin as the completion
+     * of a job, vs an anti-entropy tick or restart tick.
+     * @param <T>
+     */
+    private static final class ExecutionCompleted<T> {
+        private final Reload<T> _reload;
+
+        ExecutionCompleted(final Reload<T> reload) {
+            _reload = reload;
+        }
+
+        public Reload<T> getReload() {
+            return _reload;
         }
     }
 
