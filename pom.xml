@@ -153,6 +153,7 @@
 
     <!-- Project Overrides -->
     <buildDirectory>${project.basedir}/target</buildDirectory>
+    <maven.version>3.6.3</maven.version>
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
