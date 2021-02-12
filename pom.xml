@@ -743,6 +743,19 @@
           <skip>${skipDockerBuild}</skip>
         </configuration>
       </plugin>
+      <!-- Temporarily disable display-dependency-updates which does not work in GitHub Actions -->
+      <!-- TODO(TICKET): Remove this block. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>default-display-dependency-updates</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
