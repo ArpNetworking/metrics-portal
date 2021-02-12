@@ -744,7 +744,7 @@
         </configuration>
       </plugin>
       <!-- Temporarily disable display-dependency-updates which does not work in GitHub Actions -->
-      <!-- TODO(TICKET): Remove this block. -->
+      <!-- See: https://github.com/ArpNetworking/metrics-portal/issues/487 -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
