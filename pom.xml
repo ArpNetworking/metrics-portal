@@ -153,6 +153,7 @@
 
     <!-- Project Overrides -->
     <buildDirectory>${project.basedir}/target</buildDirectory>
+    <maven.version>3.6.3</maven.version>
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
@@ -741,6 +742,19 @@
           </images>
           <skip>${skipDockerBuild}</skip>
         </configuration>
+      </plugin>
+      <!-- Temporarily disable display-dependency-updates which does not work in GitHub Actions -->
+      <!-- See: https://github.com/ArpNetworking/metrics-portal/issues/487 -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>default-display-dependency-updates</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
