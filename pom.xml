@@ -310,11 +310,8 @@
         <!-- See: https://github.com/ArpNetworking/metrics-portal/issues/487 -->
         <executions>
           <execution>
-            <id>disable-display-dependency-updates</id>
+            <id>default-display-dependency-updates</id>
             <phase>none</phase>
-            <goals>
-              <goal>display-dependency-updates</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
