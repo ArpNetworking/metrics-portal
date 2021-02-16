@@ -292,6 +292,12 @@ public final class JobExecutorActorTest {
                 .build());
 
         final ActorRef executor = makeExecutorActor(job);
+        final JobRef<Integer> ref = new JobRef.Builder<Integer>()
+                .setRepositoryType(MockableIntJobRepository.class)
+                .setExecutionRepositoryType(MockableIntJobExecutionRepository.class)
+                .setId(job.getId())
+                .setOrganization(ORGANIZATION)
+                .build();
 
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
 
@@ -300,13 +306,20 @@ public final class JobExecutorActorTest {
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
         executor.tell(JobExecutorActor.Tick.INSTANCE, null);
+
+        // An external reload request should not cause another job start, either
+        executor.tell(new JobExecutorActor.Reload.Builder<Integer>()
+                        .setJobRef(ref)
+                        .build(),
+                null);
+
         // (ensure that the job didn't weirdly complete for some reason)
         Mockito.verify(_execRepo, Mockito.after(1000).never()).jobSucceeded(
                 Mockito.any(),
                 Mockito.any(),
                 Mockito.any(),
                 Mockito.any());
-        // Ensure that, despite the ticks, still only a single execution for the job has ever started
+        // Ensure that, despite the ticks and reload, only a single execution for the job has ever started
         Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(Mockito.eq(job.getId()),
                 Mockito.eq(ORGANIZATION),
                 Mockito.any());
