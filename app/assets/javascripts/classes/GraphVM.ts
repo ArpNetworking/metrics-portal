@@ -161,7 +161,7 @@ class GraphVM implements StatisticView {
         if (index == undefined) {
             index = this.data.length;
             this.dataStreams[cvm.server] = index;
-            var series = new Series(cvm.server, cvm.color());
+            var series = new Series(cvm.server, cvm.color(), this.spec.statistic);
             series.colorSubscription = cvm.color.subscribe((color: String) => {
                 this.updateColor(cvm);
             });
