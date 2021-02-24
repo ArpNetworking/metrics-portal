@@ -18,6 +18,7 @@ package com.arpnetworking.metrics.portal.scheduling;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
+import akka.actor.Status;
 import akka.cluster.sharding.ShardRegion;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
@@ -99,8 +100,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      *         |                                                  |
      *         v                                                  |
      * +-------------+         +--------------+   job       +-----+--------+
-     * | Initialized |  tick   |      job     |  complete   |  record job  |
-     * |  (ticking)  +-------->+   executing  +------------>+   results    |
+     * | Initialized |  tick   |      job     |  complete   |  record job  | error
+     * |  (ticking)  +-------->+   executing  +------------>+   results    +-------> crash / restart
      * +-------------+         +--------------+             +--------------+
      */
 
@@ -189,6 +190,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     private void scheduleTickFor(final Instant wakeUpAt) {
         final FiniteDuration delta = Duration.fromNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
         timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, delta);
+    }
+
+    private void killSelf() {
+        self().tell(PoisonPill.getInstance(), getSelf());
     }
 
     private void killSelfPermanently() {
@@ -559,6 +564,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                     timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
                     getSelf().tell(Tick.INSTANCE, getSelf());
                 })
+                // If any message piping future fails the actor should be restarted.
+                .match(Status.Failure.class, message -> killSelf())
                 .matchEquals(REQUEST_PERMANENT_SHUTDOWN, message -> killSelfPermanently())
                 .build();
     }
