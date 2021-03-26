@@ -256,9 +256,16 @@ public class KairosDbProxyControllerTest {
                         new Sampling.Builder().setValue(1).setUnit(SamplingUnit.HOURS).build()).setAlignStartTime(
                                 true).addOtherArg("percentile", 0.5).build()))
                 .build();
+        // Test case where top aggregator with sampling is moving window
+        final Metric metric4 = new Metric.Builder()
+                .setName("metric4")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("movingWindow").setSampling(
+                        new Sampling.Builder().setValue(7).setUnit(SamplingUnit.DAYS).build()).setAlignStartTime(
+                                true).build()))
+                .build();
         final MetricsQuery metricsQuery = new MetricsQuery.Builder()
                 .setStartTime(Instant.now())
-                .setMetrics(ImmutableList.of(metric1, metric2, metric3))
+                .setMetrics(ImmutableList.of(metric1, metric2, metric3, metric4))
                 .build();
 
         final MetricsQuery newMetricsQuery = _controller.checkAndAddMergeAggregator(metricsQuery);
@@ -275,5 +282,11 @@ public class KairosDbProxyControllerTest {
         assertEquals(newMetricsQuery.getMetrics().get(2).getAggregators().get(1).getAlignStartTime(),
                 newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getAlignStartTime());
         assertTrue(newMetricsQuery.getMetrics().get(2).getAggregators().get(0).getOtherArgs().isEmpty());
+        assertEquals("merge", newMetricsQuery.getMetrics().get(3).getAggregators().get(0).getName());
+        assertEquals("movingWindow", newMetricsQuery.getMetrics().get(3).getAggregators().get(1).getName());
+        assertEquals(1,
+                newMetricsQuery.getMetrics().get(3).getAggregators().get(0).getSampling().get().getValue());
+        assertEquals(newMetricsQuery.getMetrics().get(3).getAggregators().get(1).getSampling().get().getUnit(),
+                newMetricsQuery.getMetrics().get(3).getAggregators().get(0).getSampling().get().getUnit());
     }
 }
