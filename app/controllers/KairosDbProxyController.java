@@ -20,6 +20,7 @@ import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.service.DefaultQueryContext;
 import com.arpnetworking.kairos.service.KairosDbService;
@@ -204,10 +205,16 @@ public class KairosDbProxyController extends Controller {
                 newAggregators.add(aggregatorWithSampling.map(
                         aggregator -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> {
                             b.setName("merge");
-                            aggregator.getSampling().ifPresent(b::setSampling);
                             aggregator.getAlignStartTime().ifPresent(b::setAlignStartTime);
                             aggregator.getAlignSampling().ifPresent(b::setAlignSampling);
                             aggregator.getAlignEndTime().ifPresent(b::setAlignEndTime);
+                            // moving window sampling is a faux sampling interval that takes a window of datapoints
+                            // but generates a data point for a single unit of time.
+                            if (aggregator.getName().equals("movingWindow") && aggregator.getSampling().isPresent()) {
+                                b.setSampling(new Sampling.Builder().setValue(1).setUnit(aggregator.getSampling().get().getUnit()).build());
+                            } else {
+                                aggregator.getSampling().ifPresent(b::setSampling);
+                            }
                         })).
                         orElseGet(() -> ThreadLocalBuilder.build(Aggregator.Builder.class, b -> b.setName("merge"))));
                 newAggregators.addAll(metric.getAggregators());
