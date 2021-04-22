@@ -80,6 +80,18 @@ public class CachingAlertExecutionRepositoryTest {
                         ),
                         "akka.actor.serialization-bindings", ImmutableMap.of(
                                 "\"com.arpnetworking.commons.akka.AkkaJsonSerializable\"", "jackson-json"
+                        ),
+                        "akka.persistence.journal", ImmutableMap.of(
+                                "plugin", "akka.persistence.journal.inmem",
+                                "auto-start-journals", ImmutableList.of(
+                                        "akka.persistence.journal.inmem"
+                                )
+                        ),
+                        "akka.persistence.snapshot-store", ImmutableMap.of(
+                                "plugin", "akka.persistence.snapshot-store.local",
+                                "auto-start-journals", ImmutableList.of(
+                                        "akka.persistence.snapshot-store.local"
+                                )
                         )
                 )
         ));
