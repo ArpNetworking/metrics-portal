@@ -279,14 +279,14 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
                 sender().tell(resp, getSelf());
             })
             .match(CacheMultiPut.class, msg -> {
-                persistAsync(msg, m -> {
+                persist(msg, m -> {
                     handleMultiPut(msg);
                     _metrics.recordCounter("cache/alert-execution-cache/put", msg.getExecutions().size());
                     sender().tell(new Status.Success(null), getSelf());
                 });
             })
             .match(CachePut.class, msg -> {
-                persistAsync(msg, m -> {
+                persist(msg, m -> {
                     handlePut(msg);
                     _metrics.recordCounter("cache/alert-execution-cache/put", 1);
                     sender().tell(new Status.Success(null), getSelf());
