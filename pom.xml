@@ -28,7 +28,7 @@
   <packaging>play2</packaging>
   <name>Metrics Portal</name>
   <description>Web user interface for managing the metrics stack.</description>
-  <version>0.10.63-SNAPSHOT</version>
+  <version>0.10.63</version>
 
   <licenses>
     <license>
@@ -66,7 +66,7 @@
     <connection>scm:git:git@github.com:ArpNetworking/metrics-portal.git</connection>
     <developerConnection>scm:git:git@github.com:ArpNetworking/metrics-portal.git</developerConnection>
     <url>https://github.com/arpnetworking/metrics-portal</url>
-    <tag>HEAD</tag>
+    <tag>metrics-portal-0.10.63</tag>
   </scm>
 
   <properties>
