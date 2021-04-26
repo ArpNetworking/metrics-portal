@@ -15,11 +15,15 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.Status;
 import akka.pattern.Patterns;
+import akka.persistence.AbstractPersistentActorWithTimers;
+import akka.persistence.SaveSnapshotFailure;
+import akka.persistence.SaveSnapshotSuccess;
+import akka.persistence.SnapshotMetadata;
+import akka.persistence.SnapshotOffer;
 import com.arpnetworking.commons.akka.AkkaJsonSerializable;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -38,6 +42,7 @@ import net.sf.oval.constraint.NotNull;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,7 +54,10 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
-public final class AlertExecutionCacheActor extends AbstractActor {
+public final class AlertExecutionCacheActor extends AbstractPersistentActorWithTimers {
+    private static final String MSG_TAKE_SNAPSHOT = "MSG_TAKE_SNAPSHOT";
+    private static final String SNAPSHOT_TIMER_KEY = "SNAPSHOT_TIMER_KEY";
+    private static final Duration SNAPSHOT_INTERVAL = Duration.ofMinutes(5);
     private static final Logger LOGGER = LoggerFactory.getLogger(AlertExecutionCacheActor.class);
 
     private final PeriodicMetrics _metrics;
@@ -203,10 +211,15 @@ public final class AlertExecutionCacheActor extends AbstractActor {
         LOGGER.info()
                 .setMessage("cache actor starting")
                 .log();
+        timers().startPeriodicTimer(
+                SNAPSHOT_TIMER_KEY,
+                MSG_TAKE_SNAPSHOT,
+                SNAPSHOT_INTERVAL
+        );
     }
 
     @Override
-    public void postStop() throws Exception {
+    public void postStop() {
         super.postStop();
         LOGGER.info()
                 .setMessage("cache actor was stopped")
@@ -214,10 +227,34 @@ public final class AlertExecutionCacheActor extends AbstractActor {
     }
 
     @Override
+    public Receive createReceiveRecover() {
+        return receiveBuilder()
+                .match(SnapshotOffer.class, offer -> {
+                    final SnapshotMetadata metadata = offer.metadata();
+                    LOGGER.info()
+                        .setMessage("reloading cache from snapshot")
+                        .addData("sequenceNr", metadata.sequenceNr())
+                        .addData("timestamp", Instant.ofEpochMilli(metadata.timestamp()))
+                        .addData("persistenceId", metadata.persistenceId())
+                        .log();
+                    final CacheSnapshot snapshot = (CacheSnapshot) offer.snapshot();
+                    for (final SnapshotEntry entry : snapshot.getEntries()) {
+                        _cache.put(entry.getKey(), entry.getValue());
+                    }
+                })
+                .match(CacheMultiPut.class, this::handleMultiPut)
+                .match(CachePut.class, this::handlePut)
+                .build();
+    }
+
+    @Override
     public Receive createReceive() {
         return receiveBuilder()
             .match(CacheGet.class, msg -> {
-                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), msg.getJobId());
+                final CacheKey cacheKey = new CacheKey.Builder()
+                        .setOrganizationId(msg.getOrganizationId())
+                        .setJobId(msg.getJobId())
+                        .build();
                 final Optional<SuccessfulAlertExecution> value =
                         Optional.ofNullable(_cache.getIfPresent(cacheKey))
                             .map(e -> SuccessfulAlertExecution.Builder.copyJobExecution(e).build());
@@ -228,7 +265,10 @@ public final class AlertExecutionCacheActor extends AbstractActor {
             .match(CacheMultiGet.class, msg -> {
                 final ImmutableMap.Builder<UUID, SuccessfulAlertExecution> results = new ImmutableMap.Builder<>();
                 for (final UUID jobId : msg.getJobIds()) {
-                    final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), jobId);
+                    final CacheKey cacheKey = new CacheKey.Builder()
+                            .setOrganizationId(msg.getOrganizationId())
+                            .setJobId(jobId)
+                            .build();
                     final Optional<JobExecution.Success<AlertEvaluationResult>> value = Optional.ofNullable(_cache.getIfPresent(cacheKey));
                     value.ifPresent(alertEvaluationResultSuccess ->
                             results.put(jobId, SuccessfulAlertExecution.Builder.copyJobExecution(alertEvaluationResultSuccess).build())
@@ -239,29 +279,137 @@ public final class AlertExecutionCacheActor extends AbstractActor {
                 sender().tell(resp, getSelf());
             })
             .match(CacheMultiPut.class, msg -> {
-                for (final SuccessfulAlertExecution execution : msg.getExecutions()) {
-                    final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), execution.getJobId());
-                    _metrics.recordCounter("cache/alert-execution-cache/put", 1);
-                    _cache.put(cacheKey, execution.toJobExecution());
-                }
-                sender().tell(new Status.Success(null), getSelf());
+                persist(msg, m -> {
+                    handleMultiPut(msg);
+                    _metrics.recordCounter("cache/alert-execution-cache/put", msg.getExecutions().size());
+                    sender().tell(new Status.Success(null), getSelf());
+                });
             })
             .match(CachePut.class, msg -> {
-                _metrics.recordCounter("cache/alert-execution-cache/put", 1);
-                final CacheKey cacheKey = new CacheKey(msg.getOrganizationId(), msg.getExecution().getJobId());
-                _cache.put(cacheKey, msg.getExecution().toJobExecution());
-                sender().tell(new Status.Success(null), getSelf());
+                persist(msg, m -> {
+                    handlePut(msg);
+                    _metrics.recordCounter("cache/alert-execution-cache/put", 1);
+                    sender().tell(new Status.Success(null), getSelf());
+                });
             })
-            .build();
+            .matchEquals(MSG_TAKE_SNAPSHOT, m -> {
+                LOGGER.info("cache snapshot requested.");
+                final ImmutableList<SnapshotEntry> snapshotEntries = _cache.asMap()
+                        .entrySet()
+                        .stream()
+                        .map(e -> new SnapshotEntry.Builder().setKey(e.getKey()).setValue(e.getValue()).build())
+                        .collect(ImmutableList.toImmutableList());
+                final CacheSnapshot snapshot = new CacheSnapshot.Builder()
+                        .setEntries(snapshotEntries)
+                        .build();
+                saveSnapshot(snapshot);
+            })
+            .match(SaveSnapshotSuccess.class, m -> LOGGER.info("successfully saved cache snapshot."))
+            .match(SaveSnapshotFailure.class, m -> LOGGER.error()
+                    .addData("cause", m.cause())
+                    .setMessage("failed to save cache snapshot.")
+                    .log()
+            ).build();
     }
 
-    private static final class CacheKey {
+    @Override
+    public String persistenceId() {
+        return "alert-execution-cache";
+    }
+
+    private void handleMultiPut(final CacheMultiPut msg) {
+        for (final SuccessfulAlertExecution execution : msg.getExecutions()) {
+            final CacheKey cacheKey = new CacheKey.Builder()
+                    .setOrganizationId(msg.getOrganizationId())
+                    .setJobId(execution.getJobId())
+                    .build();
+            _cache.put(cacheKey, execution.toJobExecution());
+        }
+    }
+
+    private void handlePut(final CachePut msg) {
+        final CacheKey cacheKey = new CacheKey.Builder()
+            .setOrganizationId(msg.getOrganizationId())
+            .setJobId(msg.getExecution().getJobId())
+            .build();
+        _cache.put(cacheKey, msg.getExecution().toJobExecution());
+    }
+
+    // Snapshot of the cache for persistence.
+    //
+    // This class exists as a wrapper for serialization purposes only.
+    private static final class CacheSnapshot implements AkkaJsonSerializable {
+        private final ImmutableList<SnapshotEntry> _entries;
+
+        private CacheSnapshot(final Builder builder) {
+            _entries = builder._entries;
+        }
+
+        public ImmutableList<SnapshotEntry> getEntries() {
+            return _entries;
+        }
+
+        private static final class Builder extends OvalBuilder<CacheSnapshot> {
+            @NotNull
+            private ImmutableList<SnapshotEntry> _entries;
+
+            Builder() {
+                super(CacheSnapshot::new);
+            }
+
+            public Builder setEntries(final List<SnapshotEntry> entries) {
+                _entries = ImmutableList.copyOf(entries);
+                return this;
+            }
+        }
+    }
+
+    private static final class SnapshotEntry implements AkkaJsonSerializable {
+        private final CacheKey _key;
+        private final JobExecution.Success<AlertEvaluationResult> _value;
+
+        private SnapshotEntry(final Builder builder) {
+            _key = builder._key;
+            _value = builder._value;
+        }
+
+        public CacheKey getKey() {
+            return _key;
+        }
+
+        public JobExecution.Success<AlertEvaluationResult> getValue() {
+            return _value;
+        }
+
+        public static final class Builder extends OvalBuilder<SnapshotEntry> {
+            @NotNull
+            private CacheKey _key;
+            @NotNull
+            private JobExecution.Success<AlertEvaluationResult> _value;
+
+            Builder() {
+                super(SnapshotEntry::new);
+            }
+
+            public Builder setKey(final CacheKey key) {
+                _key = key;
+                return this;
+            }
+
+            public Builder setValue(final JobExecution.Success<AlertEvaluationResult> value) {
+                _value = value;
+                return this;
+            }
+        }
+    }
+
+    private static final class CacheKey implements AkkaJsonSerializable {
         private final UUID _organizationId;
         private final UUID _jobId;
 
-        private CacheKey(final UUID organizationId, final UUID jobId) {
-            _organizationId = organizationId;
-            _jobId = jobId;
+        private CacheKey(final Builder builder) {
+            _organizationId = builder._organizationId;
+            _jobId = builder._jobId;
         }
 
         @Override
@@ -280,6 +428,35 @@ public final class AlertExecutionCacheActor extends AbstractActor {
         @Override
         public int hashCode() {
             return Objects.hashCode(_organizationId, _jobId);
+        }
+
+        public UUID getOrganizationId() {
+            return _organizationId;
+        }
+
+        public UUID getJobId() {
+            return _jobId;
+        }
+
+        public static final class Builder extends OvalBuilder<CacheKey> {
+            @NotNull
+            private UUID _jobId;
+            @NotNull
+            private UUID _organizationId;
+
+            Builder() {
+                super(CacheKey::new);
+            }
+
+            public Builder setJobId(final UUID jobId) {
+                _jobId = jobId;
+                return this;
+            }
+
+            public Builder setOrganizationId(final UUID organizationId) {
+                _organizationId = organizationId;
+                return this;
+            }
         }
     }
 
