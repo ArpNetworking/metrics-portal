@@ -20,6 +20,7 @@ import akka.actor.Props;
 import akka.actor.Status;
 import akka.pattern.Patterns;
 import akka.persistence.AbstractPersistentActorWithTimers;
+import akka.persistence.RecoveryCompleted;
 import akka.persistence.SaveSnapshotFailure;
 import akka.persistence.SaveSnapshotSuccess;
 import akka.persistence.SnapshotMetadata;
@@ -38,6 +39,7 @@ import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
+import scala.Option;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -227,8 +229,21 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
     }
 
     @Override
+    public void onRecoveryFailure(final Throwable cause, final Option<Object> event) {
+        // I'm not sure if log serialization will handle the scala Option correctly,
+        // so let's convert it.
+        final Optional<Object> javaEvent = Optional.ofNullable(event.getOrElse(null));
+        LOGGER.error()
+                .setThrowable(cause)
+                .addData("event", javaEvent)
+                .setMessage("cache could not recover from journal")
+                .log();
+    }
+
+    @Override
     public Receive createReceiveRecover() {
         return receiveBuilder()
+                .match(RecoveryCompleted.class, msg -> LOGGER.info("cache successfully recovered"))
                 .match(SnapshotOffer.class, offer -> {
                     final SnapshotMetadata metadata = offer.metadata();
                     LOGGER.info()
@@ -239,7 +254,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
                         .log();
                     final CacheSnapshot snapshot = (CacheSnapshot) offer.snapshot();
                     for (final SnapshotEntry entry : snapshot.getEntries()) {
-                        _cache.put(entry.getKey(), entry.getValue());
+                        _cache.put(entry.getKey(), entry.getValue().toJobExecution());
                     }
                 })
                 .match(CacheMultiPut.class, this::handleMultiPut)
@@ -297,7 +312,11 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
                 final ImmutableList<SnapshotEntry> snapshotEntries = _cache.asMap()
                         .entrySet()
                         .stream()
-                        .map(e -> new SnapshotEntry.Builder().setKey(e.getKey()).setValue(e.getValue()).build())
+                        .map(e -> new SnapshotEntry.Builder()
+                                .setKey(e.getKey())
+                                .setValue(SuccessfulAlertExecution.Builder.copyJobExecution(e.getValue()).build())
+                                .build()
+                        )
                         .collect(ImmutableList.toImmutableList());
                 final CacheSnapshot snapshot = new CacheSnapshot.Builder()
                         .setEntries(snapshotEntries)
@@ -366,7 +385,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
 
     private static final class SnapshotEntry implements AkkaJsonSerializable {
         private final CacheKey _key;
-        private final JobExecution.Success<AlertEvaluationResult> _value;
+        private final SuccessfulAlertExecution _value;
 
         private SnapshotEntry(final Builder builder) {
             _key = builder._key;
@@ -377,7 +396,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
             return _key;
         }
 
-        public JobExecution.Success<AlertEvaluationResult> getValue() {
+        public SuccessfulAlertExecution getValue() {
             return _value;
         }
 
@@ -385,7 +404,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
             @NotNull
             private CacheKey _key;
             @NotNull
-            private JobExecution.Success<AlertEvaluationResult> _value;
+            private SuccessfulAlertExecution _value;
 
             Builder() {
                 super(SnapshotEntry::new);
@@ -396,7 +415,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
                 return this;
             }
 
-            public Builder setValue(final JobExecution.Success<AlertEvaluationResult> value) {
+            public Builder setValue(final SuccessfulAlertExecution value) {
                 _value = value;
                 return this;
             }
