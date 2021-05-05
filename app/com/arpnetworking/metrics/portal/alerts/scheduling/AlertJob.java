@@ -57,7 +57,7 @@ import java.util.concurrent.CompletionStage;
 
     @Override
     public Optional<String> getETag() {
-        return Optional.empty();
+        return Optional.of(Integer.toHexString(_alert.hashCode()));
     }
 
     @Override
