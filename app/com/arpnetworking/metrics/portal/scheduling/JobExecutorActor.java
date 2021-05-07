@@ -386,7 +386,8 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .orElse(true);
 
         _periodicMetrics.recordCounter("cached_job_conditional_reload_necessary", needsUpdate ? 1 : 0);
-        if (!needsUpdate) {
+        if (!needsUpdate && _lastRun.isPresent()) {
+            self().tell(new RestartTicker(_lastRun), self());
             return;
         }
         _currentlyReloading = true;
@@ -437,6 +438,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         }
         final JobRef<T> ref = assertInitialized();
 
+        _lastRun = _nextRun;
         _nextRun = Optional.empty();
         @SuppressWarnings("unchecked")
         final JobCompleted<T> typedMessage = (JobCompleted<T>) message;
@@ -495,7 +497,10 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
         Patterns.pipe(
             updateFut.handle((ignored, error) -> {
                 if (error == null) {
-                    return new ExecutionCompleted<>(new Reload.Builder<T>().setJobRef(ref).build());
+                    return new ExecutionCompleted<>(new Reload.Builder<T>()
+                            .setJobRef(ref)
+                            .setETag(_cachedJob.flatMap(Job::getETag).orElse(null))
+                            .build());
                 }
                 if (error instanceof NoSuchElementException) {
                     LOGGER.warn()
