@@ -56,9 +56,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 /**
  * Tests for {@link JobExecutorActor}.
  *
@@ -234,43 +231,6 @@ public final class JobExecutorActorTest {
         final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
         ref.tell(msg.stopMessage(), _probe.getRef());
         _probe.expectTerminated(ref);
-    }
-
-    @Test
-    public void testActorRequestsStopWhenJobIsDeletedBetweenRuns() {
-        final ChronoUnit period = ChronoUnit.MINUTES;
-        final Instant startAt = T_0.minus(period.getDuration());
-        final CompletableFuture<Void> blocker = new CompletableFuture<>();
-        final DummyJob<Integer> job = addJobToRepo(new DummyJob.Builder<Integer>()
-                .setTimeout(Duration.ofSeconds(30))
-                .setSchedule(new PeriodicSchedule.Builder()
-                        .setRunAtAndAfter(startAt)
-                        .setZone(ZoneId.of("UTC"))
-                        .setPeriod(period)
-                        .build())
-                .setResult(123)
-                .setBlocker(blocker)
-                .build());
-
-        final ActorRef ref = makeExecutorActor(job);
-        _probe.watch(ref);
-
-        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
-
-        // Delete the job definition, and then allow the previous one to complete.
-        assertThat(_repo.removeJob(job.getId(), ORGANIZATION), is(true));
-        blocker.complete(null);
-
-        // We should get a completion from the previous run, but then the job should terminate.
-        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1))
-                .jobSucceeded(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any(), Mockito.any());
-
-        final ShardRegion.Passivate msg = _probe.expectMsgClass(ShardRegion.Passivate.class);
-        ref.tell(msg.stopMessage(), _probe.getRef());
-        _probe.expectTerminated(ref);
-
-        // It should not have started a second run.
-        Mockito.verify(_execRepo, Mockito.times(1)).jobStarted(job.getId(), ORGANIZATION, startAt);
     }
 
     @Test
