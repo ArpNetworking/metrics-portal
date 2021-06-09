@@ -403,6 +403,24 @@ public class KairosDbServiceImplTest {
     }
 
     @Test
+    public void testRollupHonorsOriginalMetricName() {
+        final ImmutableList<Aggregator> aggregators = ImmutableList.of(
+                TestBeanFactory.createAggregatorBuilder()
+                        .setSampling(simpleSampling(3, SamplingUnit.HOURS))
+                        .setAlignSampling(true)
+                        .build()
+        );
+        final MetricsQuery original = simpleMetricsQuery("my_metric", aggregators);
+        final MetricsQuery rewritten = KairosDbServiceImpl.useAvailableRollups(
+                ImmutableList.of("my_metric_with_suffix_1h"),
+                original,
+                s -> ImmutableSet.of(SamplingUnit.HOURS),
+                new NoOpMetrics()
+        );
+        assertEquals(original, rewritten);
+    }
+
+    @Test
     public void testRollupQueryRewritingDoesNotRewriteOddInterval() {
         final MetricsQuery original = simpleMetricsQuery(
                 "my_metric",
