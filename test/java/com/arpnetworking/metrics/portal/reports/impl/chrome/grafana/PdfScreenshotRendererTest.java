@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -48,7 +48,7 @@ public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
         _wireMock.givenThat(
-                get(urlEqualTo("/"))
+                get(urlPathMatching("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
                                 .withBody(Utils.mockGrafanaReportPanelPage(Duration.ZERO, true))

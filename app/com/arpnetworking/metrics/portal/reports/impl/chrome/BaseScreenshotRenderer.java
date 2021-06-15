@@ -28,6 +28,7 @@ import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,9 +57,10 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
      * Get the URI to visit in order to render a given source.
      *
      * @param source the source we'll be rendering
+     * @param timeRange the time range we're rendering for
      * @return the URI to visit
      */
-    protected abstract URI getUri(S source);
+    protected abstract URI getUri(S source, TimeRange timeRange);
 
     /**
      * Called when the page we want to render has finished loading, i.e. the JavaScript {@code load} event has fired.
@@ -81,7 +83,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
 
     @Override
     public ImmutableList<Problem> validateRender(final S source, final F format) {
-        final URI uri = getUri(source);
+        final URI uri = getUri(source, new TimeRange(Instant.EPOCH, Instant.EPOCH));
         if (!_devToolsFactory.getOriginConfigs().isNavigationAllowed(uri)) {
             return ImmutableList.of(new Problem.Builder()
                     .setProblemCode("report_problem.DISALLOWED_URI")
@@ -107,7 +109,7 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 .addData("format", format)
                 .addData("timeRange", timeRange)
                 .log();
-        final CompletableFuture<Void> navigate = dts.navigate(getUri(source).toString());
+        final CompletableFuture<Void> navigate = dts.navigate(getUri(source, timeRange).toString());
         final CompletableFuture<B> result = navigate
                 .thenCompose(whatever -> {
                     LOGGER.debug()

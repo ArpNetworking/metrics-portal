@@ -24,7 +24,6 @@ import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
 
-import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -37,11 +36,6 @@ public final class PdfGrafanaScreenshotRenderer extends BaseGrafanaScreenshotRen
     @Override
     public boolean getIgnoreCertificateErrors(final GrafanaReportPanelReportSource source) {
         return source.getWebPageReportSource().ignoresCertificateErrors();
-    }
-
-    @Override
-    public URI getUri(final GrafanaReportPanelReportSource source) {
-        return source.getWebPageReportSource().getUri();
     }
 
     @Override
