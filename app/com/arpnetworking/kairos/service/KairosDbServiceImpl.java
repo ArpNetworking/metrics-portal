@@ -265,6 +265,7 @@ public final class KairosDbServiceImpl implements KairosDbService {
                             .map(RollupMetric::fromRollupMetricName)
                             .filter(Optional::isPresent)
                             .map(Optional::get)
+                            .filter(rollup -> rollup.getBaseMetricName().equals(metricName))
                             .collect(Collectors.toList());
 
                     if (rollupMetrics.isEmpty()) {
