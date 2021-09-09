@@ -40,6 +40,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
 import scala.Option;
+import scala.compat.java8.OptionConverters;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -232,7 +233,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
     public void onRecoveryFailure(final Throwable cause, final Option<Object> event) {
         // I'm not sure if log serialization will handle the scala Option correctly,
         // so let's convert it.
-        final Optional<Object> javaEvent = Optional.ofNullable(event.getOrElse(null));
+        final Optional<Object> javaEvent = OptionConverters.toJava(event);
         LOGGER.error()
                 .setThrowable(cause)
                 .addData("event", javaEvent)
