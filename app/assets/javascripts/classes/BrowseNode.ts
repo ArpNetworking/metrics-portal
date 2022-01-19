@@ -16,12 +16,12 @@
 
 interface BrowseNode {
     expandMe(): void;
-    children: KnockoutObservableArray<BrowseNode>;
-    subfolders: KnockoutObservableArray<BrowseNode>;
-    expanded: KnockoutObservable<boolean>;
-    name: KnockoutObservable<string>;
-    renderAs: KnockoutObservable<string>;
-    visible: KnockoutObservable<boolean>;
+    children: ko.ObservableArray<BrowseNode>;
+    subfolders: ko.ObservableArray<BrowseNode>;
+    expanded: ko.Observable<boolean>;
+    name: ko.Observable<string>;
+    renderAs: ko.Observable<string>;
+    visible: ko.Observable<boolean>;
 }
 
-export = BrowseNode;
+export default BrowseNode;

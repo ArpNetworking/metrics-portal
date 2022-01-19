@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-import GraphSpec = require('./GraphSpec');
-import ko = require('knockout');
-import BrowseNode = require("./BrowseNode");
+import GraphSpec from './GraphSpec';
+import * as ko from 'knockout';
+import BrowseNode from './BrowseNode';
 
 declare var require;
 class StatisticNodeVM implements BrowseNode {
     serviceName: string;
     metricName: string;
     statisticName: string;
-    children: KnockoutObservableArray<BrowseNode>;
-    subfolders: KnockoutObservableArray<BrowseNode>;
-    expanded: KnockoutObservable<boolean>;
-    name: KnockoutObservable<string>;
-    renderAs: KnockoutObservable<string>;
-    icon: KnockoutComputed<string>;
-    visible: KnockoutObservable<boolean>;
+    children: ko.ObservableArray<BrowseNode>;
+    subfolders: ko.ObservableArray<BrowseNode>;
+    expanded: ko.Observable<boolean>;
+    name: ko.Observable<string>;
+    renderAs: ko.Observable<string>;
+    icon: ko.Computed<string>;
+    visible: ko.Observable<boolean>;
 
     expandMe: () => void;
 
@@ -60,4 +60,4 @@ class StatisticNodeVM implements BrowseNode {
     }
 }
 
-export = StatisticNodeVM;
+export default StatisticNodeVM;

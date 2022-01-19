@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import Protocol = require("./protocol/Protocol");
-import V1Protocol = require("./protocol/V1Protocol");
-import V2Protocol = require("./protocol/V2Protocol");
-import ConnectionVM = require("./ConnectionVM");
-import WSCommand = require("./protocol/WSCommand");
-import GraphViewModel = require("./GraphViewModel");
-import app = require("durandal/app");
-import features = require('configure');
+import Protocol from "./protocol/Protocol";
+import V1Protocol from "./protocol/V1Protocol";
+import V2Protocol from "./protocol/V2Protocol";
+import ConnectionVM from "./ConnectionVM";
+import WSCommand from "./protocol/WSCommand";
+import GraphViewModel from "./GraphViewModel";
+import { app } from "durandal/core";
+import features from '../libs/configure';
 
 class ConnectionModel {
     socket: WebSocket = null;
@@ -139,7 +139,7 @@ class ConnectionModel {
         metricsSocket.onopen = this.connected;
         metricsSocket.onmessage = this.receiveData;
         metricsSocket.onclose = this.closed;
-        this.connectionTimeoutHandle = setTimeout(
+        this.connectionTimeoutHandle = window.setTimeout(
             () => {
                 console.info("Connection timed out to " + path + "; attempt " + this.attempt);
                 metricsSocket.close();
@@ -218,7 +218,7 @@ class ConnectionModel {
             var delay = Math.min(60000, randomWait);
             console.info("will attempt reconnect in " + (delay / 1000).toFixed() + " seconds.");
             var self = this;
-            this.retryConnectionHandle = setTimeout(() => { self.buildWebSocket(); }, delay);
+            this.retryConnectionHandle = window.setTimeout(() => { self.buildWebSocket(); }, delay);
         } else {
             // Try to connect to the next endpoint on the list immediately
             this.buildWebSocket();
@@ -236,4 +236,4 @@ class ConnectionModel {
     }
 }
 
-export = ConnectionModel;
+export default ConnectionModel;

@@ -23,4 +23,4 @@ enum Operator {
     GREATER_THAN_OR_EQUAL_TO
 }
 
-export = Operator;
+export default Operator;

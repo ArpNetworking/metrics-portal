@@ -16,13 +16,13 @@
 
 ///<amd-dependency path="./KnockoutBindings" />
 
-import app = require('durandal/app');
-import Color = require('./Color');
-import ConnectionVM = require('./ConnectionVM');
-import GraphViewModel = require('./GraphViewModel');
-import Hosts = require('./Hosts');
-import ko = require('knockout');
-import $ = require('jquery');
+import { app } from 'durandal/core';
+import Color from './Color';
+import ConnectionVM from './ConnectionVM';
+import GraphViewModel from './GraphViewModel';
+import Hosts from './Hosts';
+import * as ko from 'knockout';
+import * as $ from 'jquery';
 
 interface ResponseCallback {
     (response: any[]): void;
@@ -30,7 +30,7 @@ interface ResponseCallback {
 
 class HeaderViewModel implements ViewModel {
     fragment = ko.observable();
-    connectTo: KnockoutObservable<string> = ko.observable<string>();
+    connectTo: ko.Observable<string> = ko.observable<string>();
     autocompleteOpts: any = {
         source: {
             source: (request: string, response: ResponseCallback) => {
@@ -74,4 +74,4 @@ class HeaderViewModel implements ViewModel {
     }
 }
 
-export = HeaderViewModel;
+export default HeaderViewModel;

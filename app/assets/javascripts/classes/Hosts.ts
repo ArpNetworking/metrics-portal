@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-import app = require('durandal/app');
-import Color = require('./Color');
-import ConnectionVM = require('./ConnectionVM');
-import ko = require('knockout');
+import Color from './Color';
+import ConnectionVM from './ConnectionVM';
+import * as ko from 'knockout';
+import graphViewModel from "./GraphViewModel";
 
-declare var require;
 module Hosts {
-    export var connections: KnockoutObservableArray<ConnectionVM> = ko.observableArray<ConnectionVM>();
+    export var connections: ko.ObservableArray<ConnectionVM> = ko.observableArray<ConnectionVM>();
     export var connectionIndex: { [id: string]: ConnectionVM; } = {};
     export var colors: Color[] = [
         Color.of('#e31a1c'),
@@ -74,8 +73,7 @@ module Hosts {
     export var removeConnection = (cvm: ConnectionVM) => {
         connections.remove(cvm);
         delete connectionIndex[cvm.server];
-        var gvm = require('./GraphViewModel');
-        gvm.disconnect(cvm);
+        graphViewModel.disconnect(cvm);
         cvm.close();
     };
 
@@ -86,4 +84,4 @@ module Hosts {
     };
 }
 
-export = Hosts;
+export default Hosts;

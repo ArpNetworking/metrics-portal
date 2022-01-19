@@ -20,4 +20,4 @@ enum MetricsSoftwareState {
     NOT_INSTALLED
 }
 
-export = MetricsSoftwareState;
+export default MetricsSoftwareState;

@@ -1,5 +1,4 @@
 declare var features: any;
 
-declare module "configure" {
-    export = features;
-}
+export default features;
+

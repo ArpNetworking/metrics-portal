@@ -50,4 +50,4 @@ class Color {
     }
 }
 
-export = Color;
+export default Color;

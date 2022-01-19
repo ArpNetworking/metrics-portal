@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import ko = require('knockout');
-import ns = require('./NaturalSort');
-import ServiceData = require('./ServiceData');
-import ServiceNodeVM = require("./ServiceNodeVM");
-import GraphSpec = require("./GraphSpec");
-import FolderNodeVM = require("./FolderNodeVM");
-import MetricNodeVM = require("./MetricNodeVM");
-import StatisticNodeVM = require("./StatisticNodeVM");
-import Series = require("./Series");
-import NewMetricData = require("./NewMetricData");
-import BrowseNode = require("./BrowseNode");
+import * as ko from 'knockout';
+import ns from './NaturalSort';
+import ServiceData from './ServiceData';
+import ServiceNodeVM from './ServiceNodeVM';
+import GraphSpec from './GraphSpec';
+import FolderNodeVM from './FolderNodeVM';
+import MetricNodeVM from './MetricNodeVM';
+import StatisticNodeVM from './StatisticNodeVM';
+import Series from './Series';
+import NewMetricData from './NewMetricData';
+import BrowseNode from './BrowseNode';
 
 class MetricsBrowseList {
-    serviceNodes: KnockoutObservableArray<ServiceNodeVM> = ko.observableArray<ServiceNodeVM>();
+    serviceNodes: ko.ObservableArray<ServiceNodeVM> = ko.observableArray<ServiceNodeVM>();
 
     public bind(serviceList: ServiceData[]): void {
         var start = Date.now();
@@ -88,7 +88,7 @@ class MetricsBrowseList {
         console.log("search complete, took " + (end - start) + " millis");
     }
 
-    public searchNodes(searchTerm: string, regex: RegExp, nodes: KnockoutObservableArray<BrowseNode>, forceVisible: boolean): boolean {
+    public searchNodes(searchTerm: string, regex: RegExp, nodes: ko.ObservableArray<BrowseNode>, forceVisible: boolean): boolean {
         var expandParent = false;
 
         nodes().forEach((node) => {
@@ -165,7 +165,7 @@ class MetricsBrowseList {
         return this.binarySearch(this.serviceNodes(), name, (node) => { return node.name(); }, this.stringCompare);
     }
 
-    private findNodeByName<T extends BrowseNode>(haystack: KnockoutObservableArray<T>, needle: string): T {
+    private findNodeByName<T extends BrowseNode>(haystack: ko.ObservableArray<T>, needle: string): T {
         return this.binarySearch<T, string>(haystack(), needle, (node) => { return node.name(); }, this.stringCompare);
     }
 
@@ -201,14 +201,14 @@ class MetricsBrowseList {
         return ns.naturalSort(first, second);
     }
 
-    private sortRecurse(nodes: KnockoutObservableArray<BrowseNode>): void {
+    private sortRecurse(nodes: ko.ObservableArray<BrowseNode>): void {
         this.sortNodeArray(nodes);
         nodes().forEach((child) => this.sortRecurse(child.children));
     }
 
-    private sortNodeArray(nodes: KnockoutObservableArray<BrowseNode>) : void {
+    private sortNodeArray(nodes: ko.ObservableArray<BrowseNode>) : void {
         nodes.sort((a, b) => { return this.nodeComparator(a, b); });
     }
 }
 
-export = MetricsBrowseList;
+export default MetricsBrowseList;

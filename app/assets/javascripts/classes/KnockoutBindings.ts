@@ -4,10 +4,10 @@
 ///<amd-dependency path="typeahead" />
 ///<amd-dependency path="datetimepicker" />
 
-import ko = require('knockout');
-import $ = require('jquery');
-import _ = require('underscore');
-import bootstrap = require('bootstrap');
+import * as ko from 'knockout';
+import * as $ from 'jquery';
+import * as _ from 'underscore';
+import * as bootstrap from 'bootstrap';
 
 // @ts-ignore: import is valid
 import * as moment from 'moment-timezone/moment-timezone';
@@ -94,9 +94,12 @@ module kobindings {
             ko.utils.registerEventHandler(element, "dp.change", function (event) {
                 const value = valueAccessor();
                 if (ko.isObservable(value)) {
+                    // @ts-ignore
                     if (event.date && !(event.date instanceof moment)) {
+                        // @ts-ignore
                         value(moment.utc(event.date));
                     } else {
+                        // @ts-ignore
                         value(event.date);
                     }
                 }
@@ -202,4 +205,4 @@ module kobindings {
     }
 }
 
-export = kobindings;
+export default kobindings;

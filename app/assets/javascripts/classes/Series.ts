@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as ko from 'knockout';
 
 class Series {
     //This is really an array of elements of [timestamp, data value]
@@ -23,7 +24,7 @@ class Series {
     lines: any = { show: true, fill: false, stacked: false, fillOpacity: 1.0, fillColor: null };
     bars: any = { show: false, stacked: false };
     color: string = "black";
-    colorSubscription: KnockoutSubscription;
+    colorSubscription: ko.Subscription;
     merger: (x: number, y: number) => number;
 
     static mergeBySum = function(x: number, y: number): number {
@@ -91,4 +92,4 @@ class Series {
     }
 }
 
-export = Series;
+export default Series;

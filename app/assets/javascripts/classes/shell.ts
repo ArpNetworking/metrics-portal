@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import router = require('plugins/router');
+import * as router from 'durandal/plugins/router';
 
 class shell {
     router = router;
@@ -34,4 +34,4 @@ class shell {
     }
 }
 
-export = shell;
+export default shell;

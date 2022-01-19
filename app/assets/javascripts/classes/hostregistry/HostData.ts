@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import ko = require('knockout');
-import ConnectionVM = require('../ConnectionVM');
-import Hosts = require('../Hosts');
-import MetricsSoftwareState = require('./MetricsSoftwareState');
+import * as ko from 'knockout';
+import ConnectionVM from '../ConnectionVM';
+import Hosts from '../Hosts';
+import MetricsSoftwareState from './MetricsSoftwareState';
 
 class HostData {
     hostname: string;
     metricsSoftwareState: string;
-    connectionStyle: KnockoutComputed<string>;
-    connectable: KnockoutComputed<boolean>;
-    connection: KnockoutComputed<boolean>;
+    connectionStyle: ko.Computed<string>;
+    connectable: ko.Computed<boolean>;
+    connection: ko.Computed<boolean>;
 
     constructor(hostname: string, metricsState: string) {
         this.hostname = hostname;
@@ -72,4 +72,4 @@ class HostData {
 
 }
 
-export = HostData;
+export default HostData;

@@ -32,4 +32,4 @@ class GraphSpec {
     }
 }
 
-export = GraphSpec;
+export default GraphSpec;

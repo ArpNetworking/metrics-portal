@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import AlertData = require('./AlertData');
-import PaginatedSearchableList = require('../PaginatedSearchableList');
-import $ = require('jquery');
+import AlertData from './AlertData';
+import PaginatedSearchableList from '../PaginatedSearchableList';
+import * as $ from 'jquery';
 import csrf from '../Csrf'
 
 class AlertsList extends PaginatedSearchableList<AlertData> {
@@ -75,4 +75,4 @@ class AlertsViewModel {
     }
 }
 
-export = AlertsViewModel;
+export default AlertsViewModel;

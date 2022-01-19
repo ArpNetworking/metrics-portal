@@ -71,4 +71,4 @@ module NaturalSort {
         }
     }
 }
-export = NaturalSort;
+export default NaturalSort;

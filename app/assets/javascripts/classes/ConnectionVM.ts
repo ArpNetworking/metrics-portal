@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import Color = require('./Color');
-import ConnectionModel = require('./ConnectionModel');
-import ko = require('knockout');
+import Color from './Color';
+import ConnectionModel from './ConnectionModel';
+import * as ko from 'knockout';
+import graphViewModel from "./GraphViewModel";
 
 declare var require;
 
@@ -26,10 +27,10 @@ class ConnectionVM {
         this.model = new ConnectionModel(this.server, this);
     }
     server: string;
-    status: KnockoutObservable<string> = ko.observable<string>("connecting");
-    connected: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    selected: KnockoutObservable<boolean> = ko.observable<boolean>(false);
-    colorBase: KnockoutObservable<Color> = ko.observable(new Color(0, 0, 0));
+    status: ko.Observable<string> = ko.observable<string>("connecting");
+    connected: ko.Observable<boolean> = ko.observable<boolean>(false);
+    selected: ko.Observable<boolean> = ko.observable<boolean>(false);
+    colorBase: ko.Observable<Color> = ko.observable(new Color(0, 0, 0));
     model: ConnectionModel;
 
     shade() {
@@ -38,8 +39,7 @@ class ConnectionVM {
 
     alpha = ko.computed(() => {
         //shaded
-        var gvm = require('./GraphViewModel');
-        var shouldShade = gvm.shouldShade();
+        var shouldShade = graphViewModel.shouldShade();
         var notSelected = !this.selected();
         if (shouldShade && notSelected) {
             return 0.3;
@@ -76,4 +76,4 @@ class ConnectionVM {
     }
 }
 
-export = ConnectionVM;
+export default ConnectionVM;

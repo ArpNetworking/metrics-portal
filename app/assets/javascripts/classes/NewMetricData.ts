@@ -20,4 +20,4 @@ class NewMetricData {
     statistic: string;
 }
 
-export = NewMetricData;
+export default NewMetricData;

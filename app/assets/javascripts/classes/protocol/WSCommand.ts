@@ -19,4 +19,4 @@ interface WSCommand {
     [others: string]: any;
 }
 
-export = WSCommand;
+export default WSCommand;

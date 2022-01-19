@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import PaginatedSearchableList = require("../PaginatedSearchableList");
+import PaginatedSearchableList from '../PaginatedSearchableList';
 import Report from "./Report";
 import csrf from '../Csrf'
 
@@ -71,4 +71,4 @@ class ReportsViewModel {
 
 }
 
-export = ReportsViewModel;
+export default ReportsViewModel;

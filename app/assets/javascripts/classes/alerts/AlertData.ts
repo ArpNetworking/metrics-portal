@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import ko = require('knockout');
-import Operator = require('./Operator');
-import Quantity = require('../Quantity');
+import * as ko from 'knockout';
+import Operator from './Operator';
+import Quantity from '../Quantity';
 
 class AlertData {
     id: string;
@@ -30,9 +30,9 @@ class AlertData {
     operator: Operator;
     value: Quantity;
     extensions: { [id: string]: string };
-    contextStyle: KnockoutComputed<string>;
-    contextTip: KnockoutComputed<string>;
-    editUri: KnockoutComputed<string>;
+    contextStyle: ko.Computed<string>;
+    contextTip: ko.Computed<string>;
+    editUri: ko.Computed<string>;
 
     constructor(id: string, context: string, name: string, metric: string, service: string, cluster: string, statistic: string, period: string, operator: Operator, value: Quantity, extensions: { [id: string]: string }) {
         this.id = id;
@@ -74,4 +74,4 @@ class AlertData {
     }
 }
 
-export = AlertData;
+export default AlertData;

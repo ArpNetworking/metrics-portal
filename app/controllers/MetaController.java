@@ -17,6 +17,7 @@ package controllers;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.pattern.Patterns;
 import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
@@ -89,13 +90,12 @@ public final class MetaController extends Controller {
     public Result ping() {
         final boolean healthy = _healthProvider.isHealthy();
         final ObjectNode result = JsonNodeFactory.instance.objectNode();
-        response().setHeader(CACHE_CONTROL, "private, no-cache, no-store, must-revalidate");
         if (healthy) {
             result.put("status", HEALTHY_STATE);
-            return ok(result);
+            return ok(result).withHeader(CACHE_CONTROL, "private, no-cache, no-store, must-revalidate");
         }
         result.put("status", UNHEALTHY_STATE);
-        return internalServerError(result);
+        return internalServerError(result).withHeader(CACHE_CONTROL, "private, no-cache, no-store, must-revalidate");
     }
 
     /**
@@ -104,7 +104,7 @@ public final class MetaController extends Controller {
      * @return Serialized response containing service status.
      */
     public CompletionStage<Result> status() {
-        return PatternsCS.ask(
+        return Patterns.ask(
                 _statusActor,
                 new StatusActor.StatusRequest(),
                 Duration.ofSeconds(1))

@@ -67,4 +67,4 @@ class Quantity {
     }
 }
 
-export = Quantity;
+export default Quantity;
