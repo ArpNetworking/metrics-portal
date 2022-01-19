@@ -32,13 +32,13 @@ GET        /v1/proxy/stream                     controllers.TelemetryProxyContro
 # Hosts
 GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
 GET        /v1/hosts/:id                        controllers.HostController.get(id: String)
-PUT        /v1/hosts                            controllers.HostController.addOrUpdate
+PUT        /v1/hosts                            controllers.HostController.addOrUpdate()
 
 # Reports
 GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
 GET        /v1/reports/:id                      controllers.ReportController.get(id: java.util.UUID)
 DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID)
-PUT        /v1/reports                          controllers.ReportController.addOrUpdate
+PUT        /v1/reports                          controllers.ReportController.addOrUpdate()
 
 # Alerts
 GET        /v1/alerts/query                     controllers.AlertController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)

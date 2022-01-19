@@ -19,8 +19,7 @@ import com.arpnetworking.pillar.PillarInitializer;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
-import com.datastax.driver.mapping.MappingManager;
+import com.datastax.oss.driver.api.mapper.MapperBuilder;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
@@ -79,6 +78,7 @@ public class PillarModule extends AbstractModule {
             final com.google.inject.Provider<Cluster> clusterProvider = binder().getProvider(Key.get(Cluster.class, Names.named(name)));
             bind(Session.class).annotatedWith(Names.named(name))
                     .toProvider(new CassandraSessionProvider(clusterProvider, lifecycle));
+            new MapperBuilder().build()
             bind(MappingManager.class).annotatedWith(Names.named(name))
                     .toProvider(new CassandraMappingProvider(binder().getProvider(Key.get(Session.class, Names.named(name)))));
         }
