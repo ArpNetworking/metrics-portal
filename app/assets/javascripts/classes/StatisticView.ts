@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import ConnectionVM = require('./ConnectionVM');
-import ViewDuration = require('./ViewDuration');
-import GraphSpec = require('./GraphSpec')
+import ConnectionVM from './ConnectionVM';
+import ViewDuration from './ViewDuration';
+import GraphSpec from './GraphSpec'
 
 interface StatisticView {
     id: string;
@@ -32,9 +32,9 @@ interface StatisticView {
     updateColor(cvm: ConnectionVM): void;
     disconnectConnection(cvm: ConnectionVM): void;
 
-    renderDots: KnockoutObservable<boolean>;
-    renderStacked: KnockoutObservable<boolean>;
-    graphType: KnockoutObservable<string>;
+    renderDots: ko.Observable<boolean>;
+    renderStacked: ko.Observable<boolean>;
+    graphType: ko.Observable<string>;
 }
 
-export = StatisticView;
+export default StatisticView;

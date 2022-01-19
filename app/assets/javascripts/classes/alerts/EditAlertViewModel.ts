@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import AlertData = require('./AlertData');
-import ko = require('knockout');
-import $ = require('jquery');
-import Operator = require("./Operator");
-import Quantity = require("../Quantity");
-import uuid = require('../Uuid');
+import AlertData from './AlertData';
+import * as ko from 'knockout';
+import * as $ from 'jquery';
+import Operator from './Operator';
+import Quantity from '../Quantity';
+import uuid from '../Uuid';
 import csrf from '../Csrf';
 
 class OperatorOption {
@@ -123,4 +123,4 @@ class EditAlertViewModel {
     }
 }
 
-export = EditAlertViewModel;
+export default EditAlertViewModel;

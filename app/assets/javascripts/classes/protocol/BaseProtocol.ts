@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import Protocol = require("./Protocol");
-import ConnectionModel = require("../ConnectionModel");
-import ConnectionVM = require("../ConnectionVM");
-import GraphSpec = require("../GraphSpec");
-import WSCommand = require("./WSCommand");
+import Protocol from "./Protocol";
+import ConnectionModel from "../ConnectionModel";
+import ConnectionVM from "../ConnectionVM";
+import GraphSpec from "../GraphSpec";
+import WSCommand from "./WSCommand";
 
 class BaseProtocol implements Protocol {
     connectionInitialized():void { }
@@ -42,4 +42,4 @@ class BaseProtocol implements Protocol {
     }
 }
 
-export = BaseProtocol;
+export default BaseProtocol;

@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-import BaseProtocol = require("./BaseProtocol");
-import GraphViewModel = require("../GraphViewModel");
-import ConnectionModel = require("../ConnectionModel");
-import ConnectionVM = require("../ConnectionVM");
-import Command = require("../Command");
-import MetricsListData = require("../MetricsListData");
-import NewMetricData = require("../NewMetricData");
-import ReportData = require("../ReportData");
-import GraphSpec = require("../GraphSpec");
-import MetricsBrowseList = require("../MetricsBrowseList");
+import BaseProtocol from "./BaseProtocol";
+import GraphViewModel from "../GraphViewModel";
+import ConnectionModel from "../ConnectionModel";
+import ConnectionVM from "../ConnectionVM";
+import Command from "../Command";
+import MetricsListData from "../MetricsListData";
+import NewMetricData from "../NewMetricData";
+import ReportData from "../ReportData";
+import GraphSpec from "../GraphSpec";
+import MetricsBrowseList from "../MetricsBrowseList";
+import graphViewModel from '../GraphViewModel'
 
 declare var require;
 class V2Protocol extends BaseProtocol {
@@ -32,8 +33,7 @@ class V2Protocol extends BaseProtocol {
 
     public constructor(cm:ConnectionModel) {
         super(cm);
-        this.graphViewModel = require('../GraphViewModel');
-        this.metricsList = this.graphViewModel.metricsList;
+        this.metricsList = graphViewModel.metricsList;
     }
 
     public processMessage(data:any, cvm:ConnectionVM) {
@@ -75,4 +75,4 @@ class V2Protocol extends BaseProtocol {
     }
 }
 
-export = V2Protocol;
+export default V2Protocol;

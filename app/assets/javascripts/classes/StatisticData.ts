@@ -18,4 +18,4 @@ class StatisticData {
     name: string;
 }
 
-export = StatisticData;
+export default StatisticData;

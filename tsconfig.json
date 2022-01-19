@@ -1,17 +1,22 @@
 {
     "compilerOptions": {
-        "module": "amd",
+        "module": "ES2020",
+        "moduleResolution": "Node",
         "removeComments": true,
         "preserveConstEnums": true,
         "sourceMap": false,
-        "lib": ["es6", "es2015.iterable", "dom"]
+        "lib": ["ES2020", "dom"],
+        "paths": {
+            "durandal/*": ["node_modules/durandal-es6/*"]
+        },
+        "baseUrl": ".",
+        "rootDirs": ["app/assets/javascripts"]
     },
     "include": [
-        "**/*"
+        "app/**/*"
     ],
     "exclude": [
-        "node_modules",
         "**/*.spec.ts"
     ],
-    "target": "es6"
+    "target": "ES2020"
 }

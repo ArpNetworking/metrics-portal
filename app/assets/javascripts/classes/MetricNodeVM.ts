@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import GraphViewModel = require('./GraphViewModel');
-import StatisticNodeVM = require('./StatisticNodeVM');
-import ko = require('knockout');
-import BrowseNode = require("./BrowseNode");
+import GraphViewModel from './GraphViewModel';
+import StatisticNodeVM from './StatisticNodeVM';
+import * as ko from 'knockout';
+import BrowseNode from "./BrowseNode";
 
 class MetricNodeVM implements BrowseNode {
-    metricName: KnockoutObservable<string>;
-    name: KnockoutObservable<string>;
-    children: KnockoutObservableArray<BrowseNode>;
-    subfolders: KnockoutObservableArray<BrowseNode>;
-    expanded: KnockoutObservable<boolean>;
-    renderAs: KnockoutObservable<string>;
-    visible: KnockoutObservable<boolean>;
+    metricName: ko.Observable<string>;
+    name: ko.Observable<string>;
+    children: ko.ObservableArray<BrowseNode>;
+    subfolders: ko.ObservableArray<BrowseNode>;
+    expanded: ko.Observable<boolean>;
+    renderAs: ko.Observable<string>;
+    visible: ko.Observable<boolean>;
 
     constructor(metricName: string, displayName: string, id: string) {
         this.metricName = ko.observable(metricName);
@@ -43,4 +43,4 @@ class MetricNodeVM implements BrowseNode {
     }
 }
 
-export = MetricNodeVM;
+export default MetricNodeVM;

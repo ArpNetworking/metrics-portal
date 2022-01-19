@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import MetricNodeVM = require('./MetricNodeVM');
-import GraphViewModel = require('./GraphViewModel');
-import ko = require('knockout');
-import FolderNodeVM = require("./FolderNodeVM");
-import BrowseNode = require("./BrowseNode");
+import MetricNodeVM from './MetricNodeVM';
+import GraphViewModel from './GraphViewModel';
+import * as ko from 'knockout';
+import FolderNodeVM from './FolderNodeVM';
+import BrowseNode from './BrowseNode';
 
 class ServiceNodeVM implements BrowseNode {
-    name: KnockoutObservable<string>;
-    children: KnockoutObservableArray<MetricNodeVM>;
-    expanded: KnockoutObservable<boolean>;
-    renderAs: KnockoutObservable<string>;
-    subfolders: KnockoutObservableArray<FolderNodeVM>;
-    visible: KnockoutObservable<boolean>;
+    name: ko.Observable<string>;
+    children: ko.ObservableArray<MetricNodeVM>;
+    expanded: ko.Observable<boolean>;
+    renderAs: ko.Observable<string>;
+    subfolders: ko.ObservableArray<FolderNodeVM>;
+    visible: ko.Observable<boolean>;
 
     constructor(name: string, id: string) {
         this.name = ko.observable(name);
@@ -42,4 +42,4 @@ class ServiceNodeVM implements BrowseNode {
     }
 }
 
-export = ServiceNodeVM;
+export default ServiceNodeVM;

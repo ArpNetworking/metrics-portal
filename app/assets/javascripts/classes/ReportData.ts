@@ -54,4 +54,4 @@ class ReportData {
     }
 }
 
-export = ReportData;
+export default ReportData;

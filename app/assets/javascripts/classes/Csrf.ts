@@ -1,4 +1,4 @@
-import jwt_decode = require("jwt-decode");
+import * as jwt_decode from "jwt-decode";
 
 export default class Csrf {
     public static getToken() {

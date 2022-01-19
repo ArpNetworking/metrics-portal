@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-import system = require('durandal/system');
+import { system } from 'durandal/core';
 system.debug(true);

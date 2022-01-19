@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import ko = require('knockout');
+import * as ko from 'knockout';
 
 interface PagerElement { name: string; page: number; disabled: boolean; active: boolean}
 interface Pagination { total: number; offset: number}
@@ -31,14 +31,14 @@ interface PagerOptions {
 }
 
 abstract class PaginatedSearchableList<T> {
-    filteredEntities: KnockoutObservableArray<T> = ko.observableArray<T>();
-    searchExpression: KnockoutObservable<string> = ko.observable('');
-    searchExpressionThrottled: KnockoutComputed<string> = ko.computed<string>(() => {
+    filteredEntities: ko.ObservableArray<T> = ko.observableArray<T>();
+    searchExpression: ko.Observable<string> = ko.observable('');
+    searchExpressionThrottled: ko.Computed<string> = ko.computed<string>(() => {
         return this.searchExpression();
     }).extend({rateLimit: {timeout: 400, method: "notifyWhenChangesStop"}});
-    page: KnockoutObservable<number> = ko.observable(1);
-    pagesMax: KnockoutObservable<number> = ko.observable(1);
-    private pagerElements: KnockoutComputed<PagerElement[]>;
+    page: ko.Observable<number> = ko.observable(1);
+    pagesMax: ko.Observable<number> = ko.observable(1);
+    private pagerElements: ko.Computed<PagerElement[]>;
     private perPage = 24;
 
     entityName: string;
@@ -140,4 +140,4 @@ abstract class PaginatedSearchableList<T> {
     }
 }
 
-export = PaginatedSearchableList;
+export default PaginatedSearchableList;

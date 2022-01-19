@@ -22,4 +22,4 @@ module Uuid {
     Uuid.initialize();
 }
 
-export = Uuid;
+export default Uuid;

@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-/// <amd-dependency path="debug"/>
-/// <amd-dependency path="text"/>
-/// <amd-dependency path="jquery"/>
-/// <amd-dependency path="jquery.ui"/>
-/// <amd-dependency path="bean"/>
-/// <amd-dependency path="underscore"/>
-/// <amd-dependency path="jqrangeslider"/>
-/// <amd-dependency path="bootstrap"/>
-/// <amd-dependency path="d3"/>
-/// <amd-dependency path="gauge"/>
-/// <amd-dependency path="knockout"/>
-/// <amd-dependency path="knockout-fast-foreach"/>
-/// <amd-dependency path="classes/KnockoutBindings"/>
-/// <amd-dependency path="classes/GraphViewModel"/>
+import { app, system, viewLocator} from 'durandal/core';
 
-import system = require('durandal/system');
-import app = require('durandal/app');
-import viewLocator = require('durandal/viewLocator');
-import ko = require('knockout');
+if (process.env.NODE_ENV === "development") {
+    system.debug(true);
 
+    // @ts-ignore
+    window.ko = ko;
+    // @ts-ignore
+    window.app = app;
+    // @ts-ignore
+    window.router = router;
+}
+
+// @ts-ignore
 app.title = "M-Portal";
 app.configurePlugins({
     router: true,

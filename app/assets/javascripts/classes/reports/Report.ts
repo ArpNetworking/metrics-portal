@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import ko = require('knockout');
+import * as ko from 'knockout';
 
 import {
     BaseRecipientViewModel,
@@ -52,7 +52,7 @@ export default class Report {
 }
 
 class RecipientViewModel extends BaseRecipientViewModel {
-    badgeText: KnockoutComputed<string>;
+    badgeText: ko.Computed<string>;
 
     constructor() {
         super();
@@ -63,7 +63,7 @@ class RecipientViewModel extends BaseRecipientViewModel {
 }
 
 class SourceViewModel extends BaseSourceViewModel {
-    displayText: KnockoutComputed<string>;
+    displayText: ko.Computed<string>;
 
     constructor() {
         super();
@@ -80,16 +80,16 @@ class ScheduleViewModel extends BaseScheduleViewModel {
 
     // Unlike EditScheduleViewModel, we use a more readable format for displaying datetimes, since
     // this value does not need to be parsed (unlike in an editable form field).
-    startText: KnockoutComputed<string> =
+    startText: ko.Computed<string> =
         ko.pureComputed(() => this.start().format(ScheduleViewModel.DatetimeFormat));
-    endText: KnockoutComputed<string> = ko.pureComputed(() => {
+    endText: ko.Computed<string> = ko.pureComputed(() => {
         const end = this.end();
         if (!end) {
             return "–";
         }
         return end.format(ScheduleViewModel.DatetimeFormat);
     });
-    displayType: KnockoutComputed<string> = ko.pureComputed(() => {
+    displayType: ko.Computed<string> = ko.pureComputed(() => {
         switch (this.repeat()) {
             case ScheduleRepetition.ONE_OFF:
                 return "One-off";

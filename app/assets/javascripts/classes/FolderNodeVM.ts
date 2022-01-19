@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-import ServiceNodeVM = require('./ServiceNodeVM');
-import ko = require('knockout');
-import MetricNodeVM = require("./MetricNodeVM");
-import BrowseNode = require("./BrowseNode");
+import ServiceNodeVM from './ServiceNodeVM';
+import * as ko from 'knockout';
+import MetricNodeVM from "./MetricNodeVM";
+import BrowseNode from "./BrowseNode";
 
 class FolderNodeVM implements BrowseNode {
-    name: KnockoutObservable<string>;
-    subfolders: KnockoutObservableArray<BrowseNode>;
-    children: KnockoutObservableArray<BrowseNode>;
-    expanded: KnockoutObservable<boolean>;
-    renderAs: KnockoutObservable<string>;
-    icon: KnockoutComputed<string>;
-    visible: KnockoutObservable<boolean>;
+    name: ko.Observable<string>;
+    subfolders: ko.ObservableArray<BrowseNode>;
+    children: ko.ObservableArray<BrowseNode>;
+    expanded: ko.Observable<boolean>;
+    renderAs: ko.Observable<string>;
+    icon: ko.Computed<string>;
+    visible: ko.Observable<boolean>;
 
     constructor(name: string, id: string) {
         this.name = ko.observable(name);
@@ -34,7 +34,7 @@ class FolderNodeVM implements BrowseNode {
         this.children = ko.observableArray<BrowseNode>();
         this.expanded = ko.observable(false);
         this.renderAs = ko.observable("folder_node");
-        this.icon = ko.pureComputed<string>(() => { return this.cssIcon(); }).extend({ defer: true});
+        this.icon = ko.pureComputed<string>(() => { return this.cssIcon(); }).extend({ deferred: true});
         this.visible = ko.observable(true);
     }
 
@@ -46,4 +46,4 @@ class FolderNodeVM implements BrowseNode {
     }
 }
 
-export = FolderNodeVM
+export default FolderNodeVM

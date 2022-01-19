@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as ko from 'knockout';
 
 interface KnockoutBindingHandlers {
-    slider: KnockoutBindingHandler;
-    legendBlock: KnockoutBindingHandler;
-    slide: KnockoutBindingHandler;
-    stackdrag: KnockoutBindingHandler;
-    typeahead: KnockoutBindingHandler;
-    tooltip: KnockoutBindingHandler;
-    popover: KnockoutBindingHandler;
-    datetimepicker: KnockoutBindingHandler;
+    slider: ko.BindingHandler;
+    legendBlock: ko.BindingHandler;
+    slide: ko.BindingHandler;
+    stackdrag: ko.BindingHandler;
+    typeahead: ko.BindingHandler;
+    tooltip: ko.BindingHandler;
+    popover: ko.BindingHandler;
+    datetimepicker: ko.BindingHandler;
 }
 
-export = KnockoutBindingHandlers;
+export default KnockoutBindingHandlers;

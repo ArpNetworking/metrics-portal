@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import ServiceData = require('./ServiceData');
+import ServiceData from './ServiceData';
 
 class MetricsListData {
     metrics: ServiceData[];
@@ -24,4 +24,4 @@ class MetricsListData {
     }
 }
 
-export = MetricsListData;
+export default MetricsListData;

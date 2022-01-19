@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import MetricData = require('./MetricData');
+import MetricData from './MetricData';
 
 class ServiceData {
     name: string;
     children: MetricData[];
 }
 
-export = ServiceData;
+export default ServiceData;

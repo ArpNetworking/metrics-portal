@@ -33,4 +33,4 @@ class ViewDuration {
     }
 }
 
-export = ViewDuration;
+export default ViewDuration;

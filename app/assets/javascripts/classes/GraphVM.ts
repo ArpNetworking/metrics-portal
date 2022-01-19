@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import ConnectionVM = require('./ConnectionVM');
-import StatisticView = require('./StatisticView');
-import Series = require('./Series');
-import ViewDuration = require('./ViewDuration');
-import GraphSpec = require('./GraphSpec');
-import ko = require('knockout');
+import ConnectionVM from './ConnectionVM';
+import StatisticView from './StatisticView';
+import Series from './Series';
+import ViewDuration from './ViewDuration';
+import GraphSpec from './GraphSpec';
+import * as ko from 'knockout';
 
-import flotr = require('flotr2');
+import flotr from 'flotr2';
 
 // requestAnimFrame shim with setTimeout fallback
 window.requestAnimationFrame = (function () {
@@ -52,9 +52,9 @@ class GraphVM implements StatisticView {
     dataLength: number = 600000;
     spec: GraphSpec;
     config: number = 0;
-    renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(true);
-    renderStacked: KnockoutObservable<boolean>  = ko.observable<boolean>(false);
-    graphType: KnockoutObservable<string>       = ko.observable<string>("line");
+    renderDots: ko.Observable<boolean>     = ko.observable<boolean>(true);
+    renderStacked: ko.Observable<boolean>  = ko.observable<boolean>(false);
+    graphType: ko.Observable<string>       = ko.observable<string>("line");
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
@@ -331,4 +331,4 @@ class GraphVM implements StatisticView {
     }
 }
 
-export = GraphVM;
+export default GraphVM;

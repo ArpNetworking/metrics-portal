@@ -22,6 +22,6 @@ interface NaturalSort {
 declare var naturalSort: NaturalSort;
 
 declare module "naturalSort" {
-    export = naturalSort;
+    export default naturalSort;
 }
 

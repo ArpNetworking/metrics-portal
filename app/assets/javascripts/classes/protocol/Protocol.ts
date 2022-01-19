@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import ConnectionVM = require("../ConnectionVM");
-import GraphSpec = require("../GraphSpec");
+import ConnectionVM from "../ConnectionVM";
+import GraphSpec from "../GraphSpec";
 
 // This interface exposes the protocol between Metrics Portal and ReMet Proxy.
 // All interaction with the ReMet Proxy must go through this protocol interface.
@@ -40,4 +40,4 @@ interface Protocol {
     heartbeat(): void;
 }
 
-export = Protocol;
+export default Protocol;

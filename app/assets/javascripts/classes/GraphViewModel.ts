@@ -15,42 +15,42 @@
  */
 
 ///<amd-dependency path="jquery.ui"/>
-import app = require('durandal/app');
-import MetricData = require('./MetricData');
-import MetricNodeVM = require('./MetricNodeVM');
-import Color = require('./Color');
-import Command = require('./Command');
-import GaugeVM = require('./GaugeVM');
-import GraphVM = require('./GraphVM');
-import StatisticView = require('./StatisticView');
-import ServiceNodeVM = require('./ServiceNodeVM');
-import StatisticNodeVM = require('./StatisticNodeVM');
-import ServiceData = require('./ServiceData');
-import StatisticData = require('./StatisticData');
-import FolderNodeVM = require('./FolderNodeVM');
-import ViewDuration = require('./ViewDuration');
-import MetricsListData = require('./MetricsListData');
-import NewMetricData = require('./NewMetricData');
-import ReportData = require('./ReportData');
-import ko = require('knockout');
-import kob = require('./KnockoutBindings')
-import $ = require('jquery');
-import GraphSpec = require('./GraphSpec');
-import Hosts = require('./Hosts');
-import ConnectionVM = require('./ConnectionVM')
-import MetricsBrowseList = require("./MetricsBrowseList");
+import { app } from 'durandal/core';
+import MetricData from './MetricData';
+import MetricNodeVM from './MetricNodeVM';
+import Color from './Color';
+import Command from './Command';
+import GaugeVM from './GaugeVM';
+import GraphVM from './GraphVM';
+import StatisticView from './StatisticView';
+import ServiceNodeVM from './ServiceNodeVM';
+import StatisticNodeVM from './StatisticNodeVM';
+import ServiceData from './ServiceData';
+import StatisticData from './StatisticData';
+import FolderNodeVM from './FolderNodeVM';
+import ViewDuration from './ViewDuration';
+import MetricsListData from './MetricsListData';
+import NewMetricData from './NewMetricData';
+import ReportData from './ReportData';
+import * as ko from 'knockout';
+import kob from './KnockoutBindings'
+import * as $ from 'jquery';
+import GraphSpec from './GraphSpec';
+import Hosts from './Hosts';
+import ConnectionVM from './ConnectionVM'
+import MetricsBrowseList from './MetricsBrowseList';
 
 module GraphViewModel {
     console.log("defining graphviewmodel");
     export var connections = Hosts.connections;
-    export var graphs: KnockoutObservableArray<StatisticView> = ko.observableArray<StatisticView>();
+    export var graphs: ko.ObservableArray<StatisticView> = ko.observableArray<StatisticView>();
     export var graphsById: { [id: string]: StatisticView } = {};
     export var subscriptions: GraphSpec[] = [];
     export var viewDuration: ViewDuration = new ViewDuration();
     export var paused = ko.observable<boolean>(false);
     export var metricsVisible = ko.observable<boolean>(true);
     export var metricsWidth = ko.observable<boolean>(true);
-    export var mode: KnockoutObservable<string> = ko.observable("graph");
+    export var mode: ko.Observable<string> = ko.observable("graph");
     export var incomingFragment: string;
     export var metricsList: MetricsBrowseList = new MetricsBrowseList();
 
@@ -319,4 +319,4 @@ module GraphViewModel {
     var requireJsForceLoadKnockoutBindings = kob;
 }
 
-export = GraphViewModel;
+export default GraphViewModel;

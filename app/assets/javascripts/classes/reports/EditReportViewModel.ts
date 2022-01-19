@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import ko = require('knockout');
-import $ = require('jquery');
-import uuid = require('../Uuid');
+import * as ko from 'knockout';
+import * as $ from 'jquery';
+import uuid from '../Uuid';
 // @ts-ignore: import is valid
 import moment = require('moment-timezone/moment-timezone');
 import csrf from '../Csrf';
@@ -99,7 +99,7 @@ class EditReportViewModel {
         this.recipients.push(recipient);
     }
 
-    removeRecipient(index: KnockoutObservable<number>): void {
+    removeRecipient(index: ko.Observable<number>): void {
         this.recipients.splice(index(), 1);
     }
 
@@ -282,7 +282,7 @@ class EditSourceViewModel extends BaseSourceViewModel {
 
 class EditScheduleViewModel extends BaseScheduleViewModel {
     engine: Bloodhound<ZoneInfo>;
-    isPeriodic: KnockoutComputed<boolean>;
+    isPeriodic: ko.Computed<boolean>;
 
     constructor() {
         super();
@@ -359,4 +359,4 @@ class EditScheduleViewModel extends BaseScheduleViewModel {
     };
 }
 
-export = EditReportViewModel;
+export default EditReportViewModel;

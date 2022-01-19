@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import HostData = require('./HostData');
-import PaginatedSearchableList = require('../PaginatedSearchableList');
-import Hosts = require('../Hosts');
-import MetricsSoftwareState = require('./MetricsSoftwareState');
-import GraphViewModel = require('../GraphViewModel');
-import $ = require('jquery');
-import ko = require('knockout');
+import HostData from './HostData';
+import PaginatedSearchableList from '../PaginatedSearchableList';
+import Hosts from '../Hosts';
+import MetricsSoftwareState from './MetricsSoftwareState';
+import GraphViewModel from '../GraphViewModel';
+import * as $ from 'jquery';
+import * as ko from 'knockout';
 
 class HostList extends PaginatedSearchableList<HostData> {
-    versionFilter: KnockoutObservable <string> = ko.observable('');
+    versionFilter: ko.Observable <string> = ko.observable('');
 
     constructor() {
         super("host", {create: false});
@@ -61,4 +61,4 @@ class HostRegistryViewModel {
         this.hosts.query();
     };
 }
-export = HostRegistryViewModel;
+export default HostRegistryViewModel;

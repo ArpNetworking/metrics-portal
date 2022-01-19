@@ -24,4 +24,4 @@ class Command<T> {
     }
 }
 
-export = Command;
+export default Command;

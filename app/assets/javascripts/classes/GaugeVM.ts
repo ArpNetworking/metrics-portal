@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import ConnectionVM = require('./ConnectionVM');
-import StatisticView = require('./StatisticView');
-import ViewDuration = require('./ViewDuration');
-import GraphSpec = require('./GraphSpec')
-import ko = require('knockout');
+import ConnectionVM from './ConnectionVM';
+import StatisticView from './StatisticView';
+import ViewDuration from './ViewDuration';
+import GraphSpec from './GraphSpec'
+import * as ko from 'knockout';
 
 class GaugeVM implements StatisticView {
     id: string;
@@ -29,9 +29,9 @@ class GaugeVM implements StatisticView {
     paused: boolean;
     targetFrameRate: number = 60;
     spec: GraphSpec;
-    renderDots: KnockoutObservable<boolean>     = ko.observable<boolean>(false);
-    renderStacked: KnockoutObservable<boolean>  = ko.observable<boolean>(false);
-    graphType: KnockoutObservable<string>       = ko.observable<string>("");
+    renderDots: ko.Observable<boolean>     = ko.observable<boolean>(false);
+    renderStacked: ko.Observable<boolean>  = ko.observable<boolean>(false);
+    graphType: ko.Observable<string>       = ko.observable<string>("");
 
     constructor(id: string, name: string, spec: GraphSpec) {
         this.id = id;
@@ -86,4 +86,4 @@ class GaugeVM implements StatisticView {
     shutdown() {  }
 }
 
-export = GaugeVM;
+export default GaugeVM;

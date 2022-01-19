@@ -1,8 +1,8 @@
-import uuid = require('../Uuid');
-import ko = require('knockout');
+import uuid from '../Uuid';
+import * as ko from 'knockout';
 // @ts-ignore: import is valid
-import moment = require('moment-timezone/moment-timezone');
-import features = require('configure');
+import * as moment from 'moment-timezone/moment-timezone';
+import features from '../../libs/configure';
 
 export enum RecipientType {
     EMAIL,
@@ -109,10 +109,10 @@ export class BaseScheduleViewModel {
 }
 
 export class BaseRecipientViewModel {
-    id: KnockoutObservable<string>;
+    id: ko.Observable<string>;
     type: RecipientType;
-    address: KnockoutObservable<string>;
-    format: KnockoutObservable<ReportFormat>;
+    address: ko.Observable<string>;
+    format: ko.Observable<ReportFormat>;
 
     constructor(type?: RecipientType) {
         this.id = ko.observable(uuid.v4());
