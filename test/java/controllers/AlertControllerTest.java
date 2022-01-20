@@ -225,13 +225,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetNotFiringAlert() throws Exception {
             final UUID alertId = NOT_FIRING_IDS.get(0);
-            final Result result = Helpers.invokeWithContext(
-                    Helpers.fakeRequest(),
-                    Helpers.contextComponents(),
-                    () -> _controller.get(alertId)
-            )
-            .toCompletableFuture()
-            .get();
+            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -252,11 +246,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetFiringAlert() throws Exception {
             final UUID alertId = FIRING_IDS.get(0);
-            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
-                    Helpers.contextComponents(),
-                    () -> _controller.get(alertId))
-                    .toCompletableFuture()
-                    .get();
+            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -277,11 +267,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetAlertNotFound() throws Exception {
             final UUID unknownId = UUID.randomUUID();
-            final Result result = Helpers.invokeWithContext(Helpers.fakeRequest(),
-                    Helpers.contextComponents(),
-                    () -> _controller.get(unknownId))
-                    .toCompletableFuture()
-                    .get();
+            final Result result = _controller.get(unknownId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.NOT_FOUND)));
         }
 
@@ -293,12 +279,7 @@ public final class AlertControllerTest {
     public static class PaginationTests extends SharedSetup {
         @Test
         public void testQueryAlertsSinglePage() throws Exception {
-            final Result result = Helpers.invokeWithContext(
-                    Helpers.fakeRequest(),
-                    Helpers.contextComponents(),
-                    () -> _controller.query(ALERT_PAGE_LIMIT, 0)
-            ).toCompletableFuture()
-            .get(1, TimeUnit.SECONDS);
+            final Result result = _controller.query(ALERT_PAGE_LIMIT, 0, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
             final JsonNode page = WebServerHelper.readContentAsJson(result);
             assertThat(page.get("pagination").get("size").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));

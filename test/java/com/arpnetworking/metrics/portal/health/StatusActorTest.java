@@ -22,12 +22,14 @@ import akka.actor.Address;
 import akka.actor.UnhandledMessage;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
+import akka.cluster.ClusterEvent$;
 import akka.cluster.ClusterReadView;
 import akka.cluster.Member;
 import akka.cluster.MemberStatus;
 import akka.cluster.UniqueAddress;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
+import akka.util.Version;
 import com.arpnetworking.commons.akka.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,6 +39,7 @@ import scala.Option;
 import scala.collection.immutable.HashMap;
 import scala.collection.immutable.HashSet;
 import scala.collection.immutable.Set;
+import scala.collection.immutable.Set$;
 import scala.collection.immutable.TreeSet;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -57,17 +60,20 @@ public class StatusActorTest extends BaseActorTest {
         final Member selfMember = new Member(UniqueAddress.apply(localAddress, 1821L),
                                              1,
                                              MemberStatus.up(),
-                                             new Set.Set1<>("test"));
+                                             new Set.Set1<>("test"),
+                                             Version.Zero());
         Mockito.when(_clusterMock.selfAddress()).thenReturn(localAddress);
         final ClusterReadView readView = Mockito.mock(ClusterReadView.class);
         Mockito.when(readView.self()).thenReturn(selfMember);
         Mockito.when(_clusterMock.readView()).thenReturn(readView);
-        final ClusterEvent.CurrentClusterState state = new ClusterEvent.CurrentClusterState(
+
+        final ClusterEvent.CurrentClusterState state = ClusterEvent.CurrentClusterState$.MODULE$.apply(
                 new TreeSet<>(Member.ordering()).$plus(selfMember),
                 Member.none(),
                 new HashSet<>(),
                 Option.empty(),
                 new HashMap<>());
+
         Mockito.doAnswer(
                 invocation -> {
                     final ActorRef ref = (ActorRef) invocation.getArguments()[0];
