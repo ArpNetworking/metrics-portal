@@ -41,8 +41,8 @@ public final class CassandraHostRepositoryIT {
 
     @Before
     public void setUp() {
-        final CqlSession cassandraSession = CassandraServerHelper.createSession();
-        _hostRepo = new CassandraHostRepository(cassandraSession);
+        _cassandraSession = CassandraServerHelper.createSession();
+        _hostRepo = new CassandraHostRepository(_cassandraSession);
         _hostRepo.open();
     }
 
@@ -162,4 +162,5 @@ public final class CassandraHostRepositoryIT {
     }
 
     private CassandraHostRepository _hostRepo;
+    private CqlSession _cassandraSession;
 }
