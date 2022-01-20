@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
@@ -43,6 +44,7 @@ import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
+import play.mvc.StatusHeader;
 import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders;
 import play.shaded.ahc.org.asynchttpclient.AsyncCompletionHandler;
 import play.shaded.ahc.org.asynchttpclient.HttpResponseBodyPart;
@@ -103,8 +105,8 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied status response.
      */
-    public CompletionStage<Result> status() {
-        return proxy();
+    public CompletionStage<Result> status(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
@@ -112,8 +114,8 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied health check response.
      */
-    public CompletionStage<Result> healthCheck() {
-        return proxy();
+    public CompletionStage<Result> healthCheck(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
@@ -121,7 +123,7 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied tagNames response.
      */
-    public CompletionStage<Result> tagNames() {
+    public CompletionStage<Result> tagNames(final Http.Request request) {
         return _kairosService.listTagNames()
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
@@ -132,8 +134,8 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied tagValues response.
      */
-    public CompletionStage<Result> tagValues() {
-        return proxy();
+    public CompletionStage<Result> tagValues(final Http.Request request) {
+        return proxy(request);
     }
 
     private static CompletionStage<Result> noJsonFoundResponse() {
@@ -147,9 +149,9 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied queryTags response.
      */
-    public CompletionStage<Result> queryTags() {
+    public CompletionStage<Result> queryTags(final Http.Request request) {
         try {
-            final JsonNode jsonBody = request().body().asJson();
+            final JsonNode jsonBody = request.body().asJson();
             if (jsonBody == null) {
                 return noJsonFoundResponse();
             }
@@ -168,9 +170,9 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied queryMetrics response.
      */
-    public CompletionStage<Result> queryMetrics() {
+    public CompletionStage<Result> queryMetrics(final Http.Request request) {
         try {
-            final JsonNode jsonBody = request().body().asJson();
+            final JsonNode jsonBody = request.body().asJson();
             if (jsonBody == null) {
                 return noJsonFoundResponse();
             }
@@ -278,8 +280,8 @@ public class KairosDbProxyController extends Controller {
      *
      * @return Proxied version response.
      */
-    public CompletionStage<Result> version() {
-        return proxy();
+    public CompletionStage<Result> version(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
@@ -300,19 +302,17 @@ public class KairosDbProxyController extends Controller {
      *
      * @return the proxied {@link Result}
      */
-    private CompletionStage<Result> proxy() {
-        final String path = request().uri();
+    private CompletionStage<Result> proxy(final Http.Request request) {
+        final String path = request.uri();
         LOGGER.debug().setMessage("proxying call to kairosdb")
                 .addData("from", path)
                 .log();
         final CompletableFuture<Result> promise = new CompletableFuture<>();
-        final Http.Request request = request();
         final boolean isHttp10 = request.version().equals("HTTP/1.0");
-        final Http.Response configResponse = response();
         _client.proxy(
                 path.startsWith("/") ? path : "/" + path,
                 request,
-                new ResponseHandler(configResponse, promise, isHttp10));
+                new ResponseHandler(promise, isHttp10));
         return promise;
     }
 
@@ -330,13 +330,11 @@ public class KairosDbProxyController extends Controller {
 
     private static class ResponseHandler extends AsyncCompletionHandler<Void> {
         ResponseHandler(
-                final Http.Response response,
                 final CompletableFuture<Result> promise,
                 final boolean isHttp10) {
             try {
                 _outputStream = new PipedOutputStream();
                 _inputStream = new PipedInputStream(_outputStream);
-                _response = response;
                 _promise = promise;
                 _isHttp10 = isHttp10;
             } catch (final IOException ex) {
@@ -379,23 +377,33 @@ public class KairosDbProxyController extends Controller {
                     contentType = null;
                 }
 
-                entries.entries()
-                        .stream()
-                        .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
-                        .forEach(entry -> _response.setHeader(entry.getKey(), entry.getValue()));
-
-                if (_isHttp10) {
-                    // Strip the transfer encoding header as chunked isn't supported in 1.0
-                    _response.getHeaders().remove(TRANSFER_ENCODING);
-                    // Strip the connection header since we don't support keep-alives in 1.0
-                    _response.getHeaders().remove(CONNECTION);
-                }
-
-                final play.mvc.Result result = Results.status(_status).sendEntity(
+                final StatusHeader status = Results.status(_status);
+                Result result = status.sendEntity(
                         new HttpEntity.Streamed(
                                 StreamConverters.fromInputStream(() -> _inputStream, DEFAULT_CHUNK_SIZE),
                                 length,
                                 Optional.ofNullable(contentType)));
+
+                final ArrayList<String> headersList = entries.entries()
+                        .stream()
+                        .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
+                        .reduce(Lists.newArrayList(), (a, b) -> {
+                            a.add(b.getKey());
+                            a.add(b.getValue());
+                            return a;
+                        }, (a, b) -> {
+                            a.addAll(b);
+                            return b;
+                        });
+                final String[] headerArray = headersList.toArray(new String[0]);
+                result = result.withHeaders(headerArray);
+
+                if (_isHttp10) {
+                    // Strip the transfer encoding header as chunked isn't supported in 1.0
+                    result = result.withoutHeader(TRANSFER_ENCODING);
+                    // Strip the connection header since we don't support keep-alives in 1.0
+                    result = result.withoutHeader(CONNECTION);
+                }
 
                 _promise.complete(result);
                 return State.CONTINUE;
@@ -431,7 +439,6 @@ public class KairosDbProxyController extends Controller {
 
         private int _status;
         private final PipedOutputStream _outputStream;
-        private final Http.Response _response;
         private final PipedInputStream _inputStream;
         private final CompletableFuture<Result> _promise;
         private final boolean _isHttp10;

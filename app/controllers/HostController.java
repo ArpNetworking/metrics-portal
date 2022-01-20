@@ -75,8 +75,8 @@ public class HostController extends Controller {
      * @param id The hostname to retrieve.
      * @return Matching host.
      */
-    public Result get(final String id) {
-        final Optional<Host> result = _hostRepository.getHost(id, _organizationRepository.get(request()));
+    public Result get(final String id, final Http.Request request) {
+        final Optional<Host> result = _hostRepository.getHost(id, _organizationRepository.get(request));
         if (!result.isPresent()) {
             return notFound();
         }
@@ -89,10 +89,10 @@ public class HostController extends Controller {
      *
      * @return Ok if the host was created or updated successfully, a failure HTTP status code otherwise.
      */
-    public Result addOrUpdate() {
+    public Result addOrUpdate(final Http.Request request) {
         final Host host;
         try {
-            final models.view.Host viewHost = buildViewHost(request().body());
+            final models.view.Host viewHost = buildViewHost(request.body());
             host = convertToInternalHost(viewHost);
         } catch (final IOException e) {
             LOGGER.error()
@@ -103,7 +103,7 @@ public class HostController extends Controller {
         }
 
         try {
-            _hostRepository.addOrUpdateHost(host, _organizationRepository.get(request()));
+            _hostRepository.addOrUpdateHost(host, _organizationRepository.get(request));
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch
@@ -134,7 +134,8 @@ public class HostController extends Controller {
             @Nullable final String cluster,
             @Nullable final Integer limit,
             @Nullable final Integer offset,
-            @Nullable final String sort_by) {
+            @Nullable final String sort_by,
+            final Http.Request request) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         // Convert and validate parameters
@@ -171,7 +172,7 @@ public class HostController extends Controller {
         argSortBy.ifPresent(v -> conditions.put("sort_by", v.toString()));
 
         // Build a host repository query
-        final HostQuery query = _hostRepository.createHostQuery(_organizationRepository.get(request()))
+        final HostQuery query = _hostRepository.createHostQuery(_organizationRepository.get(request))
                 .partialHostname(argName)
                 .metricsSoftwareState(argState)
                 .cluster(argCluster)
@@ -180,14 +181,15 @@ public class HostController extends Controller {
                 .sortBy(argSortBy);
 
         // Execute the query
-        return executeQuery(argOffset, argLimit, conditions, query);
+        return executeQuery(argOffset, argLimit, conditions, query, request);
     }
 
     private Result executeQuery(
             final Optional<Integer> argOffset,
             final int argLimit,
             final Map<String, String> conditions,
-            final HostQuery query) {
+            final HostQuery query,
+            final Http.Request request) {
 
         final QueryResult<Host> result;
         try {
@@ -203,21 +205,22 @@ public class HostController extends Controller {
         }
 
         // Wrap the query results and return as JSON
-        if (result.etag().isPresent()) {
-            response().setHeader(HttpHeaders.ETAG, result.etag().get());
-        }
-        return ok(Json.toJson(new PagedContainer<>(
+        Result response = ok(Json.toJson(new PagedContainer<>(
                 result.values()
                         .stream()
                         .map(this::internalModelToViewModel)
                         .collect(Collectors.toList()),
                 new Pagination(
-                        request().path(),
+                        request.path(),
                         result.total(),
                         result.values().size(),
                         argLimit,
                         argOffset,
                         conditions))));
+        if (result.etag().isPresent()) {
+            response = response.withHeader(HttpHeaders.ETAG, result.etag().get());
+        }
+        return response;
     }
 
     private models.view.Host internalModelToViewModel(final Host host) {
