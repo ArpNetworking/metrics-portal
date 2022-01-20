@@ -23,10 +23,8 @@ import akka.http.javadsl.model.headers.AcceptEncoding;
 import akka.http.javadsl.model.headers.HttpEncoding;
 import akka.http.javadsl.model.headers.HttpEncodings;
 import akka.http.scaladsl.coding.Coder;
-import akka.http.scaladsl.coding.Deflate$;
-import akka.http.scaladsl.coding.Gzip$;
-import akka.http.scaladsl.coding.NoCoding$;
-import akka.stream.ActorMaterializer;
+import akka.http.scaladsl.coding.Coders;
+import akka.stream.Materializer;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.kairos.client.models.MetricDataPoints;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
@@ -142,16 +140,16 @@ public final class KairosDbClientImpl implements KairosDbClient {
 
     private <T> CompletionStage<T> fireRequest(final HttpRequest request, final JavaType responseType) {
         final Instant startTime = Instant.now();
-        return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)), _materializer)
+        return _http.singleRequest(request.addHeader(AcceptEncoding.create(HttpEncodings.GZIP)))
                 .thenCompose(httpResponse -> {
                     final HttpEncoding encoding = httpResponse.encoding();
                     final Coder flow;
                     if (HttpEncodings.GZIP.equals(encoding)) {
-                        flow = Gzip$.MODULE$;
+                        flow = Coders.Gzip();
                     } else if (HttpEncodings.DEFLATE.equals(encoding)) {
-                        flow = Deflate$.MODULE$;
+                        flow = Coders.Deflate();
                     } else {
-                        flow = NoCoding$.MODULE$;
+                        flow = Coders.NoCoding();
                     }
                     if (!httpResponse.status().isSuccess()) {
                         return httpResponse.entity().toStrict(_readTimeout.toMillis(), _materializer)
@@ -200,14 +198,14 @@ public final class KairosDbClientImpl implements KairosDbClient {
         _uri = builder._uri;
 
         _http = Http.get(actorSystem);
-        _materializer = ActorMaterializer.create(actorSystem);
+        _materializer = Materializer.createMaterializer(actorSystem);
         _readTimeout = builder._readTimeout;
         _metricsFactory = builder._metricsFactory;
     }
 
     private final ObjectMapper _mapper;
     private final Http _http;
-    private final ActorMaterializer _materializer;
+    private final Materializer _materializer;
     private final URI _uri;
     private final FiniteDuration _readTimeout;
     private final MetricsFactory _metricsFactory;

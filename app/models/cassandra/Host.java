@@ -15,18 +15,17 @@
  */
 package models.cassandra;
 
-import com.datastax.driver.mapping.Result;
-import com.datastax.driver.mapping.annotations.Accessor;
-import com.datastax.driver.mapping.annotations.Column;
-import com.datastax.driver.mapping.annotations.Param;
-import com.datastax.driver.mapping.annotations.PartitionKey;
-import com.datastax.driver.mapping.annotations.Query;
-import com.datastax.driver.mapping.annotations.Table;
+import com.datastax.oss.driver.api.mapper.annotations.CqlName;
+import com.datastax.oss.driver.api.mapper.annotations.Dao;
+import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
+import com.datastax.oss.driver.api.mapper.annotations.Query;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import javax.persistence.Version;
 
 /**
@@ -35,30 +34,24 @@ import javax.persistence.Version;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 // CHECKSTYLE.OFF: MemberNameCheck
-@Table(name = "hosts", keyspace = "portal")
+@Entity(defaultKeyspace = "portal")
+@CqlName("hosts")
 public class Host {
     @Version
-    @Column(name = "version")
     private Long version;
 
-    @Column(name = "created_at")
     private Instant createdAt;
 
-    @Column(name = "updated_at")
     private Instant updatedAt;
 
     @PartitionKey(1)
-    @Column(name = "name")
     private String name;
 
-    @Column(name = "cluster")
     private String cluster;
 
-    @Column(name = "metrics_software_state")
     private String metricsSoftwareState;
 
     @PartitionKey(0)
-    @Column(name = "organization")
     private UUID organization;
 
     public Long getVersion() {
@@ -135,7 +128,7 @@ public class Host {
      *
      * @author Brandon Arp (brandon dot arp at smartsheet dot com)
      */
-    @Accessor
+    @Dao
     public interface HostQueries {
         /**
          * Queries for all hosts in an organization.
@@ -143,8 +136,8 @@ public class Host {
          * @param organization Organization owning the alerts
          * @return Mapped query results
          */
-        @Query("select * from portal.hosts_by_organization where organization = :org")
-        Result<Host> getHostsForOrganization(@Param("org") UUID organization);
+        @Query("select * from ${keyspaceId}.hosts_by_organization where organization = :org")
+        CompletionStage<Host> getHostsForOrganization(UUID org);
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

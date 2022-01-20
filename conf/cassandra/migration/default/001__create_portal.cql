@@ -1,6 +1,5 @@
 -- description: creates initial schema
 -- authoredAt: 1370028263000
--- up:
 
 -- stage: 1
 CREATE TABLE alerts
@@ -37,8 +36,3 @@ SELECT *
 FROM alerts
 WHERE organization IS NOT NULL AND uuid IS NOT NULL
 PRIMARY KEY (organization, uuid);
-
--- down:
-
--- stage: 1
-DROP TABLE alerts;

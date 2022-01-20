@@ -1,16 +1,14 @@
-import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
-
 scalaVersion := "2.12.15"
 
 lazy val main = (project in file("."))
   .enablePlugins(SbtWeb)
+  .enablePlugins(PlayJava)
   .settings(
     ivyLoggingLevel := UpdateLogging.Quiet,
     Assets / sourceDirectory := baseDirectory.value / "app/assets",
     Assets / resourceDirectory  := baseDirectory.value / "public",
     target := baseDirectory.value / "target/sbt",
     gzip / includeFilter := "*",
-    TypescriptKeys.configFile := "tsconfig.json",
     pipelineStages := Seq(digest, gzip)
   )
 

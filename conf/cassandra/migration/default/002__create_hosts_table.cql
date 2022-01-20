@@ -1,8 +1,6 @@
 -- description: creates hosts table
 -- authoredAt: 1525330368000
 
--- up:
-
 -- stage: 1
 CREATE TABLE hosts
 (
@@ -22,11 +20,3 @@ SELECT *
 FROM hosts
 WHERE organization IS NOT NULL AND name IS NOT NULL
 PRIMARY KEY (organization, name);
-
--- down:
-
--- stage: 1
-DROP MATERIALIZED VIEW hosts_by_organization;
-
--- stage: 2
-DROP TABLE hosts;
