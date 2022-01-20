@@ -250,6 +250,7 @@
               <version>1.7.26</version>
             </path>
           </annotationProcessorPaths>
+          <generatedSourcesDirectory>${generated.sources}</generatedSourcesDirectory>
         </configuration>
       </plugin>
       <plugin>
@@ -387,6 +388,33 @@
         <groupId>com.google.code.sbt-compiler-maven-plugin</groupId>
         <artifactId>sbt-compiler-maven-plugin</artifactId>
         <version>${sbt.compiler.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>annotate-models</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>process-resources</phase>
+            <configuration>
+              <outputDirectory>${project.build.directory}/generated-sources/annotations</outputDirectory>
+              <javacOptions>-g -implicit:class -proc:only</javacOptions>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <phase>test-compile</phase>
+          </execution>
+          <execution>
+            <id>compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+          </execution>
+        </executions>
         <configuration>
           <!-- TODO: Remove '-Xlint:-path' once "bad path element" errors are fixed
 
@@ -394,7 +422,7 @@
               1) xalan:xalan:2.7.2 (dependency of play-test)
               2) org.apache.cassandra:cassandra-all:3.9 (direct test dependency)
           -->
-          <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror -implicit:class</javacOptions>
+          <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror -proc:none</javacOptions>
         </configuration>
       </plugin>
       <plugin>
@@ -433,6 +461,18 @@
                     <targetPath>public</targetPath>
                   </resource>
               </resources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-generated-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/annotations/</source>
+              </sources>
             </configuration>
           </execution>
         </executions>
@@ -512,6 +552,22 @@
                 <fileset>
                   <directory>${project.build.directory}/docker-assembly</directory>
                   <directory>${project.build.directory}/appassembler</directory>
+                </fileset>
+              </filesets>
+            </configuration>
+          </execution>
+          <execution>
+            <id>clean-generated-soruces</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+            <configuration>
+              <excludeDefaultDirectories>true</excludeDefaultDirectories>
+              <verbose>true</verbose>
+              <filesets>
+                <fileset>
+                  <directory>${project.build.directory}/generated-sources</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -1185,6 +1241,7 @@
       <groupId>com.datastax.oss</groupId>
       <artifactId>java-driver-mapper-processor</artifactId>
       <version>${cassandra.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
