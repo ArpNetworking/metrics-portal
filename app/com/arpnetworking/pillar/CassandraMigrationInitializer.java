@@ -81,13 +81,7 @@ public class CassandraMigrationInitializer {
                         .addData("database", dbName)
                         .log();
                 try {
-                    final scala.collection.immutable.Map<String, Object> replication =
-                            JavaConverters.mapAsScalaMapConverter(
-                                    MAPPER.convertValue(config.getReplication(), MAP_TYPE_REFERENCE))
-                                    .asScala()
-                                    .toMap(Predef.conforms());
                     final File file = new File(resource.toURI());
-
 
                     final CqlSession session = _injector.getInstance(Key.get(CqlSession.class, Names.named(dbName)));
 

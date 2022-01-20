@@ -58,7 +58,7 @@ public final class RandomHostProvider extends AbstractActor {
         _hostRepository = hostRepository;
         _organizationRepository = organizationRepository;
         _targetOrganizationId = UUID.fromString(configuration.getString("targetOrganizationId"));
-        getContext().system().scheduler().schedule(
+        getContext().system().scheduler().scheduleAtFixedRate(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),

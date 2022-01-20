@@ -78,7 +78,7 @@
     <akka.persistence.inmemory.version>2.5.1.1</akka.persistence.inmemory.version>
     <anorm.version>2.6.2</anorm.version>
     <arpnetworking.commons.version>1.20.0</arpnetworking.commons.version>
-    <aspectjrt.version>1.9.2</aspectjrt.version>
+    <aspectjrt.version>1.9.7</aspectjrt.version>
     <asynchttpclient.version>1.1.9</asynchttpclient.version>
     <cassandra.version>4.13.0</cassandra.version>
     <cdt.java.client.version>2.0.0</cdt.java.client.version>
@@ -134,8 +134,8 @@
     <wiremock.version>2.19.0</wiremock.version>
 
     <!-- Additional Plugins -->
-    <aspectjtools.maven.plugin>1.9.1</aspectjtools.maven.plugin>
-    <aspectj.maven.plugin.version>1.8</aspectj.maven.plugin.version>
+    <aspectjtools.maven.plugin>1.9.7</aspectjtools.maven.plugin>
+    <aspectj.maven.plugin.version>1.14.0</aspectj.maven.plugin.version>
     <build.helper.maven.plugin.version>1.10</build.helper.maven.plugin.version>
     <commons.io.version>2.7</commons.io.version>
     <docker.maven.plugin.version>0.27.2</docker.maven.plugin.version>
@@ -242,7 +242,12 @@
             <path>
               <groupId>com.datastax.oss</groupId>
               <artifactId>java-driver-mapper-processor</artifactId>
-              <version>${cassandra.version}.9</version>
+              <version>${cassandra.version}</version>
+            </path>
+            <path>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-nop</artifactId>
+              <version>1.7.26</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
@@ -389,7 +394,7 @@
               1) xalan:xalan:2.7.2 (dependency of play-test)
               2) org.apache.cassandra:cassandra-all:3.9 (direct test dependency)
           -->
-          <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror</javacOptions>
+          <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror -implicit:class</javacOptions>
         </configuration>
       </plugin>
       <plugin>
@@ -470,9 +475,10 @@
           </execution>
         </executions>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <complianceLevel>1.8</complianceLevel>
+          <source>11</source>
+          <target>11</target>
+          <complianceLevel>11</complianceLevel>
+          <proc>none</proc>
           <aspectLibraries>
             <aspectLibrary>
               <groupId>com.arpnetworking.logback</groupId>
@@ -1173,6 +1179,11 @@
     <dependency>
       <groupId>com.datastax.oss</groupId>
       <artifactId>java-driver-mapper-runtime</artifactId>
+      <version>${cassandra.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.datastax.oss</groupId>
+      <artifactId>java-driver-mapper-processor</artifactId>
       <version>${cassandra.version}</version>
     </dependency>
     <dependency>

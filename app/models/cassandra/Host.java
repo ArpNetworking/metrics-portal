@@ -17,15 +17,21 @@ package models.cassandra;
 
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Dao;
+import com.datastax.oss.driver.api.mapper.annotations.DaoFactory;
+import com.datastax.oss.driver.api.mapper.annotations.Delete;
 import com.datastax.oss.driver.api.mapper.annotations.Entity;
+import com.datastax.oss.driver.api.mapper.annotations.Insert;
+import com.datastax.oss.driver.api.mapper.annotations.Mapper;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 import com.datastax.oss.driver.api.mapper.annotations.Query;
+import com.datastax.oss.driver.api.mapper.annotations.Select;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 import javax.persistence.Version;
 
 /**
@@ -137,7 +143,23 @@ public class Host {
          * @return Mapped query results
          */
         @Query("select * from ${keyspaceId}.hosts_by_organization where organization = :org")
-        CompletionStage<Host> getHostsForOrganization(UUID org);
+        Stream<Host> getHostsForOrganization(UUID org);
+
+        @Select
+        CompletionStage<Host> get(UUID organization, String name);
+
+        @Insert
+        void save(Host host);
+
+        @Delete(entityClass = Host.class)
+        void delete(UUID organization, String name);
+    }
+
+    @com.datastax.oss.driver.api.mapper.annotations.Mapper
+    public interface Mapper {
+        @DaoFactory
+        HostQueries dao();
+
     }
 }
 // CHECKSTYLE.ON: MemberNameCheck

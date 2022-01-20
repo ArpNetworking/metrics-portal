@@ -222,7 +222,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
     }
 
     @Override
-    public void postStop() {
+    public void postStop() throws Exception {
         super.postStop();
         LOGGER.info()
                 .setMessage("cache actor was stopped")
