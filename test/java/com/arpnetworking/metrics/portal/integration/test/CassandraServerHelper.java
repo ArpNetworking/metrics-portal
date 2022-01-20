@@ -78,12 +78,6 @@ public final class CassandraServerHelper {
                 .withCodecRegistry(new DefaultCodecRegistry("codec"))
                 .build();
 
-        final scala.collection.immutable.Map<String, Object> replication =
-                JavaConverters.<String, Object>mapAsScalaMapConverter(
-                        OBJECT_MAPPER.convertValue(DEFAULT_REPLICATION, MAP_TYPE_REFERENCE))
-                        .asScala()
-                        .toMap(Predef.conforms());
-
         Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
         MigrationTask migration = new MigrationTask(database, new MigrationRepository(new File("./conf/cassandra/migration/" + name).getAbsolutePath()));
         migration.migrate();

@@ -26,6 +26,8 @@ import com.google.common.collect.Sets;
 import org.junit.Test;
 import scala.Option;
 import scala.collection.JavaConversions;
+import scala.collection.immutable.HashMap;
+import scala.collection.immutable.HashSet;
 import scala.collection.immutable.TreeSet;
 
 import java.util.Collections;
@@ -101,11 +103,11 @@ public class StatusResponseTest extends BaseActorTest {
     }
 
     private ClusterEvent.CurrentClusterState createClusterState() {
-        return new ClusterEvent.CurrentClusterState(
-                TreeSet.implicitBuilder(Member.ordering()).result(),
-                JavaConversions.asScalaSet(Collections.emptySet()).toSet(),
-                JavaConversions.asScalaSet(Collections.emptySet()).toSet(),
+        return ClusterEvent.CurrentClusterState$.MODULE$.apply(
+                new TreeSet<>(Member.ordering()),
+                new HashSet<>(),
+                new HashSet<>(),
                 Option.empty(),
-                scala.collection.immutable.Map$.MODULE$.empty());
+                new HashMap<>());
     }
 }
