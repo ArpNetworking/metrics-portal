@@ -136,10 +136,10 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
         super.preStart();
         // Tick once at startup, then periodically thereafter.
         self().tell(ANTI_ENTROPY_TICK, self());
-        timers().startPeriodicTimer(
+        timers().startTimerAtFixedRate(
                 ANTI_ENTROPY_PERIODIC_TIMER_NAME,
                 ANTI_ENTROPY_TICK,
-                scala.concurrent.duration.Duration.fromNanos(ANTI_ENTROPY_TICK_INTERVAL.toNanos()));
+                ANTI_ENTROPY_TICK_INTERVAL);
     }
 
     /**

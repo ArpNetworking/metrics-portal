@@ -39,7 +39,7 @@ public class NoHostProvider extends AbstractActor {
      */
     @Inject
     public NoHostProvider(@Assisted final Config configuration) {
-        getContext().system().scheduler().schedule(
+        getContext().system().scheduler().scheduleAtFixedRate(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),

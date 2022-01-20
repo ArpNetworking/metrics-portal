@@ -110,7 +110,7 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     private Http.Request initMetrics(final Http.Request request) {
-        Metrics metrics = (Metrics) request.attrs().get(Attrs.METRICS);
+        Metrics metrics = request.attrs().get(Attrs.METRICS);
         if (metrics == null) {
             metrics = _metricsFactory.create();
             return request.withAttrs(TypedMap.create(new TypedEntry<>(Attrs.METRICS, metrics)));
