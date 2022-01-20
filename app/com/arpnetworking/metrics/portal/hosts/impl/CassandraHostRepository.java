@@ -18,10 +18,7 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
-import com.datastax.driver.mapping.Result;
+import com.datastax.oss.driver.api.core.CqlSession;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -50,14 +47,11 @@ public class CassandraHostRepository implements HostRepository {
      * Public constructor.
      *
      * @param cassandraSession a Session to use to query data
-     * @param mappingManager a MappingManager providing ORM for the Cassandra objects
      */
     @Inject
     public CassandraHostRepository(
-            final Session cassandraSession,
-            final MappingManager mappingManager) {
+            final CqlSession cassandraSession) {
         _cassandraSession = cassandraSession;
-        _mappingManager = mappingManager;
     }
 
     @Override
@@ -217,8 +211,7 @@ public class CassandraHostRepository implements HostRepository {
         }
     }
 
-    private final Session _cassandraSession;
-    private final MappingManager _mappingManager;
+    private final CqlSession _cassandraSession;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraHostRepository.class);
