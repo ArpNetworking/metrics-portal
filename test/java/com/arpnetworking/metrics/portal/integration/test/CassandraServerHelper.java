@@ -17,23 +17,24 @@ package com.arpnetworking.metrics.portal.integration.test;
 
 import akka.japi.Option;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.chrisomeara.pillar.CassandraMigrator;
-import com.chrisomeara.pillar.Migrator;
-import com.chrisomeara.pillar.Registry;
-import com.chrisomeara.pillar.ReplicationOptions;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
+import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Maps;
+import org.cognitor.cassandra.migration.Database;
+import org.cognitor.cassandra.migration.MigrationConfiguration;
+import org.cognitor.cassandra.migration.MigrationRepository;
+import org.cognitor.cassandra.migration.MigrationTask;
 import scala.Predef;
 import scala.collection.JavaConverters;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Date;
@@ -53,38 +54,29 @@ public final class CassandraServerHelper {
      *
      * @return reference to the Metrics Cassandra cluster {@code Session}
      */
-    public static synchronized Session createSession() {
-        @Nullable Cluster cluster = CASSANDRA_SERVER_MAP.get(METRICS_DATABASE);
-        if (cluster == null) {
-            cluster = initializeCassandraServer(
+    public static synchronized CqlSession createSession() {
+        @Nullable CqlSession session = CASSANDRA_SERVER_MAP.get(METRICS_DATABASE);
+        if (session == null) {
+            session = initializeCassandraServer(
                     METRICS_DATABASE,
                     METRICS_KEYSPACE,
                     getEnvOrDefault("CASSANDRA_HOST", "localhost"),
                     getEnvOrDefault("CASSANDRA_PORT", DEFAULT_CASSANDRA_PORT, Integer::parseInt));
         }
-        return cluster.newSession();
+        return session;
     }
 
-    private static Cluster initializeCassandraServer(
+    private static CqlSession initializeCassandraServer(
             final String name,
             final String keyspace,
             final String hostname,
             final int port) {
 
-        final Cluster cluster;
-        try {
-            cluster = Cluster.builder()
-                    .addContactPoints(Collections.singleton(InetAddress.getByName(hostname)))
-                    .withClusterName(name)
-                    .withPort(port)
-                    .withCodecRegistry(CodecRegistry.DEFAULT_INSTANCE)
-                    .build();
-        } catch (final UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-        cluster.getConfiguration().getCodecRegistry().register(InstantCodec.instance);
-
-        final Session session = cluster.newSession();
+        final CqlSession session;
+        session = new CqlSessionBuilder()
+                .addContactPoints(Collections.singleton(InetSocketAddress.createUnresolved(hostname, port)))
+                .withCodecRegistry(new DefaultCodecRegistry("codec"))
+                .build();
 
         final scala.collection.immutable.Map<String, Object> replication =
                 JavaConverters.<String, Object>mapAsScalaMapConverter(
@@ -92,15 +84,13 @@ public final class CassandraServerHelper {
                         .asScala()
                         .toMap(Predef.conforms());
 
-        final Registry registry = Registry.fromDirectory(new File("./conf/cassandra/migration/" + name));
-        final Migrator migrator = new CassandraMigrator(registry);
-        session.init();
-        migrator.initialize(session, keyspace, new ReplicationOptions(replication));
-        session.execute("USE " + keyspace);
-        migrator.migrate(session, Option.<Date>none().asScala());
+        Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
+        MigrationTask migration = new MigrationTask(database, new MigrationRepository(new File("./conf/cassandra/migration/" + name).getAbsolutePath()));
+        migration.migrate();
 
-        CASSANDRA_SERVER_MAP.put(name, cluster);
-        return cluster;
+
+        CASSANDRA_SERVER_MAP.put(name, session);
+        return session;
     }
 
     private static String getEnvOrDefault(final String name, final String defaultValue) {
@@ -116,7 +106,7 @@ public final class CassandraServerHelper {
 
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() { };
-    private static final Map<String, Cluster> CASSANDRA_SERVER_MAP = Maps.newHashMap();
+    private static final Map<String, CqlSession> CASSANDRA_SERVER_MAP = Maps.newHashMap();
     private static final String METRICS_DATABASE = "default";
     private static final String METRICS_KEYSPACE = "portal";
     private static final int DEFAULT_CASSANDRA_PORT = 9042;
