@@ -23,6 +23,9 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Strings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import play.libs.typedmap.TypedEntry;
+import play.libs.typedmap.TypedKey;
+import play.libs.typedmap.TypedMap;
 import play.mvc.Action;
 import play.mvc.Http;
 import play.mvc.Result;
@@ -40,6 +43,9 @@ import java.util.regex.Pattern;
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class MetricsActionWrapper extends Action.Simple {
+    private static class Attrs {
+        private static final TypedKey<Metrics> METRICS = TypedKey.create("metrics");
+    }
 
     /**
      * Public constructor.
@@ -52,12 +58,13 @@ public final class MetricsActionWrapper extends Action.Simple {
 
     @Override
     @SuppressFBWarnings("DE_MIGHT_IGNORE")
-    public CompletionStage<Result> call(final Http.Context context) {
-        final Metrics metrics = getMetrics(context);
-        final BiFunction<Result, Throwable, Result> handler = new HandlerFunction(context, metrics);
+    public CompletionStage<Result> call(final Http.Request request) {
+        final Http.Request requestWithMetrics  = initMetrics(request);
+        final Metrics metrics = requestWithMetrics.attrs().get(Attrs.METRICS);
+        final BiFunction<Result, Throwable, Result> handler = new HandlerFunction(request, metrics);
         try {
             // Async controllers we can just chain the handler
-            return delegate.call(context).handle(handler);
+            return delegate.call(request).handle(handler);
             // CHECKSTYLE.OFF: IllegalCatch - Need to be able to propagate any fault
         } catch (final Throwable t1) {
             // Sync controllers actually throw so we need to do some mapping
@@ -76,18 +83,17 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     /**
-     * Create the name of the timer from a {@code Http.Context}.
+     * Create the name of the timer from a {@code Http.Request}.
      *
-     * @param context Context of the HTTP request/response.
+     * @param request the HTTP request.
      * @return Name of the timer for the request/response.
      */
-    protected static String createRouteMetricName(final Http.Context context) {
-        final Http.Request r = context.request();
+    private static String createRouteMetricName(final Http.Request request) {
         final StringBuilder metricNameBuilder = new StringBuilder("rest_service/");
-        metricNameBuilder.append(r.method());
+        metricNameBuilder.append(request.method());
 
         final String route = ROUTE_PATTERN_REGEX.matcher(
-                Optional.ofNullable(context.request().attrs().get(Router.Attrs.HANDLER_DEF).path()).orElse(""))
+                Optional.ofNullable(request.attrs().get(Router.Attrs.HANDLER_DEF).path()).orElse(""))
                 .replaceAll(":$1");
 
         if (!Strings.isNullOrEmpty(route)) {
@@ -103,23 +109,22 @@ public final class MetricsActionWrapper extends Action.Simple {
         return metricNameBuilder.toString();
     }
 
-    private Metrics getMetrics(final Http.Context context) {
-        Metrics metrics = (Metrics) context.args.get(METRICS_KEY);
+    private Http.Request initMetrics(final Http.Request request) {
+        Metrics metrics = (Metrics) request.attrs().get(Attrs.METRICS);
         if (metrics == null) {
             metrics = _metricsFactory.create();
-            context.args.put(METRICS_KEY, metrics);
+            return request.withAttrs(TypedMap.create(new TypedEntry<>(Attrs.METRICS, metrics)));
         } else {
             LOGGER.warn()
                     .setMessage("Found metrics in request context; possible issue")
                     .addData("metrics", metrics)
                     .log();
+            return request;
         }
-        return metrics;
     }
 
     private final MetricsFactory _metricsFactory;
 
-    private static final String METRICS_KEY = "metrics";
     private static final int STATUS_2XX = 2;
     private static final int STATUS_3XX = 3;
     private static final int STATUS_4XX = 4;
@@ -135,7 +140,7 @@ public final class MetricsActionWrapper extends Action.Simple {
             final Counter counter3xx = _metrics.createCounter(_routeMetricName + "status/3xx");
             final Counter counter4xx = _metrics.createCounter(_routeMetricName + "status/4xx");
             final Counter counter5xx = _metrics.createCounter(_routeMetricName + "status/5xx");
-            final long requestSize = _context.request().body().asBytes().size();
+            final long requestSize = _request.body().asBytes().size();
             final long responseSize;
             if (t != null) {
                 counter5xx.increment();
@@ -166,16 +171,16 @@ public final class MetricsActionWrapper extends Action.Simple {
         }
 
         /* package private */ HandlerFunction(
-                final Http.Context context,
+                final Http.Request request,
                 final Metrics metrics) {
-            _context = context;
+            _request = request;
             _metrics = metrics;
 
-            _routeMetricName = createRouteMetricName(context);
+            _routeMetricName = createRouteMetricName(request);
             _timer = _metrics.createTimer(_routeMetricName + "latency");
         }
 
-        private final Http.Context _context;
+        private final Http.Request _request;
         private final Metrics _metrics;
         private final Timer _timer;
         private final String _routeMetricName;

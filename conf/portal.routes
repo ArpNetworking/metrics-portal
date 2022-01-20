@@ -35,14 +35,14 @@ GET        /v1/hosts/:id                        controllers.HostController.get(i
 PUT        /v1/hosts                            controllers.HostController.addOrUpdate()
 
 # Reports
-GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/reports/:id                      controllers.ReportController.get(id: java.util.UUID)
-DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID)
-PUT        /v1/reports                          controllers.ReportController.addOrUpdate()
+GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, request: Request)
+GET        /v1/reports/:id                      controllers.ReportController.get(id: java.util.UUID, request: Request)
+DELETE     /v1/reports/:id                      controllers.ReportController.delete(id: java.util.UUID, request: Request)
+PUT        /v1/reports                          controllers.ReportController.addOrUpdate(request: Request)
 
 # Alerts
-GET        /v1/alerts/query                     controllers.AlertController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null)
-GET        /v1/alerts/:id                       controllers.AlertController.get(id: java.util.UUID)
+GET        /v1/alerts/query                     controllers.AlertController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, request: Request)
+GET        /v1/alerts/:id                       controllers.AlertController.get(id: java.util.UUID, request: Request)
 
 # Rollups
 # vvv This endpoint is currently intended only for debugging purposes. Do not rely on it.
