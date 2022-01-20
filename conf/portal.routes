@@ -30,9 +30,9 @@ GET        /version                             controllers.MetaController.versi
 GET        /v1/proxy/stream                     controllers.TelemetryProxyController.stream(uri: String ?= null)
 
 # Hosts
-GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null)
-GET        /v1/hosts/:id                        controllers.HostController.get(id: String)
-PUT        /v1/hosts                            controllers.HostController.addOrUpdate()
+GET        /v1/hosts/query                      controllers.HostController.query(name: String ?= null, state: String ?= null, cluster: String ?= null, limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, sort_by: String ?= null, request: Request)
+GET        /v1/hosts/:id                        controllers.HostController.get(id: String, request: Request)
+PUT        /v1/hosts                            controllers.HostController.addOrUpdate(request: Request)
 
 # Reports
 GET        /v1/reports/query                    controllers.ReportController.query(limit: java.lang.Integer ?= null, offset: java.lang.Integer ?= null, request: Request)
@@ -54,13 +54,13 @@ GET        /assets/html/HeaderViewModel.html    controllers.ApplicationControlle
 
 # Kairosdb proxy
 GET        /api/v1/metricnames                  controllers.KairosDbProxyController.metricNames(containing: String ?= null, prefix: String ?= null)
-GET        /api/v1/health/check                 controllers.KairosDbProxyController.healthCheck()
-GET        /api/v1/health/status                controllers.KairosDbProxyController.status()
-GET        /api/v1/tagnames                     controllers.KairosDbProxyController.tagNames()
-GET        /api/v1/tagvalues                    controllers.KairosDbProxyController.tagValues()
-GET        /api/v1/version                      controllers.KairosDbProxyController.version()
-POST       /api/v1/datapoints/query/tags        controllers.KairosDbProxyController.queryTags()
-POST       /api/v1/datapoints/query             controllers.KairosDbProxyController.queryMetrics()
+GET        /api/v1/health/check                 controllers.KairosDbProxyController.healthCheck(request: Request)
+GET        /api/v1/health/status                controllers.KairosDbProxyController.status(request: Request)
+GET        /api/v1/tagnames                     controllers.KairosDbProxyController.tagNames(request: Request)
+GET        /api/v1/tagvalues                    controllers.KairosDbProxyController.tagValues(request: Request)
+GET        /api/v1/version                      controllers.KairosDbProxyController.version(request: Request)
+POST       /api/v1/datapoints/query/tags        controllers.KairosDbProxyController.queryTags(request: Request)
+POST       /api/v1/datapoints/query             controllers.KairosDbProxyController.queryMetrics(request: Request)
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path = "/public", file: Asset)
