@@ -89,7 +89,7 @@ import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
-import com.datastax.driver.core.CodecRegistry;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -367,8 +367,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private CodecRegistry provideCodecRegistry() {
-        final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
-        registry.register(InstantCodec.instance);
+        final CodecRegistry registry = CodecRegistry.DEFAULT;
         return registry;
     }
 

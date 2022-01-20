@@ -113,7 +113,7 @@ public class ReportController extends Controller {
                     .setMessage("Failed to build a report.")
                     .setThrowable(e)
                     .log();
-            return badRequest(_problemHelper.createErrorJson(_environment, e, "request.BAD_REQUEST"));
+            return badRequest(_problemHelper.createErrorJson(_environment, e, "request.BAD_REQUEST", request.transientLang()));
         }
 
 
@@ -226,7 +226,8 @@ public class ReportController extends Controller {
                 .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
                 .orElseGet(() -> notFound(_problemHelper.createErrorJson(new Problem.Builder()
                         .setProblemCode("report_problem.NOT_FOUND")
-                        .build()
+                        .build(),
+                        request.transientLang()
                 )));
     }
 
