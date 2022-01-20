@@ -214,7 +214,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         LOGGER.info()
                 .setMessage("cache actor starting")
                 .log();
-        timers().startPeriodicTimer(
+        timers().startTimerAtFixedRate(
                 SNAPSHOT_TIMER_KEY,
                 MSG_TAKE_SNAPSHOT,
                 SNAPSHOT_INTERVAL

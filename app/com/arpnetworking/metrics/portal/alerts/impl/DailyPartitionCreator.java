@@ -173,7 +173,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 .addData("lookahead", _lookaheadDays)
                 .log();
         getSelf().tell(TICK, getSelf());
-        getTimers().startPeriodicTimer(TICKER_NAME, TICK, TICK_INTERVAL);
+        getTimers().startTimerAtFixedRate(TICKER_NAME, TICK, TICK_INTERVAL);
     }
 
 

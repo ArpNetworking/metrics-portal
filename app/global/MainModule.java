@@ -125,6 +125,7 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -132,7 +133,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -531,8 +531,8 @@ public class MainModule extends AbstractModule {
                 .setMetricsFactory(metricsFactory)
                 .setPollingExecutor(actorSystem.dispatcher())
                 .build();
-        final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
-        actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
+        final Duration delay = Duration.ofSeconds(1);
+        actorSystem.scheduler().scheduleAtFixedRate(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
     }
 

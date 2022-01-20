@@ -23,8 +23,6 @@ import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.ExecutorServiceMetricsRunnable;
 import com.arpnetworking.metrics.jvm.JvmMetricsRunnable;
-import com.arpnetworking.metrics.util.AkkaForkJoinPoolAdapter;
-import com.arpnetworking.metrics.util.ScalaForkJoinPoolAdapter;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
@@ -75,7 +73,7 @@ public final class JvmMetricsCollector extends AbstractActor {
                 .setMessage("Starting JVM metrics collector actor.")
                 .addData("actor", self())
                 .log();
-        _cancellable = getContext().system().scheduler().schedule(
+        _cancellable = getContext().system().scheduler().scheduleAtFixedRate(
                 INITIAL_DELAY,
                 _interval,
                 self(),
@@ -170,17 +168,7 @@ public final class JvmMetricsCollector extends AbstractActor {
             final Map<String, ExecutorService> executorServices,
             final String name,
             final ExecutorService executorService) {
-        if (executorService instanceof scala.concurrent.forkjoin.ForkJoinPool) {
-            // NOTE: This is deprecated in Scala 2.12 which will be adopted by Play 2.6 (maybe)
-            // ^ Scala and hopefully Play will use Java's ForkJoinPool natively instead
-            final scala.concurrent.forkjoin.ForkJoinPool scalaForkJoinPool =
-                    (scala.concurrent.forkjoin.ForkJoinPool) executorService;
-            executorServices.put(name, new ScalaForkJoinPoolAdapter(scalaForkJoinPool));
-        } else if (executorService instanceof akka.dispatch.forkjoin.ForkJoinPool) {
-            final akka.dispatch.forkjoin.ForkJoinPool akkaForkJoinPool =
-                    (akka.dispatch.forkjoin.ForkJoinPool) executorService;
-            executorServices.put(name, new AkkaForkJoinPoolAdapter(akkaForkJoinPool));
-        } else if (executorService instanceof java.util.concurrent.ForkJoinPool
+        if (executorService instanceof java.util.concurrent.ForkJoinPool
                 || executorService instanceof java.util.concurrent.ThreadPoolExecutor) {
             executorServices.put(name, executorService);
         } else {
