@@ -26,6 +26,7 @@ import com.arpnetworking.metrics.portal.integration.test.WebServerHelper;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
+import com.arpnetworking.play.metrics.ProblemHelper;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +49,7 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import play.i18n.MessagesApi;
 import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Result;
 import play.test.Helpers;
@@ -158,7 +160,8 @@ public final class AlertControllerTest {
                     alertExecutionRepository,
                     organizationRepository,
                     Mockito.mock(PeriodicMetrics.class),
-                    new HttpExecutionContext(_actorSystem.getDispatcher())
+                    new HttpExecutionContext(_actorSystem.getDispatcher()),
+                    new ProblemHelper(Helpers.stubMessagesApi())
             );
         }
 
@@ -337,11 +340,8 @@ public final class AlertControllerTest {
             final ImmutableMap.Builder<UUID, models.view.alerts.Alert> retrievedBuilder = new ImmutableMap.Builder<>();
             for (int pageNo = 0; pageNo < numPages; pageNo++) {
                 final int offset = pageNo * pageSize;
-                final Result result = Helpers.invokeWithContext(
-                        Helpers.fakeRequest(),
-                        Helpers.contextComponents(),
-                        () -> _controller.query(pageSize, offset)
-                ).toCompletableFuture().get(1, TimeUnit.SECONDS);
+                final Result result = _controller.query(pageSize, offset, Helpers.fakeRequest().build())
+                        .toCompletableFuture().get(1, TimeUnit.SECONDS);
                 final JsonNode page = WebServerHelper.readContentAsJson(result);
                 assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
                 assertThat(page.get("pagination").get("size").asInt(), is(lessThanOrEqualTo(pageSize)));

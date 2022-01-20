@@ -23,12 +23,17 @@ import com.chrisomeara.pillar.CassandraMigrator;
 import com.chrisomeara.pillar.Migrator;
 import com.chrisomeara.pillar.Registry;
 import com.chrisomeara.pillar.ReplicationOptions;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import org.cognitor.cassandra.migration.Database;
+import org.cognitor.cassandra.migration.MigrationConfiguration;
+import org.cognitor.cassandra.migration.MigrationRepository;
+import org.cognitor.cassandra.migration.MigrationTask;
 import play.Environment;
 import play.core.WebCommands;
 import scala.Predef;
@@ -48,7 +53,7 @@ import javax.inject.Inject;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public class PillarInitializer {
+public class CassandraMigrationInitializer {
     /**
      * Public constructor.
      *
@@ -58,7 +63,7 @@ public class PillarInitializer {
      * @param injector Injector
      */
     @Inject
-    public PillarInitializer(
+    public CassandraMigrationInitializer(
             final com.arpnetworking.pillar.Configuration configuration,
             final Environment environment,
             final WebCommands webCommands,
@@ -84,14 +89,19 @@ public class PillarInitializer {
                         .log();
                 try {
                     final scala.collection.immutable.Map<String, Object> replication =
-                            JavaConverters.<String, Object>mapAsScalaMapConverter(
+                            JavaConverters.mapAsScalaMapConverter(
                                     MAPPER.convertValue(config.getReplication(), MAP_TYPE_REFERENCE))
                                     .asScala()
                                     .toMap(Predef.conforms());
                     final File file = new File(resource.toURI());
-                    final Registry registry = Registry.fromDirectory(file);
-                    final Migrator migrator = new CassandraMigrator(registry);
-                    final Session session = _injector.getInstance(Key.get(Session.class, Names.named(dbName)));
+
+
+                    final CqlSession session = _injector.getInstance(Key.get(CqlSession.class, Names.named(dbName)));
+
+                    Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(config.getKeyspace()));
+                    MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()));
+                    migration.migrate();
+
                     session.init();
                     migrator.initialize(session, config.getKeyspace(), new ReplicationOptions(replication));
                     session.execute("USE " + config.getKeyspace());
@@ -117,7 +127,7 @@ public class PillarInitializer {
     private final Environment _environment;
     private final Injector _injector;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PillarInitializer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraMigrationInitializer.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() { };
     private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
 }
