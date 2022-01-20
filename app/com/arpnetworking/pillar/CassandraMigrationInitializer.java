@@ -15,16 +15,10 @@
  */
 package com.arpnetworking.pillar;
 
-import akka.japi.Option;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.chrisomeara.pillar.CassandraMigrator;
-import com.chrisomeara.pillar.Migrator;
-import com.chrisomeara.pillar.Registry;
-import com.chrisomeara.pillar.ReplicationOptions;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
@@ -43,7 +37,6 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -102,10 +95,6 @@ public class CassandraMigrationInitializer {
                     MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()));
                     migration.migrate();
 
-                    session.init();
-                    migrator.initialize(session, config.getKeyspace(), new ReplicationOptions(replication));
-                    session.execute("USE " + config.getKeyspace());
-                    migrator.migrate(session, Option.<Date>none().asScala());
                 } catch (final URISyntaxException e) {
                     LOGGER.error()
                             .setMessage("Unable to run migrations")

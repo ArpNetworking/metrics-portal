@@ -46,7 +46,7 @@ GET        /v1/alerts/:id                       controllers.AlertController.get(
 
 # Rollups
 # vvv This endpoint is currently intended only for debugging purposes. Do not rely on it.
-POST        /v1/rollups/check_consistency       controllers.RollupController.enqueueConsistencyCheck()
+POST        /v1/rollups/check_consistency       controllers.RollupController.enqueueConsistencyCheck(request: Request)
 
 # Templates
 GET        /assets/lib/configure.js             controllers.ApplicationController.getConfigureJs

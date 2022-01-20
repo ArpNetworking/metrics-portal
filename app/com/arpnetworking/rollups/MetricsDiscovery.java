@@ -18,7 +18,7 @@ package com.arpnetworking.rollups;
 import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Status;
-import akka.pattern.PatternsCS;
+import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -30,6 +30,7 @@ import com.typesafe.config.Config;
 import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -105,12 +106,12 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
         _setIterator = _metricsSet.iterator();
         _refreshDeadline = Deadline.now();
         getSelf().tell(FETCH_MSG, ActorRef.noSender());
-        getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
+        getTimers().startTimerAtFixedRate(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
 
     private void fetchMetricsForRollup() {
         final long startTime = System.nanoTime();
-        PatternsCS.pipe(
+        Patterns.pipe(
                 _kairosDbClient.queryMetricNames()
                 .whenComplete((response, failure) -> {
                     // Record metrics
@@ -173,7 +174,7 @@ public final class MetricsDiscovery extends AbstractActorWithTimers {
 
     private static final String RECORD_METRICS_MSG = "record_metrics";
     private static final String METRICS_TIMER = "metrics_timer";
-    private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
+    private static final Duration METRICS_INTERVAL = Duration.ofSeconds(1);
     private static final String REFRESH_TIMER = "refresh_timer";
     private static final Object FETCH_MSG = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsDiscovery.class);

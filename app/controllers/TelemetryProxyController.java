@@ -22,7 +22,7 @@ import akka.http.javadsl.model.ws.Message;
 import akka.http.javadsl.model.ws.TextMessage;
 import akka.http.javadsl.model.ws.WebSocketRequest;
 import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
-import akka.stream.ActorMaterializer;
+import akka.stream.Materializer;
 import akka.stream.javadsl.Flow;
 import com.google.inject.Inject;
 import models.internal.Features;
@@ -51,7 +51,7 @@ public class TelemetryProxyController extends Controller {
             final Features features) {
         _system = system;
         _enabled = features.isProxyEnabled();
-        _materializer = ActorMaterializer.create(_system);
+        _materializer = Materializer.createMaterializer(_system);
     }
 
     /**
@@ -79,7 +79,7 @@ public class TelemetryProxyController extends Controller {
     }
 
 
-    private ActorMaterializer _materializer;
+    private Materializer _materializer;
     private final ActorSystem _system;
     private final boolean _enabled;
 }

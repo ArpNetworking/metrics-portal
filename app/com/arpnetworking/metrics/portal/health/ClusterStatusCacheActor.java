@@ -32,9 +32,9 @@ import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
 import scala.compat.java8.OptionConverters;
-import scala.concurrent.duration.Duration;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -79,9 +79,9 @@ public class ClusterStatusCacheActor extends AbstractActor {
         final Scheduler scheduler = getContext()
                 .system()
                 .scheduler();
-        _pollTimer = scheduler.schedule(
-                Duration.apply(0, TimeUnit.SECONDS),
-                Duration.apply(10, TimeUnit.SECONDS),
+        _pollTimer = scheduler.scheduleAtFixedRate(
+                Duration.ofSeconds(0),
+                Duration.ofSeconds(10),
                 getSelf(),
                 POLL,
                 getContext().system().dispatcher(),
