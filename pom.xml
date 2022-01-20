@@ -241,7 +241,7 @@
             <path>
               <groupId>com.datastax.oss</groupId>
               <artifactId>java-driver-mapper-processor</artifactId>
-              <version>${cassandra.version}</version>
+              <version>${cassandra.version}.9</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
