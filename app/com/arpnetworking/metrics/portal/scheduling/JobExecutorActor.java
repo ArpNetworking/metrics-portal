@@ -35,13 +35,12 @@ import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
-import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
@@ -188,7 +187,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
     }
 
     private void scheduleTickFor(final Instant wakeUpAt) {
-        final FiniteDuration delta = Duration.fromNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
+        final Duration delta = Duration.ofNanos(Math.max(0, ChronoUnit.NANOS.between(_clock.instant(), wakeUpAt)));
         timers().startSingleTimer(EXTRA_TICK_TIMER_NAME, Tick.INSTANCE, delta);
     }
 
@@ -566,7 +565,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 .match(RestartTicker.class, message -> {
                     _currentlyReloading = false;
                     _lastRun = message.getLastRun();
-                    timers().startPeriodicTimer(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
+                    timers().startTimerAtFixedRate(PERIODIC_TICK_TIMER_NAME, Tick.INSTANCE, TICK_INTERVAL);
                     getSelf().tell(Tick.INSTANCE, getSelf());
                 })
                 // If any message piping future fails the actor should be restarted.
@@ -577,7 +576,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
     private static final String EXTRA_TICK_TIMER_NAME = "EXTRA_TICK";
     private static final String PERIODIC_TICK_TIMER_NAME = "PERIODIC_TICK";
-    private static final FiniteDuration TICK_INTERVAL = Duration.apply(1, TimeUnit.MINUTES);
+    private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     /**
      * If we wake up very slightly before we're supposed to execute, we should just execute,
      * rather than scheduling another wakeup in the very near future.

@@ -307,13 +307,9 @@ public class KairosDbProxyController extends Controller {
         LOGGER.debug().setMessage("proxying call to kairosdb")
                 .addData("from", path)
                 .log();
-        final CompletableFuture<Result> promise = new CompletableFuture<>();
-        final boolean isHttp10 = request.version().equals("HTTP/1.0");
-        _client.proxy(
+        return _client.proxy(
                 path.startsWith("/") ? path : "/" + path,
-                request,
-                new ResponseHandler(promise, isHttp10));
-        return promise;
+                request);
     }
 
     private final ProxyClient _client;
@@ -328,122 +324,5 @@ public class KairosDbProxyController extends Controller {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
 
-    private static class ResponseHandler extends AsyncCompletionHandler<Void> {
-        ResponseHandler(
-                final CompletableFuture<Result> promise,
-                final boolean isHttp10) {
-            try {
-                _outputStream = new PipedOutputStream();
-                _inputStream = new PipedInputStream(_outputStream);
-                _promise = promise;
-                _isHttp10 = isHttp10;
-            } catch (final IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        @Override
-        public State onStatusReceived(final HttpResponseStatus status) {
-            _status = status.getStatusCode();
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-            _outputStream.write(content.getBodyPartBytes());
-
-            if (content.isLast()) {
-                _outputStream.flush();
-                _outputStream.close();
-            }
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onHeadersReceived(final HttpResponseHeaders headers) {
-            try {
-                final HttpHeaders entries = headers.getHeaders();
-                Optional<Long> length = Optional.empty();
-                if (entries.contains(CONTENT_LENGTH)) {
-                    final String clen = entries.get(CONTENT_LENGTH);
-                    length = Optional.of(Long.parseLong(clen));
-                }
-                final String contentType;
-                if (entries.get(CONTENT_TYPE) != null) {
-                    contentType = entries.get(CONTENT_TYPE);
-                } else if (length.isPresent() && length.get() == 0) {
-                    contentType = "text/html";
-                } else {
-                    contentType = null;
-                }
-
-                final StatusHeader status = Results.status(_status);
-                Result result = status.sendEntity(
-                        new HttpEntity.Streamed(
-                                StreamConverters.fromInputStream(() -> _inputStream, DEFAULT_CHUNK_SIZE),
-                                length,
-                                Optional.ofNullable(contentType)));
-
-                final ArrayList<String> headersList = entries.entries()
-                        .stream()
-                        .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
-                        .reduce(Lists.newArrayList(), (a, b) -> {
-                            a.add(b.getKey());
-                            a.add(b.getValue());
-                            return a;
-                        }, (a, b) -> {
-                            a.addAll(b);
-                            return b;
-                        });
-                final String[] headerArray = headersList.toArray(new String[0]);
-                result = result.withHeaders(headerArray);
-
-                if (_isHttp10) {
-                    // Strip the transfer encoding header as chunked isn't supported in 1.0
-                    result = result.withoutHeader(TRANSFER_ENCODING);
-                    // Strip the connection header since we don't support keep-alives in 1.0
-                    result = result.withoutHeader(CONNECTION);
-                }
-
-                _promise.complete(result);
-                return State.CONTINUE;
-                // CHECKSTYLE.OFF: IllegalCatch - We need to return a response no matter what
-            } catch (final Throwable e) {
-                // CHECKSTYLE.ON: IllegalCatch
-                _promise.completeExceptionally(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void onThrowable(final Throwable t) {
-            try {
-                _outputStream.close();
-                _promise.completeExceptionally(t);
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            super.onThrowable(t);
-        }
-
-        @Override
-        public Void onCompleted(final Response response) {
-            try {
-                _outputStream.flush();
-                _outputStream.close();
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            return null;
-        }
-
-        private int _status;
-        private final PipedOutputStream _outputStream;
-        private final PipedInputStream _inputStream;
-        private final CompletableFuture<Result> _promise;
-        private final boolean _isHttp10;
-        private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
-        private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(CONTENT_TYPE, CONTENT_LENGTH, TRANSFER_ENCODING);
-    }
 }
 
