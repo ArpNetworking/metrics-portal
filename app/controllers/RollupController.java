@@ -62,6 +62,8 @@ public class RollupController extends Controller {
      *
      * This endpoint is currently intended only for debugging purposes. Do not rely on it.
      *
+     * @param request Http.Request being handled.
+     *
      * @return 204 if the consistency-check task was successfully enqueued; else 503 if the queue is full; else 500 for unknown failures.
      */
     public CompletionStage<Result> enqueueConsistencyCheck(final Http.Request request) {

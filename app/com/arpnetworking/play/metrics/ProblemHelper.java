@@ -46,6 +46,7 @@ public final class ProblemHelper {
      * @param env The current Play environment.
      * @param ex The exception causing the problem.
      * @param problemCode The problem code.
+     * @param lang The language to render the errors.
      *
      * @return A JSON representation of the problem.
      */
@@ -65,6 +66,7 @@ public final class ProblemHelper {
      * Render a {@link Problem} as JSON.
      *
      * @param problem The problem code.
+     * @param lang The language to render the errors.
      *
      * @return A JSON representation of the problem.
      */
@@ -76,8 +78,8 @@ public final class ProblemHelper {
      * Render several {@link Problem}s as JSON.
      *
      * @param problems The problems.
-     *
      * @param lang Language to render problems in
+     *
      * @return A JSON representation of the problems.
      */
     public ObjectNode createErrorJson(final List<Problem> problems, Optional<Lang> lang) {
@@ -91,6 +93,8 @@ public final class ProblemHelper {
      * Translate a problem into a given locale.
      *
      * @param problem The problem to translate.
+     * @param lang Language to render problems in
+     *
      * @return The translated problem.
      */
     public String translate(final Problem problem, Optional<Lang> lang) {

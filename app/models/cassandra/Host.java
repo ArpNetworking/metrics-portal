@@ -139,7 +139,7 @@ public class Host {
         /**
          * Queries for all hosts in an organization.
          *
-         * @param organization Organization owning the alerts
+         * @param org Organization uuid owning the hosts
          * @return Mapped query results
          */
         @Query("select * from ${keyspaceId}.hosts_by_organization where organization = :org")

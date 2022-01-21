@@ -341,8 +341,11 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
 
+        // Round trip through JSON so that the mock matcher actually matches
+        final MetricsQuery converted = OBJECT_MAPPER.convertValue(newMetricsQuery, MetricsQuery.class);
+
         final ArgumentCaptor<QueryContext> contextCaptor = ArgumentCaptor.forClass(QueryContext.class);
-        when(_mockKairosDbService.queryMetrics(contextCaptor.capture(), eq(newMetricsQuery))).thenReturn(
+        when(_mockKairosDbService.queryMetrics(contextCaptor.capture(), eq(converted))).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );

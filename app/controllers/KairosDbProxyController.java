@@ -20,6 +20,7 @@ import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
+import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.kairos.client.models.Sampling;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagsQuery;
@@ -90,6 +91,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied status call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied status response.
      */
     public CompletionStage<Result> status(final Http.Request request) {
@@ -99,6 +101,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied healthcheck call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied health check response.
      */
     public CompletionStage<Result> healthCheck(final Http.Request request) {
@@ -108,6 +111,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied tagNames call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied tagNames response.
      */
     public CompletionStage<Result> tagNames(final Http.Request request) {
@@ -119,6 +123,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied tagValues call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied tagValues response.
      */
     public CompletionStage<Result> tagValues(final Http.Request request) {
@@ -134,6 +139,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied queryTags call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied queryTags response.
      */
     public CompletionStage<Result> queryTags(final Http.Request request) {
@@ -155,6 +161,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied queryMetrics call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied queryMetrics response.
      */
     public CompletionStage<Result> queryMetrics(final Http.Request request) {
@@ -265,6 +272,7 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied version call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied version response.
      */
     public CompletionStage<Result> version(final Http.Request request) {

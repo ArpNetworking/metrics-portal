@@ -96,6 +96,7 @@ public class AlertController extends Controller {
      * @param organizationRepository Repository for organizations.
      * @param periodicMetrics Metrics instance for instrumentation.
      * @param httpContext The current context of execution.
+     * @param problemHelper The ProblemHelper to render errors.
      */
     @Inject
     public AlertController(
@@ -131,6 +132,7 @@ public class AlertController extends Controller {
      * Get a specific alert.
      *
      * @param id The identifier of the alert.
+     * @param request Http.Request being handled.
      * @return The alert, if any, otherwise notFound.
      */
     public CompletionStage<Result> get(final UUID id, final Http.Request request) {
@@ -156,6 +158,7 @@ public class AlertController extends Controller {
      *
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
+     * @param request Http.Request being handled.
      * @return {@link Result} paginated matching alerts.
      */
     public CompletionStage<Result> query(

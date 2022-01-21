@@ -90,11 +90,11 @@
     <ebean.version>11.15.4</ebean.version>
     <ebean.annotation.version>3.11</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
-    <flyway.core.version>4.2.0</flyway.core.version>
+    <flyway.core.version>8.4.0</flyway.core.version>
     <flyway.play.version>7.19.0</flyway.play.version>
     <guava.version>29.0-jre</guava.version>
-    <guice.version>4.0</guice.version>
-    <guice.assisted.version>4.1.0</guice.assisted.version>
+    <guice.version>5.0.1</guice.version>
+    <guice.assisted.version>5.0.1</guice.assisted.version>
     <hikaricp.version>2.7.9</hikaricp.version>
     <jackson.version>2.11.4</jackson.version>
     <javassist.maven.core.version>0.2.3</javassist.maven.core.version>
@@ -256,12 +256,21 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <excludePackageNames>controllers.javascript</excludePackageNames>
-          <sourceFileExcludes>
-            <sourceFileExclude>routes.java</sourceFileExclude>
-          </sourceFileExcludes>
-        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <skip>true</skip>
+              <excludePackageNames>controllers.javascript</excludePackageNames>
+              <sourceFileExcludes>
+                <sourceFileExclude>routes.java</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -971,6 +980,11 @@
     <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-cluster_${scala.package.version}</artifactId>
+      <version>${akka.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-typed_${scala.package.version}</artifactId>
       <version>${akka.version}</version>
     </dependency>
     <dependency>
