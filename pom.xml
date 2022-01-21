@@ -79,10 +79,10 @@
     <anorm.version>2.6.2</anorm.version>
     <arpnetworking.commons.version>1.20.0</arpnetworking.commons.version>
     <aspectjrt.version>1.9.7</aspectjrt.version>
-    <asynchttpclient.version>1.1.9</asynchttpclient.version>
+    <asynchttpclient.version>2.1.7</asynchttpclient.version>
     <cassandra.version>4.13.0</cassandra.version>
     <cdt.java.client.version>2.0.0</cdt.java.client.version>
-    <cglib.version>3.2.1</cglib.version>
+    <cglib.version>3.2.9</cglib.version>
     <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
     <commons.codec.version>1.15</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
@@ -111,6 +111,7 @@
     <oval.version>1.90</oval.version>
     <play2.version>2.8.13</play2.version>
     <play2-json.version>2.8.2</play2-json.version>
+    <play2-enhancer.version>1.2.2</play2-enhancer.version>
     <play2-ebean.version>6.0.0</play2-ebean.version>
     <play2-jdbc-evolutions.version>2.8.13</play2-jdbc-evolutions.version>
     <postgresql.version>42.3.8</postgresql.version>
@@ -143,7 +144,7 @@
     <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
     <play.maven.plugin.version>1.0.0-rc6-SNAPSHOT</play.maven.plugin.version>
-    <sbt.compiler.plugin.version>1.0.0</sbt.compiler.plugin.version>
+    <sbt.compiler.plugin.version>1.0.1-SNAPSHOT</sbt.compiler.plugin.version>
     <sbtrun.maven.plugin.version>1.0.1</sbtrun.maven.plugin.version>
 
     <!-- Scala -->
@@ -389,6 +390,13 @@
             <phase>package</phase>
             <goals>
               <goal>dist</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-play2-enhance</id>
+            <goals>
+              <goal>enhance</goal>
+              <goal>ebean-enhance</goal>
             </goals>
           </execution>
         </executions>
@@ -904,6 +912,11 @@
       <groupId>io.ebean</groupId>
       <artifactId>persistence-api</artifactId>
       <version>${ebean.api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-enhancer</artifactId>
+      <version>${play2-enhancer.version}</version>
     </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>

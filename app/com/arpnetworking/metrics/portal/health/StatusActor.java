@@ -22,6 +22,7 @@ import akka.actor.Props;
 import akka.cluster.Cluster;
 import akka.cluster.MemberStatus;
 import akka.pattern.Patterns;
+import akka.remote.artery.ThisActorSystemQuarantinedEvent;
 import models.view.StatusResponse;
 
 import java.time.Duration;
@@ -51,6 +52,7 @@ public class StatusActor extends AbstractActor {
 
         _cluster = cluster;
         _clusterStatusCache = clusterStatusCache;
+        context().system().eventStream().subscribe(self(), ThisActorSystemQuarantinedEvent.class);
     }
 
     /**
@@ -71,8 +73,11 @@ public class StatusActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(StatusRequest.class, message -> processStatusRequest())
+                .match(ThisActorSystemQuarantinedEvent.class, event -> {
+                    _quarantined = true;
+                })
                 .match(HealthRequest.class, message -> {
-                    final boolean healthy = _cluster.readView().self().status() == MemberStatus.up();
+                    final boolean healthy = _cluster.readView().self().status() == MemberStatus.up() && !_quarantined;
                     sender().tell(healthy, getSelf());
                 })
                 .build();
@@ -101,6 +106,7 @@ public class StatusActor extends AbstractActor {
 
     private final Cluster _cluster;
     private final ActorRef _clusterStatusCache;
+    private boolean _quarantined;
 
     private static class AsNullRecovery<T> implements Function<Throwable, T> {
         @Override

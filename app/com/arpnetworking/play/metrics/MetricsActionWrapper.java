@@ -110,10 +110,9 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     private Http.Request initMetrics(final Http.Request request) {
-        Metrics metrics = request.attrs().get(Attrs.METRICS);
-        if (metrics == null) {
-            metrics = _metricsFactory.create();
-            return request.withAttrs(TypedMap.create(new TypedEntry<>(Attrs.METRICS, metrics)));
+        Optional<Metrics> metrics = request.attrs().getOptional(Attrs.METRICS);
+        if (metrics.isEmpty()) {
+            return request.withAttrs(TypedMap.create(new TypedEntry<>(Attrs.METRICS, _metricsFactory.create())));
         } else {
             LOGGER.warn()
                     .setMessage("Found metrics in request context; possible issue")
