@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8-jre-bullseye
+FROM openjdk:11-jre
 
 MAINTAINER inscopemetrics.io
 
@@ -55,12 +55,7 @@ ENV METRICS_PORTAL_CONFIG="-Dconfig.resource=portal.application.conf"
 ENV JAVA_OPTS="\
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/opt/metrics-portal/logs/metrics-portal.oom.hprof \
-    -XX:+PrintGCDetails \
-    -XX:+PrintGCDateStamps \
-    -Xloggc:/opt/metrics-portal/logs/metrics-portal.gc.log \
-    -XX:NumberOfGCLogFiles=2 \
-    -XX:GCLogFileSize=50M \
-    -XX:+UseGCLogFileRotation \
+    -Xlog:gc*:file=/opt/metrics-portal/logs/metrics-portal.gc.log:none:filecount=5,filesize=10M \
     -XX:+UseStringDeduplication \
     -XX:+UseG1GC \
     -Duser.timezone=UTC"

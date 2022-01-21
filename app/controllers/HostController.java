@@ -73,6 +73,7 @@ public class HostController extends Controller {
      * Get specific host by hostname.
      *
      * @param id The hostname to retrieve.
+     * @param request Http.Request being handled.
      * @return Matching host.
      */
     public Result get(final String id, final Http.Request request) {
@@ -87,6 +88,7 @@ public class HostController extends Controller {
     /**
      * Adds or updates a host in the host repository.
      *
+     * @param request Http.Request being handled.
      * @return Ok if the host was created or updated successfully, a failure HTTP status code otherwise.
      */
     public Result addOrUpdate(final Http.Request request) {
@@ -125,6 +127,7 @@ public class HostController extends Controller {
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
      * @param sort_by The field to sort results by. Optional.
+     * @param request Http.Request being handled.
      * @return {@code Result} paginated matching hosts.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.

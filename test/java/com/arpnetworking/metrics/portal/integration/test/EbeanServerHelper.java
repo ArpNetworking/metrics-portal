@@ -23,6 +23,8 @@ import io.ebean.EbeanServer;
 import io.ebean.EbeanServerFactory;
 import io.ebean.config.ServerConfig;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 import java.util.Map;
 import java.util.UUID;
@@ -123,12 +125,14 @@ public final class EbeanServerHelper {
             final String database,
             final String username,
             final String password) {
-        final Flyway flyway = new Flyway();
-        flyway.setDataSource(createJdbcUrl(hostname, port, database), username, password);
-        flyway.setSchemas("portal");
-        flyway.setValidateOnMigrate(true);
-        flyway.setEncoding("UTF-8");
-        flyway.setLocations("db/migration/metrics_portal_ddl");
+        final Configuration config = new FluentConfiguration()
+                .dataSource(createJdbcUrl(hostname, port, database), username, password)
+                .schemas("portal")
+                .validateOnMigrate(true)
+                .encoding("UTF-8")
+                .locations("db/migration/metrics_portal_ddl");
+
+        final Flyway flyway = new Flyway(config);
         flyway.migrate();
     }
 

@@ -62,6 +62,8 @@ public final class ProxyClient {
      *
      * @param path the path to proxy
      * @param request the request
+     *
+     * @return Streaming response
      */
     public CompletionStage<Result> proxy(
             final String path,

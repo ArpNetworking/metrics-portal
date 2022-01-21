@@ -74,7 +74,8 @@ public class ReportController extends Controller {
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      * @param jobExecutorRegion {@link ClusterSharding} actor balancing the execution of {@link models.internal.scheduling.Job}s.
      * @param reportExecutionContext {@link ReportExecutionContext} to use to validate new reports.
-     * @param environment environment we're executing in
+     * @param environment environment we're executing in.
+     * @param problemHelper ProblemHelper to render errors.
      */
     @Inject
     public ReportController(
@@ -101,6 +102,7 @@ public class ReportController extends Controller {
     /**
      * Updates a report within the report repository, or creates one if it doesn't already exist.
      *
+     * @param request Http.Request being handled.
      * @return Ok if the report was added or updated successfully, an HTTP error code otherwise.
      */
     public Result addOrUpdate(final Http.Request request) {
@@ -144,6 +146,7 @@ public class ReportController extends Controller {
      *
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
+     * @param request Http.Request being handled.
      * @return {@link Result} paginated matching reports.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
@@ -212,6 +215,7 @@ public class ReportController extends Controller {
      * Get specific report.
      *
      * @param id The identifier of the report.
+     * @param request Http.Request being handled.
      * @return The report, if any, otherwise notFound.
      */
     public Result get(final UUID id, final Http.Request request) {
@@ -235,6 +239,7 @@ public class ReportController extends Controller {
      * Delete a specific report.
      *
      * @param id The identifier of the report.
+     * @param request Http.Request being handled.
      * @return No content if successful, otherwise an HTTP error code.
      */
     public Result delete(final UUID id, final Http.Request request) {
