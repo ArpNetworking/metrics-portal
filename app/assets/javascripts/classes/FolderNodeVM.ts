@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-import ServiceNodeVM from './ServiceNodeVM';
 import * as ko from 'knockout';
-import MetricNodeVM from "./MetricNodeVM";
 import BrowseNode from "./BrowseNode";
 
 class FolderNodeVM implements BrowseNode {

@@ -15,7 +15,6 @@
  */
 
 import MetricNodeVM from './MetricNodeVM';
-import GraphViewModel from './GraphViewModel';
 import * as ko from 'knockout';
 import FolderNodeVM from './FolderNodeVM';
 import BrowseNode from './BrowseNode';

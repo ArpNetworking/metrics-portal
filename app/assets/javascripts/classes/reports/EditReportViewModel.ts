@@ -17,15 +17,13 @@
 import * as ko from 'knockout';
 import * as $ from 'jquery';
 import uuid from '../Uuid';
-// @ts-ignore: import is valid
-import moment = require('moment-timezone/moment-timezone');
 import csrf from '../Csrf';
 
 import {
-    availableSourceTypes,
-    availableReportFormats,
     availableRecipientTypes,
+    availableReportFormats,
     availableReportIntervals,
+    availableSourceTypes,
     BaseRecipientViewModel,
     BaseScheduleViewModel,
     BaseSourceViewModel,
@@ -35,6 +33,8 @@ import {
     SourceType,
     ZoneInfo,
 } from "./Models";
+// @ts-ignore: import is valid
+import moment = require('moment-timezone/moment-timezone');
 
 class EditReportViewModel {
     enabled = true;

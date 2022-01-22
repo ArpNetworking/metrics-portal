@@ -15,7 +15,7 @@
  */
 
 import BaseProtocol from "./BaseProtocol";
-import GraphViewModel from "../GraphViewModel";
+import graphViewModel from "../GraphViewModel";
 import ConnectionModel from "../ConnectionModel";
 import ConnectionVM from "../ConnectionVM";
 import Command from "../Command";
@@ -24,7 +24,6 @@ import NewMetricData from "../NewMetricData";
 import ReportData from "../ReportData";
 import GraphSpec from "../GraphSpec";
 import MetricsBrowseList from "../MetricsBrowseList";
-import graphViewModel from '../GraphViewModel'
 
 declare var require;
 class V2Protocol extends BaseProtocol {

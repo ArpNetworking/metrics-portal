@@ -15,22 +15,12 @@
  */
 
 ///<amd-dependency path="jquery.ui"/>
-import { app } from 'durandal/core';
-import MetricData from './MetricData';
-import MetricNodeVM from './MetricNodeVM';
-import Color from './Color';
-import Command from './Command';
+import {app} from 'durandal/core';
 import GaugeVM from './GaugeVM';
 import GraphVM from './GraphVM';
 import StatisticView from './StatisticView';
-import ServiceNodeVM from './ServiceNodeVM';
-import StatisticNodeVM from './StatisticNodeVM';
-import ServiceData from './ServiceData';
-import StatisticData from './StatisticData';
-import FolderNodeVM from './FolderNodeVM';
 import ViewDuration from './ViewDuration';
 import MetricsListData from './MetricsListData';
-import NewMetricData from './NewMetricData';
 import ReportData from './ReportData';
 import * as ko from 'knockout';
 import kob from './KnockoutBindings'

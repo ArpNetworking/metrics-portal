@@ -27,7 +27,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
 import java.time.Duration;

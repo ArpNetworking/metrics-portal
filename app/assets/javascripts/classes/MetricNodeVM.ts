@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import GraphViewModel from './GraphViewModel';
-import StatisticNodeVM from './StatisticNodeVM';
 import * as ko from 'knockout';
 import BrowseNode from "./BrowseNode";
 

@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-import AlertData from './AlertData';
 import * as ko from 'knockout';
 import * as $ from 'jquery';
-import Operator from './Operator';
-import Quantity from '../Quantity';
 import uuid from '../Uuid';
 import csrf from '../Csrf';
 

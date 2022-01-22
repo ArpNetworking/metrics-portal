@@ -16,10 +16,8 @@
 
 ///<amd-dependency path="./KnockoutBindings" />
 
-import { app } from 'durandal/core';
-import Color from './Color';
+import {app} from 'durandal/core';
 import ConnectionVM from './ConnectionVM';
-import GraphViewModel from './GraphViewModel';
 import Hosts from './Hosts';
 import * as ko from 'knockout';
 import * as $ from 'jquery';

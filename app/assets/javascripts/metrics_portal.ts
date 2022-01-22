@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { app, system, viewLocator} from 'durandal/core';
+import {app, system, viewLocator} from 'durandal/core';
 
 if (process.env.NODE_ENV === "development") {
     system.debug(true);

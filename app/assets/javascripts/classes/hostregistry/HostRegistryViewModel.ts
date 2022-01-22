@@ -17,8 +17,6 @@
 import HostData from './HostData';
 import PaginatedSearchableList from '../PaginatedSearchableList';
 import Hosts from '../Hosts';
-import MetricsSoftwareState from './MetricsSoftwareState';
-import GraphViewModel from '../GraphViewModel';
 import * as $ from 'jquery';
 import * as ko from 'knockout';
 

@@ -18,7 +18,6 @@ package controllers;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.pattern.Patterns;
-import akka.pattern.PatternsCS;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.fasterxml.jackson.databind.JsonNode;

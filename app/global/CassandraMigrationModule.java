@@ -18,7 +18,6 @@ package global;
 import com.arpnetworking.pillar.CassandraMigrationInitializer;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.AbstractModule;
@@ -31,7 +30,6 @@ import com.typesafe.config.ConfigObject;
 import play.Environment;
 import play.inject.ApplicationLifecycle;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;

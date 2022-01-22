@@ -17,7 +17,6 @@
 import * as ko from 'knockout';
 import ConnectionVM from '../ConnectionVM';
 import Hosts from '../Hosts';
-import MetricsSoftwareState from './MetricsSoftwareState';
 
 class HostData {
     hostname: string;

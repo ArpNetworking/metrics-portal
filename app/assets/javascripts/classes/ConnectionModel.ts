@@ -19,8 +19,7 @@ import V1Protocol from "./protocol/V1Protocol";
 import V2Protocol from "./protocol/V2Protocol";
 import ConnectionVM from "./ConnectionVM";
 import WSCommand from "./protocol/WSCommand";
-import GraphViewModel from "./GraphViewModel";
-import { app } from "durandal/core";
+import {app} from "durandal/core";
 import features from '../libs/configure';
 
 class ConnectionModel {

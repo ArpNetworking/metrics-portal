@@ -707,7 +707,7 @@
                   <MAINTENANCE_WORK_MEM>64MB</MAINTENANCE_WORK_MEM>
                   <SHARED_BUFFERS>128MB</SHARED_BUFFERS>
                   <EFFECTIVE_CACHE_SIZE>256MB</EFFECTIVE_CACHE_SIZE>
-                  <MAX_CONNECTIONS>40</MAX_CONNECTIONS>
+                  <MAX_CONNECTIONS>400</MAX_CONNECTIONS>
                 </env>
                 <network>
                   <mode>custom</mode>
