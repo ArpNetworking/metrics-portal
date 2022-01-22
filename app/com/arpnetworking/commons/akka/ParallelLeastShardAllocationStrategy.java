@@ -26,14 +26,15 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import scala.collection.JavaConversions;
 import scala.collection.immutable.IndexedSeq;
 import scala.concurrent.Future;
+import scala.jdk.CollectionConverters;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -80,7 +81,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
         return Futures.successful(currentShardAllocations
                 .entrySet()
                 .stream()
-                .sorted(Comparator.comparingInt(e -> JavaConversions.seqAsJavaList(e.getValue()).size()))
+                .sorted(Comparator.comparingInt(e -> CollectionConverters.SeqHasAsJava(e.getValue()).asJava().size()))
                 .findFirst()
                 .get()
                 .getKey());
@@ -99,12 +100,13 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
                 new TreeSet<>(Comparator.comparingInt(RegionShardAllocations::getEffectiveShardCount));
 
         for (final Map.Entry<ActorRef, IndexedSeq<String>> entry : currentShardAllocations.entrySet()) {
+            final IndexedSeq<String> shardSeq = entry.getValue();
+            final Set<String> shards = Sets.newHashSet(CollectionConverters.IterableHasAsJava(shardSeq).asJava());
             allocations.add(
                     new RegionShardAllocations(
                             entry.getKey(),
                             // Only count the shards that are not currently rebalancing
-                            JavaConversions.setAsJavaSet(entry.getValue().<String>toSet())
-                                    .stream()
+                            shards.stream()
                                     .filter(e -> !rebalanceInProgress.contains(e))
                                     .collect(Collectors.toSet())));
         }
@@ -153,7 +155,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
         // Scala representation
         final Map<ActorRef, Set<String>> currentAllocations = Maps.transformValues(
                 currentShardAllocations,
-                e -> Sets.newHashSet(JavaConversions.seqAsJavaList(e)));
+                e -> Sets.newHashSet(CollectionConverters.SeqHasAsJava(e).asJava()));
 
         final RebalanceNotification notification = new RebalanceNotification(
                 currentAllocations,

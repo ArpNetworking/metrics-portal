@@ -19,9 +19,11 @@ import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.collect.ImmutableMap;
 import models.internal.impl.DefaultAlertTrigger;
+import net.sf.oval.Validator;
 import net.sf.oval.constraint.CheckWith;
 import net.sf.oval.constraint.CheckWithCheck;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.context.OValContext;
 
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -178,7 +180,7 @@ public final class AlertTrigger {
         private static final class EndAfterStart implements CheckWithCheck.SimpleCheck {
 
             @Override
-            public boolean isSatisfied(final Object obj, final Object val) {
+            public boolean isSatisfied(final Object obj, final Object val, final OValContext context, final Validator validator) {
                 if (obj instanceof Builder) {
                     final Builder builder = (Builder) obj;
                     return builder._endTime.map(endTime -> !endTime.isBefore(builder._time)).orElse(true);

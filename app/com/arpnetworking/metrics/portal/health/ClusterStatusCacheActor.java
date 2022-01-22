@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
 import scala.compat.java8.OptionConverters;
@@ -101,7 +102,7 @@ public class ClusterStatusCacheActor extends AbstractActor {
                 .match(ClusterEvent.CurrentClusterState.class, clusterState -> {
                     _clusterState = Optional.of(clusterState);
                     try (Metrics metrics = _metricsFactory.create()) {
-                        metrics.setGauge("akka/members_count", clusterState.members().size());
+                        metrics.setGauge("akka/members_count", Streams.stream(clusterState.getMembers()).count());
                         if (_cluster.selfAddress().equals(clusterState.getLeader())) {
                             metrics.setGauge("akka/is_leader", 1);
                         } else {

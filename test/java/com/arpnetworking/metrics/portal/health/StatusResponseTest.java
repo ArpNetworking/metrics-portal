@@ -25,12 +25,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.junit.Test;
 import scala.Option;
-import scala.collection.JavaConversions;
 import scala.collection.immutable.HashMap;
 import scala.collection.immutable.HashSet;
 import scala.collection.immutable.TreeSet;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;

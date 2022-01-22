@@ -41,8 +41,10 @@ import scala.collection.immutable.HashSet;
 import scala.collection.immutable.Set;
 import scala.collection.immutable.Set$;
 import scala.collection.immutable.TreeSet;
+import scala.collection.mutable.ReusableBuilder;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.SortedSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,8 +69,10 @@ public class StatusActorTest extends BaseActorTest {
         Mockito.when(readView.self()).thenReturn(selfMember);
         Mockito.when(_clusterMock.readView()).thenReturn(readView);
 
+        final ReusableBuilder<Member, TreeSet<Member>> memberSet = TreeSet.newBuilder(Member.ordering());
+        memberSet.addOne(selfMember);
         final ClusterEvent.CurrentClusterState state = ClusterEvent.CurrentClusterState$.MODULE$.apply(
-                new TreeSet<>(Member.ordering()).$plus(selfMember),
+                memberSet.result(),
                 Member.none(),
                 new HashSet<>(),
                 Option.empty(),
