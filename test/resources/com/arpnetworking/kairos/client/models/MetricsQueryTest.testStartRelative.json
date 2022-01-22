@@ -3,5 +3,5 @@
     "value": 1,
     "unit": "days"
   },
-  "metrics": []
+  "metrics": ["foo"]
 }
