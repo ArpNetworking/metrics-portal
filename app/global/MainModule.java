@@ -838,7 +838,7 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
-            if (cluster.selfRoles().contains(INDEXER_ROLE)) {
+            if (cluster.getSelfRoles().contains(INDEXER_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         _hostProviderProps,
                         PoisonPill.getInstance(),
@@ -878,7 +878,7 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
-            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+            if (cluster.getSelfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 ReportRepository.class,
@@ -925,7 +925,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+            if (cluster.getSelfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 AlertJobRepository.class,
@@ -970,7 +970,7 @@ public class MainModule extends AbstractModule {
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             final int actorCount = _configuration.getInt("rollup.generator.count");
-            if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
+            if (_enabled && cluster.getSelfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
                 }
@@ -1106,7 +1106,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_actorSystem);
-            if (_enabled && cluster.selfRoles().contains(_role)) {
+            if (_enabled && cluster.getSelfRoles().contains(_role)) {
                 final ActorRef manager = _actorSystem.actorOf(ClusterSingletonManager.props(
                         getProps(),
                         PoisonPill.getInstance(),
