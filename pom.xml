@@ -82,7 +82,7 @@
     <asynchttpclient.version>2.1.7</asynchttpclient.version>
     <cassandra.version>4.13.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
-    <cglib.version>3.2.9</cglib.version>
+    <cglib.version>3.3.0</cglib.version>
     <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
     <commons.codec.version>1.15</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
@@ -739,7 +739,7 @@
                   <MAINTENANCE_WORK_MEM>64MB</MAINTENANCE_WORK_MEM>
                   <SHARED_BUFFERS>128MB</SHARED_BUFFERS>
                   <EFFECTIVE_CACHE_SIZE>256MB</EFFECTIVE_CACHE_SIZE>
-                  <MAX_CONNECTIONS>20</MAX_CONNECTIONS>
+                  <MAX_CONNECTIONS>40</MAX_CONNECTIONS>
                 </env>
                 <network>
                   <mode>custom</mode>
@@ -1210,13 +1210,6 @@
       <groupId>com.arpnetworking.commons</groupId>
       <artifactId>commons</artifactId>
       <version>${arpnetworking.commons.version}</version>
-      <exclusions>
-        <!-- TODO(ville): Remove suppression once findbugs to spotbugs migration is complete -->
-        <exclusion>
-          <groupId>com.google.code.findbugs</groupId>
-          <artifactId>findbugs-annotations</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.arpnetworking.commons</groupId>
