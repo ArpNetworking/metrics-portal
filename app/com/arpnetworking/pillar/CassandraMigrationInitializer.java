@@ -30,8 +30,6 @@ import org.cognitor.cassandra.migration.MigrationRepository;
 import org.cognitor.cassandra.migration.MigrationTask;
 import play.Environment;
 import play.core.WebCommands;
-import scala.Predef;
-import scala.collection.JavaConverters;
 
 import java.io.File;
 import java.net.URISyntaxException;
