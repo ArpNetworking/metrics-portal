@@ -278,7 +278,10 @@ public final class AlertControllerTest {
     public static class PaginationTests extends SharedSetup {
         @Test
         public void testQueryAlertsSinglePage() throws Exception {
-            final Result result = _controller.query(ALERT_PAGE_LIMIT, 0, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
+            final Result result = _controller.query(
+                    ALERT_PAGE_LIMIT,
+                    0,
+                    Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
             final JsonNode page = WebServerHelper.readContentAsJson(result);
             assertThat(page.get("pagination").get("size").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));

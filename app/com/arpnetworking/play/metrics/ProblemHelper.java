@@ -35,8 +35,13 @@ import java.util.Optional;
  */
 public final class ProblemHelper {
 
+    /**
+     * Public constructor.
+     *
+     * @param messagesApi message api instance to render messages
+     */
     @Inject
-    public ProblemHelper(MessagesApi messagesApi) {
+    public ProblemHelper(final MessagesApi messagesApi) {
         _messagesApi = messagesApi;
     }
     /**
@@ -49,7 +54,7 @@ public final class ProblemHelper {
      *
      * @return A JSON representation of the problem.
      */
-    public ObjectNode createErrorJson(final Environment env, final Exception ex, final String problemCode, Optional<Lang> lang) {
+    public ObjectNode createErrorJson(final Environment env, final Exception ex, final String problemCode, final Optional<Lang> lang) {
         final ObjectNode errorNode = createErrorJson(ImmutableList.of(new Problem.Builder().setProblemCode(problemCode).build()), lang);
         if (env.isDev()) {
             if (ex.getMessage() != null) {
@@ -69,7 +74,7 @@ public final class ProblemHelper {
      *
      * @return A JSON representation of the problem.
      */
-    public ObjectNode createErrorJson(final Problem problem, Optional<Lang> lang) {
+    public ObjectNode createErrorJson(final Problem problem, final Optional<Lang> lang) {
         return createErrorJson(ImmutableList.of(problem), lang);
     }
 
@@ -81,7 +86,7 @@ public final class ProblemHelper {
      *
      * @return A JSON representation of the problems.
      */
-    public ObjectNode createErrorJson(final List<Problem> problems, Optional<Lang> lang) {
+    public ObjectNode createErrorJson(final List<Problem> problems, final Optional<Lang> lang) {
         final ObjectNode errorJson = Json.newObject();
         final ArrayNode errors = errorJson.putArray("errors");
         problems.forEach(problem -> errors.add(translate(problem, lang)));
@@ -96,7 +101,7 @@ public final class ProblemHelper {
      *
      * @return The translated problem.
      */
-    public String translate(final Problem problem, Optional<Lang> lang) {
+    public String translate(final Problem problem, final Optional<Lang> lang) {
         return _messagesApi.get(lang.orElse(Lang.defaultLang()), problem.getProblemCode(), problem.getArgs().toArray());
     }
 

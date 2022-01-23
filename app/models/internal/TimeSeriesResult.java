@@ -47,6 +47,11 @@ public interface TimeSeriesResult {
          */
         long getSampleSize();
 
+        /**
+         * Gets the results of the query.
+         *
+         * @return a list of {@link Result}
+         */
         ImmutableList<? extends Result> getResults();
     }
 
@@ -56,14 +61,39 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface Result {
+        /**
+         * Gets the name of the metric.
+         *
+         * @return the metric name
+         */
         String getName();
 
+        /**
+         * Gets the data points.
+         *
+         * @return a list of {@link DataPoint}
+         */
         ImmutableList<? extends DataPoint> getValues();
 
+        /**
+         * Gets the tags.
+         *
+         * @return the tags
+         */
         ImmutableMultimap<String, String> getTags();
 
+        /**
+         * Gets the alert triggers (if any).
+         *
+         * @return list of triggers
+         */
         ImmutableList<? extends AlertTrigger> getAlerts();
 
+        /**
+         * Gets group-by parameters.
+         *
+         * @return group by details
+         */
         ImmutableList<? extends QueryGroupBy> getGroupBy();
     }
 
@@ -82,9 +112,19 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface QueryTagGroupBy extends QueryGroupBy {
+        /**
+         * Gets the tags.
+         *
+         * @return the tags
+         */
         ImmutableList<String> getTags();
-        ImmutableMap<String, String> getGroup();
 
+        /**
+         * The key/value pairs for this group by record.
+         *
+         * @return key/value map for the group by tags
+         */
+        ImmutableMap<String, String> getGroup();
     }
 
     /**
@@ -94,6 +134,11 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface QueryTypeGroupBy extends QueryGroupBy {
+        /**
+         * Gets the group by type.
+         *
+         * @return the group by type
+         */
         String getType();
     }
 
@@ -103,8 +148,18 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface DataPoint {
+        /**
+         * Gets the time of the datapoint.
+         *
+         * @return the datapoint time
+         */
         Instant getTime();
 
+        /**
+         * Gets the recorded value of the datapoint.
+         *
+         * @return the datapoint value
+         */
         Object getValue();
     }
 }

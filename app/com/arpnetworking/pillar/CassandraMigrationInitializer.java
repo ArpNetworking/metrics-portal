@@ -15,12 +15,9 @@
  */
 package com.arpnetworking.pillar;
 
-import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -83,8 +80,8 @@ public class CassandraMigrationInitializer {
 
                     final CqlSession session = _injector.getInstance(Key.get(CqlSession.class, Names.named(dbName)));
 
-                    Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(config.getKeyspace()));
-                    MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()));
+                    final Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(config.getKeyspace()));
+                    final MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()));
                     migration.migrate();
 
                 } catch (final URISyntaxException e) {
@@ -109,6 +106,4 @@ public class CassandraMigrationInitializer {
     private final Injector _injector;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraMigrationInitializer.class);
-    private static final TypeReference<Map<String, Object>> MAP_TYPE_REFERENCE = new TypeReference<Map<String, Object>>() { };
-    private static final ObjectMapper MAPPER = ObjectMapperFactory.getInstance();
 }
