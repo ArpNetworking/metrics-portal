@@ -43,10 +43,6 @@ import java.util.regex.Pattern;
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
 public final class MetricsActionWrapper extends Action.Simple {
-    private static class Attrs {
-        private static final TypedKey<Metrics> METRICS = TypedKey.create("metrics");
-    }
-
     /**
      * Public constructor.
      *
@@ -110,7 +106,7 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     private Http.Request initMetrics(final Http.Request request) {
-        Optional<Metrics> metrics = request.attrs().getOptional(Attrs.METRICS);
+        final Optional<Metrics> metrics = request.attrs().getOptional(Attrs.METRICS);
         if (metrics.isEmpty()) {
             return request.withAttrs(TypedMap.create(new TypedEntry<>(Attrs.METRICS, _metricsFactory.create())));
         } else {
@@ -183,5 +179,9 @@ public final class MetricsActionWrapper extends Action.Simple {
         private final Metrics _metrics;
         private final Timer _timer;
         private final String _routeMetricName;
+    }
+
+    private static class Attrs {
+        private static final TypedKey<Metrics> METRICS = TypedKey.create("metrics");
     }
 }

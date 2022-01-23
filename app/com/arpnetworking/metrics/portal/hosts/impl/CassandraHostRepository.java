@@ -87,7 +87,7 @@ public class CassandraHostRepository implements HostRepository {
                 }
                 return Optional.of(cassandraHost.toInternal());
             }).toCompletableFuture().get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (final InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
 

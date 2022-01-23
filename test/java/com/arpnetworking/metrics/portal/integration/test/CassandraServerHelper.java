@@ -73,8 +73,10 @@ public final class CassandraServerHelper {
         session = sessionBuilder
                 .build();
 
-        Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
-        MigrationTask migration = new MigrationTask(database, new MigrationRepository(new File("./conf/cassandra/migration/" + name).getAbsolutePath()));
+        final Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
+        final MigrationTask migration = new MigrationTask(
+                database,
+                new MigrationRepository(new File("./conf/cassandra/migration/" + name).getAbsolutePath()));
         migration.migrate();
 
 

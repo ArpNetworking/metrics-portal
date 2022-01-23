@@ -35,6 +35,11 @@ import java.util.Optional;
  */
 public final class ProblemHelper {
 
+    /**
+     * Public constructor.
+     *
+     * @param messagesApi message api instance to render messages
+     */
     @Inject
     public ProblemHelper(final MessagesApi messagesApi) {
         _messagesApi = messagesApi;

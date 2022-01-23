@@ -56,7 +56,7 @@ public final class AkkaClusteringConfigFactory {
     /**
      * Utility class, should not be constructable.
      */
-    private AkkaClusteringConfigFactory(){}
+    private AkkaClusteringConfigFactory() {}
 
     private static final UUID RUN_ID = UUID.randomUUID();
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);

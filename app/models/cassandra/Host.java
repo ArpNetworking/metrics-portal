@@ -144,18 +144,45 @@ public class Host {
         @Query("select * from ${keyspaceId}.hosts_by_organization where organization = :org")
         Stream<Host> getHostsForOrganization(UUID org);
 
+        /**
+         * Gets a host by organization and name.
+         *
+         * @param organization the id of the organization
+         * @param name the name of the host
+         *
+         * @return A future host or null if none found
+         */
         @Select
         CompletionStage<Host> get(UUID organization, String name);
 
+        /**
+         * Saves a host record.
+         *
+         * @param host the host
+         */
         @Insert
         void save(Host host);
 
+        /**
+         * Deletes a host record.
+         *
+         * @param organization the organization id that owns the host
+         * @param name the name of the host
+         */
         @Delete(entityClass = Host.class)
         void delete(UUID organization, String name);
     }
 
+    /**
+     * Mapper for Host queries.
+     */
     @com.datastax.oss.driver.api.mapper.annotations.Mapper
     public interface Mapper {
+        /**
+         * Gets the DAO.
+         *
+         * @return the DAO
+         */
         @DaoFactory
         HostQueries dao();
 

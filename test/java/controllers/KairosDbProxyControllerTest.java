@@ -112,7 +112,7 @@ public class KairosDbProxyControllerTest {
         Result result;
         try {
             result = _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
 
@@ -139,7 +139,7 @@ public class KairosDbProxyControllerTest {
 
         try {
             result = _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
 
@@ -351,7 +351,7 @@ public class KairosDbProxyControllerTest {
         final Result result;
         try {
             result = controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
         }
 
