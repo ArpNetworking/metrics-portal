@@ -17,7 +17,7 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.commons.java.time.TimeAdapters;
+import com.arpnetworking.notcommons.java.time.TimeAdapters;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.Predicates;

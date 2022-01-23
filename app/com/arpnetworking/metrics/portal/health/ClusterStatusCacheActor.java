@@ -23,7 +23,7 @@ import akka.actor.Props;
 import akka.actor.Scheduler;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
-import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.google.common.collect.ArrayListMultimap;

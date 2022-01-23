@@ -179,7 +179,7 @@
     <docker.skip.cassandra>false</docker.skip.cassandra>
     <docker.skip.metrics-portal>false</docker.skip.metrics-portal>
     <docker.kairosdb.version>2.1.7</docker.kairosdb.version>
-    <docker.postgres.version>10.7</docker.postgres.version>
+    <docker.postgres.version>14.1</docker.postgres.version>
     <docker.cassandra.version>3.11</docker.cassandra.version>
 
     <!-- Assembly Overrides -->
@@ -732,6 +732,7 @@
               <alias>postgres</alias>
               <run>
                 <skip>${docker.skip.postgres}</skip>
+                <cmd>postgres -c max_connections=200</cmd>
                 <env>
                   <POSTGRES_USER>root</POSTGRES_USER>
                   <POSTGRES_PASSWORD>password</POSTGRES_PASSWORD>
@@ -739,7 +740,6 @@
                   <MAINTENANCE_WORK_MEM>64MB</MAINTENANCE_WORK_MEM>
                   <SHARED_BUFFERS>128MB</SHARED_BUFFERS>
                   <EFFECTIVE_CACHE_SIZE>256MB</EFFECTIVE_CACHE_SIZE>
-                  <MAX_CONNECTIONS>400</MAX_CONNECTIONS>
                 </env>
                 <network>
                   <mode>custom</mode>
@@ -860,7 +860,7 @@
                     <method>GET</method>
                     <status>200</status>
                   </http>
-                  <time>120000</time>
+                  <time>300000</time>
                   <kill>1000</kill>
                 </wait>
               </run>

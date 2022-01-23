@@ -15,11 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.integration.test;
 
-import akka.japi.Option;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
-import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,15 +27,10 @@ import org.cognitor.cassandra.migration.Database;
 import org.cognitor.cassandra.migration.MigrationConfiguration;
 import org.cognitor.cassandra.migration.MigrationRepository;
 import org.cognitor.cassandra.migration.MigrationTask;
-import scala.Predef;
-import scala.collection.JavaConverters;
 
 import java.io.File;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -73,9 +66,11 @@ public final class CassandraServerHelper {
             final int port) {
 
         final CqlSession session;
-        session = new CqlSessionBuilder()
+        final CqlSessionBuilder sessionBuilder = new CqlSessionBuilder()
                 .addContactPoints(Collections.singleton(InetSocketAddress.createUnresolved(hostname, port)))
-                .withCodecRegistry(new DefaultCodecRegistry("codec"))
+                .withLocalDatacenter("datacenter1")
+                .withCodecRegistry(new DefaultCodecRegistry("codec"));
+        session = sessionBuilder
                 .build();
 
         Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
@@ -84,7 +79,7 @@ public final class CassandraServerHelper {
 
 
         CASSANDRA_SERVER_MAP.put(name, session);
-        return session;
+        return sessionBuilder.build();
     }
 
     private static String getEnvOrDefault(final String name, final String defaultValue) {

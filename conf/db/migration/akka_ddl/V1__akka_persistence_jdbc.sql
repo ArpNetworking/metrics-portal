@@ -20,9 +20,9 @@
  * https://github.com/dnvriend/akka-persistence-jdbc/blob/master/src/test/resources/schema/postgres/postgres-schema.sql
  */
 
-DROP TABLE IF EXISTS akka.journal;
+DROP TABLE IF EXISTS akka.event_journal;
 
-DROP TABLE IF EXISTS akka.snapshot;
+DROP TABLE IF EXISTS akka.event_snapshot;
 
 CREATE TABLE IF NOT EXISTS akka.event_journal(
                                                    ordering BIGSERIAL,

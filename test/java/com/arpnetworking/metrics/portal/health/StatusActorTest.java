@@ -22,7 +22,6 @@ import akka.actor.Address;
 import akka.actor.UnhandledMessage;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
-import akka.cluster.ClusterEvent$;
 import akka.cluster.ClusterReadView;
 import akka.cluster.Member;
 import akka.cluster.MemberStatus;
@@ -30,7 +29,7 @@ import akka.cluster.UniqueAddress;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
 import akka.util.Version;
-import com.arpnetworking.commons.akka.BaseActorTest;
+import com.arpnetworking.notcommons.akka.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -39,12 +38,10 @@ import scala.Option;
 import scala.collection.immutable.HashMap;
 import scala.collection.immutable.HashSet;
 import scala.collection.immutable.Set;
-import scala.collection.immutable.Set$;
 import scala.collection.immutable.TreeSet;
 import scala.collection.mutable.ReusableBuilder;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.SortedSet;
 import java.util.concurrent.TimeUnit;
 
 /**

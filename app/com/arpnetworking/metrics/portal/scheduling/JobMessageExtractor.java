@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.scheduling;
 
 import akka.cluster.sharding.ShardRegion;
-import com.arpnetworking.commons.serialization.Serializer;
+import com.arpnetworking.notcommons.serialization.Serializer;
 
 import javax.annotation.Nullable;
 

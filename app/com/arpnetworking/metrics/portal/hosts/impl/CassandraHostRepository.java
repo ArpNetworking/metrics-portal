@@ -67,7 +67,6 @@ public class CassandraHostRepository implements HostRepository {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
-        _cassandraSession.close();
     }
 
     @Override
