@@ -16,8 +16,8 @@
 
 package com.arpnetworking.metrics.portal.scheduling;
 
-import com.arpnetworking.commons.serialization.Deserializer;
-import com.arpnetworking.commons.serialization.Serializer;
+import com.arpnetworking.notcommons.serialization.Deserializer;
+import com.arpnetworking.notcommons.serialization.Serializer;
 
 /**
  * A type that allows for both serialization and deserialization of JobRefs.

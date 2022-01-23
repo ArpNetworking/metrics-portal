@@ -40,6 +40,11 @@ public interface TimeSeriesResult {
      * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
      */
     interface Query {
+        /**
+         * Gets the number of samples.
+         *
+         * @return the number of samples
+         */
         long getSampleSize();
 
         ImmutableList<? extends Result> getResults();

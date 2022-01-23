@@ -20,7 +20,7 @@ import akka.actor.ActorRef;
 import akka.japi.pf.ReceiveBuilder;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
-import com.arpnetworking.commons.tagger.Tagger;
+import com.arpnetworking.notcommons.tagger.Tagger;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.DataPoint;

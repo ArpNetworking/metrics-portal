@@ -20,7 +20,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
-import com.arpnetworking.commons.java.time.TimeAdapters;
+import com.arpnetworking.notcommons.java.time.TimeAdapters;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;

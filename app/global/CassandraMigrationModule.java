@@ -122,7 +122,7 @@ public class CassandraMigrationModule extends AbstractModule {
                     .build();
             _lifecycleProvider.get().addStopHook(() -> {
                 final CompletableFuture<Void> done = new CompletableFuture<>();
-                session.closeAsync().whenCompleteAsync((v, t) -> { done.complete(null); }, MoreExecutors.directExecutor());
+                session.closeAsync().whenCompleteAsync((v, t) -> done.complete(null), MoreExecutors.directExecutor());
                 return done;
             });
             return session;

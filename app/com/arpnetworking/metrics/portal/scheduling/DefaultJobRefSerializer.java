@@ -16,7 +16,7 @@
 
 package com.arpnetworking.metrics.portal.scheduling;
 
-import com.arpnetworking.commons.serialization.DeserializationException;
+import com.arpnetworking.notcommons.serialization.DeserializationException;
 import models.internal.impl.DefaultOrganization;
 
 import java.util.Arrays;
