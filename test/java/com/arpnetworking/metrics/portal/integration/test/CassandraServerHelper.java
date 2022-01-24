@@ -28,7 +28,6 @@ import org.cognitor.cassandra.migration.MigrationConfiguration;
 import org.cognitor.cassandra.migration.MigrationRepository;
 import org.cognitor.cassandra.migration.MigrationTask;
 
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Map;
