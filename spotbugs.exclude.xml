@@ -29,6 +29,18 @@
         <Bug pattern="DLS_DEAD_LOCAL_STORE" />
     </Match>
 
+    <!-- Match all EI_EXPOSE_REP violations. These are about internal state being able
+        to be modified by passing in mutable objects. Problem is that SpotBugs doesn't know
+        which objects are actually mutable so false positives abound.
+    -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP2" />
+            <Bug pattern="EI_EXPOSE_REP" />
+            <Bug pattern="MS_EXPOSE_REP" />
+        </Or>
+    </Match>
+
     <!-- Match all RV_RETURN_VALUE_IGNORED_BAD_PRACTICE violations on all unit
        test files since Mockito usage can cause this violation when stating
        expectations.
@@ -62,6 +74,7 @@
             <Class name="~portal\.Routes.*" />
             <Class name="~kairosdb\.Routes.*" />
             <Class name="~views\.html\..*" />
+            <Class name="~models\.cassandra\..*Generated" />
         </Or>
     </Match>
 

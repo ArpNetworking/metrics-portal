@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportB
 import com.github.tomakehurst.wiremock.common.Strings;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -37,7 +38,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
 
 /**
  * Tests class {@link HtmlGrafanaScreenshotRenderer}.
@@ -127,7 +128,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
             stage.get();
             Assert.fail("rendering should not have completed successfully");
         } catch (final ExecutionException exc) {
-            assertTrue(exc.getCause() instanceof BaseGrafanaScreenshotRenderer.BrowserReportedFailure);
+            assertThat(exc.getCause(), Matchers.instanceOf(BaseGrafanaScreenshotRenderer.BrowserReportedFailure.class));
         }
     }
 }
