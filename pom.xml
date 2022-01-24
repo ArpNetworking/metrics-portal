@@ -366,6 +366,14 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </execution>
+        </executions>
         <configuration>
           <ignoredDependencies combine.children="append">
             <ignoredDependency>com.typesafe.play:play-java_${scala.package.version}:jar:*</ignoredDependency>
