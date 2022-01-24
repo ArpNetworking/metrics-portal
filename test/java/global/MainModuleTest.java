@@ -22,6 +22,7 @@ import com.arpnetworking.metrics.impl.ApacheHttpSink;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -56,7 +58,7 @@ public final class MainModuleTest {
         final List<Sink> sinks = MainModule.createMonitoringSinks(sinkConfigs.getConfigList("sinks"), OBJECT_MAPPER);
         assertEquals(1, sinks.size());
         final Sink sink = sinks.get(0);
-        assertTrue(sink instanceof ApacheHttpSink);
+        assertThat(sink, Matchers.instanceOf(ApacheHttpSink.class));
         assertEquals(URI.create("http://test.example.com:7090/some/path"), getField(sink, "_uri"));
     }
 
@@ -70,7 +72,7 @@ public final class MainModuleTest {
             // CHECKSTYLE.OFF: IllegalCatch - Need to interrogate the cause
         } catch (final RuntimeException e) {
             // CHECKSTYLE.ON: IllegalCatch
-            assertTrue(e.getCause() instanceof ClassNotFoundException);
+            assertThat(e.getCause(), Matchers.instanceOf(ClassNotFoundException.class));
         }
     }
 

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -58,6 +59,7 @@ public class JacksonSerializer extends JSerializer {
      *
      * @param objectMapper the ObjectMapper to use.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_STATIC_REP2", justification = "Must take an object mapper")
     public static void setObjectMapper(final ObjectMapper objectMapper) {
         if (gObjectMapper != null) {
             LOGGER.warn("ObjectMapper was already registered.");

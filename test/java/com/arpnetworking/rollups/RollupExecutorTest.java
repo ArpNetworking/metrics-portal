@@ -39,6 +39,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -199,7 +201,7 @@ public class RollupExecutorTest {
         assertEquals(1, rollupQuery.getMetrics().size());
         final Metric metric = rollupQuery.getMetrics().get(0);
         assertEquals(1, metric.getGroupBy().size());
-        assertTrue(metric.getGroupBy().get(0) instanceof MetricsQuery.QueryTagGroupBy);
+        MatcherAssert.assertThat(metric.getGroupBy().get(0), Matchers.instanceOf(MetricsQuery.QueryTagGroupBy.class));
         assertEquals(ImmutableSet.of("tag1", "tag2"), ((MetricsQuery.QueryTagGroupBy) metric.getGroupBy().get(0)).getTags());
         assertEquals(3, metric.getAggregators().size());
         assertEquals("merge", metric.getAggregators().get(0).getName());

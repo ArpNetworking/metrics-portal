@@ -30,6 +30,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Features;
 import org.junit.After;
 import org.junit.Before;
@@ -56,6 +57,7 @@ import static org.mockito.Mockito.when;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "anonymous test class won't be extended")
 public final class MetricsDiscoveryTest {
 
     @Before
@@ -123,7 +125,6 @@ public final class MetricsDiscoveryTest {
                                         "cmf/test/foobar"
                                 ))
                                 .build()));
-
         new TestKit(_system) {{
             final TestActorRef<MetricsDiscovery> actor = createActor();
             final ActorRef testActor = getTestActor();
