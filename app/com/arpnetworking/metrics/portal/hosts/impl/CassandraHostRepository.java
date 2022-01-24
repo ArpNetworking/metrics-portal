@@ -202,7 +202,9 @@ public class CassandraHostRepository implements HostRepository {
 
     @Override
     public long getHostCount(final Organization organization) {
-        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession)
+                .withDefaultKeyspace("portal")
+                .build();
         final models.cassandra.Host.HostQueries dao = mapper.dao();
         final Stream<models.cassandra.Host> result = dao.getHostsForOrganization(organization.getId());
         return result.count();

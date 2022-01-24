@@ -49,7 +49,7 @@ public final class CassandraServerHelper {
      */
     public static synchronized CqlSession createSession() {
         @Nullable CqlSession session = CASSANDRA_SERVER_MAP.get(METRICS_DATABASE);
-        if (session == null) {
+        if (session == null || session.isClosed()) {
             session = initializeCassandraServer(
                     METRICS_DATABASE,
                     METRICS_KEYSPACE,
@@ -76,7 +76,7 @@ public final class CassandraServerHelper {
         final Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
         final MigrationTask migration = new MigrationTask(
                 database,
-                new MigrationRepository(new File("./conf/cassandra/migration/" + name).getAbsolutePath()));
+                new MigrationRepository("cassandra/migration/" + name));
         migration.migrate();
 
 

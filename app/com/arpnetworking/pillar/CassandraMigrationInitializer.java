@@ -69,6 +69,7 @@ public class CassandraMigrationInitializer {
             final Configuration.DatastoreConfig config = entry.getValue();
 
             final Path directory = config.getDirectory();
+            LOGGER.debug().setMessage("Looking for Cassandra migrations").addData("path", directory.toString()).log();
             @Nullable final URL resource = _environment.resource(directory.toString());
             if (resource != null) {
                 LOGGER.info()
