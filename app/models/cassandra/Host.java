@@ -15,6 +15,7 @@
  */
 package models.cassandra;
 
+import com.datastax.oss.driver.api.mapper.annotations.ClusteringColumn;
 import com.datastax.oss.driver.api.mapper.annotations.CqlName;
 import com.datastax.oss.driver.api.mapper.annotations.Dao;
 import com.datastax.oss.driver.api.mapper.annotations.DaoFactory;
@@ -49,7 +50,7 @@ public class Host {
 
     private Instant updatedAt;
 
-    @PartitionKey(1)
+    @ClusteringColumn(0)
     private String name;
 
     private String cluster;
@@ -141,19 +142,19 @@ public class Host {
          * @param org Organization uuid owning the hosts
          * @return Mapped query results
          */
-        @Query("select * from ${keyspaceId}.hosts_by_organization where organization = :org")
+        @Query("select * from ${keyspaceId}.hosts where organization = :org")
         Stream<Host> getHostsForOrganization(UUID org);
 
         /**
          * Gets a host by organization and name.
          *
-         * @param organization the id of the organization
+         * @param organizationId the id of the organization
          * @param name the name of the host
          *
          * @return A future host or null if none found
          */
         @Select
-        CompletionStage<Host> get(UUID organization, String name);
+        CompletionStage<Host> get(UUID organizationId, String name);
 
         /**
          * Saves a host record.
@@ -166,11 +167,11 @@ public class Host {
         /**
          * Deletes a host record.
          *
-         * @param organization the organization id that owns the host
+         * @param organizationId the organization id that owns the host
          * @param name the name of the host
          */
         @Delete(entityClass = Host.class)
-        void delete(UUID organization, String name);
+        void delete(UUID organizationId, String name);
     }
 
     /**
