@@ -143,10 +143,9 @@
     <javassist.maven.plugin.version>0.2.3</javassist.maven.plugin.version>
     <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
-    <play.maven.plugin.version>1.0.0-rc6-SNAPSHOT</play.maven.plugin.version>
-    <sbt.compiler.plugin.version>1.0.0</sbt.compiler.plugin.version>
+    <play.maven.plugin.version>1.0.1</play.maven.plugin.version>
+    <sbt.compiler.plugin.version>1.0.3</sbt.compiler.plugin.version>
     <frontend.maven.plugin.version>1.14.0</frontend.maven.plugin.version>
-    <sbt.compiler.plugin.version>1.0.1-SNAPSHOT</sbt.compiler.plugin.version>
 
     <!-- Scala -->
     <scala.package.version>2.13</scala.package.version>
@@ -398,14 +397,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>analyze</id>
-            <configuration>
-              <skip>true</skip>
-            </configuration>
-          </execution>
-        </executions>
         <configuration>
           <ignoredDependencies combine.children="append">
             <ignoredDependency>com.typesafe.play:play-java_${scala.package.version}:jar:*</ignoredDependency>
@@ -415,7 +406,7 @@
 
       <!-- Project Specific Plugins -->
       <plugin>
-        <groupId>com.google.code.play2-maven-plugin</groupId>
+        <groupId>com.arpnetworking.code.play2-maven-plugin</groupId>
         <artifactId>play2-maven-plugin</artifactId>
         <version>${play.maven.plugin.version}</version>
         <extensions>true</extensions>
@@ -442,7 +433,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.google.code.sbt-compiler-maven-plugin</groupId>
+        <groupId>com.arpnetworking.code.sbt-compiler-maven-plugin</groupId>
         <artifactId>sbt-compiler-maven-plugin</artifactId>
         <version>${sbt.compiler.plugin.version}</version>
         <executions>
