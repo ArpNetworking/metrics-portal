@@ -69,7 +69,7 @@ ENV APP_OPTS="/opt/metrics-portal"
 ENV ADDITIONAL_APP_OPTS=""
 
 # Build
-RUN apk add --no-cache chromium
+RUN apt update && apt install -y gosu chromium && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /opt/metrics-portal/lib/ext && \
     mkdir -p /opt/metrics-portal/config && \
     mkdir -p /opt/metrics-portal/logs
