@@ -208,11 +208,13 @@ public class KairosDbProxyController extends Controller {
                     .map(aggregator -> {
                         if (aggregator.getSampling().isPresent()) {
                             final Sampling sampling = aggregator.getSampling().get();
-                            final Duration samplingDuration = Duration.of(sampling.getValue(), SamplingUnit.toChronoUnit(sampling.getUnit()));
+                            final Duration samplingDuration = Duration.of(
+                                    sampling.getValue(),
+                                    SamplingUnit.toChronoUnit(sampling.getUnit()));
                             if (samplingDuration.compareTo(_minAggregationPeriod) < 0) {
                                 return ThreadLocalBuilder.clone(aggregator, Aggregator.Builder.class, b -> {
                                     b.setSampling(Sampling.Builder.clone(sampling, Sampling.Builder.class, builder -> {
-                                        builder.setValue((int)_minAggregationPeriod.getSeconds());
+                                        builder.setValue((int) _minAggregationPeriod.getSeconds());
                                         builder.setUnit(SamplingUnit.SECONDS);
                                     }));
                                 });
