@@ -75,7 +75,6 @@ public class KairosDbProxyControllerTest {
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(true);
-        when(_mockConfig.getDuration(eq("kairosdb.proxy.minAggregationPeriod"))).thenReturn(Duration.ofMinutes(1));
         when(_mockKairosDbService.queryMetricNames(any(), any(), anyBoolean())).thenReturn(CompletableFuture.completedFuture(
                 new MetricNamesResponse.Builder()
                         .setResults(ImmutableList.of("metric1", "metric2"))
@@ -145,6 +144,13 @@ public class KairosDbProxyControllerTest {
 
     @Test
     public void testClampsAggregators() {
+        when(_mockConfig.getDuration(eq("kairosdb.proxy.minAggregationPeriod"))).thenReturn(Duration.ofMinutes(1));
+        _controller = new KairosDbProxyController(
+                _mockConfig,
+                _mockWSClient,
+                OBJECT_MAPPER,
+                _mockKairosDbService
+        );
         final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count")
@@ -157,9 +163,6 @@ public class KairosDbProxyControllerTest {
                 .setStartTime(Instant.now())
                 .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
-        // ***
-        // Test success case where both metrics have aggregators
-        // ***
         metric2Builder.setAggregators(ImmutableList.of(new Aggregator.Builder().setName("sum").build()));
         builder.setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
 
@@ -181,7 +184,6 @@ public class KairosDbProxyControllerTest {
 
 
         final MetricsQuery query = queryCaptor.getValue();
-        System.out.println(OBJECT_MAPPER.valueToTree(query));
         final ImmutableList<Metric> queryMetrics = query.getMetrics();
         assertEquals(2, queryMetrics.size());
 
@@ -192,6 +194,60 @@ public class KairosDbProxyControllerTest {
         assertEquals("count", aggregator.getName());
         final Sampling sampling = aggregator.getSampling().get();
         assertEquals(Duration.ofMinutes(1), Duration.of(sampling.getValue(), SamplingUnit.toChronoUnit(sampling.getUnit())));
+
+
+        queryMetric = queryMetrics.get(1);
+        aggregators = queryMetric.getAggregators();
+        aggregator = aggregators.get(0);
+        assertEquals(1, aggregators.size());
+        assertEquals("sum", aggregator.getName());
+    }
+
+    @Test
+    public void testNoClampAggregatorWhenNoConfig() {
+        final Metric.Builder metric1Builder = new Metric.Builder()
+                .setName("metric1")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count")
+                        .setSampling(new Sampling.Builder().setValue(1).setUnit(SamplingUnit.SECONDS).build())
+                        .build()));
+        final Metric.Builder metric2Builder = new Metric.Builder()
+                .setName("metric2")
+                .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("sum").build()));
+        final MetricsQuery.Builder builder = new MetricsQuery.Builder()
+                .setStartTime(Instant.now())
+                .setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
+
+        metric2Builder.setAggregators(ImmutableList.of(new Aggregator.Builder().setName("sum").build()));
+        builder.setMetrics(ImmutableList.of(metric1Builder.build(), metric2Builder.build()));
+
+        final Http.RequestBuilder request = Helpers.fakeRequest()
+                .method(Helpers.POST)
+                .uri("/api/v1/datapoints/query")
+                .header("Content-Type", "application/json")
+                .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(builder.build()));
+
+        final ArgumentCaptor<MetricsQuery> queryCaptor = ArgumentCaptor.forClass(MetricsQuery.class);
+
+        when(_mockKairosDbService.queryMetrics(any(), queryCaptor.capture())).thenReturn(
+                CompletableFuture.completedFuture(new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()));
+
+        Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
+            final CompletionStage<Result> completionStage = _controller.queryMetrics();
+            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
+        });
+
+
+        final MetricsQuery query = queryCaptor.getValue();
+        final ImmutableList<Metric> queryMetrics = query.getMetrics();
+        assertEquals(2, queryMetrics.size());
+
+        Metric queryMetric = queryMetrics.get(0);
+        ImmutableList<Aggregator> aggregators = queryMetric.getAggregators();
+        assertEquals(1, aggregators.size());
+        Aggregator aggregator = aggregators.get(0);
+        assertEquals("count", aggregator.getName());
+        final Sampling sampling = aggregator.getSampling().get();
+        assertEquals(Duration.ofSeconds(1), Duration.of(sampling.getValue(), SamplingUnit.toChronoUnit(sampling.getUnit())));
 
 
         queryMetric = queryMetrics.get(1);

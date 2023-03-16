@@ -90,7 +90,7 @@ public class KairosDbProxyController extends Controller {
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
         _requireAggregators = configuration.getBoolean("kairosdb.proxy.requireAggregators");
         _addMergeAggregator = configuration.getBoolean("kairosdb.proxy.addMergeAggregator");
-        _minAggregationPeriod = configuration.getDuration("kairosdb.proxy.minAggregationPeriod");
+        _minAggregationPeriod = Optional.ofNullable(configuration.getDuration("kairosdb.proxy.minAggregationPeriod"));
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
@@ -211,10 +211,10 @@ public class KairosDbProxyController extends Controller {
                             final Duration samplingDuration = Duration.of(
                                     sampling.getValue(),
                                     SamplingUnit.toChronoUnit(sampling.getUnit()));
-                            if (samplingDuration.compareTo(_minAggregationPeriod) < 0) {
+                            if (_minAggregationPeriod.isPresent() && samplingDuration.compareTo(_minAggregationPeriod.get()) < 0) {
                                 return ThreadLocalBuilder.clone(aggregator, Aggregator.Builder.class, b -> {
                                     b.setSampling(Sampling.Builder.clone(sampling, Sampling.Builder.class, builder -> {
-                                        builder.setValue((int) _minAggregationPeriod.getSeconds());
+                                        builder.setValue((int) _minAggregationPeriod.get().getSeconds());
                                         builder.setUnit(SamplingUnit.SECONDS);
                                     }));
                                 });
@@ -321,7 +321,7 @@ public class KairosDbProxyController extends Controller {
     private final boolean _filterRollups;
     private final boolean _requireAggregators;
     private final boolean _addMergeAggregator;
-    private final Duration _minAggregationPeriod;
+    private final Optional<Duration> _minAggregationPeriod;
     private final KairosDbService _kairosService;
 
     private static final ImmutableSet<String> NON_HISTOGRAM_AGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
