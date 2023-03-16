@@ -21,6 +21,7 @@ import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.Sampling;
+import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.kairos.service.DefaultQueryContext;
 import com.arpnetworking.kairos.service.KairosDbService;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -88,6 +90,7 @@ public class KairosDbProxyController extends Controller {
         _filterRollups = configuration.getBoolean("kairosdb.proxy.filterRollups");
         _requireAggregators = configuration.getBoolean("kairosdb.proxy.requireAggregators");
         _addMergeAggregator = configuration.getBoolean("kairosdb.proxy.addMergeAggregator");
+        _minAggregationPeriod = Optional.ofNullable(configuration.getDuration("kairosdb.proxy.minAggregationPeriod"));
 
         final ImmutableSet<String> excludedTagNames = ImmutableSet.copyOf(
                 configuration.getStringList("kairosdb.proxy.excludedTagNames"));
@@ -183,6 +186,8 @@ public class KairosDbProxyController extends Controller {
                 metricsQuery = checkAndAddMergeAggregator(metricsQuery);
             }
 
+            metricsQuery = clampAggregationPeriod(metricsQuery);
+
             final QueryContext context = new DefaultQueryContext.Builder()
                     .setOrigin(QueryOrigin.EXTERNAL_REQUEST)
                     .build();
@@ -193,6 +198,38 @@ public class KairosDbProxyController extends Controller {
         } catch (final IOException e) {
             return CompletableFuture.completedFuture(Results.internalServerError(e.getMessage()));
         }
+    }
+
+    /* package private */ MetricsQuery clampAggregationPeriod(final MetricsQuery metricsQuery) {
+        final List<Metric> newMetrics = new ArrayList<>();
+        for (final Metric metric : metricsQuery.getMetrics()) {
+            final ImmutableList<Aggregator> newAggregators = metric.getAggregators()
+                    .stream()
+                    .map(aggregator -> {
+                        if (aggregator.getSampling().isPresent()) {
+                            final Sampling sampling = aggregator.getSampling().get();
+                            final Duration samplingDuration = Duration.of(
+                                    sampling.getValue(),
+                                    SamplingUnit.toChronoUnit(sampling.getUnit()));
+                            if (_minAggregationPeriod.isPresent() && samplingDuration.compareTo(_minAggregationPeriod.get()) < 0) {
+                                return ThreadLocalBuilder.clone(aggregator, Aggregator.Builder.class, b -> {
+                                    b.setSampling(Sampling.Builder.clone(sampling, Sampling.Builder.class, builder -> {
+                                        builder.setValue((int) _minAggregationPeriod.get().getSeconds());
+                                        builder.setUnit(SamplingUnit.SECONDS);
+                                    }));
+                                });
+                            }
+                        }
+                        return aggregator;
+                    })
+                    .collect(ImmutableList.toImmutableList());
+
+            newMetrics.add(ThreadLocalBuilder.clone(
+                    metric, Metric.Builder.class, b->b.setAggregators(newAggregators)));
+
+        }
+        final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
+        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
     }
 
     /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
@@ -284,6 +321,7 @@ public class KairosDbProxyController extends Controller {
     private final boolean _filterRollups;
     private final boolean _requireAggregators;
     private final boolean _addMergeAggregator;
+    private final Optional<Duration> _minAggregationPeriod;
     private final KairosDbService _kairosService;
 
     private static final ImmutableSet<String> NON_HISTOGRAM_AGGREGATORS = ImmutableSet.of("sum", "count", "avg", "max", "min");
