@@ -94,7 +94,7 @@
     <flyway.play.version>4.0.0</flyway.play.version>
     <guava.version>23.6.1-jre</guava.version>
     <guice.version>4.0</guice.version>
-    <guice.assisted.version>4.1.0</guice.assisted.version>
+    <guice.assisted.version>5.1.0</guice.assisted.version>
     <hikaricp.version>2.7.9</hikaricp.version>
     <jackson.version>2.9.10</jackson.version>
     <javassist.maven.core.version>0.2.1</javassist.maven.core.version>
