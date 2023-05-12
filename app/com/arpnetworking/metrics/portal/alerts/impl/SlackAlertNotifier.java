@@ -17,13 +17,23 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertNotifier;
+import com.arpnetworking.metrics.portal.hosts.impl.ConsulClient;
 import com.fasterxml.jackson.annotation.JacksonInject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import play.libs.Json;
 import play.libs.ws.WSClient;
+import play.libs.ws.WSResponse;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CompletionStage;
 
 public class SlackAlertNotifier implements AlertNotifier {
@@ -31,16 +41,39 @@ public class SlackAlertNotifier implements AlertNotifier {
         _apiKey = builder._apiKey;
         _messagePostUrl = builder._messagePostUrl;
         _wsClient = builder._wsClient;
+        _defaultChannelId = builder._defaultChannelId;
+        _channelIdMap = builder._channelIdMap;
     }
 
     @Override
     public CompletionStage<Void> notify(Alert alert, AlertEvaluationResult result, String message) {
-        return null;
+        String channelId = Optional.ofNullable(_channelIdMap.get(alert.getName())).orElse(_defaultChannelId);
+
+        ObjectNode object = Json.newObject();
+        object.put("channel", channelId);
+        object.put("text", message);
+
+        return _wsClient
+                .url(_messagePostUrl)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", String.format("Bearer %s", _apiKey))
+                .post(object)
+                .thenApply(response -> {
+                    if (response.getStatus() / 100 != 2) {
+                        throw new RuntimeException(new IOException(
+                                String.format(
+                                        "Non-200 response %d from SlackAlertNotifier",
+                                        response.getStatus())));
+                    }
+                    return null;
+                });
     }
 
     private final String _apiKey;
     private final String _messagePostUrl;
     private final WSClient _wsClient;
+    private final String _defaultChannelId;
+    private final Map<String, String> _channelIdMap;
 
     public static class Builder extends OvalBuilder<SlackAlertNotifier> {
         /**
@@ -74,6 +107,28 @@ public class SlackAlertNotifier implements AlertNotifier {
             return this;
         }
 
+        /**
+         * Sets the default channel id to send messages to. Cannot be null or empty.
+         *
+         * @param defaultChannelId the default channel id to post the messages to
+         * @return This instance of {@code Builder} for chaining.
+         */
+        public Builder setDefaultChannelId(final String defaultChannelId) {
+            _defaultChannelId = defaultChannelId;
+            return this;
+        }
+
+        /**
+         * Sets the map of alert name to channel id. Optional.
+         *
+         * @param channelIdMap the map of alert name to channel id
+         * @return This instance of {@code Builder} for chaining.
+         */
+        public Builder setChannelIdMap(final Map<String, String> channelIdMap) {
+            _channelIdMap = channelIdMap;
+            return this;
+        }
+
         @NotNull
         @NotEmpty
         private String _apiKey;
@@ -83,5 +138,12 @@ public class SlackAlertNotifier implements AlertNotifier {
         @NotNull
         @JacksonInject
         private WSClient _wsClient;
+
+        @NotNull
+        @NotEmpty
+        private String _defaultChannelId;
+
+        @NotNull
+        private Map<String, String> _channelIdMap = Maps.newHashMap();
     }
 }
