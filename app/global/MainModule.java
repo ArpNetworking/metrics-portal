@@ -54,6 +54,7 @@ import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
+import com.arpnetworking.metrics.portal.alerts.AlertNotifier;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.alerts.impl.AlertExecutionCacheActor;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
@@ -248,8 +249,9 @@ public class MainModule extends AbstractModule {
     private AlertExecutionContext provideAlertExecutionContext(
             final Config config,
             final QueryExecutor executor,
-            final PeriodicMetrics metrics
-    ) {
+            final PeriodicMetrics metrics,
+            final AlertNotifier alertNotifier
+            ) {
         final FiniteDuration interval = ConfigurationHelper.getFiniteDuration(config, "alerting.execution.defaultInterval");
         final java.time.Duration queryOffset = ConfigurationHelper.getJavaDuration(config, "alerting.execution.queryOffset");
 
@@ -260,7 +262,7 @@ public class MainModule extends AbstractModule {
                     metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount);
                 })
                 .build();
-        return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset);
+        return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset, alertNotifier);
     }
 
     @Provides
@@ -386,6 +388,20 @@ public class MainModule extends AbstractModule {
                 .setReadTimeout(ConfigurationHelper.getFiniteDuration(configuration, "kairosdb.timeout"))
                 .setMetricsFactory(metricsFactory)
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
+    private AlertNotifier provideAlertNotifier(
+            final ObjectMapper mapper,
+            final Config configuration,
+            final Injector injector,
+            final Environment environment) {
+        final Config notifierConfig = configuration.getConfig("alerting.notifier");
+        final AlertNotifier notifier = ConfigurationHelper.toInstance(injector, environment, notifierConfig);
+        return notifier;
+
     }
 
     @Provides

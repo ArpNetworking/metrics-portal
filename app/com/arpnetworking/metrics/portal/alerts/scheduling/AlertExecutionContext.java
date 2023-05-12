@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.alerts.scheduling;
 
+import com.arpnetworking.metrics.portal.alerts.AlertNotifier;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryWindow;
@@ -68,6 +69,7 @@ public final class AlertExecutionContext {
     private final QueryExecutor _executor;
     private final Schedule _defaultSchedule;
     private final Duration _queryOffset;
+    private final AlertNotifier _alertNotifier;
 
     /**
      * Default constructor.
@@ -80,11 +82,13 @@ public final class AlertExecutionContext {
     public AlertExecutionContext(
             final Schedule defaultSchedule,
             final QueryExecutor executor,
-            final Duration queryOffset
+            final Duration queryOffset,
+            final AlertNotifier alertNotifier
     ) {
         _defaultSchedule = defaultSchedule;
         _executor = executor;
         _queryOffset = queryOffset;
+        _alertNotifier = alertNotifier;
     }
 
     /**
