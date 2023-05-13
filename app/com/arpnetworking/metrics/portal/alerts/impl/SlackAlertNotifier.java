@@ -17,10 +17,9 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertNotifier;
-import com.arpnetworking.metrics.portal.hosts.impl.ConsulClient;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
@@ -28,12 +27,13 @@ import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 import play.libs.Json;
 import play.libs.ws.WSClient;
-import play.libs.ws.WSResponse;
+import scala.collection.mutable.StringBuilder;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.CompletionStage;
 
 public class SlackAlertNotifier implements AlertNotifier {
@@ -46,12 +46,34 @@ public class SlackAlertNotifier implements AlertNotifier {
     }
 
     @Override
-    public CompletionStage<Void> notify(Alert alert, AlertEvaluationResult result, String message) {
-        String channelId = Optional.ofNullable(_channelIdMap.get(alert.getName())).orElse(_defaultChannelId);
+    public CompletionStage<Void> notify(final Alert alert, final AlertEvaluationResult result) {
+        final String channelId = Optional.ofNullable(_channelIdMap.get(alert.getName())).orElse(_defaultChannelId);
+        final StringBuilder message = new StringBuilder();
+        message.append(String.format(
+                "%s is in alarm\n\n" +
+                "%s\n\n" +
+                "from %s to %s.\n\n",
+                alert.getName(),
+                alert.getDescription(),
+                DateTimeFormatter.RFC_1123_DATE_TIME.format(result.getQueryStartTime().atZone(ZoneOffset.UTC)),
+                DateTimeFormatter.RFC_1123_DATE_TIME.format(result.getQueryEndTime().atZone(ZoneOffset.UTC))
+                ));
 
-        ObjectNode object = Json.newObject();
-        object.put("channel", channelId);
-        object.put("text", message);
+        message.append("Firing tags:\n");
+        message.append("----------------\n");
+        for (final ImmutableMap<String, String> tag : result.getFiringTags()) {
+            for (final Map.Entry<String, String> entry : tag.entrySet()) {
+                message.append(String.format(
+                        "%s: %s\n",
+                        entry.getKey(),
+                        entry.getValue()));
+            }
+            message.append("----------------\n");
+        }
+
+        final ObjectNode object = Json.newObject()
+            .put("channel", channelId)
+            .put("text", message.toString());
 
         return _wsClient
                 .url(_messagePostUrl)

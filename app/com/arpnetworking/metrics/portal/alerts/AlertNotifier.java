@@ -21,5 +21,5 @@ import models.internal.alerts.AlertEvaluationResult;
 import java.util.concurrent.CompletionStage;
 
 public interface AlertNotifier {
-    CompletionStage<Void> notify(final Alert alert, final AlertEvaluationResult result, final String message);
+    CompletionStage<Void> notify(final Alert alert, final AlertEvaluationResult result);
 }
