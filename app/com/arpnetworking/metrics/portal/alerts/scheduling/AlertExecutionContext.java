@@ -77,6 +77,7 @@ public final class AlertExecutionContext {
      * @param defaultSchedule The default alert execution schedule.
      * @param executor The executor to use for alert queries.
      * @param queryOffset The offset to apply to the query interval.
+     * @param alertNotifier The notifier to use to notify users of alert triggers.
      */
     @Inject
     public AlertExecutionContext(
@@ -132,7 +133,14 @@ public final class AlertExecutionContext {
 
             return _executor
                     .executeQuery(bounded)
-                    .thenApply(res -> toAlertResult(res, scheduled, window, queryRangeStart, queryRangeEnd));
+                    .thenApply(res -> toAlertResult(res, scheduled, window, queryRangeStart, queryRangeEnd))
+                    .thenCompose(result -> {
+                        if (result.getFiringTags().size() > 0) {
+                            return _alertNotifier.notify(alert, result).thenApply(v -> result);
+                        } else {
+                            return CompletableFuture.completedFuture(result);
+                        }
+                    });
             // CHECKSTYLE.OFF: IllegalCatch - Exception is propagated into the CompletionStage
         } catch (final Exception e) {
             // CHECKSTYLE.ON: IllegalCatch

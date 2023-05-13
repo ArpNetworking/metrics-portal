@@ -17,6 +17,7 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
+import com.arpnetworking.metrics.portal.alerts.impl.NopAlertNotifier;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
@@ -117,7 +118,8 @@ public class AlertExecutionContextTest {
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor,
-                Duration.ZERO
+                Duration.ZERO,
+                new NopAlertNotifier()
         );
         _objectMapper = SerializationTestUtils.getApiObjectMapper();
     }
@@ -133,7 +135,8 @@ public class AlertExecutionContextTest {
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor,
-                queryOffset
+                queryOffset,
+                new NopAlertNotifier()
         );
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
@@ -177,7 +180,8 @@ public class AlertExecutionContextTest {
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor,
-                queryOffset
+                queryOffset,
+                new NopAlertNotifier()
         );
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);

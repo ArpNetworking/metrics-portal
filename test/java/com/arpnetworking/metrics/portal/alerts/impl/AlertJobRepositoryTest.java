@@ -94,7 +94,7 @@ public class AlertJobRepositoryTest {
                 .thenReturn(Optional.of(_alert));
 
         final Schedule schedule = NeverSchedule.getInstance();
-        _context = new AlertExecutionContext(schedule, mockExecutor, Duration.ZERO);
+        _context = new AlertExecutionContext(schedule, mockExecutor, Duration.ZERO, new NopAlertNotifier());
         _jobRepository = new AlertJobRepository(_alertRepository, _context);
     }
 

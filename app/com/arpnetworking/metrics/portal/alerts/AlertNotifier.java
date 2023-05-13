@@ -20,6 +20,18 @@ import models.internal.alerts.AlertEvaluationResult;
 
 import java.util.concurrent.CompletionStage;
 
+/**
+ * An interface that allows for the notification of alert triggers to external locations.
+ *
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
+ */
 public interface AlertNotifier {
-    CompletionStage<Void> notify(final Alert alert, final AlertEvaluationResult result);
+    /**
+     * Notify the external location of the alert trigger.
+     *
+     * @param alert source alert
+     * @param result details of the alert execution
+     * @return Void completion stage
+     */
+    CompletionStage<Void> notify(Alert alert, AlertEvaluationResult result);
 }

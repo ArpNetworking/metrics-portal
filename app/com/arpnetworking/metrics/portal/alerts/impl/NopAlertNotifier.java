@@ -22,6 +22,11 @@ import models.internal.alerts.AlertEvaluationResult;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * An {@link AlertNotifier} that does nothing.
+ *
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
+ */
 public class NopAlertNotifier implements AlertNotifier {
     @Override
     public CompletionStage<Void> notify(final Alert alert, final AlertEvaluationResult result) {

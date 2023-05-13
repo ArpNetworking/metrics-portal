@@ -36,7 +36,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-public class SlackAlertNotifier implements AlertNotifier {
+/**
+ * An {@link AlertNotifier} that sends messages to Slack.
+ *
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
+ */
+public final class SlackAlertNotifier implements AlertNotifier {
     private SlackAlertNotifier(final Builder builder) {
         _apiKey = builder._apiKey;
         _messagePostUrl = builder._messagePostUrl;
@@ -50,25 +55,25 @@ public class SlackAlertNotifier implements AlertNotifier {
         final String channelId = Optional.ofNullable(_channelIdMap.get(alert.getName())).orElse(_defaultChannelId);
         final StringBuilder message = new StringBuilder();
         message.append(String.format(
-                "%s is in alarm\n\n" +
-                "%s\n\n" +
-                "from %s to %s.\n\n",
+                "%s is in alarm%n%n"
+                        + "%s%n%n"
+                        + "from %s to %s.%n%n",
                 alert.getName(),
                 alert.getDescription(),
                 DateTimeFormatter.RFC_1123_DATE_TIME.format(result.getQueryStartTime().atZone(ZoneOffset.UTC)),
                 DateTimeFormatter.RFC_1123_DATE_TIME.format(result.getQueryEndTime().atZone(ZoneOffset.UTC))
                 ));
 
-        message.append("Firing tags:\n");
-        message.append("----------------\n");
+        message.append("Firing tags:%n");
+        message.append("----------------%n");
         for (final ImmutableMap<String, String> tag : result.getFiringTags()) {
             for (final Map.Entry<String, String> entry : tag.entrySet()) {
                 message.append(String.format(
-                        "%s: %s\n",
+                        "%s: %s%n%n",
                         entry.getKey(),
                         entry.getValue()));
             }
-            message.append("----------------\n");
+            message.append("----------------%n");
         }
 
         final ObjectNode object = Json.newObject()
@@ -97,6 +102,9 @@ public class SlackAlertNotifier implements AlertNotifier {
     private final String _defaultChannelId;
     private final Map<String, String> _channelIdMap;
 
+    /**
+     * Builder for instances of {@link SlackAlertNotifier}.
+     */
     public static class Builder extends OvalBuilder<SlackAlertNotifier> {
         /**
          * Public constructor.
