@@ -399,8 +399,7 @@ public class MainModule extends AbstractModule {
             final Injector injector,
             final Environment environment) {
         final Config notifierConfig = configuration.getConfig("alerting.notifier");
-        final AlertNotifier notifier = ConfigurationHelper.toInstance(injector, environment, notifierConfig);
-        return notifier;
+        return ConfigurationHelper.toInstanceMapped(AlertNotifier.class, mapper, notifierConfig);
 
     }
 

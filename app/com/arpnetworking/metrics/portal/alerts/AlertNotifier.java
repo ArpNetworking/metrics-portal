@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.alerts;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 
@@ -25,6 +26,10 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.CLASS,
+        property = "type"
+)
 public interface AlertNotifier {
     /**
      * Notify the external location of the alert trigger.
