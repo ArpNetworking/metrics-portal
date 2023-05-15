@@ -64,8 +64,8 @@ public final class SlackAlertNotifier implements AlertNotifier {
                 DateTimeFormatter.RFC_1123_DATE_TIME.format(result.getQueryEndTime().atZone(ZoneOffset.UTC))
                 ));
 
-        message.append("Firing tags:%n");
-        message.append("----------------%n");
+        message.append(String.format("Firing tags:%n"));
+        message.append(String.format("----------------%n"));
         for (final ImmutableMap<String, String> tag : result.getFiringTags()) {
             for (final Map.Entry<String, String> entry : tag.entrySet()) {
                 message.append(String.format(
@@ -73,7 +73,7 @@ public final class SlackAlertNotifier implements AlertNotifier {
                         entry.getKey(),
                         entry.getValue()));
             }
-            message.append("----------------%n");
+            message.append(String.format("----------------%n"));
         }
 
         final ObjectNode object = Json.newObject()
