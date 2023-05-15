@@ -159,21 +159,30 @@ public final class SlackAlertNotifier implements AlertNotifier {
             return this;
         }
 
-        @NotNull
-        @NotEmpty
+        /**
+         * Sets the {@link WSClient} to use. Required. Cannot be null.
+         *
+         * @param wsClient the {@link WSClient}
+         * @return This instance of {@code Builder} for chaining.
+         */
+        public Builder setWSClient(final WSClient wsClient) {
+            _wsClient = wsClient;
+            return this;
+        }
+
+        @NotNull(message = "Must have an API key")
+        @NotEmpty(message = "API key must not be empty")
         private String _apiKey;
-        @NotNull
-        @NotEmpty
+        @NotNull(message = "Must have a message post URL")
+        @NotEmpty(message = "Message post URL must not be empty")
         private String _messagePostUrl;
         @NotNull
         @JacksonInject
         private WSClient _wsClient;
-
-        @NotNull
-        @NotEmpty
+        @NotNull(message = "Must have a default channel id")
+        @NotEmpty(message = "Default channel id must not be empty")
         private String _defaultChannelId;
-
-        @NotNull
+        @NotNull(message = "Channel id map must not be null")
         private Map<String, String> _channelIdMap = Maps.newHashMap();
     }
 }

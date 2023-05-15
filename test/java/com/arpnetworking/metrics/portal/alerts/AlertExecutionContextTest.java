@@ -17,7 +17,6 @@
 package com.arpnetworking.metrics.portal.alerts;
 
 import com.arpnetworking.metrics.portal.TestBeanFactory;
-import com.arpnetworking.metrics.portal.alerts.impl.NopAlertNotifier;
 import com.arpnetworking.metrics.portal.alerts.scheduling.AlertExecutionContext;
 import com.arpnetworking.metrics.portal.query.QueryAlignment;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
@@ -65,6 +64,9 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.refEq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -90,6 +92,7 @@ public class AlertExecutionContextTest {
     private Schedule _schedule;
     private QueryExecutor _executor;
     private ObjectMapper _objectMapper;
+    private AlertNotifier _alertNotifier;
 
     // This is small because the futures here should never actually block.
     private static final long TEST_TIMEOUT_MS = 50;
@@ -115,11 +118,13 @@ public class AlertExecutionContextTest {
         _executor = Mockito.mock(QueryExecutor.class);
         when(_executor.queryWindow(any())).thenReturn(MINUTELY_ALIGNED_LOOKBACK);
         when(_executor.evaluationPeriodHint(any())).thenReturn(Optional.empty());
+        _alertNotifier = Mockito.mock(AlertNotifier.class);
+        when(_alertNotifier.notify(refEq(_alert), any())).thenReturn(CompletableFuture.completedFuture(null));
         _context = new AlertExecutionContext(
                 _schedule,
                 _executor,
                 Duration.ZERO,
-                new NopAlertNotifier()
+                _alertNotifier
         );
         _objectMapper = SerializationTestUtils.getApiObjectMapper();
     }
@@ -136,7 +141,7 @@ public class AlertExecutionContextTest {
                 _schedule,
                 _executor,
                 queryOffset,
-                new NopAlertNotifier()
+                _alertNotifier
         );
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
@@ -181,7 +186,7 @@ public class AlertExecutionContextTest {
                 _schedule,
                 _executor,
                 queryOffset,
-                new NopAlertNotifier()
+                _alertNotifier
         );
         final CompletableFuture<MetricsQueryResult> pendingResponse = new CompletableFuture<>();
         final ArgumentCaptor<BoundedMetricsQuery> captor = ArgumentCaptor.forClass(BoundedMetricsQuery.class);
@@ -331,6 +336,7 @@ public class AlertExecutionContextTest {
         assertThat(result.getSeriesName(), equalTo(TEST_METRIC));
         assertThat(result.getFiringTags(), is(ImmutableList.of(ImmutableMap.of())));
         assertThat(result.getGroupBys(), equalTo(ImmutableList.of()));
+        verify(_alertNotifier, times(1)).notify(refEq(_alert), refEq(result));
     }
 
     @Test
