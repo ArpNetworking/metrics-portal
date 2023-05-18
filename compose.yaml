@@ -1,0 +1,10 @@
+services:
+  mportal:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_FILE=-Dconfig.resource=dev.conf
+    command: ["/opt/metrics-portal/bin/metrics-portal", "-Dconfig.resource=dev.conf"]

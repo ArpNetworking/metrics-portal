@@ -16,10 +16,10 @@
 logLevel := Level.Info
 
 // The Typesafe repository
-resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 // The SBT Community repository
-resolvers += "SBT Community repository" at "http://dl.bintray.com/sbt/sbt-plugin-releases/"
+resolvers += "SBT Community repository" at "https://dl.bintray.com/sbt/sbt-plugin-releases/"
 
 addSbtPlugin("uk.co.josephearl" % "sbt-findbugs" % "2.5.0")
 

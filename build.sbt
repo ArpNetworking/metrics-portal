@@ -90,7 +90,7 @@ val appDependencies = Seq(
   "org.webjars" % "bootstrap" % "3.3.7",
   "org.webjars.npm" % "bootstrap-daterangepicker" % "2.1.17",
   "org.webjars.npm" % "d3" % "4.11.0",
-  "com.github.romix.akka" %% "akka-kryo-serialization" % "0.5.3-0.ss.1",
+  "io.altoo" %% "akka-kryo-serialization" % "1.0.0",
 
   // Needed for dev
   "org.iq80.leveldb"            % "leveldb"          % "0.9",
@@ -291,9 +291,6 @@ val main = (project in file(".")).enablePlugins(play.sbt.PlayJava, play.ebean.sb
 
   scalaVersion := "2.11.12",
   resolvers += Resolver.mavenLocal,
-
-  // Custom kryo repo for akka 2.5 compat
-  resolvers += Resolver.bintrayRepo("7thsense", "maven"),
 
   libraryDependencies ++= appDependencies,
 
