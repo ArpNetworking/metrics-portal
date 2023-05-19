@@ -90,8 +90,8 @@ import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
-import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -134,6 +134,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -258,9 +259,7 @@ public class MainModule extends AbstractModule {
         final Schedule defaultAlertSchedule = new UnboundedPeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
-                .setOverrunReporter(overrunPeriodCount -> {
-                    metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount);
-                })
+                .setOverrunReporter(overrunPeriodCount -> metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount))
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset, alertNotifier);
     }
@@ -367,8 +366,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private CodecRegistry provideCodecRegistry() {
-        final CodecRegistry registry = CodecRegistry.DEFAULT;
-        return registry;
+        return CodecRegistry.DEFAULT;
     }
 
     @Provides
@@ -450,7 +448,7 @@ public class MainModule extends AbstractModule {
                         Metric.Order.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
-        objectMapper.enable(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS);
+        objectMapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature());
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         objectMapper.registerModule(customModule);
@@ -828,6 +826,7 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
@@ -868,6 +867,7 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
@@ -916,6 +916,7 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             if (cluster.getSelfRoles().contains(ANTI_ENTROPY_ROLE)) {
@@ -960,6 +961,7 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             final int actorCount = _configuration.getInt("rollup.generator.count");

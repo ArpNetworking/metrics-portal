@@ -16,7 +16,7 @@
 package com.arpnetworking.metrics.portal.health;
 
 import akka.actor.ActorRef;
-import com.arpnetworking.commons.akka.BaseActorTest;
+import com.arpnetworking.notcommons.akka.BaseActorTest;
 import com.arpnetworking.utility.test.SimpleReplierActor;
 import org.junit.Before;
 import org.junit.Test;

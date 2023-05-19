@@ -43,6 +43,7 @@ import play.test.Helpers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -148,7 +149,7 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void testClampsAggregators() {
+    public void testClampsAggregators() throws ExecutionException, InterruptedException, TimeoutException {
         when(_mockConfig.getDuration(eq("kairosdb.proxy.minAggregationPeriod"))).thenReturn(Duration.ofMinutes(1));
         _controller = new KairosDbProxyController(
                 _mockConfig,
@@ -182,10 +183,7 @@ public class KairosDbProxyControllerTest {
         when(_mockKairosDbService.queryMetrics(any(), queryCaptor.capture())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()));
 
-        Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+        _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
 
 
         final MetricsQuery query = queryCaptor.getValue();
@@ -209,7 +207,7 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void testNoClampAggregatorWhenNoConfig() {
+    public void testNoClampAggregatorWhenNoConfig() throws ExecutionException, InterruptedException, TimeoutException {
         final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count")
@@ -236,10 +234,8 @@ public class KairosDbProxyControllerTest {
         when(_mockKairosDbService.queryMetrics(any(), queryCaptor.capture())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()));
 
-        Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+
+        _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
 
 
         final MetricsQuery query = queryCaptor.getValue();
