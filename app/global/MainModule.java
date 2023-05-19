@@ -90,7 +90,6 @@ import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
 import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
