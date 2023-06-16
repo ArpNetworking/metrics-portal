@@ -355,9 +355,11 @@ public final class MetricsQuery {
             return true;
         }
 
-        @ValidateWithMethod(methodName = "validateStart", parameterType = Instant.class, message = "Must set either start time or start relative time, but not both.")
+        @ValidateWithMethod(methodName = "validateStart", parameterType = Instant.class,
+                message = "Must set either start time or start relative time, but not both.")
         private Instant _startTime;
-        @ValidateWithMethod(methodName = "validateEnd", parameterType = Instant.class, message = "Must set either end time or end relative time, but not both.")
+        @ValidateWithMethod(methodName = "validateEnd", parameterType = Instant.class,
+                message = "Must set either end time or end relative time, but not both.")
         private Instant _endTime;
         private RelativeDateTime _startRelative;
         private RelativeDateTime _endRelative;
