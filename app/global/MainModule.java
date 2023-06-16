@@ -568,13 +568,20 @@ public class MainModule extends AbstractModule {
                     .map(QueryOrigin::valueOf)
                     .collect(ImmutableSet.toImmutableSet());
 
+        final EnumSet<QueryOrigin> rollupOrigins;
+        if (rollupEnabledOrigins.size() > 0) {
+            rollupOrigins = EnumSet.copyOf(rollupEnabledOrigins);
+        } else {
+            rollupOrigins = EnumSet.noneOf(QueryOrigin.class);
+        }
+
         return new KairosDbServiceImpl.Builder()
                 .setKairosDbClient(kairosDbClient)
                 .setMetricsFactory(metricsFactory)
                 .setExcludedTagNames(excludedTagNames)
                 .setMetricsQueryConfig(metricsQueryConfig)
                 .setRewrittenQueryConsumer(rewrittenQueryConsumer)
-                .setRollupEnabledOrigins(EnumSet.copyOf(rollupEnabledOrigins))
+                .setRollupEnabledOrigins(rollupOrigins)
                 .build();
     }
 
