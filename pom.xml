@@ -92,7 +92,7 @@
     <ebean.api.version>2.2.1</ebean.api.version>
     <flyway.core.version>4.2.0</flyway.core.version>
     <flyway.play.version>4.0.0</flyway.play.version>
-    <guava.version>23.6.1-jre</guava.version>
+    <guava.version>32.0.0-jre</guava.version>
     <guice.version>4.0</guice.version>
     <guice.assisted.version>4.1.0</guice.assisted.version>
     <hikaricp.version>2.7.9</hikaricp.version>
