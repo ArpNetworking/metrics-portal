@@ -28,7 +28,7 @@
   <packaging>play2</packaging>
   <name>Metrics Portal</name>
   <description>Web user interface for managing the metrics stack.</description>
-  <version>0.10.78-SNAPSHOT</version>
+  <version>0.10.79-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -131,7 +131,7 @@
     <jsonassert.version>1.5.0</jsonassert.version>
     <junit.version>4.12</junit.version>
     <mockito.version>2.23.4</mockito.version>
-    <thrift.version>0.14.0</thrift.version>
+    <thrift.version>0.18.1</thrift.version>
     <wiremock.version>2.19.0</wiremock.version>
 
     <!-- Additional Plugins -->
