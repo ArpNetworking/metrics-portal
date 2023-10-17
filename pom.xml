@@ -146,7 +146,6 @@
     <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
     <play.maven.plugin.version>1.0.0-rc5</play.maven.plugin.version>
     <sbt.compiler.plugin.version>1.0.0</sbt.compiler.plugin.version>
-    <sbtrun.maven.plugin.version>1.0.1</sbtrun.maven.plugin.version>
     <frontend.maven.plugin.version>1.14.0</frontend.maven.plugin.version>
 
     <!-- Scala -->
@@ -419,24 +418,6 @@
           -->
           <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror</javacOptions>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.google.code.sbtrun-maven-plugin</groupId>
-        <artifactId>sbtrun-maven-plugin</artifactId>
-        <version>${sbtrun.maven.plugin.version}</version>
-        <executions>
-          <execution>
-            <id>compile-assets</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <args>web-assets:assets</args>
-              <jvmArgs>-Dscala.version=${scala.version}</jvmArgs>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

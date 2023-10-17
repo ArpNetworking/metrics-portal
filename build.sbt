@@ -1,9 +1,6 @@
-import com.arpnetworking.sbt.typescript.Import.TypescriptKeys
-
 scalaVersion := "2.11.12"
 
 lazy val main = (project in file("."))
-  .enablePlugins(SbtWeb)
   .settings(
     libraryDependencies ++= Seq(
       "org.webjars" % "bean" % "1.0.14",
@@ -28,5 +25,5 @@ lazy val main = (project in file("."))
       "org.webjars.npm" % "moment-timezone" % "0.5.23"
     ),
     ivyLoggingLevel := UpdateLogging.Quiet,
-    target := baseDirectory.value / "target/sbt",
+    target := baseDirectory.value / "target/sbt"
   )
