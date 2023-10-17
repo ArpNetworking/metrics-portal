@@ -92,7 +92,8 @@ public abstract class BaseChromeTestSuite {
                                 "args", ImmutableMap.of(
                                         "no-sandbox", true,
                                         "headless", true,
-                                        "remote-debugging-port", 48928
+                                        "remote-debugging-port", 48928,
+                                        "remote-allow-origins", "*"
                                 ),
                                 "executor", ImmutableMap.of(
                                         "corePoolSize", 8,
