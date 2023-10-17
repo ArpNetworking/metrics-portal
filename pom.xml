@@ -320,8 +320,13 @@
             <goals>
               <goal>npm</goal>
             </goals>
-
-            <!-- optional: default phase is "generate-resources" -->
+            <phase>generate-resources</phase>
+          </execution>
+          <execution>
+            <id>gulp build</id>
+            <goals>
+              <goal>gulp</goal>
+            </goals>
             <phase>generate-resources</phase>
           </execution>
         </executions>
@@ -438,6 +443,21 @@
         <artifactId>build-helper-maven-plugin</artifactId>
         <version>${build.helper.maven.plugin.version}</version>
         <executions>
+          <execution>
+            <id>add-public-assets-to-resources</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>add-resource</goal>
+            </goals>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/public</directory>
+                  <targetPath>public</targetPath>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
           <execution>
             <id>add-web-assets-to-resources</id>
             <phase>generate-resources</phase>
