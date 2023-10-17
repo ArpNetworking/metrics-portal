@@ -3,8 +3,10 @@ var ts = require('gulp-typescript');
 
 var tsProject = ts.createProject('tsconfig.json');
 
-gulp.task('scripts', function() {
-    var tsResult = gulp.src("ap/assets/javascripts/**/*.ts") // or tsProject.src()
+gulp.task('default', function() {
+    console.log("We're starting...")
+    console.log("tsProject.config = ", tsProject.config);
+    var tsResult = tsProject.src()
         .pipe(tsProject());
 
     return tsResult.js.pipe(gulp.dest('target/sbt/web/public/main/javascripts'));
