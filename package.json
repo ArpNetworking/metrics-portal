@@ -9,10 +9,14 @@
     "@types/typeahead": "^0.11.31",
     "@types/underscore": "^1.8.4",
     "gulp": "^4.0.2",
+    "gulp-npm-dist": "^1.0.4",
     "gulp-typescript": "^6.0.0-alpha.1",
-    "moment": "^2.24.0"
+    "moment": "^2.24.0",
+    "requirejs": "^2.3.6"
   },
   "devDependencies": {
+    "del": "^7.1.0",
     "typescript": "^4.0.5"
-  }
+  },
+  "type": "module"
 }
