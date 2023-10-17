@@ -454,6 +454,9 @@
                 <resource>
                   <directory>${project.basedir}/public</directory>
                   <targetPath>public</targetPath>
+                  <excludes>
+                    <exclude>**/*.ts</exclude>
+                  </excludes>
                 </resource>
               </resources>
             </configuration>
