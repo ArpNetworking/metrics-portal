@@ -2,6 +2,8 @@ import gulp from 'gulp';
 import tscript from 'gulp-typescript';
 import {deleteAsync as del} from 'del';
 import npmDist from 'gulp-npm-dist';
+import rename from 'gulp-rename';
+
 
 const tsProject = tscript.createProject('tsconfig.json');
 
@@ -14,6 +16,10 @@ export function ts() {
 
 export function copy() {
     return gulp.src(npmDist(), {base:'./node_modules'})
+        .pipe(rename(function(path) {
+            path.dirname = path.dirname.replace(/\/dist/, '').replace(/\\dist/, '');
+            path.dirname = path.dirname.replace(/\/build/, '').replace(/\\build/, '');
+        }))
         .pipe(gulp.dest('target/sbt/web/public/main/lib'));
 }
 
