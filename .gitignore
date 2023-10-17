@@ -34,3 +34,5 @@ test-snapshots/
 # VSCode
 .vscode/
 .project
+
+node_modules/
