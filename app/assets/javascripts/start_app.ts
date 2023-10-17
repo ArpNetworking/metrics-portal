@@ -42,16 +42,16 @@ requirejs.config({
         'plugins/widget': '../lib/durandal/js/plugins/widget',
 
         'flotr2' : '../lib/flotr2/flotr2.amd',
-        'jquery' : '../lib/jquery/jquery.min',
+        'jquery' : '../lib/jquery.dist/jquery.min',
         'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
         'jqrangeslider' : '../lib/jQRangeSlider/jQAllRangeSliders-withRuler-min',
         'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
-        'knockout' : '../lib/knockout/knockout',
+        'knockout' : '../lib/knockout.build/knockout-latest',
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
-        'underscore' : '../lib/underscorejs/underscore-min', //Required by flotr2
-        'moment' : '../lib/moment/moment',
+        'underscore' : '../lib/underscore/amd/underscore', //Required by flotr2
+        'moment' : '../lib/moment.dist/moment',
         'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
         'datetimepicker' : '../lib/Eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
     },

@@ -6,8 +6,6 @@ import npmDist from 'gulp-npm-dist';
 const tsProject = tscript.createProject('tsconfig.json');
 
 export function ts() {
-    console.log("We're starting...")
-    console.log("tsProject.config = ", tsProject.config);
     var tsResult = tsProject.src()
         .pipe(tsProject());
 
