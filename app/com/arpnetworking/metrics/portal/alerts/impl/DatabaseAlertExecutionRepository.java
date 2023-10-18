@@ -113,7 +113,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 "portal",
                 "alert_executions",
                 partitionCreationOffset,
-                partitionCreationLookahead
+                partitionCreationLookahead,
+                _executor
         );
     }
 
