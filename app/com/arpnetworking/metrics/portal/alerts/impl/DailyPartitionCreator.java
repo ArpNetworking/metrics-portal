@@ -87,6 +87,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         this(ebeanServer, periodicMetrics, schema, table, scheduleOffset, lookahead, retainCount, Clock.systemUTC());
     }
 
+    // CHECKSTYLE.OFF: ParameterNumber
     /* package private */ DailyPartitionCreator(
             final EbeanServer ebeanServer,
             final PeriodicMetrics periodicMetrics,
@@ -113,6 +114,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         _partitionCache = Sets.newHashSet();
         _retainCount = retainCount;
     }
+    // CHECKSTYLE.ON: ParameterNumber
 
     /**
      * Create {@link Props} for this actor.
@@ -339,7 +341,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 stmt.execute();
             }
 
-            final List<SqlRow> partitionTables = _ebeanServer.createSqlQuery("SELECT name from information_schema where table_schema = ? and table_name LIKE ?")
+            final List<SqlRow> partitionTables = _ebeanServer
+                    .createSqlQuery("SELECT name from information_schema where table_schema = ? and table_name LIKE ?")
                     .setParameter(1, schema)
                     .setParameter(2, table + "_%")
                     .findList();

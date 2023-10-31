@@ -56,15 +56,19 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
 
         _actorSystem = ActorSystem.create();
         final PeriodicMetrics metricsMock = Mockito.mock(PeriodicMetrics.class);
+        final DatabaseAlertExecutionRepository.PartitionManager partitionManager =
+                new DatabaseAlertExecutionRepository.PartitionManager.Builder()
+                        .setOffset(scala.concurrent.duration.Duration.Zero())
+                        .setLookahead(5)
+                        .setRetainCount(25)
+                        .build();
 
         return new DatabaseAlertExecutionRepository(
                 server,
                 adminServer,
                 _actorSystem,
                 metricsMock,
-                Duration.ZERO,
-                5, // Arbitrary, but helps distinguish logs
-                25,
+                partitionManager,
                 Executors.newSingleThreadExecutor()
         );
     }
