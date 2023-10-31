@@ -101,6 +101,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final PeriodicMetrics periodicMetrics,
             final Duration partitionCreationOffset,
             final int partitionCreationLookahead,
+            final int retainCount,
             final Executor executor
     ) {
         _ebeanServer = portalServer;
@@ -113,7 +114,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 "portal",
                 "alert_executions",
                 partitionCreationOffset,
-                partitionCreationLookahead
+                partitionCreationLookahead,
+                retainCount
         );
     }
 
@@ -125,6 +127,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             builder._periodicMetrics,
             builder._partitionManager.getOffset(),
             builder._partitionManager.getLookahead(),
+            builder._partitionManager.getRetainCount(),
             builder._context
         );
     }
@@ -435,10 +438,12 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     static final class PartitionManager {
         private final Integer _lookahead;
         private final Duration _offset;
+        private final Integer _retainCount;
 
         private PartitionManager(final Builder builder) {
             _lookahead = builder._lookahead;
             _offset = Duration.of(builder._offset.length(), TimeAdapters.toChronoUnit(builder._offset.unit()));
+            _retainCount = builder._retainCount;
         }
 
         public Duration getOffset() {
@@ -449,9 +454,15 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             return _lookahead;
         }
 
+        public Integer getRetainCount() {
+            return _retainCount;
+        }
+
         static final class Builder extends OvalBuilder<PartitionManager> {
             @NotNull
             private Integer _lookahead = 7;
+            @NotNull
+            private Integer _retainCount = 30;
             @NotNull
             private scala.concurrent.duration.Duration _offset = FiniteDuration.apply(0, TimeUnit.SECONDS);
 
@@ -466,6 +477,16 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
              */
             public Builder setLookahead(final int lookahead) {
                 _lookahead = lookahead;
+                return this;
+            }
+
+            /**
+             * Set the number of retained partitions. Optional. Defaults to 30.
+             * @param retainCount The number of partitions to retain.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setRetainCount(final int retainCount) {
+                _retainCount = retainCount;
                 return this;
             }
 

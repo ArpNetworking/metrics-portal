@@ -31,6 +31,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.EbeanServer;
+import io.ebean.SqlRow;
 import io.ebean.Transaction;
 
 import java.sql.Connection;
@@ -43,10 +44,12 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.persistence.PersistenceException;
 
 /**
@@ -69,6 +72,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private final String _table;
     private final Clock _clock;
     private final Schedule _schedule;
+    private final int _retainCount;
     private Optional<Instant> _lastRun;
 
     private DailyPartitionCreator(
@@ -77,9 +81,10 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final String schema,
             final String table,
             final Duration scheduleOffset,
-            final int lookahead
+            final int lookahead,
+            final int retainCount
     ) {
-        this(ebeanServer, periodicMetrics, schema, table, scheduleOffset, lookahead, Clock.systemUTC());
+        this(ebeanServer, periodicMetrics, schema, table, scheduleOffset, lookahead, retainCount, Clock.systemUTC());
     }
 
     /* package private */ DailyPartitionCreator(
@@ -89,6 +94,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final String table,
             final Duration scheduleOffset,
             final int lookaheadDays,
+            final int retainCount,
             final Clock clock
     ) {
         _ebeanServer = ebeanServer;
@@ -105,6 +111,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         _table = table;
         _clock = clock;
         _partitionCache = Sets.newHashSet();
+        _retainCount = retainCount;
     }
 
     /**
@@ -116,6 +123,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param table The parent table name
      * @param scheduleOffset Execution offset from midnight
      * @param lookahead maximum number of partitions to create in advance
+     * @param retainCount number of partitions to retain
      * @return A new Props.
      */
     public static Props props(
@@ -124,7 +132,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             final String schema,
             final String table,
             final Duration scheduleOffset,
-            final int lookahead
+            final int lookahead,
+            final int retainCount
     ) {
         return Props.create(
                 DailyPartitionCreator.class,
@@ -134,7 +143,8 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                     schema,
                     table,
                     scheduleOffset,
-                    lookahead
+                    lookahead,
+                    retainCount
                 )
         );
     }
@@ -327,6 +337,28 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 stmt.setDate(3, java.sql.Date.valueOf(startDate));
                 stmt.setDate(4, java.sql.Date.valueOf(endDate));
                 stmt.execute();
+            }
+
+            final List<SqlRow> partitionTables = _ebeanServer.createSqlQuery("SELECT name from information_schema where table_schema = ? and table_name LIKE ?")
+                    .setParameter(1, schema)
+                    .setParameter(2, table + "_%")
+                    .findList();
+
+            if (partitionTables.size() > _retainCount) {
+                final List<String> toDelete = partitionTables.stream()
+                        .limit(partitionTables.size() - _retainCount)
+                        .map(row -> row.getString("table_name"))
+                        .collect(Collectors.toList());
+                for (final String tableToDelete : toDelete) {
+                    try (PreparedStatement deleteStmt = conn.prepareStatement("DROP TABLE IF EXISTS ?")) {
+                        deleteStmt.setString(1, tableToDelete);
+                        deleteStmt.execute();
+                        LOGGER.debug().setMessage("Deleted old partition table")
+                                .addData("tableName", tableToDelete)
+                                .log();
+                    }
+
+                }
             }
             tx.commit();
         } catch (final SQLException e) {
