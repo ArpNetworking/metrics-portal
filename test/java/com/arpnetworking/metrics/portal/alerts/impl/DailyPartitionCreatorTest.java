@@ -57,6 +57,7 @@ public class DailyPartitionCreatorTest {
     private static final String TEST_TABLE = "TEST_TABLE";
     private static final Duration MSG_TIMEOUT = Duration.ofSeconds(1);
     private static final long TEST_LOOKAHEAD = 7;
+    private static final int TEST_RETAIN_COUNT = 30;
 
     private static final Instant CLOCK_START = Instant.parse("2020-08-13T00:00:00Z");
 
@@ -96,6 +97,7 @@ public class DailyPartitionCreatorTest {
                         TEST_TABLE,
                         Duration.ZERO,
                         (int) TEST_LOOKAHEAD,
+                        TEST_RETAIN_COUNT,
                         _clock
                 ) {
                     @Override

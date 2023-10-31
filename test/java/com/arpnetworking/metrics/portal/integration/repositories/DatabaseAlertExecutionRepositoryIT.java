@@ -64,6 +64,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
                 metricsMock,
                 Duration.ZERO,
                 5, // Arbitrary, but helps distinguish logs
+                25,
                 Executors.newSingleThreadExecutor()
         );
     }
