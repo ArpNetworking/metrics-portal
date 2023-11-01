@@ -89,8 +89,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      * @param partitionServer Play's {@code EbeanServer} for partition creation.
      * @param actorSystem The actor system to use.
      * @param periodicMetrics A metrics instance to record against.
-     * @param partitionCreationOffset Daily offset for partition creation, e.g. 0 is midnight
-     * @param partitionCreationLookahead How many days of partitions to create
+     * @param partitionManager Partition creation configuration.
      * @param executor The executor to use for the DB operations
      */
     @Inject
@@ -99,8 +98,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             final EbeanServer partitionServer,
             final ActorSystem actorSystem,
             final PeriodicMetrics periodicMetrics,
-            final Duration partitionCreationOffset,
-            final int partitionCreationLookahead,
+            final PartitionManager partitionManager,
             final Executor executor
     ) {
         _ebeanServer = portalServer;
@@ -112,8 +110,9 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
                 periodicMetrics,
                 "portal",
                 "alert_executions",
-                partitionCreationOffset,
-                partitionCreationLookahead
+                partitionManager._offset,
+                partitionManager._lookahead,
+                partitionManager._retainCount
         );
     }
 
@@ -123,8 +122,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             builder._ddlServer,
             builder._actorSystem,
             builder._periodicMetrics,
-            builder._partitionManager.getOffset(),
-            builder._partitionManager.getLookahead(),
+            builder._partitionManager,
             builder._context
         );
     }
@@ -432,13 +430,18 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         }
     }
 
-    static final class PartitionManager {
+    /**
+     * Configuration for partition creation.
+     */
+    public static final class PartitionManager {
         private final Integer _lookahead;
         private final Duration _offset;
+        private final Integer _retainCount;
 
         private PartitionManager(final Builder builder) {
             _lookahead = builder._lookahead;
             _offset = Duration.of(builder._offset.length(), TimeAdapters.toChronoUnit(builder._offset.unit()));
+            _retainCount = builder._retainCount;
         }
 
         public Duration getOffset() {
@@ -449,13 +452,25 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             return _lookahead;
         }
 
-        static final class Builder extends OvalBuilder<PartitionManager> {
+        public Integer getRetainCount() {
+            return _retainCount;
+        }
+
+        /**
+         * Builder implementation for {@link PartitionManager}.
+         */
+        public static final class Builder extends OvalBuilder<PartitionManager> {
             @NotNull
             private Integer _lookahead = 7;
             @NotNull
+            private Integer _retainCount = 30;
+            @NotNull
             private scala.concurrent.duration.Duration _offset = FiniteDuration.apply(0, TimeUnit.SECONDS);
 
-            Builder() {
+            /**
+             * Public constructor.
+             */
+            public Builder() {
                 super(PartitionManager::new);
             }
 
@@ -470,12 +485,32 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
             }
 
             /**
+             * Set the number of retained partitions. Optional. Defaults to 30.
+             * @param retainCount The number of partitions to retain.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setRetainCount(final int retainCount) {
+                _retainCount = retainCount;
+                return this;
+            }
+
+            /**
              * Set the offset. Optional. Defaults to 0.
              * @param offset The offset.
              * @return This instance of {@code Builder} for chaining.
              */
             public Builder setOffset(final String offset) {
                 _offset = FiniteDuration.apply(offset);
+                return this;
+            }
+
+            /**
+             * Set the offset. Optional. Defaults to 0.
+             * @param offset The offset.
+             * @return This instance of {@code Builder} for chaining.
+             */
+            public Builder setOffset(final scala.concurrent.duration.Duration offset) {
+                _offset = offset;
                 return this;
             }
         }
