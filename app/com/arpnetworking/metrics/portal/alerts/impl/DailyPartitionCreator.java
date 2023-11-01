@@ -342,7 +342,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             }
 
             final List<SqlRow> partitionTables = _ebeanServer
-                    .createSqlQuery("SELECT name from information_schema where table_schema = ? and table_name LIKE ?")
+                    .createSqlQuery("SELECT name from information_schema.tables where table_schema = ? and table_name LIKE ?")
                     .setParameter(1, schema)
                     .setParameter(2, table + "_%")
                     .findList();
@@ -354,7 +354,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                         .collect(Collectors.toList());
                 for (final String tableToDelete : toDelete) {
                     try (PreparedStatement deleteStmt = conn.prepareStatement("DROP TABLE IF EXISTS ?")) {
-                        deleteStmt.setString(1, tableToDelete);
+                        deleteStmt.setString(1, schema + "." + tableToDelete);
                         deleteStmt.execute();
                         LOGGER.debug().setMessage("Deleted old partition table")
                                 .addData("tableName", tableToDelete)
