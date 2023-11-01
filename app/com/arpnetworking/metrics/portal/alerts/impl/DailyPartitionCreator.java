@@ -342,7 +342,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             }
 
             final List<SqlRow> partitionTables = _ebeanServer
-                    .createSqlQuery("SELECT name from information_schema.tables where table_schema = ? and table_name LIKE ?")
+                    .createSqlQuery("SELECT table_name from information_schema.tables where table_schema = ? and table_name LIKE ?")
                     .setParameter(1, schema)
                     .setParameter(2, table + "_%")
                     .findList();
