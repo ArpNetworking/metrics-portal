@@ -39,6 +39,9 @@ import models.internal.Organization;
 import models.internal.alerts.Alert;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
+import net.sf.oval.constraint.Assert;
+import net.sf.oval.constraint.CheckWith;
+import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -461,8 +464,13 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
          */
         public static final class Builder extends OvalBuilder<PartitionManager> {
             @NotNull
+            @Min(0)
             private Integer _lookahead = 7;
             @NotNull
+            @Assert(expr = "_this._retainCount > _this._lookahead",
+                    lang = "java",
+                    message = "retainCount must be greater than lookahead")
+            @Min(1)
             private Integer _retainCount = 30;
             @NotNull
             private scala.concurrent.duration.Duration _offset = FiniteDuration.apply(0, TimeUnit.SECONDS);

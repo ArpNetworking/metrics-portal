@@ -37,6 +37,7 @@ import io.ebean.Transaction;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -354,14 +355,13 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                         .map(row -> row.getString("table_name"))
                         .collect(Collectors.toList());
                 for (final String tableToDelete : toDelete) {
-                    try (PreparedStatement deleteStmt = conn.prepareStatement("DROP TABLE IF EXISTS ?")) {
-                        deleteStmt.setString(1, schema + "." + tableToDelete);
-                        deleteStmt.execute();
+                    try (final Statement deleteStmt = conn.createStatement()) {
+                        deleteStmt.execute(String.format("DROP TABLE IF EXISTS \"%s\".\"%s\"", schema, tableToDelete));
                         LOGGER.debug().setMessage("Deleted old partition table")
+                                .addData("schema", schema)
                                 .addData("tableName", tableToDelete)
                                 .log();
                     }
-
                 }
             }
             tx.commit();

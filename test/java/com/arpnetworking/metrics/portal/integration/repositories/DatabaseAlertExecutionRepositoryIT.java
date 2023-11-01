@@ -29,6 +29,9 @@ import io.ebean.EbeanServer;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
+import net.sf.oval.exception.ConstraintsViolatedException;
+import org.junit.Assert;
+import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
@@ -81,6 +84,34 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
         final Optional<models.ebean.Organization> org = models.ebean.Organization.findByOrganization(server, organization);
         if (!org.isPresent()) {
             throw new IllegalStateException("organization not found: " + organization);
+        }
+    }
+
+    @Test
+    public void testPartitionManagerBuilder() {
+        DatabaseAlertExecutionRepository.PartitionManager pm;
+        pm = new DatabaseAlertExecutionRepository.PartitionManager.Builder()
+                .build();
+        Assert.assertNotNull(pm);
+
+        pm = new DatabaseAlertExecutionRepository.PartitionManager.Builder()
+                .setLookahead(7)
+                .build();
+        Assert.assertNotNull(pm);
+
+        pm = new DatabaseAlertExecutionRepository.PartitionManager.Builder()
+                .setLookahead(7)
+                .setRetainCount(30)
+                .build();
+        Assert.assertNotNull(pm);
+
+        try {
+            pm = new DatabaseAlertExecutionRepository.PartitionManager.Builder()
+                    .setLookahead(7)
+                    .setRetainCount(3)
+                    .build();
+            Assert.fail("Expected exception");
+        } catch (final ConstraintsViolatedException ignored) {
         }
     }
 
