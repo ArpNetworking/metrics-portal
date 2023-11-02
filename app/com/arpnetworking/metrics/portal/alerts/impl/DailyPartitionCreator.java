@@ -355,7 +355,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                         .map(row -> row.getString("table_name"))
                         .collect(Collectors.toList());
                 for (final String tableToDelete : toDelete) {
-                    try (final Statement deleteStmt = conn.createStatement()) {
+                    try (Statement deleteStmt = conn.createStatement()) {
                         deleteStmt.execute(String.format("DROP TABLE IF EXISTS \"%s\".\"%s\"", schema, tableToDelete));
                         LOGGER.debug().setMessage("Deleted old partition table")
                                 .addData("schema", schema)
