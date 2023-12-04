@@ -43,6 +43,7 @@ import net.sf.oval.constraint.CheckWith;
 import net.sf.oval.constraint.CheckWithCheck;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
+import net.sf.oval.context.OValContext;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Duration;
@@ -522,7 +523,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
 
             private static final class RetainMoreThanLookahead implements CheckWithCheck.SimpleCheck {
                 @Override
-                public boolean isSatisfied(final Object obj, final Object val) {
+                public boolean isSatisfied(final Object obj, final Object val, final OValContext context, final net.sf.oval.Validator validator) {
                     if (obj instanceof Builder) {
                         final Builder builder = (Builder) obj;
                         return builder._retainCount >= builder._lookahead;
