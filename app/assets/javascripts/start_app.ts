@@ -56,6 +56,7 @@ requirejs.config({
         'moment' : '../lib/moment/moment',
         'moment-timezone' : '../lib/moment-timezones/moment-timezone-with-data.min',
         'datetimepicker' : '../lib/eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
+        // '@popperjs/core': '../lib/@popperjs/core/core' //Required by bootstrap
     },
     map : {
         '*': {
@@ -79,6 +80,9 @@ requirejs.config({
         },
         'typeahead' : {
             deps : [ 'jquery']
+        },
+        'datetimepicker' : {
+            deps: ['moment']
         }
     }
 });
