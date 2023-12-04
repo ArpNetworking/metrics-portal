@@ -18,7 +18,7 @@ export function copy() {
     return gulp.src(npmDist(), {base:'./node_modules'})
         .pipe(rename(function(path) {
             path.dirname = path.dirname.replace(/\/dist/, '').replace(/\\dist/, '');
-            path.dirname = path.dirname.replace(/\/build/, '').replace(/\\build/, '');
+        //     path.dirname = path.dirname.replace(/\/build/, '').replace(/\\build/, '');
         }))
         .pipe(gulp.dest('target/sbt/web/public/main/lib'));
 }
