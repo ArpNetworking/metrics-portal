@@ -36,3 +36,4 @@ test-snapshots/
 .project
 
 node_modules/
+node/

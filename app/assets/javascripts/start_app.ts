@@ -43,17 +43,24 @@ requirejs.config({
 
         'flotr2' : '../lib/flotr2/flotr2.amd',
         'jquery' : '../lib/jquery/jquery.min',
-        'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
-        'jqrangeslider' : '../lib/jQRangeSlider/jQAllRangeSliders-withRuler-min',
+        'jquery.ui' : '../lib/jquery-ui-dist/jquery-ui.min',
+        // 'jqrangeslider' : '../lib/jqrangeslider/jQAllRangeSliders-withRuler-min',
+        'jqrangeslider' : '../lib/jqrangeslider/jQRangeSlider',
         'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
-        'knockout' : '../lib/knockout/knockout',
+        // 'knockout' : '../lib/knockout/output/knockout-latest',
+        'knockout' : '../lib/knockout/build/output/knockout-latest',
+
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '../lib/requirejs-text/text', //Required by durandal
-        'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
-        'underscore' : '../lib/underscorejs/underscore-min', //Required by flotr2
+        'typeahead' : '../lib/typeahead.js/typeahead.bundle.min',
+        // 'underscore' : '../lib/underscore/amd/underscore', //Required by flotr2
+        'underscore' : '../lib/underscore/underscore', //Required by flotr2
+        '_setup': '../lib/underscore/amd/_setup',
         'moment' : '../lib/moment/moment',
-        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
-        'datetimepicker' : '../lib/Eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
+        // 'moment-timezone' : '../lib/moment-timezones/moment-timezone-with-data.min',
+        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data.min',
+        'datetimepicker' : '../lib/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min',
+        // '@popperjs/core': '../lib/@popperjs/core/core' //Required by bootstrap
     },
     map : {
         '*': {
@@ -77,6 +84,9 @@ requirejs.config({
         },
         'typeahead' : {
             deps : [ 'jquery']
+        },
+        'datetimepicker' : {
+            deps: ['moment']
         }
     }
 });
