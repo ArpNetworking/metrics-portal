@@ -51,8 +51,9 @@ requirejs.config({
         'text' : '../lib/requirejs-text/text', //Required by durandal
         'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
         'underscore' : '../lib/underscore/amd/underscore', //Required by flotr2
+        '_setup': '../lib/underscore/amd/_setup',
         'moment' : '../lib/moment/moment',
-        'moment-timezone' : '../lib/moment-timezone/builds/moment-timezone-with-data',
+        'moment-timezone' : '../lib/moment-timezones/moment-timezone-with-data.min',
         'datetimepicker' : '../lib/eonasdan-bootstrap-datetimepicker/js/bootstrap-datetimepicker.min',
     },
     map : {
