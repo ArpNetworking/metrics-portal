@@ -49,7 +49,7 @@ requirejs.config({
         'knockout' : '../lib/knockout/output/knockout-latest',
         'knockout-fast-foreach' : 'knockout-fast-foreach.min',
         'text' : '../lib/requirejs-text/text', //Required by durandal
-        'typeahead' : '../lib/typeaheadjs/typeahead.bundle',
+        'typeahead' : '../lib/typeahead.js/typeahead.bundle.min',
         'underscore' : '../lib/underscore/amd/underscore', //Required by flotr2
         '_setup': '../lib/underscore/amd/_setup',
         'moment' : '../lib/moment/moment',
