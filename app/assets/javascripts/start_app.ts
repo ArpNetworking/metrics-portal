@@ -43,8 +43,7 @@ requirejs.config({
 
         'flotr2' : '../lib/flotr2/flotr2.amd',
         'jquery' : '../lib/jquery/jquery.min',
-        // 'jquery.ui' : '../lib/jquery-ui/jquery-ui.min',
-        'jquery.ui' : '../lib/jquery-ui/build/release',
+        'jquery.ui' : '../lib/jquery-ui-dist/jquery-ui.min',
         // 'jqrangeslider' : '../lib/jqrangeslider/jQAllRangeSliders-withRuler-min',
         'jqrangeslider' : '../lib/jqrangeslider/jQRangeSlider',
         'jwt_decode' : '../lib/github-com-auth0-jwt-decode/jwt-decode',
