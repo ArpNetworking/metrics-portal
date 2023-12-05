@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.integration.test;
 
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.google.common.collect.Maps;
 import com.zaxxer.hikari.HikariConfig;
@@ -23,6 +25,8 @@ import io.ebean.EbeanServer;
 import io.ebean.EbeanServerFactory;
 import io.ebean.config.ServerConfig;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 import java.util.Map;
 import java.util.UUID;
@@ -36,12 +40,19 @@ import javax.annotation.Nullable;
  */
 public final class EbeanServerHelper {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(EbeanServerHelper.class);
+
     /**
      * Obtain a reference to the shared Metrics database {@code EbeanServer}.
      *
      * @return reference to the shared Metrics database {@code EbeanServer}
      */
     public static synchronized EbeanServer getMetricsDatabase() {
+        LOGGER.info().setMessage("Getting ebean server for metrics db")
+                .addData("databaseName", METRICS_DATABASE_NAME)
+                .addData("serverMap", EBEAN_SERVER_MAP)
+                .addData("pid", ProcessHandle.current().pid())
+                .log();
         @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_DATABASE_NAME);
         if (ebeanServer == null) {
             // TODO(ville): It should not be necessary to register this as the default database.
@@ -55,6 +66,7 @@ public final class EbeanServerHelper {
                     METRICS_DATABASE_PASSWORD,
                     DEFAULT_POOL_SIZE,
                     true);
+            EBEAN_SERVER_MAP.put(METRICS_DATABASE_NAME, ebeanServer);
             migrateServer(
                     getEnvOrDefault("PG_HOST", "localhost"),
                     getEnvOrDefault("PG_PORT", DEFAULT_POSTGRES_PORT, Integer::parseInt),
@@ -62,8 +74,19 @@ public final class EbeanServerHelper {
                     METRICS_DATABASE_ADMIN_USERNAME,
                     METRICS_DATABASE_ADMIN_PASSWORD);
 
-            EBEAN_SERVER_MAP.put(METRICS_DATABASE_NAME, ebeanServer);
+            LOGGER.info().setMessage("Added connection to metrics db pool")
+                    .addData("databaseName", METRICS_DATABASE_NAME)
+                    .addData("serverMap", EBEAN_SERVER_MAP)
+                    .addData("pid", ProcessHandle.current().pid())
+                    .log();
+        } else {
+            LOGGER.info().setMessage("Found existing metrics connection in db pool")
+                    .addData("databaseName", METRICS_DATABASE_NAME)
+                    .addData("serverMap", EBEAN_SERVER_MAP)
+                    .addData("pid", ProcessHandle.current().pid())
+                    .log();
         }
+
         return ebeanServer;
     }
 
@@ -123,12 +146,14 @@ public final class EbeanServerHelper {
             final String database,
             final String username,
             final String password) {
-        final Flyway flyway = new Flyway();
-        flyway.setDataSource(createJdbcUrl(hostname, port, database), username, password);
-        flyway.setSchemas("portal");
-        flyway.setValidateOnMigrate(true);
-        flyway.setEncoding("UTF-8");
-        flyway.setLocations("db/migration/metrics_portal_ddl");
+        final Configuration config = new FluentConfiguration()
+                .dataSource(createJdbcUrl(hostname, port, database), username, password)
+                .schemas("portal")
+                .validateOnMigrate(true)
+                .encoding("UTF-8")
+                .locations("db/migration/metrics_portal_ddl");
+
+        final Flyway flyway = new Flyway(config);
         flyway.migrate();
     }
 

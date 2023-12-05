@@ -21,13 +21,15 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.cluster.Cluster;
 import akka.cluster.MemberStatus;
-import akka.pattern.PatternsCS;
-import akka.remote.AssociationErrorEvent;
+import akka.pattern.Patterns;
+import akka.remote.artery.ThisActorSystemQuarantinedEvent;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.view.StatusResponse;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import javax.annotation.Nullable;
 
 /**
  * Periodically polls the cluster status and caches the result.
@@ -35,9 +37,6 @@ import java.util.function.Function;
  * Accepts the following messages:
  *     {@link StatusRequest}: Replies with a StatusResponse message containing the service status data
  *     {@link HealthRequest}: Replies with a boolean value, true indicating healthy, false indicating unhealthy
- *
- * Internal-only messages:
- *     {@link AssociationErrorEvent}: Evaluates the possibility of the node being quarantined
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
@@ -48,13 +47,14 @@ public class StatusActor extends AbstractActor {
      * @param cluster The instance of the Clustering extension.
      * @param clusterStatusCache The actor holding the cached cluster status.
      */
+    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     public StatusActor(
             final Cluster cluster,
             final ActorRef clusterStatusCache) {
 
         _cluster = cluster;
         _clusterStatusCache = clusterStatusCache;
-        context().system().eventStream().subscribe(self(), AssociationErrorEvent.class);
+        getContext().system().eventStream().subscribe(getSelf(), ThisActorSystemQuarantinedEvent.class);
     }
 
     /**
@@ -75,10 +75,8 @@ public class StatusActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(StatusRequest.class, message -> processStatusRequest())
-                .match(AssociationErrorEvent.class, error -> {
-                    if (error.cause().getMessage().contains("quarantined this system")) {
-                        _quarantined = true;
-                    }
+                .match(ThisActorSystemQuarantinedEvent.class, event -> {
+                    _quarantined = true;
                 })
                 .match(HealthRequest.class, message -> {
                     final boolean healthy = _cluster.readView().self().status() == MemberStatus.up() && !_quarantined;
@@ -90,7 +88,7 @@ public class StatusActor extends AbstractActor {
     private void processStatusRequest() {
         // Call the bookkeeper
         final CompletableFuture<ClusterStatusCacheActor.StatusResponse> clusterStateFuture =
-                PatternsCS.ask(
+                Patterns.ask(
                         _clusterStatusCache,
                         new ClusterStatusCacheActor.GetRequest(),
                         Duration.ofSeconds(3))
@@ -98,7 +96,7 @@ public class StatusActor extends AbstractActor {
                 .exceptionally(new AsNullRecovery<>())
                 .toCompletableFuture();
 
-        PatternsCS.pipe(
+        Patterns.pipe(
                 clusterStateFuture.toCompletableFuture()
                         .thenApply(statusResponse -> new StatusResponse.Builder()
                                 .setClusterState(statusResponse)
@@ -108,13 +106,13 @@ public class StatusActor extends AbstractActor {
                 .to(sender(), self());
     }
 
-    private boolean _quarantined = false;
-
     private final Cluster _cluster;
     private final ActorRef _clusterStatusCache;
+    private boolean _quarantined;
 
     private static class AsNullRecovery<T> implements Function<Throwable, T> {
         @Override
+        @Nullable
         public T apply(final Throwable failure) {
             return null;
         }

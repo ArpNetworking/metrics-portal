@@ -39,6 +39,7 @@ import models.view.Pagination;
 import play.libs.Json;
 import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.time.Instant;
@@ -84,6 +85,7 @@ public class AlertController extends Controller {
     private final AlertExecutionRepository _executionRepository;
     private final OrganizationRepository _organizationRepository;
     private final PeriodicMetrics _periodicMetrics;
+    private final ProblemHelper _problemHelper;
 
     /**
      * Public constructor.
@@ -94,6 +96,7 @@ public class AlertController extends Controller {
      * @param organizationRepository Repository for organizations.
      * @param periodicMetrics Metrics instance for instrumentation.
      * @param httpContext The current context of execution.
+     * @param problemHelper The ProblemHelper to render errors.
      */
     @Inject
     public AlertController(
@@ -102,7 +105,8 @@ public class AlertController extends Controller {
             final AlertExecutionRepository executionRepository,
             final OrganizationRepository organizationRepository,
             final PeriodicMetrics periodicMetrics,
-            final HttpExecutionContext httpContext
+            final HttpExecutionContext httpContext,
+            final ProblemHelper problemHelper
     ) {
         _alertRepository = alertRepository;
         _executionRepository = executionRepository;
@@ -121,18 +125,20 @@ public class AlertController extends Controller {
             _executionsLookbackDays = DEFAULT_EXECUTIONS_LOOKBACK_DAYS;
         }
         _periodicMetrics = periodicMetrics;
+        _problemHelper = problemHelper;
     }
 
     /**
      * Get a specific alert.
      *
      * @param id The identifier of the alert.
+     * @param request Http.Request being handled.
      * @return The alert, if any, otherwise notFound.
      */
-    public CompletionStage<Result> get(final UUID id) {
+    public CompletionStage<Result> get(final UUID id, final Http.Request request) {
         final Organization organization;
         try {
-            organization = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request);
         } catch (final NoSuchElementException e) {
             return CompletableFuture.completedFuture(internalServerError());
         }
@@ -140,9 +146,10 @@ public class AlertController extends Controller {
         return alert
                 .map(a -> fromInternal(a, organization).thenApplyAsync(viewAlert -> ok(Json.toJson(viewAlert)),
                         _httpContext.current()))
-                .orElseGet(() -> CompletableFuture.completedFuture(notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                .orElseGet(() -> CompletableFuture.completedFuture(notFound(_problemHelper.createErrorJson(new Problem.Builder()
                         .setProblemCode("alert_problem.NOT_FOUND")
-                        .build()
+                        .build(),
+                        request.transientLang()
                 ))));
     }
 
@@ -151,15 +158,17 @@ public class AlertController extends Controller {
      *
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
+     * @param request Http.Request being handled.
      * @return {@link Result} paginated matching alerts.
      */
     public CompletionStage<Result> query(
             @Nullable final Integer limit,
-            @Nullable final Integer offset
-    ) {
+            @Nullable final Integer offset,
+            final Http.Request request
+            ) {
         final Organization organization;
         try {
-            organization = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request);
         } catch (final NoSuchElementException e) {
             return CompletableFuture.completedFuture(internalServerError());
         }
@@ -193,7 +202,7 @@ public class AlertController extends Controller {
             ok(Json.toJson(new PagedContainer<>(
                     alerts,
                     new Pagination(
-                            request().path(),
+                            request.path(),
                             queryResult.total(),
                             queryResult.values().size(),
                             argLimit,

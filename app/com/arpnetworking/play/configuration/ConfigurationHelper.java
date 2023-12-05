@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.play.configuration;
 
-import com.arpnetworking.commons.java.time.TimeAdapters;
+import com.arpnetworking.notcommons.java.time.TimeAdapters;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.arpnetworking.utility.ConfigurationOverrideModule;

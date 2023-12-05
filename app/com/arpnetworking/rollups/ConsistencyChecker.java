@@ -152,7 +152,7 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     public void preStart() throws Exception {
         super.preStart();
         getSelf().tell(TICK, getSelf());
-        getTimers().startPeriodicTimer("PERIODIC_TICK", TICK, TICK_INTERVAL);
+        getTimers().startTimerAtFixedRate("PERIODIC_TICK", TICK, TICK_INTERVAL);
     }
 
     private Task dequeueWork() {

@@ -96,7 +96,7 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
                     } catch (final InterruptedException | ExecutionException e) {
                         throw new CompletionException(e);
                     }
-                    final boolean ready = (html instanceof String) && !((String) html).isEmpty();
+                    final boolean ready = html instanceof String && !((String) html).isEmpty();
                     LOGGER.debug()
                             .setMessage("checked for readiness")
                             .addData("source", source)

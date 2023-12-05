@@ -18,10 +18,10 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.testkit.javadsl.TestKit;
-import com.arpnetworking.commons.akka.JacksonSerializer;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
+import com.arpnetworking.notcommons.akka.JacksonSerializer;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -76,10 +76,10 @@ public class CachingAlertExecutionRepositoryTest {
                 ImmutableMap.of(
                         "akka.actor.serialize-messages", "on",
                         "akka.actor.serializers", ImmutableMap.of(
-                                "jackson-json", "com.arpnetworking.commons.akka.JacksonSerializer"
+                                "jackson-json", "com.arpnetworking.notcommons.akka.JacksonSerializer"
                         ),
                         "akka.actor.serialization-bindings", ImmutableMap.of(
-                                "\"com.arpnetworking.commons.akka.AkkaJsonSerializable\"", "jackson-json"
+                                "\"com.arpnetworking.notcommons.akka.AkkaJsonSerializable\"", "jackson-json"
                         ),
                         "akka.persistence.journal", ImmutableMap.of(
                                 "plugin", "akka.persistence.journal.inmem",

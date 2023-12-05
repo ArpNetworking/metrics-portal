@@ -27,7 +27,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -56,7 +55,7 @@ public final class RollupManager extends AbstractActorWithTimers {
 
     private static final Object RECORD_METRICS_MSG = new Object();
     private static final String METRICS_TIMER = "metrics_timer";
-    private static final FiniteDuration METRICS_INTERVAL = FiniteDuration.apply(1, TimeUnit.SECONDS);
+    private static final Duration METRICS_INTERVAL = Duration.ofSeconds(1);
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupManager.class);
     private static final Random RANDOM = new Random();
     private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(1);
@@ -101,7 +100,7 @@ public final class RollupManager extends AbstractActorWithTimers {
         _consistencyChecker = consistencyChecker;
         _consistencyCheckFractionOfWrites = consistencyCheckFractionOfWrites;
         _rollupDefinitions = new TreeSet<>(new RollupComparator());
-        getTimers().startPeriodicTimer(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
+        getTimers().startTimerAtFixedRate(METRICS_TIMER, RECORD_METRICS_MSG, METRICS_INTERVAL);
     }
 
     @Override

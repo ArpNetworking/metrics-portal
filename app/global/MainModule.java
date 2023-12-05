@@ -29,14 +29,9 @@ import akka.cluster.singleton.ClusterSingletonManagerSettings;
 import akka.cluster.singleton.ClusterSingletonProxy;
 import akka.cluster.singleton.ClusterSingletonProxySettings;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
-import com.arpnetworking.commons.akka.JacksonSerializer;
-import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.arpnetworking.commons.jackson.databind.module.akka.AkkaModule;
-import com.arpnetworking.commons.java.time.TimeAdapters;
-import com.arpnetworking.commons.tagger.Tagger;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -80,6 +75,11 @@ import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
+import com.arpnetworking.notcommons.akka.JacksonSerializer;
+import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.notcommons.jackson.databind.module.akka.AkkaModule;
+import com.arpnetworking.notcommons.java.time.TimeAdapters;
+import com.arpnetworking.notcommons.tagger.Tagger;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.rollups.MetricsDiscovery;
@@ -89,9 +89,8 @@ import com.arpnetworking.rollups.RollupGenerator;
 import com.arpnetworking.rollups.RollupManager;
 import com.arpnetworking.rollups.RollupPartitioner;
 import com.arpnetworking.utility.ConfigTypedProvider;
-import com.datastax.driver.core.CodecRegistry;
-import com.datastax.driver.extras.codecs.jdk8.InstantCodec;
-import com.fasterxml.jackson.core.JsonParser;
+import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -125,6 +124,7 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -132,8 +132,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -258,9 +258,7 @@ public class MainModule extends AbstractModule {
         final Schedule defaultAlertSchedule = new UnboundedPeriodicSchedule.Builder()
                 .setPeriod(TimeAdapters.toChronoUnit(interval.unit()))
                 .setPeriodCount(interval.length())
-                .setOverrunReporter(overrunPeriodCount -> {
-                    metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount);
-                })
+                .setOverrunReporter(overrunPeriodCount -> metrics.recordCounter("jobs/executor/overrunPeriods", overrunPeriodCount))
                 .build();
         return new AlertExecutionContext(defaultAlertSchedule, executor, queryOffset, alertNotifier);
     }
@@ -367,9 +365,7 @@ public class MainModule extends AbstractModule {
     @Provides
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private CodecRegistry provideCodecRegistry() {
-        final CodecRegistry registry = CodecRegistry.DEFAULT_INSTANCE;
-        registry.register(InstantCodec.instance);
-        return registry;
+        return CodecRegistry.DEFAULT;
     }
 
     @Provides
@@ -451,7 +447,7 @@ public class MainModule extends AbstractModule {
                         Metric.Order.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
-        objectMapper.enable(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS);
+        objectMapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature());
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(new AkkaModule(actorSystem));
         objectMapper.registerModule(customModule);
@@ -532,8 +528,8 @@ public class MainModule extends AbstractModule {
                 .setMetricsFactory(metricsFactory)
                 .setPollingExecutor(actorSystem.dispatcher())
                 .build();
-        final FiniteDuration delay = FiniteDuration.apply(1, TimeUnit.SECONDS);
-        actorSystem.scheduler().schedule(delay, delay, periodicMetrics, actorSystem.dispatcher());
+        final Duration delay = Duration.ofSeconds(1);
+        actorSystem.scheduler().scheduleAtFixedRate(delay, delay, periodicMetrics, actorSystem.dispatcher());
         return periodicMetrics;
     }
 
@@ -836,10 +832,11 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
-            if (cluster.selfRoles().contains(INDEXER_ROLE)) {
+            if (cluster.getSelfRoles().contains(INDEXER_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         _hostProviderProps,
                         PoisonPill.getInstance(),
@@ -876,10 +873,11 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             // Start a singleton instance of the scheduler on a "host_indexer" node in the cluster.
-            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+            if (cluster.getSelfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 ReportRepository.class,
@@ -924,9 +922,10 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
-            if (cluster.selfRoles().contains(ANTI_ENTROPY_ROLE)) {
+            if (cluster.getSelfRoles().contains(ANTI_ENTROPY_ROLE)) {
                 final ActorRef managerRef = _system.actorOf(ClusterSingletonManager.props(
                         JobCoordinator.props(_injector,
                                 AlertJobRepository.class,
@@ -968,10 +967,11 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
+        @Nullable
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_system);
             final int actorCount = _configuration.getInt("rollup.generator.count");
-            if (_enabled && cluster.selfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
+            if (_enabled && cluster.getSelfRoles().contains(RollupMetricsDiscoveryProvider.ROLLUP_METRICS_DISCOVERY_ROLE)) {
                 for (int i = 0; i < actorCount; i++) {
                     _system.actorOf(GuiceActorCreator.props(_injector, RollupGenerator.class));
                 }
@@ -1107,7 +1107,7 @@ public class MainModule extends AbstractModule {
         @Override
         public ActorRef get() {
             final Cluster cluster = Cluster.get(_actorSystem);
-            if (_enabled && cluster.selfRoles().contains(_role)) {
+            if (_enabled && cluster.getSelfRoles().contains(_role)) {
                 final ActorRef manager = _actorSystem.actorOf(ClusterSingletonManager.props(
                         getProps(),
                         PoisonPill.getInstance(),

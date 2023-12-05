@@ -18,10 +18,7 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
-import com.datastax.driver.mapping.Result;
+import com.datastax.oss.driver.api.core.CqlSession;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -34,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,14 +48,11 @@ public class CassandraHostRepository implements HostRepository {
      * Public constructor.
      *
      * @param cassandraSession a Session to use to query data
-     * @param mappingManager a MappingManager providing ORM for the Cassandra objects
      */
     @Inject
     public CassandraHostRepository(
-            final Session cassandraSession,
-            final MappingManager mappingManager) {
+            final CqlSession cassandraSession) {
         _cassandraSession = cassandraSession;
-        _mappingManager = mappingManager;
     }
 
     @Override
@@ -72,7 +67,6 @@ public class CassandraHostRepository implements HostRepository {
         assertIsOpen();
         LOGGER.debug().setMessage("Closing host repository").log();
         _isOpen.set(false);
-        _cassandraSession.close();
     }
 
     @Override
@@ -84,14 +78,19 @@ public class CassandraHostRepository implements HostRepository {
                 .addData("organization", organization)
                 .log();
 
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        final models.cassandra.Host cassandraHost = mapper.get(organization, hostname);
-
-        if (cassandraHost == null) {
-            return Optional.empty();
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
+        try {
+            return  dao.get(organization.getId(), hostname).thenApply(cassandraHost -> {
+                if (cassandraHost == null) {
+                    return Optional.<Host>empty();
+                }
+                return Optional.of(cassandraHost.toInternal());
+            }).toCompletableFuture().get();
+        } catch (final InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
 
-        return Optional.of(cassandraHost.toInternal());
     }
 
     @Override
@@ -109,8 +108,9 @@ public class CassandraHostRepository implements HostRepository {
         cassHost.setMetricsSoftwareState(host.getMetricsSoftwareState().name());
         cassHost.setName(host.getHostname());
 
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        mapper.save(cassHost);
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
+        dao.save(cassHost);
     }
 
     @Override
@@ -123,8 +123,9 @@ public class CassandraHostRepository implements HostRepository {
                 .log();
         final Optional<Host> host = getHost(hostname, organization);
         if (host.isPresent()) {
-            final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-            mapper.delete(organization, hostname);
+            final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+            final models.cassandra.Host.HostQueries dao = mapper.dao();
+            dao.delete(organization.getId(), hostname);
         }
     }
 
@@ -145,9 +146,9 @@ public class CassandraHostRepository implements HostRepository {
                 .setMessage("Querying")
                 .addData("query", query)
                 .log();
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        final models.cassandra.Host.HostQueries accessor = mapper.getManager().createAccessor(models.cassandra.Host.HostQueries.class);
-        final Result<models.cassandra.Host> result = accessor.getHostsForOrganization(query.getOrganization().getId());
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
+        final Stream<models.cassandra.Host> result = dao.getHostsForOrganization(query.getOrganization().getId());
         final Spliterator<models.cassandra.Host> allAlerts = result.spliterator();
         final int start = query.getOffset().orElse(0);
 
@@ -201,10 +202,12 @@ public class CassandraHostRepository implements HostRepository {
 
     @Override
     public long getHostCount(final Organization organization) {
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        final models.cassandra.Host.HostQueries accessor = mapper.getManager().createAccessor(models.cassandra.Host.HostQueries.class);
-        final Result<models.cassandra.Host> result = accessor.getHostsForOrganization(organization.getId());
-        return StreamSupport.stream(result.spliterator(), false).count();
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession)
+                .withDefaultKeyspace("portal")
+                .build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
+        final Stream<models.cassandra.Host> result = dao.getHostsForOrganization(organization.getId());
+        return result.count();
     }
 
     private void assertIsOpen() {
@@ -217,8 +220,7 @@ public class CassandraHostRepository implements HostRepository {
         }
     }
 
-    private final Session _cassandraSession;
-    private final MappingManager _mappingManager;
+    private final CqlSession _cassandraSession;
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraHostRepository.class);

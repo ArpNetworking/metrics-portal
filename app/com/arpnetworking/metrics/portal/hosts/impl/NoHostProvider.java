@@ -22,6 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * This is a placeholder actor that does not actually find any hosts.
@@ -37,9 +38,10 @@ public class NoHostProvider extends AbstractActor {
      *
      * @param configuration Play configuration.
      */
+    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     @Inject
     public NoHostProvider(@Assisted final Config configuration) {
-        getContext().system().scheduler().schedule(
+        getContext().system().scheduler().scheduleAtFixedRate(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),

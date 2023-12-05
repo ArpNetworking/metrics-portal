@@ -1,4 +1,5 @@
 {
+  "private": true,
   "dependencies": {
     "@types/bootstrap": "3.3.36",
     "@types/durandal": "2.1.36",

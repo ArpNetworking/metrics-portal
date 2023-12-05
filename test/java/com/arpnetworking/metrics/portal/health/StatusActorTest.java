@@ -28,7 +28,8 @@ import akka.cluster.MemberStatus;
 import akka.cluster.UniqueAddress;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestProbe;
-import com.arpnetworking.commons.akka.BaseActorTest;
+import akka.util.Version;
+import com.arpnetworking.notcommons.akka.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -38,6 +39,7 @@ import scala.collection.immutable.HashMap;
 import scala.collection.immutable.HashSet;
 import scala.collection.immutable.Set;
 import scala.collection.immutable.TreeSet;
+import scala.collection.mutable.ReusableBuilder;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.util.concurrent.TimeUnit;
@@ -57,17 +59,22 @@ public class StatusActorTest extends BaseActorTest {
         final Member selfMember = new Member(UniqueAddress.apply(localAddress, 1821L),
                                              1,
                                              MemberStatus.up(),
-                                             new Set.Set1<>("test"));
+                                             new Set.Set1<>("test"),
+                                             Version.Zero());
         Mockito.when(_clusterMock.selfAddress()).thenReturn(localAddress);
         final ClusterReadView readView = Mockito.mock(ClusterReadView.class);
         Mockito.when(readView.self()).thenReturn(selfMember);
         Mockito.when(_clusterMock.readView()).thenReturn(readView);
-        final ClusterEvent.CurrentClusterState state = new ClusterEvent.CurrentClusterState(
-                new TreeSet<>(Member.ordering()).$plus(selfMember),
+
+        final ReusableBuilder<Member, TreeSet<Member>> memberSet = TreeSet.newBuilder(Member.ordering());
+        memberSet.addOne(selfMember);
+        final ClusterEvent.CurrentClusterState state = ClusterEvent.CurrentClusterState$.MODULE$.apply(
+                memberSet.result(),
                 Member.none(),
                 new HashSet<>(),
                 Option.empty(),
                 new HashMap<>());
+
         Mockito.doAnswer(
                 invocation -> {
                     final ActorRef ref = (ActorRef) invocation.getArguments()[0];

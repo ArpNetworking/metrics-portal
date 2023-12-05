@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueType;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import play.Environment;
 
 import java.util.Set;
@@ -46,6 +47,7 @@ public class MultiProvider extends AbstractActor {
      * @param configuration Play configuration.
      */
     @Inject
+    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getContext() and getSelf() are safe to call")
     public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Config configuration) {
         final Set<String> entries = configuration.root().keySet();
         for (String key : entries) {
@@ -64,7 +66,7 @@ public class MultiProvider extends AbstractActor {
 
                 // Create the props and launch
                 final Props subProps = factory.create(subConfig, ConfigurationHelper.getType(environment, subConfig, "type"));
-                context().actorOf(subProps);
+                getContext().actorOf(subProps);
             }
         }
     }

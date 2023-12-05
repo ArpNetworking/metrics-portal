@@ -23,6 +23,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.io.IOException;
@@ -61,12 +62,14 @@ public class RollupController extends Controller {
      *
      * This endpoint is currently intended only for debugging purposes. Do not rely on it.
      *
+     * @param request Http.Request being handled.
+     *
      * @return 204 if the consistency-check task was successfully enqueued; else 503 if the queue is full; else 500 for unknown failures.
      */
-    public CompletionStage<Result> enqueueConsistencyCheck() {
+    public CompletionStage<Result> enqueueConsistencyCheck(final Http.Request request) {
         final ConsistencyChecker.Task task;
         try {
-            task = _mapper.treeToValue(request().body().asJson(), ConsistencyChecker.Task.class);
+            task = _mapper.treeToValue(request.body().asJson(), ConsistencyChecker.Task.class);
         } catch (final IOException err) {
             return CompletableFuture.completedFuture(badRequest(err.getMessage()));
         }

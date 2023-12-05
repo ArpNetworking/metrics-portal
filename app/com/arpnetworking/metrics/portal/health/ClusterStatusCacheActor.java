@@ -23,25 +23,25 @@ import akka.actor.Props;
 import akka.actor.Scheduler;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
-import com.arpnetworking.commons.akka.ParallelLeastShardAllocationStrategy;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
+import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Streams;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
-import scala.compat.java8.OptionConverters;
-import scala.concurrent.duration.Duration;
+import scala.jdk.javaapi.OptionConverters;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -79,9 +79,9 @@ public class ClusterStatusCacheActor extends AbstractActor {
         final Scheduler scheduler = getContext()
                 .system()
                 .scheduler();
-        _pollTimer = scheduler.schedule(
-                Duration.apply(0, TimeUnit.SECONDS),
-                Duration.apply(10, TimeUnit.SECONDS),
+        _pollTimer = scheduler.scheduleAtFixedRate(
+                Duration.ofSeconds(0),
+                Duration.ofSeconds(10),
                 getSelf(),
                 POLL,
                 getContext().system().dispatcher(),
@@ -101,7 +101,7 @@ public class ClusterStatusCacheActor extends AbstractActor {
                 .match(ClusterEvent.CurrentClusterState.class, clusterState -> {
                     _clusterState = Optional.of(clusterState);
                     try (Metrics metrics = _metricsFactory.create()) {
-                        metrics.setGauge("akka/members_count", clusterState.members().size());
+                        metrics.setGauge("akka/members_count", Streams.stream(clusterState.getMembers()).count());
                         if (_cluster.selfAddress().equals(clusterState.getLeader())) {
                             metrics.setGauge("akka/is_leader", 1);
                         } else {

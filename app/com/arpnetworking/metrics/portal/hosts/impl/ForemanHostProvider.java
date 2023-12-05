@@ -17,7 +17,7 @@ package com.arpnetworking.metrics.portal.hosts.impl;
 
 import akka.actor.AbstractActor;
 import akka.actor.Status;
-import akka.pattern.PatternsCS;
+import akka.pattern.Patterns;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -59,7 +59,7 @@ public final class ForemanHostProvider extends AbstractActor {
         _hostRepository = hostRepository;
         _organizationRepository = organizationRepository;
         _targetOrganizationId = UUID.fromString(configuration.getString("targetOrganizationId"));
-        getContext().system().scheduler().schedule(
+        getContext().system().scheduler().scheduleAtFixedRate(
                 ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
                 ConfigurationHelper.getFiniteDuration(configuration, "interval"),
                 getSelf(),
@@ -83,7 +83,7 @@ public final class ForemanHostProvider extends AbstractActor {
                             .setMessage("Searching for added/updated hosts")
                             .addData("actor", self())
                             .log();
-                    PatternsCS.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
+                    Patterns.pipe(_client.getHostPage(1), context().dispatcher()).to(self(), self());
                 })
                 .match(ForemanClient.HostPageResponse.class, response -> {
                     final List<ForemanClient.ForemanHost> results = response.getResults();
@@ -96,7 +96,7 @@ public final class ForemanHostProvider extends AbstractActor {
                     }
 
                     if (response.getTotal() > response.getPage() * response.getPerPage()) {
-                        PatternsCS
+                        Patterns
                                 .pipe(
                                         _client.getHostPage(
                                                 response.getPage() + 1,

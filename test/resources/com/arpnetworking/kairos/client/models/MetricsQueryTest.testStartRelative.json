@@ -3,5 +3,38 @@
     "value": 1,
     "unit": "days"
   },
-  "metrics": []
+  "metrics": [
+    {
+      "limit": 0,
+      "name": "web_perf/time_to_interactive",
+      "tags": {
+        "browser_name": [
+          "Chrome",
+          "ChromeiOS"
+        ],
+        "product": [
+          "Sharing"
+        ],
+        "region": [
+          "Africa",
+          "Asia"
+        ],
+        "source_type": [
+          "mobile",
+          "web"
+        ]
+      },
+      "aggregators": [
+        {
+          "name": "count",
+          "align_sampling": true,
+          "sampling": {
+            "value": 1,
+            "unit": "days"
+          }
+        }
+      ],
+      "group_by": [{"name": "tag", "tags": ["source_type"]}]
+    }
+  ]
 }

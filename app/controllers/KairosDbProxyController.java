@@ -15,7 +15,6 @@
  */
 package controllers;
 
-import akka.stream.javadsl.StreamConverters;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.models.Aggregator;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -34,31 +33,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
-import play.http.HttpEntity;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.mvc.Results;
-import play.shaded.ahc.io.netty.handler.codec.http.HttpHeaders;
-import play.shaded.ahc.org.asynchttpclient.AsyncCompletionHandler;
-import play.shaded.ahc.org.asynchttpclient.HttpResponseBodyPart;
-import play.shaded.ahc.org.asynchttpclient.HttpResponseHeaders;
-import play.shaded.ahc.org.asynchttpclient.HttpResponseStatus;
-import play.shaded.ahc.org.asynchttpclient.Response;
 
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
@@ -101,27 +89,30 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied status call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied status response.
      */
-    public CompletionStage<Result> status() {
-        return proxy();
+    public CompletionStage<Result> status(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
      * Proxied healthcheck call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied health check response.
      */
-    public CompletionStage<Result> healthCheck() {
-        return proxy();
+    public CompletionStage<Result> healthCheck(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
      * Proxied tagNames call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied tagNames response.
      */
-    public CompletionStage<Result> tagNames() {
+    public CompletionStage<Result> tagNames(final Http.Request request) {
         return _kairosService.listTagNames()
                 .<JsonNode>thenApply(_mapper::valueToTree)
                 .thenApply(Results::ok);
@@ -130,10 +121,11 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied tagValues call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied tagValues response.
      */
-    public CompletionStage<Result> tagValues() {
-        return proxy();
+    public CompletionStage<Result> tagValues(final Http.Request request) {
+        return proxy(request);
     }
 
     private static CompletionStage<Result> noJsonFoundResponse() {
@@ -145,11 +137,12 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied queryTags call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied queryTags response.
      */
-    public CompletionStage<Result> queryTags() {
+    public CompletionStage<Result> queryTags(final Http.Request request) {
         try {
-            final JsonNode jsonBody = request().body().asJson();
+            final JsonNode jsonBody = request.body().asJson();
             if (jsonBody == null) {
                 return noJsonFoundResponse();
             }
@@ -166,11 +159,12 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied queryMetrics call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied queryMetrics response.
      */
-    public CompletionStage<Result> queryMetrics() {
+    public CompletionStage<Result> queryMetrics(final Http.Request request) {
         try {
-            final JsonNode jsonBody = request().body().asJson();
+            final JsonNode jsonBody = request.body().asJson();
             if (jsonBody == null) {
                 return noJsonFoundResponse();
             }
@@ -276,10 +270,11 @@ public class KairosDbProxyController extends Controller {
     /**
      * Proxied version call.
      *
+     * @param request Http.Request being handled.
      * @return Proxied version response.
      */
-    public CompletionStage<Result> version() {
-        return proxy();
+    public CompletionStage<Result> version(final Http.Request request) {
+        return proxy(request);
     }
 
     /**
@@ -300,20 +295,14 @@ public class KairosDbProxyController extends Controller {
      *
      * @return the proxied {@link Result}
      */
-    private CompletionStage<Result> proxy() {
-        final String path = request().uri();
+    private CompletionStage<Result> proxy(final Http.Request request) {
+        final String path = request.uri();
         LOGGER.debug().setMessage("proxying call to kairosdb")
                 .addData("from", path)
                 .log();
-        final CompletableFuture<Result> promise = new CompletableFuture<>();
-        final Http.Request request = request();
-        final boolean isHttp10 = request.version().equals("HTTP/1.0");
-        final Http.Response configResponse = response();
-        _client.proxy(
+        return _client.proxy(
                 path.startsWith("/") ? path : "/" + path,
-                request,
-                new ResponseHandler(configResponse, promise, isHttp10));
-        return promise;
+                request);
     }
 
     private final ProxyClient _client;
@@ -328,115 +317,5 @@ public class KairosDbProxyController extends Controller {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KairosDbProxyController.class);
 
-    private static class ResponseHandler extends AsyncCompletionHandler<Void> {
-        ResponseHandler(
-                final Http.Response response,
-                final CompletableFuture<Result> promise,
-                final boolean isHttp10) {
-            try {
-                _outputStream = new PipedOutputStream();
-                _inputStream = new PipedInputStream(_outputStream);
-                _response = response;
-                _promise = promise;
-                _isHttp10 = isHttp10;
-            } catch (final IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-
-        @Override
-        public State onStatusReceived(final HttpResponseStatus status) {
-            _status = status.getStatusCode();
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onBodyPartReceived(final HttpResponseBodyPart content) throws Exception {
-            _outputStream.write(content.getBodyPartBytes());
-
-            if (content.isLast()) {
-                _outputStream.flush();
-                _outputStream.close();
-            }
-            return State.CONTINUE;
-        }
-
-        @Override
-        public State onHeadersReceived(final HttpResponseHeaders headers) {
-            try {
-                final HttpHeaders entries = headers.getHeaders();
-                Optional<Long> length = Optional.empty();
-                if (entries.contains(CONTENT_LENGTH)) {
-                    final String clen = entries.get(CONTENT_LENGTH);
-                    length = Optional.of(Long.parseLong(clen));
-                }
-                final String contentType;
-                if (entries.get(CONTENT_TYPE) != null) {
-                    contentType = entries.get(CONTENT_TYPE);
-                } else if (length.isPresent() && length.get() == 0) {
-                    contentType = "text/html";
-                } else {
-                    contentType = null;
-                }
-
-                entries.entries()
-                        .stream()
-                        .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
-                        .forEach(entry -> _response.setHeader(entry.getKey(), entry.getValue()));
-
-                if (_isHttp10) {
-                    // Strip the transfer encoding header as chunked isn't supported in 1.0
-                    _response.getHeaders().remove(TRANSFER_ENCODING);
-                    // Strip the connection header since we don't support keep-alives in 1.0
-                    _response.getHeaders().remove(CONNECTION);
-                }
-
-                final play.mvc.Result result = Results.status(_status).sendEntity(
-                        new HttpEntity.Streamed(
-                                StreamConverters.fromInputStream(() -> _inputStream, DEFAULT_CHUNK_SIZE),
-                                length,
-                                Optional.ofNullable(contentType)));
-
-                _promise.complete(result);
-                return State.CONTINUE;
-                // CHECKSTYLE.OFF: IllegalCatch - We need to return a response no matter what
-            } catch (final Throwable e) {
-                // CHECKSTYLE.ON: IllegalCatch
-                _promise.completeExceptionally(e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void onThrowable(final Throwable t) {
-            try {
-                _outputStream.close();
-                _promise.completeExceptionally(t);
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            super.onThrowable(t);
-        }
-
-        @Override
-        public Void onCompleted(final Response response) {
-            try {
-                _outputStream.flush();
-                _outputStream.close();
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            return null;
-        }
-
-        private int _status;
-        private final PipedOutputStream _outputStream;
-        private final Http.Response _response;
-        private final PipedInputStream _inputStream;
-        private final CompletableFuture<Result> _promise;
-        private final boolean _isHttp10;
-        private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
-        private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(CONTENT_TYPE, CONTENT_LENGTH, TRANSFER_ENCODING);
-    }
 }
 

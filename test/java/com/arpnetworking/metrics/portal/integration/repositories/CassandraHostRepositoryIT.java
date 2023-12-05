@@ -18,9 +18,7 @@ package com.arpnetworking.metrics.portal.integration.repositories;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.hosts.impl.CassandraHostRepository;
 import com.arpnetworking.metrics.portal.integration.test.CassandraServerHelper;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
+import com.datastax.oss.driver.api.core.CqlSession;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -35,7 +33,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests class {@link com.arpnetworking.metrics.portal.alerts.impl.CassandraAlertRepository}.
+ * Tests class {@link com.arpnetworking.metrics.portal.hosts.impl.CassandraHostRepository}.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
@@ -43,9 +41,8 @@ public final class CassandraHostRepositoryIT {
 
     @Before
     public void setUp() {
-        final Session cassandraSession = CassandraServerHelper.createSession();
-        _mappingManager = new MappingManager(cassandraSession);
-        _hostRepo = new CassandraHostRepository(cassandraSession, _mappingManager);
+        _cassandraSession = CassandraServerHelper.createSession();
+        _hostRepo = new CassandraHostRepository(_cassandraSession);
         _hostRepo.open();
     }
 
@@ -72,8 +69,9 @@ public final class CassandraHostRepositoryIT {
         query.partialHostname(Optional.of(cassandraHost.getName()));
         assertEquals(0L, _hostRepo.queryHosts(query).total());
 
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
-        mapper.save(cassandraHost);
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
+        dao.save(cassandraHost);
 
         final QueryResult<Host> result = _hostRepo.queryHosts(query);
         assertEquals(1L, result.total());
@@ -89,13 +87,14 @@ public final class CassandraHostRepositoryIT {
     public void testGetHostCountWithMultipleHost() {
         final Organization org = TestBeanFactory.newOrganization();
         assertEquals(0, _hostRepo.getHostCount(org));
-        final Mapper<models.cassandra.Host> mapper = _mappingManager.mapper(models.cassandra.Host.class);
+        final models.cassandra.Host.Mapper mapper = new models.cassandra.Host_MapperBuilder(_cassandraSession).build();
+        final models.cassandra.Host.HostQueries dao = mapper.dao();
 
         final models.cassandra.Host cassandraHost1 = TestBeanFactory.createCassandraHost(org);
-        mapper.save(cassandraHost1);
+        dao.save(cassandraHost1);
 
         final models.cassandra.Host cassandraHost = TestBeanFactory.createCassandraHost(org);
-        mapper.save(cassandraHost);
+        dao.save(cassandraHost);
 
         assertEquals(2, _hostRepo.getHostCount(org));
     }
@@ -163,5 +162,5 @@ public final class CassandraHostRepositoryIT {
     }
 
     private CassandraHostRepository _hostRepo;
-    private MappingManager _mappingManager;
+    private CqlSession _cassandraSession;
 }

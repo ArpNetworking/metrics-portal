@@ -43,8 +43,9 @@ import play.test.Helpers;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -108,10 +109,12 @@ public class KairosDbProxyControllerTest {
         // ***
         // Test failure case where one metric doesn't have an aggregator
         // ***
-        Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+        Result result;
+        try {
+            result = _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
 
         assertEquals(Http.Status.BAD_REQUEST, result.status());
         assertEquals("All queried metrics must have at least one aggregator",
@@ -133,17 +136,19 @@ public class KairosDbProxyControllerTest {
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
-        result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+
+        try {
+            result = _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));
     }
 
     @Test
-    public void testClampsAggregators() {
+    public void testClampsAggregators() throws ExecutionException, InterruptedException, TimeoutException {
         when(_mockConfig.getDuration(eq("kairosdb.proxy.minAggregationPeriod"))).thenReturn(Duration.ofMinutes(1));
         _controller = new KairosDbProxyController(
                 _mockConfig,
@@ -177,10 +182,7 @@ public class KairosDbProxyControllerTest {
         when(_mockKairosDbService.queryMetrics(any(), queryCaptor.capture())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()));
 
-        Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+        _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
 
 
         final MetricsQuery query = queryCaptor.getValue();
@@ -204,7 +206,7 @@ public class KairosDbProxyControllerTest {
     }
 
     @Test
-    public void testNoClampAggregatorWhenNoConfig() {
+    public void testNoClampAggregatorWhenNoConfig() throws ExecutionException, InterruptedException, TimeoutException {
         final Metric.Builder metric1Builder = new Metric.Builder()
                 .setName("metric1")
                 .setAggregators(ImmutableList.of(new Aggregator.Builder().setName("count")
@@ -231,10 +233,8 @@ public class KairosDbProxyControllerTest {
         when(_mockKairosDbService.queryMetrics(any(), queryCaptor.capture())).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder().setQueries(ImmutableList.of()).build()));
 
-        Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<Result> completionStage = _controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+
+        _controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
 
 
         final MetricsQuery query = queryCaptor.getValue();
@@ -334,16 +334,21 @@ public class KairosDbProxyControllerTest {
                 .header("Content-Type", "application/json")
                 .bodyJson(OBJECT_MAPPER.<JsonNode>valueToTree(metricsQuery));
 
+        // Round trip through JSON so that the mock matcher actually matches
+        final MetricsQuery converted = OBJECT_MAPPER.convertValue(newMetricsQuery, MetricsQuery.class);
+
         final ArgumentCaptor<QueryContext> contextCaptor = ArgumentCaptor.forClass(QueryContext.class);
-        when(_mockKairosDbService.queryMetrics(contextCaptor.capture(), eq(newMetricsQuery))).thenReturn(
+        when(_mockKairosDbService.queryMetrics(contextCaptor.capture(), eq(converted))).thenReturn(
                 CompletableFuture.completedFuture(new MetricsQueryResponse.Builder()
                         .setQueries(ImmutableList.of()).build())
         );
 
-        final Result result = Helpers.invokeWithContext(request, Helpers.contextComponents(), () -> {
-            final CompletionStage<play.mvc.Result> completionStage = controller.queryMetrics();
-            return completionStage.toCompletableFuture().get(10, TimeUnit.SECONDS);
-        });
+        final Result result;
+        try {
+            result = controller.queryMetrics(request.build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
 
         assertEquals(Http.Status.OK, result.status());
         assertEquals("{\"queries\":[]}", Helpers.contentAsString(result));

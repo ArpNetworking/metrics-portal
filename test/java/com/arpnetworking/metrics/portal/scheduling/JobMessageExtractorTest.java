@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import com.arpnetworking.commons.serialization.Serializer;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
+import com.arpnetworking.notcommons.serialization.Serializer;
 import models.internal.Organization;
 import models.internal.impl.DefaultOrganization;
 import org.junit.Test;

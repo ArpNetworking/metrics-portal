@@ -1,4 +1,4 @@
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.15"
 
 lazy val main = (project in file("."))
   .settings(

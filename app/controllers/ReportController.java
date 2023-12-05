@@ -47,6 +47,7 @@ import net.sf.oval.exception.ConstraintsViolatedException;
 import play.Environment;
 import play.libs.Json;
 import play.mvc.Controller;
+import play.mvc.Http;
 import play.mvc.Result;
 
 import java.util.Map;
@@ -73,7 +74,8 @@ public class ReportController extends Controller {
      * @param organizationRepository Instance of {@link OrganizationRepository}.
      * @param jobExecutorRegion {@link ClusterSharding} actor balancing the execution of {@link models.internal.scheduling.Job}s.
      * @param reportExecutionContext {@link ReportExecutionContext} to use to validate new reports.
-     * @param environment environment we're executing in
+     * @param environment environment we're executing in.
+     * @param problemHelper ProblemHelper to render errors.
      */
     @Inject
     public ReportController(
@@ -83,7 +85,8 @@ public class ReportController extends Controller {
             @Named("job-execution-shard-region")
             final ActorRef jobExecutorRegion,
             final ReportExecutionContext reportExecutionContext,
-            final Environment environment
+            final Environment environment,
+            final ProblemHelper problemHelper
             ) {
         this(
                 configuration.getInt("reports.limit"),
@@ -91,35 +94,37 @@ public class ReportController extends Controller {
                 organizationRepository,
                 jobExecutorRegion,
                 reportExecutionContext,
-                environment
+                environment,
+                problemHelper
         );
     }
 
     /**
      * Updates a report within the report repository, or creates one if it doesn't already exist.
      *
+     * @param request Http.Request being handled.
      * @return Ok if the report was added or updated successfully, an HTTP error code otherwise.
      */
-    public Result addOrUpdate() {
+    public Result addOrUpdate(final Http.Request request) {
         final Report report;
         try {
-            final JsonNode body = request().body().asJson();
+            final JsonNode body = request.body().asJson();
             report = OBJECT_MAPPER.treeToValue(body, models.view.reports.Report.class).toInternal();
         } catch (final JsonProcessingException | ConstraintsViolatedException e) {
             LOGGER.error()
                     .setMessage("Failed to build a report.")
                     .setThrowable(e)
                     .log();
-            return badRequest(ProblemHelper.createErrorJson(_environment, e, "request.BAD_REQUEST"));
+            return badRequest(_problemHelper.createErrorJson(_environment, e, "request.BAD_REQUEST", request.transientLang()));
         }
 
 
         final ImmutableList<Problem> problems = _reportExecutionContext.validateExecute(report);
         if (!problems.isEmpty()) {
-            return badRequest(ProblemHelper.createErrorJson(problems));
+            return badRequest(_problemHelper.createErrorJson(problems, request.transientLang()));
         }
 
-        final Organization organization = _organizationRepository.get(request());
+        final Organization organization = _organizationRepository.get(request);
         try {
             _reportRepository.addOrUpdateReport(report, organization);
             // CHECKSTYLE.OFF: IllegalCatch - Convert any exception to 500
@@ -132,7 +137,7 @@ public class ReportController extends Controller {
             return internalServerError();
         }
 
-        kickJobExecutor(report.getId());
+        kickJobExecutor(report.getId(), _organizationRepository.get(request));
         return noContent();
     }
 
@@ -141,17 +146,19 @@ public class ReportController extends Controller {
      *
      * @param limit The maximum number of results to return. Optional.
      * @param offset The number of results to skip. Optional.
+     * @param request Http.Request being handled.
      * @return {@link Result} paginated matching reports.
      */
     // CHECKSTYLE.OFF: ParameterNameCheck - Names must match query parameters.
     public Result query(
             @Nullable final Integer limit,
-            @Nullable final Integer offset) {
+            @Nullable final Integer offset,
+            final Http.Request request) {
         // CHECKSTYLE.ON: ParameterNameCheck
 
         final Organization organization;
         try {
-            organization = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request);
         } catch (final NoSuchElementException e) {
             return internalServerError();
         }
@@ -186,40 +193,45 @@ public class ReportController extends Controller {
 
         final Map<String, String> conditions = ImmutableMap.of();
 
-        result.etag().ifPresent(etag -> response().setHeader(HttpHeaders.ETAG, etag));
-        return ok(Json.toJson(new PagedContainer<>(
+        Result response = ok(Json.toJson(new PagedContainer<>(
                 result.values()
                         .stream()
                         .map(models.view.reports.Report::fromInternal)
                         .collect(Collectors.toList()),
                 new Pagination(
-                        request().path(),
+                        request.path(),
                         result.total(),
                         result.values().size(),
                         argLimit,
                         argOffset,
                         conditions))));
+        if (result.etag().isPresent()) {
+            response = response.withHeader(HttpHeaders.ETAG, result.etag().get());
+        }
+        return response;
     }
 
     /**
      * Get specific report.
      *
      * @param id The identifier of the report.
+     * @param request Http.Request being handled.
      * @return The report, if any, otherwise notFound.
      */
-    public Result get(final UUID id) {
+    public Result get(final UUID id, final Http.Request request) {
         final Organization organization;
         try {
-            organization = _organizationRepository.get(request());
+            organization = _organizationRepository.get(request);
         } catch (final NoSuchElementException e) {
             return internalServerError();
         }
         final Optional<Report> report = _reportRepository.getReport(id, organization);
         return report
                 .map(r -> ok(Json.toJson(models.view.reports.Report.fromInternal(r))))
-                .orElseGet(() -> notFound(ProblemHelper.createErrorJson(new Problem.Builder()
+                .orElseGet(() -> notFound(_problemHelper.createErrorJson(new Problem.Builder()
                         .setProblemCode("report_problem.NOT_FOUND")
-                        .build()
+                        .build(),
+                        request.transientLang()
                 )));
     }
 
@@ -227,15 +239,16 @@ public class ReportController extends Controller {
      * Delete a specific report.
      *
      * @param id The identifier of the report.
+     * @param request Http.Request being handled.
      * @return No content if successful, otherwise an HTTP error code.
      */
-    public Result delete(final UUID id) {
-        final Organization organization = _organizationRepository.get(request());
+    public Result delete(final UUID id, final Http.Request request) {
+        final Organization organization = _organizationRepository.get(request);
         final int deletedCount = _reportRepository.deleteReport(id, organization);
         if (deletedCount == 0) {
             return notFound();
         }
-        kickJobExecutor(id);
+        kickJobExecutor(id, organization);
         return noContent();
     }
 
@@ -245,7 +258,8 @@ public class ReportController extends Controller {
             final OrganizationRepository organizationRepository,
             final ActorRef jobExecutorRegion,
             final ReportExecutionContext reportExecutionContext,
-            final Environment environment
+            final Environment environment,
+            final ProblemHelper problemHelper
     ) {
         _maxLimit = maxLimit;
         _reportRepository = reportRepository;
@@ -253,14 +267,15 @@ public class ReportController extends Controller {
         _jobExecutorRegion = jobExecutorRegion;
         _reportExecutionContext = reportExecutionContext;
         _environment = environment;
+        _problemHelper = problemHelper;
     }
 
-    private void kickJobExecutor(final UUID reportId) {
+    private void kickJobExecutor(final UUID reportId, final Organization organization) {
         _jobExecutorRegion.tell(
                 new JobExecutorActor.Reload.Builder<Report.Result>()
                         .setJobRef(new JobRef.Builder<Report.Result>()
                                 .setId(reportId)
-                                .setOrganization(_organizationRepository.get(request()))
+                                .setOrganization(organization)
                                 .setRepositoryType(ReportRepository.class)
                                 .setExecutionRepositoryType(ReportExecutionRepository.class)
                                 .build())
@@ -274,6 +289,7 @@ public class ReportController extends Controller {
     private final ActorRef _jobExecutorRegion;
     private final ReportExecutionContext _reportExecutionContext;
     private final Environment _environment;
+    private final ProblemHelper _problemHelper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportController.class);
     private static final ObjectMapper OBJECT_MAPPER = ObjectMapperFactory.getInstance();

@@ -15,18 +15,29 @@
  */
 package com.arpnetworking.play;
 
+import akka.stream.javadsl.Source;
 import akka.util.ByteString;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.http.HttpEntity;
 import play.libs.ws.WSClient;
-import play.shaded.ahc.org.asynchttpclient.AsyncHandler;
-import play.shaded.ahc.org.asynchttpclient.RequestBuilder;
+import play.libs.ws.WSRequest;
+import play.mvc.Http;
+import play.mvc.Result;
+import play.mvc.Results;
+import play.mvc.StatusHeader;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A simple proxy client.
@@ -51,47 +62,84 @@ public final class ProxyClient {
      *
      * @param path the path to proxy
      * @param request the request
-     * @param handler a handler to execute as a callback
-     * @param <T> the type of the handler
+     *
+     * @return Streaming response
      */
-    public <T> void proxy(
+    public CompletionStage<Result> proxy(
             final String path,
-            final play.mvc.Http.Request request,
-            final AsyncHandler<T> handler) {
+            final play.mvc.Http.Request request) {
 
+        // TODO(brandon): Would be nice to have a streaming api for request body
+        // Possibly implement a BodyParser that returns the Accumulator?
+        // See: https://www.playframework.com/documentation/2.8.x/JavaBodyParsers#Directing-the-body-elsewhere
         final ByteString body = request.body().asBytes();
         final URI uri = _baseUri.resolve(path);
+        final boolean isHttp10 = request.version().equals("HTTP/1.0");
 
-        final RequestBuilder builder = new RequestBuilder();
+        WSRequest wsrequest = _client.url(uri.toString());
+
         for (final Map.Entry<String, String[]> entry : request.queryString().entrySet()) {
             for (final String val : entry.getValue()) {
-                builder.addQueryParam(entry.getKey(), val);
+                wsrequest = wsrequest.addQueryParameter(entry.getKey(), val);
             }
         }
 
-        builder.setUrl(uri.toString());
-        builder.setMethod(request.method());
-        for (final Map.Entry<String, List<String>> entry : request.getHeaders().toMap().entrySet()) {
+        wsrequest = wsrequest.setMethod(request.method());
+        for (final Map.Entry<String, List<String>> entry : request.getHeaders().asMap().entrySet()) {
             for (final String val : entry.getValue()) {
-                builder.setHeader(entry.getKey(), val);
+                wsrequest = wsrequest.addHeader(entry.getKey(), val);
             }
         }
         if (body != null) {
-            builder.setBody(body.asByteBuffer());
+            wsrequest = wsrequest.setBody(Source.single(ByteString.fromByteBuffer(body.asByteBuffer())));
         }
 
-        final Object underlying = _client.getUnderlying();
-        if (underlying instanceof play.shaded.ahc.org.asynchttpclient.AsyncHttpClient) {
-            final play.shaded.ahc.org.asynchttpclient.AsyncHttpClient client =
-                    (play.shaded.ahc.org.asynchttpclient.AsyncHttpClient) underlying;
-            client.executeRequest(builder.build(), handler);
-        } else {
-            throw new RuntimeException("Unknown AsyncHttpClient '" + underlying.getClass().getCanonicalName() + "'");
-        }
+        return wsrequest.stream().thenApply(resp -> {
+            final Map<String, List<String>> entries = resp.getHeaders();
+            final Optional<Long> length = resp.getSingleHeader(Http.HeaderNames.CONTENT_LENGTH).map(Long::parseLong);
+
+            final Optional<String> contentType = resp.getSingleHeader(Http.HeaderNames.CONTENT_TYPE)
+                    .or(() -> length.map(v -> v == 0 ? "text/html" : null));
+
+            final StatusHeader status = Results.status(resp.getStatus());
+            Result result = status.sendEntity(
+                    new HttpEntity.Streamed(
+                            resp.getBodyAsSource(),
+                            length,
+                            contentType));
+
+            final ArrayList<String> headersList = entries.entrySet()
+                    .stream()
+                    .filter(entry -> !FILTERED_HEADERS.contains(entry.getKey()))
+                    .reduce(Lists.newArrayList(), (a, b) -> {
+                        a.add(b.getKey());
+                        a.add(b.getValue().get(0));
+                        return a;
+                    }, (a, b) -> {
+                        a.addAll(b);
+                        return b;
+                    });
+            final String[] headerArray = headersList.toArray(new String[0]);
+            result = result.withHeaders(headerArray);
+
+            if (isHttp10) {
+                // Strip the transfer encoding header as chunked isn't supported in 1.0
+                result = result.withoutHeader(Http.HeaderNames.TRANSFER_ENCODING);
+                // Strip the connection header since we don't support keep-alives in 1.0
+                result = result.withoutHeader(Http.HeaderNames.CONNECTION);
+            }
+
+            return result;
+        });
     }
 
     private final URI _baseUri;
     private final WSClient _client;
     private static final Logger LOGGER = LoggerFactory.getLogger(ProxyClient.class);
+    private static final Set<String> FILTERED_HEADERS = Sets.newHashSet(
+            Http.HeaderNames.CONTENT_TYPE,
+            Http.HeaderNames.CONTENT_LENGTH,
+            Http.HeaderNames.TRANSFER_ENCODING);
+
 }
 

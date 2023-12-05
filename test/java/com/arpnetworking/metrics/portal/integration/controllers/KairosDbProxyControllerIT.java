@@ -40,6 +40,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.ContentType;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import play.mvc.Http;
@@ -55,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -281,7 +283,7 @@ public final class KairosDbProxyControllerIT {
         final MetricsQueryResponse.QueryResult result = response.getQueries().get(0).getResults().get(0);
         assertEquals(_metricName, result.getName());
         assertEquals(2, result.getGroupBy().size());
-        assertTrue(result.getGroupBy().get(0) instanceof MetricsQueryResponse.QueryTagGroupBy);
+        assertThat(result.getGroupBy().get(0), Matchers.instanceOf(MetricsQueryResponse.QueryTagGroupBy.class));
         final MetricsQueryResponse.QueryTagGroupBy groupBy = (MetricsQueryResponse.QueryTagGroupBy) result.getGroupBy().get(0);
         assertEquals(1, groupBy.getGroup().size());
         assertEquals("foo", groupBy.getGroup().get("ignored"));

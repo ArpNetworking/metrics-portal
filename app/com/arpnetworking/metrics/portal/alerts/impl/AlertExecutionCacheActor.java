@@ -25,9 +25,9 @@ import akka.persistence.SaveSnapshotFailure;
 import akka.persistence.SaveSnapshotSuccess;
 import akka.persistence.SnapshotMetadata;
 import akka.persistence.SnapshotOffer;
-import com.arpnetworking.commons.akka.AkkaJsonSerializable;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
+import com.arpnetworking.notcommons.akka.AkkaJsonSerializable;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Objects;
@@ -40,7 +40,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
 import scala.Option;
-import scala.compat.java8.OptionConverters;
+import scala.jdk.javaapi.OptionConverters;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -214,7 +214,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         LOGGER.info()
                 .setMessage("cache actor starting")
                 .log();
-        timers().startPeriodicTimer(
+        timers().startTimerAtFixedRate(
                 SNAPSHOT_TIMER_KEY,
                 MSG_TAKE_SNAPSHOT,
                 SNAPSHOT_INTERVAL
@@ -222,7 +222,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
     }
 
     @Override
-    public void postStop() {
+    public void postStop() throws Exception {
         super.postStop();
         LOGGER.info()
                 .setMessage("cache actor was stopped")
