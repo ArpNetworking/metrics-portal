@@ -40,7 +40,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
 import scala.Option;
-import scala.compat.java8.OptionConverters;
+import scala.jdk.javaapi.OptionConverters;
 
 import java.time.Duration;
 import java.time.Instant;

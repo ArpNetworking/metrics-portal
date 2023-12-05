@@ -46,8 +46,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotNull;
-import scala.compat.java8.FutureConverters;
 import scala.concurrent.duration.FiniteDuration;
+import scala.jdk.javaapi.FutureConverters;
 
 import java.io.IOException;
 import java.net.URI;
@@ -153,7 +153,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
                     }
                     if (!httpResponse.status().isSuccess()) {
                         return httpResponse.entity().toStrict(_readTimeout.toMillis(), _materializer)
-                                .thenCompose(strict -> FutureConverters.toJava(flow.decode(strict.getData(), _materializer)))
+                                .thenCompose(strict -> FutureConverters.asJava(flow.decode(strict.getData(), _materializer)))
                                 .thenApply(materializedBody -> {
                                     final String responseBody = materializedBody.utf8String();
                                     if (responseBody.isEmpty()) {
@@ -173,7 +173,7 @@ public final class KairosDbClientImpl implements KairosDbClient {
                     }
                     return httpResponse.entity()
                             .toStrict(_readTimeout.toMillis(), _materializer)
-                            .thenCompose(strict -> FutureConverters.toJava(flow.decode(strict.getData(), _materializer)));
+                            .thenCompose(strict -> FutureConverters.asJava(flow.decode(strict.getData(), _materializer)));
                 })
                 .thenApply(body -> {
                     try {

@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
-import scala.compat.java8.OptionConverters;
+import scala.jdk.javaapi.OptionConverters;
 
 import java.io.Serializable;
 import java.time.Duration;

@@ -61,7 +61,8 @@ public final class ApplicationController extends Controller {
      */
     public CompletionStage<Result> getConfigureJs() {
         return CompletableFuture.completedFuture(
-                ok(views.html.ConfigureJsViewModel.render(_featuresJson.get()))
+                ok(views.html
+                        .ConfigureJsViewModel.render(_featuresJson.get()))
                         .as("text/javascript"));
     }
 
