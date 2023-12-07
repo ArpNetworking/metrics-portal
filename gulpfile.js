@@ -14,6 +14,11 @@ export function ts() {
     return tsResult.js.pipe(gulp.dest('target/sbt/web/public/main/javascripts'));
 }
 
+export function copyVendored() {
+    return gulp.src('app/assets/vendored/**')
+        .pipe(gulp.dest('target/sbt/web/public/main/'));
+}
+
 export function copy() {
     return gulp.src(npmDist(), {base:'./node_modules'})
         .pipe(rename(function(path) {
@@ -29,6 +34,6 @@ export function clean() {
     return del([ 'target/sbt/web/public/main' ]);
 }
 
-const build = gulp.series(clean, gulp.parallel(ts, copy));
+const build = gulp.series(clean, gulp.parallel(ts, copy, copyVendored));
 
 export default build;
