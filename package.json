@@ -10,7 +10,7 @@
     "@types/typeahead": "0.11.31",
     "@types/underscore": "1.8.4",
     "bean": "1.0.14",
-    "bootstrap": "3.3.7",
+    "bootstrap": "3.4.1",
     "d3": "4.11.0",
     "durandal": "2.2.0",
     "eonasdan-bootstrap-datetimepicker": "4.17.47",
