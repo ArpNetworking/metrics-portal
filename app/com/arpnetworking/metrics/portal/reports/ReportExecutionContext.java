@@ -211,7 +211,9 @@ public final class ReportExecutionContext {
             final S source,
             final F format
     ) {
-        final Renderer<?, ?> result = _renderers.getOrDefault(source.getType(), ImmutableMap.of()).get(format.getMimeType());
+        final ImmutableMap<MediaType, Renderer<?, ?>> renderers = _renderers.getOrDefault(source.getType(), ImmutableMap.of());
+        assert renderers != null;
+        final Renderer<?, ?> result = renderers.get(format.getMimeType());
         if (result == null) {
             throw new IllegalArgumentException(
                     "no Renderer exists for source type " + source.getType() + ", MIME type " + format.getMimeType()
