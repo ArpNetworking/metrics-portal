@@ -92,7 +92,7 @@
     <flyway.core.version>8.4.0</flyway.core.version>
     <flyway.play.version>7.19.0</flyway.play.version>
     <guava.version>29.0-jre</guava.version>
-    <guice.version>5.0.1</guice.version>
+    <guice.version>7.0.0</guice.version>
     <guice.assisted.version>7.0.0</guice.assisted.version>
     <hikaricp.version>2.7.9</hikaricp.version>
     <jackson.version>2.16.0</jackson.version>
