@@ -71,7 +71,7 @@
 
   <properties>
     <!-- Dependency Versions -->
-    <akka.version>2.6.18</akka.version>
+    <akka.version>2.6.19</akka.version>
     <akka.http.version>10.2.7</akka.http.version>
     <akka.persistence.cassandra.version>1.0.5</akka.persistence.cassandra.version>
     <akka.persistence.jdbc.version>5.0.4</akka.persistence.jdbc.version>
