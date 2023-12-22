@@ -24,7 +24,7 @@
     "jquery-ui-themes": "1.12.0",
     "knockout": "3.4.0",
     "moment": "2.24.0",
-    "moment-timezone": "0.5.23",
+    "moment-timezone": "0.5.35",
     "requirejs": "2.3.6",
     "requirejs-text": "2.0.12",
     "typeahead.js": "0.10.4",
