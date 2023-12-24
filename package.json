@@ -19,7 +19,7 @@
     "gulp": "^4.0.2",
     "gulp-npm-dist": "1.0.4",
     "gulp-typescript": "6.0.0-alpha.1",
-    "jquery": "3.2.1",
+    "jquery": "3.5.0",
     "jquery-ui-dist": "1.12.1",
     "jquery-ui-themes": "1.12.0",
     "knockout": "3.4.0",
