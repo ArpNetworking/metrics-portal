@@ -26,7 +26,7 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -131,7 +131,7 @@ public class SlackAlertNotifierTest {
         Mockito.verify(_wsRequestMock).addHeader(eq("Authorization"), eq("Bearer notarealapikey"));
 
         final JsonNode value = _postCaptor.getValue();
-        Assert.assertThat(value.get("channel").asText(), org.hamcrest.Matchers.equalTo("alertspecificchannel"));
+        MatcherAssert.assertThat(value.get("channel").asText(), org.hamcrest.Matchers.equalTo("alertspecificchannel"));
     }
 
     @Test
@@ -148,6 +148,6 @@ public class SlackAlertNotifierTest {
         Mockito.verify(_wsRequestMock).addHeader(eq("Authorization"), eq("Bearer notarealapikey"));
 
         final JsonNode value = _postCaptor.getValue();
-        Assert.assertThat(value.get("channel").asText(), org.hamcrest.Matchers.equalTo("123asdi"));
+        MatcherAssert.assertThat(value.get("channel").asText(), org.hamcrest.Matchers.equalTo("123asdi"));
     }
 }

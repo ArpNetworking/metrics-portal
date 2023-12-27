@@ -17,11 +17,12 @@ package com.arpnetworking.notcommons.java.util;
 
 import com.google.common.collect.Lists;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests for the LexicalNumericComparator.
@@ -34,8 +35,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("this", "that");
         final ArrayList<String> expected = Lists.newArrayList("that", "this");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -43,8 +44,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("128", "20");
         final ArrayList<String> expected = Lists.newArrayList("20", "128");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -52,8 +53,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test 128", "test 20");
         final ArrayList<String> expected = Lists.newArrayList("test 20", "test 128");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -61,8 +62,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test_100", "test_20");
         final ArrayList<String> expected = Lists.newArrayList("test_20", "test_100");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -70,8 +71,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test 020 aab", "test 20 aaa");
         final ArrayList<String> expected = Lists.newArrayList("test 20 aaa", "test 020 aab");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -79,8 +80,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test_020_aab", "test_20_aaa");
         final ArrayList<String> expected = Lists.newArrayList("test_20_aaa", "test_020_aab");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -88,8 +89,8 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test 20 aaa more", "test 20 aaa");
         final ArrayList<String> expected = Lists.newArrayList("test 20 aaa", "test 20 aaa more");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 
     @Test
@@ -97,7 +98,7 @@ public class LexicalNumericComparatorTest {
         final ArrayList<String> strings = Lists.newArrayList("test 20 aaa", "test 20 aaa more");
         final ArrayList<String> expected = Lists.newArrayList("test 20 aaa", "test 20 aaa more");
         Collections.sort(strings, new LexicalNumericComparator());
-        Assert.assertThat(strings, Matchers.contains(expected.toArray()));
-        Assert.assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
+        assertThat(strings, Matchers.contains(expected.toArray()));
+        assertThat(strings, Matchers.containsInRelativeOrder(expected.toArray()));
     }
 }
