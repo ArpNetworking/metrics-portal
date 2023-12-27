@@ -16,9 +16,7 @@
 package com.arpnetworking.notcommons.java.util;
 
 import com.google.common.collect.Lists;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
