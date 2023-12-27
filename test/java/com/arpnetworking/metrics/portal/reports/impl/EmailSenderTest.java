@@ -56,9 +56,6 @@ public class EmailSenderTest {
     @Rule
     public ErrorCollector _collector = new ErrorCollector();
 
-    @Rule
-    public ExpectedException _thrown = ExpectedException.none();
-
     private static final Instant T0 = Instant.parse("2019-01-01T00:00:00.000Z");
 
     private Mailer _mailer;
@@ -114,13 +111,16 @@ public class EmailSenderTest {
 
     @Test
     public void testSendFailsIfExceptionThrown() throws MailException, ExecutionException, InterruptedException {
-        _thrown.expectCause(instanceOf(MailException.class));
         _server.stop(); // so we should get an exception when trying to connect to it
         final RenderedReport report = TestBeanFactory.createRenderedReportBuilder().build();
-        _sender.send(
-                TestBeanFactory.createRecipientBuilder().build(),
-                ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
-        ).toCompletableFuture().get();
+        try {
+            _sender.send(
+                    TestBeanFactory.createRecipientBuilder().build(),
+                    ImmutableMap.of(new HtmlReportFormat.Builder().build(), report)
+            ).toCompletableFuture().get();
+        } catch (final ExecutionException e) {
+            _collector.checkThat(e.getCause(), instanceOf(MailException.class));
+        }
     }
 
     @Test
