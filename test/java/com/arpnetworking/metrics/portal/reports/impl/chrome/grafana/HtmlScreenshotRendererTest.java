@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.BaseChromeTestSuite;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Utils;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import com.github.tomakehurst.wiremock.common.Strings;
+import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.HtmlReportFormat;
 import org.hamcrest.Matchers;
@@ -31,12 +32,13 @@ import org.mockito.Mockito;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -53,7 +55,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
         _wireMock.givenThat(
-                get(urlEqualTo("/"))
+                get(urlPathMatching("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
                                 .withBody(Utils.mockGrafanaReportPanelPage(renderDelay, true))
@@ -100,7 +102,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
         _wireMock.givenThat(
-                get(urlEqualTo("/"))
+                get(urlPathMatching("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
                                 .withBody(Utils.mockGrafanaReportPanelPage(Duration.ofSeconds(2), false))
@@ -130,5 +132,17 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         } catch (final ExecutionException exc) {
             assertThat(exc.getCause(), Matchers.instanceOf(BaseGrafanaScreenshotRenderer.BrowserReportedFailure.class));
         }
+    }
+
+    @Test
+    public void testUriBuilding() throws Exception {
+        final HtmlGrafanaScreenshotRenderer renderer = new HtmlGrafanaScreenshotRenderer(getDevToolsFactory());
+        final GrafanaReportPanelReportSource source = new GrafanaReportPanelReportSource.Builder()
+                .setWebPageReportSource(TestBeanFactory.createWebPageReportSourceBuilder()
+                    .setUri(URI.create("http://example.com/grafana-page?foo=bar&from=override-this"))
+                    .build())
+                .build();
+        final URI uri = renderer.getUri(source, new TimeRange(Instant.ofEpochSecond(1234567890L), Instant.ofEpochSecond(9876543210L)));
+        assertEquals(uri.getQuery(), "foo=bar&from=1234567890&to=9876543210");
     }
 }
