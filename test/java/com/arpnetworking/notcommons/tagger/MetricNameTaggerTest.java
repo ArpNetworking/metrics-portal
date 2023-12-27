@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Unit tests for {@link MetricNameTagger}.

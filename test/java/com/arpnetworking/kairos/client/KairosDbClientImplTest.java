@@ -34,9 +34,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -96,7 +96,7 @@ public class KairosDbClientImplTest {
                         )
         );
         final MetricNamesResponse response = _kairosDbClient.queryMetricNames().toCompletableFuture().get();
-        Assert.assertThat(response.getResults(), Matchers.contains("foo"));
+        MatcherAssert.assertThat(response.getResults(), Matchers.contains("foo"));
     }
 
     @Test
