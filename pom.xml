@@ -102,7 +102,7 @@
     <javax.inject.version>1</javax.inject.version>
     <jsr305.version>3.0.2</jsr305.version>
     <logback.steno.version>1.18.3</logback.steno.version>
-    <logback.version>1.2.12</logback.version>
+    <logback.version>1.2.13</logback.version>
     <metrics.client.version>0.11.3</metrics.client.version>
     <metrics.client.http.version>0.11.2</metrics.client.http.version>
     <metrics.incubator.extra.version>0.11.2</metrics.incubator.extra.version>
