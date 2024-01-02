@@ -92,8 +92,8 @@
     <flyway.core.version>8.4.0</flyway.core.version>
     <flyway.play.version>7.19.0</flyway.play.version>
     <guava.version>33.0.0-jre</guava.version>
-    <guice.version>7.0.0</guice.version>
-    <guice.assisted.version>7.0.0</guice.assisted.version>
+    <guice.version>6.0.0</guice.version>
+    <guice.assisted.version>6.0.0</guice.assisted.version>
     <hikaricp.version>2.7.9</hikaricp.version>
     <jackson.version>2.16.1</jackson.version>
     <javassist.maven.core.version>0.2.3</javassist.maven.core.version>
@@ -1155,6 +1155,16 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>${guice.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject.extensions</groupId>
+      <artifactId>guice-assistedinject</artifactId>
+      <version>${guice.assisted.version}</version>
+    </dependency>
 
     <!-- Jackson -->
     <dependency>
@@ -1248,16 +1258,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.inject</groupId>
-      <artifactId>guice</artifactId>
-      <version>${guice.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.inject.extensions</groupId>
-      <artifactId>guice-assistedinject</artifactId>
-      <version>${guice.assisted.version}</version>
     </dependency>
     <dependency>
       <groupId>net.sf.oval</groupId>
