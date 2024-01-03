@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:11-jre
+FROM eclipse-temurin:17-jre
 
 MAINTAINER inscopemetrics.io
 
@@ -53,6 +53,8 @@ ENV JVM_XMX="1024m"
 ENV LOGBACK_CONFIG="-Dlogger.file=/opt/metrics-portal/config/logback.xml"
 ENV METRICS_PORTAL_CONFIG="-Dconfig.resource=portal.application.conf"
 ENV JAVA_OPTS="\
+    --add-opens java.base/java.nio=ALL-UNNAMED \
+    --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/opt/metrics-portal/logs/metrics-portal.oom.hprof \
     -Xlog:gc*:file=/opt/metrics-portal/logs/metrics-portal.gc.log:none:filecount=5,filesize=10M \
@@ -64,7 +66,7 @@ ENV APP_OPTS="/opt/metrics-portal"
 ENV ADDITIONAL_APP_OPTS=""
 
 # Build
-RUN apt update && apt install -y gosu chromium && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y gosu chromium-browser && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /opt/metrics-portal/lib/ext && \
     mkdir -p /opt/metrics-portal/config && \
     mkdir -p /opt/metrics-portal/logs

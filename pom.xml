@@ -18,7 +18,7 @@
   <parent>
     <groupId>com.arpnetworking.build</groupId>
     <artifactId>arpnetworking-parent-pom</artifactId>
-    <version>3.0.3</version>
+    <version>3.2.2</version>
     <relativePath />
   </parent>
 
@@ -77,11 +77,10 @@
     <akka.persistence.jdbc.version>5.0.4</akka.persistence.jdbc.version>
     <akka.persistence.inmemory.version>2.5.1.1</akka.persistence.inmemory.version>
     <anorm.version>2.6.2</anorm.version>
-    <arpnetworking.commons.version>2.0.2</arpnetworking.commons.version>
+    <arpnetworking.commons.version>3.0.0</arpnetworking.commons.version>
     <aspectjrt.version>1.9.7</aspectjrt.version>
     <cassandra.version>4.13.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
-    <cglib.version>3.3.0</cglib.version>
     <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
     <commons.codec.version>1.15</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
@@ -902,11 +901,21 @@
       <artifactId>play_${scala.package.version}</artifactId>
       <version>${play2.version}</version>
     </dependency>
-    <dependency>	
-      <groupId>com.typesafe.play</groupId>	
-      <artifactId>play-guice_${scala.package.version}</artifactId>	
-      <version>${play2.version}</version>	
+    <dependency>
+      <groupId>com.typesafe.play</groupId>
+      <artifactId>play-guice_${scala.package.version}</artifactId>
+      <version>${play2.version}</version>
       <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.inject</groupId>
+          <artifactId>guice</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.inject.extensions</groupId>
+          <artifactId>guice-assistedinject</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.typesafe.play</groupId>
@@ -1204,6 +1213,11 @@
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-guice</artifactId>
       <version>${jackson.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.inject</groupId>
+          <artifactId>guice</artifactId>
+        </exclusion></exclusions>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
@@ -1216,12 +1230,6 @@
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjrt</artifactId>
       <version>${aspectjrt.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>cglib</groupId>
-      <artifactId>cglib</artifactId>
-      <version>${cglib.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
