@@ -74,7 +74,9 @@ public final class CassandraServerHelper {
         session = sessionBuilder
                 .build();
 
-        final MigrationConfiguration migrationConfiguration = new MigrationConfiguration().withKeyspaceName(keyspace).withExecutionProfile("migration");
+        final MigrationConfiguration migrationConfiguration = new MigrationConfiguration()
+                .withKeyspaceName(keyspace)
+                .withExecutionProfile("migration");
         final Database database = new Database(session, migrationConfiguration);
         final MigrationRepository migrationRepository = new MigrationRepository("cassandra/migration/" + name);
         final MigrationTask migration = new MigrationTask(
