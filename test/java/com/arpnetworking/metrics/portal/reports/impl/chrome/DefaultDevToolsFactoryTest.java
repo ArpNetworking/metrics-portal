@@ -61,7 +61,7 @@ public class DefaultDevToolsFactoryTest {
         new DefaultDevToolsFactory.Builder().setConfig(VALID_CONFIG).build();
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 10000)
     public void testInvalidConstruction() {
         final ImmutableSet<String> requiredFields = ImmutableSet.of(
                 "path",

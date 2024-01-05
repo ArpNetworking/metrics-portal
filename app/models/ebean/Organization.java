@@ -15,9 +15,9 @@
  */
 package models.ebean;
 
-import io.ebean.EbeanServer;
-import io.ebean.annotation.CreatedTimestamp;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.Database;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -57,11 +57,11 @@ public class Organization {
     @Column(name = "version")
     private Long version;
 
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
@@ -73,7 +73,7 @@ public class Organization {
      * @return The organization from the database.
      */
     public static Optional<Organization> findByOrganization(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final models.internal.Organization organization) {
         return Optional.ofNullable(
                 ebeanServer.createQuery(Organization.class)

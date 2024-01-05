@@ -16,8 +16,8 @@
 package models.ebean;
 
 import com.arpnetworking.metrics.portal.reports.RecipientType;
-import io.ebean.annotation.CreatedTimestamp;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 import models.internal.impl.DefaultRecipient;
 
 import java.sql.Timestamp;
@@ -55,11 +55,11 @@ public final class Recipient {
     @Column(name = "uuid")
     private UUID uuid;
 
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 

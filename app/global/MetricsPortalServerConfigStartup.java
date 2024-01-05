@@ -21,15 +21,15 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import io.ebean.config.ServerConfig;
+import io.ebean.config.DatabaseConfig;
 import io.ebean.event.ServerConfigStartup;
 
 /**
- * Plugin class to configure Ebean's {@link ServerConfig} at runtime.
+ * Plugin class to configure Ebean's {@link DatabaseConfig} at runtime.
  * <p>
  * This is necessary for configuring the Ebean server with dependencies
  * constructed via Guice, for instance. This class will be invoked for every
- * instance of {@code EbeanServer}.
+ * instance of {@code Database}.
  * <p>
  * NOTE: This <b>must</b> be used alongside an injector, since its whole purpose
  * is a shim around Ebean's lack of Guice support.
@@ -47,7 +47,7 @@ public class MetricsPortalServerConfigStartup implements ServerConfigStartup {
     public MetricsPortalServerConfigStartup() {}
 
     @Override
-    public void onStart(final ServerConfig serverConfig) {
+    public void onStart(final DatabaseConfig serverConfig) {
         LOGGER.info().setMessage("Initializing Ebean ServerConfig").log();
         // In some cases we manually load the ebean model classes via
         // ServerConfig#addPackage (see EbeanServerHelper).

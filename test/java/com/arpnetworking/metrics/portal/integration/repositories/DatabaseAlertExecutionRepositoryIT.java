@@ -25,7 +25,7 @@ import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
@@ -47,8 +47,8 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
 
     @Override
     public JobExecutionRepository<AlertEvaluationResult> setUpRepository(final Organization organization) {
-        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
-        final EbeanServer adminServer = EbeanServerHelper.getAdminMetricsDatabase();
+        final Database server = EbeanServerHelper.getMetricsDatabase();
+        final Database adminServer = EbeanServerHelper.getAdminMetricsDatabase();
 
         final models.ebean.Organization ebeanOrganization = TestBeanFactory.createEbeanOrganization();
         ebeanOrganization.setUuid(organization.getId());
@@ -77,7 +77,7 @@ public class DatabaseAlertExecutionRepositoryIT extends JobExecutionRepositoryIT
     public void ensureJobExists(final Organization organization, final UUID jobId) {
         // DatabaseAlertExecutionRepository does not validate that the JobID is a valid AlertID since those
         // references are not constrained in the underlying execution table.
-        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final Database server = EbeanServerHelper.getMetricsDatabase();
         final Optional<models.ebean.Organization> org = models.ebean.Organization.findByOrganization(server, organization);
         if (!org.isPresent()) {
             throw new IllegalStateException("organization not found: " + organization);

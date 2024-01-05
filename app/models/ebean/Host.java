@@ -16,8 +16,8 @@
 package models.ebean;
 
 
-import io.ebean.annotation.CreatedTimestamp;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 
@@ -57,11 +57,11 @@ public class Host {
     @Column(name = "version")
     private Long version;
 
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 

@@ -25,7 +25,7 @@ import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +64,7 @@ public class DailyPartitionCreatorTest {
     private ManualClock _clock;
 
     // Unused Mocks
-    private EbeanServer _server;
+    private Database _server;
     private PeriodicMetrics _metrics;
 
     // ActorSystem fields
@@ -73,7 +73,7 @@ public class DailyPartitionCreatorTest {
 
     @Before
     public void setUp() {
-        _server = Mockito.mock(EbeanServer.class);
+        _server = Mockito.mock(Database.class);
         _metrics = Mockito.mock(PeriodicMetrics.class);
         _clock = new ManualClock(CLOCK_START, Duration.ofDays(1), ZoneOffset.UTC);
 

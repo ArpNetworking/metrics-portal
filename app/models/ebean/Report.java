@@ -17,10 +17,10 @@ package models.ebean;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
-import io.ebean.EbeanServer;
-import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.Database;
 import io.ebean.annotation.SoftDelete;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 import models.internal.impl.DefaultReport;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -82,11 +82,11 @@ public class Report {
     )
     private List<ReportRecipientAssoc> recipientAssocs = Collections.emptyList();
 
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
@@ -199,13 +199,13 @@ public class Report {
     /**
      * Finds a {@link Report} when given a uuid.
      *
-     * @param ebeanServer The {@code EbeanServer} instance to use.
+     * @param ebeanServer The {@code Database} instance to use.
      * @param organization The parent organization for this report.
      * @param reportId The report uuid to lookup.
      * @return The report from the database.
      */
     public static Optional<Report> findByUUID(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final models.ebean.Organization organization,
             final UUID reportId) {
         return ebeanServer.find(models.ebean.Report.class)

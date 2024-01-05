@@ -85,8 +85,8 @@
     <commons.codec.version>1.15</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
-    <ebean.version>11.15.4</ebean.version>
-    <ebean.annotation.version>3.11</ebean.annotation.version>
+    <ebean.version>12.16.1</ebean.version>
+    <ebean.annotation.version>7.8</ebean.annotation.version>
     <ebean.api.version>2.2.1</ebean.api.version>
     <flyway.core.version>8.4.0</flyway.core.version>
     <flyway.play.version>7.19.0</flyway.play.version>
@@ -111,7 +111,7 @@
     <play2.version>2.8.21</play2.version>
     <play2-json.version>2.8.2</play2-json.version>
     <play2-enhancer.version>1.2.2</play2-enhancer.version>
-    <play2-ebean.version>6.0.0</play2-ebean.version>
+    <play2-ebean.version>6.2.0</play2-ebean.version>
     <play2-jdbc-evolutions.version>2.8.13</play2-jdbc-evolutions.version>
     <postgresql.version>42.3.8</postgresql.version>
     <scala.version>2.13.12</scala.version>

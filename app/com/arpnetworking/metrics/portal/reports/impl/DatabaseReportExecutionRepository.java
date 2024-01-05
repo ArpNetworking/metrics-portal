@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.DatabaseExecutionHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.ExpressionList;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
@@ -49,18 +49,18 @@ public final class DatabaseReportExecutionRepository implements ReportExecutionR
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseReportExecutionRepository.class);
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
     private final DatabaseExecutionHelper<Report.Result, ReportExecution> _executionHelper;
     private final Executor _executor;
 
     /**
      * Public constructor.
      *
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param ebeanServer Play's {@code Database} for this repository.
      * @param executor The executor to spawn futures onto.
      */
     @Inject
-    public DatabaseReportExecutionRepository(@Named("metrics_portal") final EbeanServer ebeanServer, final Executor executor) {
+    public DatabaseReportExecutionRepository(@Named("metrics_portal") final Database ebeanServer, final Executor executor) {
         _ebeanServer = ebeanServer;
         _executionHelper = new DatabaseExecutionHelper<>(LOGGER, _ebeanServer, this::findOrCreateReportExecution, executor);
         _executor = executor;

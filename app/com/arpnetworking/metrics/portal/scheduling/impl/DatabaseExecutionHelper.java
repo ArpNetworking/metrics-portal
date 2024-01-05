@@ -19,7 +19,7 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.arpnetworking.steno.Logger;
 import com.google.common.base.Throwables;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.Transaction;
 import models.ebean.BaseExecution;
 import models.internal.Organization;
@@ -45,7 +45,7 @@ import javax.persistence.PersistenceException;
  * @author Christian Briones (cbriones at dropbox dot com)
  */
 public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
     private final ExecutionAdapter<T, E> _adapter;
     private final Logger _logger;
     private Executor _executor;
@@ -60,7 +60,7 @@ public final class DatabaseExecutionHelper<T, E extends BaseExecution<T>> {
      */
     public DatabaseExecutionHelper(
             final Logger logger,
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final ExecutionAdapter<T, E> adapter,
             final Executor executor
     ) {

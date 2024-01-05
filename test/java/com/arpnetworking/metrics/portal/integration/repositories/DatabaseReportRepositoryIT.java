@@ -23,7 +23,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultReport;
@@ -72,7 +72,7 @@ public class DatabaseReportRepositoryIT {
     private static final String ORIGINAL_REPORT_NAME = "Original Report Name";
     private static final String ALTERED_REPORT_NAME = "Altered Report Name";
 
-    private EbeanServer _server;
+    private Database _server;
     private DatabaseReportRepository _repository;
     private Organization _organization;
     private models.ebean.Organization _ebeanOrganization;

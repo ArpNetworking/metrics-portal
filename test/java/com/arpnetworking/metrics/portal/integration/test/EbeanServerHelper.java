@@ -21,9 +21,9 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.google.common.collect.Maps;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.ebean.EbeanServer;
-import io.ebean.EbeanServerFactory;
-import io.ebean.config.ServerConfig;
+import io.ebean.Database;
+import io.ebean.DatabaseFactory;
+import io.ebean.config.DatabaseConfig;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
@@ -34,7 +34,7 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 
 /**
- * Helper to manage shared {@code EbeanServer} references for integration testing.
+ * Helper to manage shared {@code Database} references for integration testing.
  *
  * @author ville dot koskela at inscopemetrics dot io
  */
@@ -43,17 +43,17 @@ public final class EbeanServerHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(EbeanServerHelper.class);
 
     /**
-     * Obtain a reference to the shared Metrics database {@code EbeanServer}.
+     * Obtain a reference to the shared Metrics database {@code Database}.
      *
-     * @return reference to the shared Metrics database {@code EbeanServer}
+     * @return reference to the shared Metrics database {@code Database}
      */
-    public static synchronized EbeanServer getMetricsDatabase() {
+    public static synchronized Database getMetricsDatabase() {
         LOGGER.info().setMessage("Getting ebean server for metrics db")
                 .addData("databaseName", METRICS_DATABASE_NAME)
                 .addData("serverMap", EBEAN_SERVER_MAP)
                 .addData("pid", ProcessHandle.current().pid())
                 .log();
-        @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_DATABASE_NAME);
+        @Nullable Database ebeanServer = EBEAN_SERVER_MAP.get(METRICS_DATABASE_NAME);
         if (ebeanServer == null) {
             // TODO(ville): It should not be necessary to register this as the default database.
             // e.g.
@@ -91,12 +91,12 @@ public final class EbeanServerHelper {
     }
 
      /**
-     * Obtain a reference to the shared Metrics database {@code EbeanServer} with the admin user.
+     * Obtain a reference to the shared Metrics database {@code Database} with the admin user.
      *
-     * @return reference to the shared Metrics database {@code EbeanServer}
+     * @return reference to the shared Metrics database {@code Database}
      */
-    public static synchronized EbeanServer getAdminMetricsDatabase() {
-        @Nullable EbeanServer ebeanServer = EBEAN_SERVER_MAP.get(METRICS_ADMIN_NAME);
+    public static synchronized Database getAdminMetricsDatabase() {
+        @Nullable Database ebeanServer = EBEAN_SERVER_MAP.get(METRICS_ADMIN_NAME);
         if (ebeanServer == null) {
             ebeanServer = createEbeanServer(
                     getEnvOrDefault("PG_HOST", "localhost"),
@@ -111,7 +111,7 @@ public final class EbeanServerHelper {
         return ebeanServer;
     }
 
-    private static EbeanServer createEbeanServer(
+    private static Database createEbeanServer(
             final String hostname,
             final int port,
             final String database,
@@ -129,7 +129,7 @@ public final class EbeanServerHelper {
         hikariConfig.setPoolName(name);
         hikariConfig.setUsername(username);
 
-        final ServerConfig serverConfig = new ServerConfig();
+        final DatabaseConfig serverConfig = new DatabaseConfig();
         serverConfig.setName(name);
         serverConfig.setDefaultServer(setAsDefault);
         serverConfig.setDataSource(new HikariDataSource(hikariConfig));
@@ -137,7 +137,7 @@ public final class EbeanServerHelper {
         serverConfig.setObjectMapper(SerializationTestUtils.getApiObjectMapper());
         serverConfig.setDataTimeZone("UTC");
 
-        return EbeanServerFactory.create(serverConfig);
+        return DatabaseFactory.create(serverConfig);
     }
 
     private static void migrateServer(
@@ -176,7 +176,7 @@ public final class EbeanServerHelper {
 
     private EbeanServerHelper() {}
 
-    private static final Map<String, EbeanServer> EBEAN_SERVER_MAP = Maps.newHashMap();
+    private static final Map<String, Database> EBEAN_SERVER_MAP = Maps.newHashMap();
     private static final String METRICS_DATABASE_NAME = "metrics";
     private static final String METRICS_ADMIN_NAME = "metrics_ddl";
     private static final String METRICS_DATABASE_USERNAME = "metrics_app";

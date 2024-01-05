@@ -27,7 +27,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.typesafe.config.Config;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.PagedList;
 import io.ebean.Transaction;
 import models.ebean.NeverReportSchedule;
@@ -87,29 +87,29 @@ public final class DatabaseReportRepository implements ReportRepository {
             };
 
     private AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
 
     /**
      * Public constructor.
      *
      * @param environment Play's {@code Environment} instance.
      * @param config Play's {@code Configuration} instance.
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param ebeanServer Play's {@code Database} for this repository.
      */
     @Inject
     public DatabaseReportRepository(
             final Environment environment,
             final Config config,
-            @Named("metrics_portal") final EbeanServer ebeanServer) {
+            @Named("metrics_portal") final Database ebeanServer) {
         this(ebeanServer);
     }
 
     /**
      * Public constructor for manual configuration. This is intended for testing.
      *
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param ebeanServer Play's {@code Database} for this repository.
      */
-    public DatabaseReportRepository(final EbeanServer ebeanServer) {
+    public DatabaseReportRepository(final Database ebeanServer) {
         _ebeanServer = ebeanServer;
     }
 
@@ -297,7 +297,7 @@ public final class DatabaseReportRepository implements ReportRepository {
     }
 
     private static PagedList<models.ebean.Report> createReportQuery(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final ReportQuery query) {
         final int offset = query.getOffset().orElse(0);
         final int limit = query.getLimit();
