@@ -78,7 +78,8 @@ public final class CassandraServerHelper {
         final MigrationRepository migrationRepository = new MigrationRepository("cassandra/migration/" + name);
         final MigrationTask migration = new MigrationTask(
                 database,
-                migrationRepository);
+                migrationRepository,
+                true);
 
         LOGGER.info()
                 .setMessage("Running cassandra migrations for test setup")
