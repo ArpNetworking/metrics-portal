@@ -16,7 +16,7 @@
 
 package models.ebean;
 
-import io.ebean.annotation.CreatedTimestamp;
+import io.ebean.annotation.WhenCreated;
 
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -48,7 +48,7 @@ import javax.persistence.Table;
 @IdClass(ReportRecipientAssoc.Key.class)
 // CHECKSTYLE.OFF: MemberNameCheck
 public class ReportRecipientAssoc {
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 

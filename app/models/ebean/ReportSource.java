@@ -15,9 +15,9 @@
  */
 package models.ebean;
 
-import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.SoftDelete;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -53,10 +53,10 @@ public abstract class ReportSource {
     private long id;
     @Column(name = "uuid")
     private UUID uuid;
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
     @SoftDelete

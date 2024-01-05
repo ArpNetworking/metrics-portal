@@ -18,9 +18,9 @@ package models.ebean;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import io.ebean.EbeanServer;
-import io.ebean.annotation.CreatedTimestamp;
 import io.ebean.annotation.SoftDelete;
-import io.ebean.annotation.UpdatedTimestamp;
+import io.ebean.annotation.WhenCreated;
+import io.ebean.annotation.WhenModified;
 import models.internal.impl.DefaultReport;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -82,11 +82,11 @@ public class Report {
     )
     private List<ReportRecipientAssoc> recipientAssocs = Collections.emptyList();
 
-    @CreatedTimestamp
+    @WhenCreated
     @Column(name = "created_at")
     private Timestamp createdAt;
 
-    @UpdatedTimestamp
+    @WhenModified
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
