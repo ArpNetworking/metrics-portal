@@ -181,7 +181,7 @@ public final class MetricsActionWrapper extends Action.Simple {
         private final String _routeMetricName;
     }
 
-    private static class Attrs {
+    private static final class Attrs {
         private static final TypedKey<Metrics> METRICS = TypedKey.create("metrics");
     }
 }

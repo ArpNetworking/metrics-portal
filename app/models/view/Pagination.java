@@ -17,6 +17,7 @@ package models.view;
 
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jboss.netty.handler.codec.http.QueryStringEncoder;
 
 import java.net.URI;
@@ -42,6 +43,8 @@ public class Pagination {
      * @param offset The offset, in records, of the first record in this page.
      * @param conditions The {@code Map} of query parameter key-value pairs.
      */
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Protected as mentioned at "
+            + "https://wiki.sei.cmu.edu/confluence/display/java/OBJ11-J.+Be+wary+of+letting+constructors+throw+exceptions")
     public Pagination(
             final String path,
             final long total,

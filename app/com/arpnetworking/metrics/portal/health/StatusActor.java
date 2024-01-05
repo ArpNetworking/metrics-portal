@@ -110,7 +110,7 @@ public class StatusActor extends AbstractActor {
     private final ActorRef _clusterStatusCache;
     private boolean _quarantined;
 
-    private static class AsNullRecovery<T> implements Function<Throwable, T> {
+    private static final class AsNullRecovery<T> implements Function<Throwable, T> {
         @Override
         @Nullable
         public T apply(final Throwable failure) {

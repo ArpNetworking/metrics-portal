@@ -32,6 +32,7 @@ import com.google.common.net.MediaType;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.reports.Recipient;
@@ -140,17 +141,27 @@ public class EmailSender implements Sender {
      */
     @Inject
     public EmailSender(@Assisted final Config config, final ObjectMapper mapper) {
-        this(buildMailer(config), config, mapper);
+        this(buildMailer(config), config.getString("fromAddress"), buildAllowedRecipients(config, mapper));
     }
 
     /**
      * Constructor for tests, allowing dependency injection of the {@link Mailer}.
      */
+    @SuppressFBWarnings(value = "CT_CONSTRUCTOR_THROW", justification = "Protected as mentioned at "
+        + "https://wiki.sei.cmu.edu/confluence/display/java/OBJ11-J.+Be+wary+of+letting+constructors+throw+exceptions")
     /* package private */ EmailSender(final Mailer mailer, final Config config, final ObjectMapper mapper) {
-        _fromAddress = config.getString("fromAddress");
+        this(mailer, config.getString("fromAddress"), buildAllowedRecipients(config, mapper));
+    }
+
+    private EmailSender(final Mailer mailer, final String fromAddress, final ImmutableSet<Pattern> allowedRecipients) {
+        _fromAddress = fromAddress;
+        _allowedRecipients = allowedRecipients;
         _mailer = mailer;
+    }
+
+    private static ImmutableSet<Pattern> buildAllowedRecipients(final Config config, final ObjectMapper mapper) {
         try {
-            _allowedRecipients = mapper.readValue(ConfigurationHelper.toJson(config, ALLOWED_RECIPIENTS_KEY), ALLOWED_RECIPIENTS_TYPE);
+            return mapper.readValue(ConfigurationHelper.toJson(config, ALLOWED_RECIPIENTS_KEY), ALLOWED_RECIPIENTS_TYPE);
         } catch (final IOException e) {
             throw new IllegalArgumentException(e);
         }
