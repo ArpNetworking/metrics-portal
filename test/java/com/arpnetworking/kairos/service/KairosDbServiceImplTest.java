@@ -41,7 +41,7 @@ import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import io.ebeaninternal.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -50,6 +50,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -560,9 +561,10 @@ public class KairosDbServiceImplTest {
 
     private String readResource(final String resourceSuffix) {
         try {
-            return IOUtils.readUtf8(getClass()
+            return IOUtils.toString(getClass()
                     .getClassLoader()
-                    .getResourceAsStream("com/arpnetworking/kairos/service/" + CLASS_NAME + "." + resourceSuffix + ".json"));
+                    .getResourceAsStream("com/arpnetworking/kairos/service/" + CLASS_NAME + "." + resourceSuffix + ".json"),
+                    StandardCharsets.UTF_8);
         } catch (final IOException e) {
             fail("Failed with exception: " + e);
             return null;

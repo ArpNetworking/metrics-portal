@@ -30,7 +30,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.SqlRow;
 import io.ebean.Transaction;
 
@@ -64,7 +64,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private static final Duration TICK_INTERVAL = Duration.ofMinutes(1);
     private static final String TICKER_NAME = "PERIODIC_TICK";
 
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
     private final PeriodicMetrics _periodicMetrics;
     private final Set<LocalDate> _partitionCache;
 
@@ -77,7 +77,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
     private Optional<Instant> _lastRun;
 
     private DailyPartitionCreator(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final PeriodicMetrics periodicMetrics,
             final String schema,
             final String table,
@@ -90,7 +90,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
 
     // CHECKSTYLE.OFF: ParameterNumber
     /* package private */ DailyPartitionCreator(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final PeriodicMetrics periodicMetrics,
             final String schema,
             final String table,
@@ -130,7 +130,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @return A new Props.
      */
     public static Props props(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final PeriodicMetrics periodicMetrics,
             final String schema,
             final String table,
@@ -333,7 +333,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
         // TODO(cbriones): Move DB operation off the dispatcher thread pool.
         final String sql = "SELECT portal.create_daily_partition(?, ?, ?, ?);";
         try (Transaction tx = _ebeanServer.beginTransaction()) {
-            final Connection conn = tx.getConnection();
+            final Connection conn = tx.connection();
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                 stmt.setString(1, schema);
                 stmt.setString(2, table);
@@ -343,7 +343,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
             }
 
             final List<SqlRow> partitionTables = _ebeanServer
-                    .createSqlQuery("SELECT table_name from information_schema.tables where table_schema = ? and "
+                    .sqlQuery("SELECT table_name from information_schema.tables where table_schema = ? and "
                             + "table_name LIKE ? order by table_name")
                     .setParameter(1, schema)
                     .setParameter(2, table + "_%")
@@ -353,7 +353,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
                 final List<String> toDelete = partitionTables.stream()
                         .limit(partitionTables.size() - _retainCount)
                         .map(row -> row.getString("table_name"))
-                        .collect(Collectors.toList());
+                        .toList();
                 for (final String tableToDelete : toDelete) {
                     try (Statement deleteStmt = conn.createStatement()) {
                         deleteStmt.execute(String.format("DROP TABLE IF EXISTS \"%s\".\"%s\"", schema, tableToDelete));

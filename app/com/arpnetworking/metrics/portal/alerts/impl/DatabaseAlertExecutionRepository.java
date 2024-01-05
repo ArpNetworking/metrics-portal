@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.collect.ImmutableMap;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import global.BlockingIOExecutionContext;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
 import models.ebean.AlertExecution;
@@ -76,7 +76,7 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     private static final Duration ACTOR_STOP_TIMEOUT = Duration.ofSeconds(5);
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
     private final DatabaseExecutionHelper<AlertEvaluationResult, AlertExecution> _helper;
 
     private static final String ACTOR_NAME = "alertExecutionPartitionCreator";
@@ -89,8 +89,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
     /**
      * Public constructor.
      *
-     * @param portalServer Play's {@code EbeanServer} for this repository.
-     * @param partitionServer Play's {@code EbeanServer} for partition creation.
+     * @param portalServer Play's {@code Database} for this repository.
+     * @param partitionServer Play's {@code Database} for partition creation.
      * @param actorSystem The actor system to use.
      * @param periodicMetrics A metrics instance to record against.
      * @param partitionManager Partition creation configuration.
@@ -98,8 +98,8 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
      */
     @Inject
     public DatabaseAlertExecutionRepository(
-            final EbeanServer portalServer,
-            final EbeanServer partitionServer,
+            final Database portalServer,
+            final Database partitionServer,
             final ActorSystem actorSystem,
             final PeriodicMetrics periodicMetrics,
             final PartitionManager partitionManager,
@@ -406,11 +406,11 @@ public final class DatabaseAlertExecutionRepository implements AlertExecutionRep
         @NotNull
         @JacksonInject
         @Named("metrics_portal")
-        private EbeanServer _portalServer;
+        private Database _portalServer;
         @NotNull
         @JacksonInject
         @Named("metrics_portal_ddl")
-        private EbeanServer _ddlServer;
+        private Database _ddlServer;
         @NotNull
         @JacksonInject
         private ActorSystem _actorSystem;

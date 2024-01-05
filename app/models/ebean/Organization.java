@@ -15,7 +15,7 @@
  */
 package models.ebean;
 
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.annotation.WhenCreated;
 import io.ebean.annotation.WhenModified;
 
@@ -73,7 +73,7 @@ public class Organization {
      * @return The organization from the database.
      */
     public static Optional<Organization> findByOrganization(
-            final EbeanServer ebeanServer,
+            final Database ebeanServer,
             final models.internal.Organization organization) {
         return Optional.ofNullable(
                 ebeanServer.createQuery(Organization.class)

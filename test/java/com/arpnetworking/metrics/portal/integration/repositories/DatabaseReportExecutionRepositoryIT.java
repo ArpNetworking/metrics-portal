@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.integration.test.EbeanServerHelper;
 import com.arpnetworking.metrics.portal.reports.impl.DatabaseReportExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import models.internal.Organization;
 import models.internal.impl.DefaultReportResult;
 import models.internal.reports.Report;
@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryIT<Report.Result> {
     @Override
     JobExecutionRepository<Report.Result> setUpRepository(final Organization organization) {
-        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final Database server = EbeanServerHelper.getMetricsDatabase();
         final Executor executor = Executors.newSingleThreadExecutor();
 
         final DatabaseReportExecutionRepository repository = new DatabaseReportExecutionRepository(server, executor);
@@ -50,7 +50,7 @@ public class DatabaseReportExecutionRepositoryIT extends JobExecutionRepositoryI
 
     @Override
     void ensureJobExists(final Organization organization, final UUID jobId) {
-        final EbeanServer server = EbeanServerHelper.getMetricsDatabase();
+        final Database server = EbeanServerHelper.getMetricsDatabase();
         final models.ebean.Organization ebeanOrganization = models.ebean.Organization.findByOrganization(
                 server,
                 organization

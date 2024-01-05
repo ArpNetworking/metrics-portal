@@ -106,8 +106,9 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.ebean.DB;
 import io.ebean.Ebean;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import models.internal.Features;
 import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
@@ -155,11 +156,11 @@ public class MainModule extends AbstractModule {
         // Databases
         // NOTE: These are not singletons because the lifecycle is controlled by
         // Ebean itself and we are just binding the instances by name through Guice
-        bind(EbeanServer.class)
+        bind(Database.class)
                 .annotatedWith(Names.named("metrics_portal"))
                 .toProvider(MetricsPortalEbeanServerProvider.class);
 
-        bind(EbeanServer.class)
+        bind(Database.class)
                 .annotatedWith(Names.named("metrics_portal_ddl"))
                 .toProvider(MetricsPortalDDLEbeanServerProvider.class);
 
@@ -592,7 +593,7 @@ public class MainModule extends AbstractModule {
         return ConfigurationHelper.toInstanceMapped(Tagger.class, mapper, taggerConfig);
     }
 
-    private static final class MetricsPortalEbeanServerProvider implements Provider<EbeanServer> {
+    private static final class MetricsPortalEbeanServerProvider implements Provider<Database> {
         @Inject
         MetricsPortalEbeanServerProvider(
                 final Configuration configuration,
@@ -604,12 +605,12 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
-        public EbeanServer get() {
-            return Ebean.getServer("metrics_portal");
+        public Database get() {
+            return DB.byName("metrics_portal");
         }
     }
 
-    private static final class MetricsPortalDDLEbeanServerProvider implements Provider<EbeanServer> {
+    private static final class MetricsPortalDDLEbeanServerProvider implements Provider<Database> {
         @Inject
         MetricsPortalDDLEbeanServerProvider(
                 final Configuration configuration,
@@ -621,8 +622,8 @@ public class MainModule extends AbstractModule {
         }
 
         @Override
-        public EbeanServer get() {
-            return Ebean.getServer("metrics_portal_ddl");
+        public Database get() {
+            return DB.byName("metrics_portal_ddl");
         }
     }
 

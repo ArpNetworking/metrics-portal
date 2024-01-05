@@ -22,7 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import io.ebean.EbeanServer;
+import io.ebean.Database;
 import io.ebean.ExpressionList;
 import io.ebean.PagedList;
 import io.ebean.Query;
@@ -61,22 +61,22 @@ public class DatabaseHostRepository implements HostRepository {
      *
      * @param environment Play's {@code Environment} instance.
      * @param config Play's {@code Configuration} instance.
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param ebeanServer Play's {@code Database} for this repository.
      */
     @Inject
     public DatabaseHostRepository(
             final Environment environment,
             final Config config,
-            @Named("metrics_portal") final EbeanServer ebeanServer) {
+            @Named("metrics_portal") final Database ebeanServer) {
         this(ebeanServer);
     }
 
     /**
      * Public constructor for manual configuration. This is intended for testing.
      *
-     * @param ebeanServer Play's {@code EbeanServer} for this repository.
+     * @param ebeanServer Play's {@code Database} for this repository.
      */
-    public DatabaseHostRepository(final EbeanServer ebeanServer) {
+    public DatabaseHostRepository(final Database ebeanServer) {
         _ebeanServer = ebeanServer;
     }
 
@@ -148,7 +148,7 @@ public class DatabaseHostRepository implements HostRepository {
                     .orElse("");
 
             _ebeanServer.save(ebeanHost);
-            _ebeanServer.createSqlUpdate(
+            _ebeanServer.sqlUpdate(
                     "UPDATE portal.hosts SET name_idx_col = "
                             + "setweight(to_tsvector('simple', coalesce(:hostname,'')), 'A')"
                             + "|| setweight(to_tsvector('simple', coalesce(:labels,'')), 'B')"
@@ -253,7 +253,7 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     private static PagedList<models.ebean.Host> createHostQuery(
-            final EbeanServer server,
+            final Database server,
             final HostQuery query,
             final Organization organization) {
         final StringBuilder selectBuilder = new StringBuilder(
@@ -356,7 +356,7 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     private static Query<models.ebean.Host> createParameterizedHostQueryFromRawSql(
-            final EbeanServer server,
+            final Database server,
             final String sql,
             final Map<String, Object> parameters) {
         final RawSql rawSql = RawSqlBuilder.parse(sql)
@@ -404,7 +404,7 @@ public class DatabaseHostRepository implements HostRepository {
     }
 
     private final AtomicBoolean _isOpen = new AtomicBoolean(false);
-    private final EbeanServer _ebeanServer;
+    private final Database _ebeanServer;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseHostRepository.class);
 }
