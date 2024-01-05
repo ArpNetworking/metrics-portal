@@ -783,6 +783,7 @@
               <name>cassandra:${docker.cassandra.version}</name>
               <alias>cassandra</alias>
               <run>
+                <capAdd>CAP_SYS_NICE</capAdd>
                 <skip>${docker.skip.cassandra}</skip>
                 <network>
                   <mode>custom</mode>
