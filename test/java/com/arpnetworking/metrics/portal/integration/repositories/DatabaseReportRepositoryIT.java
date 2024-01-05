@@ -201,7 +201,7 @@ public class DatabaseReportRepositoryIT {
         final DefaultReport.Builder reportBuilder = TestBeanFactory.createReportBuilder();
         final PeriodicSchedule.Builder scheduleBuilder =
                 new PeriodicSchedule.Builder()
-                        .setRunAtAndAfter(Instant.now())
+                        .setRunAtAndAfter(Instant.now().truncatedTo(ChronoUnit.MICROS))
                         .setRunUntil(null)
                         .setOffset(Duration.ofMinutes(10))
                         .setPeriod(ChronoUnit.DAYS)

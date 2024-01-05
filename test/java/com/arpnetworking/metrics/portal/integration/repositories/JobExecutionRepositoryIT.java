@@ -107,7 +107,7 @@ public abstract class JobExecutionRepositoryIT<T> {
             justification = "The 'this' reference is the test class and I'm not concerned about it potentially living too long."
     )
     public void testJobStarted() throws Exception {
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         _repository.jobStarted(_jobId, _organization, scheduled)
                 .toCompletableFuture()
@@ -153,7 +153,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     @Test
     public void testJobSucceeded() throws Exception {
         final T result = newResult();
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         final Optional<JobExecution.Success<T>> executionResult =
             _repository.jobStarted(_jobId, _organization, scheduled)
@@ -224,7 +224,7 @@ public abstract class JobExecutionRepositoryIT<T> {
 
     @Test
     public void testJobFailed() throws Exception {
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
         final Throwable error = new RuntimeException("something went wrong.");
 
         final Optional<JobExecution<T>> lastRun =
@@ -264,7 +264,7 @@ public abstract class JobExecutionRepositoryIT<T> {
 
     @Test
     public void testJobMultipleRuns() throws Exception {
-        final Instant t0 = Instant.now();
+        final Instant t0 = Instant.now().truncatedTo(ChronoUnit.MICROS);
         final Duration dt = Duration.ofHours(1);
 
         final List<CompletionStage<Void>> markedStarted = new ArrayList<>();
@@ -294,7 +294,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     public void testSanityCheckRunningMultipleJobsWithDistinctResults() throws Exception {
         final T firstResult = newResult();
         final T secondResult = newResult();
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
 
         JobExecution.Success<T> execution =
                 _repository.jobStarted(_jobId, _organization, scheduled)
@@ -326,7 +326,7 @@ public abstract class JobExecutionRepositoryIT<T> {
     @Test
     public void testStateChange() throws Exception {
         final T result = newResult();
-        final Instant scheduled = Instant.now();
+        final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
         final Throwable error = new RuntimeException("something went wrong.");
 
         _repository.jobStarted(_jobId, _organization, scheduled)

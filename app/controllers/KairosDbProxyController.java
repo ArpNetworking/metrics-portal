@@ -219,11 +219,11 @@ public class KairosDbProxyController extends Controller {
                     .collect(ImmutableList.toImmutableList());
 
             newMetrics.add(ThreadLocalBuilder.clone(
-                    metric, Metric.Builder.class, b->b.setAggregators(newAggregators)));
+                    metric, Metric.Builder.class, b -> b.setAggregators(newAggregators)));
 
         }
         final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
-        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
+        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b -> b.setMetrics(finalNewMetrics));
     }
 
     /* package private */ MetricsQuery checkAndAddMergeAggregator(final MetricsQuery metricsQuery) {
@@ -251,14 +251,14 @@ public class KairosDbProxyController extends Controller {
                 newAggregators.addAll(metric.getAggregators());
                 final ImmutableList<Aggregator> finalNewAggregators = ImmutableList.copyOf(newAggregators);
                 newMetrics.add(ThreadLocalBuilder.clone(
-                        metric, Metric.Builder.class, b->b.setAggregators(finalNewAggregators)));
+                        metric, Metric.Builder.class, b -> b.setAggregators(finalNewAggregators)));
             } else {
                 newMetrics.add(metric);
             }
         }
 
         final ImmutableList<Metric> finalNewMetrics = ImmutableList.copyOf(newMetrics);
-        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b->b.setMetrics(finalNewMetrics));
+        return ThreadLocalBuilder.clone(metricsQuery, MetricsQuery.Builder.class, b -> b.setMetrics(finalNewMetrics));
     }
 
     private Boolean needMergeAggregator(final ImmutableList<Aggregator> aggregators) {

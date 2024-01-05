@@ -824,7 +824,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
             @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
             private boolean validateErrorAndResult(@Nullable final Object result) {
-                return (result == null) ^ (_error == null);
+                return result == null ^ _error == null;
             }
         }
     }

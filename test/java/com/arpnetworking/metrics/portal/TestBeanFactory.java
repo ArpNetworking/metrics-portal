@@ -101,7 +101,7 @@ public final class TestBeanFactory {
                     .setWidthInches((RANDOM.nextInt(100) + 1) * 8.5f / 100f)
                     .build();
         }
-        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
         final LocalDateTime runAtAndAfter = now.plusDays(RANDOM.nextInt(100) - 50);
         final LocalDateTime runUntil = runAtAndAfter.plusDays(RANDOM.nextInt(100) + 1);
         final Schedule schedule;

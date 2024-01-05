@@ -28,4 +28,5 @@
 
     <!-- Exclude guice bindings -->
     <suppress checks="FileLength" files="app/global/MainModule.java"/>
+    <suppress checks="FinalClass" files="test/.*\.java"/>
 </suppressions>

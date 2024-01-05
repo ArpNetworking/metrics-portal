@@ -250,7 +250,7 @@ public final class RollupManager extends AbstractActorWithTimers {
         _consistencyCheckDelay = consistencyCheckDelay;
     }
 
-    private static class RollupComparator implements Comparator<RollupDefinition>, Serializable {
+    private static final class RollupComparator implements Comparator<RollupDefinition>, Serializable {
 
         private static final long serialVersionUID = -3992696463296110397L;
 
