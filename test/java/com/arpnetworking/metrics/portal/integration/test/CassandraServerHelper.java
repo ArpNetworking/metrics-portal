@@ -16,6 +16,8 @@
 package com.arpnetworking.metrics.portal.integration.test;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.internal.core.type.codec.registry.DefaultCodecRegistry;
@@ -72,11 +74,25 @@ public final class CassandraServerHelper {
         session = sessionBuilder
                 .build();
 
-        final Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(keyspace));
+        final MigrationConfiguration migrationConfiguration = new MigrationConfiguration()
+                .withKeyspaceName(keyspace)
+                .withExecutionProfile("migration");
+        final Database database = new Database(session, migrationConfiguration);
+        final MigrationRepository migrationRepository = new MigrationRepository("cassandra/migration/" + name);
         final MigrationTask migration = new MigrationTask(
                 database,
-                new MigrationRepository("cassandra/migration/" + name));
+                migrationRepository,
+                true);
+
+        LOGGER.info()
+                .setMessage("Running cassandra migrations for test setup")
+                .addData("databaseVersion", database.getVersion())
+                .addData("migrationVersion", migrationRepository.getLatestVersion())
+                .log();
         migration.migrate();
+        LOGGER.info()
+                .setMessage("Migration complete")
+                .log();
 
 
         CASSANDRA_SERVER_MAP.put(name, session);
@@ -101,6 +117,7 @@ public final class CassandraServerHelper {
     private static final String METRICS_KEYSPACE = "portal";
     private static final int DEFAULT_CASSANDRA_PORT = 9042;
     private static final ObjectNode DEFAULT_REPLICATION;
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraServerHelper.class);
 
     static {
         DEFAULT_REPLICATION = OBJECT_MAPPER.createObjectNode();

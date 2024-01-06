@@ -82,7 +82,7 @@ public class CassandraMigrationInitializer {
                     final CqlSession session = _injector.getInstance(Key.get(CqlSession.class, Names.named(dbName)));
 
                     final Database database = new Database(session, new MigrationConfiguration().withKeyspaceName(config.getKeyspace()));
-                    final MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()));
+                    final MigrationTask migration = new MigrationTask(database, new MigrationRepository(file.getAbsolutePath()), true);
                     migration.migrate();
 
                 } catch (final URISyntaxException e) {

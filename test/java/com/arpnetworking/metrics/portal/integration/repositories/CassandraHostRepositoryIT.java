@@ -48,7 +48,9 @@ public final class CassandraHostRepositoryIT {
 
     @After
     public void tearDown() {
-        _hostRepo.close();
+        if (_hostRepo != null) {
+            _hostRepo.close();
+        }
     }
 
     @Test
