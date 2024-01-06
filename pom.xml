@@ -78,7 +78,7 @@
     <anorm.version>2.6.2</anorm.version>
     <arpnetworking.commons.version>3.1.0</arpnetworking.commons.version>
     <aspectjrt.version>1.9.7</aspectjrt.version>
-    <cassandra.version>4.14.0</cassandra.version>
+    <cassandra.version>4.17.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
     <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
     <commons.codec.version>1.16.0</commons.codec.version>
