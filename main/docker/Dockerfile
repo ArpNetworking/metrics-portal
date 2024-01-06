@@ -80,6 +80,7 @@ ADD lib /opt/metrics-portal/lib/
 ENTRYPOINT [ \
     "/opt/metrics-portal/bin/metrics-portal", \
     "--add-opens=java.base/java.nio=ALL-UNNAMED", \
+    "--add-opens java.base/sun.nio.ch=ALL-UNNAMED", \
     "${LOGBACK_CONFIG}", \
     "${METRICS_PORTAL_CONFIG}", \
     "-Xms${JVM_XMS}", \
