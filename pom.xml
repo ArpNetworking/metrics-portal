@@ -101,7 +101,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <logback.steno.version>2.1.1</logback.steno.version>
     <logback.version>1.4.14</logback.version>
-    <metrics.client.version>0.11.3</metrics.client.version>
+    <metrics.client.version>0.12.1</metrics.client.version>
     <metrics.client.http.version>0.12.1</metrics.client.http.version>
     <metrics.incubator.extra.version>0.11.2</metrics.incubator.extra.version>
     <metrics.jvm.extra.version>0.11.2</metrics.jvm.extra.version>
