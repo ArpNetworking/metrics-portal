@@ -55,6 +55,7 @@ ENV METRICS_PORTAL_CONFIG="-Dconfig.resource=portal.application.conf"
 ENV JAVA_OPTS="\
     --add-opens java.base/java.nio=ALL-UNNAMED \
     --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+    --add-opens=java.base/java.lang=ALL-UNNAMED \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/opt/metrics-portal/logs/metrics-portal.oom.hprof \
     -Xlog:gc*:file=/opt/metrics-portal/logs/metrics-portal.gc.log:none:filecount=5,filesize=10M \
@@ -66,7 +67,7 @@ ENV APP_OPTS="/opt/metrics-portal"
 ENV ADDITIONAL_APP_OPTS=""
 
 # Build
-RUN apt update && apt install -y gosu chromium-browser && rm -rf /var/lib/apt/lists/*
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y gosu chromium-browser && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /opt/metrics-portal/lib/ext && \
     mkdir -p /opt/metrics-portal/config && \
     mkdir -p /opt/metrics-portal/logs
