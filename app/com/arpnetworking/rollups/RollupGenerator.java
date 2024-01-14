@@ -523,5 +523,5 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
     static final Object FETCH_METRIC = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupGenerator.class);
-    private static final int KAIROSDB_PERIOD_MILLIS = 1000 * 60 * 60 * 24 * 21;
+    private static final long KAIROSDB_PERIOD_MILLIS = 1000L * 60 * 60 * 24 * 21;
 }
