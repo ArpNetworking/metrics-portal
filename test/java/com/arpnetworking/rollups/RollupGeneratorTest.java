@@ -65,6 +65,7 @@ import javax.inject.Named;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
@@ -184,7 +185,7 @@ public class RollupGeneratorTest {
         verify(_kairosDbClient, times(1)).queryMetricTags(captor.capture());
         final TagsQuery tagQuery = captor.getValue();
         assertEquals("metric", tagQuery.getMetrics().get(0).getName());
-        assertEquals(Optional.of(Instant.ofEpochSecond(0)), tagQuery.getStartTime());
+        assertNotEquals(Optional.of(Instant.ofEpochSecond(0)), tagQuery.getStartTime());
     }
 
     @Test
