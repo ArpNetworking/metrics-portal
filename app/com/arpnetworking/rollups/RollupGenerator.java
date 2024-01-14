@@ -123,6 +123,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
             final MetricsFactory metricsFactory,
             @Named("RollupGeneratorTagger") final Tagger tagger
     ) {
+        _tagLookbackPeriods = 1;
         _metricsDiscovery = metricsDiscovery;
         _rollupManager = rollupManager;
         _kairosDbClient = kairosDbClient;
@@ -157,9 +158,12 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private void fetchMetricTags(final String metricName) {
         _periodicMetrics.recordCounter("rollup/generator/metric_names_message/received", 1);
         final long startTime = System.nanoTime();
+        final long now = System.currentTimeMillis();
+        final long beginningOfPeriod = now - (now % KAIROSDB_PERIOD_MILLIS);
+        final long startPeriod = beginningOfPeriod - (_tagLookbackPeriods * KAIROSDB_PERIOD_MILLIS);
         Patterns.pipe(_kairosDbClient.queryMetricTags(
                 new TagsQuery.Builder()
-                        .setStartTime(Instant.ofEpochMilli(0))
+                        .setStartTime(Instant.ofEpochMilli(startPeriod))
                         .setMetrics(ImmutableList.of(
                                 ThreadLocalBuilder.build(MetricTags.Builder.class, builder -> builder.setName(metricName))
                         ))
@@ -510,6 +514,7 @@ public class RollupGenerator extends AbstractActorWithTimers {
     private final KairosDbClient _kairosDbClient;
     private final Map<RollupPeriod, Integer> _maxBackFillByPeriod;
     private final FiniteDuration _fetchBackoff;
+    private final int _tagLookbackPeriods;
     private final Clock _clock;
     private final PeriodicMetrics _periodicMetrics;
     private final MetricsFactory _metricsFactory;
@@ -518,4 +523,5 @@ public class RollupGenerator extends AbstractActorWithTimers {
 
     static final Object FETCH_METRIC = new Object();
     private static final Logger LOGGER = LoggerFactory.getLogger(RollupGenerator.class);
+    private static final int KAIROSDB_PERIOD_MILLIS = 1000 * 60 * 60 * 24 * 21;
 }
