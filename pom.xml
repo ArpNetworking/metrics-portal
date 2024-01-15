@@ -139,7 +139,7 @@
     <commons.io.version>2.13.0</commons.io.version>
     <docker.maven.plugin.version>0.27.2</docker.maven.plugin.version>
     <javassist.maven.plugin.version>0.2.3</javassist.maven.plugin.version>
-    <maven.assembly.plugin.version>2.6</maven.assembly.plugin.version>
+    <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.1.5</rpm.maven.plugin.version>
     <play.maven.plugin.version>1.0.1</play.maven.plugin.version>
     <sbt.compiler.plugin.version>1.0.3</sbt.compiler.plugin.version>
