@@ -130,7 +130,7 @@
     <junit.version>4.13.2</junit.version>
     <mockito.version>2.23.4</mockito.version>
     <thrift.version>0.18.1</thrift.version>
-    <wiremock.version>2.19.0</wiremock.version>
+    <wiremock.version>2.27.2</wiremock.version>
 
     <!-- Additional Plugins -->
     <aspectjtools.maven.plugin>1.9.7</aspectjtools.maven.plugin>

@@ -13,7 +13,6 @@
       },
       "align_sampling": true
     }],
-    "group_by" : [],
     "limit": 1,
     "order": "desc"
   }],
