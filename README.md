@@ -1,6 +1,3 @@
-
-
-
 Metrics Portal
 ==============
 
