@@ -60,9 +60,11 @@ import static org.mockito.Mockito.when;
 @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "anonymous test class won't be extended")
 public final class MetricsDiscoveryTest {
 
+    private AutoCloseable mocks;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         when(_features.isRollupsEnabled()).thenReturn(true);
         when(_config.getString(eq("rollup.fetch.interval"))).thenReturn("1h");
         when(_config.getStringList(eq("rollup.metric.whitelist"))).thenReturn(Collections.emptyList());
@@ -90,6 +92,11 @@ public final class MetricsDiscoveryTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     private TestActorRef<MetricsDiscovery> createActor() {

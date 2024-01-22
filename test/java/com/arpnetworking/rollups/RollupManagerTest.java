@@ -61,10 +61,11 @@ public final class RollupManagerTest {
     private TestKit _consistencyChecker;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         when(_features.isRollupsEnabled()).thenReturn(true);
         when(_partitioner.mightSplittingFixFailure(Mockito.any())).thenReturn(false);
 
@@ -80,6 +81,11 @@ public final class RollupManagerTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     private TestActorRef<RollupManager> createActor() {

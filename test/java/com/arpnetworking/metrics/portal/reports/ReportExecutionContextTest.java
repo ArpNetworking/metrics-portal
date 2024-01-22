@@ -42,6 +42,7 @@ import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,11 +111,12 @@ public class ReportExecutionContextTest {
     @Mock
     private MockEmailSender _emailSender;
     private Config _config;
+    private AutoCloseable mocks;
 
     @Before
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(
                 Mockito.any(),
                 Mockito.any()
@@ -140,6 +142,15 @@ public class ReportExecutionContextTest {
                 "reporting.renderers.WEB_PAGE.\"application/pdf\".pdfCompatibilityVersion", "2.0",
                 "reporting.senders.EMAIL.type", getClass().getName() + "$MockEmailSender"
         ));
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     @Test

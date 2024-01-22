@@ -101,10 +101,11 @@ public class RollupGeneratorTest {
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
     private static final int MAX_BACKFILL_PERIODS = 4;
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         when(_config.getString(eq("rollup.fetch.backoff"))).thenReturn("5min");
         when(_config.getInt(eq("rollup.maxBackFill.periods.hourly"))).thenReturn(MAX_BACKFILL_PERIODS);
         when(_config.getInt(eq("rollup.maxBackFill.periods.daily"))).thenReturn(MAX_BACKFILL_PERIODS);
@@ -147,6 +148,11 @@ public class RollupGeneratorTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     private TestActorRef<RollupGenerator> createActor() {

@@ -22,6 +22,7 @@ import com.github.kklisura.cdt.protocol.types.network.Request;
 import com.github.kklisura.cdt.services.ChromeDevToolsService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -50,20 +51,30 @@ public class DevToolsNetworkConfigurationProtocolTest {
     private ArgumentCaptor<EventHandler<com.github.kklisura.cdt.protocol.events.network.RequestIntercepted>> _requestInterceptorCaptor;
     @Captor
     private ArgumentCaptor<EventHandler<RequestPaused>> _requestPausedCaptor;
-    private PerOriginConfigs _originConfigs = new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of(
+    private final PerOriginConfigs _originConfigs = new PerOriginConfigs.Builder().setByOrigin(ImmutableMap.of(
             "https://whitelisted.com", new OriginConfig.Builder()
                     .setAllowedNavigationPaths(ImmutableSet.of("/allowed-nav-.*"))
                     .setAllowedRequestPaths(ImmutableSet.of("/allowed-req-.*"))
                     .setAdditionalHeaders(ImmutableMap.of("X-Extra-Header", "extra header value"))
                     .build()
     )).build();
+    private AutoCloseable mocks;
 
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         Mockito.doReturn(_network).when(_dts).getNetwork();
         Mockito.doReturn(_fetch).when(_dts).getFetch();
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     @Test

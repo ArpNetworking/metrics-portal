@@ -35,6 +35,7 @@ import models.internal.impl.DefaultAlertQuery;
 import models.internal.impl.DefaultMetricsQuery;
 import models.internal.impl.DefaultQueryResult;
 import models.internal.scheduling.Job;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -67,6 +68,7 @@ public class AlertJobRepositoryTest {
 
     private AlertJobRepository _jobRepository;
     private AlertExecutionContext _context;
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() {
@@ -89,13 +91,22 @@ public class AlertJobRepositoryTest {
                 .build();
 
         // Create a mock AlertRepository that contains a single alert.
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         Mockito.when(_alertRepository.getAlert(_id, _organization))
                 .thenReturn(Optional.of(_alert));
 
         final Schedule schedule = NeverSchedule.getInstance();
         _context = new AlertExecutionContext(schedule, mockExecutor, Duration.ZERO, new NopAlertNotifier());
         _jobRepository = new AlertJobRepository(_alertRepository, _context);
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     @Test

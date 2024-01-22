@@ -66,10 +66,11 @@ public final class ConsistencyCheckerTest {
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
 
         _system = ActorSystem.create();
 
@@ -90,6 +91,11 @@ public final class ConsistencyCheckerTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     private TestActorRef<ConsistencyChecker> createActor(

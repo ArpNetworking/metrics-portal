@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,12 +61,13 @@ public class EmailSenderTest {
     private Mailer _mailer;
     private EmailSender _sender;
     private SimpleSmtpServer _server;
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() throws IOException {
         _server = SimpleSmtpServer.start(getFreePort());
         _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         _sender = new EmailSender(
                 _mailer,
                 ConfigFactory.parseMap(ImmutableMap.of(
@@ -75,6 +77,15 @@ public class EmailSenderTest {
                 )),
                 ObjectMapperFactory.createInstance()
         );
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     @Test

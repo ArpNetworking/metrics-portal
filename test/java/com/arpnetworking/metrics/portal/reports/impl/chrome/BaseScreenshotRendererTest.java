@@ -25,6 +25,7 @@ import models.internal.Problem;
 import models.internal.TimeRange;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,16 +56,26 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
                     .setAdditionalHeaders(ImmutableMap.of("X-Auth-Token", SECRET_TOKEN))
                     .build()))
             .build();
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         _dts = Mockito.mock(DevToolsService.class);
         Mockito.doAnswer(args -> CompletableFuture.completedFuture(null)).when(_dts).navigate(Mockito.anyString());
 
         _factory = Mockito.mock(DevToolsFactory.class);
         Mockito.doReturn(_dts).when(_factory).create(Mockito.anyBoolean());
         Mockito.doReturn(ORIGIN_CONFIGS).when(_factory).getOriginConfigs();
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     private MockRenderer createMockRenderer() {

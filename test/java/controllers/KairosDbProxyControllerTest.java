@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -69,10 +70,11 @@ public class KairosDbProxyControllerTest {
     private KairosDbService _mockKairosDbService;
 
     private KairosDbProxyController _controller;
+    private AutoCloseable mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        mocks = MockitoAnnotations.openMocks(this);
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(true);
@@ -87,6 +89,15 @@ public class KairosDbProxyControllerTest {
                 OBJECT_MAPPER,
                 _mockKairosDbService
         );
+    }
+
+    @After
+    public void tearDown() {
+        if (mocks != null) {
+            try {
+                mocks.close();
+            } catch (final Exception ignored) { }
+        }
     }
 
     @Test
