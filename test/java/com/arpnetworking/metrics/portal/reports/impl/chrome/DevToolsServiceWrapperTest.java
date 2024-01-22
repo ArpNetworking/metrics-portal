@@ -17,6 +17,7 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,10 +46,11 @@ public class DevToolsServiceWrapperTest {
     private com.github.kklisura.cdt.services.ChromeDevToolsService _wrapped;
 
     private DevToolsService _dts;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         Mockito.doReturn(_page).when(_wrapped).getPage();
         Mockito.doReturn(_fetch).when(_wrapped).getFetch();
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
@@ -67,6 +69,17 @@ public class DevToolsServiceWrapperTest {
                 DevToolsNetworkConfigurationProtocol.FETCH
         );
         Mockito.verify(_fetch).onRequestPaused(Mockito.any());
+    }
+
+    @After
+    public void tearDown() {
+        if (_mocks != null) {
+            try {
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
+            } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
+        }
     }
 
     @Test

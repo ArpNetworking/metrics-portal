@@ -23,6 +23,7 @@ import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.ConfigFactory;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,10 +44,22 @@ import java.util.stream.Collectors;
 public class QueryConsistencyTaskCreatorTest {
     @Mock
     private PeriodicMetrics _periodicMetrics;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
+    }
+
+    @After
+    public void tearDown() {
+        if (_mocks != null) {
+            try {
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
+            } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
+        }
     }
 
     @Test

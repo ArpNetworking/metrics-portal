@@ -74,10 +74,11 @@ public final class JobExecutorActorTest {
     private PeriodicMetrics _periodicMetrics;
     private ActorSystem _system;
     private TestKit _probe;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
 
         _repo = Mockito.spy(new MockableIntJobRepository());
         _repo.open();
@@ -109,6 +110,13 @@ public final class JobExecutorActorTest {
     @After
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
+        if (_mocks != null) {
+            try {
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
+            } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
+        }
     }
 
     private DummyJob<Integer> addJobToRepo(final DummyJob<Integer> job) {

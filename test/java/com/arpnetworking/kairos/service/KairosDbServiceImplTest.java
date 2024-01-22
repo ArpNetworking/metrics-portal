@@ -42,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -90,11 +91,12 @@ public class KairosDbServiceImplTest {
     private Consumer<MetricsQuery> _mockRewrittenMetricsQueryConsumer;
 
     private KairosDbServiceImpl _service;
+    private AutoCloseable _mocks;
 
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         _service = new KairosDbServiceImpl.Builder()
                 .setKairosDbClient(_mockClient)
                 .setMetricsFactory(_mockMetricsFactory)
@@ -113,6 +115,17 @@ public class KairosDbServiceImplTest {
         when(_mockMetrics.createTimer(any())).thenReturn(Mockito.mock(Timer.class));
 
         when(_mockQueryConfig.getQueryEnabledRollups(any())).thenReturn(ImmutableSet.copyOf(SamplingUnit.values()));
+    }
+
+    @After
+    public void tearDown() {
+        if (_mocks != null) {
+            try {
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
+            } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
+        }
     }
 
     @Test

@@ -83,10 +83,11 @@ public class RollupExecutorTest {
     private TestKit _probe;
 
     private ActorSystem _system;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         when(_config.getString(eq("rollup.executor.pollInterval"))).thenReturn("3sec");
         when(_config.getString(eq("rollup.ttl"))).thenReturn("0sec");
 
@@ -111,6 +112,13 @@ public class RollupExecutorTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
+        if (_mocks != null) {
+            try {
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
+            } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
+        }
     }
 
     private ActorRef createActor() {
