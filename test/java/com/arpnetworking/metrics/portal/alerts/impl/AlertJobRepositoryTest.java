@@ -68,7 +68,7 @@ public class AlertJobRepositoryTest {
 
     private AlertJobRepository _jobRepository;
     private AlertExecutionContext _context;
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
@@ -91,7 +91,7 @@ public class AlertJobRepositoryTest {
                 .build();
 
         // Create a mock AlertRepository that contains a single alert.
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         Mockito.when(_alertRepository.getAlert(_id, _organization))
                 .thenReturn(Optional.of(_alert));
 
@@ -102,10 +102,12 @@ public class AlertJobRepositoryTest {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

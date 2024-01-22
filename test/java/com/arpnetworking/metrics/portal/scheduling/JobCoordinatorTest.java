@@ -67,11 +67,11 @@ public class JobCoordinatorTest {
     private PeriodicMetrics _periodicMetrics;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         _repo = Mockito.spy(new MockableIntJobRepository());
         _repo.open();
 
@@ -100,10 +100,12 @@ public class JobCoordinatorTest {
     @After
     public void tearDown() {
         _system.terminate();
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

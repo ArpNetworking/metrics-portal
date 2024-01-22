@@ -61,13 +61,13 @@ public class EmailSenderTest {
     private Mailer _mailer;
     private EmailSender _sender;
     private SimpleSmtpServer _server;
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() throws IOException {
         _server = SimpleSmtpServer.start(getFreePort());
         _mailer = MailerBuilder.withSMTPServer("localhost", _server.getPort()).buildMailer();
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         _sender = new EmailSender(
                 _mailer,
                 ConfigFactory.parseMap(ImmutableMap.of(
@@ -81,10 +81,12 @@ public class EmailSenderTest {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

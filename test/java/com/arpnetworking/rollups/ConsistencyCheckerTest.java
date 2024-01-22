@@ -66,11 +66,11 @@ public final class ConsistencyCheckerTest {
     private ActorSystem _system;
 
     private static final AtomicLong SYSTEM_NAME_NONCE = new AtomicLong(0);
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() throws Exception {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
 
         _system = ActorSystem.create();
 
@@ -91,10 +91,12 @@ public final class ConsistencyCheckerTest {
     public void tearDown() {
         TestKit.shutdownActorSystem(_system);
         _system = null;
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

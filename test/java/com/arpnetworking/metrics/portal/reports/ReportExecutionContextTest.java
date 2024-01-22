@@ -111,12 +111,12 @@ public class ReportExecutionContextTest {
     @Mock
     private MockEmailSender _emailSender;
     private Config _config;
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         Mockito.doReturn(CompletableFuture.completedFuture("done")).when(_emailSender).send(
                 Mockito.any(),
                 Mockito.any()
@@ -146,10 +146,12 @@ public class ReportExecutionContextTest {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

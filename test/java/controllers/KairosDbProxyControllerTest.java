@@ -70,11 +70,11 @@ public class KairosDbProxyControllerTest {
     private KairosDbService _mockKairosDbService;
 
     private KairosDbProxyController _controller;
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         when(_mockConfig.getString(eq("kairosdb.uri"))).thenReturn("http://example.com/");
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.requireAggregators"))).thenReturn(true);
         when(_mockConfig.getBoolean(eq("kairosdb.proxy.addMergeAggregator"))).thenReturn(true);
@@ -93,10 +93,12 @@ public class KairosDbProxyControllerTest {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

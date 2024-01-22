@@ -46,11 +46,11 @@ public class DevToolsServiceWrapperTest {
     private com.github.kklisura.cdt.services.ChromeDevToolsService _wrapped;
 
     private DevToolsService _dts;
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         Mockito.doReturn(_page).when(_wrapped).getPage();
         Mockito.doReturn(_fetch).when(_wrapped).getFetch();
         _tab = new com.github.kklisura.cdt.services.types.ChromeTab();
@@ -73,10 +73,12 @@ public class DevToolsServiceWrapperTest {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 

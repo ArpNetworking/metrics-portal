@@ -56,11 +56,11 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
                     .setAdditionalHeaders(ImmutableMap.of("X-Auth-Token", SECRET_TOKEN))
                     .build()))
             .build();
-    private AutoCloseable mocks;
+    private AutoCloseable _mocks;
 
     @Before
     public void setUp() {
-        mocks = MockitoAnnotations.openMocks(this);
+        _mocks = MockitoAnnotations.openMocks(this);
         _dts = Mockito.mock(DevToolsService.class);
         Mockito.doAnswer(args -> CompletableFuture.completedFuture(null)).when(_dts).navigate(Mockito.anyString());
 
@@ -71,10 +71,12 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
 
     @After
     public void tearDown() {
-        if (mocks != null) {
+        if (_mocks != null) {
             try {
-                mocks.close();
+                _mocks.close();
+                // CHECKSTYLE.OFF: IllegalCatch - Ignore all errors when closing the mock
             } catch (final Exception ignored) { }
+                // CHECKSTYLE.ON: IllegalCatch
         }
     }
 
