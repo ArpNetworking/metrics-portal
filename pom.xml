@@ -33,7 +33,7 @@
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
       <comments>A business-friendly OSS license</comments>
     </license>
@@ -137,7 +137,7 @@
     <aspectj.maven.plugin.version>1.14.0</aspectj.maven.plugin.version>
     <build.helper.maven.plugin.version>1.10</build.helper.maven.plugin.version>
     <commons.io.version>2.13.0</commons.io.version>
-    <docker.maven.plugin.version>0.27.2</docker.maven.plugin.version>
+    <docker.maven.plugin.version>0.43.4</docker.maven.plugin.version>
     <javassist.maven.plugin.version>0.2.3</javassist.maven.plugin.version>
     <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.3.0</rpm.maven.plugin.version>
