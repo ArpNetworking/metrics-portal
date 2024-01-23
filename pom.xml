@@ -85,7 +85,7 @@
     <dkimutils.version>1.1.12</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>12.16.1</ebean.version>
-    <ebean.annotation.version>7.8</ebean.annotation.version>
+    <ebean.annotation.version>8.4</ebean.annotation.version>
     <ebean.api.version>2.2.5</ebean.api.version>
     <flyway.core.version>10.5.0</flyway.core.version>
     <flyway.play.version>8.0.1</flyway.play.version>
