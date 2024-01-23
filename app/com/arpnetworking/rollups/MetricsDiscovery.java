@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Actor for discovering the list of metrics available to be rolled up on a periodic basis.

@@ -42,8 +42,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Actor that fetches RollupDefinitions from a RollupManager and performs the specified

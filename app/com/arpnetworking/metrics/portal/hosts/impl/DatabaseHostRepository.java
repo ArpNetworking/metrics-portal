@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 /**
  * Implementation of {@link HostRepository} using Postgresql database.

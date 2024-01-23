@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Metrics portal host controller. Exposes APIs to query and manipulate hosts.

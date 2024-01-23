@@ -56,8 +56,8 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Actor for generating rollup jobs for individual source metrics.

@@ -28,7 +28,7 @@ import models.internal.Problem;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Implementation of a {@link QueryExecutor} that just returns an error result.

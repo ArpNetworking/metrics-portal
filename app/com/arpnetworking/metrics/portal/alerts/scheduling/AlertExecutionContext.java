@@ -47,7 +47,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Utility class for scheduling and evaluating alerts.

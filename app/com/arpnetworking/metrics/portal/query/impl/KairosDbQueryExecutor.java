@@ -43,7 +43,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * A {@code QueryExecutor} that accepts KairosDB JSON metrics queries.

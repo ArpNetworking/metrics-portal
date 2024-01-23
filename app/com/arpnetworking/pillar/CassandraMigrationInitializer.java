@@ -34,7 +34,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Initializer for the Pillar play module.

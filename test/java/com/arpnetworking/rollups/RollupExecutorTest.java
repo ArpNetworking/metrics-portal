@@ -54,8 +54,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

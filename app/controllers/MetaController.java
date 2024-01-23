@@ -36,9 +36,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
 /**
  * Metrics portal generic Play controller.

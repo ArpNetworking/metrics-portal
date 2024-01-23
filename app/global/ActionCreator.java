@@ -23,7 +23,7 @@ import play.mvc.Action;
 import play.mvc.Http;
 
 import java.lang.reflect.Method;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Request handler for the application.

@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * Configuration for the Pillar evolutions.

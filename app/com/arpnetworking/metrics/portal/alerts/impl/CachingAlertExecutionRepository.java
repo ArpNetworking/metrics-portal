@@ -39,7 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 /**
  * An alert repository wrapper that caches the most recent successful results.

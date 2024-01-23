@@ -50,7 +50,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * KairosDb proxy controller.

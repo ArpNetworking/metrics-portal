@@ -23,8 +23,8 @@ import play.mvc.EssentialFilter;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 /**
  * Creates the set of filters used for handling requests.
