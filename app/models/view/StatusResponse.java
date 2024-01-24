@@ -15,8 +15,8 @@
  */
 package models.view;
 
-import akka.actor.Address;
-import akka.cluster.Member;
+import org.apache.pekko.actor.Address;
+import org.apache.pekko.cluster.Member;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.fasterxml.jackson.annotation.JsonProperty;

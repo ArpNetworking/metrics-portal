@@ -16,8 +16,8 @@
 
 package com.arpnetworking.notcommons.akka;
 
-import akka.actor.ExtendedActorSystem;
-import akka.serialization.JSerializer;
+import org.apache.pekko.actor.ExtendedActorSystem;
+import org.apache.pekko.serialization.JSerializer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;

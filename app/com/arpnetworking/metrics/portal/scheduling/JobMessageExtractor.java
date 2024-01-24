@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.cluster.sharding.ShardRegion;
+import org.apache.pekko.cluster.sharding.ShardRegion;
 import com.arpnetworking.notcommons.serialization.Serializer;
 
 import javax.annotation.Nullable;

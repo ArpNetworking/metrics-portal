@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.pattern.Patterns;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;

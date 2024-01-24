@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.pattern.Patterns;
-import akka.persistence.AbstractPersistentActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.pattern.Patterns;
+import org.apache.pekko.persistence.AbstractPersistentActorWithTimers;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.util.PagingIterator;

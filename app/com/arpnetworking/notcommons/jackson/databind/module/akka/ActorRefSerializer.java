@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.notcommons.jackson.databind.module.akka;
 
-import akka.actor.ActorRef;
-import akka.serialization.Serialization;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.serialization.Serialization;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;

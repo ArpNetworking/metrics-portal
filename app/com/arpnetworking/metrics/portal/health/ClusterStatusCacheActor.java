@@ -16,13 +16,13 @@
 
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Cancellable;
-import akka.actor.Props;
-import akka.actor.Scheduler;
-import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Scheduler;
+import org.apache.pekko.cluster.Cluster;
+import org.apache.pekko.cluster.ClusterEvent;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;

@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.ActorRef;
-import akka.cluster.ClusterEvent;
-import akka.cluster.Member;
-import akka.testkit.TestProbe;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.cluster.ClusterEvent;
+import org.apache.pekko.cluster.Member;
+import org.apache.pekko.testkit.TestProbe;
 import com.arpnetworking.notcommons.akka.BaseActorTest;
 import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
 import com.google.common.collect.Maps;

@@ -15,16 +15,16 @@
  */
 package com.arpnetworking.kairos.client;
 
-import akka.actor.ActorSystem;
-import akka.http.javadsl.Http;
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpRequest;
-import akka.http.javadsl.model.headers.AcceptEncoding;
-import akka.http.javadsl.model.headers.HttpEncoding;
-import akka.http.javadsl.model.headers.HttpEncodings;
-import akka.http.scaladsl.coding.Coder;
-import akka.http.scaladsl.coding.Coders;
-import akka.stream.Materializer;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.Http;
+import org.apache.pekko.http.javadsl.model.ContentTypes;
+import org.apache.pekko.http.javadsl.model.HttpRequest;
+import org.apache.pekko.http.javadsl.model.headers.AcceptEncoding;
+import org.apache.pekko.http.javadsl.model.headers.HttpEncoding;
+import org.apache.pekko.http.javadsl.model.headers.HttpEncodings;
+import org.apache.pekko.http.scaladsl.coding.Coder;
+import org.apache.pekko.http.scaladsl.coding.Coders;
+import org.apache.pekko.stream.Materializer;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.kairos.client.models.MetricDataPoints;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;

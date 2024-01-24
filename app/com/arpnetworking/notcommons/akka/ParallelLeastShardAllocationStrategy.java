@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.notcommons.akka;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.cluster.sharding.ShardCoordinator;
-import akka.dispatch.Futures;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSelection;
+import org.apache.pekko.cluster.sharding.ShardCoordinator;
+import org.apache.pekko.dispatch.Futures;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableMap;

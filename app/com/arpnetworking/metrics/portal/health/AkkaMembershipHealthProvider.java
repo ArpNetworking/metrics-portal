@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.ActorRef;
-import akka.pattern.Patterns;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 

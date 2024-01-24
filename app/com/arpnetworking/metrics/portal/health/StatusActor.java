@@ -16,13 +16,13 @@
 
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.cluster.Cluster;
-import akka.cluster.MemberStatus;
-import akka.pattern.Patterns;
-import akka.remote.artery.ThisActorSystemQuarantinedEvent;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.cluster.Cluster;
+import org.apache.pekko.cluster.MemberStatus;
+import org.apache.pekko.pattern.Patterns;
+import org.apache.pekko.remote.artery.ThisActorSystemQuarantinedEvent;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.view.StatusResponse;
 

@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.notcommons.jackson.databind.module.akka;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.databind.module.SimpleModule;

@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.routing.ConsistentHashingRouter;
+import org.apache.pekko.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;

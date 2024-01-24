@@ -15,7 +15,7 @@
  */
 package actors;
 
-import akka.actor.AbstractActor;
+import org.apache.pekko.actor.AbstractActor;
 
 /**
  * Simple actor that does nothing, used for passing actorRefs to controllers that are disabled.

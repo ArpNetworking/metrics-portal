@@ -15,15 +15,15 @@
  */
 package controllers;
 
-import akka.NotUsed;
-import akka.actor.ActorSystem;
-import akka.http.javadsl.Http;
-import akka.http.javadsl.model.ws.Message;
-import akka.http.javadsl.model.ws.TextMessage;
-import akka.http.javadsl.model.ws.WebSocketRequest;
-import akka.http.javadsl.model.ws.WebSocketUpgradeResponse;
-import akka.stream.Materializer;
-import akka.stream.javadsl.Flow;
+import org.apache.pekko.NotUsed;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.Http;
+import org.apache.pekko.http.javadsl.model.ws.Message;
+import org.apache.pekko.http.javadsl.model.ws.TextMessage;
+import org.apache.pekko.http.javadsl.model.ws.WebSocketRequest;
+import org.apache.pekko.http.javadsl.model.ws.WebSocketUpgradeResponse;
+import org.apache.pekko.stream.Materializer;
+import org.apache.pekko.stream.javadsl.Flow;
 import com.google.inject.Inject;
 import models.internal.Features;
 import play.mvc.Controller;

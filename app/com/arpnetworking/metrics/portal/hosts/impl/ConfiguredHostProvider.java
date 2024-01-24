@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
+import org.apache.pekko.actor.AbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;

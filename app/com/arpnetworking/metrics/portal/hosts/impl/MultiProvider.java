@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;

@@ -15,8 +15,8 @@
  */
 package controllers;
 
-import akka.actor.ActorRef;
-import akka.cluster.sharding.ClusterSharding;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.cluster.sharding.ClusterSharding;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.reports.ReportExecutionContext;

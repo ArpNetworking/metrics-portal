@@ -15,7 +15,7 @@
  */
 package models.internal;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.notcommons.java.util.LexicalNumericComparator;
 import com.fasterxml.jackson.core.JsonGenerator;

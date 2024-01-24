@@ -16,7 +16,7 @@
 
 package global;
 
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorSystem;
 import com.google.inject.Inject;
 import play.libs.concurrent.CustomExecutionContext;
 

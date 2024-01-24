@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.ActorRef;
-import akka.pattern.Patterns;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.kairos.client.models.Metric;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;

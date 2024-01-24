@@ -15,7 +15,7 @@
  */
 package com.arpnetworking.notcommons.jackson.databind.module.akka;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**

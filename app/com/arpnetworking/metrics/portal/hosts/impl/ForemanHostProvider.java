@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
-import akka.actor.Status;
-import akka.pattern.Patterns;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Status;
+import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.play.configuration.ConfigurationHelper;

@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.Actor;
-import akka.actor.Props;
+import org.apache.pekko.actor.Actor;
+import org.apache.pekko.actor.Props;
 import com.arpnetworking.commons.akka.GuiceActorCreator;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.google.inject.Inject;

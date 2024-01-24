@@ -15,10 +15,10 @@
  */
 package actors;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorSystem;
-import akka.actor.Cancellable;
-import akka.dispatch.Dispatcher;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.dispatch.Dispatcher;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.ExecutorServiceMetricsRunnable;
