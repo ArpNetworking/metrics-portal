@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import jakarta.inject.Inject;
-import jakarta.inject.Provider;
+import javax.inject.Provider;
 
 /**
  * Module for Pillar evolutions plugin.
