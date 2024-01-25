@@ -85,7 +85,7 @@ public final class ProxyClient {
         }
 
         wsrequest = wsrequest.setMethod(request.method());
-        for (final Map.Entry<String, List<String>> entry : request.getHeaders().asMap().entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : request.headers().asMap().entrySet()) {
             for (final String val : entry.getValue()) {
                 wsrequest = wsrequest.addHeader(entry.getKey(), val);
             }

@@ -37,6 +37,7 @@ import models.internal.scheduling.JobExecution;
 import models.view.PagedContainer;
 import models.view.Pagination;
 import play.libs.Json;
+import play.libs.concurrent.ClassLoaderExecutionContext;
 import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -75,7 +76,7 @@ public class AlertController extends Controller {
 
     // The maximum page size. Any requests larger than this amount will be truncated.
     private final int _maxPageSize;
-    private final HttpExecutionContext _httpContext;
+    private final ClassLoaderExecutionContext _httpContext;
     // The maximum number of executions to fetch per batch.
     private final int _executionsBatchSize;
     // The number of days back to check for executions.
@@ -105,7 +106,7 @@ public class AlertController extends Controller {
             final AlertExecutionRepository executionRepository,
             final OrganizationRepository organizationRepository,
             final PeriodicMetrics periodicMetrics,
-            final HttpExecutionContext httpContext,
+            final ClassLoaderExecutionContext httpContext,
             final ProblemHelper problemHelper
     ) {
         _alertRepository = alertRepository;

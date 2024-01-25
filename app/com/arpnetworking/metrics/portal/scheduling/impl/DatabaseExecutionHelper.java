@@ -31,7 +31,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 /**
  * Helper class for implementing a SQL-backed {@link JobExecutionRepository}, providing facilities for updating the state

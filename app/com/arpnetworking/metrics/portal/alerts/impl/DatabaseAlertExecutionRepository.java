@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.persistence.EntityNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Implementation of {@link JobExecutionRepository} for {@link Alert} jobs using a SQL database.

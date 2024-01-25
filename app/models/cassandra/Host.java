@@ -32,7 +32,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
-import javax.persistence.Version;
+import jakarta.persistence.Version;
 
 /**
  * Model for alerts stored in Cassandra.

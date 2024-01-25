@@ -28,7 +28,7 @@ import org.apache.pekko.cluster.singleton.ClusterSingletonManager;
 import org.apache.pekko.cluster.singleton.ClusterSingletonManagerSettings;
 import org.apache.pekko.cluster.singleton.ClusterSingletonProxy;
 import org.apache.pekko.cluster.singleton.ClusterSingletonProxySettings;
-import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.pekko.GuiceActorCreator;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializer;
 import com.arpnetworking.commons.jackson.databind.EnumerationDeserializerStrategyUsingToUpperCase;
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;

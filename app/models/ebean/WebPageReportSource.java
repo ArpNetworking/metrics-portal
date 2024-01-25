@@ -16,9 +16,9 @@
 package models.ebean;
 
 import java.net.URI;
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 /**
  * Data Model for SQL storage of a web based report generation scheme.

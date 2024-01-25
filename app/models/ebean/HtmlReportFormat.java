@@ -16,8 +16,8 @@
 
 package models.ebean;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 /**
  * Ebean data model for an HTML report format.

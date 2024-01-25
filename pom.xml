@@ -76,7 +76,7 @@
     <pekko.persistence.cassandra.version>1.0.0</pekko.persistence.cassandra.version>
     <pekko.persistence.jdbc.version>1.0.0</pekko.persistence.jdbc.version>
     <anorm.version>2.6.2</anorm.version>
-    <arpnetworking.commons.version>3.0.0</arpnetworking.commons.version>
+    <arpnetworking.commons.version>3.1.0</arpnetworking.commons.version>
     <aspectjrt.version>1.9.7</aspectjrt.version>
     <cassandra.version>4.14.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
@@ -84,9 +84,9 @@
     <commons.codec.version>1.16.0</commons.codec.version>
     <dkimutils.version>1.1.12</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
-    <ebean.version>12.16.1</ebean.version>
-    <ebean.annotation.version>7.8</ebean.annotation.version>
-    <ebean.api.version>2.2.5</ebean.api.version>
+    <ebean.version>13.17.3</ebean.version>
+<!--    <ebean.annotation.version>7.8</ebean.annotation.version>-->
+<!--    <ebean.api.version>2.2.5</ebean.api.version>-->
     <flyway.core.version>10.5.0</flyway.core.version>
     <flyway.play.version>8.0.1</flyway.play.version>
     <guava.version>33.0.0-jre</guava.version>
@@ -961,18 +961,18 @@
     <dependency>
       <groupId>io.ebean</groupId>
       <artifactId>ebean</artifactId>
-      <version>${ebean.version}</version>
+      <version>${ebean.version}-jakarta</version>
     </dependency>
-    <dependency>
-      <groupId>io.ebean</groupId>
-      <artifactId>ebean-annotation</artifactId>
-      <version>${ebean.annotation.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.ebean</groupId>
-      <artifactId>persistence-api</artifactId>
-      <version>${ebean.api.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>io.ebean</groupId>-->
+<!--      <artifactId>ebean-annotation</artifactId>-->
+<!--      <version>${ebean.annotation.version}</version>-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>io.ebean</groupId>-->
+<!--      <artifactId>jakarta-persistence-api</artifactId>-->
+<!--      <version>${ebean.api.version}</version>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>com.typesafe</groupId>
       <artifactId>config</artifactId>

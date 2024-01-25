@@ -23,11 +23,11 @@ import models.internal.scheduling.Period;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 /**
  * Data Model for a periodically recurring report schedule (i.e. recurs daily).
