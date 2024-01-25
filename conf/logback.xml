@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
 <!--
   ~ Copyright 2014 Brandon Arp
   ~
@@ -15,14 +16,18 @@
   ~ limitations under the License.
   -->
 <configuration>
+  <import class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP"/>
+  <import class="com.arpnetworking.logback.KeyValueEncoder"/>
+  <import class="ch.qos.logback.classic.AsyncAppender"/>
+  <import class="ch.qos.logback.core.rolling.RollingFileAppender"/>
+  <import class="ch.qos.logback.classic.PatternLayout"/>
+  <import class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"/>
 
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
-
-  <!-- IMPORTANT: This logger should only used when debugging and testing -->
-  <appender name="MetricsPortalLogger" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <!-- IMPORTANT: This logger should only be used when debugging and testing -->
+  <appender name="MetricsPortalLogger" class="RollingFileAppender">
     <file>logs/metrics-portal.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <timeBasedFileNamingAndTriggeringPolicy class="com.arpnetworking.logback.SizeAndRandomizedTimeBasedFNATP">
+    <rollingPolicy class="TimeBasedRollingPolicy">
+      <timeBasedFileNamingAndTriggeringPolicy class="SizeAndRandomizedTimeBasedFNATP">
         <maxOffsetInMillis>900000</maxOffsetInMillis>
         <maxFileSize>2gb</maxFileSize>
       </timeBasedFileNamingAndTriggeringPolicy>
@@ -30,14 +35,14 @@
       <maxHistory>5</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
-    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
-      <layout class="ch.qos.logback.classic.PatternLayout">
+    <encoder class="KeyValueEncoder">
+      <layout class="PatternLayout">
         <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
       </layout>
     </encoder>
   </appender>
 
-  <appender name="MetricsPortalAsync" class="ch.qos.logback.classic.AsyncAppender">
+  <appender name="MetricsPortalAsync" class="AsyncAppender">
     <appender-ref ref="MetricsPortalLogger"/>
     <discardingThreshold>0</discardingThreshold>
     <queueSize>500</queueSize>
@@ -55,5 +60,4 @@
   <root level="INFO">
     <appender-ref ref="MetricsPortalAsync" />
   </root>
-
 </configuration>

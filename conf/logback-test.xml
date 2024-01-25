@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
 <!--
   ~ Copyright 2014 Brandon Arp
   ~
@@ -15,13 +16,13 @@
   ~ limitations under the License.
   -->
 <configuration>
+  <import class="com.arpnetworking.logback.KeyValueEncoder"/>
+  <import class="ch.qos.logback.classic.PatternLayout"/>
+  <import class="ch.qos.logback.core.ConsoleAppender"/>
 
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
-
-  <!-- IMPORTANT: This logger should only used when debugging and testing -->
-  <appender name="MetricsPortalLogger" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder class="com.arpnetworking.logback.KeyValueEncoder">
-      <layout class="ch.qos.logback.classic.PatternLayout">
+  <appender name="MetricsPortalLogger" class="ConsoleAppender">
+    <encoder class="KeyValueEncoder">
+      <layout class="PatternLayout">
         <pattern>%date %t [%level] %logger : %message %ex%n</pattern>
       </layout>
     </encoder>
@@ -43,5 +44,4 @@
   <root level="INFO">
     <appender-ref ref="MetricsPortalLogger" />
   </root>
-
 </configuration>
