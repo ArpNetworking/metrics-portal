@@ -28,7 +28,7 @@ eclipse-bin/
 # Mac
 .DS_Store
 
-# Akka test persistence data
+# Pekko test persistence data
 test-snapshots/
 
 # VSCode

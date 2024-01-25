@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.notcommons.akka;
+package com.arpnetworking.notcommons.pekko;
 
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSelection;
@@ -52,7 +52,7 @@ public final class ParallelLeastShardAllocationStrategy extends ShardCoordinator
      *
      * @param maxParallel number of allocations to start in parallel
      * @param rebalanceThreshold difference in number of shards required to cause a rebalance
-     * @param notify the {@link akka.actor.ActorSelection} selection to notify of changes
+     * @param notify the {@link org.apache.pekko.actor.ActorSelection} selection to notify of changes
      */
     public ParallelLeastShardAllocationStrategy(
             final int maxParallel,

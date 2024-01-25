@@ -230,7 +230,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
 
 
     private JobRef<T> unsafeJobRefCast(@SuppressWarnings("rawtypes") final JobRef ref) {
-        // THIS MAKES ME SO SAD. But there's simply no way to plumb the type information through Akka.
+        // THIS MAKES ME SO SAD. But there's simply no way to plumb the type information through Pekko.
         @SuppressWarnings("unchecked")
         final JobRef<T> typedRef = ref;
         return typedRef;
@@ -588,7 +588,7 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
      * Internal message telling the actor to request a permanent shutdown.
      *
      * This exists because it is unsafe to call `killSelfPermanently` from inside
-     * a CompletionStage, since we could be outside an Akka dispatcher thread.
+     * a CompletionStage, since we could be outside an Pekko dispatcher thread.
      */
     private static final String REQUEST_PERMANENT_SHUTDOWN = "REQUEST_SHUTDOWN";
 

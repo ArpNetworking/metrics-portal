@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.notcommons.jackson.databind.module.akka;
+package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 
 import org.apache.pekko.actor.ActorRef;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 /**
- * Jackson module for serializing Akka objects for use in JSON/Jackson based
+ * Jackson module for serializing Pekko objects for use in JSON/Jackson based
  * logger serializers(e.g. logback-steno).
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
  */
-public final class AkkaLoggingModule extends SimpleModule {
+public final class PekkoLoggingModule extends SimpleModule {
 
     /**
      * Public constructor.
      */
-    public AkkaLoggingModule() { }
+    public PekkoLoggingModule() { }
 
     @Override
     public void setupModule(final SetupContext context) {

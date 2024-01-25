@@ -19,7 +19,7 @@ import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.testkit.TestActorRef;
 import org.apache.pekko.testkit.javadsl.TestKit;
-import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.pekko.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.DataPoint;
 import com.arpnetworking.kairos.client.models.Metric;
@@ -29,7 +29,7 @@ import com.arpnetworking.kairos.client.models.TagsQuery;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.arpnetworking.notcommons.tagger.NoTagsTagger;
 import com.arpnetworking.notcommons.tagger.Tagger;
 import com.google.common.collect.ImmutableList;
@@ -116,7 +116,7 @@ public class RollupGeneratorTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
 
         _probe = new TestKit(_system);
 

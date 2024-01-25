@@ -52,10 +52,10 @@ public final class MetaController extends Controller {
      * Public constructor.
      *
      * @param objectMapper Instance of {@code ObjectMapper}.
-     * @param actorSystem Instance of Akka {@code ActorSystem}.
+     * @param actorSystem Instance of Pekko {@code ActorSystem}.
      * @param healthProvider Instance of {@link HealthProvider}.
      * @param configuration Play configuration for the app.
-     * @param statusActor Reference to Akka {@link StatusActor}.
+     * @param statusActor Reference to Pekko {@link StatusActor}.
      */
     @Inject
     public MetaController(

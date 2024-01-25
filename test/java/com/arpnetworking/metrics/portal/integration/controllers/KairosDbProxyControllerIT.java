@@ -74,7 +74,7 @@ public final class KairosDbProxyControllerIT {
         urlBuilder.append(getEnvOrDefault("KAIROSDB_PORT", "8082"));
 
         _kairosDbClientDirect = new KairosDbClientImpl.Builder()
-                .setActorSystem(AKKA_ACTOR_SYSTEM)
+                .setActorSystem(PEKKO_ACTOR_SYSTEM)
                 .setMapper(SerializationTestUtils.getApiObjectMapper())
                 .setReadTimeout(FiniteDuration.apply(10, TimeUnit.SECONDS))
                 .setUri(URI.create(urlBuilder.toString()))
@@ -82,7 +82,7 @@ public final class KairosDbProxyControllerIT {
                 .build();
 
         _kairosDbClientProxied = new KairosDbClientImpl.Builder()
-                .setActorSystem(AKKA_ACTOR_SYSTEM)
+                .setActorSystem(PEKKO_ACTOR_SYSTEM)
                 .setMapper(SerializationTestUtils.getApiObjectMapper())
                 .setReadTimeout(FiniteDuration.apply(10, TimeUnit.SECONDS))
                 .setUri(URI.create(WebServerHelper.getUri("")))
@@ -350,5 +350,5 @@ public final class KairosDbProxyControllerIT {
     private KairosDbClient _kairosDbClientProxied;
     private KairosDbClient _kairosDbClientDirect;
 
-    private static final ActorSystem AKKA_ACTOR_SYSTEM = ActorSystem.create(KairosDbProxyControllerIT.class.getSimpleName());
+    private static final ActorSystem PEKKO_ACTOR_SYSTEM = ActorSystem.create(KairosDbProxyControllerIT.class.getSimpleName());
 }

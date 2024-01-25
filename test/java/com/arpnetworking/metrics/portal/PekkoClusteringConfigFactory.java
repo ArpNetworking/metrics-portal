@@ -23,14 +23,14 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Factory for creating Akka networking config to prevent port collisions.
+ * Factory for creating Pekko networking config to prevent port collisions.
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public final class AkkaClusteringConfigFactory {
+public final class PekkoClusteringConfigFactory {
 
     /**
-     * Generates Akka config with a unique network port.
+     * Generates Pekko config with a unique network port.
      *
      * @return a test cluster configuration pointing to 127.0.0.1
      */
@@ -38,13 +38,13 @@ public final class AkkaClusteringConfigFactory {
         final int nextCounter = UNIQUE_COUNTER.getAndIncrement();
         final int port = BASE_PORT + nextCounter;
         return ImmutableMap.<String, Object>builder()
-                .put("akka.cluster.seed-nodes", Collections.singletonList(String.format("akka.tcp://mportal@127.0.0.1:%d", port)))
-                .put("akka.remote.netty.tcp.hostname", "127.0.0.1")
-                .put("akka.remote.netty.tcp.port", port)
-                .put("akka.persistence.snapshot-store.plugin", "akka.persistence.snapshot-store.local")
-                .put("akka.persistence.journal.plugin", "akka.persistence.journal.inmem")
+                .put("pekko.cluster.seed-nodes", Collections.singletonList(String.format("pekko.tcp://mportal@127.0.0.1:%d", port)))
+                .put("pekko.remote.netty.tcp.hostname", "127.0.0.1")
+                .put("pekko.remote.netty.tcp.port", port)
+                .put("pekko.persistence.snapshot-store.plugin", "pekko.persistence.snapshot-store.local")
+                .put("pekko.persistence.journal.plugin", "pekko.persistence.journal.inmem")
                 .put(
-                        "akka.persistence.snapshot-store.local.dir",
+                        "pekko.persistence.snapshot-store.local.dir",
                         "test-snapshots/"
                                 + RUN_ID + "/"
                                 + nextCounter + "/"
@@ -56,7 +56,7 @@ public final class AkkaClusteringConfigFactory {
     /**
      * Utility class, should not be constructable.
      */
-    private AkkaClusteringConfigFactory() {}
+    private PekkoClusteringConfigFactory() {}
 
     private static final UUID RUN_ID = UUID.randomUUID();
     private static final AtomicInteger UNIQUE_COUNTER = new AtomicInteger(1);

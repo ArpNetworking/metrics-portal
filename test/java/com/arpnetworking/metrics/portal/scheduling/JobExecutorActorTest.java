@@ -25,7 +25,7 @@ import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
@@ -103,7 +103,7 @@ public final class JobExecutorActorTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
         _probe = new TestKit(_system);
     }
 
@@ -141,7 +141,7 @@ public final class JobExecutorActorTest {
                 .build();
         final String name;
         try {
-            // Akka can be inconsistent in the times it applies URL encoding to the actor name.
+            // Pekko can be inconsistent in the times it applies URL encoding to the actor name.
             // To at least ensure this is handled in the actor, we always encode here in the test.
             name = URLEncoder.encode((new DefaultJobRefSerializer()).serialize(ref), StandardCharsets.UTF_8.name());
         } catch (final UnsupportedEncodingException e) {

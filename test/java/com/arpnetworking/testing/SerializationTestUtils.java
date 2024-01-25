@@ -66,7 +66,7 @@ public final class SerializationTestUtils {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
         objectMapper.registerModule(customModule);
-        // NOTE: AkkaModule not registered since it requires an actor system
+        // NOTE: PekkoModule not registered since it requires an actor system
         return objectMapper;
     }
 

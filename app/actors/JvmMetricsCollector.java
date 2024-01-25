@@ -58,11 +58,11 @@ public final class JvmMetricsCollector extends AbstractActor {
         _interval = ConfigurationHelper.getFiniteDuration(configuration, "metrics.jvm.interval");
         _jvmMetricsRunnable = new JvmMetricsRunnable.Builder()
                 .setMetricsFactory(metricsFactory)
-                .setSwallowException(false) // Relying on the default akka supervisor strategy here.
+                .setSwallowException(false) // Relying on the default pekko supervisor strategy here.
                 .build();
         _executorServiceMetricsRunnable = new ExecutorServiceMetricsRunnable.Builder()
                 .setMetricsFactory(metricsFactory)
-                .setSwallowException(false) // Relying on the default akka supervisor strategy here.
+                .setSwallowException(false) // Relying on the default pekko supervisor strategy here.
                 .setExecutorServices(createExecutorServiceMap(context().system(), configuration))
                 .build();
     }
@@ -126,7 +126,7 @@ public final class JvmMetricsCollector extends AbstractActor {
         if (configuration.getBoolean("metrics.jvm.dispatchers.includeDefaultDispatcher")) {
             addExecutorServiceFromExecutionContextExecutor(
                     executorServices,
-                    "akka/default_dispatcher",
+                    "pekko/default_dispatcher",
                     actorSystem.dispatcher());
         }
 
@@ -136,7 +136,7 @@ public final class JvmMetricsCollector extends AbstractActor {
                 final String dispatcherNameAsString = (String) dispatcherName;
                 addExecutorServiceFromExecutionContextExecutor(
                         executorServices,
-                        "akka/" + dispatcherNameAsString.replaceAll("-", "_"),
+                        "pekko/" + dispatcherNameAsString.replaceAll("-", "_"),
                         actorSystem.dispatchers().lookup(dispatcherNameAsString)
                 );
             } else {

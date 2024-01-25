@@ -29,7 +29,7 @@ import org.apache.pekko.cluster.UniqueAddress;
 import org.apache.pekko.testkit.TestActorRef;
 import org.apache.pekko.testkit.TestProbe;
 import org.apache.pekko.util.Version;
-import com.arpnetworking.notcommons.akka.BaseActorTest;
+import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;

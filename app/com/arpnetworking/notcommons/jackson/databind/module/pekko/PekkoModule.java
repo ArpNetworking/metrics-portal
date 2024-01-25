@@ -13,36 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.notcommons.jackson.databind.module.akka;
+package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-
-import java.io.IOException;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * Deserializer for an Akka ActorRef.
+ * Jackson module for serializing and deserializing Pekko objects.
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public final class ActorRefDeserializer extends JsonDeserializer<ActorRef> {
+public final class PekkoModule extends SimpleModule {
+
     /**
      * Public constructor.
      *
-     * @param system actor system used to resolve references
+     * @param system the actor system to resolve references
      */
-    public ActorRefDeserializer(final ActorSystem system) {
+    public PekkoModule(final ActorSystem system) {
         _system = system;
     }
 
     @Override
-    public ActorRef deserialize(final JsonParser p, final DeserializationContext ctxt) throws IOException {
-        return _system.provider().resolveActorRef(p.getValueAsString());
+    public void setupModule(final SetupContext context) {
+        addSerializer(ActorRef.class, new ActorRefSerializer());
+        addDeserializer(ActorRef.class, new ActorRefDeserializer(_system));
+        super.setupModule(context);
     }
 
     /**
@@ -62,5 +62,8 @@ public final class ActorRefDeserializer extends JsonDeserializer<ActorRef> {
         return toLogValue().toString();
     }
 
+    @SuppressFBWarnings("SE_BAD_FIELD")
     private final ActorSystem _system;
+
+    private static final long serialVersionUID = 4294591813352245070L;
 }

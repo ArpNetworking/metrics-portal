@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.arpnetworking.notcommons.akka;
+package com.arpnetworking.notcommons.pekko;
 
 import org.apache.pekko.actor.ExtendedActorSystem;
 import org.apache.pekko.serialization.JSerializer;
@@ -29,10 +29,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 
 /**
- * Serializer for Akka using Jackson.
+ * Serializer for Pekko using Jackson.
  * <br>
- * This should be replaced with akka-jackson-serialization once this project is
- * is on Scala 2.12+ and Akka 2.6+.
+ * This should be replaced with pekko-jackson-serialization once this project is
+ * is on Scala 2.12+ and Pekko.
  *
  * @author Christian Briones (cbriones at dropbox dot com)
  */
@@ -41,7 +41,7 @@ public class JacksonSerializer extends JSerializer {
     private static @Nullable ObjectMapper gObjectMapper;
 
     /**
-     * Constructor used by Akka upon system initialization.
+     * Constructor used by Pekko upon system initialization.
      *
      * @param ignored the actor system
      */
@@ -51,7 +51,7 @@ public class JacksonSerializer extends JSerializer {
      * Set the object mapper to be used by all instances.
      * <br>
      * This should only be called once, before initialization. This method exists
-     * because Akka does not provide any initialization hooks for serializers outside
+     * because Pekko does not provide any initialization hooks for serializers outside
      * of passing the configuration object.
      * <br>
      * Since we don't want to define the ObjectMapper twice (once in Guice, the other in the
@@ -81,7 +81,7 @@ public class JacksonSerializer extends JSerializer {
 
     @Override
     public int identifier() {
-        // Akka allows for this to be any integer >40.
+        // Pekko allows for this to be any integer >40.
         // Randomly generated from IDE.
         return 564_386_063;
     }

@@ -75,9 +75,9 @@ import com.arpnetworking.metrics.portal.scheduling.JobMessageExtractor;
 import com.arpnetworking.metrics.portal.scheduling.JobRefSerializer;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.UnboundedPeriodicSchedule;
-import com.arpnetworking.notcommons.akka.JacksonSerializer;
-import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
-import com.arpnetworking.notcommons.jackson.databind.module.akka.AkkaModule;
+import com.arpnetworking.notcommons.pekko.JacksonSerializer;
+import com.arpnetworking.notcommons.pekko.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.notcommons.jackson.databind.module.pekko.PekkoModule;
 import com.arpnetworking.notcommons.java.time.TimeAdapters;
 import com.arpnetworking.notcommons.tagger.Tagger;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
@@ -449,7 +449,7 @@ public class MainModule extends AbstractModule {
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature());
         objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
-        objectMapper.registerModule(new AkkaModule(actorSystem));
+        objectMapper.registerModule(new PekkoModule(actorSystem));
         objectMapper.registerModule(customModule);
 
         configureMapperForInjection(objectMapper, injector);

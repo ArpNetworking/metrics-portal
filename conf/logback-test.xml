@@ -38,7 +38,7 @@
   <logger name="org.reflections.Reflections" level="ERROR" />
   <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
   <logger name="io.ebean" level="TRACE" />
-  <logger name="io.akka" level="TRACE" />
+  <logger name="org.apache.pekko" level="TRACE" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalLogger" />

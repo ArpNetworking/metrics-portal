@@ -61,7 +61,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param repositoryType The type of the repository to load.
      * @param execRepositoryType The type of the execution repository to load.
      * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
-     * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
+     * @param jobExecutorRegion The ref to the Pekko cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */
@@ -90,7 +90,7 @@ public final class JobCoordinator<T> extends AbstractPersistentActorWithTimers {
      * @param repositoryType The type of the repository to load.
      * @param execRepositoryType The type of the execution repository to load.
      * @param organizationRepository Provides the set of all {@link Organization}s to monitor in the repository.
-     * @param jobExecutorRegion The ref to the Akka cluster-sharding region that dispatches to {@link JobExecutorActor}s.
+     * @param jobExecutorRegion The ref to the Pekko cluster-sharding region that dispatches to {@link JobExecutorActor}s.
      * @param periodicMetrics The {@link PeriodicMetrics} that this actor will use to log its metrics.
      * @return A new props to create this actor.
      */

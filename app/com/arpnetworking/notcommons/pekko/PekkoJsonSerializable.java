@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Smartsheet
+ * Copyright 2021 Dropbox, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.arpnetworking.notcommons.pekko;
 
-@ParametersAreNonnullByDefault
-@ReturnValuesAreNonnullByDefault
-package com.arpnetworking.notcommons.akka;
-
-import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
-
-import javax.annotation.ParametersAreNonnullByDefault;
+/**
+ * Marker interface for message types to indicate they should be serialized using
+ * {@link JacksonSerializer}.
+ *
+ * @author Christian Briones (cbriones at dropbox dot com)
+ */
+public interface PekkoJsonSerializable { }

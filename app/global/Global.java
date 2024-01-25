@@ -35,13 +35,13 @@ public final class Global {
     /**
      * Public constructor.
      *
-     * @param akka the actor system.
+     * @param pekko the actor system.
      * @param lifecycle injected lifecycle.
      */
     @Inject
-    public Global(final ActorSystem akka, final ApplicationLifecycle lifecycle) {
+    public Global(final ActorSystem pekko, final ApplicationLifecycle lifecycle) {
         LOGGER.info().setMessage("Starting application...").log();
-        _akka = akka;
+        _pekko = pekko;
         lifecycle.addStopHook(this::onStop);
 
         LOGGER.debug().setMessage("Startup complete").log();
@@ -57,7 +57,7 @@ public final class Global {
         return shutdownFuture;
     }
 
-    private final ActorSystem _akka;
+    private final ActorSystem _pekko;
     private final CompletableFuture<Boolean> _shutdownFuture = new CompletableFuture<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Global.class);

@@ -61,7 +61,7 @@ public final class RollupManager extends AbstractActorWithTimers {
     private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
-     * Creates a {@link Props} for use in Akka.
+     * Creates a {@link Props} for use in Pekko.
      *
      * @param periodicMetrics periodic metrics client
      * @param metricsFactory metrics factory
