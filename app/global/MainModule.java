@@ -115,7 +115,9 @@ import org.flywaydb.play.PlayInitializer;
 import play.Environment;
 import play.api.Configuration;
 import play.api.db.evolutions.DynamicEvolutions;
+import play.api.libs.json.JsonConfig;
 import play.api.libs.json.JsonParserSettings;
+import play.api.libs.json.jackson.PlayJsonMapperModule;
 import play.api.libs.json.jackson.PlayJsonModule;
 import play.db.ebean.EbeanConfig;
 import play.inject.ApplicationLifecycle;
@@ -448,7 +450,7 @@ public class MainModule extends AbstractModule {
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
         objectMapper.enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS.mappedFeature());
-        objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
+        objectMapper.registerModule(new PlayJsonMapperModule(JsonConfig.apply()));
         objectMapper.registerModule(new PekkoModule(actorSystem));
         objectMapper.registerModule(customModule);
 

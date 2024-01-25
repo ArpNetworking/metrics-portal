@@ -24,7 +24,9 @@ import com.arpnetworking.kairos.client.models.TimeUnit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.Assert;
+import play.api.libs.json.JsonConfig;
 import play.api.libs.json.JsonParserSettings;
+import play.api.libs.json.jackson.PlayJsonMapperModule;
 import play.api.libs.json.jackson.PlayJsonModule;
 
 import java.io.IOException;
@@ -64,7 +66,7 @@ public final class SerializationTestUtils {
                         Metric.Order.class,
                         EnumerationDeserializerStrategyUsingToUpperCase.newInstance()));
         final ObjectMapper objectMapper = ObjectMapperFactory.createInstance();
-        objectMapper.registerModule(new PlayJsonModule(JsonParserSettings.apply()));
+        objectMapper.registerModule(new PlayJsonMapperModule(JsonConfig.apply()));
         objectMapper.registerModule(customModule);
         // NOTE: PekkoModule not registered since it requires an actor system
         return objectMapper;

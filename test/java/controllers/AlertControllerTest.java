@@ -49,6 +49,7 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import play.libs.concurrent.ClassLoaderExecutionContext;
 import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Result;
 import play.test.Helpers;
@@ -159,7 +160,7 @@ public final class AlertControllerTest {
                     alertExecutionRepository,
                     organizationRepository,
                     Mockito.mock(PeriodicMetrics.class),
-                    new HttpExecutionContext(_actorSystem.getDispatcher()),
+                    new ClassLoaderExecutionContext(_actorSystem.getDispatcher()),
                     new ProblemHelper(Helpers.stubMessagesApi())
             );
         }
