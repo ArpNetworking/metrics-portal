@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;

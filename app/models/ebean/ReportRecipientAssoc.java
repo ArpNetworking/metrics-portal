@@ -17,10 +17,6 @@
 package models.ebean;
 
 import io.ebean.annotation.WhenCreated;
-
-import java.sql.Timestamp;
-import java.util.Objects;
-import javax.annotation.Nullable;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -32,6 +28,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+
+import java.sql.Timestamp;
+import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * Data model for a mapping between a report and a recipient.

@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.integration.controllers;
 
-import org.apache.pekko.actor.ActorSystem;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.KairosDbClientImpl;
 import com.arpnetworking.kairos.client.models.Aggregator;
@@ -40,6 +39,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.ContentType;
+import org.apache.pekko.actor.ActorSystem;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;

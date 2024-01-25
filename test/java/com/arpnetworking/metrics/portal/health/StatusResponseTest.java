@@ -15,14 +15,14 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.cluster.ClusterEvent;
-import org.apache.pekko.cluster.Member;
-import org.apache.pekko.testkit.TestProbe;
 import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import com.arpnetworking.notcommons.pekko.ParallelLeastShardAllocationStrategy;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.cluster.ClusterEvent;
+import org.apache.pekko.cluster.Member;
+import org.apache.pekko.testkit.TestProbe;
 import org.junit.Test;
 import scala.Option;
 import scala.collection.immutable.HashMap;

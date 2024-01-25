@@ -15,8 +15,6 @@
  */
 package models.view;
 
-import org.apache.pekko.actor.Address;
-import org.apache.pekko.cluster.Member;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.health.ClusterStatusCacheActor;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,6 +26,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
 import models.internal.ShardAllocation;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.actor.Address;
+import org.apache.pekko.cluster.Member;
 import scala.jdk.CollectionConverters;
 
 import java.io.IOException;

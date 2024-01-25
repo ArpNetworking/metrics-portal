@@ -17,7 +17,6 @@ package models.ebean;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.OneOffSchedule;
-
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 

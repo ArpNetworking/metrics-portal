@@ -16,8 +16,8 @@
 
 package global;
 
-import org.apache.pekko.actor.ActorSystem;
 import com.google.inject.Inject;
+import org.apache.pekko.actor.ActorSystem;
 import play.libs.concurrent.CustomExecutionContext;
 
 /**

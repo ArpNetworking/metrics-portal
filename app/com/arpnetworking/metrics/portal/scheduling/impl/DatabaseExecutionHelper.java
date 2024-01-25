@@ -21,6 +21,7 @@ import com.arpnetworking.steno.Logger;
 import com.google.common.base.Throwables;
 import io.ebean.Database;
 import io.ebean.Transaction;
+import jakarta.persistence.PersistenceException;
 import models.ebean.BaseExecution;
 import models.internal.Organization;
 import models.internal.scheduling.JobExecution;
@@ -31,7 +32,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import jakarta.persistence.PersistenceException;
 
 /**
  * Helper class for implementing a SQL-backed {@link JobExecutionRepository}, providing facilities for updating the state

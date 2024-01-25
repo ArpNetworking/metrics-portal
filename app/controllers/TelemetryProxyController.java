@@ -15,6 +15,8 @@
  */
 package controllers;
 
+import com.google.inject.Inject;
+import models.internal.Features;
 import org.apache.pekko.NotUsed;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.http.javadsl.Http;
@@ -24,8 +26,6 @@ import org.apache.pekko.http.javadsl.model.ws.WebSocketRequest;
 import org.apache.pekko.http.javadsl.model.ws.WebSocketUpgradeResponse;
 import org.apache.pekko.stream.Materializer;
 import org.apache.pekko.stream.javadsl.Flow;
-import com.google.inject.Inject;
-import models.internal.Features;
 import play.mvc.Controller;
 import play.mvc.WebSocket;
 

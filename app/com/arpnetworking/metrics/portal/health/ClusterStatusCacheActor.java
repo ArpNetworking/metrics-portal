@@ -16,13 +16,6 @@
 
 package com.arpnetworking.metrics.portal.health;
 
-import org.apache.pekko.actor.AbstractActor;
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.Cancellable;
-import org.apache.pekko.actor.Props;
-import org.apache.pekko.actor.Scheduler;
-import org.apache.pekko.cluster.Cluster;
-import org.apache.pekko.cluster.ClusterEvent;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.notcommons.pekko.ParallelLeastShardAllocationStrategy;
@@ -32,6 +25,13 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Scheduler;
+import org.apache.pekko.cluster.Cluster;
+import org.apache.pekko.cluster.ClusterEvent;
 import scala.jdk.javaapi.OptionConverters;
 
 import java.io.Serializable;

@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import org.apache.pekko.actor.ActorRef;
 import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import com.arpnetworking.utility.test.SimpleReplierActor;
+import org.apache.pekko.actor.ActorRef;
 import org.junit.Before;
 import org.junit.Test;
 

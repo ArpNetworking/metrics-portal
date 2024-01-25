@@ -22,6 +22,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import io.ebean.Database;
 import io.ebean.ExpressionList;
+import jakarta.persistence.EntityNotFoundException;
 import models.ebean.ReportExecution;
 import models.internal.Organization;
 import models.internal.reports.Report;
@@ -37,7 +38,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.inject.Named;
-import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Implementation of {@link JobExecutionRepository} for {@link Report} jobs using a SQL database.

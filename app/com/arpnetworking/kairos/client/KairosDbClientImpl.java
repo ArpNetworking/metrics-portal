@@ -15,16 +15,6 @@
  */
 package com.arpnetworking.kairos.client;
 
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.http.javadsl.Http;
-import org.apache.pekko.http.javadsl.model.ContentTypes;
-import org.apache.pekko.http.javadsl.model.HttpRequest;
-import org.apache.pekko.http.javadsl.model.headers.AcceptEncoding;
-import org.apache.pekko.http.javadsl.model.headers.HttpEncoding;
-import org.apache.pekko.http.javadsl.model.headers.HttpEncodings;
-import org.apache.pekko.http.scaladsl.coding.Coder;
-import org.apache.pekko.http.scaladsl.coding.Coders;
-import org.apache.pekko.stream.Materializer;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.kairos.client.models.MetricDataPoints;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
@@ -46,6 +36,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.http.javadsl.Http;
+import org.apache.pekko.http.javadsl.model.ContentTypes;
+import org.apache.pekko.http.javadsl.model.HttpRequest;
+import org.apache.pekko.http.javadsl.model.headers.AcceptEncoding;
+import org.apache.pekko.http.javadsl.model.headers.HttpEncoding;
+import org.apache.pekko.http.javadsl.model.headers.HttpEncodings;
+import org.apache.pekko.http.scaladsl.coding.Coder;
+import org.apache.pekko.http.scaladsl.coding.Coders;
+import org.apache.pekko.stream.Materializer;
 import scala.concurrent.duration.FiniteDuration;
 import scala.jdk.javaapi.FutureConverters;
 

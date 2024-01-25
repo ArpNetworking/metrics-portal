@@ -16,12 +16,6 @@
 
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import org.apache.pekko.actor.AbstractActorWithTimers;
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.Props;
-import org.apache.pekko.actor.Status;
-import org.apache.pekko.japi.pf.ReceiveBuilder;
-import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
@@ -33,6 +27,13 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.Database;
 import io.ebean.SqlRow;
 import io.ebean.Transaction;
+import jakarta.persistence.PersistenceException;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Status;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
+import org.apache.pekko.pattern.Patterns;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,7 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import jakarta.persistence.PersistenceException;
 
 /**
  * An actor that will periodically create table partitions.

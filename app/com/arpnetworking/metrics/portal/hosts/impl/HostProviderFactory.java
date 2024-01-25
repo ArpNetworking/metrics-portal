@@ -15,13 +15,13 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import org.apache.pekko.actor.Actor;
-import org.apache.pekko.actor.Props;
 import com.arpnetworking.commons.pekko.GuiceActorCreator;
 import com.arpnetworking.utility.ConfigurationOverrideModule;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
+import org.apache.pekko.actor.Actor;
+import org.apache.pekko.actor.Props;
 
 /**
  * Factory for creating HostProviders with nested/changed Configurations.

@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 
-import org.apache.pekko.actor.ActorRef;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Jackson module for serializing Pekko objects for use in JSON/Jackson based

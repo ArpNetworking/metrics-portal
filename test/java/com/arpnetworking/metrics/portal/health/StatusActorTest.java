@@ -16,6 +16,7 @@
 
 package com.arpnetworking.metrics.portal.health;
 
+import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import org.apache.pekko.actor.Actor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.Address;
@@ -29,7 +30,6 @@ import org.apache.pekko.cluster.UniqueAddress;
 import org.apache.pekko.testkit.TestActorRef;
 import org.apache.pekko.testkit.TestProbe;
 import org.apache.pekko.util.Version;
-import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;

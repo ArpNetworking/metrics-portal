@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.testkit.TestActorRef;
-import org.apache.pekko.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbRequestException;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
@@ -29,6 +25,10 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Features;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.TestActorRef;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -15,11 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.pattern.Patterns;
-import org.apache.pekko.testkit.TestActorRef;
-import org.apache.pekko.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
@@ -32,6 +27,11 @@ import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import net.sf.oval.exception.ConstraintsViolatedException;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.pattern.Patterns;
+import org.apache.pekko.testkit.TestActorRef;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

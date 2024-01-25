@@ -18,16 +18,16 @@ package models.ebean;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.arpnetworking.metrics.portal.scheduling.impl.PeriodicSchedule;
-import models.internal.scheduling.Period;
-
-import java.time.Duration;
-import java.time.ZoneId;
-import java.util.Objects;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import models.internal.scheduling.Period;
+
+import java.time.Duration;
+import java.time.ZoneId;
+import java.util.Objects;
 
 /**
  * Data Model for a periodically recurring report schedule (i.e. recurs daily).

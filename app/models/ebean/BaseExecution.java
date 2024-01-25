@@ -17,17 +17,17 @@
 package models.ebean;
 
 import io.ebean.annotation.DbJsonB;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
 
 /**
  * A generic execution event for a {@code Job}.

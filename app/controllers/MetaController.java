@@ -15,9 +15,6 @@
  */
 package controllers;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,6 +26,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import models.view.StatusResponse;
 import models.view.VersionInfo;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.pattern.Patterns;
 import play.mvc.Controller;
 import play.mvc.Result;
 

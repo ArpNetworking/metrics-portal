@@ -15,10 +15,6 @@
  */
 package actors;
 
-import org.apache.pekko.actor.AbstractActor;
-import org.apache.pekko.actor.ActorSystem;
-import org.apache.pekko.actor.Cancellable;
-import org.apache.pekko.dispatch.Dispatcher;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.ExecutorServiceMetricsRunnable;
@@ -31,6 +27,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.dispatch.Dispatcher;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.duration.FiniteDuration;
 

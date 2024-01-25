@@ -16,6 +16,8 @@
 
 package com.arpnetworking.metrics.portal.health;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import models.view.StatusResponse;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.Props;
@@ -23,8 +25,6 @@ import org.apache.pekko.cluster.Cluster;
 import org.apache.pekko.cluster.MemberStatus;
 import org.apache.pekko.pattern.Patterns;
 import org.apache.pekko.remote.artery.ThisActorSystemQuarantinedEvent;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import models.view.StatusResponse;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;

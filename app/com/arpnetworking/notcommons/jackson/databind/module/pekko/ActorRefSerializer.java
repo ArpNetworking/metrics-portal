@@ -15,11 +15,11 @@
  */
 package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.serialization.Serialization;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.serialization.Serialization;
 
 import java.io.IOException;
 

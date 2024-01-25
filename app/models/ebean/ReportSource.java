@@ -18,9 +18,6 @@ package models.ebean;
 import io.ebean.annotation.SoftDelete;
 import io.ebean.annotation.WhenCreated;
 import io.ebean.annotation.WhenModified;
-
-import java.sql.Timestamp;
-import java.util.UUID;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
@@ -30,6 +27,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
+
+import java.sql.Timestamp;
+import java.util.UUID;
 
 /**
  * Data Model for SQL storage of a report generation scheme.

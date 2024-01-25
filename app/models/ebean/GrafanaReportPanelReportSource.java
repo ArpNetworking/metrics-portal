@@ -15,10 +15,11 @@
  */
 package models.ebean;
 
-import java.net.URI;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+
+import java.net.URI;
 
 /**
  * Data Model for SQL storage of a Grafana based report generation scheme.

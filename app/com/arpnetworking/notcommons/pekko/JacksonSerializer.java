@@ -16,8 +16,6 @@
 
 package com.arpnetworking.notcommons.pekko;
 
-import org.apache.pekko.actor.ExtendedActorSystem;
-import org.apache.pekko.serialization.JSerializer;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -25,6 +23,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.pekko.actor.ExtendedActorSystem;
+import org.apache.pekko.serialization.JSerializer;
 
 import java.io.IOException;
 

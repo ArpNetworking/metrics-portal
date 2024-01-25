@@ -15,13 +15,13 @@
  */
 package controllers;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.pattern.Patterns;
 import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 import play.mvc.Controller;
 import play.mvc.Http;
 import play.mvc.Result;

@@ -16,9 +16,6 @@
 package models.ebean;
 
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-
-import java.time.Instant;
-import javax.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
@@ -28,6 +25,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
+
+import java.time.Instant;
+import javax.annotation.Nullable;
 
 /**
  * Data Model for SQL storage of report schedules.

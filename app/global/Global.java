@@ -16,11 +16,11 @@
 
 package global;
 
-import org.apache.pekko.actor.ActorSystem;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.pekko.actor.ActorSystem;
 import play.inject.ApplicationLifecycle;
 
 import java.util.concurrent.CompletableFuture;

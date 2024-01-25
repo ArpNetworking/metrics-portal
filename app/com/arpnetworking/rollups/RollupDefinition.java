@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import org.apache.pekko.routing.ConsistentHashingRouter;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
@@ -23,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.routing.ConsistentHashingRouter;
 
 import java.io.Serializable;
 import java.time.Instant;
