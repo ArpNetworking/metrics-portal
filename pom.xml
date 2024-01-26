@@ -128,7 +128,7 @@
     <jsonassert.version>1.5.0</jsonassert.version>
     <junit.version>4.13.2</junit.version>
     <mockito.version>5.9.0</mockito.version>
-    <thrift.version>0.18.1</thrift.version>
+    <thrift.version>0.19.0</thrift.version>
     <wiremock.version>2.27.2</wiremock.version>
 
     <!-- Additional Plugins -->
