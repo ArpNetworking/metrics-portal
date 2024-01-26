@@ -15,23 +15,23 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.pattern.Patterns;
-import akka.testkit.TestActorRef;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricsQuery;
 import com.arpnetworking.kairos.client.models.MetricsQueryResponse;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.utility.test.ResourceHelper;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.ConfigFactory;
 import net.sf.oval.exception.ConstraintsViolatedException;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.pattern.Patterns;
+import org.apache.pekko.testkit.TestActorRef;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,7 +76,7 @@ public final class ConsistencyCheckerTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration())
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration())
         );
 
         when(_kairosDbClient.queryMetrics(

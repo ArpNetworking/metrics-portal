@@ -18,19 +18,19 @@ package models.ebean;
 
 import com.google.common.base.Objects;
 import io.ebean.annotation.DbJsonB;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import models.internal.alerts.AlertEvaluationResult;
 
 import java.time.Instant;
 import java.util.UUID;
 import javax.annotation.Nullable;
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
 
 /**
  * An execution event for an {@link models.internal.alerts.Alert}.

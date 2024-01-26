@@ -15,20 +15,20 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.testkit.TestActorRef;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbRequestException;
 import com.arpnetworking.metrics.impl.NoOpMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Features;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.TestActorRef;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +71,7 @@ public final class RollupManagerTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
 
         _consistencyChecker = new TestKit(_system);
 

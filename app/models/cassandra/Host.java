@@ -25,6 +25,7 @@ import com.datastax.oss.driver.api.mapper.annotations.Insert;
 import com.datastax.oss.driver.api.mapper.annotations.PartitionKey;
 import com.datastax.oss.driver.api.mapper.annotations.Query;
 import com.datastax.oss.driver.api.mapper.annotations.Select;
+import jakarta.persistence.Version;
 import models.internal.MetricsSoftwareState;
 import models.internal.impl.DefaultHost;
 
@@ -32,7 +33,6 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
-import javax.persistence.Version;
 
 /**
  * Model for alerts stored in Cassandra.

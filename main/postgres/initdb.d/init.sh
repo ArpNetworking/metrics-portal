@@ -3,7 +3,7 @@
 psql_root_postgres=( psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --dbname "$POSTGRES_DB" )
 psql_root_metrics=( psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --no-password --dbname "metrics" )
 psql_metrics_dba=( psql -v ON_ERROR_STOP=1 --username "metrics_dba" --no-password --dbname "metrics" )
-psql_akka_dba=( psql -v ON_ERROR_STOP=1 --username "akka_dba" --no-password --dbname "metrics" )
+psql_pekko_dba=( psql -v ON_ERROR_STOP=1 --username "pekko_dba" --no-password --dbname "metrics" )
 
 # Run as database administrator against the postgres database
 # NOTE: The password is already set by the caller
@@ -19,9 +19,9 @@ echo "$0: running /docker-entrypoint-initdb.d/init.sql.1"; "${psql_root_metrics[
 export PGPASSWORD="metrics_dba_password"
 echo "$0: running /docker-entrypoint-initdb.d/init.sql.2"; "${psql_metrics_dba[@]}" -f "/docker-entrypoint-initdb.d/init.sql.3";
 
-# Run as akka dba
-export PGPASSWORD="akka_dba_password"
-echo "$0: running /docker-entrypoint-initdb.d/init.sql.3"; "${psql_akka_dba[@]}" -f "/docker-entrypoint-initdb.d/init.sql.4";
+# Run as pekko dba
+export PGPASSWORD="pekko_dba_password"
+echo "$0: running /docker-entrypoint-initdb.d/init.sql.3"; "${psql_pekko_dba[@]}" -f "/docker-entrypoint-initdb.d/init.sql.4";
 
 # Restore the root password
 export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"

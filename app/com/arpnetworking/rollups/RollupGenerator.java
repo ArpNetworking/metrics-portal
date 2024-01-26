@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.japi.pf.ReceiveBuilder;
-import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.Aggregator;
@@ -41,6 +37,10 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigUtil;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.japi.pf.ReceiveBuilder;
+import org.apache.pekko.pattern.Patterns;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Clock;

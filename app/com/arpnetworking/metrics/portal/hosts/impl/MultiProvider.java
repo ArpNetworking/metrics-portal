@@ -15,8 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
 import com.arpnetworking.play.configuration.ConfigurationHelper;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
@@ -25,6 +23,8 @@ import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
 import play.Environment;
 
 import java.util.Set;

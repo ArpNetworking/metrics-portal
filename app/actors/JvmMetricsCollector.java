@@ -15,10 +15,6 @@
  */
 package actors;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorSystem;
-import akka.actor.Cancellable;
-import akka.dispatch.Dispatcher;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.jvm.ExecutorServiceMetricsRunnable;
@@ -31,6 +27,10 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.dispatch.Dispatcher;
 import scala.concurrent.ExecutionContextExecutor;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -58,11 +58,11 @@ public final class JvmMetricsCollector extends AbstractActor {
         _interval = ConfigurationHelper.getFiniteDuration(configuration, "metrics.jvm.interval");
         _jvmMetricsRunnable = new JvmMetricsRunnable.Builder()
                 .setMetricsFactory(metricsFactory)
-                .setSwallowException(false) // Relying on the default akka supervisor strategy here.
+                .setSwallowException(false) // Relying on the default pekko supervisor strategy here.
                 .build();
         _executorServiceMetricsRunnable = new ExecutorServiceMetricsRunnable.Builder()
                 .setMetricsFactory(metricsFactory)
-                .setSwallowException(false) // Relying on the default akka supervisor strategy here.
+                .setSwallowException(false) // Relying on the default pekko supervisor strategy here.
                 .setExecutorServices(createExecutorServiceMap(context().system(), configuration))
                 .build();
     }
@@ -126,7 +126,7 @@ public final class JvmMetricsCollector extends AbstractActor {
         if (configuration.getBoolean("metrics.jvm.dispatchers.includeDefaultDispatcher")) {
             addExecutorServiceFromExecutionContextExecutor(
                     executorServices,
-                    "akka/default_dispatcher",
+                    "pekko/default_dispatcher",
                     actorSystem.dispatcher());
         }
 
@@ -136,7 +136,7 @@ public final class JvmMetricsCollector extends AbstractActor {
                 final String dispatcherNameAsString = (String) dispatcherName;
                 addExecutorServiceFromExecutionContextExecutor(
                         executorServices,
-                        "akka/" + dispatcherNameAsString.replaceAll("-", "_"),
+                        "pekko/" + dispatcherNameAsString.replaceAll("-", "_"),
                         actorSystem.dispatchers().lookup(dispatcherNameAsString)
                 );
             } else {

@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.notcommons.java.time.TimeAdapters;
@@ -27,6 +26,7 @@ import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.actor.ActorRef;
 
 import java.time.Duration;
 import java.time.Instant;

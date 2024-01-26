@@ -16,8 +16,6 @@
 
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.config.ConfigProvider;
@@ -30,6 +28,8 @@ import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
 import models.internal.impl.DefaultOrganization;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

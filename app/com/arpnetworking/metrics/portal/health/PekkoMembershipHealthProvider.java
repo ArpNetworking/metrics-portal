@@ -15,10 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.ActorRef;
-import akka.pattern.Patterns;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.pattern.Patterns;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
@@ -30,19 +30,19 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Implementation of {@link HealthProvider} interface which looks at the Akka cluster
+ * Implementation of {@link HealthProvider} interface which looks at the Pekko cluster
  * state to determine health. If the host is a member and
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
-public class AkkaMembershipHealthProvider implements HealthProvider {
+public class PekkoMembershipHealthProvider implements HealthProvider {
     /**
      * Public constructor.
      *
      * @param statusActor the {@link StatusActor} to retrieve the cluster status from.
      */
     @Inject
-    public AkkaMembershipHealthProvider(@Named("status") final ActorRef statusActor) {
+    public PekkoMembershipHealthProvider(@Named("status") final ActorRef statusActor) {
         _statusActor = statusActor;
     }
 
@@ -77,5 +77,5 @@ public class AkkaMembershipHealthProvider implements HealthProvider {
 
     private final ActorRef _statusActor;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AkkaMembershipHealthProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PekkoMembershipHealthProvider.class);
 }

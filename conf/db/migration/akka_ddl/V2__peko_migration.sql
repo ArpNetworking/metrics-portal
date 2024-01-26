@@ -1,5 +1,5 @@
-/*
- * Copyright 2019 Dropbox Inc.
+/**
+ * Copyright 2024 Brandon Arp
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package actors;
 
-import org.apache.pekko.actor.AbstractActor;
-
-/**
- * Simple actor that does nothing, used for passing actorRefs to controllers that are disabled.
- *
- * @author Gilligan Markham (gmarkham at dropbox dot com)
- */
-public class NoopActor extends AbstractActor {
-    @Override
-    public Receive createReceive() {
-        return emptyBehavior();
-    }
-}
+ALTER SCHEMA akka RENAME TO pekko;

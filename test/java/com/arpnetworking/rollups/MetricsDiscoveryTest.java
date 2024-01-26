@@ -15,15 +15,11 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.testkit.TestActorRef;
-import akka.testkit.javadsl.TestKit;
-import com.arpnetworking.commons.akka.GuiceActorCreator;
+import com.arpnetworking.commons.pekko.GuiceActorCreator;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -32,6 +28,10 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Features;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.TestActorRef;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,7 +84,7 @@ public final class MetricsDiscoveryTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
 
     }
 

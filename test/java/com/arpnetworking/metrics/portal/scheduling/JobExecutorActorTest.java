@@ -15,17 +15,12 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.cluster.sharding.ShardRegion;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.metrics.impl.TsdMetricsFactory;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.incubator.impl.TsdPeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobRepository;
@@ -38,6 +33,11 @@ import com.typesafe.config.ConfigFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.cluster.sharding.ShardRegion;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,7 +103,7 @@ public final class JobExecutorActorTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
         _probe = new TestKit(_system);
     }
 
@@ -141,7 +141,7 @@ public final class JobExecutorActorTest {
                 .build();
         final String name;
         try {
-            // Akka can be inconsistent in the times it applies URL encoding to the actor name.
+            // Pekko can be inconsistent in the times it applies URL encoding to the actor name.
             // To at least ensure this is handled in the actor, we always encode here in the test.
             name = URLEncoder.encode((new DefaultJobRefSerializer()).serialize(ref), StandardCharsets.UTF_8.name());
         } catch (final UnsupportedEncodingException e) {

@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorRef;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
@@ -49,6 +48,7 @@ import models.internal.impl.DefaultQueryResult;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNegative;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.actor.ActorRef;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.Status;
-import akka.pattern.Patterns;
 import com.arpnetworking.kairos.client.KairosDbClient;
 import com.arpnetworking.kairos.client.models.MetricNamesResponse;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
@@ -27,6 +23,10 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import com.typesafe.config.Config;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Status;
+import org.apache.pekko.pattern.Patterns;
 import scala.concurrent.duration.Deadline;
 import scala.concurrent.duration.FiniteDuration;
 

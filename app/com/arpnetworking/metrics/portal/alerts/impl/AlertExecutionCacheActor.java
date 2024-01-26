@@ -15,19 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.actor.Status;
-import akka.pattern.Patterns;
-import akka.persistence.AbstractPersistentActorWithTimers;
-import akka.persistence.RecoveryCompleted;
-import akka.persistence.SaveSnapshotFailure;
-import akka.persistence.SaveSnapshotSuccess;
-import akka.persistence.SnapshotMetadata;
-import akka.persistence.SnapshotOffer;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.notcommons.akka.AkkaJsonSerializable;
+import com.arpnetworking.notcommons.pekko.PekkoJsonSerializable;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.Objects;
@@ -39,6 +29,16 @@ import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Status;
+import org.apache.pekko.pattern.Patterns;
+import org.apache.pekko.persistence.AbstractPersistentActorWithTimers;
+import org.apache.pekko.persistence.RecoveryCompleted;
+import org.apache.pekko.persistence.SaveSnapshotFailure;
+import org.apache.pekko.persistence.SaveSnapshotSuccess;
+import org.apache.pekko.persistence.SnapshotMetadata;
+import org.apache.pekko.persistence.SnapshotOffer;
 import scala.Option;
 import scala.jdk.javaapi.OptionConverters;
 
@@ -358,7 +358,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
     // Snapshot of the cache for persistence.
     //
     // This class exists as a wrapper for serialization purposes only.
-    private static final class CacheSnapshot implements AkkaJsonSerializable {
+    private static final class CacheSnapshot implements PekkoJsonSerializable {
         private final ImmutableList<SnapshotEntry> _entries;
 
         private CacheSnapshot(final Builder builder) {
@@ -384,7 +384,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class SnapshotEntry implements AkkaJsonSerializable {
+    private static final class SnapshotEntry implements PekkoJsonSerializable {
         private final CacheKey _key;
         private final SuccessfulAlertExecution _value;
 
@@ -423,7 +423,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class CacheKey implements AkkaJsonSerializable {
+    private static final class CacheKey implements PekkoJsonSerializable {
         private final UUID _organizationId;
         private final UUID _jobId;
 
@@ -480,7 +480,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class CacheGet implements AkkaJsonSerializable {
+    private static final class CacheGet implements PekkoJsonSerializable {
         private final UUID _jobId;
         private final UUID _organizationId;
 
@@ -522,7 +522,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class CacheGetResponse implements AkkaJsonSerializable {
+    private static final class CacheGetResponse implements PekkoJsonSerializable {
         private final Optional<SuccessfulAlertExecution> _execution;
 
         public Optional<SuccessfulAlertExecution> getExecution() {
@@ -549,7 +549,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
 
     }
 
-    private static final class CacheMultiGet implements AkkaJsonSerializable {
+    private static final class CacheMultiGet implements PekkoJsonSerializable {
         private final Collection<UUID> _jobIds;
         private final UUID _organizationId;
 
@@ -589,7 +589,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class CacheMultiGetResponse implements AkkaJsonSerializable {
+    private static final class CacheMultiGetResponse implements PekkoJsonSerializable {
         private final ImmutableMap<UUID, SuccessfulAlertExecution> _executions;
 
         public ImmutableMap<UUID, SuccessfulAlertExecution> getExecutions() {
@@ -616,7 +616,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
 
     }
 
-    private static final class CacheMultiPut implements AkkaJsonSerializable {
+    private static final class CacheMultiPut implements PekkoJsonSerializable {
         private final UUID _organizationId;
         private final Collection<SuccessfulAlertExecution> _executions;
 
@@ -655,7 +655,7 @@ public final class AlertExecutionCacheActor extends AbstractPersistentActorWithT
         }
     }
 
-    private static final class CachePut implements AkkaJsonSerializable {
+    private static final class CachePut implements PekkoJsonSerializable {
         private final SuccessfulAlertExecution _execution;
         private final UUID _organizationId;
 

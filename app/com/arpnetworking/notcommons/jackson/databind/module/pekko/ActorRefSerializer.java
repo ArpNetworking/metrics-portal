@@ -13,32 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.notcommons.jackson.databind.module.akka;
+package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 
-import akka.actor.ActorRef;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.serialization.Serialization;
 
 import java.io.IOException;
 
 /**
- * Serializer for an Akka ActorRef.
+ * Serializer for an Pekko ActorRef.
  *
- * @author Ville Koskela (ville dot koskela at inscopemetrics dot com)
+ * @author Brandon Arp (brandon dot arp at inscopemetrics dot com)
  */
-public final class ActorRefLoggingSerializer extends JsonSerializer<ActorRef> {
-
-    /**
-     * Public constructor.
-     */
-    public ActorRefLoggingSerializer() { }
+public final class ActorRefSerializer extends JsonSerializer<ActorRef> {
 
     @Override
     public void serialize(
             final ActorRef value,
             final JsonGenerator gen,
             final SerializerProvider serializers) throws IOException {
-        gen.writeString(value.toString());
+        gen.writeString(Serialization.serializedActorPath(value));
     }
 }

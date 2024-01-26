@@ -16,8 +16,6 @@
 
 package com.arpnetworking.metrics.portal.integration.repositories;
 
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.alerts.impl.DatabaseAlertExecutionRepository;
@@ -29,6 +27,8 @@ import io.ebean.Database;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.mockito.Mockito;
 
 import java.time.Duration;

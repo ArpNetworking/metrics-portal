@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
@@ -30,6 +29,7 @@ import models.internal.Host;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
+import org.apache.pekko.actor.AbstractActor;
 
 import java.time.Duration;
 import java.util.UUID;

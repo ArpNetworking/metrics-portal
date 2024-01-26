@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import akka.actor.AbstractActor;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
@@ -32,6 +31,7 @@ import com.typesafe.config.ConfigValue;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 import models.internal.impl.DefaultHost;
+import org.apache.pekko.actor.AbstractActor;
 
 import java.util.UUID;
 

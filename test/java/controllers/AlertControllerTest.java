@@ -15,8 +15,6 @@
  */
 package controllers;
 
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.alerts.AlertRepository;
@@ -43,13 +41,15 @@ import models.internal.impl.DefaultAlert;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultMetricsQuery;
 import models.view.alerts.AlertFiringState;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import play.libs.concurrent.HttpExecutionContext;
+import play.libs.concurrent.ClassLoaderExecutionContext;
 import play.mvc.Result;
 import play.test.Helpers;
 
@@ -159,7 +159,7 @@ public final class AlertControllerTest {
                     alertExecutionRepository,
                     organizationRepository,
                     Mockito.mock(PeriodicMetrics.class),
-                    new HttpExecutionContext(_actorSystem.getDispatcher()),
+                    new ClassLoaderExecutionContext(_actorSystem.getDispatcher()),
                     new ProblemHelper(Helpers.stubMessagesApi())
             );
         }

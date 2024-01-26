@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
@@ -34,6 +30,7 @@ import global.BlockingIOExecutionContext;
 import io.ebean.Database;
 import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
+import jakarta.persistence.EntityNotFoundException;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
 import models.internal.alerts.Alert;
@@ -44,6 +41,10 @@ import net.sf.oval.constraint.CheckWithCheck;
 import net.sf.oval.constraint.Min;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.context.OValContext;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.pattern.Patterns;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.time.Duration;
@@ -63,7 +64,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.persistence.EntityNotFoundException;
 
 /**
  * Implementation of {@link JobExecutionRepository} for {@link Alert} jobs using a SQL database.

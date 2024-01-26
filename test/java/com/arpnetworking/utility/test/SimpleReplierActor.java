@@ -15,8 +15,8 @@
  */
 package com.arpnetworking.utility.test;
 
-import akka.actor.AbstractActor;
-import akka.actor.Props;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.Props;
 
 /**
  * Actor implementation that will always return a static value for every message.

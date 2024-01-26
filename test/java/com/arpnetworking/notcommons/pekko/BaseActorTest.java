@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.arpnetworking.notcommons.akka;
+package com.arpnetworking.notcommons.pekko;
 
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorSystem;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;

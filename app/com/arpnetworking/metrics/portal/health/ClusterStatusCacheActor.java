@@ -16,22 +16,22 @@
 
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Cancellable;
-import akka.actor.Props;
-import akka.actor.Scheduler;
-import akka.cluster.Cluster;
-import akka.cluster.ClusterEvent;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
-import com.arpnetworking.notcommons.akka.ParallelLeastShardAllocationStrategy;
+import com.arpnetworking.notcommons.pekko.ParallelLeastShardAllocationStrategy;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.ShardAllocation;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Cancellable;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.actor.Scheduler;
+import org.apache.pekko.cluster.Cluster;
+import org.apache.pekko.cluster.ClusterEvent;
 import scala.jdk.javaapi.OptionConverters;
 
 import java.io.Serializable;
@@ -53,11 +53,11 @@ import javax.annotation.Nullable;
 public class ClusterStatusCacheActor extends AbstractActor {
 
     /**
-     * Creates a {@link akka.actor.Props} for use in Akka.
+     * Creates a {@link org.apache.pekko.actor.Props} for use in Pekko.
      *
      * @param cluster The cluster to reference.
      * @param metricsFactory A {@link MetricsFactory} to use for metrics creation.
-     * @return A new {@link akka.actor.Props}
+     * @return A new {@link org.apache.pekko.actor.Props}
      */
     public static Props props(final Cluster cluster, final MetricsFactory metricsFactory) {
         return Props.create(ClusterStatusCacheActor.class, cluster, metricsFactory);
@@ -66,7 +66,7 @@ public class ClusterStatusCacheActor extends AbstractActor {
     /**
      * Public constructor.
      *
-     * @param cluster {@link akka.cluster.Cluster} whose state is cached
+     * @param cluster {@link org.apache.pekko.cluster.Cluster} whose state is cached
      * @param metricsFactory A {@link MetricsFactory} to use for metrics creation.
      */
     public ClusterStatusCacheActor(final Cluster cluster, final MetricsFactory metricsFactory) {
@@ -101,11 +101,11 @@ public class ClusterStatusCacheActor extends AbstractActor {
                 .match(ClusterEvent.CurrentClusterState.class, clusterState -> {
                     _clusterState = Optional.of(clusterState);
                     try (Metrics metrics = _metricsFactory.create()) {
-                        metrics.setGauge("akka/members_count", Streams.stream(clusterState.getMembers()).count());
+                        metrics.setGauge("pekko/members_count", Streams.stream(clusterState.getMembers()).count());
                         if (_cluster.selfAddress().equals(clusterState.getLeader())) {
-                            metrics.setGauge("akka/is_leader", 1);
+                            metrics.setGauge("pekko/is_leader", 1);
                         } else {
-                            metrics.setGauge("akka/is_leader", 0);
+                            metrics.setGauge("pekko/is_leader", 0);
                         }
                     }
                 })

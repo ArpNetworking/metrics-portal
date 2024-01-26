@@ -16,7 +16,7 @@
 
 @ParametersAreNonnullByDefault
 @ReturnValuesAreNonnullByDefault
-package com.arpnetworking.notcommons.akka;
+package com.arpnetworking.notcommons.pekko;
 
 import com.arpnetworking.commons.javax.annotation.ReturnValuesAreNonnullByDefault;
 

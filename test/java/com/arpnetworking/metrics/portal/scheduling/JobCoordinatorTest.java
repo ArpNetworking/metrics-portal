@@ -15,12 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.scheduling;
 
-import akka.actor.ActorSystem;
-import akka.actor.Props;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
-import com.arpnetworking.metrics.portal.AkkaClusteringConfigFactory;
+import com.arpnetworking.metrics.portal.PekkoClusteringConfigFactory;
 import com.arpnetworking.metrics.portal.organizations.OrganizationRepository;
 import com.arpnetworking.metrics.portal.organizations.impl.DefaultOrganizationRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
@@ -32,6 +29,9 @@ import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,7 +92,7 @@ public class JobCoordinatorTest {
 
         _system = ActorSystem.create(
                 "test-" + SYSTEM_NAME_NONCE.getAndIncrement(),
-                ConfigFactory.parseMap(AkkaClusteringConfigFactory.generateConfiguration()));
+                ConfigFactory.parseMap(PekkoClusteringConfigFactory.generateConfiguration()));
 
         _messageExtractor = new TestKit(_system);
     }

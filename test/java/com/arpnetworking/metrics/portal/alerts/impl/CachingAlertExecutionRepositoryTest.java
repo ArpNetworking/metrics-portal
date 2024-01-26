@@ -15,13 +15,10 @@
  */
 package com.arpnetworking.metrics.portal.alerts.impl;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.testkit.javadsl.TestKit;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.arpnetworking.metrics.portal.alerts.AlertExecutionRepository;
 import com.arpnetworking.metrics.portal.scheduling.impl.MapJobExecutionRepository;
-import com.arpnetworking.notcommons.akka.JacksonSerializer;
+import com.arpnetworking.notcommons.pekko.JacksonSerializer;
 import com.arpnetworking.testing.SerializationTestUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -32,6 +29,9 @@ import models.internal.alerts.AlertEvaluationResult;
 import models.internal.impl.DefaultAlertEvaluationResult;
 import models.internal.impl.DefaultOrganization;
 import models.internal.scheduling.JobExecution;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.testkit.javadsl.TestKit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,23 +74,23 @@ public class CachingAlertExecutionRepositoryTest {
                 // Force serialization, since this cache is intended to
                 // be used across the network.
                 ImmutableMap.of(
-                        "akka.actor.serialize-messages", "on",
-                        "akka.actor.serializers", ImmutableMap.of(
-                                "jackson-json", "com.arpnetworking.notcommons.akka.JacksonSerializer"
+                        "pekko.actor.serialize-messages", "on",
+                        "pekko.actor.serializers", ImmutableMap.of(
+                                "jackson-json", "com.arpnetworking.notcommons.pekko.JacksonSerializer"
                         ),
-                        "akka.actor.serialization-bindings", ImmutableMap.of(
-                                "\"com.arpnetworking.notcommons.akka.AkkaJsonSerializable\"", "jackson-json"
+                        "pekko.actor.serialization-bindings", ImmutableMap.of(
+                                "\"com.arpnetworking.notcommons.pekko.PekkoJsonSerializable\"", "jackson-json"
                         ),
-                        "akka.persistence.journal", ImmutableMap.of(
-                                "plugin", "akka.persistence.journal.inmem",
+                        "pekko.persistence.journal", ImmutableMap.of(
+                                "plugin", "pekko.persistence.journal.inmem",
                                 "auto-start-journals", ImmutableList.of(
-                                        "akka.persistence.journal.inmem"
+                                        "pekko.persistence.journal.inmem"
                                 )
                         ),
-                        "akka.persistence.snapshot-store", ImmutableMap.of(
-                                "plugin", "akka.persistence.snapshot-store.local",
+                        "pekko.persistence.snapshot-store", ImmutableMap.of(
+                                "plugin", "pekko.persistence.snapshot-store.local",
                                 "auto-start-journals", ImmutableList.of(
-                                        "akka.persistence.snapshot-store.local"
+                                        "pekko.persistence.snapshot-store.local"
                                 )
                         )
                 )

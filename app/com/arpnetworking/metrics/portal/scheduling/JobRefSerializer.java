@@ -23,7 +23,7 @@ import com.arpnetworking.notcommons.serialization.Serializer;
  * A type that allows for both serialization and deserialization of JobRefs.
  * <p>
  * Alongside a {@link JobMessageExtractor}, this can be used as a workaround
- * for the lack of dynamic props in Akka's classic cluster sharding.
+ * for the lack of dynamic props in Pekko's classic cluster sharding.
  * <p>
  * See <a href=https://stackoverflow.com/a/26524666>this SO post</a> for more details. This is Option A.
  * <p>

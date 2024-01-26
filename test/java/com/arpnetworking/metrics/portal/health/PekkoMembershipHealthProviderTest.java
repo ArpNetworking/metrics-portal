@@ -15,9 +15,9 @@
  */
 package com.arpnetworking.metrics.portal.health;
 
-import akka.actor.ActorRef;
-import com.arpnetworking.notcommons.akka.BaseActorTest;
+import com.arpnetworking.notcommons.pekko.BaseActorTest;
 import com.arpnetworking.utility.test.SimpleReplierActor;
+import org.apache.pekko.actor.ActorRef;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Brandon Arp (brandon dot arp at inscopemetrics dot io)
  */
-public class AkkaMembershipHealthProviderTest extends BaseActorTest {
+public class PekkoMembershipHealthProviderTest extends BaseActorTest {
 
     @Before
     @Override
@@ -40,7 +40,7 @@ public class AkkaMembershipHealthProviderTest extends BaseActorTest {
     @Test
     public void recognizesUnhealthy() {
         final ActorRef unhealthyActor = getSystem().actorOf(SimpleReplierActor.props(false));
-        final AkkaMembershipHealthProvider provider = new AkkaMembershipHealthProvider(unhealthyActor);
+        final PekkoMembershipHealthProvider provider = new PekkoMembershipHealthProvider(unhealthyActor);
         final boolean isHealthy = provider.isHealthy();
         assertFalse(isHealthy);
     }
@@ -48,7 +48,7 @@ public class AkkaMembershipHealthProviderTest extends BaseActorTest {
     @Test
     public void recognizesHealthy() {
         final ActorRef healthyActor = getSystem().actorOf(SimpleReplierActor.props(true));
-        final AkkaMembershipHealthProvider provider = new AkkaMembershipHealthProvider(healthyActor);
+        final PekkoMembershipHealthProvider provider = new PekkoMembershipHealthProvider(healthyActor);
         final boolean isHealthy = provider.isHealthy();
         assertTrue(isHealthy);
     }

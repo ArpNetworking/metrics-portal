@@ -15,10 +15,6 @@
  */
 package com.arpnetworking.rollups;
 
-import akka.actor.AbstractActorWithTimers;
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.pattern.Patterns;
 import com.arpnetworking.commons.builder.ThreadLocalBuilder;
 import com.arpnetworking.metrics.Metrics;
 import com.arpnetworking.metrics.MetricsFactory;
@@ -27,6 +23,10 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.pekko.actor.AbstractActorWithTimers;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.pattern.Patterns;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -61,7 +61,7 @@ public final class RollupManager extends AbstractActorWithTimers {
     private static final ScheduledThreadPoolExecutor EXECUTOR = new ScheduledThreadPoolExecutor(1);
 
     /**
-     * Creates a {@link Props} for use in Akka.
+     * Creates a {@link Props} for use in Pekko.
      *
      * @param periodicMetrics periodic metrics client
      * @param metricsFactory metrics factory

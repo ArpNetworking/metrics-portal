@@ -15,12 +15,12 @@
  */
 package com.arpnetworking.play;
 
-import akka.stream.javadsl.Source;
-import akka.util.ByteString;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
+import org.apache.pekko.stream.javadsl.Source;
+import org.apache.pekko.util.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.http.HttpEntity;
@@ -85,7 +85,7 @@ public final class ProxyClient {
         }
 
         wsrequest = wsrequest.setMethod(request.method());
-        for (final Map.Entry<String, List<String>> entry : request.getHeaders().asMap().entrySet()) {
+        for (final Map.Entry<String, List<String>> entry : request.headers().asMap().entrySet()) {
             for (final String val : entry.getValue()) {
                 wsrequest = wsrequest.addHeader(entry.getKey(), val);
             }

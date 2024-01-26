@@ -15,9 +15,6 @@
  */
 package controllers;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.pattern.Patterns;
 import com.arpnetworking.metrics.portal.health.HealthProvider;
 import com.arpnetworking.metrics.portal.health.StatusActor;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,6 +26,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import models.view.StatusResponse;
 import models.view.VersionInfo;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.pattern.Patterns;
 import play.mvc.Controller;
 import play.mvc.Result;
 
@@ -52,10 +52,10 @@ public final class MetaController extends Controller {
      * Public constructor.
      *
      * @param objectMapper Instance of {@code ObjectMapper}.
-     * @param actorSystem Instance of Akka {@code ActorSystem}.
+     * @param actorSystem Instance of Pekko {@code ActorSystem}.
      * @param healthProvider Instance of {@link HealthProvider}.
      * @param configuration Play configuration for the app.
-     * @param statusActor Reference to Akka {@link StatusActor}.
+     * @param statusActor Reference to Pekko {@link StatusActor}.
      */
     @Inject
     public MetaController(
