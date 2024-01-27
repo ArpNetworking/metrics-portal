@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 

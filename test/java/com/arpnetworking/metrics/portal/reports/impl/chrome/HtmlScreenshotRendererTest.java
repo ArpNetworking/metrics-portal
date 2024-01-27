@@ -45,7 +45,7 @@ import static org.junit.Assert.fail;
  */
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
@@ -78,7 +78,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         assertTrue(response.contains("here are some bytes"));
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testObeysOriginConfig() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 

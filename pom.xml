@@ -82,7 +82,7 @@
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
     <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
     <commons.codec.version>1.16.0</commons.codec.version>
-    <dkimutils.version>1.1.12</dkimutils.version>
+    <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>13.17.3</ebean.version>
 <!--    <ebean.annotation.version>7.8</ebean.annotation.version>-->
