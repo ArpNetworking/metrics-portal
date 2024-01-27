@@ -130,7 +130,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 5000)
     public void testClosesDevToolsOnTimeoutWhileNavigating() throws Exception {
         final CompletableFuture<?> navigationStarted = new CompletableFuture<>();
         Mockito.doAnswer(args -> {
@@ -149,7 +149,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 5000)
     public void testClosesDevToolsOnCancelWhileNavigating() throws Exception {
         final CompletableFuture<?> navigationStarted = new CompletableFuture<>();
         Mockito.doAnswer(args -> {

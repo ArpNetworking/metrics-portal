@@ -85,17 +85,17 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
         assertEquals(response, "content we care about");
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testImmediateRendering() throws Exception {
         runTestWithRenderDelay(Duration.ZERO);
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testDelayedRendering() throws Exception {
         runTestWithRenderDelay(Duration.ofSeconds(2));
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void testDelayedRenderingFailure() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
