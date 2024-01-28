@@ -120,7 +120,7 @@
     <jug.version>4.3.0</jug.version>
 
     <!-- Test Dependency Versions -->
-    <apache.http.client.version>4.5.13</apache.http.client.version>
+    <apache.http.client.version>4.5.14</apache.http.client.version>
     <apache.http.core.version>4.4.16</apache.http.core.version>
     <hamcrest.version>2.1</hamcrest.version>
     <jsonassert.version>1.5.0</jsonassert.version>
