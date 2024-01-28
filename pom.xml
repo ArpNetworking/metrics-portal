@@ -80,7 +80,7 @@
     <aspectjrt.version>1.9.21</aspectjrt.version>
     <cassandra.version>4.17.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
-    <cassandra.migration.version>2.5.0_v4</cassandra.migration.version>
+    <cassandra.migration.version>2.6.1_v4</cassandra.migration.version>
     <commons.codec.version>1.16.0</commons.codec.version>
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
