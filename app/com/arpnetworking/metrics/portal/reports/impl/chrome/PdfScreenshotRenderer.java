@@ -17,7 +17,7 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
 import models.internal.impl.WebPageReportSource;

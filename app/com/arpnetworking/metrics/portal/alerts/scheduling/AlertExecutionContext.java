@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import jakarta.inject.Inject;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
@@ -47,7 +48,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
-import jakarta.inject.Inject;
 
 /**
  * Utility class for scheduling and evaluating alerts.

@@ -19,6 +19,8 @@ import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import models.internal.Features;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -26,8 +28,6 @@ import play.mvc.Result;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 
 /**
  * Metrics portal application Play controller.

@@ -22,7 +22,7 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.impl.DefaultJobQuery;

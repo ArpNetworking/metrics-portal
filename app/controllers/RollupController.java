@@ -19,7 +19,9 @@ import com.arpnetworking.rollups.ConsistencyChecker;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.pattern.Patterns;
 import play.mvc.Controller;
@@ -31,8 +33,6 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 /**
  * Metrics portal rollup controller. Exposes APIs to query and manipulate rollups.

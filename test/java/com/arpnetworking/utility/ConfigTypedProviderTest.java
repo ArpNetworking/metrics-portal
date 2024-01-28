@@ -17,7 +17,7 @@ package com.arpnetworking.utility;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

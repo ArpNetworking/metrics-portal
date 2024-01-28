@@ -19,6 +19,7 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.datastax.oss.driver.api.core.CqlSession;
+import jakarta.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -36,7 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jakarta.inject.Inject;
 
 /**
  * Implementation of {@link HostRepository} for Cassandra database.

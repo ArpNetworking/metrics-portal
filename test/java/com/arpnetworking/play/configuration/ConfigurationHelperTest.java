@@ -17,7 +17,7 @@ package com.arpnetworking.play.configuration;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;

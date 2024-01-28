@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.AlertQuery;
 import models.internal.Organization;
 import models.internal.QueryResult;

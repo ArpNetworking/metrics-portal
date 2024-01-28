@@ -18,7 +18,7 @@ package com.arpnetworking.play.metrics;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.Problem;
 import play.Environment;
 import play.i18n.Lang;

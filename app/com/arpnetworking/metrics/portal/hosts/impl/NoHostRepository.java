@@ -20,7 +20,7 @@ import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;

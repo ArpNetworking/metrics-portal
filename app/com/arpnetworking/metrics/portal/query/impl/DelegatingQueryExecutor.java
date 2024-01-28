@@ -19,7 +19,7 @@ package com.arpnetworking.metrics.portal.query.impl;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryExecutorRegistry;
 import com.arpnetworking.metrics.portal.query.QueryWindow;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;

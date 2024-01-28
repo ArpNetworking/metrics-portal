@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.assistedinject.Assisted;

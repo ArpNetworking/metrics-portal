@@ -97,6 +97,9 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.DB;
 import io.ebean.Database;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import models.internal.Features;
 import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
@@ -134,9 +137,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 /**
  * Module that defines the main bindings.

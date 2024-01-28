@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.query.QueryExecutionException;
 import com.arpnetworking.metrics.portal.query.QueryExecutor;
 import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.google.common.collect.ImmutableList;
+import jakarta.inject.Singleton;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryResult;
@@ -28,7 +29,6 @@ import models.internal.Problem;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import jakarta.inject.Singleton;
 
 /**
  * Implementation of a {@link QueryExecutor} that just returns an error result.

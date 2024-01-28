@@ -19,8 +19,8 @@ package com.arpnetworking.kairos.config;
 import com.arpnetworking.kairos.client.models.SamplingUnit;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Locale;

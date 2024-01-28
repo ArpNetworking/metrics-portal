@@ -31,6 +31,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import net.sf.oval.constraint.NotNull;
 import org.apache.pekko.actor.AbstractActorWithTimers;
 import org.apache.pekko.actor.ActorRef;
@@ -42,8 +44,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
 
 /**
  * Actor that fetches RollupDefinitions from a RollupManager and performs the specified

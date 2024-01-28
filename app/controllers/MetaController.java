@@ -24,6 +24,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import models.view.StatusResponse;
 import models.view.VersionInfo;
 import org.apache.pekko.actor.ActorRef;
@@ -36,9 +39,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 /**
  * Metrics portal generic Play controller.
