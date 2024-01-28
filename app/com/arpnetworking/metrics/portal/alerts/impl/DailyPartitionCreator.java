@@ -24,6 +24,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Database;
 import io.ebean.SqlRow;
 import io.ebean.Transaction;
@@ -314,6 +315,7 @@ public class DailyPartitionCreator extends AbstractActorWithTimers {
      * @param startDate the start date, inclusive.
      * @param endDate the end date, exclusive.
      */
+    @SuppressFBWarnings(value = "SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE", justification = "This is a strictly controlled set of strings.")
     protected void execute(
             final String schema,
             final String table,
