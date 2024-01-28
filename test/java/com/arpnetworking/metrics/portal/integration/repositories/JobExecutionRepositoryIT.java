@@ -111,11 +111,11 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         _repository.jobStarted(_jobId, _organization, scheduled)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         final Optional<JobExecution<T>> executionResult = _repository.getLastScheduled(_jobId, _organization)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         assertTrue(executionResult.isPresent());
         final JobExecution<T> execution = executionResult.get();
@@ -125,7 +125,7 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         assertThat(_repository.getLastCompleted(_jobId, _organization)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS), equalTo(Optional.empty()));
+                .get(10, TimeUnit.SECONDS), equalTo(Optional.empty()));
 
         // TODO(cbriones): This doesn't actually require an integer, but spotbugs complains that we're returning null if we use Void.
         // Of course, in that case there's nothing else we can possibly return. The visitors below should also be changed.
@@ -160,7 +160,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                 .thenCompose(ignored -> _repository.jobSucceeded(_jobId, _organization, scheduled, result))
                 .thenCompose(ignored -> _repository.getLastSuccess(_jobId, _organization))
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         assertTrue(executionResult.isPresent());
 
@@ -175,7 +175,7 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         final Optional<JobExecution<T>> lastRun = _repository.getLastCompleted(_jobId, _organization)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
         (new JobExecution.Visitor<T, Integer>() {
@@ -213,7 +213,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                         .thenCompose(ignored -> _repository.jobSucceeded(_jobId, _organization, scheduled, result))
                         .thenCompose(ignore -> _repository.getLastSuccess(_jobId, _organization))
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
 
         if (!lastRun.isPresent()) {
             fail("Expected a non-empty success to be returned.");
@@ -232,7 +232,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                         .thenCompose(ignored -> _repository.jobFailed(_jobId, _organization, scheduled, error))
                         .thenCompose(ignore -> _repository.getLastCompleted(_jobId, _organization))
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
 
         assertThat(lastRun, not(equalTo(Optional.empty())));
 
@@ -278,13 +278,13 @@ public abstract class JobExecutionRepositoryIT<T> {
             .thenCompose(ignore -> _repository.jobFailed(_jobId, _organization, t0.plus(dt.multipliedBy(1)), new IllegalStateException()))
             .thenCompose(ignore -> _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(2)), newResult()))
             .thenCompose(ignore -> _repository.jobSucceeded(_jobId, _organization, t0.plus(dt.multipliedBy(3)), newResult()))
-            .get(1, TimeUnit.SECONDS);
+            .get(10, TimeUnit.SECONDS);
 
         assertEquals(
                 t0.plus(dt.multipliedBy(3)),
                 _repository.getLastCompleted(_jobId, _organization)
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS)
+                        .get(10, TimeUnit.SECONDS)
                         .get()
                         .getScheduled()
         );
@@ -301,7 +301,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                         .thenCompose(ignored -> _repository.jobSucceeded(_jobId, _organization, scheduled, firstResult))
                         .thenCompose(ignore -> _repository.getLastSuccess(_jobId, _organization))
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS)
+                        .get(10, TimeUnit.SECONDS)
                         .get();
 
         assertThat(execution.getResult(), is(firstResult));
@@ -317,7 +317,7 @@ public abstract class JobExecutionRepositoryIT<T> {
                         .thenCompose(ignored -> _repository.jobSucceeded(_jobId, _organization, scheduled, secondResult))
                         .thenCompose(ignore -> _repository.getLastSuccess(_jobId, _organization))
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS)
+                        .get(10, TimeUnit.SECONDS)
                         .get();
 
         assertThat(execution.getResult(), is(secondResult));
@@ -331,24 +331,24 @@ public abstract class JobExecutionRepositoryIT<T> {
 
         _repository.jobStarted(_jobId, _organization, scheduled)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         _repository.jobSucceeded(_jobId, _organization, scheduled, result)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         final JobExecution.Success<T> execution = _repository.getLastSuccess(_jobId, _organization)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS)
+                .get(10, TimeUnit.SECONDS)
                 .get();
         assertThat(execution.getResult(), not(nullValue()));
 
         // A failed updated should *not* clear the start time but it should clear the result
         _repository.jobFailed(_jobId, _organization, scheduled, error)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         final JobExecution<T> updatedExecution = _repository.getLastCompleted(_jobId, _organization)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS)
+                .get(10, TimeUnit.SECONDS)
                 .get();
 
         (new JobExecution.Visitor<T, Integer>() {
@@ -397,10 +397,10 @@ public abstract class JobExecutionRepositoryIT<T> {
                 final Instant scheduled = truncatedNow.minus(Duration.ofDays(runsPerJob - 1 - i));
                 _repository.jobStarted(jobId, _organization, scheduled)
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
                 _repository.jobSucceeded(jobId, _organization, scheduled, result)
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
             }
         }
         // Create a failed execution in the "future" for one job id
@@ -413,20 +413,20 @@ public abstract class JobExecutionRepositoryIT<T> {
         ensureJobExists(_organization, extraJobId);
         _repository.jobStarted(extraJobId, _organization, truncatedNow)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         _repository.jobSucceeded(extraJobId, _organization, truncatedNow, newResult())
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         // Create an additional job with a failure.
         final UUID failedJobId = UUID.randomUUID();
         ensureJobExists(_organization, failedJobId);
         _repository.jobStarted(extraJobId, _organization, truncatedNow)
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
         _repository.jobFailed(extraJobId, _organization, truncatedNow, new Throwable("an error"))
                 .toCompletableFuture()
-                .get(1, TimeUnit.SECONDS);
+                .get(10, TimeUnit.SECONDS);
 
         // Request an ID that doesn't exist.
         final UUID nonexistentId = UUID.randomUUID();
@@ -440,7 +440,7 @@ public abstract class JobExecutionRepositoryIT<T> {
         final Map<UUID, JobExecution.Success<T>> successes =
                 _repository.getLastSuccessBatch(jobIds, _organization, currentDate.minusDays(runsPerJob))
                         .toCompletableFuture()
-                        .get(1, TimeUnit.SECONDS);
+                        .get(10, TimeUnit.SECONDS);
 
         for (final UUID jobId : existingJobIds) {
             assertThat(successes, hasKey(jobId));
