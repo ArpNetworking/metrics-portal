@@ -29,6 +29,7 @@ import com.arpnetworking.metrics.portal.query.QueryWindow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import jakarta.inject.Inject;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
 import models.internal.MetricsQueryFormat;
@@ -43,7 +44,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import javax.inject.Inject;
 
 /**
  * A {@code QueryExecutor} that accepts KairosDB JSON metrics queries.

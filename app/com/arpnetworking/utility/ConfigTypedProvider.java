@@ -16,10 +16,10 @@
 package com.arpnetworking.utility;
 
 import com.arpnetworking.play.configuration.ConfigurationHelper;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
 import play.Environment;
 
 /**

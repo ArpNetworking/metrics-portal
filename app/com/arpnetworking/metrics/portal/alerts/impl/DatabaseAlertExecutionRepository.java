@@ -30,6 +30,8 @@ import global.BlockingIOExecutionContext;
 import io.ebean.Database;
 import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.persistence.EntityNotFoundException;
 import models.ebean.AlertExecution;
 import models.internal.Organization;
@@ -62,8 +64,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Implementation of {@link JobExecutionRepository} for {@link Alert} jobs using a SQL database.

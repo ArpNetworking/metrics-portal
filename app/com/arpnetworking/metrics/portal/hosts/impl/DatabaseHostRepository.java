@@ -20,7 +20,6 @@ import com.arpnetworking.steno.LogBuilder;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Maps;
-import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import io.ebean.Database;
 import io.ebean.ExpressionList;
@@ -30,6 +29,8 @@ import io.ebean.RawSql;
 import io.ebean.RawSqlBuilder;
 import io.ebean.Transaction;
 import io.ebeaninternal.server.rawsql.DRawSql;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.Organization;
@@ -47,7 +48,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import javax.inject.Named;
 
 /**
  * Implementation of {@link HostRepository} using Postgresql database.

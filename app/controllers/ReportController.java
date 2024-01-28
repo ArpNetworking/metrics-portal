@@ -32,9 +32,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HttpHeaders;
-import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import models.internal.Organization;
 import models.internal.Problem;
 import models.internal.QueryResult;
@@ -56,7 +57,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 
 /**
  * Metrics portal report controller. Exposes APIs to query and manipulate reports.

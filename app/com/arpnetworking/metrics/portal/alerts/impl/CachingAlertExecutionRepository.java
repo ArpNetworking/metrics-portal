@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JacksonInject;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import jakarta.inject.Named;
 import models.internal.Organization;
 import models.internal.alerts.AlertEvaluationResult;
 import models.internal.scheduling.JobExecution;
@@ -39,7 +40,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
-import javax.inject.Named;
 
 /**
  * An alert repository wrapper that caches the most recent successful results.

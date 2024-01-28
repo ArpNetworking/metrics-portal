@@ -15,6 +15,8 @@
  */
 package global;
 
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import play.api.http.EnabledFilters;
 import play.filters.cors.CORSFilter;
 import play.filters.gzip.GzipFilter;
@@ -23,8 +25,6 @@ import play.mvc.EssentialFilter;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /**
  * Creates the set of filters used for handling requests.

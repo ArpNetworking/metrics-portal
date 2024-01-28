@@ -16,7 +16,7 @@
 
 package global;
 
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import org.apache.pekko.actor.ActorSystem;
 import play.libs.concurrent.CustomExecutionContext;
 

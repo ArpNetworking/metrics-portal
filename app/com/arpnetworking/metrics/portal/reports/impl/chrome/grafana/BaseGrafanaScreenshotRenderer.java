@@ -21,7 +21,7 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsFactory;
 import com.arpnetworking.metrics.portal.reports.impl.chrome.DevToolsService;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.TimeRange;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.reports.ReportFormat;

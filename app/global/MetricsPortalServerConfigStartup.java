@@ -19,10 +19,10 @@ package global;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.event.ServerConfigStartup;
+import jakarta.inject.Inject;
 
 /**
  * Plugin class to configure Ebean's {@link DatabaseConfig} at runtime.

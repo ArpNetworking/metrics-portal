@@ -30,6 +30,8 @@ import com.typesafe.config.Config;
 import io.ebean.Database;
 import io.ebean.PagedList;
 import io.ebean.Transaction;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import models.ebean.NeverReportSchedule;
 import models.ebean.OneOffReportSchedule;
@@ -58,8 +60,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Implementation of {@link ReportRepository} using a SQL database.

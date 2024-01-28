@@ -38,6 +38,8 @@ import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.testkit.TestActorRef;
@@ -60,8 +62,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

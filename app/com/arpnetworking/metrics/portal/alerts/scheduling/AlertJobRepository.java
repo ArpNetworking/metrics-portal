@@ -20,6 +20,7 @@ import com.arpnetworking.metrics.portal.alerts.AlertRepository;
 import com.arpnetworking.metrics.portal.scheduling.JobQuery;
 import com.arpnetworking.metrics.portal.scheduling.JobRepository;
 import com.google.common.collect.ImmutableList;
+import jakarta.inject.Inject;
 import models.internal.Organization;
 import models.internal.QueryResult;
 import models.internal.alerts.Alert;
@@ -31,7 +32,6 @@ import models.internal.scheduling.Job;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import javax.inject.Inject;
 
 /**
  * A {@code JobRepository} for alert evaluation jobs.

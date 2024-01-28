@@ -15,7 +15,7 @@
  */
 package controllers;
 
-import com.google.inject.Inject;
+import jakarta.inject.Inject;
 import models.internal.Features;
 import org.apache.pekko.NotUsed;
 import org.apache.pekko.actor.ActorSystem;

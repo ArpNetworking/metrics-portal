@@ -17,6 +17,8 @@ package com.arpnetworking.metrics.portal.health;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.pattern.Patterns;
 
@@ -26,8 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * Implementation of {@link HealthProvider} interface which looks at the Pekko cluster

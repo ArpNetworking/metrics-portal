@@ -83,8 +83,8 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.module.guice.GuiceAnnotationIntrospector;
-import com.fasterxml.jackson.module.guice.GuiceInjectableValues;
+import com.fasterxml.jackson.module.guice7.GuiceAnnotationIntrospector;
+import com.fasterxml.jackson.module.guice7.GuiceInjectableValues;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -97,6 +97,9 @@ import com.typesafe.config.Config;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.DB;
 import io.ebean.Database;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import models.internal.Features;
 import models.internal.MetricsQueryFormat;
 import models.internal.impl.DefaultFeatures;
@@ -134,9 +137,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 /**
  * Module that defines the main bindings.
@@ -534,8 +534,8 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @com.google.inject.Singleton
-    @com.google.inject.name.Named("status")
+    @Singleton
+    @Named("status")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideStatusActor(
             final ActorSystem system,

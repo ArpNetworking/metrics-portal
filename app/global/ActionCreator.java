@@ -19,11 +19,11 @@ package global;
 import com.arpnetworking.metrics.MetricsFactory;
 import com.arpnetworking.play.metrics.MetricsActionWrapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import jakarta.inject.Inject;
 import play.mvc.Action;
 import play.mvc.Http;
 
 import java.lang.reflect.Method;
-import javax.inject.Inject;
 
 /**
  * Request handler for the application.

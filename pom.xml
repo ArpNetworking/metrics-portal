@@ -85,8 +85,6 @@
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>13.17.3</ebean.version>
-<!--    <ebean.annotation.version>7.8</ebean.annotation.version>-->
-<!--    <ebean.api.version>2.2.5</ebean.api.version>-->
     <flyway.core.version>10.5.0</flyway.core.version>
     <flyway.play.version>8.0.1</flyway.play.version>
     <guava.version>33.0.0-jre</guava.version>
@@ -97,7 +95,6 @@
     <javassist.maven.core.version>0.2.7</javassist.maven.core.version>
     <java.mail.version>5.0.0</java.mail.version>
     <java.websocket.version>1.3.0</java.websocket.version>
-    <javax.inject.version>1</javax.inject.version>
     <jsr305.version>3.0.2</jsr305.version>
     <lmdb.version>0.9.0</lmdb.version>
     <logback.steno.version>2.1.1</logback.steno.version>
@@ -1219,7 +1216,7 @@
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-guice</artifactId>
+      <artifactId>jackson-module-guice7</artifactId>
       <version>${jackson.version}</version>
       <exclusions>
         <exclusion>
@@ -1264,11 +1261,6 @@
       <groupId>com.github.spotbugs</groupId>
       <artifactId>spotbugs-annotations</artifactId>
       <version>${spotbugs.annotations.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <version>${javax.inject.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>

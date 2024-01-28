@@ -23,6 +23,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Sets;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
 import org.apache.pekko.actor.AbstractActorWithTimers;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.Status;
@@ -41,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 
 /**
  * Actor for discovering the list of metrics available to be rolled up on a periodic basis.

@@ -27,6 +27,7 @@ import com.google.inject.name.Names;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigObject;
+import jakarta.inject.Inject;
 import play.Environment;
 import play.inject.ApplicationLifecycle;
 
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import javax.inject.Provider;
 
 /**

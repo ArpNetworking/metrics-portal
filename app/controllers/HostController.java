@@ -25,8 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 import com.google.common.net.HttpHeaders;
-import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import models.internal.Host;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
 
 /**
  * Metrics portal host controller. Exposes APIs to query and manipulate hosts.

@@ -21,6 +21,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import jakarta.inject.Inject;
 import org.cognitor.cassandra.migration.Database;
 import org.cognitor.cassandra.migration.MigrationConfiguration;
 import org.cognitor.cassandra.migration.MigrationRepository;
@@ -34,7 +35,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /**
  * Initializer for the Pillar play module.

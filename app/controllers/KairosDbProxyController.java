@@ -33,8 +33,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Singleton;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import play.libs.ws.WSClient;
 import play.mvc.Controller;
 import play.mvc.Http;
@@ -50,7 +51,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 /**
  * KairosDb proxy controller.
