@@ -18,7 +18,7 @@ package models.view;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jboss.netty.handler.codec.http.QueryStringEncoder;
+import org.apache.hc.core5.net.URIBuilder;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -109,14 +109,14 @@ public class Pagination {
             final int limit,
             final int offset,
             final Map<String, String> conditions) {
-        final QueryStringEncoder queryStringEncoder = new QueryStringEncoder(path);
+        final URIBuilder builder = new URIBuilder().setPath(path);
         for (Map.Entry<String, String> entry : conditions.entrySet()) {
-            queryStringEncoder.addParam(entry.getKey(), entry.getValue());
+            builder.addParameter(entry.getKey(), entry.getValue());
         }
-        queryStringEncoder.addParam("limit", String.valueOf(limit));
-        queryStringEncoder.addParam("offset", String.valueOf(offset));
+        builder.addParameter("limit", String.valueOf(limit));
+        builder.addParameter("offset", String.valueOf(offset));
         try {
-            return new URI(queryStringEncoder.toString());
+            return new URI(builder.toString());
         } catch (final URISyntaxException e) {
             throw new RuntimeException("Failed building uri", e);
         }
