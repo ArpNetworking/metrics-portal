@@ -17,10 +17,10 @@ package com.arpnetworking.play.configuration;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
-import jakarta.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.inject.Inject;
 import org.junit.Assert;
 import org.junit.Test;
 import play.Environment;

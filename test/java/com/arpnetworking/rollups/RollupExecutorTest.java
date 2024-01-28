@@ -36,6 +36,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 import org.apache.pekko.testkit.javadsl.TestKit;
@@ -54,8 +56,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
