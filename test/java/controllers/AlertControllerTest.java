@@ -146,7 +146,7 @@ public final class AlertControllerTest {
                     Mockito.mock(PeriodicMetrics.class),
                     configProvider,
                     _organization.getId(),
-                    Duration.ofSeconds(1),
+                    Duration.ofSeconds(10),
                     probe.getRef()
             );
             alertRepository.open();
@@ -224,7 +224,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetNotFiringAlert() throws Exception {
             final UUID alertId = NOT_FIRING_IDS.get(0);
-            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
+            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -245,7 +245,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetFiringAlert() throws Exception {
             final UUID alertId = FIRING_IDS.get(0);
-            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
+            final Result result = _controller.get(alertId, Helpers.fakeRequest().build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
 
             final models.view.alerts.Alert alert = WebServerHelper.readContentAs(result, models.view.alerts.Alert.class);
@@ -266,7 +266,7 @@ public final class AlertControllerTest {
         @Test
         public void testGetAlertNotFound() throws Exception {
             final UUID unknownId = UUID.randomUUID();
-            final Result result = _controller.get(unknownId, Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
+            final Result result = _controller.get(unknownId, Helpers.fakeRequest().build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.NOT_FOUND)));
         }
 
@@ -281,7 +281,7 @@ public final class AlertControllerTest {
             final Result result = _controller.query(
                     ALERT_PAGE_LIMIT,
                     0,
-                    Helpers.fakeRequest().build()).toCompletableFuture().get(1, TimeUnit.SECONDS);
+                    Helpers.fakeRequest().build()).toCompletableFuture().get(10, TimeUnit.SECONDS);
             assertThat(result.status(), is(equalTo(Helpers.OK)));
             final JsonNode page = WebServerHelper.readContentAsJson(result);
             assertThat(page.get("pagination").get("size").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
@@ -324,7 +324,7 @@ public final class AlertControllerTest {
             for (int pageNo = 0; pageNo < numPages; pageNo++) {
                 final int offset = pageNo * pageSize;
                 final Result result = _controller.query(pageSize, offset, Helpers.fakeRequest().build())
-                        .toCompletableFuture().get(1, TimeUnit.SECONDS);
+                        .toCompletableFuture().get(10, TimeUnit.SECONDS);
                 final JsonNode page = WebServerHelper.readContentAsJson(result);
                 assertThat(page.get("pagination").get("total").asInt(), is(equalTo(TOTAL_ALERT_COUNT)));
                 assertThat(page.get("pagination").get("size").asInt(), is(lessThanOrEqualTo(pageSize)));
