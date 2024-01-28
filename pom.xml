@@ -135,7 +135,7 @@
     <build.helper.maven.plugin.version>1.10</build.helper.maven.plugin.version>
     <commons.io.version>2.15.1</commons.io.version>
     <docker.maven.plugin.version>0.43.4</docker.maven.plugin.version>
-    <javassist.maven.plugin.version>0.2.3</javassist.maven.plugin.version>
+    <javassist.maven.plugin.version>0.2.8</javassist.maven.plugin.version>
     <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
     <rpm.maven.plugin.version>2.3.0</rpm.maven.plugin.version>
     <play.maven.plugin.version>1.0.5</play.maven.plugin.version>
