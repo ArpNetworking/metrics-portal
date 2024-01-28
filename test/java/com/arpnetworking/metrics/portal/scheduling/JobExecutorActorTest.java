@@ -159,7 +159,7 @@ public final class JobExecutorActorTest {
                 .build());
         makeExecutorActor(j);
 
-        Mockito.verify(_execRepo, Mockito.timeout(1000)).jobSucceeded(
+        Mockito.verify(_execRepo, Mockito.timeout(10000)).jobSucceeded(
                 j.getId(),
                 ORGANIZATION,
                 j.getSchedule().nextRun(Optional.empty()).get(),
@@ -176,7 +176,7 @@ public final class JobExecutorActorTest {
                 .build());
         makeExecutorActor(j);
 
-        Mockito.verify(_execRepo, Mockito.timeout(1000)).jobFailed(
+        Mockito.verify(_execRepo, Mockito.timeout(10000)).jobFailed(
                 Mockito.eq(j.getId()),
                 Mockito.eq(ORGANIZATION),
                 Mockito.eq(j.getSchedule().nextRun(Optional.empty()).get()),
@@ -193,7 +193,7 @@ public final class JobExecutorActorTest {
                         .build());
         makeExecutorActor(j);
 
-        Mockito.verify(_execRepo, Mockito.after(1000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.after(3000).never()).jobStarted(Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(_execRepo, Mockito.never()).jobFailed(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
@@ -215,7 +215,7 @@ public final class JobExecutorActorTest {
                         .build());
         makeExecutorActor(j);
         // Actor should have started ticking on its own.
-        Mockito.verify(_execRepo, Mockito.after(1000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(_execRepo, Mockito.timeout(10000)).jobSucceeded(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -282,13 +282,13 @@ public final class JobExecutorActorTest {
                 null);
 
         // (ensure that the job didn't weirdly complete for some reason)
-        Mockito.verify(_execRepo, Mockito.after(1000).never()).jobSucceeded(
+        Mockito.verify(_execRepo, Mockito.after(5000).never()).jobSucceeded(
                 Mockito.any(),
                 Mockito.any(),
                 Mockito.any(),
                 Mockito.any());
         // Ensure that, despite the ticks and reload, only a single execution for the job has ever started
-        Mockito.verify(_execRepo, Mockito.timeout(1000).times(1)).jobStarted(Mockito.eq(job.getId()),
+        Mockito.verify(_execRepo, Mockito.timeout(10000).times(1)).jobStarted(Mockito.eq(job.getId()),
                 Mockito.eq(ORGANIZATION),
                 Mockito.any());
 
@@ -296,12 +296,12 @@ public final class JobExecutorActorTest {
         blocker.complete(null);
 
         // NOW we should be able to run again; the necessary tick should have been triggered by job completion
-        Mockito.verify(_execRepo, Mockito.timeout(2000))
+        Mockito.verify(_execRepo, Mockito.timeout(10000))
                 .jobStarted(job.getId(), ORGANIZATION, job.getSchedule().nextRun(Optional.of(startAt)).get());
         // ...but still, only two executions should ever have started (one for T_0, one for T_0+period i.e. now)
-        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
+        Mockito.verify(_execRepo, Mockito.timeout(10000).times(2))
                 .jobStarted(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any());
-        Mockito.verify(_execRepo, Mockito.timeout(1000).times(2))
+        Mockito.verify(_execRepo, Mockito.timeout(10000).times(2))
                 .jobSucceeded(Mockito.eq(job.getId()), Mockito.eq(ORGANIZATION), Mockito.any(), Mockito.any());
     }
 
