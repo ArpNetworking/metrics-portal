@@ -534,8 +534,8 @@ public class MainModule extends AbstractModule {
     }
 
     @Provides
-    @com.google.inject.Singleton
-    @com.google.inject.name.Named("status")
+    @Singleton
+    @Named("status")
     @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD") // Invoked reflectively by Guice
     private ActorRef provideStatusActor(
             final ActorSystem system,
