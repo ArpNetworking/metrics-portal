@@ -33,7 +33,7 @@ import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.mockito.MockitoAnnotations;
 import org.simplejavamail.MailException;
-import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
 
 import java.io.IOException;
