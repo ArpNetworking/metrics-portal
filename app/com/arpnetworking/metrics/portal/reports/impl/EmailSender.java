@@ -38,9 +38,9 @@ import models.internal.TimeRange;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.email.EmailBuilder;
-import org.simplejavamail.email.EmailPopulatingBuilder;
-import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
 
 import java.io.IOException;
