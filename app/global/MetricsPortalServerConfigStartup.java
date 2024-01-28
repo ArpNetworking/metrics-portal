@@ -20,6 +20,7 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import io.ebean.DatabaseBuilder;
 import io.ebean.config.DatabaseConfig;
 import io.ebean.event.ServerConfigStartup;
 import jakarta.inject.Inject;
@@ -47,7 +48,7 @@ public class MetricsPortalServerConfigStartup implements ServerConfigStartup {
     public MetricsPortalServerConfigStartup() {}
 
     @Override
-    public void onStart(final DatabaseConfig serverConfig) {
+    public void onStart(final DatabaseBuilder serverConfig) {
         LOGGER.info().setMessage("Initializing Ebean ServerConfig").log();
         // In some cases we manually load the ebean model classes via
         // ServerConfig#addPackage (see EbeanServerHelper).
@@ -63,6 +64,6 @@ public class MetricsPortalServerConfigStartup implements ServerConfigStartup {
         if (gObjectMapper == null) {
             throw new IllegalStateException("ObjectMapper is null - was this class loaded manually outside of Play?");
         }
-        serverConfig.setObjectMapper(gObjectMapper);
+        serverConfig.objectMapper(gObjectMapper);
     }
 }
