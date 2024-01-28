@@ -84,7 +84,7 @@
     <commons.codec.version>1.16.0</commons.codec.version>
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
-    <ebean.version>13.17.3</ebean.version>
+    <ebean.version>13.26.0-jakarta</ebean.version>
     <flyway.core.version>10.6.0</flyway.core.version>
     <flyway.play.version>9.0.0</flyway.play.version>
     <guava.version>33.0.0-jre</guava.version>
@@ -960,7 +960,7 @@
     <dependency>
       <groupId>io.ebean</groupId>
       <artifactId>ebean</artifactId>
-      <version>${ebean.version}-jakarta</version>
+      <version>${ebean.version}</version>
     </dependency>
 <!--    <dependency>-->
 <!--      <groupId>io.ebean</groupId>-->
