@@ -156,12 +156,12 @@ public class JobCoordinatorTest {
         // start the actor which will trigger an initial anti-entropy run.
         makeCoordinatorActor();
 
-        _messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
+        _messageExtractor.expectMsg(Duration.ofSeconds(15), new JobExecutorActor.Reload.Builder<Integer>()
                         .setJobRef(makeRef(job1))
                         .setETag(job1.getETag().orElse(null))
                         .build());
 
-        _messageExtractor.expectMsg(new JobExecutorActor.Reload.Builder<Integer>()
+        _messageExtractor.expectMsg(Duration.ofSeconds(15), new JobExecutorActor.Reload.Builder<Integer>()
                         .setJobRef(makeRef(job2))
                         .setETag(job2.getETag().orElse(null))
                         .build());
