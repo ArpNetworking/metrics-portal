@@ -77,7 +77,7 @@
     <pekko.persistence.jdbc.version>1.0.0</pekko.persistence.jdbc.version>
     <anorm.version>2.6.2</anorm.version>
     <arpnetworking.commons.version>3.1.0</arpnetworking.commons.version>
-    <aspectjrt.version>1.9.21</aspectjrt.version>
+    <aspectjrt.version>1.9.21.1</aspectjrt.version>
     <cassandra.version>4.17.0</cassandra.version>
     <cdt.java.client.version>4.0.0-fluidsonic-1</cdt.java.client.version>
     <cassandra.migration.version>2.6.1_v4</cassandra.migration.version>
