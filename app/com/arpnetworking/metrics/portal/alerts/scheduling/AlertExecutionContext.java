@@ -118,6 +118,9 @@ public final class AlertExecutionContext {
      */
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
         try {
+            if (!alert.isEnabled()) {
+                throw new IllegalStateException("Alert is not enabled");
+            }
             // If we're unable to obtain a period hint then we will not be able to
             // correctly window the query, as smaller intervals could miss data.
             final MetricsQuery query = alert.getQuery();
