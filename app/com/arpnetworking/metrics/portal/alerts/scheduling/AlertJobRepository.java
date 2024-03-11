@@ -89,6 +89,7 @@ public final class AlertJobRepository implements JobRepository<AlertEvaluationRe
         final QueryResult<Alert> queryResult = _repo.createAlertQuery(query.getOrganization())
                 .offset(query.getOffset().orElse(0))
                 .limit(query.getLimit())
+                .enabled(true)
                 .execute();
         final List<Job<AlertEvaluationResult>> values = queryResult.values()
                 .stream()

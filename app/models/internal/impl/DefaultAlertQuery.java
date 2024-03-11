@@ -51,6 +51,12 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     @Override
+    public AlertQuery enabled(boolean enabled) {
+        _enabled = Optional.of(enabled);
+        return this;
+    }
+
+    @Override
     public AlertQuery limit(final int limit) {
         _limit = limit;
         return this;
@@ -78,6 +84,11 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     @Override
+    public Optional<Boolean> getEnabled() {
+        return _enabled;
+    }
+
+    @Override
     public int getLimit() {
         return _limit;
     }
@@ -102,6 +113,7 @@ public final class DefaultAlertQuery implements AlertQuery {
     private final AlertRepository _repository;
     private final Organization _organization;
     private Optional<String> _contains = Optional.empty();
+    private Optional<Boolean> _enabled = Optional.empty();
     private int _limit = DEFAULT_LIMIT;
     private Optional<Integer> _offset = Optional.empty();
 

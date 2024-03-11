@@ -214,6 +214,7 @@ public class PluggableAlertRepository implements AlertRepository {
 
         final ImmutableList<Alert> alerts = _alerts.values().stream()
                 .filter(containsPredicate)
+                .filter(alert -> query.getEnabled().isEmpty() || alert.isEnabled() == query.getEnabled().get())
                 .skip(query.getOffset().orElse(0))
                 .limit(query.getLimit())
                 .collect(ImmutableList.toImmutableList());

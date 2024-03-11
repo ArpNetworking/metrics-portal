@@ -35,6 +35,14 @@ public interface AlertQuery {
     AlertQuery contains(String contains);
 
     /**
+     * Filter to only alerts that are enabled. Optional. Default is not set.
+     *
+     * @return This instance of {@link AlertQuery}.
+     */
+    AlertQuery enabled(boolean enabled);
+
+
+    /**
      * The maximum number of alerts to return.  Optional. Default is 1000.
      *
      * @param limit The maximum number of alerts to return.
@@ -70,6 +78,13 @@ public interface AlertQuery {
      * @return The contains.
      */
     Optional<String> getContains();
+
+    /**
+     * Accessor for the enabled flag.
+     *
+     * @return The enabled flag.
+     */
+    Optional<Boolean> getEnabled();
 
     /**
      * Accessor for the limit.
