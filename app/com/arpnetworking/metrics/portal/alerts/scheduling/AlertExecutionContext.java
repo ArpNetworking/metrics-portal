@@ -24,6 +24,7 @@ import com.arpnetworking.metrics.portal.scheduling.Schedule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import models.internal.BoundedMetricsQuery;
 import models.internal.MetricsQuery;
@@ -116,6 +117,7 @@ public final class AlertExecutionContext {
      * @param scheduled The scheduled evaluation time.
      * @return A completion stage containing {@code AlertEvaluationResult}.
      */
+    @SuppressFBWarnings(value = "REC_CATCH_EXCEPTION", justification = "Exception is propagated into the CompletionStage")
     public CompletionStage<AlertEvaluationResult> execute(final Alert alert, final Instant scheduled) {
         try {
             if (!alert.isEnabled()) {
