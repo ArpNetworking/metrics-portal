@@ -51,7 +51,7 @@ public final class DefaultAlertQuery implements AlertQuery {
     }
 
     @Override
-    public AlertQuery enabled(boolean enabled) {
+    public AlertQuery enabled(final boolean enabled) {
         _enabled = Optional.of(enabled);
         return this;
     }

@@ -37,6 +37,7 @@ public interface AlertQuery {
     /**
      * Filter to only alerts that are enabled. Optional. Default is not set.
      *
+     * @param enabled The enabled flag.
      * @return This instance of {@link AlertQuery}.
      */
     AlertQuery enabled(boolean enabled);
