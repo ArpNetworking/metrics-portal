@@ -84,7 +84,7 @@
     <commons.codec.version>1.16.1</commons.codec.version>
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
-    <ebean.version>15.0.1</ebean.version>
+    <ebean.version>14.0.2</ebean.version>
     <flyway.core.version>10.10.0</flyway.core.version>
     <flyway.play.version>9.0.0</flyway.play.version>
     <guava.version>33.1.0-jre</guava.version>
