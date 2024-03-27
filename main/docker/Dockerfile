@@ -50,7 +50,7 @@ WORKDIR /opt/metrics-portal
 
 ENV JVM_XMS="64m"
 ENV JVM_XMX="1024m"
-ENV LOGBACK_CONFIG="-Dlogger.file=/opt/metrics-portal/config/logback.xml"
+ENV LOGBACK_CONFIG="-Dlogger.file=/opt/metrics-portal/config/logback-console.xml"
 ENV METRICS_PORTAL_CONFIG="-Dconfig.resource=portal.application.conf"
 ENV JAVA_OPTS="\
     --add-opens java.base/java.nio=ALL-UNNAMED \
