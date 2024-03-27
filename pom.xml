@@ -84,7 +84,7 @@
     <commons.codec.version>1.16.1</commons.codec.version>
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
-    <ebean.version>13.23.2-jakarta</ebean.version>
+    <ebean.version>14.0.2</ebean.version>
     <flyway.core.version>10.10.0</flyway.core.version>
     <flyway.play.version>9.0.0</flyway.play.version>
     <guava.version>33.1.0-jre</guava.version>
@@ -106,7 +106,7 @@
     <oval.version>3.2.1</oval.version>
     <play2.version>3.0.2</play2.version>
     <play2-json.version>3.0.2</play2-json.version>
-    <play2-ebean.version>8.1.0</play2-ebean.version>
+    <play2-ebean.version>8.2.0</play2-ebean.version>
     <play2-jdbc-evolutions.version>3.0.2</play2-jdbc-evolutions.version>
     <postgresql.version>42.7.3</postgresql.version>
     <scala.version>2.13.12</scala.version>
