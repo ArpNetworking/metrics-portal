@@ -804,7 +804,7 @@
                 </ports>
                 <wait>
                   <log>Starting listening for CQL clients on</log>
-                  <time>30000</time>
+                  <time>60000</time>
                 </wait>
               </run>
             </image>
@@ -831,7 +831,7 @@
                     <method>GET</method>
                     <status>200</status>
                   </http>
-                  <time>30000</time>
+                  <time>60000</time>
                   <kill>1000</kill>
                 </wait>
               </run>
