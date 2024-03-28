@@ -174,7 +174,7 @@
     <docker.kairosdb.version>2.1.7</docker.kairosdb.version>
     <docker.postgres.version>14.1</docker.postgres.version>
     <docker.cassandra.version>3.11</docker.cassandra.version>
-    <docker.image.version>${project.version}</docker.image.version>
+    <docker.image.tag>${project.version}</docker.image.tag>
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
@@ -739,7 +739,7 @@
               <goal>push</goal>
             </goals>
             <configuration>
-              <filter>arpnetworking/metrics-portal:${docker.image.version}</filter>
+              <filter>arpnetworking/metrics-portal:${docker.image.tag}</filter>
             </configuration>
           </execution>
         </executions>
@@ -839,7 +839,7 @@
             </image>
             <!-- Metrics Portal -->
             <image>
-              <name>arpnetworking/metrics-portal:${docker.image.version}</name>
+              <name>arpnetworking/metrics-portal:${docker.image.tag}</name>
               <alias>metrics-portal</alias>
               <build>
                 <dockerFile>${project.build.directory}/docker-assembly/Dockerfile</dockerFile>
