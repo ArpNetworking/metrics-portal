@@ -71,10 +71,10 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y gosu chromium-br
 RUN mkdir -p /opt/metrics-portal/lib/ext && \
     mkdir -p /opt/metrics-portal/config && \
     mkdir -p /opt/metrics-portal/logs
-ADD deps /opt/metrics-portal/lib/
-ADD bin /opt/metrics-portal/bin/
-ADD config /opt/metrics-portal/config/
-ADD lib /opt/metrics-portal/lib/
+COPY --link deps /opt/metrics-portal/lib/
+COPY --link bin /opt/metrics-portal/bin/
+COPY --link config /opt/metrics-portal/config/
+COPY --link lib /opt/metrics-portal/lib/
 
 # Entry point
 ENTRYPOINT [ \

@@ -60,6 +60,16 @@ pipeline {
         }
       }
     }
+    stage('Save cache') {
+      when {
+        branch 'master'
+      }
+      steps {
+        withMaven {
+          sh "./jdk-wrapper.sh ./mvnw -Ddocker.image.tag=cache-base -Ddocker.push.registry=docker.arpnetworking.com docker:push"
+        }
+      }
+    }
   }
   post('Analysis') {
     always {
