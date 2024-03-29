@@ -18,6 +18,7 @@ package com.arpnetworking.notcommons.jackson.databind.module.pekko;
 import com.arpnetworking.logback.annotations.LogValue;
 import com.arpnetworking.steno.LogValueMapFactory;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 
@@ -63,6 +64,7 @@ public final class PekkoModule extends SimpleModule {
         return toLogValue().toString();
     }
 
+    @SuppressFBWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
     private final transient ActorSystem _system;
 
     @Serial

@@ -335,6 +335,7 @@ public final class TagsQuery {
             _otherArgs = Maps.newHashMap();
         }
 
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Method is called by Oval")
         private boolean validateStart(@Nullable final Instant ignored) {
             if (_startTime == null) {
                 return _startRelative != null;
@@ -343,6 +344,7 @@ public final class TagsQuery {
             }
         }
 
+        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "Method is called by Oval")
         private boolean validateEnd(@Nullable final Instant ignored) {
             if (_endTime != null) {
                 return _endRelative == null;

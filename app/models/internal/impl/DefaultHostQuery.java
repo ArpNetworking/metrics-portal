@@ -18,6 +18,7 @@ package models.internal.impl;
 import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.metrics.portal.hosts.HostRepository;
 import com.google.common.base.MoreObjects;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
@@ -131,8 +132,9 @@ public final class DefaultHostQuery implements HostQuery {
     }
 
 
+    @SuppressFBWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
     private final transient HostRepository _repository;
-    private final transient Organization _organization;
+    private final Organization _organization;
     @Nullable
     private String _partialHostname = null;
     @Nullable
