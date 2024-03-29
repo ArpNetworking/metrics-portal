@@ -54,6 +54,11 @@ public class StatusActor extends AbstractActor {
 
         _cluster = cluster;
         _clusterStatusCache = clusterStatusCache;
+    }
+
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
         getContext().system().eventStream().subscribe(getSelf(), ThisActorSystemQuarantinedEvent.class);
     }
 

@@ -22,6 +22,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.ActorSystem;
 
+import java.io.Serial;
+
 /**
  * Jackson module for serializing and deserializing Pekko objects.
  *
@@ -62,8 +64,9 @@ public final class PekkoModule extends SimpleModule {
         return toLogValue().toString();
     }
 
-    @SuppressFBWarnings("SE_BAD_FIELD")
-    private final ActorSystem _system;
+    @SuppressFBWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
+    private final transient ActorSystem _system;
 
+    @Serial
     private static final long serialVersionUID = 4294591813352245070L;
 }

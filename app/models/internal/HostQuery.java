@@ -15,6 +15,7 @@
  */
 package models.internal;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 /**
@@ -22,7 +23,7 @@ import java.util.Optional;
  *
  * @author Ville Koskela (ville dot koskela at inscopemetrics dot io)
  */
-public interface HostQuery {
+public interface HostQuery extends Serializable {
 
     /**
      * Set the hostname to query for. Optional. Defaults to all hosts. If this field is not set it is strongly
