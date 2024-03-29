@@ -22,7 +22,9 @@ import models.internal.HostQuery;
 import models.internal.MetricsSoftwareState;
 import models.internal.Organization;
 
+import java.io.Serial;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Default internal model implementation for a host query.
@@ -45,19 +47,19 @@ public final class DefaultHostQuery implements HostQuery {
 
     @Override
     public HostQuery partialHostname(final Optional<String> partialHostname) {
-        _partialHostname = partialHostname;
+        _partialHostname = partialHostname.orElse(null);
         return this;
     }
 
     @Override
     public HostQuery metricsSoftwareState(final Optional<MetricsSoftwareState> metricsSoftwareState) {
-        _metricsSoftwareState = metricsSoftwareState;
+        _metricsSoftwareState = metricsSoftwareState.orElse(null);
         return this;
     }
 
     @Override
     public HostQuery cluster(final Optional<String> cluster) {
-        _cluster = cluster;
+        _cluster = cluster.orElse(null);
         return this;
     }
 
@@ -69,19 +71,19 @@ public final class DefaultHostQuery implements HostQuery {
 
     @Override
     public HostQuery offset(final Optional<Integer> offset) {
-        _offset = offset;
+        _offset = offset.orElse(null);
         return this;
     }
 
     @Override
     public HostQuery sortBy(final Optional<Field> sortBy) {
-        _sortBy = sortBy;
+        _sortBy = sortBy.orElse(null);
         return this;
     }
 
     @Override
     public Optional<String> getPartialHostname() {
-        return _partialHostname;
+        return Optional.ofNullable(_partialHostname);
     }
 
     @Override
@@ -91,12 +93,12 @@ public final class DefaultHostQuery implements HostQuery {
 
     @Override
     public Optional<MetricsSoftwareState> getMetricsSoftwareState() {
-        return _metricsSoftwareState;
+        return Optional.ofNullable(_metricsSoftwareState);
     }
 
     @Override
     public Optional<String> getCluster() {
-        return _cluster;
+        return Optional.ofNullable(_cluster);
     }
 
     @Override
@@ -106,12 +108,12 @@ public final class DefaultHostQuery implements HostQuery {
 
     @Override
     public Optional<Integer> getOffset() {
-        return _offset;
+        return Optional.ofNullable(_offset);
     }
 
     @Override
     public Optional<Field> getSortBy() {
-        return _sortBy;
+        return Optional.ofNullable(_sortBy);
     }
 
     @Override
@@ -129,14 +131,21 @@ public final class DefaultHostQuery implements HostQuery {
     }
 
 
-    private final HostRepository _repository;
-    private final Organization _organization;
-    private Optional<String> _partialHostname = Optional.empty();
-    private Optional<MetricsSoftwareState> _metricsSoftwareState = Optional.empty();
-    private Optional<String> _cluster = Optional.empty();
+    private final transient HostRepository _repository;
+    private final transient Organization _organization;
+    @Nullable
+    private String _partialHostname = null;
+    @Nullable
+    private MetricsSoftwareState _metricsSoftwareState = null;
+    @Nullable
+    private String _cluster = null;
     private int _limit = DEFAULT_LIMIT;
-    private Optional<Integer> _offset = Optional.empty();
-    private Optional<Field> _sortBy = Optional.empty();
+    @Nullable
+    private Integer _offset = null;
+    @Nullable
+    private Field _sortBy = null;
 
     private static final int DEFAULT_LIMIT = 1000;
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

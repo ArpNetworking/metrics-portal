@@ -146,7 +146,6 @@
 
     <!-- Project Overrides -->
     <buildDirectory>${project.basedir}/target</buildDirectory>
-    <maven.version>3.8.4</maven.version>
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
@@ -483,7 +482,7 @@
                 1) xalan:xalan:2.7.2 (dependency of play-test)
                 2) org.apache.cassandra:cassandra-all:3.9 (direct test dependency)
             -->
-            <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Werror -proc:none</javacOptions>
+            <javacOptions>-g -deprecation -Xlint:all -Xlint:-processing -Xlint:-path -Xlint:-this-escape -Werror -proc:none</javacOptions>
           </configuration>
           </execution>
         </executions>

@@ -33,6 +33,8 @@ import org.apache.pekko.actor.AbstractActor;
  */
 public class NoHostProvider extends AbstractActor {
 
+    private final Config _configuration;
+
     /**
      * Public constructor.
      *
@@ -41,9 +43,15 @@ public class NoHostProvider extends AbstractActor {
     @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     @Inject
     public NoHostProvider(@Assisted final Config configuration) {
+        _configuration = configuration;
+    }
+
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
         getContext().system().scheduler().scheduleAtFixedRate(
-                ConfigurationHelper.getFiniteDuration(configuration, "initialDelay"),
-                ConfigurationHelper.getFiniteDuration(configuration, "interval"),
+                ConfigurationHelper.getFiniteDuration(_configuration, "initialDelay"),
+                ConfigurationHelper.getFiniteDuration(_configuration, "interval"),
                 getSelf(),
                 TICK,
                 getContext().dispatcher(),

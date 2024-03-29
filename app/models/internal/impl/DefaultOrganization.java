@@ -23,6 +23,8 @@ import models.internal.Organization;
 import net.sf.oval.constraint.NotEmpty;
 import net.sf.oval.constraint.NotNull;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -31,7 +33,7 @@ import java.util.UUID;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 @Loggable
-public final class DefaultOrganization implements Organization {
+public final class DefaultOrganization implements Organization, Serializable {
 
     @Override
     public UUID getId() {
@@ -71,6 +73,8 @@ public final class DefaultOrganization implements Organization {
     }
 
     private final UUID _id;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * Implementation of builder pattern for {@link DefaultOrganization}.

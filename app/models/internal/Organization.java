@@ -15,6 +15,7 @@
  */
 package models.internal;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 /**
@@ -23,7 +24,7 @@ import java.util.UUID;
  *
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
-public interface Organization {
+public interface Organization extends Serializable {
     /**
      * Accessor for the uuid.
      *

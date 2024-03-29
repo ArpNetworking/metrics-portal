@@ -39,6 +39,10 @@ import java.util.Set;
  * @author Brandon Arp (brandon dot arp at smartsheet dot com)
  */
 public class MultiProvider extends AbstractActor {
+    private final HostProviderFactory _factory;
+    private final Environment _environment;
+    private final Config _configuration;
+
     /**
      * Public constructor.
      *
@@ -49,11 +53,19 @@ public class MultiProvider extends AbstractActor {
     @Inject
     @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getContext() and getSelf() are safe to call")
     public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Config configuration) {
-        final Set<String> entries = configuration.root().keySet();
+        _factory = factory;
+        _environment = environment;
+        _configuration = configuration;
+    }
+
+    @Override
+    public void preStart() throws Exception {
+        super.preStart();
+        final Set<String> entries = _configuration.root().keySet();
         for (String key : entries) {
-            if (configuration.getValue(key).valueType() == ConfigValueType.OBJECT) {
+            if (_configuration.getValue(key).valueType() == ConfigValueType.OBJECT) {
                 // Make sure that we're looking at an Object with a .type subkey
-                if (!configuration.hasPath(key + ".type")) {
+                if (!_configuration.hasPath(key + ".type")) {
                     LOGGER.warn()
                             .setMessage("Expected type for host provider")
                             .addData("key", key)
@@ -62,10 +74,10 @@ public class MultiProvider extends AbstractActor {
                 }
 
                 // Create the child configuration, with a fallback to the current config for things like "interval"
-                final Config subConfig = configuration.getConfig(key).withFallback(configuration);
+                final Config subConfig = _configuration.getConfig(key).withFallback(_configuration);
 
                 // Create the props and launch
-                final Props subProps = factory.create(subConfig, ConfigurationHelper.getType(environment, subConfig, "type"));
+                final Props subProps = _factory.create(subConfig, ConfigurationHelper.getType(_environment, subConfig, "type"));
                 getContext().actorOf(subProps);
             }
         }
