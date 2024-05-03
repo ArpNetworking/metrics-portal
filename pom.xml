@@ -111,7 +111,7 @@
     <postgresql.version>42.7.3</postgresql.version>
     <scala.version>2.13.12</scala.version>
     <scala.xml.version>2.3.0</scala.xml.version>
-    <simplejavamail.version>8.9.0</simplejavamail.version>
+    <simplejavamail.version>8.10.0</simplejavamail.version>
     <slf4j.version>2.0.13</slf4j.version>
     <spotbugs.annotations.version>4.8.4</spotbugs.annotations.version>
     <twirl.api.version>2.0.3</twirl.api.version>
