@@ -104,7 +104,7 @@
     <metrics.jvm.extra.version>0.13.1</metrics.jvm.extra.version>
     <oval.version>3.2.1</oval.version>
     <play2.version>3.0.3</play2.version>
-    <play2-json.version>3.0.3</play2-json.version>
+    <play2-json.version>3.0.4</play2-json.version>
     <play2-ebean.version>8.3.0</play2-ebean.version>
     <play2-jdbc-evolutions.version>3.0.3</play2-jdbc-evolutions.version>
     <postgresql.version>42.7.3</postgresql.version>
