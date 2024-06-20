@@ -106,7 +106,7 @@
     <play2.version>3.0.4</play2.version>
     <play2-json.version>3.0.4</play2-json.version>
     <play2-ebean.version>8.3.0</play2-ebean.version>
-    <play2-jdbc-evolutions.version>3.0.3</play2-jdbc-evolutions.version>
+    <play2-jdbc-evolutions.version>3.0.4</play2-jdbc-evolutions.version>
     <postgresql.version>42.7.3</postgresql.version>
     <scala.version>2.13.12</scala.version>
     <scala.xml.version>2.3.0</scala.xml.version>
