@@ -71,7 +71,7 @@
 
   <properties>
     <!-- Dependency Versions -->
-    <pekko.version>1.0.2</pekko.version>
+    <pekko.version>1.0.3</pekko.version>
     <pekko.http.version>1.0.1</pekko.http.version>
     <pekko.persistence.cassandra.version>1.0.0</pekko.persistence.cassandra.version>
     <pekko.persistence.jdbc.version>1.0.0</pekko.persistence.jdbc.version>
@@ -1039,6 +1039,16 @@
     <dependency>
       <groupId>org.apache.pekko</groupId>
       <artifactId>pekko-actor_${scala.package.version}</artifactId>
+      <version>${pekko.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-actor-typed_${scala.package.version}</artifactId>
+      <version>${pekko.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pekko</groupId>
+      <artifactId>pekko-serialization-jackson_${scala.package.version}</artifactId>
       <version>${pekko.version}</version>
     </dependency>
     <dependency>
