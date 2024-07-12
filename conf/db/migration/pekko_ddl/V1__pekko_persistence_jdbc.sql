@@ -19,12 +19,12 @@
  *
  * https://github.com/dnvriend/akka-persistence-jdbc/blob/master/src/test/resources/schema/postgres/postgres-schema.sql
  */
+DROP TABLE IF EXISTS event_journal;
+DROP TABLE IF EXISTS event_tag;
+DROP TABLE IF EXISTS event_snapshot;
+DROP TABLE IF EXISTS durable_state;
 
-DROP TABLE IF EXISTS akka.event_journal;
-
-DROP TABLE IF EXISTS akka.event_snapshot;
-
-CREATE TABLE IF NOT EXISTS akka.event_journal(
+CREATE TABLE IF NOT EXISTS event_journal(
                                                    ordering BIGSERIAL,
                                                    persistence_id VARCHAR(255) NOT NULL,
     sequence_number BIGINT NOT NULL,
@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS akka.event_journal(
     PRIMARY KEY(persistence_id, sequence_number)
     );
 
-CREATE UNIQUE INDEX event_journal_ordering_idx ON akka.event_journal(ordering);
+CREATE UNIQUE INDEX event_journal_ordering_idx ON event_journal(ordering);
 
-CREATE TABLE IF NOT EXISTS akka.event_tag(
+CREATE TABLE IF NOT EXISTS event_tag(
                                                event_id BIGINT,
                                                tag VARCHAR(256),
     PRIMARY KEY(event_id, tag),
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS akka.event_tag(
     ON DELETE CASCADE
     );
 
-CREATE TABLE IF NOT EXISTS akka.snapshot (
+CREATE TABLE IF NOT EXISTS snapshot (
     persistence_id VARCHAR(255) NOT NULL,
     sequence_number BIGINT NOT NULL,
     created BIGINT NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS akka.snapshot (
     PRIMARY KEY(persistence_id, sequence_number)
     );
 
-CREATE TABLE IF NOT EXISTS akka.durable_state (
+CREATE TABLE IF NOT EXISTS durable_state (
                                                     global_offset BIGSERIAL,
                                                     persistence_id VARCHAR(255) NOT NULL,
     revision BIGINT NOT NULL,
@@ -84,5 +84,5 @@ CREATE TABLE IF NOT EXISTS akka.durable_state (
     state_timestamp BIGINT NOT NULL,
     PRIMARY KEY(persistence_id)
     );
-CREATE INDEX state_tag_idx on akka.durable_state (tag);
-CREATE INDEX state_global_offset_idx on akka.durable_state (global_offset);
+CREATE INDEX state_tag_idx on durable_state (tag);
+CREATE INDEX state_global_offset_idx on durable_state (global_offset);
