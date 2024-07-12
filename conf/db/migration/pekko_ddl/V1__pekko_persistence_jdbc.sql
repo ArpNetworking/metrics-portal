@@ -20,8 +20,9 @@
  * https://github.com/dnvriend/akka-persistence-jdbc/blob/master/src/test/resources/schema/postgres/postgres-schema.sql
  */
 DROP TABLE IF EXISTS event_journal;
-
+DROP TABLE IF EXISTS event_tag;
 DROP TABLE IF EXISTS event_snapshot;
+DROP TABLE IF EXISTS durable_state;
 
 CREATE TABLE IF NOT EXISTS event_journal(
                                                    ordering BIGSERIAL,
