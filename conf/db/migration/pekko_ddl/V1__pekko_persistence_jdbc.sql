@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Brandon Arp
+ * Copyright 2019 Dropbox
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+/**
+ * Based on:
+ *
+ * https://github.com/dnvriend/akka-persistence-jdbc/blob/master/src/test/resources/schema/postgres/postgres-schema.sql
+ */
+DROP TABLE IF EXISTS event_journal;
 
+DROP TABLE IF EXISTS event_snapshot;
 
-DROP TABLE IF EXISTS akka.event_journal;
-DROP TABLE IF EXISTS akka.event_tag;
-DROP TABLE IF EXISTS akka.event_snapshot;
-DROP TABLE IF EXISTS akka.durable_state;
-
-DROP SCHEMA IF EXISTS akka CASCADE;
-
-DROP TABLE IF EXISTS pekko.event_journal;
-DROP TABLE IF EXISTS pekko.event_tag;
-DROP TABLE IF EXISTS pekko.event_snapshot;
-DROP TABLE IF EXISTS pekko.durable_state;
-
-CREATE TABLE IF NOT EXISTS pekko.event_journal(
-    ordering BIGSERIAL,
-    persistence_id VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS event_journal(
+                                                   ordering BIGSERIAL,
+                                                   persistence_id VARCHAR(255) NOT NULL,
     sequence_number BIGINT NOT NULL,
     deleted BOOLEAN DEFAULT FALSE NOT NULL,
 
@@ -48,11 +44,11 @@ CREATE TABLE IF NOT EXISTS pekko.event_journal(
     PRIMARY KEY(persistence_id, sequence_number)
     );
 
-CREATE UNIQUE INDEX event_journal_ordering_idx ON pekko.event_journal(ordering);
+CREATE UNIQUE INDEX event_journal_ordering_idx ON event_journal(ordering);
 
-CREATE TABLE IF NOT EXISTS pekko.event_tag(
-    event_id BIGINT,
-    tag VARCHAR(256),
+CREATE TABLE IF NOT EXISTS event_tag(
+                                               event_id BIGINT,
+                                               tag VARCHAR(256),
     PRIMARY KEY(event_id, tag),
     CONSTRAINT fk_event_journal
     FOREIGN KEY(event_id)
@@ -60,7 +56,7 @@ CREATE TABLE IF NOT EXISTS pekko.event_tag(
     ON DELETE CASCADE
     );
 
-CREATE TABLE IF NOT EXISTS pekko.snapshot (
+CREATE TABLE IF NOT EXISTS snapshot (
     persistence_id VARCHAR(255) NOT NULL,
     sequence_number BIGINT NOT NULL,
     created BIGINT NOT NULL,
@@ -76,9 +72,9 @@ CREATE TABLE IF NOT EXISTS pekko.snapshot (
     PRIMARY KEY(persistence_id, sequence_number)
     );
 
-CREATE TABLE IF NOT EXISTS pekko.durable_state (
-    global_offset BIGSERIAL,
-    persistence_id VARCHAR(255) NOT NULL,
+CREATE TABLE IF NOT EXISTS durable_state (
+                                                    global_offset BIGSERIAL,
+                                                    persistence_id VARCHAR(255) NOT NULL,
     revision BIGINT NOT NULL,
     state_payload BYTEA NOT NULL,
     state_serial_id INTEGER NOT NULL,
@@ -87,5 +83,5 @@ CREATE TABLE IF NOT EXISTS pekko.durable_state (
     state_timestamp BIGINT NOT NULL,
     PRIMARY KEY(persistence_id)
     );
-CREATE INDEX state_tag_idx on pekko.durable_state (tag);
-CREATE INDEX state_global_offset_idx on pekko.durable_state (global_offset);
+CREATE INDEX state_tag_idx on durable_state (tag);
+CREATE INDEX state_global_offset_idx on durable_state (global_offset);
