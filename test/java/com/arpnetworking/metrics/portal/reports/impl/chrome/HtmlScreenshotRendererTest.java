@@ -72,9 +72,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
         stage.get();
 
-        final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(builder).setBytes(bytes.capture());
-        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
+        final String response = Strings.stringFromBytes(builder.getBytes(), StandardCharsets.UTF_8);
         assertTrue(response.contains("here are some bytes"));
     }
 
