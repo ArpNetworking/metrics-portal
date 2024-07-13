@@ -39,6 +39,7 @@
   <logger name="com.arpnetworking.metrics.impl.ApacheHttpSink" level="OFF" />
   <logger name="io.ebean" level="TRACE" />
   <logger name="org.apache.pekko" level="TRACE" />
+  <logger name="com.arpnetworking.metrics.portal.reports" level="DEBUG" />
 
   <root level="INFO">
     <appender-ref ref="MetricsPortalLogger" />

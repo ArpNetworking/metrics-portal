@@ -120,16 +120,34 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                 });
 
         result.whenComplete((x, e) -> {
-            LOGGER.debug()
-                    .setMessage("rendering completed")
-                    .addData("source", source)
-                    .addData("format", format)
-                    .addData("timeRange", timeRange)
-                    .addData("result", x)
-                    .setThrowable(e)
-                    .log();
-            navigate.cancel(true);
-            dts.close();
+            try {
+                if (e != null) {
+                    LOGGER.error()
+                            .setMessage("rendering failed")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .setThrowable(e)
+                            .log();
+                } else {
+                    LOGGER.debug()
+                            .setMessage("rendering completed")
+                            .addData("source", source)
+                            .addData("format", format)
+                            .addData("timeRange", timeRange)
+                            .addData("result", x)
+                            .log();
+                }
+                navigate.cancel(true);
+            } finally {
+                dts.close();
+                LOGGER.debug()
+                        .setMessage("devtools service closed")
+                        .addData("source", source)
+                        .addData("format", format)
+                        .addData("timeRange", timeRange)
+                        .log();
+            }
         });
 
         TIMEOUT_SERVICE.schedule(() -> result.cancel(true), timeout.toNanos(), TimeUnit.NANOSECONDS);

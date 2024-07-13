@@ -17,6 +17,8 @@
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import jakarta.inject.Inject;
 import models.internal.TimeRange;
 import models.internal.impl.PdfReportFormat;
@@ -31,6 +33,7 @@ import java.util.concurrent.CompletionStage;
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
 public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageReportSource, PdfReportFormat> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HtmlScreenshotRenderer.class);
 
     @Override
     protected boolean getIgnoreCertificateErrors(final WebPageReportSource source) {
@@ -50,6 +53,13 @@ public final class PdfScreenshotRenderer extends BaseScreenshotRenderer<WebPageR
             final TimeRange timeRange,
             final B builder
     ) {
+        LOGGER.debug()
+                .setMessage("Rendering page content to HTML")
+                .addData("source", source)
+                .addData("format", format)
+                .addData("timeRange", timeRange)
+                .addData("builder", builder)
+                .log();
         return devToolsService.printToPdf(format.getWidthInches(), format.getHeightInches()).thenApply(builder::setBytes);
     }
 

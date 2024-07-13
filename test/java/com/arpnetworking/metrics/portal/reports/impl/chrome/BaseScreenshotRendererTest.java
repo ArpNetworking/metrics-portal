@@ -18,6 +18,8 @@ package com.arpnetworking.metrics.portal.reports.impl.chrome;
 import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -36,6 +38,9 @@ import org.mockito.MockitoAnnotations;
 import java.net.URI;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Tests for {@link BaseScreenshotRenderer}.
@@ -49,6 +54,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
     @Mock
     private DevToolsService _dts;
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseScreenshotRendererTest.class);
     private static final String SECRET_TOKEN = "SECRET TOKEN";
     private static final PerOriginConfigs ORIGIN_CONFIGS = new PerOriginConfigs.Builder()
             .setByOrigin(ImmutableMap.of("http://allowed.com", new OriginConfig.Builder()
@@ -83,14 +89,15 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
     private MockRenderer createMockRenderer() {
         return createMockRenderer(new CompletableFuture<>());
     }
+    @SuppressWarnings("unchecked")
     private MockRenderer createMockRenderer(final CompletableFuture<?> complete) {
-        return new MockRenderer(_factory, complete);
+        return new MockRenderer(_factory, (CompletableFuture<MockRenderedReportBuilder>) complete);
     }
 
     @Test
     public void testClosesDevToolsWhenComplete() {
         final MockRenderer renderer = createMockRenderer();
-        renderer.getComplete().complete(null); // make the render complete immediately
+        renderer.getComplete().complete(new MockRenderedReportBuilder()); // make the render complete immediately
         renderer.render(
                 TestBeanFactory.createWebPageReportSourceBuilder().build(),
                 new HtmlReportFormat.Builder().build(),
@@ -103,7 +110,7 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test
     public void testClosesDevToolsOnTimeoutWhileRendering() {
-        final MockRenderer renderer = createMockRenderer(Mockito.mock(CompletableFuture.class));
+        final MockRenderer renderer = createMockRenderer(new CompletableFuture<>());
         renderer.render(
                 TestBeanFactory.createWebPageReportSourceBuilder().build(),
                 new HtmlReportFormat.Builder().build(),
@@ -111,13 +118,12 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
                 Mockito.mock(MockRenderedReportBuilder.class),
                 Duration.ofMillis(500)
         );
-        Mockito.verify(renderer.getComplete(), Mockito.timeout(500)).thenApply(Mockito.any());
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
     }
 
     @Test
     public void testClosesDevToolsOnCancelWhileRendering() {
-        final MockRenderer renderer = createMockRenderer(Mockito.mock(CompletableFuture.class));
+        final MockRenderer renderer = createMockRenderer(new CompletableFuture<>());
         final CompletableFuture<?> future = renderer.render(
                 TestBeanFactory.createWebPageReportSourceBuilder().build(),
                 new HtmlReportFormat.Builder().build(),
@@ -125,8 +131,10 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
                 Mockito.mock(MockRenderedReportBuilder.class),
                 Duration.ofDays(1)
         );
-        Mockito.verify(renderer.getComplete(), Mockito.timeout(500)).thenApply(Mockito.any());
-        future.cancel(true);
+        try {
+            future.cancel(true);
+            renderer.getComplete().get(500, TimeUnit.MILLISECONDS);
+        } catch (final TimeoutException | ExecutionException | InterruptedException ignored) { }
         Mockito.verify(_dts, Mockito.timeout(1000).atLeastOnce()).close();
     }
 
@@ -200,21 +208,35 @@ public class BaseScreenshotRendererTest extends BaseChromeTestSuite {
                 final TimeRange timeRange,
                 final B builder
         ) {
-            return _complete.thenApply(anything -> builder.setBytes(new byte[0]));
+            LOGGER.debug()
+                    .setMessage("Rendering in mock renderer")
+                    .addData("source", source)
+                    .addData("format", format)
+                    .addData("timeRange", timeRange)
+                    .addData("builder", builder)
+                    .addData("complete", _complete)
+                    .log();
+            final CompletableFuture<B> result = _complete.thenApply(anything -> builder.setBytes(new byte[0]));
+            LOGGER.debug()
+                    .setMessage("Rendering in mock renderer callback complete")
+                    .addData("result", result)
+                    .log();
+
+            return result;
         }
 
-        CompletableFuture<?> getComplete() {
+        CompletableFuture<MockRenderedReportBuilder> getComplete() {
             return _complete;
         }
 
         MockRenderer(
                 final DevToolsFactory factory,
-                final CompletableFuture<?> complete
+                final CompletableFuture<MockRenderedReportBuilder> complete
         ) {
             super(factory);
             _complete = complete;
         }
 
-        private final CompletableFuture<?> _complete;
+        private final CompletableFuture<MockRenderedReportBuilder> _complete;
     }
 }

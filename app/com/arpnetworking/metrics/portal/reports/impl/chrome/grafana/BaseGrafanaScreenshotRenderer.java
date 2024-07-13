@@ -80,6 +80,12 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
             final B builder
     ) {
         final CompletableFuture<B> result = new CompletableFuture<>();
+        LOGGER.debug()
+                .setMessage("waiting for reportrendered event")
+                .addData("source", source)
+                .addData("format", format)
+                .addData("timeRange", timeRange)
+                .log();
 
         final CompletableFuture<?> successFuture = devToolsService.nowOrOnEvent(
                 "reportrendered",

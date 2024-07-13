@@ -17,11 +17,74 @@
 package com.arpnetworking.metrics.portal.reports.impl.testing;
 
 import com.arpnetworking.metrics.portal.reports.RenderedReport;
+import com.google.common.collect.ImmutableSetMultimap;
+import models.internal.TimeRange;
+import models.internal.impl.DefaultRenderedReport;
+import models.internal.impl.DefaultReport;
+import models.internal.impl.WebPageReportSource;
+import models.internal.reports.Recipient;
+import models.internal.reports.ReportFormat;
+import org.apache.pekko.http.scaladsl.model.Uri;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Non-generic implementation of {@link RenderedReport.Builder}, for ease of mocking.
  *
  * @author Spencer Pearson (spencerpearson at dropbox dot com)
  */
-public abstract class MockRenderedReportBuilder
-        implements RenderedReport.Builder<MockRenderedReportBuilder, RenderedReport> {}
+public class MockRenderedReportBuilder
+        implements RenderedReport.Builder<MockRenderedReportBuilder, RenderedReport> {
+
+    private TimeRange _timeRange;
+    private byte[] _bytes;
+    private Instant _generatedAt;
+    private ReportFormat _format;
+
+    @Override
+    public MockRenderedReportBuilder setBytes(final byte[] bytes) {
+        _bytes = bytes;
+        return this;
+    }
+
+    @Override
+    public MockRenderedReportBuilder setTimeRange(final TimeRange timeRange) {
+        _timeRange = timeRange;
+        return this;
+    }
+
+    @Override
+    public MockRenderedReportBuilder setGeneratedAt(final Instant generatedAt) {
+        _generatedAt = generatedAt;
+        return this;
+    }
+
+    @Override
+    public MockRenderedReportBuilder setFormat(final ReportFormat format) {
+        _format = format;
+        return this;
+    }
+
+    @Override
+    public RenderedReport build() {
+        return new DefaultRenderedReport.Builder()
+                .setTimeRange(_timeRange)
+                .setGeneratedAt(_generatedAt)
+                .setFormat(_format)
+                .setBytes(_bytes)
+                .setReport(new DefaultReport.Builder()
+                        .setReportSource(
+                                new WebPageReportSource.Builder()
+                                        .setId(UUID.randomUUID())
+                                        .setUri(URI.create("http://example.com/"))
+                                        .setTitle("Example Report Source")
+                                .build())
+                        .setId(UUID.randomUUID())
+                        .setName("Example Report")
+                        .setRecipients(new ImmutableSetMultimap.Builder<ReportFormat, Recipient>().build())
+                        .build())
+                .build();
+    }
+}
