@@ -47,7 +47,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
     public void testRendering() throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
@@ -80,7 +80,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
     public void testObeysOriginConfig() throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/allowed-page"))
@@ -107,7 +107,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 format,
                 DEFAULT_TIME_RANGE,
                 builder,
-                DEFAULT_TIMEOUT.multipliedBy(1000)
+                DEFAULT_TIMEOUT
         );
 
         stage.get();

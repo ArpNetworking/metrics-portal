@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
@@ -97,7 +97,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
     public void testDelayedRenderingFailure() throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))

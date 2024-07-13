@@ -24,7 +24,6 @@ import models.internal.impl.DefaultReport;
 import models.internal.impl.WebPageReportSource;
 import models.internal.reports.Recipient;
 import models.internal.reports.ReportFormat;
-import org.apache.pekko.http.scaladsl.model.Uri;
 
 import java.net.URI;
 import java.time.Instant;
