@@ -64,7 +64,7 @@ public final class PeriodicSchedule extends BoundedSchedule {
     @Override
     protected Optional<Instant> unboundedNextRun(final Optional<Instant> lastRun) {
         final Instant untruncatedNextRun = lastRun
-                .map(run -> run.plus(_periodCount, _period))
+                .map(run -> _period.addTo(run, _periodCount))
                 .orElseGet(this::getRunAtAndAfter);
 
         try {

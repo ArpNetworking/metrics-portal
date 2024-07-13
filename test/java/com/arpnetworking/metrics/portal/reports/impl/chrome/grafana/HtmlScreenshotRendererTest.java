@@ -25,8 +25,6 @@ import models.internal.impl.HtmlReportFormat;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -50,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     private void runTestWithRenderDelay(final Duration renderDelay) throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
@@ -79,9 +77,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
         stage.get();
 
-        final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(builder).setBytes(bytes.capture());
-        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
+        final String response = Strings.stringFromBytes(builder.getBytes(), StandardCharsets.UTF_8);
         assertEquals(response, "content we care about");
     }
 
@@ -97,7 +93,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
     public void testDelayedRenderingFailure() throws Exception {
-        final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
+        final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
         _wireMock.givenThat(
                 get(urlEqualTo("/"))
