@@ -48,6 +48,10 @@ public class MockRenderedReportBuilder
         return this;
     }
 
+    public byte[] getBytes() {
+        return _bytes;
+    }
+
     @Override
     public MockRenderedReportBuilder setTimeRange(final TimeRange timeRange) {
         _timeRange = timeRange;

@@ -25,8 +25,6 @@ import models.internal.impl.HtmlReportFormat;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -34,9 +32,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
@@ -79,9 +75,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
         stage.get();
 
-        final ArgumentCaptor<byte[]> bytes = ArgumentCaptor.forClass(byte[].class);
-        Mockito.verify(builder).setBytes(bytes.capture());
-        final String response = Strings.stringFromBytes(bytes.getValue(), StandardCharsets.UTF_8);
+        final String response = Strings.stringFromBytes(builder.getBytes(), StandardCharsets.UTF_8);
         assertEquals(response, "content we care about");
     }
 
