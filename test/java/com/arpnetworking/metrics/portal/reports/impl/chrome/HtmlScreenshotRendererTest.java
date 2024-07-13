@@ -22,8 +22,6 @@ import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
