@@ -68,9 +68,15 @@ public final class PeriodicSchedule extends BoundedSchedule {
                 .orElseGet(this::getRunAtAndAfter);
 
         try {
+            final ChronoUnit truncationPeriod;
+            if (_period.getDuration().toMillis() > Duration.ofDays(1).toMillis()) {
+                truncationPeriod = ChronoUnit.DAYS;
+            } else {
+                truncationPeriod = _period;
+            }
             final Instant nextRun =
                     ZonedDateTime.ofInstant(untruncatedNextRun, _zone)
-                            .truncatedTo(_period)
+                            .truncatedTo(truncationPeriod)
                             .plus(_offset)
                             .toInstant();
 
