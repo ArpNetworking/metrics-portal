@@ -16,6 +16,8 @@
 package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.logback.annotations.Loggable;
+import com.arpnetworking.steno.Logger;
+import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
@@ -26,6 +28,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,6 +51,7 @@ public final class PeriodicSchedule extends BoundedSchedule {
     private final long _periodCount;
     private final ZoneId _zone;
     private final Duration _offset;
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeriodicSchedule.class);
 
     private PeriodicSchedule(final Builder builder) {
         super(builder);
@@ -63,13 +67,32 @@ public final class PeriodicSchedule extends BoundedSchedule {
                 .map(run -> run.plus(_periodCount, _period))
                 .orElseGet(this::getRunAtAndAfter);
 
-        final Instant nextRun =
-                ZonedDateTime.ofInstant(untruncatedNextRun, _zone)
-                    .truncatedTo(_period)
-                    .plus(_offset)
-                    .toInstant();
+        try {
+            final ChronoUnit truncationPeriod;
+            if (_period.getDuration().toMillis() > Duration.ofDays(1).toMillis()) {
+                truncationPeriod = ChronoUnit.DAYS;
+            } else {
+                truncationPeriod = _period;
+            }
+            final Instant nextRun =
+                    ZonedDateTime.ofInstant(untruncatedNextRun, _zone)
+                            .truncatedTo(truncationPeriod)
+                            .plus(_offset)
+                            .toInstant();
 
-        return Optional.of(nextRun);
+            return Optional.of(nextRun);
+        } catch (final UnsupportedTemporalTypeException e) {
+            LOGGER.error().setMessage("Error creating next run time")
+                    .addData("lastRun", lastRun)
+                    .addData("untruncatedNextRun", untruncatedNextRun)
+                    .addData("period", _period)
+                    .addData("periodCount", _periodCount)
+                    .addData("zone", _zone)
+                    .addData("offset", _offset)
+                    .setThrowable(e)
+                    .log();
+            throw e;
+        }
     }
 
     @Override
