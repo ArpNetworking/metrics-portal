@@ -119,7 +119,7 @@
 
     <!-- Test Dependency Versions -->
     <apache.http.client.version>5.3.1</apache.http.client.version>
-    <apache.http.core.version>5.2.4</apache.http.core.version>
+    <apache.http.core.version>5.2.5</apache.http.core.version>
     <hamcrest.version>2.2</hamcrest.version>
     <jsonassert.version>1.5.0</jsonassert.version>
     <junit.version>4.13.2</junit.version>
