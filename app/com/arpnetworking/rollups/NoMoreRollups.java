@@ -15,6 +15,8 @@
  */
 package com.arpnetworking.rollups;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.Serializable;
 
 /**
@@ -22,6 +24,7 @@ import java.io.Serializable;
  *
  * @author Gilligan Markham (gmarkham at dropbox dot com)
  */
+@SuppressFBWarnings(value = "SING_SINGLETON_IMPLEMENTS_SERIALIZABLE", justification = "Optimization. Pekko requires serializable messages.")
 public final class NoMoreRollups implements Serializable {
 
     private static final long serialVersionUID = -3503619526731721351L;
