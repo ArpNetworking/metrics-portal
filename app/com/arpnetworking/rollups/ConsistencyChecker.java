@@ -739,6 +739,8 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
     /**
      * Indicates that a submitted {@link Task} was rejected because the internal task-buffer is full.
      */
+    @SuppressFBWarnings(value = "SING_SINGLETON_IMPLEMENTS_SERIALIZABLE",
+            justification = "Optimization. Pekko requires serializable messages.")
     public static final class BufferFull extends Exception {
         private static final long serialVersionUID = 7840529083811798202L;
         private static final BufferFull INSTANCE = new BufferFull();
