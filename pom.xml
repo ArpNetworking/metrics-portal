@@ -176,6 +176,7 @@
 
     <!-- Assembly Overrides -->
     <tgz.finalName>${project.build.finalName}</tgz.finalName>
+    <surefire.timeout>120</surefire.timeout>
   </properties>
 
   <build>
