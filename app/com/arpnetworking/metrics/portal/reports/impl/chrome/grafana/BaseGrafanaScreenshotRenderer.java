@@ -124,9 +124,21 @@ public abstract class BaseGrafanaScreenshotRenderer<F extends ReportFormat>
 
         final CompletableFuture<?> failureFuture = devToolsService.nowOrOnEvent(
                 "reportrenderfailed",
-                () -> false
-                // TODO(spencerpearson): ^ this might miss a very fast failure.
-                //   How can we avoid this race condition?
+                () -> {
+                    // TODO(spencerpearson): ^ this might miss a very fast failure.
+                    //   How can we avoid this race condition?
+                    final Object rawHtml;
+                    try {
+                        rawHtml = devToolsService.evaluate("document.documentElement.outerHTML").get();
+                    } catch (final InterruptedException | ExecutionException e) {
+                        throw new CompletionException(e);
+                    }
+                    LOGGER.debug()
+                            .setMessage("snapshot of html looking for failiure")
+                            .addData("bodySrc", rawHtml)
+                            .log();
+                    return false;
+                }
         ).thenApply(whatever -> {
             LOGGER.debug()
                     .setMessage("browser fired reportrenderfailed event")
