@@ -12,13 +12,14 @@ pipeline {
     stage('Init') {
       steps {
         checkout scm
-	script {
-	  def m = (env.GIT_URL =~ /(\/|:)(([^\/]+)\/)?(([^\/]+?)(\.git)?)$/)
-	  if (m) {
-	    org = m.group(3)
-	    repo = m.group(5)
-	  }
-	}
+        script {
+          def m = (env.GIT_URL =~ /(\/|:)(([^\/]+)\/)?(([^\/]+?)(\.git)?)$/)
+          if (m) {
+            org = m.group(3)
+            repo = m.group(5)
+          }
+        }
+        discoverReferenceBuild()
       }
     }
     stage('Setup build') {
@@ -73,6 +74,7 @@ pipeline {
   }
   post('Analysis') {
     always {
+      recordCoverage(tools: [[parser: 'JACOCO']])
       recordIssues(
           enabledForFailure: true, aggregatingResults: true,
           tools: [java(), checkStyle(reportEncoding: 'UTF-8'), spotBugs()])
