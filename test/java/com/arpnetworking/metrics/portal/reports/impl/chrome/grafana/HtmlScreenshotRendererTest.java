@@ -99,7 +99,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
                 get(urlEqualTo("/"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "text/html")
-                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ofSeconds(5), false))
+                                .withBody(Utils.mockGrafanaReportPanelPage(Duration.ofSeconds(2), false))
                         )
         );
 
