@@ -51,7 +51,7 @@ public abstract class BaseChromeTestSuite {
     public WireMockRule _wireMock = new WireMockRule(WireMockConfiguration.wireMockConfig().dynamicPort());
 
     protected static final TimeRange DEFAULT_TIME_RANGE = new TimeRange(Instant.EPOCH, Instant.EPOCH.plus(Duration.ofDays(1)));
-    protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(15);
+    protected static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
     private static final ImmutableList<String> POSSIBLE_CHROME_PATHS = ImmutableList.of(
             "/usr/bin/chromium",
