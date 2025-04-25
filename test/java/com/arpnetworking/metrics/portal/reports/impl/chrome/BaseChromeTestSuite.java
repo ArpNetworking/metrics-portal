@@ -15,6 +15,7 @@
  */
 package com.arpnetworking.metrics.portal.reports.impl.chrome;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.common.collect.ImmutableList;
@@ -24,6 +25,7 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigUtil;
 import models.internal.TimeRange;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
@@ -137,5 +139,17 @@ public abstract class BaseChromeTestSuite {
     @BeforeClass
     public static void setUpClass() {
         Assume.assumeTrue("could not find Chrome in any likely location", CHROME_PATH.isPresent());
+    }
+
+    /**
+     * Handles setup for all tests. Chrome will request favicon.ico so we need to support it.
+     */
+    @Before
+    public void setUp() {
+        _wireMock.givenThat(
+                WireMock.get(WireMock.urlEqualTo("/favicon.ico"))
+                        .willReturn(WireMock.aResponse()
+                                .withStatus(404)
+                                .withBody("Not Found")));
     }
 }
