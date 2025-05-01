@@ -15,7 +15,6 @@
  */
 package com.arpnetworking.metrics.portal.hosts.impl;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import org.junit.Test;
@@ -26,6 +25,7 @@ import play.libs.ws.WSResponse;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -53,7 +53,7 @@ public final class ConsulClientTest {
         Mockito.doReturn(
                 Resources.toString(
                         Resources.getResource(this.getClass(), "consul_v0.6_catalog_nodes.json"),
-                        Charsets.UTF_8))
+                        StandardCharsets.UTF_8))
                 .when(response)
                 .getBody();
 
