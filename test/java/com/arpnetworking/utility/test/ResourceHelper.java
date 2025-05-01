@@ -16,11 +16,11 @@
 package com.arpnetworking.utility.test;
 
 import com.arpnetworking.commons.jackson.databind.ObjectMapperFactory;
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Helper to load resources.
@@ -57,7 +57,7 @@ public final class ResourceHelper {
      */
     public static String loadResource(final Class<?> testClass, final String suffix) throws IOException {
         final URL resourceUrl = resourceURL(testClass, suffix);
-        return Resources.toString(resourceUrl, Charsets.UTF_8);
+        return Resources.toString(resourceUrl, StandardCharsets.UTF_8);
     }
 
     /**
