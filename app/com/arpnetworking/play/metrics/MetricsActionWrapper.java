@@ -53,7 +53,6 @@ public final class MetricsActionWrapper extends Action.Simple {
     }
 
     @Override
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
     public CompletionStage<Result> call(final Http.Request request) {
         final Http.Request requestWithMetrics  = initMetrics(request);
         final Metrics metrics = requestWithMetrics.attrs().get(Attrs.METRICS);

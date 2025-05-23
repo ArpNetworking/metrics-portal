@@ -163,7 +163,6 @@ public class ReportExecutionContextTest {
     }
 
     @Test
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED")
     public void testExecute() throws Exception {
         final ReportExecutionContext context = new ReportExecutionContext(CLOCK, _injector, _environment, _config);
         context.execute(EXAMPLE_REPORT, T1).toCompletableFuture().get();
@@ -302,7 +301,6 @@ public class ReportExecutionContextTest {
         }
 
         @Override
-        @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
         public CompletionStage<Void> send(
                 final Recipient recipient,
                 final ImmutableMap<ReportFormat, RenderedReport> formatsToSend

@@ -51,7 +51,6 @@ public class MultiProvider extends AbstractActor {
      * @param configuration Play configuration.
      */
     @Inject
-    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getContext() and getSelf() are safe to call")
     public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Config configuration) {
         _factory = factory;
         _environment = environment;

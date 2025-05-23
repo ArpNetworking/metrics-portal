@@ -216,7 +216,6 @@ public final class LocalHostRepository implements HostRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalHostRepository.class);
 
-    @SuppressFBWarnings("SE_BAD_FIELD")
     private static class HostComparator implements Comparator<Host>, Serializable {
 
         HostComparator(final HostQuery query) {

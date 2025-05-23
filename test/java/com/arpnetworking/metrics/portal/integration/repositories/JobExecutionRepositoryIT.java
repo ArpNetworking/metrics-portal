@@ -102,10 +102,6 @@ public abstract class JobExecutionRepositoryIT<T> {
     }
 
     @Test
-    @SuppressFBWarnings(
-            value = "SIC_INNER_SHOULD_BE_STATIC_ANON",
-            justification = "The 'this' reference is the test class and I'm not concerned about it potentially living too long."
-    )
     public void testJobStarted() throws Exception {
         final Instant scheduled = Instant.now().truncatedTo(ChronoUnit.MICROS);
 

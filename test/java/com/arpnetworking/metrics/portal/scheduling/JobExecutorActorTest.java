@@ -242,7 +242,6 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void testOnlyExecutesOneAtATime() {
         final ChronoUnit period = ChronoUnit.MINUTES;
         final Instant startAt = T_0.minus(period.getDuration());

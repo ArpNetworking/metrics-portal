@@ -47,7 +47,6 @@ public final class Global {
         LOGGER.debug().setMessage("Startup complete").log();
     }
 
-    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "CompletableFuture can take a null arg")
     private CompletionStage<Void> onStop() {
         final CompletableFuture<Void> shutdownFuture = new CompletableFuture<>();
         LOGGER.info().setMessage("Shutting down application...").log();

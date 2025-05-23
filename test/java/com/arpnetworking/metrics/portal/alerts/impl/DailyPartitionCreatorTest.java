@@ -85,7 +85,6 @@ public class DailyPartitionCreatorTest {
         return createActor(() -> { });
     }
 
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private ActorRef createActor(final Runnable onExecute) {
         // Create an actor with the db execution behavior mocked out.
         final Props props = Props.create(

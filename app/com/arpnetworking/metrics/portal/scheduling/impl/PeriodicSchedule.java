@@ -226,7 +226,6 @@ public final class PeriodicSchedule extends BoundedSchedule {
             return this;
         }
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateOffset(final Duration offset) {
             return !offset.isNegative()
                    && offset.minus(_period.getDuration()).isNegative();

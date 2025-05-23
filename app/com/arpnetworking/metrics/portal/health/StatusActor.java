@@ -47,7 +47,6 @@ public class StatusActor extends AbstractActor {
      * @param cluster The instance of the Clustering extension.
      * @param clusterStatusCache The actor holding the cached cluster status.
      */
-    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     public StatusActor(
             final Cluster cluster,
             final ActorRef clusterStatusCache) {

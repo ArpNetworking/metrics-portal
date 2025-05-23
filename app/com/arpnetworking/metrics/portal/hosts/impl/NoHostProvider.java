@@ -40,7 +40,6 @@ public class NoHostProvider extends AbstractActor {
      *
      * @param configuration Play configuration.
      */
-    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     @Inject
     public NoHostProvider(@Assisted final Config configuration) {
         _configuration = configuration;

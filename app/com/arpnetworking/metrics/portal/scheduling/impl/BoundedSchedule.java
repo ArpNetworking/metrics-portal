@@ -151,7 +151,6 @@ public abstract class BoundedSchedule implements Schedule {
             return self();
         }
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateRunAtAndAfter(final Instant runAtAndAfter) {
             return !runAtAndAfter.equals(Instant.MIN) && (_runUntil == null || !runAtAndAfter.isAfter(_runUntil));
         }
