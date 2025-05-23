@@ -16,7 +16,6 @@
 
 package com.arpnetworking.metrics.portal.health;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.view.StatusResponse;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;

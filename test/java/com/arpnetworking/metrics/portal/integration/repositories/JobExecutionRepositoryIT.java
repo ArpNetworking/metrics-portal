@@ -21,7 +21,6 @@ import com.arpnetworking.metrics.portal.TestBeanFactory;
 import com.arpnetworking.metrics.portal.scheduling.JobExecutionRepository;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Organization;
 import models.internal.scheduling.JobExecution;
 import org.junit.After;

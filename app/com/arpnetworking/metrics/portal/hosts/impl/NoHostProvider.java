@@ -20,7 +20,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import org.apache.pekko.actor.AbstractActor;
 

@@ -19,7 +19,6 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.base.MoreObjects;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Database;
 import jakarta.persistence.PersistenceException;
 import org.apache.pekko.actor.ActorRef;
