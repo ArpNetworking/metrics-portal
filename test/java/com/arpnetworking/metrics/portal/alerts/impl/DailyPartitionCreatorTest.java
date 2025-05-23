@@ -19,7 +19,6 @@ package com.arpnetworking.metrics.portal.alerts.impl;
 import com.arpnetworking.commons.java.time.ManualClock;
 import com.arpnetworking.metrics.incubator.PeriodicMetrics;
 import com.google.common.base.MoreObjects;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.ebean.Database;
 import jakarta.persistence.PersistenceException;
 import org.apache.pekko.actor.ActorRef;
@@ -85,7 +84,6 @@ public class DailyPartitionCreatorTest {
         return createActor(() -> { });
     }
 
-    @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
     private ActorRef createActor(final Runnable onExecute) {
         // Create an actor with the db execution behavior mocked out.
         final Props props = Props.create(

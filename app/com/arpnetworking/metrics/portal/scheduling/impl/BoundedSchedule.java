@@ -17,7 +17,6 @@ package com.arpnetworking.metrics.portal.scheduling.impl;
 
 import com.arpnetworking.commons.builder.OvalBuilder;
 import com.arpnetworking.metrics.portal.scheduling.Schedule;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
@@ -151,7 +150,6 @@ public abstract class BoundedSchedule implements Schedule {
             return self();
         }
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateRunAtAndAfter(final Instant runAtAndAfter) {
             return !runAtAndAfter.equals(Instant.MIN) && (_runUntil == null || !runAtAndAfter.isAfter(_runUntil));
         }

@@ -550,7 +550,6 @@ public final class ConsistencyChecker extends AbstractActorWithTimers {
                 return this;
             }
 
-            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
             private boolean validateStartTime(final Instant startTime) {
                 return startTime.equals(_period.recentEndTime(startTime));
             }

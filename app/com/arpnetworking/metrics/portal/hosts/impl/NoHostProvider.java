@@ -20,7 +20,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import org.apache.pekko.actor.AbstractActor;
 
@@ -40,7 +39,6 @@ public class NoHostProvider extends AbstractActor {
      *
      * @param configuration Play configuration.
      */
-    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getSelf() and getContext() are safe to call")
     @Inject
     public NoHostProvider(@Assisted final Config configuration) {
         _configuration = configuration;

@@ -69,7 +69,6 @@ public class JacksonSerializer extends JSerializer {
 
 
     @Override
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH", justification = "Preconditions.checkNotNull will throw")
     public Object fromBinaryJava(final byte[] bytes, final Class<?> manifest) {
         Preconditions.checkNotNull(manifest, "Jackson deserialization requires a manifest.");
         Preconditions.checkNotNull(gObjectMapper, "The mapper was not configured at startup.");
@@ -88,7 +87,6 @@ public class JacksonSerializer extends JSerializer {
     }
 
     @Override
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH", justification = "Preconditions.checkNotNull will throw")
     public byte[] toBinary(final Object o) {
         Preconditions.checkNotNull(gObjectMapper, "The mapper was not configured at startup.");
         try {

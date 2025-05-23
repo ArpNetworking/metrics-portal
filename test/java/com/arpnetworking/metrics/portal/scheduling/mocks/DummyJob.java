@@ -202,7 +202,6 @@ public final class DummyJob<T> implements Job<T> {
             return this;
         }
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateResultXorError(final Object result) {
             return _result.isPresent() ^ _error.isPresent();
         }

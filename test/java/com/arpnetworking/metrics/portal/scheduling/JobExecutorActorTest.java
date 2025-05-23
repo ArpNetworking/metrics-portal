@@ -30,7 +30,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.ConfigFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.Organization;
 import models.internal.scheduling.Job;
 import org.apache.pekko.actor.ActorRef;
@@ -242,7 +241,6 @@ public final class JobExecutorActorTest {
     }
 
     @Test
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     public void testOnlyExecutesOneAtATime() {
         final ChronoUnit period = ChronoUnit.MINUTES;
         final Instant startAt = T_0.minus(period.getDuration());

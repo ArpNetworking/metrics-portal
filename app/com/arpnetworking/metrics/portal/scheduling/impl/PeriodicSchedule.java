@@ -19,7 +19,6 @@ import com.arpnetworking.logback.annotations.Loggable;
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.MoreObjects;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.sf.oval.constraint.NotNull;
 import net.sf.oval.constraint.ValidateWithMethod;
 
@@ -226,7 +225,6 @@ public final class PeriodicSchedule extends BoundedSchedule {
             return this;
         }
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateOffset(final Duration offset) {
             return !offset.isNegative()
                    && offset.minus(_period.getDuration()).isNegative();

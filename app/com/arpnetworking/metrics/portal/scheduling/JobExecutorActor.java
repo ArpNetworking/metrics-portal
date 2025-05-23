@@ -24,7 +24,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Injector;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.scheduling.Job;
 import models.internal.scheduling.JobExecution;
 import net.sf.oval.constraint.NotNull;
@@ -822,7 +821,6 @@ public final class JobExecutorActor<T> extends AbstractActorWithTimers {
                 return this;
             }
 
-            @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
             private boolean validateErrorAndResult(@Nullable final Object result) {
                 return result == null ^ _error == null;
             }

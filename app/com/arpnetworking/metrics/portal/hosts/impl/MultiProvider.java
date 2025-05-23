@@ -21,7 +21,6 @@ import com.arpnetworking.steno.LoggerFactory;
 import com.google.inject.assistedinject.Assisted;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueType;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.Props;
@@ -51,7 +50,6 @@ public class MultiProvider extends AbstractActor {
      * @param configuration Play configuration.
      */
     @Inject
-    @SuppressFBWarnings(value = "MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR", justification = "getContext() and getSelf() are safe to call")
     public MultiProvider(final HostProviderFactory factory, final Environment environment, @Assisted final Config configuration) {
         _factory = factory;
         _environment = environment;

@@ -24,7 +24,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Injector;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import models.internal.reports.Recipient;
 import models.internal.reports.Report;
 import models.internal.reports.ReportFormat;
@@ -95,10 +94,6 @@ public final class DefaultReport implements Report {
     }
 
     @Override
-    @SuppressFBWarnings(
-            value = "NP_NONNULL_PARAM_VIOLATION",
-            justification = "Known problem with FindBugs. See https://github.com/findbugsproject/findbugs/issues/79."
-    )
     public CompletionStage<Result> execute(final Injector injector, final Instant scheduled) {
         return injector.getInstance(ReportExecutionContext.class).execute(this, scheduled);
     }
@@ -253,7 +248,6 @@ public final class DefaultReport implements Report {
         @NotNull
         private Duration _timeout;
 
-        @SuppressFBWarnings(value = "UPM_UNCALLED_PRIVATE_METHOD", justification = "invoked reflectively by @ValidateWithMethod")
         private boolean validateRecipientsPresent(final ImmutableSetMultimap<ReportFormat, Recipient> result) {
             return !_recipients.isEmpty();
         }

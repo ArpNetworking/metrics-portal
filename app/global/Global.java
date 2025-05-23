@@ -18,7 +18,6 @@ package global;
 
 import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import org.apache.pekko.actor.ActorSystem;
 import play.inject.ApplicationLifecycle;
@@ -47,7 +46,6 @@ public final class Global {
         LOGGER.debug().setMessage("Startup complete").log();
     }
 
-    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "CompletableFuture can take a null arg")
     private CompletionStage<Void> onStop() {
         final CompletableFuture<Void> shutdownFuture = new CompletableFuture<>();
         LOGGER.info().setMessage("Shutting down application...").log();

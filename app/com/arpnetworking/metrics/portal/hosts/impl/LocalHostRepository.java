@@ -22,7 +22,6 @@ import com.arpnetworking.steno.Logger;
 import com.arpnetworking.steno.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.inject.Inject;
 import models.internal.Host;
 import models.internal.HostQuery;
@@ -216,7 +215,6 @@ public final class LocalHostRepository implements HostRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalHostRepository.class);
 
-    @SuppressFBWarnings("SE_BAD_FIELD")
     private static class HostComparator implements Comparator<Host>, Serializable {
 
         HostComparator(final HostQuery query) {
