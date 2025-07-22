@@ -101,7 +101,7 @@
     <metrics.client.version>0.13.0</metrics.client.version>
     <metrics.client.http.version>0.14.0</metrics.client.http.version>
     <metrics.incubator.extra.version>0.13.0</metrics.incubator.extra.version>
-    <metrics.jvm.extra.version>0.13.1</metrics.jvm.extra.version>
+    <metrics.jvm.extra.version>0.13.2</metrics.jvm.extra.version>
     <oval.version>3.2.1</oval.version>
     <play2.version>3.0.8</play2.version>
     <play2-json.version>3.0.5</play2-json.version>
