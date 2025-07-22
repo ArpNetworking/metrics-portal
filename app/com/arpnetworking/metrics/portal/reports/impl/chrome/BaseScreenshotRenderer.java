@@ -28,6 +28,7 @@ import models.internal.reports.ReportSource;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledExecutorService;
@@ -138,7 +139,11 @@ public abstract class BaseScreenshotRenderer<S extends ReportSource, F extends R
                             .addData("result", x)
                             .log();
                 }
-                navigate.cancel(true);
+                try {
+                    navigate.cancel(true);
+                } catch (final CancellationException ignored) {
+                    // Future was already cancelled, which is fine
+                }
             } finally {
                 dts.close();
                 LOGGER.debug()
