@@ -98,7 +98,7 @@
     <lmdb.version>0.9.1</lmdb.version>
     <logback.steno.version>2.2.0</logback.steno.version>
     <logback.version>1.5.18</logback.version>
-    <metrics.client.version>0.13.0</metrics.client.version>
+    <metrics.client.version>0.13.1</metrics.client.version>
     <metrics.client.http.version>0.14.0</metrics.client.http.version>
     <metrics.incubator.extra.version>0.13.0</metrics.incubator.extra.version>
     <metrics.jvm.extra.version>0.13.2</metrics.jvm.extra.version>
