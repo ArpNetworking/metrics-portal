@@ -112,7 +112,7 @@
     <scala.xml.version>2.4.0</scala.xml.version>
     <simplejavamail.version>8.12.6</simplejavamail.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <spotbugs.annotations.version>4.9.3</spotbugs.annotations.version>
+    <spotbugs.annotations.version>4.9.4</spotbugs.annotations.version>
     <twirl.api.version>2.0.3</twirl.api.version>
     <typesafe.config.version>1.4.4</typesafe.config.version>
     <jug.version>5.1.0</jug.version>
