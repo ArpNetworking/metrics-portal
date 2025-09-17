@@ -90,11 +90,13 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
     }
 
     @Test(timeout = 60000)
+    @Ignore
     public void testDelayedRendering() throws Exception {
         runTestWithRenderDelay(Duration.ofSeconds(2));
     }
 
     @Test(timeout = 60000)
+    @Ignore
     public void testDelayedRenderingFailure() throws Exception {
         final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 

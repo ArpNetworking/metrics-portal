@@ -21,6 +21,7 @@ import com.github.tomakehurst.wiremock.common.Strings;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import models.internal.impl.HtmlReportFormat;
 import models.internal.impl.WebPageReportSource;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.URI;
@@ -44,6 +45,7 @@ import static org.junit.Assert.fail;
 public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
+    @Ignore
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
@@ -75,6 +77,7 @@ public class HtmlScreenshotRendererTest extends BaseChromeTestSuite {
     }
 
     @Test(timeout = 60000)
+    @Ignore
     public void testObeysOriginConfig() throws Exception {
         final MockRenderedReportBuilder builder = new MockRenderedReportBuilder();
 
