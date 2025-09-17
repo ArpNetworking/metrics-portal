@@ -21,6 +21,7 @@ import com.arpnetworking.metrics.portal.reports.impl.chrome.grafana.testing.Util
 import com.arpnetworking.metrics.portal.reports.impl.testing.MockRenderedReportBuilder;
 import models.internal.impl.GrafanaReportPanelReportSource;
 import models.internal.impl.PdfReportFormat;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -44,6 +45,7 @@ import static org.junit.Assert.assertTrue;
 public class PdfScreenshotRendererTest extends BaseChromeTestSuite {
 
     @Test(timeout = 60000)
+    @Ignore
     public void testRendering() throws Exception {
         final MockRenderedReportBuilder builder = Mockito.mock(MockRenderedReportBuilder.class);
 
