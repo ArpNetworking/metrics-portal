@@ -138,7 +138,7 @@
     <rpm.maven.plugin.version>2.3.0</rpm.maven.plugin.version>
     <play.maven.plugin.version>1.0.5</play.maven.plugin.version>
     <sbt.compiler.plugin.version>1.0.3</sbt.compiler.plugin.version>
-    <frontend.maven.plugin.version>1.15.1</frontend.maven.plugin.version>
+    <frontend.maven.plugin.version>1.15.4</frontend.maven.plugin.version>
 
     <!-- Scala -->
     <scala.package.version>2.13</scala.package.version>
