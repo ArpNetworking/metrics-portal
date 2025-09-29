@@ -118,7 +118,7 @@
     <jug.version>5.1.1</jug.version>
 
     <!-- Test Dependency Versions -->
-    <apache.http.client.version>5.5</apache.http.client.version>
+    <apache.http.client.version>5.5.1</apache.http.client.version>
     <apache.http.core.version>5.3.6</apache.http.core.version>
     <hamcrest.version>3.0</hamcrest.version>
     <jsonassert.version>1.5.0</jsonassert.version>
