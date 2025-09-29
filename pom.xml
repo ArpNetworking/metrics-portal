@@ -115,7 +115,7 @@
     <spotbugs.annotations.version>4.9.6</spotbugs.annotations.version>
     <twirl.api.version>2.0.3</twirl.api.version>
     <typesafe.config.version>1.4.5</typesafe.config.version>
-    <jug.version>5.1.0</jug.version>
+    <jug.version>5.1.1</jug.version>
 
     <!-- Test Dependency Versions -->
     <apache.http.client.version>5.5</apache.http.client.version>
