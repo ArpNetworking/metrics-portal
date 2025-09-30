@@ -85,7 +85,7 @@
     <dkimutils.version>2.0.1</dkimutils.version>
     <dumbster.version>1.7.1</dumbster.version>
     <ebean.version>14.0.2</ebean.version>
-    <flyway.core.version>11.13.1</flyway.core.version>
+    <flyway.core.version>11.13.2</flyway.core.version>
     <flyway.play.version>9.1.0</flyway.play.version>
     <guava.version>33.5.0-jre</guava.version>
     <guice.version>6.0.0</guice.version>
