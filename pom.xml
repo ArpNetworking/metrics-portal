@@ -105,7 +105,7 @@
     <oval.version>3.2.1</oval.version>
     <play2.version>3.0.9</play2.version>
     <play2-json.version>3.0.6</play2-json.version>
-    <play2-ebean.version>8.3.0</play2-ebean.version>
+    <play2-ebean.version>8.5.0</play2-ebean.version>
     <play2-jdbc-evolutions.version>3.0.9</play2-jdbc-evolutions.version>
     <postgresql.version>42.7.8</postgresql.version>
     <scala.version>2.13.12</scala.version>
